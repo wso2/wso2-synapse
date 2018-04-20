@@ -107,6 +107,9 @@ public class DeliveryAgent {
     public void submit(MessageContext msgContext, EndpointReference epr)
             throws AxisFault {
         try {
+            if (log.isDebugEnabled()) {
+                log.debug("Submitting request for MessageID: " + msgContext.getMessageID());
+            }
             URL url = new URL(epr.getAddress());
             String scheme = url.getProtocol() != null ? url.getProtocol() : "http";
             String hostname = url.getHost();
@@ -158,6 +161,10 @@ public class DeliveryAgent {
 
             NHttpClientConnection conn = targetConnections.getConnection(route);
             if (conn != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Connection found from pool for MessageID: " + msgContext.getMessageID() +
+                            ", conn: " + conn.toString());
+                }
             	conn.resetInput();
             	conn.resetOutput();
                 MessageContext messageContext = queue.poll();
@@ -200,6 +207,9 @@ public class DeliveryAgent {
      * @param port remote port number
      */
     public void connected(HttpRoute route, NHttpClientConnection conn) {
+        if (log.isDebugEnabled()) {
+            log.debug("Connection established conn: " + conn.toString());
+        }
         Queue<MessageContext> queue = null;
         lock.lock();
         try {
@@ -235,6 +245,10 @@ public class DeliveryAgent {
             try {
                 TargetContext.updateState(conn, ProtocolState.REQUEST_READY);
                 TargetContext.get(conn).setRequestMsgCtx(messageContext);
+                if (log.isDebugEnabled()) {
+                    log.debug("Trying to send the message, MessageID:" + messageContext.getMessageID() +
+                            ", conn:" + conn.toString());
+                }
                 submitRequest(conn, route, messageContext);
             } catch (AxisFault e) {
                 log.error("IO error while sending the request out", e);
@@ -244,7 +258,8 @@ public class DeliveryAgent {
 
     private void submitRequest(NHttpClientConnection conn, HttpRoute route, MessageContext msgContext) throws AxisFault {
         if (log.isDebugEnabled()) {
-            log.debug("Submitting new request to the connection: " + conn);
+            log.debug("Submitting new request MessageID:"
+                    + msgContext.getMessageID() +" to the connection: " + conn);
         }
 
         if (SynapseDebugInfoHolder.getInstance().isDebuggerEnabled()) {
