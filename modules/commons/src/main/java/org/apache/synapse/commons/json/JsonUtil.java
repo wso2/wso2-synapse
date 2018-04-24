@@ -668,10 +668,18 @@ public final class JsonUtil {
             }
             SOAPEnvelope e = messageContext.getEnvelope();
             if (e != null) {
-                SOAPBody b = e.getBody();
-                if (b != null) {
-                    removeIndentations(b);
-                    Iterator children = b.getChildren();
+                SOAPBody body = e.getBody();
+                if (body != null) {
+                    try {
+                        removeIndentations(body);
+                    } catch (Exception exp) {
+                        // This means json payload is malformed.
+                        // ignoring the json payload
+                        logger.warn("Existing json payload is malformed. Discarding the existing json payload. MessageID : " +
+                                messageContext.getMessageID(), exp);
+                        return null;
+                    }
+                    Iterator children = body.getChildren();
                     while (children.hasNext()) {
                         Object o = children.next();
                         if (o instanceof OMNode) {
@@ -684,7 +692,7 @@ public final class JsonUtil {
                                      messageContext.getMessageID());
                     }
                     if (addAsNewFirstChild) {
-                        b.addChild(elem);
+                        body.addChild(elem);
                         if (logger.isTraceEnabled()) {
                             logger.trace(
                                     "#getNewJsonPayload. Added the new JSON sourced element as the first child. MessageID: " +
