@@ -20,6 +20,7 @@ package org.apache.synapse.commons.json;
 
 import org.apache.axiom.om.impl.llom.OMElementImpl;
 import org.apache.axis2.transport.http.HTTPConstants;
+import org.apache.synapse.commons.SynapseCommonsException;
 import org.apache.synapse.commons.staxon.core.json.JsonXMLConfig;
 import org.apache.synapse.commons.staxon.core.json.JsonXMLConfigBuilder;
 import org.apache.synapse.commons.staxon.core.json.JsonXMLInputFactory;
@@ -674,10 +675,9 @@ public final class JsonUtil {
                         removeIndentations(body);
                     } catch (Exception exp) {
                         // This means json payload is malformed.
-                        // ignoring the json payload
-                        logger.warn("Existing json payload is malformed. Discarding the existing json payload. MessageID : " +
+                        body.getFirstElement().detach();
+                        throw  new SynapseCommonsException("Existing json payload is malformed. MessageID : " +
                                 messageContext.getMessageID(), exp);
-                        return null;
                     }
                     Iterator children = body.getChildren();
                     while (children.hasNext()) {
