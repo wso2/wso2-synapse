@@ -165,17 +165,18 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             if (synInCtx.getProperty(SynapseConstants.OUT_ONLY) == null || "false"
                     .equals(synInCtx.getProperty(SynapseConstants.OUT_ONLY))) {
                 if (synInCtx.getEnvelope() != null) {
-            if (synLog.isTraceTraceEnabled()) {
-                synLog.traceTrace("Response payload received : " + synInCtx.getEnvelope());
+                    if (synLog.isTraceTraceEnabled()) {
+                        synLog.traceTrace("Response payload received : " + synInCtx.getEnvelope());
+                    }
+                    if (synLog.isTraceOrDebugEnabled()) {
+                        synLog.traceOrDebug("End : Call mediator - Blocking Call");
+                    }
+                } else {
+                    if (synLog.isTraceOrDebugEnabled()) {
+                        synLog.traceOrDebug("Service returned a null response");
+                    }
+                }
             }
-            if (synLog.isTraceOrDebugEnabled()) {
-                synLog.traceOrDebug("End : Call mediator - Blocking Call");
-            }
-        } else {
-            if (synLog.isTraceOrDebugEnabled()) {
-                synLog.traceOrDebug("Service returned a null response");
-            }
-        }}
         } else {
             log.error("Error while performing the call operation in blocking mode");
             return false;

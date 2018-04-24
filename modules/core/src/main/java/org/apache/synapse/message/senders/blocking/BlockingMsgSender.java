@@ -430,8 +430,7 @@ public class BlockingMsgSender {
 
                 synapseInMsgCtx.setProperty(SynapseConstants.ERROR_MESSAGE, fault.getMessage());
                 synapseInMsgCtx.setProperty(SynapseConstants.ERROR_DETAIL,
-                        fault.getDetail() != null ?
-                                fault.getDetail().getText() : "");
+                        fault.getDetail() != null ? fault.getDetail().getText() : "");
                 if (!isOutOnly) {
                     org.apache.axis2.context.MessageContext faultMC = fault.getFaultMessageContext();
                     if (faultMC != null) {
