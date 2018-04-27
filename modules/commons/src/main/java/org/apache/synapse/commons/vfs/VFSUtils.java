@@ -356,12 +356,14 @@ public class VFSUtils {
     }
     public static boolean isFailRecord(FileSystemManager fsManager, FileObject fo) {
         try {
-	    String fullPath = fo.getName().getURI();	
+	    String fullPath = fo.getName().getURI();
+	    String queryParams = "";
             int pos = fullPath.indexOf("?");
             if (pos > -1) {
+                queryParams = fullPath.substring(pos);
                 fullPath = fullPath.substring(0, pos);
             }
-            FileObject failObject = fsManager.resolveFile(fullPath + ".fail");
+            FileObject failObject = fsManager.resolveFile(fullPath + ".fail" + queryParams);
             if (failObject.exists()) {
             	return true;
             }
