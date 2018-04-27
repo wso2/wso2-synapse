@@ -646,6 +646,12 @@ public final class JsonUtil {
                     }
                     OMElement element = OMAbstractFactory.getOMFactory().createOMElement(jsonElement, null);
                     element.addChild(OMAbstractFactory.getOMFactory().createOMText(jsonString));
+                    if (removeChildren) {
+                        removeChildrenFromPayloadBody(messageContext);
+                        if (addAsNewFirstChild) {
+                            addPayloadBody(messageContext, element);
+                        }
+                    }
                     return element;
                 } catch (IOException e) {
                     throw new AxisFault(
@@ -666,44 +672,66 @@ public final class JsonUtil {
                             messageContext.getMessageID());
                 }
                 return elem;
-            }
-            SOAPEnvelope e = messageContext.getEnvelope();
-            if (e != null) {
-                SOAPBody body = e.getBody();
-                if (body != null) {
-                    try {
-                        removeIndentations(body);
-                    } catch (Exception exp) {
-                        // This means json payload is malformed.
-                        body.getFirstElement().detach();
-                        throw  new SynapseCommonsException("Existing json payload is malformed. MessageID : " +
-                                messageContext.getMessageID(), exp);
-                    }
-                    Iterator children = body.getChildren();
-                    while (children.hasNext()) {
-                        Object o = children.next();
-                        if (o instanceof OMNode) {
-                            //((OMNode) o).detach();
-                            children.remove();
-                        }
-                    }
-                    if (logger.isTraceEnabled()) {
-                        logger.trace("#getNewJsonPayload. Removed child elements from exiting message. MessageID: " +
-                                     messageContext.getMessageID());
-                    }
-                    if (addAsNewFirstChild) {
-                        body.addChild(elem);
-                        if (logger.isTraceEnabled()) {
-                            logger.trace(
-                                    "#getNewJsonPayload. Added the new JSON sourced element as the first child. MessageID: " +
-                                    messageContext.getMessageID());
-                        }
-                    }
+            } else {
+                removeChildrenFromPayloadBody(messageContext);
+                if (addAsNewFirstChild) {
+                    addPayloadBody(messageContext, elem);
                 }
             }
             return elem;
         }
         return null;
+    }
+
+    /**
+     * Remove the children element from the existing message
+     *
+     * @param messageContext Axis2 Message context
+     */
+    private static void removeChildrenFromPayloadBody(MessageContext messageContext) {
+        SOAPEnvelope envelope = messageContext.getEnvelope();
+        if (envelope != null) {
+            SOAPBody body = envelope.getBody();
+            if (body != null) {
+                try {
+                    removeIndentations(body);
+                } catch (Exception exp) {
+                    // This means json payload is malformed.
+                    body.getFirstElement().detach();
+                    throw  new SynapseCommonsException("Existing json payload is malformed. MessageID : " +
+                            messageContext.getMessageID(), exp);
+                }
+                Iterator children = body.getChildren();
+                while (children.hasNext()) {
+                    Object child = children.next();
+                    if (child instanceof OMNode) {
+                        children.remove();
+                    }
+                }
+                if (logger.isTraceEnabled()) {
+                    logger.trace("#getNewJsonPayload. Removed child elements from exiting message. MessageID: " +
+                            messageContext.getMessageID());
+                }
+            }
+        }
+    }
+
+    /**
+     * Add the new JSON sourced element as the first child in the payload body
+     *
+     * @param messageContext Axis2 Message context
+     * @param elem          The new payload
+     */
+    private static void addPayloadBody(MessageContext messageContext, OMElement elem) {
+        SOAPEnvelope envelope = messageContext.getEnvelope();
+        if (envelope != null) {
+            SOAPBody body = envelope.getBody();
+            body.addChild(elem);
+            if (logger.isTraceEnabled()) {
+                logger.trace("#getNewJsonPayload. Added the new JSON sourced element as the first child. MessageID: "
+                        + messageContext.getMessageID());
+            }
+        }
     }
 
     /**
