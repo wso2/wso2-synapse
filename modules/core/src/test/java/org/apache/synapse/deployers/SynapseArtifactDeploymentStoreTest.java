@@ -25,10 +25,11 @@ import org.junit.Test;
 public class SynapseArtifactDeploymentStoreTest {
     /**
      * Test adding of artifact
+     *
      * @throws Exception
      */
     @Test
-    public void testAddArtifact() throws Exception{
+    public void testAddArtifact() throws Exception {
         SynapseArtifactDeploymentStore synapseArtifactDeploymentStore = new SynapseArtifactDeploymentStore();
         String sampleArtifact = "sampleArtifact";
         String sampleFile = "sampleFile";
@@ -38,10 +39,11 @@ public class SynapseArtifactDeploymentStoreTest {
 
     /**
      * Test removing of artifact
+     *
      * @throws Exception
      */
     @Test
-    public void testRemoveArtifact() throws Exception{
+    public void testRemoveArtifact() throws Exception {
         SynapseArtifactDeploymentStore synapseArtifactDeploymentStore = new SynapseArtifactDeploymentStore();
         String sampleArtifact = "sampleArtifact";
         String sampleFile = "sampleFile";
@@ -51,10 +53,11 @@ public class SynapseArtifactDeploymentStoreTest {
 
     /**
      * Test adding of an updated artifact
+     *
      * @throws Exception
      */
     @Test
-    public void testAddUpdatingArtifact() throws Exception{
+    public void testAddUpdatingArtifact() throws Exception {
         SynapseArtifactDeploymentStore synapseArtifactDeploymentStore = new SynapseArtifactDeploymentStore();
         String sampleArtifact = "sampleArtifact";
         String sampleFile = "sampleFile";
@@ -64,23 +67,26 @@ public class SynapseArtifactDeploymentStoreTest {
 
     /**
      * Test removing of an updated artifact
+     *
      * @throws Exception
      */
     @Test
-    public void testRemoveUpdatingArtifact() throws Exception{
+    public void testRemoveUpdatingArtifact() throws Exception {
         SynapseArtifactDeploymentStore synapseArtifactDeploymentStore = new SynapseArtifactDeploymentStore();
         String sampleArtifact = "sampleArtifact";
         String sampleFile = "sampleFile";
         synapseArtifactDeploymentStore.removeUpdatingArtifact(sampleFile);
-        Assert.assertFalse("Updated Artifact not removed", synapseArtifactDeploymentStore.isUpdatingArtifact(sampleFile));
+        Assert.assertFalse("Updated Artifact not removed",
+                synapseArtifactDeploymentStore.isUpdatingArtifact(sampleFile));
     }
 
     /**
      * Test adding of a restored artifact
+     *
      * @throws Exception
      */
     @Test
-    public void testAddRestoredArtifact() throws Exception{
+    public void testAddRestoredArtifact() throws Exception {
         SynapseArtifactDeploymentStore synapseArtifactDeploymentStore = new SynapseArtifactDeploymentStore();
         String sampleFile = "sampleFile";
         synapseArtifactDeploymentStore.addRestoredArtifact(sampleFile);
@@ -89,37 +95,43 @@ public class SynapseArtifactDeploymentStoreTest {
 
     /**
      * Test removing of a restored artifact
+     *
      * @throws Exception
      */
     @Test
-    public void testRemoveRestoredArtifact() throws Exception{
+    public void testRemoveRestoredArtifact() throws Exception {
         SynapseArtifactDeploymentStore synapseArtifactDeploymentStore = new SynapseArtifactDeploymentStore();
         String sampleFile = "sampleFile";
         synapseArtifactDeploymentStore.removeRestoredFile(sampleFile);
-        Assert.assertFalse("Restored Artifact not removed", synapseArtifactDeploymentStore.isUpdatingArtifact(sampleFile));
+        Assert.assertFalse("Restored Artifact not removed",
+                synapseArtifactDeploymentStore.isUpdatingArtifact(sampleFile));
     }
 
     /**
      * Test adding of a backed-up artifact
+     *
      * @throws Exception
      */
     @Test
-    public void testAddBackedupArtifact() throws Exception{
+    public void testAddBackedupArtifact() throws Exception {
         SynapseArtifactDeploymentStore synapseArtifactDeploymentStore = new SynapseArtifactDeploymentStore();
         String sampleFile = "sampleFile";
         synapseArtifactDeploymentStore.addBackedUpArtifact(sampleFile);
-        Assert.assertTrue("Backed-up Artifact not added", synapseArtifactDeploymentStore.isBackedUpArtifact(sampleFile));
+        Assert.assertTrue("Backed-up Artifact not added",
+                synapseArtifactDeploymentStore.isBackedUpArtifact(sampleFile));
     }
 
     /**
      * Test removing of a backed-up artifact
+     *
      * @throws Exception
      */
     @Test
-    public void testRemoveBackedupArtifact() throws Exception{
+    public void testRemoveBackedupArtifact() throws Exception {
         SynapseArtifactDeploymentStore synapseArtifactDeploymentStore = new SynapseArtifactDeploymentStore();
         String sampleFile = "sampleFile";
         synapseArtifactDeploymentStore.removeBackedUpArtifact(sampleFile);
-        Assert.assertFalse("Backed-up Artifact not removed", synapseArtifactDeploymentStore.isBackedUpArtifact(sampleFile));
+        Assert.assertFalse("Backed-up Artifact not removed",
+                synapseArtifactDeploymentStore.isBackedUpArtifact(sampleFile));
     }
 }
