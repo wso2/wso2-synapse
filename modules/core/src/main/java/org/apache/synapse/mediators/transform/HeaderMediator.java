@@ -39,9 +39,10 @@ import org.apache.synapse.util.xpath.SynapseXPath;
 
 import javax.xml.namespace.QName;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * The header mediator is able to set a given value as a SOAP header, or remove a given
@@ -187,7 +188,11 @@ public class HeaderMediator extends AbstractMediator {
 	                headersMap.put(headerName, value);
 	            }
 	            if (headers == null) {
-	                Map headersMap = new HashMap();
+	                Map<String, Object> headersMap = new TreeMap<>(new Comparator<String>() {
+                            public int compare(String o1, String o2) {
+                                return o1.compareToIgnoreCase(o2);
+                            }
+	                });
 	                headersMap.put(headerName, value);
 	                axis2MessageCtx.setProperty(
 	                        org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,

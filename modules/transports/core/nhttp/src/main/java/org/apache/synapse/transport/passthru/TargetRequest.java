@@ -52,14 +52,12 @@ import org.apache.synapse.transport.passthru.util.TargetRequestFactory;
 import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 /**
  * This is a class for representing a request to be sent to a target.
@@ -251,7 +249,7 @@ public class TargetRequest {
         }
         
         Object o = requestMsgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
-        if (o != null && o instanceof TreeMap) {
+        if (o != null && o instanceof Map) {
             Map _headers = (Map) o;
             String trpContentType = (String) _headers.get(HTTP.CONTENT_TYPE);
             if (trpContentType != null && !trpContentType.equals("")) {
