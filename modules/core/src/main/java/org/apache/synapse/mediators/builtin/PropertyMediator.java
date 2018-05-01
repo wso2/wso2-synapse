@@ -35,9 +35,10 @@ import org.apache.axis2.util.JavaUtils;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.util.MediatorPropertyUtils;
 
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -168,7 +169,11 @@ public class PropertyMediator extends AbstractMediator {
                     headersMap.put(name, resultValue);
                 }
                 if (headers == null) {
-                    Map headersMap = new HashMap();
+                    Map<String, Object> headersMap = new TreeMap<>(new Comparator<String>() {
+                        public int compare(String o1, String o2) {
+                            return o1.compareToIgnoreCase(o2);
+                        }
+                    });
                     headersMap.put(name, resultValue);
                     axis2MessageCtx.setProperty(
                             org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
