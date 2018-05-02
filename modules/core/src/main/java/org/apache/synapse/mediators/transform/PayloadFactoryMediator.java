@@ -19,7 +19,11 @@
 
 package org.apache.synapse.mediators.transform;
 
-import org.apache.axiom.om.*;
+import org.apache.axiom.om.OMAbstractFactory;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMException;
+import org.apache.axiom.om.OMFactory;
+import org.apache.axiom.om.OMText;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAP12Constants;
@@ -27,10 +31,10 @@ import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.protocol.HTTP;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.xml.SynapsePath;
@@ -46,10 +50,14 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 import javax.xml.namespace.QName;
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -277,7 +285,16 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 } else if(mediaType.equals(XML_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) {
                     // JSON to XML conversion here
                     try {
-                        OMElement omXML = JsonUtil.toXml(IOUtils.toInputStream(replacementEntry.getKey()), false);
+                        replacementValue = replacementEntry.getKey();
+                        replacementValue = replacementValue.replaceAll(ESCAPE_DOUBLE_QUOTE_WITH_FIVE_BACK_SLASHES,
+                                ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES)
+                                .replaceAll("\\$", ESCAPE_DOLLAR_WITH_SIX_BACK_SLASHES)
+                                .replaceAll("\\\\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
+                                .replaceAll("\\\\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
+                                .replaceAll("\\\\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
+                                .replaceAll("\\\\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
+                                .replaceAll("\\\\t", ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES);
+                        OMElement omXML = JsonUtil.toXml(IOUtils.toInputStream(replacementValue), false);
                         if (JsonUtil.isAJsonPayloadElement(omXML)) { // remove <jsonObject/> from result.
                             Iterator children = omXML.getChildElements();
                             String childrenStr = "";
