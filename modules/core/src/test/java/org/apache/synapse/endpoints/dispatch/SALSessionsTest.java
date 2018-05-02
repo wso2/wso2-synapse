@@ -29,6 +29,7 @@ import org.apache.synapse.endpoints.AddressEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.junit.Assert;
 import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,17 +39,18 @@ import java.util.List;
 public class SALSessionsTest {
     /**
      * Test updating session with session id
+     *
      * @throws Exception
      */
     @Test
-    public void testUpdateWithId() throws Exception{
+    public void testUpdateWithId() throws Exception {
         BasicConfigurator.configure();
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
         ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
         SynapseEnvironment synapseEnvironment = new Axis2SynapseEnvironment(cfgCtx, synapseConfiguration);
         Axis2MessageContext axis2MessageContext = new Axis2MessageContext(new org.apache.axis2.context.MessageContext(),
-                                synapseConfiguration, synapseEnvironment);
+                synapseConfiguration, synapseEnvironment);
         MessageContext messageContext = axis2MessageContext;
         Endpoint endpoint = new AddressEndpoint();
         List<Endpoint> endpoints = new ArrayList<>();
@@ -66,10 +68,11 @@ public class SALSessionsTest {
 
     /**
      * Test updating session with cookie
+     *
      * @throws Exception
      */
     @Test
-    public void testUpdateWithCookie() throws Exception{
+    public void testUpdateWithCookie() throws Exception {
         BasicConfigurator.configure();
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
@@ -97,10 +100,11 @@ public class SALSessionsTest {
 
     /**
      * Test updating session with session id and old session
+     *
      * @throws Exception
      */
     @Test
-    public void testUpdateWithOldSession() throws Exception{
+    public void testUpdateWithOldSession() throws Exception {
         BasicConfigurator.configure();
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
@@ -126,10 +130,11 @@ public class SALSessionsTest {
 
     /**
      * Test updating session with session id and old session where the old session id is same as current session id
+     *
      * @throws Exception
      */
     @Test
-    public void testUpdateWithOldSessionSameName() throws Exception{
+    public void testUpdateWithOldSessionSameName() throws Exception {
         BasicConfigurator.configure();
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
@@ -156,10 +161,11 @@ public class SALSessionsTest {
 
     /**
      * Test updating session with cookie and old session
+     *
      * @throws Exception
      */
     @Test
-    public void testUpdateCookieWithOldSession() throws Exception{
+    public void testUpdateCookieWithOldSession() throws Exception {
         BasicConfigurator.configure();
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
@@ -191,10 +197,11 @@ public class SALSessionsTest {
 
     /**
      * Test updating session with cookie and old session where the old session id is same as current session id
+     *
      * @throws Exception
      */
     @Test
-    public void testUpdateCookieWithOldSessionSameName() throws Exception{
+    public void testUpdateCookieWithOldSessionSameName() throws Exception {
         BasicConfigurator.configure();
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
