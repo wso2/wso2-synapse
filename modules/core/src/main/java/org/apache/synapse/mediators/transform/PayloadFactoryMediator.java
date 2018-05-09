@@ -19,7 +19,11 @@
 
 package org.apache.synapse.mediators.transform;
 
-import org.apache.axiom.om.*;
+import org.apache.axiom.om.OMAbstractFactory;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMException;
+import org.apache.axiom.om.OMFactory;
+import org.apache.axiom.om.OMText;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAP12Constants;
@@ -27,10 +31,10 @@ import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.protocol.HTTP;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.xml.SynapsePath;
@@ -46,10 +50,14 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 import javax.xml.namespace.QName;
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -214,6 +222,41 @@ public class PayloadFactoryMediator extends AbstractMediator {
     }
 
     /**
+     * Replace special characters of a JSON string.
+     * @param jsonString JSON string.
+     * @return
+     */
+    private String escapeSpecialCharactersOfJson(String jsonString) {
+        // This is to replace \" with \\" and \\$ with \$. Because for Matcher, $ sign is
+        // a special character and for JSON " is a special character.
+        //replacing other json special characters i.e \b, \f, \n \r, \t
+        return jsonString.replaceAll(ESCAPE_DOUBLE_QUOTE_WITH_FIVE_BACK_SLASHES,
+                ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES)
+                .replaceAll(ESCAPE_DOLLAR_WITH_TEN_BACK_SLASHES, ESCAPE_DOLLAR_WITH_SIX_BACK_SLASHES)
+                .replaceAll("\\\\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\\\\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\\\\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\\\\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\\\\t", ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES);
+    }
+
+    /**
+     * Replace special characters of a XML string.
+     * @param xmlString XML string.
+     * @return
+     */
+    private String escapeSpecialCharactersOfXml(String xmlString) {
+        return xmlString.replaceAll(ESCAPE_DOUBLE_QUOTE_WITH_FIVE_BACK_SLASHES,
+                ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES)
+                .replaceAll("\\$", ESCAPE_DOLLAR_WITH_SIX_BACK_SLASHES)
+                .replaceAll("\\\\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\\\\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\\\\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\\\\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\\\\t", ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES);
+    }
+
+    /**
      * Replaces the payload format with SynapsePath arguments which are evaluated using getArgValues().
      *
      * @param format
@@ -248,17 +291,8 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     try {
                         replacementValue = "<jsonObject>" + replacementEntry.getKey() + "</jsonObject>";
                         OMElement omXML = AXIOMUtil.stringToOM(replacementValue);
-                        // This is to replace \" with \\" and \\$ with \$. Because for Matcher, $ sign is
-                        // a special character and for JSON " is a special character.
-                        //replacing other json special characters i.e \b, \f, \n \r, \t
-                        replacementValue = JsonUtil.toJsonString(omXML).toString()
-                                .replaceAll(ESCAPE_DOUBLE_QUOTE_WITH_FIVE_BACK_SLASHES, ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES)
-                                .replaceAll(ESCAPE_DOLLAR_WITH_TEN_BACK_SLASHES, ESCAPE_DOLLAR_WITH_SIX_BACK_SLASHES)
-                                .replaceAll("\\\\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\\\\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\\\\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\\\\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\\\\t", ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES);
+                        replacementValue = JsonUtil.toJsonString(omXML).toString();
+                        replacementValue = escapeSpecialCharactersOfJson(replacementValue);
                     } catch (XMLStreamException e) {
                         handleException("Error parsing XML for JSON conversion, please check your xPath expressions return valid XML: ", synCtx);
                     } catch (AxisFault e) {
@@ -277,7 +311,9 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 } else if(mediaType.equals(XML_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) {
                     // JSON to XML conversion here
                     try {
-                        OMElement omXML = JsonUtil.toXml(IOUtils.toInputStream(replacementEntry.getKey()), false);
+                        replacementValue = replacementEntry.getKey();
+                        replacementValue = escapeSpecialCharactersOfXml(replacementValue);
+                        OMElement omXML = JsonUtil.toXml(IOUtils.toInputStream(replacementValue), false);
                         if (JsonUtil.isAJsonPayloadElement(omXML)) { // remove <jsonObject/> from result.
                             Iterator children = omXML.getChildElements();
                             String childrenStr = "";
