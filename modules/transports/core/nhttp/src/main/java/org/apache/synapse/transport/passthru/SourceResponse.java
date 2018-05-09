@@ -184,9 +184,9 @@ public class SourceResponse {
         if (entity == null &&
             PassThroughConstants.HTTP_HEAD.equalsIgnoreCase(request.getRequest().getRequestLine().getMethod())) {
             if (response.getFirstHeader(PassThroughConstants.ORGINAL_CONTEN_LENGTH) == null && response.getFirstHeader(
-		            HTTP.CONTENT_LEN).getValue() != null && (response.getFirstHeader(HTTP.CONTENT_LEN).getValue().equals("0"))) {
+		            HTTP.CONTENT_LEN) != null && (response.getFirstHeader(HTTP.CONTENT_LEN).getValue().equals("0"))) {
                 response.removeHeaders(HTTP.CONTENT_LEN);
-            } else {
+            } else if (response.getFirstHeader(PassThroughConstants.ORGINAL_CONTEN_LENGTH) != null) {
                 response.removeHeaders(HTTP.CONTENT_LEN);
                 response.addHeader(HTTP.CONTENT_LEN,
                                    response.getFirstHeader(PassThroughConstants.ORGINAL_CONTEN_LENGTH).getValue());
