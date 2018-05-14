@@ -40,10 +40,8 @@ public class LocalEntryDeployerTest {
     @Test
     public void testDeploy() throws Exception {
         String inputXML = "<localEntry key=\"TestEntry\" xmlns=\"http://ws.apache.org/ns/synapse\">0.1</localEntry>";
-
         OMElement inputElement = AXIOMUtil.stringToOM(inputXML);
         LocalEntryDeployer localEntryDeployer = new LocalEntryDeployer();
-
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
         ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
@@ -51,10 +49,8 @@ public class LocalEntryDeployerTest {
         axisConfiguration.addParameter(new Parameter(SynapseConstants.SYNAPSE_ENV, synapseEnvironment));
         axisConfiguration.addParameter(new Parameter(SynapseConstants.SYNAPSE_CONFIG, synapseConfiguration));
         cfgCtx.setAxisConfiguration(axisConfiguration);
-
         localEntryDeployer.init(cfgCtx);
         String response = localEntryDeployer.deploySynapseArtifact(inputElement, "sampleFile", null);
-
         Assert.assertEquals("Local Entry not deployed!", "TestEntry", response);
     }
 
@@ -66,10 +62,8 @@ public class LocalEntryDeployerTest {
     @Test
     public void testUpdate() throws Exception {
         String inputXML = "<localEntry key=\"TestEntry\" xmlns=\"http://ws.apache.org/ns/synapse\">0.1</localEntry>";
-
         OMElement inputElement = AXIOMUtil.stringToOM(inputXML);
         LocalEntryDeployer localEntryDeployer = new LocalEntryDeployer();
-
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
         ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
@@ -77,16 +71,11 @@ public class LocalEntryDeployerTest {
         axisConfiguration.addParameter(new Parameter(SynapseConstants.SYNAPSE_ENV, synapseEnvironment));
         axisConfiguration.addParameter(new Parameter(SynapseConstants.SYNAPSE_CONFIG, synapseConfiguration));
         cfgCtx.setAxisConfiguration(axisConfiguration);
-
         localEntryDeployer.init(cfgCtx);
         localEntryDeployer.deploySynapseArtifact(inputElement, "sampleFile", null);
-
         String inputUpdateXML = "<localEntry key=\"TestEntryUpdated\" xmlns=\"http://ws.apache.org/ns/synapse\">0.1</localEntry>";
-
         OMElement updatedElement = AXIOMUtil.stringToOM(inputUpdateXML);
-
         String response = localEntryDeployer.updateSynapseArtifact(updatedElement, "sampleUpdateFile", "TestEntry", null);
-
         Assert.assertEquals("Local Entry not updated!", "TestEntryUpdated", response);
     }
 
@@ -98,10 +87,8 @@ public class LocalEntryDeployerTest {
     @Test
     public void testUndeploy() throws Exception {
         String inputXML = "<localEntry key=\"TestEntry\" xmlns=\"http://ws.apache.org/ns/synapse\">0.1</localEntry>";
-
         OMElement inputElement = AXIOMUtil.stringToOM(inputXML);
         LocalEntryDeployer localEntryDeployer = new LocalEntryDeployer();
-
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
         ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
@@ -109,11 +96,9 @@ public class LocalEntryDeployerTest {
         axisConfiguration.addParameter(new Parameter(SynapseConstants.SYNAPSE_ENV, synapseEnvironment));
         axisConfiguration.addParameter(new Parameter(SynapseConstants.SYNAPSE_CONFIG, synapseConfiguration));
         cfgCtx.setAxisConfiguration(axisConfiguration);
-
         localEntryDeployer.init(cfgCtx);
         localEntryDeployer.deploySynapseArtifact(inputElement, "sampleFile", null);
         Assert.assertNotNull("Local Entry not deployed!", synapseConfiguration.getEntry("TestEntry"));
-
         localEntryDeployer.undeploySynapseArtifact("TestEntry");
         Assert.assertNull("Local Entry cannot be undeployed", synapseConfiguration.getEntry("TestEntry"));
     }
