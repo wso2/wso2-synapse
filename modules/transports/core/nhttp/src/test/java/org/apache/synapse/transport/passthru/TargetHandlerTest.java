@@ -63,15 +63,12 @@ public class TargetHandlerTest extends TestCase {
         DeliveryAgent deliveryAgent = mock(DeliveryAgent.class);
         ClientConnFactory connFactory = mock(ClientConnFactory.class);
         TargetConfiguration configuration = mock(TargetConfiguration.class);
-
         TargetHandler targetHandler = new TargetHandler(deliveryAgent, connFactory, configuration);
-
         NHttpClientConnection conn = mock(NHttpClientConnection.class, Mockito.RETURNS_DEEP_STUBS);
         HttpContext context = mock(HttpContext.class);
         when(conn.getContext()).thenReturn(context);
         mockStatic(TargetContext.class);
         when(TargetContext.getState(any(NHttpClientConnection.class))).thenReturn(ProtocolState.REQUEST_READY);
-
         targetHandler.requestReady(conn);
     }
 
@@ -84,7 +81,6 @@ public class TargetHandlerTest extends TestCase {
     public void testOutputReady() throws Exception {
         DeliveryAgent deliveryAgent = mock(DeliveryAgent.class);
         ClientConnFactory connFactory = mock(ClientConnFactory.class);
-
         ConfigurationContext configurationContext = new ConfigurationContext(new AxisConfiguration());
         WorkerPool workerPool = new NativeWorkerPool(3, 4, 5, 5, "name", "id");
         PassThroughTransportMetricsCollector metrics = new PassThroughTransportMetricsCollector(true, "testScheme");
@@ -94,7 +90,6 @@ public class TargetHandlerTest extends TestCase {
         MessageContext messageContext = new MessageContext();
         targetContext.setRequestMsgCtx(messageContext);
         TargetHandler targetHandler = new TargetHandler(deliveryAgent, connFactory, targetConfiguration);
-
         TargetRequest request = mock(TargetRequest.class);
         NHttpClientConnection conn = mock(NHttpClientConnection.class, Mockito.RETURNS_DEEP_STUBS);
         ContentEncoder encoder = mock(ContentEncoder.class);
@@ -105,7 +100,6 @@ public class TargetHandlerTest extends TestCase {
         when(request.hasEntityBody()).thenReturn(true);
         when(request.write(conn, encoder)).thenReturn(12);
         when(encoder.isCompleted()).thenReturn(true);
-
         targetHandler.outputReady(conn, encoder);
 
     }
@@ -119,7 +113,6 @@ public class TargetHandlerTest extends TestCase {
     public void testInputReady() throws Exception {
         DeliveryAgent deliveryAgent = mock(DeliveryAgent.class);
         ClientConnFactory connFactory = mock(ClientConnFactory.class);
-
         ConfigurationContext configurationContext = new ConfigurationContext(new AxisConfiguration());
         WorkerPool workerPool = new NativeWorkerPool(3, 4, 5, 5, "name", "id");
         PassThroughTransportMetricsCollector metrics = new PassThroughTransportMetricsCollector(true, "testScheme");
@@ -129,7 +122,6 @@ public class TargetHandlerTest extends TestCase {
         MessageContext messageContext = new MessageContext();
         targetContext.setRequestMsgCtx(messageContext);
         TargetHandler targetHandler = new TargetHandler(deliveryAgent, connFactory, targetConfiguration);
-
         TargetResponse response = mock(TargetResponse.class);
         NHttpClientConnection conn = mock(NHttpClientConnection.class, Mockito.RETURNS_DEEP_STUBS);
         ContentDecoder decoder = mock(ContentDecoder.class);
@@ -138,7 +130,6 @@ public class TargetHandlerTest extends TestCase {
         when(TargetContext.getState(conn)).thenReturn(ProtocolState.RESPONSE_HEAD);
         when(TargetContext.getResponse(conn)).thenReturn(response);
         when(decoder.isCompleted()).thenReturn(true);
-
         targetHandler.inputReady(conn, decoder);
         
     }

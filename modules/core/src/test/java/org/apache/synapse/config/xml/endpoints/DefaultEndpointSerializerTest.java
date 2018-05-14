@@ -19,11 +19,13 @@ package org.apache.synapse.config.xml.endpoints;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.endpoints.DefaultEndpoint;
 import org.apache.synapse.config.xml.AbstractTestCase;
+import org.junit.Test;
 
 /**
  * Test class for building and then serializing default endpoint
  */
 public class DefaultEndpointSerializerTest extends AbstractTestCase {
+    @Test
     public void test() throws Exception {
         String inputXml = "<endpoint  xmlns=\"http://ws.apache.org/ns/synapse\">" + "<default format=\"soap11\" />"
                 + "</endpoint>";
