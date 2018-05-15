@@ -494,6 +494,12 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
     @Override
     public void update() {
+	    String [] tasksInRegistry = taskManager.getTaskNames();
+	    for (String taskName : tasksInRegistry) {
+		    if (taskName.contains(TASK_PREFIX + name)) {
+			    taskManager.delete(taskName);
+		    }
+	    }
 	    start();
     }
 
