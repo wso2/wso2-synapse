@@ -249,9 +249,13 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		 * There could be servers that are disabled at startup time.
 		 * therefore not started but initiated.
 		 */
+		return stopTasks(memberCount);
+	}
+
+	private boolean stopTasks(int taskCount) {
 		if (taskManager != null && taskManager.isInitialized()) {
 
-			for (int i = 0; i < memberCount; i++) {
+			for (int i = 0; i < taskCount; i++) {
 				/*
 				 * This is to immediately stop the scheduler to avoid firing new
 				 * services
@@ -262,7 +266,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 				}
 				if (logger.isDebugEnabled()) {
 					logger.debug("ShuttingDown Message Processor Scheduler : " +
-					             taskManager.getName());
+							taskManager.getName());
 				}
 				/*
 				 * This value should be given in the format -->
@@ -271,7 +275,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 				 * manager.
 				 */
 				taskManager.delete(TASK_PREFIX + name + i + "::" +
-				                    MessageProcessorConstants.SCHEDULED_MESSAGE_PROCESSOR_GROUP);
+						MessageProcessorConstants.SCHEDULED_MESSAGE_PROCESSOR_GROUP);
 				//even the task is existed or not at Task REPO we need to clear the NTaskAdaptor
 				//synapseTaskProperties map which holds taskName and TASK Instance for expired TASK at undeployment.
 				//taskManager.delete() method does that. There is a possibility to reinitialize those expired tasks
@@ -288,7 +292,6 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
 			return true;
 		}
-
 		return false;
 	}
 
@@ -495,10 +498,14 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     @Override
     public void update() {
 	    String[] tasksInRegistry = taskManager.getTaskNames();
+	    int taskCountInRegistry = 0;
 	    for (String taskName : tasksInRegistry) {
 		    if (taskName.contains(TASK_PREFIX + name)) {
-			    taskManager.delete(taskName);
+			    taskCountInRegistry++;
 		    }
+	    }
+	    if (taskCountInRegistry > memberCount) {
+		    this.stopTasks(taskCountInRegistry);
 	    }
 	    start();
     }
