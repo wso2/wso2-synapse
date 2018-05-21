@@ -18,11 +18,6 @@
 
 package org.apache.synapse.message.processor.impl.forwarder;
 
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMException;
@@ -31,8 +26,6 @@ import org.apache.axiom.om.util.ElementHelper;
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axiom.soap.SOAPHeaderBlock;
-import org.apache.axis2.description.Parameter;
-import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -47,6 +40,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.endpoints.TemplateEndpoint;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.StoreForwardException;
 import org.apache.synapse.message.processor.MessageProcessor;
@@ -56,6 +50,17 @@ import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.task.Task;
 import org.apache.synapse.util.MessageHelper;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This task is responsible for forwarding a request to a given endpoint. This
@@ -491,6 +496,9 @@ public class ForwardingService implements Task, ManagedLifecycle {
 				log.error("Endpoint does not exists. Deactivating the message processor");
 				deactivateMessageProcessor(messageContext);
 				return;
+			}
+			if (endpoint instanceof TemplateEndpoint) {
+				endpoint = ((TemplateEndpoint) endpoint).getRealEndpoint();
 			}
 			AbstractEndpoint abstractEndpoint = (AbstractEndpoint) endpoint;
 			EndpointDefinition endpointDefinition = abstractEndpoint.getDefinition();
