@@ -658,7 +658,6 @@ public class JDBCMessageStore extends AbstractMessageStore {
         try {
             con = jdbcConfiguration.getConnection();
             ps = con.prepareStatement(statement.getStatement());
-            con = ps.getConnection();
             rs = ps.executeQuery();
             while (rs.next()) {
                 try {
