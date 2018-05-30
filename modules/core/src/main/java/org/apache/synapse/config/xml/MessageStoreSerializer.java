@@ -107,7 +107,11 @@ public class MessageStoreSerializer {
             String value = (String) paramValue;
             property = fac.createOMElement("parameter", synNS);
             property.addAttribute(fac.createOMAttribute("name", nullNS, name));
-            property.setText(value.trim());
+            if (messageStore.getParameterKey(name) != null) {
+                property.addAttribute(fac.createOMAttribute("key", nullNS, messageStore.getParameterKey(name)));
+            } else {
+                property.setText(value.trim());
+            }
         } else if (paramValue instanceof SynapseXPath) {
             SynapseXPath value = (SynapseXPath) paramValue;
             String expression = value.getExpression();

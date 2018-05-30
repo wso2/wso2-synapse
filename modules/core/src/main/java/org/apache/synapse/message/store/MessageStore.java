@@ -61,6 +61,37 @@ public interface MessageStore extends ManagedLifecycle, Nameable, SynapseArtifac
     Map<String, Object> getParameters();
 
     /**
+     * Adds message store specific parameters
+     *
+     * @param name parameter name
+     * @param key  parameter key value
+     */
+    void addParameter(String name, String key);
+
+    /**
+     * Adds message store parameter registry keys
+     *
+     * @param name parameter name
+     * @param key  parameter registry key value
+     */
+    void addParameterKey(String name, String key);
+
+    /**
+     * Gets parameter registry key from the parameter name
+     *
+     * @param name parameter name
+     * @return registry key of parameter value
+     */
+    String getParameterKey(String name);
+
+    /**
+     * Gets registry key mappings for the parameters
+     *
+     * @return registry key maps for parameter values
+     */
+    Map<String, Object> getParameterKeyMap();
+
+    /**
      * Set the name of the file that the Message store is configured
      *
      * @param filename Name of the file where this artifact is defined

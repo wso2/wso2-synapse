@@ -21,16 +21,29 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMComment;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMText;
+import org.apache.axiom.om.impl.llom.OMTextImpl;
+import org.apache.axis2.AxisFault;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.Startup;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.commons.executors.PriorityExecutor;
+import org.apache.synapse.commons.executors.config.PriorityExecutorFactory;
+import org.apache.synapse.config.Entry;
+import org.apache.synapse.config.SynapseConfigUtils;
+import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.config.xml.endpoints.EndpointFactory;
 import org.apache.synapse.config.xml.endpoints.TemplateFactory;
+import org.apache.synapse.config.xml.eventing.EventSourceFactory;
 import org.apache.synapse.config.xml.inbound.InboundEndpointFactory;
 import org.apache.synapse.config.xml.rest.APIFactory;
+import org.apache.synapse.core.axis2.ProxyService;
+import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.Template;
+import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
@@ -38,24 +51,14 @@ import org.apache.synapse.libraries.util.LibDeployerUtils;
 import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.store.MessageStore;
-import org.apache.synapse.commons.executors.PriorityExecutor;
-import org.apache.synapse.commons.executors.config.PriorityExecutorFactory;
-import org.apache.synapse.config.Entry;
-import org.apache.synapse.config.SynapseConfigUtils;
-import org.apache.synapse.config.SynapseConfiguration;
-import org.apache.synapse.config.xml.endpoints.EndpointFactory;
-import org.apache.synapse.config.xml.eventing.EventSourceFactory;
-import org.apache.synapse.core.axis2.ProxyService;
-import org.apache.synapse.endpoints.Endpoint;
-import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.registry.Registry;
-import org.apache.axis2.AxisFault;
 import org.apache.synapse.rest.API;
 import org.apache.synapse.task.TaskManager;
 
 import javax.xml.namespace.QName;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Properties;
 
 public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
@@ -327,7 +330,7 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
                                                   OMElement elem, Properties properties) {
         MessageStore messageStore = null;
         try {
-            messageStore = MessageStoreFactory.createMessageStore(elem, properties);
+            messageStore = MessageStoreFactory.createMessageStore(elem, properties, config);
             config.addMessageStore(messageStore.getName(), messageStore);
         } catch (Exception e) {
             String msg = "Message Store configuration cannot be built";

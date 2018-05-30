@@ -18,19 +18,19 @@
 package org.apache.synapse.deployers;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMText;
+import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.commons.jmx.MBeanRegistrar;
+import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.MessageStoreFactory;
 import org.apache.synapse.config.xml.MessageStoreSerializer;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
-import org.apache.synapse.config.xml.endpoints.EndpointFactory;
-import org.apache.synapse.config.xml.endpoints.EndpointSerializer;
-import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.message.store.MessageStore;
 
 import java.io.File;
+import java.util.Map;
 import java.util.Properties;
 
 public class MessageStoreDeployer extends AbstractSynapseArtifactDeployer{
@@ -45,7 +45,8 @@ public class MessageStoreDeployer extends AbstractSynapseArtifactDeployer{
 
         try{
 
-            MessageStore ms = MessageStoreFactory.createMessageStore(artifactConfig,properties);
+            SynapseConfiguration config = getSynapseConfiguration();
+            MessageStore ms = MessageStoreFactory.createMessageStore(artifactConfig, properties, config);
             if(ms != null) {
                 ms.setFileName((new File(fileName)).getName());
 
@@ -59,7 +60,7 @@ public class MessageStoreDeployer extends AbstractSynapseArtifactDeployer{
                 if (log.isDebugEnabled()) {
                     log.debug("Initialized the Message Store : " + ms.getName());
                 }
-                getSynapseConfiguration().addMessageStore(ms.getName(), ms);
+                config.addMessageStore(ms.getName(), ms);
                 if (log.isDebugEnabled()) {
                     log.debug("Message Store Deployment from file : " + fileName + " : Completed");
                 }
@@ -87,7 +88,8 @@ public class MessageStoreDeployer extends AbstractSynapseArtifactDeployer{
         }
 
         try {
-            MessageStore ms = MessageStoreFactory.createMessageStore(artifactConfig, properties);
+            SynapseConfiguration config = getSynapseConfiguration();
+            MessageStore ms = MessageStoreFactory.createMessageStore(artifactConfig, properties, config);
             if (ms == null) {
                 handleSynapseArtifactDeploymentError("Message Store update failed. The artifact " +
                         "defined in the file: " + fileName + " is not valid");
@@ -101,7 +103,7 @@ public class MessageStoreDeployer extends AbstractSynapseArtifactDeployer{
             }
 
             ms.init(getSynapseEnvironment());
-            MessageStore existingMs = getSynapseConfiguration().getMessageStore(existingArtifactName);
+            MessageStore existingMs = config.getMessageStore(existingArtifactName);
 
             // We should add the updated MessageStore as a new MessageStore and remove the old one
             getSynapseConfiguration().removeMessageStore(existingArtifactName);
@@ -182,4 +184,6 @@ public class MessageStoreDeployer extends AbstractSynapseArtifactDeployer{
                     "Restoring of the MessageStore named '" + artifactName + "' has failed", e);
         }
     }
+
+
 }
