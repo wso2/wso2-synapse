@@ -19,12 +19,12 @@
 
 package org.apache.synapse.transport.vfs;
 
-import java.io.File;
-
 import org.apache.axis2.description.AxisService;
 import org.apache.axis2.transport.testkit.channel.RequestResponseChannel;
 import org.apache.axis2.transport.testkit.tests.Setup;
 import org.apache.axis2.transport.testkit.tests.Transient;
+
+import java.io.File;
 
 public class VFSRequestResponseFileChannel extends VFSFileChannel implements RequestResponseChannel {
     private final String replyPath;
@@ -41,6 +41,9 @@ public class VFSRequestResponseFileChannel extends VFSFileChannel implements Req
 
     @Override
     public void setupService(AxisService service, boolean isClientSide) throws Exception {
+        if (service.getOperations() != null && service.getOperations().next() != null) {
+            service.getOperations().next().setMessageExchangePattern("http://www.w3.org/ns/wsdl/out-only");
+        }
         super.setupService(service, isClientSide);
         service.addParameter("transport.vfs.ReplyFileURI", "vfs:" + replyFile.toURL());
     }
