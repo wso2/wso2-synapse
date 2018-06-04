@@ -48,8 +48,7 @@
 			                org.apache.synapse.transport.passthru.*,
 			                org.apache.synapse.transport.certificatevalidation.*,
                             org.apache.synapse.transport.dynamicconfigurations.*,
-                            org.apache.synapse.transport.customlogsetter.*,
-                            org.bouncycastle.*
+                            org.apache.synapse.transport.customlogsetter.*
                         </Export-Package>
                         <Import-Package>
                             !javax.xml.namespace,
