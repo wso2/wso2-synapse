@@ -19,7 +19,7 @@
 package org.apache.synapse.endpoints;
 
 import com.damnhandy.uri.template.UriTemplate;
-import com.damnhandy.uri.template.impl.ExpressionParseException;
+import com.damnhandy.uri.template.VariableExpansionException;
 import org.apache.axis2.Constants;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.synapse.MessageContext;
@@ -114,7 +114,7 @@ public class HTTPEndpoint extends AbstractEndpoint {
         }
     }
 
-    private void processUrlTemplate(MessageContext synCtx) throws ExpressionParseException {
+    private void processUrlTemplate(MessageContext synCtx) throws VariableExpansionException {
         Map<String, Object> variables = new HashMap<String, Object>();
 
         /*The properties with uri.var.* are only considered for Outbound REST Endpoints*/
@@ -180,7 +180,7 @@ public class HTTPEndpoint extends AbstractEndpoint {
                         log.debug("Invalid URL syntax for HTTP Endpoint: " + this.getName(), e);
                     }
                     evaluatedUri = template.getTemplate();
-                } catch(ExpressionParseException e) {
+                } catch(VariableExpansionException e) {
                     log.debug("No URI Template variables defined in HTTP Endpoint: " + this.getName());
                     evaluatedUri = template.getTemplate();
                 } catch(MalformedURLException e) {
@@ -250,7 +250,7 @@ public class HTTPEndpoint extends AbstractEndpoint {
                         log.debug("Invalid URL syntax for HTTP Endpoint: " + this.getName(), e);
                     }
                     evaluatedUri = template.getTemplate();
-                } catch(ExpressionParseException e) {
+                } catch(VariableExpansionException e) {
                     log.debug("No URI Template variables defined in HTTP Endpoint: " + this.getName());
                     evaluatedUri = template.getTemplate();
                 }
