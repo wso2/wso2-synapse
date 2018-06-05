@@ -242,7 +242,9 @@ public class SamplingService implements Task, ManagedLifecycle {
 	 *         <code>false</code> otherwise.
 	 */
 	public boolean terminate() {
-		messageConsumer.cleanup();
+        if (messageConsumer != null) {
+            messageConsumer.cleanup();
+        }
 		return true;
 	}
 
