@@ -93,9 +93,7 @@ public class ContinuationStackManager {
         if (synCtx.isContinuationEnabled() && !synCtx.getContinuationStateStack().isEmpty()) {
             if (!SequenceType.ANON.equals(seqType)) {
                 ContinuationStackManager.popContinuationStateStack(synCtx);
-            } else {
-                removeReliantContinuationState(synCtx);
-            }
+            } 
         }
     }
 
