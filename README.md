@@ -30,4 +30,4 @@ WSO2 developers can be contacted via the mailing lists:
 
 |  Branch | Build Status |
 | :------------ |:-------------
-| wso2-synapse master      | [![Build Status](https://wso2.org/jenkins/job/wso2-synapse/badge/icon)](https://wso2.org/jenkins/job/wso2-synapse)
+| wso2-synapse master      | [![Build Status](https://wso2.org/jenkins/view/wso2-dependencies/job/forked-dependencies/job/wso2-synapse/badge/icon)](https://wso2.org/jenkins/view/wso2-dependencies/job/forked-dependencies/job/wso2-synapse)
