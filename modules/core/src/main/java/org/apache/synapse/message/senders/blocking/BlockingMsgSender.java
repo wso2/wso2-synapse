@@ -45,16 +45,18 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.endpoints.ResolvingEndpoint;
 import org.apache.synapse.endpoints.IndirectEndpoint;
 import org.apache.synapse.endpoints.TemplateEndpoint;
 import org.apache.synapse.util.MessageHelper;
+import org.apache.synapse.util.xpath.SynapseXPath;
 
 import javax.xml.namespace.QName;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.Iterator;
 import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -112,6 +114,15 @@ public class BlockingMsgSender {
         }
         if (endpoint instanceof TemplateEndpoint) {
             endpoint = ((TemplateEndpoint) endpoint).getRealEndpoint();
+        }
+
+        //If the Endpoint is a resolving endpoint, real endpoint details are required to
+        // get the correct endpoint definition
+        if (endpoint instanceof ResolvingEndpoint) {
+            SynapseXPath keyExpression = ((ResolvingEndpoint) endpoint).getKeyExpression();
+            String key = keyExpression.stringValueOf(synapseInMsgCtx);
+            endpoint = ((ResolvingEndpoint) endpoint).loadAndInitEndpoint(((Axis2MessageContext) synapseInMsgCtx).
+                    getAxis2MessageContext().getConfigurationContext(), key);
         }
 
         AbstractEndpoint abstractEndpoint = (AbstractEndpoint) endpoint;

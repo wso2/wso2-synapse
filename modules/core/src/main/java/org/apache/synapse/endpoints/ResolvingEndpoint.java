@@ -78,7 +78,7 @@ public class ResolvingEndpoint extends AbstractEndpoint {
         }
     }
 
-    private Endpoint loadAndInitEndpoint(ConfigurationContext cc, String key) {
+    public Endpoint loadAndInitEndpoint(ConfigurationContext cc, String key) {
         Parameter parameter = cc.getAxisConfiguration().getParameter(
                 SynapseConstants.SYNAPSE_CONFIG);
         Parameter synEnvParameter = cc.getAxisConfiguration().getParameter(
