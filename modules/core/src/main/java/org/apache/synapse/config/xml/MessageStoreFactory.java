@@ -65,8 +65,6 @@ public class MessageStoreFactory {
             = new QName(SynapseConstants.SYNAPSE_NAMESPACE, "description");
     public static final QName KEY_Q = new QName("", "key");
 
-    public static final String EMPTY_STRING = "";
-
 
     public static MessageStore createMessageStore(OMElement elem, Properties properties) {
         return createMessageStore(elem, properties, null);
