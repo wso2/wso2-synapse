@@ -151,7 +151,7 @@ public class MessageStoreFactory {
                             } else {
                                 String msg = "Registry entry defined with key: " + paramKey.getAttributeValue()
                                         + " not found.";
-                                log.error(msg);
+                                handleException(msg);
                             }
                         } else {
                             handleException("Synapse configuration is null.");

@@ -89,7 +89,7 @@ public interface MessageStore extends ManagedLifecycle, Nameable, SynapseArtifac
      *
      * @return registry key maps for parameter values
      */
-    Map<String, Object> getParameterKeyMap();
+    Map<String, String> getParameterKeyMap();
 
     /**
      * Set the name of the file that the Message store is configured
