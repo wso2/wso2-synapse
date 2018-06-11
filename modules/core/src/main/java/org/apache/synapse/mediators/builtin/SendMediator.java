@@ -89,6 +89,7 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
             keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
             keySet.remove(SynapseConstants.LAST_ENDPOINT);
             keySet.remove(SynapseConstants.BLOCKING_MSG_SENDER);
+            keySet.remove(SynapseConstants.BLOCKING_SENDER_ERROR);
         }
 
         if (receivingSequence != null) {
