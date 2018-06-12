@@ -228,16 +228,19 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
             synapseOutMsgCtx.setProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER, faultHandlerBeforeInvocation);
             endpoint.send(synapseOutMsgCtx);
 
+            // Check for rollback status
+            org.apache.axis2.context.MessageContext outAxis2MsgCtx =
+                    ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext();
+            if (outAxis2MsgCtx.getProperty(SynapseConstants.SET_ROLLBACK_ONLY) != null) {
+                axis2MsgCtx.setProperty(SynapseConstants.SET_ROLLBACK_ONLY,
+                                        outAxis2MsgCtx.getProperty(SynapseConstants.SET_ROLLBACK_ONLY));
+            }
+
             // check whether fault sequence is already invoked
             if (faultHandlerBeforeInvocation != getLastSequenceFaultHandler(synapseOutMsgCtx)) {
-                org.apache.axis2.context.MessageContext outAxis2MsgCtx =
-                        ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext();
-                if (outAxis2MsgCtx.getProperty(SynapseConstants.SET_ROLLBACK_ONLY) != null) {
-                    axis2MsgCtx.setProperty(SynapseConstants.SET_ROLLBACK_ONLY,
-                                            outAxis2MsgCtx.getProperty(SynapseConstants.SET_ROLLBACK_ONLY));
-                }
                 return false;
             }
+
             if (!("true".equals(synapseOutMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR)))) {
                 if (synapseOutMsgCtx.getProperty(SynapseConstants.OUT_ONLY) == null || "false"
                         .equals(synapseOutMsgCtx.getProperty(SynapseConstants.OUT_ONLY))) {
