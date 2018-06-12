@@ -444,8 +444,14 @@ public class BlockingMsgSender {
         } else {
             // If a message was successfully processed to give it a chance to clear up or reset its state to active
             Stack faultStack = synapseInMsgCtx.getFaultStack();
-            if (faultStack != null && !faultStack.isEmpty() && faultStack.peek() instanceof AbstractEndpoint) {
-                ((AbstractEndpoint) synapseInMsgCtx.getFaultStack().pop()).onSuccess();
+            if (faultStack != null && !faultStack.isEmpty()) {
+                if (faultStack.peek() instanceof AbstractEndpoint) {
+                    ((AbstractEndpoint) synapseInMsgCtx.getFaultStack().pop()).onSuccess();
+                }
+                // Remove all endpoint related fault handlers if any
+                while (!faultStack.empty() && faultStack.peek() instanceof AbstractEndpoint) {
+                    faultStack.pop();
+                }
             }
         }
     }
