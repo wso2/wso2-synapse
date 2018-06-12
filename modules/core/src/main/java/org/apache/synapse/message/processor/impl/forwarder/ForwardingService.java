@@ -555,6 +555,14 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 			if (messageConsumer != null && messageConsumer.isAlive()) {
 				messageToDispatch.setProperty(SynapseConstants.BLOCKING_MSG_SENDER, sender);
+				// Clear the message context properties related to endpoint in last service invocation
+				Set keySet = messageToDispatch.getPropertyKeySet();
+				if (keySet != null) {
+					keySet.remove(SynapseConstants.RECEIVING_SEQUENCE);
+					keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
+					keySet.remove(SynapseConstants.LAST_ENDPOINT);
+					keySet.remove(SynapseConstants.BLOCKING_SENDER_ERROR);
+				}
 				endpoint.send(messageToDispatch);
 				if ("true".equals(messageToDispatch.getProperty(SynapseConstants.OUT_ONLY))) {
 					if ("true".equals(messageToDispatch.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {

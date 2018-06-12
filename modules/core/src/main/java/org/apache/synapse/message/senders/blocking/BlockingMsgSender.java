@@ -57,9 +57,10 @@ import javax.xml.namespace.QName;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.Iterator;
 import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.Set;
+import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -85,7 +86,7 @@ public class BlockingMsgSender {
     boolean initClientOptions = true;
 
     private final static String LOCAL_ANON_SERVICE = "__LOCAL_ANON_SERVICE__";
-    
+
     private Pattern errorMsgPattern = Pattern.compile("Transport error: \\d{3} .*");
 
     private Pattern statusCodePattern = Pattern.compile("\\d{3}");
@@ -296,13 +297,6 @@ public class BlockingMsgSender {
         if (log.isDebugEnabled()) {
             log.debug("Start Sending the Message ");
         }
-
-        // clear the message context properties related to endpoint in last service invocation
-        Set keySet = synapseInMsgCtx.getPropertyKeySet();
-        if (keySet != null) {
-            keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
-        }
-
         org.apache.axis2.context.MessageContext axisInMsgCtx =
                 ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext();
         org.apache.axis2.context.MessageContext axisOutMsgCtx =
@@ -448,20 +442,15 @@ public class BlockingMsgSender {
             synapseInMsgCtx.getFaultStack().pop().handleFault(synapseInMsgCtx,
                     (Exception) synapseInMsgCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
         } else {
-            if (!synapseInMsgCtx.getFaultStack().empty()) {
-                // If a message was successfully processed to give it a chance to clear up or reset its state to active
-                if (endpointDefinition.getAddress() != null) {
+            // If a message was successfully processed to give it a chance to clear up or reset its state to active
+            Stack faultStack = synapseInMsgCtx.getFaultStack();
+            if (faultStack != null && !faultStack.isEmpty()) {
+                if (faultStack.peek() instanceof AbstractEndpoint) {
                     ((AbstractEndpoint) synapseInMsgCtx.getFaultStack().pop()).onSuccess();
                 }
-                // Enpoints in the faultStack will interrupt the next invocation when handle fault,
-                // So remove it from message context
-                synapseInMsgCtx.getFaultStack().removeAllElements();
-                // But the Mediation for the call mediator is not completed in this stage,
-                // so need to add the MediatorFaultHandler
-                SeqContinuationState seqContinuationState = (SeqContinuationState) ContinuationStackManager
-                        .peakContinuationStateStack(synapseInMsgCtx);
-                if (seqContinuationState != null) {
-                    ContinuationStackManager.pushFaultHandler(synapseInMsgCtx, seqContinuationState);
+                // Remove all endpoint related fault handlers if any
+                while (!faultStack.empty() && faultStack.peek() instanceof AbstractEndpoint) {
+                    faultStack.pop();
                 }
             }
         }

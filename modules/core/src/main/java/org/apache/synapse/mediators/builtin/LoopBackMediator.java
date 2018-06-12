@@ -56,6 +56,8 @@ public class LoopBackMediator extends AbstractMediator {
                 keySet.remove(SynapseConstants.RECEIVING_SEQUENCE);
                 keySet.remove(SynapseConstants.CONTINUATION_CALL);
                 keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
+                keySet.remove(SynapseConstants.BLOCKING_SENDER_ERROR);
+                keySet.remove(SynapseConstants.BLOCKING_MSG_SENDER);
             }
 
             synCtx.setResponse(true);

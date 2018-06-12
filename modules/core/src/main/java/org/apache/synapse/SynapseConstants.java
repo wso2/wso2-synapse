@@ -364,6 +364,7 @@ public final class SynapseConstants {
 
     // - Blocking Message Sender Constants
     public static final String BLOCKING_SENDER_ERROR = "blocking.sender.error";
+    public static final String SET_ROLLBACK_ONLY = "SET_ROLLBACK_ONLY";
     public static final String HTTP_SC = "HTTP_SC";
     public static final String HTTP_SENDER_STATUSCODE = "transport.http.statusCode";
     public static final String BLOCKING_SENDER_PRESERVE_REQ_HEADERS =

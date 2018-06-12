@@ -167,8 +167,8 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                 }
             }
 
+            org.apache.axis2.context.MessageContext axis2MsgCtx = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
             if (isWrappingEndpointCreated) {
-                org.apache.axis2.context.MessageContext axis2MsgCtx = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
                 if (Constants.VALUE_TRUE.equals(axis2MsgCtx.getProperty(Constants.Configuration.ENABLE_MTOM))) {
                     ((AbstractEndpoint) endpoint).getDefinition().setUseMTOM(true);
                 }
@@ -183,15 +183,12 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                         handleException("Cloud not get the context name " + USER_TX_LOOKUP_STR, e, synCtx);
                     }
                     TranscationManger.beginTransaction();
-                    org.apache.axis2.context.MessageContext axis2MsgCtx =
-                            ((Axis2MessageContext)synCtx).getAxis2MessageContext();
                     axis2MsgCtx.setProperty(NhttpConstants.DISTRIBUTED_TRANSACTION, TranscationManger.getTransaction());
                     axis2MsgCtx.setProperty(NhttpConstants.DISTRIBUTED_TRANSACTION_MANAGER,TranscationManger.getTransactionManager());
                 } catch (Exception e) {
                     handleException("Error starting transaction",synCtx);
                 }
             }
-
 
             MessageContext synapseOutMsgCtx = MessageHelper.cloneMessageContext(synCtx);
             // Send the SOAP Header Blocks to support WS-Addressing
@@ -219,9 +216,32 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
             }
 
             synapseOutMsgCtx.setProperty(SynapseConstants.BLOCKING_MSG_SENDER, blockingMsgSender);
+            // Clear the message context properties related to endpoint in last service invocation
+            Set keySet = synapseOutMsgCtx.getPropertyKeySet();
+            if (keySet != null) {
+                keySet.remove(SynapseConstants.RECEIVING_SEQUENCE);
+                keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
+                keySet.remove(SynapseConstants.LAST_ENDPOINT);
+                keySet.remove(SynapseConstants.BLOCKING_SENDER_ERROR);
+            }
+            Object faultHandlerBeforeInvocation = getLastSequenceFaultHandler(synapseOutMsgCtx);
+            synapseOutMsgCtx.setProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER, faultHandlerBeforeInvocation);
             endpoint.send(synapseOutMsgCtx);
 
-            if ("false".equals(synapseOutMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
+            // Check for rollback status
+            org.apache.axis2.context.MessageContext outAxis2MsgCtx =
+                    ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext();
+            if (outAxis2MsgCtx.getProperty(SynapseConstants.SET_ROLLBACK_ONLY) != null) {
+                axis2MsgCtx.setProperty(SynapseConstants.SET_ROLLBACK_ONLY,
+                                        outAxis2MsgCtx.getProperty(SynapseConstants.SET_ROLLBACK_ONLY));
+            }
+
+            // check whether fault sequence is already invoked
+            if (faultHandlerBeforeInvocation != getLastSequenceFaultHandler(synapseOutMsgCtx)) {
+                return false;
+            }
+
+            if (!("true".equals(synapseOutMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR)))) {
                 if (synapseOutMsgCtx.getProperty(SynapseConstants.OUT_ONLY) == null || "false"
                         .equals(synapseOutMsgCtx.getProperty(SynapseConstants.OUT_ONLY))) {
                     setResponseHttpSc(synapseOutMsgCtx, synCtx);
@@ -413,6 +433,8 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                 endpoint = new AddressEndpoint();
                 endpointDefinition = new EndpointDefinition();
                 endpointDefinition.setAddress(serviceURL);
+                endpointDefinition.addSuspendErrorCode(-1);
+                endpointDefinition.addTimeoutErrorCode(-1);
                 ((AddressEndpoint) endpoint).setDefinition(endpointDefinition);
                 isWrappingEndpointCreated = true;
             } else if (endpoint == null && endpointKey == null) {
