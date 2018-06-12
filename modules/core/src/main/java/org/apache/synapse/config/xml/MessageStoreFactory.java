@@ -21,10 +21,13 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMText;
+import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.message.store.Constants;
 import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.message.store.impl.jms.JmsStore;
@@ -56,15 +59,20 @@ public class MessageStoreFactory {
     public static final QName NAME_Q = new QName(XMLConfigConstants.NULL_NAMESPACE, "name");
     public static final QName EXPRESSION_Q = new QName(XMLConfigConstants.NULL_NAMESPACE,"expression");
     public static final QName SEQUENCE_Q = new QName(XMLConfigConstants.NULL_NAMESPACE, "sequence");
-
     public static final QName PARAMETER_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
             "parameter");
     private static final QName DESCRIPTION_Q
             = new QName(SynapseConstants.SYNAPSE_NAMESPACE, "description");
+    public static final QName KEY_Q = new QName("", "key");
 
+
+    public static MessageStore createMessageStore(OMElement elem, Properties properties) {
+        return createMessageStore(elem, properties, null);
+    }
 
     @SuppressWarnings({"UnusedDeclaration"})
-    public static MessageStore createMessageStore(OMElement elem, Properties properties) {
+    public static MessageStore createMessageStore(OMElement elem, Properties properties,
+            SynapseConfiguration synapseConfiguration) {
 
         OMAttribute clss = elem.getAttribute(CLASS_Q);
         MessageStore messageStore;
@@ -104,7 +112,7 @@ public class MessageStoreFactory {
             messageStore.setDescription(descriptionElem.getText());
         }
 
-        messageStore.setParameters(getParameters(elem));
+        messageStore.setParameters(getParameters(elem, messageStore, synapseConfiguration));
 
 
 
@@ -112,7 +120,8 @@ public class MessageStoreFactory {
         return messageStore;
     }
 
-    private static Map<String, Object> getParameters(OMElement elem) {
+    private static Map<String, Object> getParameters(OMElement elem, MessageStore messageStore,
+            SynapseConfiguration synapseConfiguration) {
         Map<String, Object> parameters = null;
         try {
             Iterator params = elem.getChildrenWithName(PARAMETER_Q);
@@ -123,11 +132,31 @@ public class MessageStoreFactory {
                     OMElement prop = (OMElement) o;
                     OMAttribute paramName = prop.getAttribute(NAME_Q);
                     OMAttribute expression = prop.getAttribute(EXPRESSION_Q);
+                    OMAttribute paramKey = prop.getAttribute(KEY_Q);
                     String paramValue = prop.getText();
                     if(expression != null){
                         SynapsePath xPathExpression = SynapsePathFactory.getSynapsePath(prop, EXPRESSION_Q);
                         registerParameter(parameters, paramName, xPathExpression);
-                    }else {
+                    } else if (paramKey != null) {
+                        addParameterKey(messageStore, paramName.getAttributeValue(), paramKey.getAttributeValue());
+                        if (synapseConfiguration != null) {
+                            Object obj = synapseConfiguration.getEntry(paramKey.getAttributeValue());
+                            if (obj == null) {
+                                synapseConfiguration.getEntryDefinition(paramKey.getAttributeValue());
+                                obj = synapseConfiguration.getEntry(paramKey.getAttributeValue());
+                            }
+                            if (obj != null && obj instanceof OMTextImpl) {
+                                OMText objText = (OMText) obj;
+                                registerParameter(parameters, paramName, objText.getText());
+                            } else {
+                                String msg = "Registry entry defined with key: " + paramKey.getAttributeValue()
+                                        + " not found.";
+                                handleException(msg);
+                            }
+                        } else {
+                            handleException("Synapse configuration is null.");
+                        }
+                    } else {
                         registerParameter(parameters, paramName, paramValue);
                     }
                 }
@@ -154,6 +183,10 @@ public class MessageStoreFactory {
         } else {
             handleException("Invalid MessageStore parameter - Parameter must have a name ");
         }
+    }
+
+    private static void addParameterKey(MessageStore ms, String key, String value) {
+        ms.addParameterKey(key, value);
     }
 
     private static void handleException(String msg) {

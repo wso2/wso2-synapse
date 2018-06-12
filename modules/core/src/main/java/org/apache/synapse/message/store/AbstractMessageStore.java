@@ -69,6 +69,11 @@ public abstract class AbstractMessageStore implements MessageStore {
     protected Map<String,Object> parameters;
 
     /**
+     * Message store parameters with registry keys
+     */
+    protected Map<String, String> parameterKeyMap;
+
+    /**
      * Message Store description
      */
     protected String description;
@@ -178,6 +183,28 @@ public abstract class AbstractMessageStore implements MessageStore {
             return;
         }
         this.parameters = parameters;
+    }
+
+    public void addParameter(String name, String key) {
+        parameters.put(name, key);
+    }
+
+    public void addParameterKey(String name, String key) {
+        if(parameterKeyMap == null) {
+            parameterKeyMap = new HashMap<>();
+        }
+        parameterKeyMap.put(name, key);
+    }
+
+    public String getParameterKey(String name) {
+        if(parameterKeyMap != null) {
+            return parameterKeyMap.get(name);
+        }
+        return null;
+    }
+
+    public Map<String, String> getParameterKeyMap() {
+        return parameterKeyMap;
     }
 
     public void destroy() {
