@@ -96,7 +96,7 @@ public class ServerConnFactoryBuilder {
             try {
                 KeyStore keyStore = KeyStore.getInstance(type);
                 fis = new FileInputStream(location);
-                if (log.isInfoEnabled()) {
+                if (log.isDebugEnabled()) {
                     log.debug(name + " Loading Identity Keystore from : " + location);
                 }
 
@@ -148,7 +148,7 @@ public class ServerConnFactoryBuilder {
             try {
                 KeyStore trustStore = KeyStore.getInstance(type);
                 fis = new FileInputStream(location);
-                if (log.isInfoEnabled()) {
+                if (log.isDebugEnabled()) {
                     log.debug(name + " Loading Trust Keystore from : " + location);
                 }
 

@@ -290,8 +290,8 @@ public class ClientConnFactoryBuilder {
             try {
                 KeyStore keyStore = KeyStore.getInstance(type);
                 fis = new FileInputStream(location);
-                if (log.isInfoEnabled()) {
-                    log.info(name + " Loading Identity Keystore from : " + location);
+                if (log.isDebugEnabled()) {
+                    log.debug(name + " Loading Identity Keystore from : " + location);
                 }
 
                 keyStore.load(fis, storePassword.toCharArray());
@@ -329,8 +329,8 @@ public class ClientConnFactoryBuilder {
             try {
                 KeyStore trustStore = KeyStore.getInstance(type);
                 fis = new FileInputStream(location);
-                if (log.isInfoEnabled()) {
-                    log.info(name + " Loading Trust Keystore from : " + location);
+                if (log.isDebugEnabled()) {
+                    log.debug(name + " Loading Trust Keystore from : " + location);
                 }
 
                 trustStore.load(fis, storePassword.toCharArray());
@@ -391,8 +391,8 @@ public class ClientConnFactoryBuilder {
          
             try (FileInputStream fis = new FileInputStream(location)) { 
                 KeyStore keyStore = KeyStore.getInstance(type);             
-                if (log.isInfoEnabled()) {
-                    log.info(name + " Loading Identity Keystore from : " + location);
+                if (log.isDebugEnabled()) {
+                    log.debug(name + " Loading Identity Keystore from : " + location);
                 }
 
                 keyStore.load(fis, storePassword.toCharArray());
@@ -423,8 +423,8 @@ public class ClientConnFactoryBuilder {
             try (FileInputStream fis = new FileInputStream(location)) {
                 KeyStore trustStore = KeyStore.getInstance(type);
         
-                if (log.isInfoEnabled()) {
-                    log.info(name + " Loading Trust Keystore from : " + location);
+                if (log.isDebugEnabled()) {
+                    log.debug(name + " Loading Trust Keystore from : " + location);
                 }
 
                 trustStore.load(fis, storePassword.toCharArray());

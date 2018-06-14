@@ -32,6 +32,8 @@ import java.sql.Connection;
  */
 public class DBReportMediator extends AbstractDBMediator {
 
+    public static final String MODIFIED_ROW_COUNT_PROP_NAME = "DBREPORT_MODIFIED_RAW_COUNT";
+
     public boolean isUseTransaction() {
         return useTransaction;
     }
@@ -83,6 +85,9 @@ public class DBReportMediator extends AbstractDBMediator {
                             "No rows were inserted for statement : " + stmnt.getRawStatement());
                 }
             }
+
+            // Set row count that modified by executing SQL command as a property
+            msgCtx.setProperty(MODIFIED_ROW_COUNT_PROP_NAME, count);
 
             if (!(threadInTx || useTransaction)) {
                 if (!con.getAutoCommit()) {
