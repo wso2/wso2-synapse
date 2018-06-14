@@ -1491,7 +1491,11 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
         // destroy the Message processors
         for (MessageProcessor mp : messageProcessors.values()) {
-            mp.destroy();
+            if (mp instanceof AbstractMessageProcessor) {
+                ((AbstractMessageProcessor) mp).destroy(preserverState);
+            } else {
+                mp.destroy();
+            }
         }
 
         for (API api : apiTable.values()) {
