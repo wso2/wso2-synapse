@@ -144,7 +144,9 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                  "passthru-" + namePrefix.toLowerCase() + "-sender");
         
         proxyConfig = new ProxyConfigBuilder().build(transportOutDescription);
-        log.info(proxyConfig.logProxyConfig());
+        if (log.isDebugEnabled()) {
+            log.debug(proxyConfig.logProxyConfig());
+        }
 
         targetConfiguration = new TargetConfiguration(configurationContext,
                 transportOutDescription, workerPool, metrics,
