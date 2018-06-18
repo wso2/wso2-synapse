@@ -53,6 +53,7 @@ public class DBReportMediatorTest extends AbstractMediatorTestCase {
         } else {
             fail("DB report failed");
         }
+        assertEquals("Validate updated raw count", synCtx.getProperty("DBREPORT_MODIFIED_RAW_COUNT"), 1);
     }
 
     public static Test suite() {
