@@ -21,12 +21,9 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMNode;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.commons.util.PropertyHelper;
-import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.mediators.ext.ClassMediator;
 
 import javax.xml.namespace.QName;
@@ -117,7 +114,7 @@ public class ClassMediatorFactory extends AbstractMediatorFactory {
             throw new SynapseException(msg, e);
         }
 
-        classMediator.addAllProperties(MediatorPropertyFactory.getMediatorProperties(elem));
+        classMediator.addAllProperties(MediatorPropertyFactory.getMediatorProperties(elem, mediator));
 
         // after successfully creating the mediator
         // set its common attributes such as tracing etc
