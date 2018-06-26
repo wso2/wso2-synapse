@@ -66,6 +66,7 @@ import org.apache.synapse.message.processor.impl.AbstractMessageProcessor;
 import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.registry.Registry;
 import org.apache.synapse.rest.API;
+import org.apache.synapse.startup.quartz.StartUpController;
 import org.apache.synapse.task.TaskManager;
 import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
 import org.apache.synapse.util.xpath.ext.SynapseXpathVariableResolver;
@@ -1465,7 +1466,14 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         
         // destroy the startups
         for (ManagedLifecycle stp : startups.values()) {
-            stp.destroy();
+            // This flow gets executed when the shutdown hook is triggered. If the startup is an instance of
+            // StartUpController we don't need to destroy it as it will remove the registry entry and the task will
+            // not be re-scheduled to the other node in the cluster. Ref product-ei/issues/2353
+            if (stp instanceof StartUpController) {
+                ((StartUpController) stp).destroy(false);
+            } else {
+                stp.destroy();
+            }
         }
 
         // clear session information used for SA load balancing
