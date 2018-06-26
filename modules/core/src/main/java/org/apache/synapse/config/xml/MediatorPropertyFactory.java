@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.jaxen.JaxenException;
@@ -45,7 +46,7 @@ public class MediatorPropertyFactory {
 
     private static final Log log = LogFactory.getLog(MediatorPropertyFactory.class);
 
-    public static List<MediatorProperty> getMediatorProperties(OMElement elem) {
+    public static List<MediatorProperty> getMediatorProperties(OMElement elem, Mediator mediator) {
 
         List<MediatorProperty> propertyList = new ArrayList<MediatorProperty>();
 
@@ -82,7 +83,11 @@ public class MediatorPropertyFactory {
                     throw new SynapseException(msg);
 
                 } else {
-                    prop.setValue(attValue.getAttributeValue());
+                    String attributeValue = attValue.getAttributeValue();
+                    prop.setValue(attributeValue);
+                    if (mediator != null) {
+                        PropertyHelper.setInstanceProperty(attName.getAttributeValue(), attributeValue, mediator);
+                    }
                 }
 
             } else if (attExpr != null) {
@@ -135,5 +140,9 @@ public class MediatorPropertyFactory {
         }
 
         return propertyList;
+    }
+
+    public static List<MediatorProperty> getMediatorProperties(OMElement elem) {
+        return getMediatorProperties(elem, null);
     }
 }

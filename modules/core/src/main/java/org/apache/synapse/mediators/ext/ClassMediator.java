@@ -86,9 +86,10 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
 
         try {
             for (MediatorProperty property : properties) {
-                String propertyValue =
-                        property.getValue() != null ? property.getValue() : property.getEvaluatedExpression(synCtx);
-                PropertyHelper.setInstanceProperty(property.getName(), propertyValue, mediator);
+                if (property.getExpression() != null) {
+                    PropertyHelper.setInstanceProperty(property.getName(), property.getEvaluatedExpression(synCtx),
+                            mediator);
+                }
             }
             result = mediator.mediate(synCtx);
         } catch (Exception e) {
