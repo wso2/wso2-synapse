@@ -46,6 +46,7 @@ import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
+import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
@@ -75,6 +76,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static org.apache.synapse.SynapseConstants.SYNAPSE_VALIDATE_MEDIATOR_REDEPLOYMENT_CACHE_CLEAR;
 
 /**
  * Validate a message or an element against a schema
@@ -561,6 +564,29 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
             }
         }
         return result;
+    }
+
+    @Override
+    /**
+     * Initialize child mediators recursively
+     *
+     * @param synapseEnvironment synapse environment
+     */
+    public void init(SynapseEnvironment synapseEnvironment) {
+        if (Boolean.parseBoolean(synapseEnvironment.getSynapseConfiguration()
+                .getProperty(SYNAPSE_VALIDATE_MEDIATOR_REDEPLOYMENT_CACHE_CLEAR))) {
+            for (Value schemaKey : schemaKeys) {
+                Entry entry = synapseEnvironment.getSynapseConfiguration().getEntryDefinition(schemaKey.getKeyValue());
+                entry.clearCache();
+            }
+            if (resourceMap != null && resourceMap.getResources().size() > 0) {
+                for (Map.Entry<String, String> resource : resourceMap.getResources().entrySet()) {
+                    Entry entry = synapseEnvironment.getSynapseConfiguration().getEntryDefinition(resource.getValue());
+                    entry.clearCache();
+                }
+            }
+        }
+        super.init(synapseEnvironment);
     }
 
     /**
