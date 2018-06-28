@@ -172,6 +172,9 @@ public final class SynapseConstants {
     public static final String SYNAPSE_LIB_LOADER = "synapse.lib.classloader";
     /** conf directory name **/
     public static final String CONF_DIRECTORY = "conf";
+    /** the name of the property used for validate mediator redeployment mediation cache clearing */
+    public static final String SYNAPSE_VALIDATE_MEDIATOR_REDEPLOYMENT_CACHE_CLEAR="synapse.validate.mediator.redeployment.mediation.cache.clear.enable";
+
 
     // hidden service parameter
     public static final String HIDDEN_SERVICE_PARAM = "hiddenService";
