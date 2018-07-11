@@ -269,8 +269,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                             (String) msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH)));
                 }
 
-                deliveryAgent.submit(msgContext, epr);
-                sendRequestContent(msgContext);
+                sendRequestContent(msgContext, epr);
             } else {
                 handleException("Cannot send message to " + AddressingConstants.Final.WSA_NONE_URI);
             }
@@ -336,60 +335,77 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         targetConfiguration.getPreserveHttpHeaders().remove(headerName.toUpperCase());
     }
 
-	private void sendRequestContent(final MessageContext msgContext) throws AxisFault {
-
-        if (Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
-            synchronized (msgContext) {
-                while (!Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.WAIT_BUILDER_IN_STREAM_COMPLETE)) &&
-                        !Boolean.TRUE.equals(msgContext.getProperty("PASSTHRU_CONNECT_ERROR"))) {
-                    try {
-                        msgContext.wait();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+    private boolean waitForReady(final MessageContext msgContext) {
+        synchronized (msgContext) {
+            while (!Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.WAIT_BUILDER_IN_STREAM_COMPLETE)) &&
+                   !Boolean.TRUE.equals(msgContext.getProperty("PASSTHRU_CONNECT_ERROR"))) {
+                try {
+                    msgContext.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
+        }
 
-            if (Boolean.TRUE.equals(msgContext.getProperty("PASSTHRU_CONNECT_ERROR"))) {
-                return;
-            }
+        if (Boolean.TRUE.equals(msgContext.getProperty("PASSTHRU_CONNECT_ERROR"))) {
+            return false;
+        }
 
+        return true;
+    }
 
-            OutputStream out = (OutputStream) msgContext.getProperty(PassThroughConstants.BUILDER_OUTPUT_STREAM);
-            if (out != null) {
-                String disableChunking = (String) msgContext.getProperty(PassThroughConstants.DISABLE_CHUNKING);
-                String forceHttp10 = (String) msgContext.getProperty(PassThroughConstants.FORCE_HTTP_1_0);
-                Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+    private void sendRequestContent(final MessageContext msgContext, final EndpointReference epr) throws AxisFault {
 
-                if ("true".equals(disableChunking) || "true".equals(forceHttp10)) {
+        if (Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
+            String disableChunking = (String) msgContext.getProperty(PassThroughConstants.DISABLE_CHUNKING);
+            String forceHttp10 = (String) msgContext.getProperty(PassThroughConstants.FORCE_HTTP_1_0);
+            Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+            OutputStream out = null;
 
-                    MessageFormatter formatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
-                    OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
-                    long messageSize = 0;
+            if ("true".equals(disableChunking) || "true".equals(forceHttp10)) {
 
-                    try {
-                        OverflowBlob overflowBlob = setStreamAsTempData(formatter, msgContext, format);
-                        messageSize = overflowBlob.getLength();
-                        msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH, messageSize);
+                MessageFormatter formatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
+                OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
+                long messageSize = 0;
+
+                try {
+                    OverflowBlob overflowBlob = setStreamAsTempData(formatter, msgContext, format);
+                    messageSize = overflowBlob.getLength();
+                    msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH, messageSize);
+                    deliveryAgent.submit(msgContext, epr);
+                    if (!waitForReady(msgContext)) {
+                        return;
+                    }
+                    out = (OutputStream) msgContext.getProperty(PassThroughConstants.BUILDER_OUTPUT_STREAM);
+                    if (out != null) {
                         overflowBlob.writeTo(out);
-                    } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        handleException("IO while building message", e);
+                        if (pipe.isStale) {
+                            throw new IOException("Target Connection is stale..");
+                        }
+                        //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
+                        //to ignore any entity enclosed methods available.
+                        if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
+                                RelayUtils.isDeleteRequestWithoutPayload(msgContext)) {
+                            pipe.setSerializationCompleteWithoutData(true);
+                        } else if (messageSize == 0 &&
+                                (msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
+                                        (Boolean) msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY))) {
+                            pipe.setSerializationCompleteWithoutData(true);
+                        } else {
+                            pipe.setSerializationComplete(true);
+                        }
                     }
-                    //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
-                    //to ignore any entity enclosed methods available.
-                    if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
-                            RelayUtils.isDeleteRequestWithoutPayload(msgContext)) {
-                        pipe.setSerializationCompleteWithoutData(true);
-                    } else if (messageSize == 0 &&
-                            (msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
-                                    (Boolean) msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY))) {
-                        pipe.setSerializationCompleteWithoutData(true);
-                    } else {
-                        pipe.setSerializationComplete(true);
-                    }
-
-                } else {
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    handleException("IO while building message", e);
+                }
+            } else {
+                deliveryAgent.submit(msgContext, epr);
+                if (!waitForReady(msgContext)) {
+                    return;
+                }
+                out = (OutputStream) msgContext.getProperty(PassThroughConstants.BUILDER_OUTPUT_STREAM);
+                if (out != null) {
                     //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
                     //to ignore any entity enclosed methods available.
                     if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
@@ -409,6 +425,9 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                         MessageFormatter formatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
                         OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
                         formatter.writeTo(msgContext, format, out, false);
+                        if (pipe.isStale) {
+                            handleException("IO while building message", new IOException("Target Connection is stale.."));
+                        }
                     }
                     if ((msgContext.getProperty(PassThroughConstants.REST_GET_DELETE_INVOKE) != null &&
                             (Boolean) msgContext.getProperty(PassThroughConstants.REST_GET_DELETE_INVOKE))) {
@@ -416,7 +435,6 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     } else {
                         pipe.setSerializationComplete(true);
                     }
-
                 }
             }
         }
