@@ -150,24 +150,23 @@ public class TargetRequest {
         
         MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
         
-        HttpRequest request = 
-                new BasicHttpEntityEnclosingRequest(method, path, version != null ? version : HttpVersion.HTTP_1_1);
+        HttpRequest request = null;
 
-        BasicHttpEntity entity = new BasicHttpEntity();
-        
-        ((BasicHttpEntityEnclosingRequest) request).setEntity(entity);
-        
         boolean forceContentLength = 
                 requestMsgCtx.isPropertyTrue(NhttpConstants.FORCE_HTTP_CONTENT_LENGTH);
         boolean forceContentLengthCopy = 
                 requestMsgCtx.isPropertyTrue(PassThroughConstants.COPY_CONTENT_LENGTH_FROM_INCOMING);
                             
         if (forceContentLength && needToProcessChunking) {
-            entity.setChunked(false);
             if (forceContentLengthCopy && contentLength != -1) {
                 if (log.isDebugEnabled()) {
                     log.debug("Set ContentLength : " + contentLength);
                 }
+                request = new BasicHttpEntityEnclosingRequest(method, path,
+                        version != null ? version : HttpVersion.HTTP_1_1);
+                BasicHttpEntity entity = new BasicHttpEntity();
+                ((BasicHttpEntityEnclosingRequest) request).setEntity(entity);
+                entity.setChunked(false);
                 entity.setContentLength(contentLength);
             } else if (!hasEntityBody) {
                 if (log.isDebugEnabled()) {
@@ -180,6 +179,10 @@ public class TargetRequest {
                 if (log.isDebugEnabled()) {
                     log.debug("Set ContentLength : " + contentLength);
                 }
+                request = new BasicHttpEntityEnclosingRequest(method, path,
+                        version != null ? version : HttpVersion.HTTP_1_1);
+                BasicHttpEntity entity = new BasicHttpEntity();
+                ((BasicHttpEntityEnclosingRequest) request).setEntity(entity);
                 entity.setChunked(false);
                 entity.setContentLength(contentLength);
             } else {
@@ -187,6 +190,10 @@ public class TargetRequest {
                     if (log.isDebugEnabled()) {
                         log.debug("Set chunked : " + chunk);
                     }
+                    request = new BasicHttpEntityEnclosingRequest(method, path,
+                            version != null ? version : HttpVersion.HTTP_1_1);
+                    BasicHttpEntity entity = new BasicHttpEntity();
+                    ((BasicHttpEntityEnclosingRequest) request).setEntity(entity);
                     entity.setChunked(chunk);
                 } else {
                     if (log.isDebugEnabled()) {
