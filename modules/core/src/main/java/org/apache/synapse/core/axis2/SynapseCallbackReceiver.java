@@ -55,7 +55,6 @@ import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.ResponseAcceptEncodingProcessor;
 
-import java.util.Map;
 import java.util.Stack;
 import java.util.Timer;
 
@@ -374,13 +373,9 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 response.removeProperty(AddressingConstants.DISABLE_ADDRESSING_FOR_OUT_MESSAGES);
             }
 
-            Map headers = (Map) axisOutMsgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
-            String acceptType = (String) headers.get("Accept");
-
-            // set the 'Accept' header value as the messageType of the response
-            if (acceptType != null) {
-                response.setProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE, acceptType);
-            }
+            // ContentType set in response msgCtx will be used as the messageType
+            response.setProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE,
+                    response.getProperty(Constants.Configuration.CONTENT_TYPE));
 
             // compare original received message (axisOutMsgCtx) soap version with the response
             // if they are different change to original version 
