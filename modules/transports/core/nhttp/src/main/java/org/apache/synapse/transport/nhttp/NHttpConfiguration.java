@@ -68,6 +68,9 @@ public final class NHttpConfiguration {
     // general
     private static final String G_BUFFER_SIZE  = "nhttp_buffer_size";
     private static final String G_DISABLED_HTTP_METHODS = "nhttp_disabled_methods";
+
+    // log file rotation
+    private static final String IS_LOG_ROTATABLE = "nhttp.is.log.rotatable";
   
     //additional rest dispatch handlers
     private static final String NHTTP_REST_DISPATCHER_SERVICE="nhttp.rest.dispatcher.service";
@@ -195,6 +198,10 @@ public final class NHttpConfiguration {
 
     public int getBufferSize() {
         return getProperty(G_BUFFER_SIZE, BUFFER_SIZE);
+    }
+
+    public boolean isLogRotatable() {
+        return getBooleanValue(IS_LOG_ROTATABLE, false);
     }
 
     public boolean isKeepAliveDisabled() {
