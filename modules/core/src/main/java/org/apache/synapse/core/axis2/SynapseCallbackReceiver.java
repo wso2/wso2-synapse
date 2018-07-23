@@ -19,7 +19,6 @@
 
 package org.apache.synapse.core.axis2;
 
-import org.apache.axiom.om.OMException;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.addressing.AddressingConstants;
@@ -28,7 +27,6 @@ import org.apache.axis2.addressing.RelatesTo;
 import org.apache.axis2.client.Options;
 import org.apache.axis2.client.async.AxisCallback;
 import org.apache.axis2.context.MessageContext;
-import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.util.CallbackReceiver;
 import org.apache.axis2.wsdl.WSDLConstants;
 import org.apache.commons.logging.Log;
@@ -375,14 +373,9 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 response.removeProperty(AddressingConstants.DISABLE_ADDRESSING_FOR_OUT_MESSAGES);
             }
 
-            Object messageType = axisOutMsgCtx.getProperty(
-                    org.apache.axis2.Constants.Configuration.MESSAGE_TYPE);
-            if (!HTTPConstants.MEDIA_TYPE_X_WWW_FORM.equals(messageType)) {
-                 // copy the message type property that's used by the out message to the
-                 // response message
-                response.setProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE,
-                    messageType);
-            }
+            // ContentType set in response msgCtx will be used as the messageType
+            response.setProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE,
+                    response.getProperty(Constants.Configuration.CONTENT_TYPE));
 
             // compare original received message (axisOutMsgCtx) soap version with the response
             // if they are different change to original version 
