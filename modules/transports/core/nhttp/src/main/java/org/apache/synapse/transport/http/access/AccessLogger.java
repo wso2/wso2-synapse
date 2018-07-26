@@ -18,18 +18,27 @@
  */
 package org.apache.synapse.transport.http.access;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Properties;
 
+import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
+import org.apache.synapse.transport.nhttp.NHttpConfiguration;
 
 /**
  * Class that logs the Http Accesses to the access log files. Code segment borrowed from
@@ -44,7 +53,11 @@ public class AccessLogger {
     public static final String NHTTP_LOG_DIRECTORY = "nhttp.log.directory";
 
     public final static String ACCESS_LOG_ID = "org.apache.synapse.transport.nhttp.access";
-    
+
+    private final static String DATE_EXTRACT_REGEX = "\\[([^]]+)\\]";
+
+    private final static String DATE_FORMAT_STRING = "dd/MMM/yyyy:HH:mm:ss Z";
+
     private static Log log = LogFactory.getLog(ACCESS_LOG_ID);
 
     public AccessLogger(final Log log) {
@@ -97,8 +110,7 @@ public class AccessLogger {
     /**
      * Can the log file be rotated.
      */
-    protected boolean isRotatable = true;
-
+    protected boolean isRotatable = NHttpConfiguration.getInstance().isLogRotatable();
 
     /**
      * Log the specified message to the log file, switching files if the date
@@ -190,25 +202,82 @@ public class AccessLogger {
 
         // Open the current log file
         try {
-            String pathname;
+            Date today = new Date(System.currentTimeMillis());
+            String pathname = dir.getAbsolutePath() + File.separator + AccessConstants.getPrefix()
+                    + AccessConstants.getSuffix();
+            String oldPathname;
             // If no rotate - no need for dateStamp in fileName
             if (isRotatable) {
-                pathname = dir.getAbsolutePath() + File.separator + AccessConstants.getPrefix() +
-                           dateStamp + AccessConstants.getSuffix();
-            } else {
-                pathname = dir.getAbsolutePath() + File.separator + AccessConstants.getPrefix() +
-                           AccessConstants.getSuffix();
+                File existing = new File(pathname);
+                // renaming existing file to a file with date
+                if (existing.exists()) {
+                    try {
+                        // if file exists, read first line and take the timestamp
+                        BufferedReader input = new BufferedReader(new FileReader(existing));
+                        Pattern pattern = Pattern.compile(DATE_EXTRACT_REGEX);
+                        String line = input.readLine();
+                        if (!line.isEmpty()) {
+                            Matcher matcher = pattern.matcher(line);
+                            if (matcher.find()) {
+                                String date = matcher.group(1);
+                                SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT_STRING);
+                                dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+                                Date lastDateFromLog = dateFormat.parse(date);
+                                // if same day - write to the existing file
+                                if (!DateUtils.isSameDay(today, lastDateFromLog)) {
+                                    // rename the file to log_[date].log, delete the existing file
+                                    String oldDateStamp = fileDateFormatter.format(lastDateFromLog);
+                                    oldPathname = dir.getAbsolutePath() + File.separator + AccessConstants.getPrefix()
+                                            + oldDateStamp + AccessConstants.getSuffix();
+                                    File oldFile = new File(oldPathname);
+                                    existing.renameTo(oldFile);
+                                    existing.delete();
+                                }
+                            } else {
+                                // no date found from the regex
+                                createFileInError(dir, existing);
+                            }
+                        }
+                    } catch (ParseException e) {
+                        log.error("Error occurred when parsing the date from existing log file", e);
+                        createFileInError(dir, existing);
+                    }
+                }
             }
-
             writer = new PrintWriter(new BufferedWriter(new FileWriter(
                     pathname, true), 128000), true);
-
             currentLogFile = new File(pathname);
         } catch (IOException e) {
             log.warn("Unable to open the print writer", e);
             writer = null;
             currentLogFile = null;
         }
+    }
+
+    /**
+     * If error happens, create a file with yesterday timestamp.
+     *
+     * @param dir      log file directory
+     * @param existing existing log fil
+     */
+    private void createFileInError(File dir, File existing) {
+        Date today = new Date(System.currentTimeMillis());
+        Calendar calender = Calendar.getInstance();
+        calender.setTime(today);
+        calender.add(Calendar.DATE, -1);
+        Date dayBefore = calender.getTime();
+        String pathName = dir.getAbsolutePath() + File.separator + AccessConstants.getPrefix()
+                + fileDateFormatter.format(dayBefore) + AccessConstants.getSuffix();
+        File oldFile = new File(pathName);
+        // file with yesterday timestamp exists
+        if (oldFile.exists()) {
+            pathName = dir.getAbsolutePath() + File.separator + AccessConstants.getPrefix()
+                    + fileDateFormatter.format(dayBefore) + "_" + fileDateFormatter.format(today)
+                    + AccessConstants.getSuffix();
+            oldFile = new File(pathName);
+        }
+        existing.renameTo(oldFile);
+        existing.delete();
     }
 
     /**
