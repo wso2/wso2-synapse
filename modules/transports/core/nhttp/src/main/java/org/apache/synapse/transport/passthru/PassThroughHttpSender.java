@@ -437,6 +437,8 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     }
                 }
             }
+        } else {
+            deliveryAgent.submit(msgContext, epr);
         }
     }
 	
