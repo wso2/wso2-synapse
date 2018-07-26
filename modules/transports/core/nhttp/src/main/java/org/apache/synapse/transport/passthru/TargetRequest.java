@@ -266,7 +266,7 @@ public class TargetRequest {
             }
         }
 
-        boolean needToProcessChunking = !((request.getProtocolVersion().equals(HttpVersion.HTTP_1_0))
+        boolean needToProcessChunking = !((version != null && version.equals(HttpVersion.HTTP_1_0))
                 || (PassThroughConstants.HTTP_GET
                         .equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD)))
                 || RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx));
