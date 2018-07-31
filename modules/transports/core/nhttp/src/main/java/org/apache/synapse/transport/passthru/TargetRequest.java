@@ -145,29 +145,28 @@ public class TargetRequest {
         return contentLength;
     }
     
-    protected HttpRequest getHttpRequest(NHttpClientConnection conn, String path) {
+    protected HttpRequest getHttpRequest(NHttpClientConnection conn, String path, boolean needToProcessChunking) {
         long contentLength = getContentLength(conn);
         
         MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
         
-        HttpRequest request = 
-                new BasicHttpEntityEnclosingRequest(method, path, version != null ? version : HttpVersion.HTTP_1_1);
+        HttpRequest request = null;
 
-        BasicHttpEntity entity = new BasicHttpEntity();
-        
-        ((BasicHttpEntityEnclosingRequest) request).setEntity(entity);
-        
         boolean forceContentLength = 
                 requestMsgCtx.isPropertyTrue(NhttpConstants.FORCE_HTTP_CONTENT_LENGTH);
         boolean forceContentLengthCopy = 
                 requestMsgCtx.isPropertyTrue(PassThroughConstants.COPY_CONTENT_LENGTH_FROM_INCOMING);
                             
-        if (forceContentLength) {
-            entity.setChunked(false);
+        if (forceContentLength && needToProcessChunking) {
             if (forceContentLengthCopy && contentLength != -1) {
                 if (log.isDebugEnabled()) {
                     log.debug("Set ContentLength : " + contentLength);
                 }
+                request = new BasicHttpEntityEnclosingRequest(method, path,
+                        version != null ? version : HttpVersion.HTTP_1_1);
+                BasicHttpEntity entity = new BasicHttpEntity();
+                ((BasicHttpEntityEnclosingRequest) request).setEntity(entity);
+                entity.setChunked(false);
                 entity.setContentLength(contentLength);
             } else if (!hasEntityBody) {
                 if (log.isDebugEnabled()) {
@@ -176,17 +175,25 @@ public class TargetRequest {
                 request = new BasicHttpRequest(method, path, version != null ? version : HttpVersion.HTTP_1_1);
             }
         } else {
-            if (contentLength != -1) {
+            if (contentLength != -1 && needToProcessChunking) {
                 if (log.isDebugEnabled()) {
                     log.debug("Set ContentLength : " + contentLength);
                 }
+                request = new BasicHttpEntityEnclosingRequest(method, path,
+                        version != null ? version : HttpVersion.HTTP_1_1);
+                BasicHttpEntity entity = new BasicHttpEntity();
+                ((BasicHttpEntityEnclosingRequest) request).setEntity(entity);
                 entity.setChunked(false);
                 entity.setContentLength(contentLength);
             } else {
-                if (hasEntityBody) {
+                if (hasEntityBody && needToProcessChunking) {
                     if (log.isDebugEnabled()) {
                         log.debug("Set chunked : " + chunk);
                     }
+                    request = new BasicHttpEntityEnclosingRequest(method, path,
+                            version != null ? version : HttpVersion.HTTP_1_1);
+                    BasicHttpEntity entity = new BasicHttpEntity();
+                    ((BasicHttpEntityEnclosingRequest) request).setEntity(entity);
                     entity.setChunked(chunk);
                 } else {
                     if (log.isDebugEnabled()) {
@@ -258,8 +265,13 @@ public class TargetRequest {
                 }
             }
         }
-                                                            
-        request = getHttpRequest(conn, path);
+
+        boolean needToProcessChunking = !((version != null && version.equals(HttpVersion.HTTP_1_0))
+                || (PassThroughConstants.HTTP_GET
+                        .equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD)))
+                || RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx));
+
+        request = getHttpRequest(conn, path, needToProcessChunking);
 
         //setup wsa action..
         if (request != null) {
@@ -286,11 +298,7 @@ public class TargetRequest {
         request.setParams(new DefaultedHttpParams(request.getParams(), targetConfiguration.getHttpParams()));
 
         //Chunking is not performed for request has "http 1.0" and "GET" http method
-        if (!((request.getProtocolVersion().equals(HttpVersion.HTTP_1_0)) 
-                || (PassThroughConstants.HTTP_GET.equals(
-                        requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) 
-                || RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx))
-            && request instanceof BasicHttpEntityEnclosingRequest) {
+        if (needToProcessChunking && request instanceof BasicHttpEntityEnclosingRequest) {
             this.processChunking(conn, requestMsgCtx);
         }
 
