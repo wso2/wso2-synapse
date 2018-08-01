@@ -668,7 +668,16 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
             for (PolicyInfo pi : policies) {
 
-                Policy policy = getPolicyFromKey(pi.getPolicyKey(), synCfg);
+                String key = pi.getPolicyKey();
+                Policy policy = null;
+
+                synCfg.getEntryDefinition(key);
+                Object o = synCfg.getEntry(key);
+                if (o == null) {
+                    handleException("NoSecurity Policy found from key " + key + " in Axis2 service \"" + name + "\"");
+                } else {
+                    policy = PolicyEngine.getPolicy(SynapseConfigUtils.getStreamSource(o).getInputStream());
+                }
 
                 if (policy == null) {
                     handleException("Cannot find Policy from the key");
@@ -874,13 +883,6 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             ((WSDL11ToAxisServiceBuilder) wsdlToAxisServiceBuilder).
                     setCustomWSDLResolver(userDefWSDLLocator);
         }
-    }
-
-    private Policy getPolicyFromKey(String key, SynapseConfiguration synCfg) {
-
-        synCfg.getEntryDefinition(key);
-        return PolicyEngine.getPolicy(
-                SynapseConfigUtils.getStreamSource(synCfg.getEntry(key)).getInputStream());
     }
 
     /**
