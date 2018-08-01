@@ -668,19 +668,21 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
             for (PolicyInfo pi : policies) {
 
-                String key = pi.getPolicyKey();
+                String policyKey = pi.getPolicyKey();
                 Policy policy = null;
 
-                synCfg.getEntryDefinition(key);
-                Object o = synCfg.getEntry(key);
-                if (o == null) {
-                    handleException("NoSecurity Policy found from key " + key + " in Axis2 service \"" + name + "\"");
+                synCfg.getEntryDefinition(policyKey);
+                Object policyEntry = synCfg.getEntry(policyKey);
+                if (policyEntry == null) {
+                    handleException("Security Policy Entry not found for key: " + policyKey +
+                            " in Proxy Service: " + name);
                 } else {
-                    policy = PolicyEngine.getPolicy(SynapseConfigUtils.getStreamSource(o).getInputStream());
+                    policy = PolicyEngine.getPolicy(SynapseConfigUtils.getStreamSource(policyEntry).getInputStream());
                 }
 
                 if (policy == null) {
-                    handleException("Cannot find Policy from the key");
+                    handleException("Invalid Security Policy found for the key: " + policyKey +
+                            " in proxy service: " + name);
                 }
 
                 if (NO_SECURITY_POLICY.equals(policy.getId())) {
