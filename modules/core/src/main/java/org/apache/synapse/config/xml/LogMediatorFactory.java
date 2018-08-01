@@ -77,6 +77,9 @@ public class LogMediatorFactory extends AbstractMediatorFactory  {
                 logMediator.setLogLevel(LogMediator.FULL);
             } else if (CUSTOM.equals(levelstr)) {
                 logMediator.setLogLevel(LogMediator.CUSTOM);
+            } else {
+                handleException("Invalid log level. Level has to be one of the following : "
+                        + "simple, headers, full, custom");
             }
         }
 
