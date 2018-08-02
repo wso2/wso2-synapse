@@ -150,14 +150,14 @@ public class TargetRequest {
         
         MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
         
-        HttpRequest request = null;
+        HttpRequest request;
 
         boolean forceContentLength = 
                 requestMsgCtx.isPropertyTrue(NhttpConstants.FORCE_HTTP_CONTENT_LENGTH);
         boolean forceContentLengthCopy = 
                 requestMsgCtx.isPropertyTrue(PassThroughConstants.COPY_CONTENT_LENGTH_FROM_INCOMING);
                             
-        if (forceContentLength && needToProcessChunking) {
+        if (forceContentLength) {
             if (forceContentLengthCopy && contentLength != -1) {
                 if (log.isDebugEnabled()) {
                     log.debug("Set ContentLength : " + contentLength);
@@ -173,9 +173,13 @@ public class TargetRequest {
                     log.debug("Set BasicHttpRequest Object");
                 }
                 request = new BasicHttpRequest(method, path, version != null ? version : HttpVersion.HTTP_1_1);
+            } else {
+                // default
+                request =
+                        new BasicHttpEntityEnclosingRequest(method, path, version != null ? version : HttpVersion.HTTP_1_1);
             }
         } else {
-            if (contentLength != -1 && needToProcessChunking) {
+            if (contentLength != -1) {
                 if (log.isDebugEnabled()) {
                     log.debug("Set ContentLength : " + contentLength);
                 }
@@ -186,7 +190,7 @@ public class TargetRequest {
                 entity.setChunked(false);
                 entity.setContentLength(contentLength);
             } else {
-                if (hasEntityBody && needToProcessChunking) {
+                if (hasEntityBody) {
                     if (log.isDebugEnabled()) {
                         log.debug("Set chunked : " + chunk);
                     }
