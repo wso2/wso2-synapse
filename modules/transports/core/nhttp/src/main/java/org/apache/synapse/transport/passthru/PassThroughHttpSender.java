@@ -342,7 +342,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 try {
                     msgContext.wait();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    log.error("Interrupted while waiting for passthru connection..", e);
                 }
             }
         }
@@ -396,7 +396,6 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                         }
                     }
                 } catch (IOException e) {
-                    // TODO Auto-generated catch block
                     handleException("IO while building message", e);
                 }
             } else {
