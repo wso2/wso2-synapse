@@ -227,6 +227,11 @@ public class SimpleURLRegistry extends AbstractRegistry implements Registry {
         //TODO
     }
 
+    @Override
+    public boolean isExists(String path) {
+        //TODO
+        return false;
+    }
 
     private long getCachableDuration() {
         String cachableDuration = (String) properties.get("cachableDuration");

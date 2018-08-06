@@ -26,7 +26,7 @@ import org.apache.synapse.config.Entry;
 import java.util.Map;
 import java.util.HashMap;
 
-public class SimpleInMemoryRegistry extends AbstractRegistry {    
+public class SimpleInMemoryRegistry extends AbstractRegistry {
 
     private Map<String,InMemoryRegistryEntry> registry = new HashMap<String,InMemoryRegistryEntry>();
     private long cacheDuration;
@@ -94,6 +94,12 @@ public class SimpleInMemoryRegistry extends AbstractRegistry {
 
     public void updateRegistryEntry(RegistryEntry entry) {
 
+    }
+
+    @Override
+    public boolean isExists(String path) {
+        //TODO
+        return false;
     }
 
     public int getHitCount() {
