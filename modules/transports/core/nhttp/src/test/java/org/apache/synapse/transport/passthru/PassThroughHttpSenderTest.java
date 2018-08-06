@@ -19,6 +19,7 @@ package org.apache.synapse.transport.passthru;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.apache.axis2.Constants;
+import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.context.OperationContext;
@@ -34,6 +35,7 @@ import org.apache.http.nio.reactor.IOSession;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.util.BufferFactory;
+import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
 import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -109,10 +111,11 @@ public class PassThroughHttpSenderTest extends TestCase {
         sender = PowerMockito.spy(sender);
 
         PowerMockito.when(targetConfiguration.getBufferFactory()).thenReturn(factory);
-        PowerMockito.doNothing().when(sender, "sendRequestContent", any(MessageContext.class));
+        PowerMockito.doNothing().when(sender, "sendRequestContent", any(MessageContext.class), any(EndpointReference.class));
 
         Handler.InvocationResponse response = sender.invoke(messageContext);
 
+        
         Assert.assertNotNull("PassThrough Http Sender not invoked!", response);
     }
 
