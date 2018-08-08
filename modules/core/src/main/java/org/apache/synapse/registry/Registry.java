@@ -147,4 +147,12 @@ public interface Registry {
      * @param entryKey The registry entry
      */
     public Properties getResourceProperties(String entryKey);
+
+    /**
+     * Check if a resource exists
+     *
+     * @param path The path of the resource
+     * @return true if the resource exists
+     */
+    public boolean isResourceExists(String path);
 }
