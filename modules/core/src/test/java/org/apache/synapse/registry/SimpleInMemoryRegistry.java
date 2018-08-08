@@ -97,7 +97,7 @@ public class SimpleInMemoryRegistry extends AbstractRegistry {
     }
 
     @Override
-    public boolean isExists(String path) {
+    public boolean isResourceExists(String path) {
         //TODO
         return false;
     }

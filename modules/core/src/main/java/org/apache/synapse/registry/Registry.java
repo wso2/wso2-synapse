@@ -151,8 +151,8 @@ public interface Registry {
     /**
      * Check if a resource exists
      *
-     * @param path The path the of resource
+     * @param path The path of the resource
      * @return true if the resource exists
      */
-    public boolean isExists(String path);
+    public boolean isResourceExists(String path);
 }

@@ -228,7 +228,7 @@ public class SimpleURLRegistry extends AbstractRegistry implements Registry {
     }
 
     @Override
-    public boolean isExists(String path) {
+    public boolean isResourceExists(String path) {
         //TODO
         return false;
     }
