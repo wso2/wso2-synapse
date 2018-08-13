@@ -817,7 +817,6 @@ public final class JsonUtil {
         if (e != null) {
             SOAPBody b = e.getBody();
             if (b != null) {
-                removeIndentations(b); // cleans payload by removing unnecessary characters
                 Iterator children = b.getChildren();
                 while (children.hasNext()) {
                     Object o = children.next();
