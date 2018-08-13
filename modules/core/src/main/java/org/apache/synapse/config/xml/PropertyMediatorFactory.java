@@ -60,7 +60,7 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
 
         OMElement valueElement = elem.getFirstElement();
 
-        if (name == null) {
+        if (name == null || name.getAttributeValue().isEmpty()) {
             String msg = "The 'name' attribute is required for the configuration of a property mediator";
             log.error(msg);
             throw new SynapseException(msg);

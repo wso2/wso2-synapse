@@ -65,6 +65,10 @@ public class ServiceDynamicLoadbalanceEndpoint extends DynamicLoadbalanceEndpoin
      */
     private Map<String, String> hostDomainMap;
 
+    public ServiceDynamicLoadbalanceEndpoint() {
+
+    }
+
     @Override
     public void init(SynapseEnvironment synapseEnvironment) {
         if (!initialized) {
