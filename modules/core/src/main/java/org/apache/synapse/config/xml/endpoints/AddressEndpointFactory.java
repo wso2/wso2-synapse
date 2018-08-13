@@ -116,6 +116,9 @@ public class AddressEndpointFactory extends DefaultEndpointFactory {
 
         if (address != null) {
             endpointDefinition.setAddress(address.getAttributeValue().trim());
+        } else {
+            handleException("Invalid endpoint definition. " +
+                    "\"uri\" attribute of the address endpoint cannot be empty.");
         }
 
         extractSpecificEndpointProperties(endpointDefinition, elem);
