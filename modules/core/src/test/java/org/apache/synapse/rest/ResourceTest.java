@@ -18,7 +18,10 @@
 
 package org.apache.synapse.rest;
 
+import org.apache.http.HttpStatus;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
@@ -59,22 +62,22 @@ public class ResourceTest extends RESTMediationTestCase {
         assertEquals("10", synCtx.getProperty(RESTConstants.REST_QUERY_PARAM_PREFIX + "b"));
         assertEquals("/foo/bar", synCtx.getProperty(RESTConstants.REST_QUERY_PARAM_PREFIX + "c"));
     }
-    
+
     public void testQueryParamWithURL() throws Exception {
     	API api = new API("TestAPI", "/test");
     	Resource resource = new Resource();
     	api.addResource(resource);
-    	 
+
     	SynapseConfiguration synapseConfig = new SynapseConfiguration();
     	synapseConfig.addAPI(api.getName(), api);
-    	
+
     	RESTRequestHandler handler = new RESTRequestHandler();
-    	       
+
     	MessageContext synCtx = getMessageContext(synapseConfig, false, "/test/admin?a=http://test.com", "GET");
     	handler.process(synCtx);
     	//verify query parameters with URLs as values
     	assertEquals("http://test.com", synCtx.getProperty(RESTConstants.REST_QUERY_PARAM_PREFIX + "a"));
-    	                
+
     	synCtx = getMessageContext(synapseConfig, false, "/test/admin?a=http://test.com&b=10&c=/foo/bar", "GET");
     	handler.process(synCtx);
     	//verify query parameters with URLs as values
@@ -110,5 +113,23 @@ public class ResourceTest extends RESTMediationTestCase {
         new SynapseMessageReceiver().receive(mc);
         assertEquals("seq.in.value", mc.getProperty("seq.in"));
         assertEquals("seq.fault.value", mc.getProperty("seq.fault"));
+    }
+
+    public void testFaultSequenceException() throws Exception {
+        //test IllegalArgumentException
+        API api = new API("TestAPI", "/cal");
+        Resource resource = new Resource();
+
+        SynapseConfiguration synapseConfig = new SynapseConfiguration();
+        synapseConfig.addAPI(api.getName(), api);
+        synapseConfig.addSequence("main", getTestSequence("main.in", "main.value"));
+        MessageContext synCtx = getMessageContext(synapseConfig, false, "/cal/1.0/add?x=1%&y=1", "GET");
+        MessageContextCreatorForAxis2.setSynConfig(synapseConfig);
+        MessageContextCreatorForAxis2.setSynEnv(synCtx.getEnvironment());
+        try {
+            resource.process(synCtx);
+        } catch (SynapseException e) {
+            assertEquals(synCtx.getProperty(SynapseConstants.ERROR_CODE), HttpStatus.SC_BAD_REQUEST);
+        }
     }
 }
