@@ -25,6 +25,7 @@ import org.apache.http.nio.reactor.ConnectingIOReactor;
 import org.apache.synapse.transport.passthru.ConnectCallback;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.TargetContext;
+import org.apache.synapse.transport.passthru.config.ConnectionTimeoutConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
 import java.io.IOException;
@@ -56,6 +57,9 @@ public class TargetConnections {
     /** callback invoked when a connection is made */
     private ConnectCallback callback = null;
 
+    /** Configurations to use remove idle connections */
+    private ConnectionTimeoutConfiguration idleConnectionConfiguration;
+
     /**
      * Create a TargetConnections with the given IO-Reactor
      *
@@ -70,6 +74,7 @@ public class TargetConnections {
         this.maxConnections = targetConfiguration.getMaxConnections();
         this.ioReactor = ioReactor;
         this.callback = callback;
+        this.idleConnectionConfiguration = targetConfiguration.getConnectionTimeoutConfiguration();
     }
 
     /**
