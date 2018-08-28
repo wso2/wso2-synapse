@@ -121,9 +121,9 @@ public abstract class AbstractDBMediatorFactory extends AbstractMediatorFactory 
             SynapseXPath xpath = new SynapseXPath("self::node()/syn:connection/syn:pool");
             xpath.addNamespace("syn", XMLConfigConstants.SYNAPSE_NAMESPACE);
             pool = (OMElement) xpath.selectSingleNode(elem);
-            if (pool.getFirstChildWithName(DSNAME_Q) != null) {
+            if (pool != null && pool.getFirstChildWithName(DSNAME_Q) != null) {
                 readLookupConfig(mediator, pool);
-            } else if (pool.getFirstChildWithName(DRIVER_Q) != null) {
+            } else if (pool != null && pool.getFirstChildWithName(DRIVER_Q) != null) {
                 readCustomDataSourceConfig(pool, mediator);
             } else {
                 handleException("The DataSource connection information must be specified for " +
