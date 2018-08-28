@@ -37,18 +37,33 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class HostConnections {
     private static final Log log = LogFactory.getLog(HostConnections.class);
-    // route
+    /**
+     * route
+     */
     private final HttpRoute route;
-    // maximum number of connections allowed for this host + port
+    /**
+     * maximum number of connections allowed for this host + port
+     */
     private final int maxSize;
-    // number of awaiting connections
+    /**
+     * number of awaiting connections
+     */
     private int pendingConnections;
+    /**
+     * connection idle time for connection removal
+     */
     private int connectionIdleTime;
-    // maximum life span of a connection
+    /**
+     * maximum life span of a connection
+     */
     private int maximumConnectionLifeSpan;
-    // list of free connections available
+    /**
+     * list of free connections available
+     */
     private List<NHttpClientConnection> freeConnections = new ArrayList<NHttpClientConnection>();
-    // list of connections in use
+    /**
+     * list of connections in use
+     */
     private List<NHttpClientConnection> busyConnections = new ArrayList<NHttpClientConnection>();
 
     private Lock lock = new ReentrantLock();
