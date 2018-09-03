@@ -142,6 +142,14 @@ public class TargetRequestFactory {
 					if (builderInvoked
 							&& (((messageType.indexOf(HTTPConstants.MEDIA_TYPE_MULTIPART_RELATED) != -1) 
 									|| (messageType.indexOf(HTTPConstants.MEDIA_TYPE_MULTIPART_FORM_DATA) != -1)))) {
+						// if this is a multipart message, need to make sure the new boundry is set in the content type.
+						// Hence, call formatter.getContentType explicitly and forcefully set the content type
+						MessageFormatter formatter = MessageProcessorSelector.getMessageFormatter(msgContext);
+						OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
+						if (formatter != null) {
+							msgContext.setProperty(PassThroughConstants.MESSAGE_OUTPUT_FORMAT, format);
+							cType = formatter.getContentType(msgContext, format, msgContext.getSoapAction());
+						}
 						request.addHeader(HTTP.CONTENT_TYPE, cType);
 					}
 
