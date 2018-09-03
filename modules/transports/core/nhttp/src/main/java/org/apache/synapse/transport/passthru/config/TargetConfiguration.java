@@ -59,6 +59,8 @@ public class TargetConfiguration extends BaseConfiguration {
 
     private TargetConnections connections = null;
 
+    private ConnectionTimeoutConfiguration connectionTimeoutConfiguration;
+
     public TargetConfiguration(ConfigurationContext configurationContext,
                                ParameterInclude parameters,
                                WorkerPool pool,
@@ -75,6 +77,7 @@ public class TargetConfiguration extends BaseConfiguration {
                         new RequestExpectContinue()
          });
         this.proxyAuthenticator = proxyAuthenticator;
+        this.connectionTimeoutConfiguration = new ConnectionTimeoutConfiguration(conf.getConnectionIdleTime(), conf.getMaximumConnectionLifespan());
     }
 
     public void build() throws AxisFault {
@@ -113,6 +116,10 @@ public class TargetConfiguration extends BaseConfiguration {
 
     public void setConnections(TargetConnections connections) {
         this.connections = connections;
+    }
+
+    public ConnectionTimeoutConfiguration getConnectionTimeoutConfiguration() {
+        return connectionTimeoutConfiguration;
     }
 
     /**
@@ -158,3 +165,4 @@ public class TargetConfiguration extends BaseConfiguration {
     }
 
 }
+
