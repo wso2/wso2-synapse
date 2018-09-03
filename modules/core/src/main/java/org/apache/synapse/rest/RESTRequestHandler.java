@@ -27,7 +27,9 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.rest.version.ContextVersionStrategy;
 import org.apache.synapse.rest.version.DefaultStrategy;
+import org.apache.synapse.rest.version.URLBasedVersionStrategy;
 
 import java.util.*;
 
@@ -83,6 +85,16 @@ public class RESTRequestHandler {
                 //APIs whose VersionStrategy is bound to an instance of DefaultStrategy, should be skipped and processed at last.
                 //Otherwise they will be always chosen to process the request without matching the version.
                 defaultStrategyApiSet.add(api);
+            } else if (api.getVersionStrategy().getClass().getName().equals(ContextVersionStrategy.class.getName())
+                    || api.getVersionStrategy().getClass().getName().equals(URLBasedVersionStrategy.class.getName())) {
+                api.setLogSetterValue();
+                if (api.canProcess(synCtx)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Located specific API: " + api.getName() + " for processing message");
+                    }
+                    apiProcessNonDefaultStrategy(synCtx, api);
+                    return true;
+                }
             } else if (api.canProcess(synCtx)) {
                 if (log.isDebugEnabled()) {
                     log.debug("Located specific API: " + api.getName() + " for processing message");
@@ -117,6 +129,20 @@ public class RESTRequestHandler {
         if (RuntimeStatisticCollector.isStatisticsEnabled()) {
             statisticReportingIndex = OpenEventCollector
                     .reportEntryEvent(synCtx, api.getAPIName(), api.getAspectConfiguration(), ComponentType.API);
+            api.process(synCtx);
+            CloseEventCollector.tryEndFlow(synCtx, api.getAPIName(), ComponentType.API, statisticReportingIndex, true);
+        } else {
+            api.process(synCtx);
+        }
+    }
+
+    //Process APIs which have context or url strategy
+    private void apiProcessNonDefaultStrategy(MessageContext synCtx, API api) {
+        Integer statisticReportingIndex = 0;
+        if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+            statisticReportingIndex = OpenEventCollector
+                    .reportEntryEvent(synCtx, api.getAPIName() + "_" + api.getVersion(), api.getAspectConfiguration(),
+                            ComponentType.API);
             api.process(synCtx);
             CloseEventCollector.tryEndFlow(synCtx, api.getAPIName(), ComponentType.API, statisticReportingIndex, true);
         } else {
