@@ -143,8 +143,8 @@ public class XSLTMediatorTest extends TestCase {
         // set XSLT transformation URL
         setXsltTransformationURL(transformMediator, "xslt-key");
 
-        MessageContext synCtx = new TestMessageContextBuilder().addFileEntry("xslt-key",
-                "../../repository/conf/sample/resources/transform/transform_unittest.xslt")
+        MessageContext synCtx = new TestMessageContextBuilder().setRequireAxis2MessageContext(true).addFileEntry
+                ("xslt-key", "../../repository/conf/sample/resources/transform/transform_unittest.xslt")
                 .setBodyFromString(SOURCE).addTextAroundBody().build();
         transformMediator.mediate(synCtx);
 
@@ -166,7 +166,7 @@ public class XSLTMediatorTest extends TestCase {
 
         MessageContext synCtx = new TestMessageContextBuilder().addFileEntry("xslt-key",
                 "../../repository/conf/sample/resources/transform/transform_unittest.xslt")
-                .setBodyFromString(SOURCE).addTextAroundBody().build();
+                .setBodyFromString(SOURCE).setRequireAxis2MessageContext(true).addTextAroundBody().build();
         transformMediator.mediate(synCtx);
 
         // validate result
@@ -186,7 +186,7 @@ public class XSLTMediatorTest extends TestCase {
             MessageContext synCtx = new TestMessageContextBuilder().addFileEntry("xslt-key",
                     "../../repository/conf/sample/resources/transform/transform_load.xml")
                     .setBodyFromFile("../../repository/conf/sample/resources/transform/message.xml")
-                    .addTextAroundBody().build();
+                    .addTextAroundBody().setRequireAxis2MessageContext(true).build();
             //MessageContext synCtx = TestUtils.getTestContextForXSLTMediator(SOURCE, props);
             transformMediator.mediate(synCtx);
 //            synCtx.getEnvelope().serializeAndConsume(new FileOutputStream("/tmp/out.xml"));
@@ -207,7 +207,7 @@ public class XSLTMediatorTest extends TestCase {
             MessageContext synCtx = new TestMessageContextBuilder().addFileEntry("xslt-key",
                     "../../repository/conf/sample/resources/transform/transform_load_3.xml")
                     .setBodyFromFile("../../repository/conf/sample/resources/transform/message.xml")
-                    .addTextAroundBody().build();
+                    .addTextAroundBody().setRequireAxis2MessageContext(true).build();
             //MessageContext synCtx = TestUtils.getTestContextForXSLTMediator(SOURCE, props);
             transformMediator.mediate(synCtx);
 //            System.gc();
@@ -226,7 +226,7 @@ public class XSLTMediatorTest extends TestCase {
          MessageContext synCtx = new TestMessageContextBuilder().addFileEntry("xslt-key",
                  "../../repository/conf/sample/resources/transform/transform_load_2.xml")
                  .setBodyFromFile("../../repository/conf/sample/resources/transform/med_message.xml")
-                 .addTextAroundBody().build();
+                 .addTextAroundBody().setRequireAxis2MessageContext(true).build();
          transformMediator.mediate(synCtx);
 
          // validate result
@@ -248,7 +248,7 @@ public class XSLTMediatorTest extends TestCase {
             MessageContext synCtx = new TestMessageContextBuilder().addFileEntry("xslt-key",
                     "../../repository/conf/sample/resources/transform/transform_load_2.xml")
                     .setBodyFromFile("../../repository/conf/sample/resources/transform/small_message.xml")
-                    .addTextAroundBody().build();
+                    .addTextAroundBody().setRequireAxis2MessageContext(true).build();
             //MessageContext synCtx = TestUtils.getTestContextForXSLTMediator(SOURCE, props);
             transformMediator.mediate(synCtx);
             //System.out.println("done : " + i + " :: " + Runtime.getRuntime().freeMemory());
@@ -272,7 +272,7 @@ public class XSLTMediatorTest extends TestCase {
         MessageContext synCtx = new TestMessageContextBuilder().addFileEntry("xslt-key",
                 "../../repository/conf/sample/resources/transform/transform_unittest.xslt")
                 .setBodyFromString(ENCLOSING_SOURCE)
-                .addTextAroundBody().build();
+                .addTextAroundBody().setRequireAxis2MessageContext(true).build();
         transformMediator.mediate(synCtx);
 
         // validate result
@@ -296,7 +296,7 @@ public class XSLTMediatorTest extends TestCase {
         MessageContext mc = new TestMessageContextBuilder().addFileEntry("xslt-key",
                 "../../repository/conf/sample/resources/transform/encoding_test.xslt")
                 .setEnvelopeFromFile("../../repository/conf/sample/resources/transform" +
-                        "/encoding_test.xml").build();
+                        "/encoding_test.xml").setRequireAxis2MessageContext(true).build();
 
         transformMediator.mediate(mc);
 
@@ -312,8 +312,7 @@ public class XSLTMediatorTest extends TestCase {
         setXsltTransformationURL(transformMediator, "xslt-key");
         MessageContext mc = new TestMessageContextBuilder()
             .addEntry("xslt-key", getClass().getResource("invalid.xslt"))
-            .setBodyFromString("<root/>")
-            .build();
+            .setBodyFromString("<root/>").setRequireAxis2MessageContext(true).build();
 
         try {
             transformMediator.mediate(mc);
@@ -336,8 +335,7 @@ public class XSLTMediatorTest extends TestCase {
         setXsltTransformationURL(transformMediator, "xslt-key");
 
         MessageContext mc = new TestMessageContextBuilder()
-            .addEntry("xslt-key", getClass().getResource("cdata.xslt"))
-            .build();
+                .addEntry("xslt-key", getClass().getResource("cdata.xslt")).setRequireAxis2MessageContext(true).build();
 
         OMFactory factory = OMAbstractFactory.getOMFactory();
         OMElement in = factory.createOMElement(new QName(null, "in"));
@@ -421,12 +419,12 @@ public class XSLTMediatorTest extends TestCase {
         // Mediate twice for synCtx
         MessageContext synCtx = new TestMessageContextBuilder().addEntry(
                 xsltKeyValue, getClass().getResource(xsltFile)).setBodyFromString(
-                source).addTextAroundBody().build();
+                source).addTextAroundBody().setRequireAxis2MessageContext(true).build();
         transformMediator.mediate(synCtx);
 
         synCtx = new TestMessageContextBuilder().addEntry(
                 xsltKeyValue, getClass().getResource(xsltFile)).setBodyFromString(
-                source).addTextAroundBody().build();
+                source).addTextAroundBody().setRequireAxis2MessageContext(true).build();
         transformMediator.mediate(synCtx);
     }
 
@@ -438,7 +436,7 @@ public class XSLTMediatorTest extends TestCase {
 
         MessageContext mc = new TestMessageContextBuilder()
             .addEntry("xslt-key", XSLTMediator.class.getResource("identity.xslt"))
-            .build();
+            .setRequireAxis2MessageContext(true).build();
 
         OMFactory factory = OMAbstractFactory.getOMFactory();
         OMElement orgRoot = factory.createOMElement(new QName("root"));
