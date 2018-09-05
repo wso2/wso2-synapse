@@ -226,6 +226,11 @@
             <artifactId>jetty-server</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.tngtech.java</groupId>
+            <artifactId>junit-dataprovider</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <properties />

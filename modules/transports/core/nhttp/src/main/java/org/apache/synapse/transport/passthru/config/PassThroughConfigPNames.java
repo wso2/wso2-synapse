@@ -81,6 +81,17 @@ public interface PassThroughConfigPNames {
     public String DISABLE_KEEPALIVE = "http.connection.disable.keepalive";
 
     /**
+     * Defines the time interval for idle connection removal.
+     */
+    public String CONNECTION_IDLE_TIME = "transport.sender.connection.idle.time";
+
+    /**
+     * Defines the time interval for maximum connection lifespan.
+     */
+    public String MAXIMUM_CONNECTION_LIFESPAN = "transport.sender.connection.maximum.lifespan";
+
+
+    /**
      * Defines the maximum number of connections per host port
      */
     public String MAX_CONNECTION_PER_HOST_PORT = "http.max.connection.per.host.port";

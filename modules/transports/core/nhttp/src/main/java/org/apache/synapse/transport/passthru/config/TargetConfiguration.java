@@ -57,6 +57,8 @@ public class TargetConfiguration extends BaseConfiguration {
     /** Http headers which should be preserved */
     private List<String> preserveHttpHeaders;
 
+    private ConnectionTimeoutConfiguration connectionTimeoutConfiguration;
+    
     private TargetConnections connections = null;
 
     public TargetConfiguration(ConfigurationContext configurationContext,
@@ -74,6 +76,8 @@ public class TargetConfiguration extends BaseConfiguration {
                         new RequestUserAgent(),
                         new RequestExpectContinue()
          });
+        this.connectionTimeoutConfiguration = new ConnectionTimeoutConfiguration(conf.getConnectionIdleTime(),
+                                                                                 conf.getMaximumConnectionLifespan());
         this.proxyAuthenticator = proxyAuthenticator;
     }
 
