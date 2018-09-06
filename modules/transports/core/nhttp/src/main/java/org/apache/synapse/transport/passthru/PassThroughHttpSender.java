@@ -413,11 +413,6 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                         return;
                     }
 
-                    if ((msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
-                            (Boolean) msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY))) {
-                        pipe.setSerializationCompleteWithoutData(true);
-                        return;
-                    }
 
                     if ((disableChunking == null || !"true".equals(disableChunking)) ||
                             (forceHttp10 == null || !"true".equals(forceHttp10))) {
@@ -430,6 +425,9 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     }
                     if ((msgContext.getProperty(PassThroughConstants.REST_GET_DELETE_INVOKE) != null &&
                             (Boolean) msgContext.getProperty(PassThroughConstants.REST_GET_DELETE_INVOKE))) {
+                        pipe.setSerializationCompleteWithoutData(true);
+                    }else if ((msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
+                            (Boolean) msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY))) {
                         pipe.setSerializationCompleteWithoutData(true);
                     } else {
                         pipe.setSerializationComplete(true);
