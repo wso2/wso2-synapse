@@ -136,6 +136,13 @@ public class PassThroughConfiguration {
         return getStringProperty(PassThroughConfigPNames.HTTP_HEADERS_PRESERVE, "");
     }
 
+    public int getConnectionIdleTime() {
+        return getIntProperty(PassThroughConfigPNames.CONNECTION_IDLE_TIME, Integer.MAX_VALUE);
+    }
+    public int getMaximumConnectionLifespan() {
+        return getIntProperty(PassThroughConfigPNames.MAXIMUM_CONNECTION_LIFESPAN, Integer.MAX_VALUE);
+    }
+
     /**
      * Loads the properties from a given property file path
      *

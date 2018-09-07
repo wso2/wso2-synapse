@@ -956,6 +956,12 @@
               <scope>test</scope>
           </dependency>
           <dependency>
+              <groupId>com.tngtech.java</groupId>
+              <artifactId>junit-dataprovider</artifactId>
+              <version>${dataprovider.version}</version>
+              <scope>test</scope>
+          </dependency>
+          <dependency>
               <groupId>org.jacoco</groupId>
               <artifactId>org.jacoco.agent</artifactId>
               <classifier>runtime</classifier>
@@ -1183,6 +1189,7 @@
       <jacoco.agent.version>0.7.9</jacoco.agent.version>
       <jacoco.ant.version>0.7.9</jacoco.ant.version>
       <powermock.version>1.7.1</powermock.version>
+      <dataprovider.version>1.5.0</dataprovider.version>
       <activemq.version>5.2.0</activemq.version>
       <rhino.version>1.7R4</rhino.version>
       <jetty.version>7.2.0.v20101020</jetty.version>

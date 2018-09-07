@@ -16,16 +16,19 @@
 
 package org.apache.synapse.transport.passthru.connections;
 
-import org.apache.http.conn.routing.HttpRoute;
-import org.apache.http.nio.NHttpClientConnection;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.conn.routing.HttpRoute;
+import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.transport.http.conn.SynapseHTTPRequestFactory;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.config.ConnectionTimeoutConfiguration;
 
-import java.util.List;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -34,15 +37,33 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class HostConnections {
     private static final Log log = LogFactory.getLog(HostConnections.class);
-    // route
+    /**
+     * route
+     */
     private final HttpRoute route;
-    // maximum number of connections allowed for this host + port
+    /**
+     * maximum number of connections allowed for this host + port
+     */
     private final int maxSize;
-    // number of awaiting connections
+    /**
+     * number of awaiting connections
+     */
     private int pendingConnections;
-    // list of free connections available
+    /**
+     * connection idle time for connection removal
+     */
+    private int connectionIdleTime;
+    /**
+     * maximum life span of a connection
+     */
+    private int maximumConnectionLifeSpan;
+    /**
+     * list of free connections available
+     */
     private List<NHttpClientConnection> freeConnections = new ArrayList<NHttpClientConnection>();
-    // list of connections in use
+    /**
+     * list of connections in use
+     */
     private List<NHttpClientConnection> busyConnections = new ArrayList<NHttpClientConnection>();
 
     private Lock lock = new ReentrantLock();
@@ -55,6 +76,18 @@ public class HostConnections {
         this.maxSize = maxSize;
     }
 
+    public HostConnections(HttpRoute route, int maxSize, ConnectionTimeoutConfiguration
+            connectionTimeoutConfiguration) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Creating new connection pool: " + route);
+        }
+        this.route = route;
+        this.maxSize = maxSize;
+        this.connectionIdleTime = connectionTimeoutConfiguration.getConnectionIdleTime();
+        this.maximumConnectionLifeSpan = connectionTimeoutConfiguration.getMaximumConnectionLifeSpane();
+    }
+
     /**
      * Get a connection for the host:port
      *
@@ -63,14 +96,29 @@ public class HostConnections {
     public NHttpClientConnection getConnection() {
         lock.lock();
         try {
-            if (freeConnections.size() > 0) {
+            while (!freeConnections.isEmpty()) {
                 if (log.isDebugEnabled()) {
                     log.debug("Returning an existing free connection " + route);
                 }
                 NHttpClientConnection conn = freeConnections.get(0);
-                freeConnections.remove(conn);
-                busyConnections.add(conn);
-                return conn;
+                long currentTime = System.currentTimeMillis();
+                long connectionInitTime = (Long) conn.getContext().getAttribute(PassThroughConstants.
+                                                                                        CONNECTION_INIT_TIME);
+                long lastReleasedTime = (Long) conn.getContext().getAttribute(PassThroughConstants.
+                                                                                      CONNECTION_RELEASE_TIME);
+                if (isMaximumLifeSpanExceeded(currentTime, connectionInitTime) || isIdleTimeExceeded(currentTime,
+                                                                                                     lastReleasedTime)) {
+                    freeConnections.remove(conn);
+                    try {
+                        conn.shutdown();
+                    } catch (IOException io) {
+                        log.error("Error occurred while shutting down connection." + io.getMessage());
+                    }
+                } else {
+                    freeConnections.remove(conn);
+                    busyConnections.add(conn);
+                    return conn;
+                }
             }
         } finally {
             lock.unlock();
@@ -78,12 +126,34 @@ public class HostConnections {
         return null;
     }
 
+    private boolean isIdleTimeExceeded(long currentTime, long lastReleasedTime) {
+        if (connectionIdleTime > 0 && currentTime > lastReleasedTime + connectionIdleTime) {
+            if (log.isDebugEnabled()) {
+                log.debug("Connection has been idle for " + (currentTime - lastReleasedTime) + " milliseconds.");
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isMaximumLifeSpanExceeded(long currentTime, long connectionInitTime) {
+        if (maximumConnectionLifeSpan > 0 && currentTime > maximumConnectionLifeSpan + connectionInitTime) {
+            if (log.isDebugEnabled()) {
+                log.debug("Connection has been persisted for " + (currentTime - connectionInitTime)
+                                  + " milliseconds where the maximum connection life span is " +
+                                  maximumConnectionLifeSpan + " milliseconds.");
+            }
+            return true;
+        }
+        return false;
+    }
+
     public void release(NHttpClientConnection conn) {
         conn.getMetrics().reset();
         HttpContext ctx = conn.getContext();
         ctx.removeAttribute(ExecutionContext.HTTP_REQUEST);
         ctx.removeAttribute(ExecutionContext.HTTP_RESPONSE);
-
+        ctx.setAttribute(PassThroughConstants.CONNECTION_RELEASE_TIME, System.currentTimeMillis());
         ctx.removeAttribute(SynapseHTTPRequestFactory.ENDPOINT_URL);
         lock.lock();
         try {
@@ -114,6 +184,7 @@ public class HostConnections {
         }
         lock.lock();
         try {
+            conn.getContext().setAttribute(PassThroughConstants.CONNECTION_INIT_TIME, System.currentTimeMillis());
             busyConnections.add(conn);
         } finally {
             lock.unlock();
@@ -144,7 +215,7 @@ public class HostConnections {
         } finally {
             lock.unlock();
         }
-    }    
+    }
 
     public HttpRoute getRoute() {
         return route;
