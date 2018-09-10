@@ -80,7 +80,7 @@ public class ProxyServiceFactory {
         ProxyService proxy = null;
 
         OMAttribute name = elem.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, "name"));
-        if (name == null) {
+        if (name == null || "".equals(name.getAttributeValue())) {
             handleException("The 'name' attribute is required for a Proxy service definition");
         } else {
             proxy = new ProxyService(name.getAttributeValue());
