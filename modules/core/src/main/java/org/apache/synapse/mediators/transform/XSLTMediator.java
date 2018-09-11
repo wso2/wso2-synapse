@@ -28,9 +28,11 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.mediators.Value;
@@ -260,7 +262,12 @@ public class XSLTMediator extends AbstractMediator {
                 " against source XPath : " + source + " reason : " + e.getMessage(), e, synCtx);
 
         }
-
+        org.apache.axis2.context.MessageContext axis2MsgCtx =
+                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        if (JsonUtil.hasAJsonPayload(axis2MsgCtx)) {
+            JsonUtil.setJsonStream(axis2MsgCtx,
+                    JsonUtil.toJsonStream(axis2MsgCtx.getEnvelope().getBody().getFirstElement()));
+        }
         synLog.traceOrDebug("End : XSLT mediator");
 
         return true;
