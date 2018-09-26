@@ -439,6 +439,14 @@ public class PayloadFactoryMediator extends AbstractMediator {
     }
 
     /**
+     * Helper function that returns true if value passed is of JSON type and expression is JSON.
+     */
+    private boolean isJson(String value, SynapsePath expression) {
+        return !(value == null || value.trim().isEmpty()) && (value.trim().charAt(0) == '{'
+                || value.trim().charAt(0) == '[') && expression.getPathType().equals(SynapsePath.JSON_PATH);
+    }
+
+    /**
      * Helper function to remove indentations.
      * @param element
      */
@@ -497,7 +505,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     // XML escape the result of an expression that produces a literal, if the target format
                     // of the payload is XML.
                     details.setXml(isXML(value));
-                    if (!details.isXml() && XML_TYPE.equals(getType()) && !isJson(value.trim())) {
+                    if (!details.isXml() && XML_TYPE.equals(getType()) && !isJson(value.trim(), arg.getExpression())) {
                         value = StringEscapeUtils.escapeXml(value);
                     }
                     value = Matcher.quoteReplacement(value);
