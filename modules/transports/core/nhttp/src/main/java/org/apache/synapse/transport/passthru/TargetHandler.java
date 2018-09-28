@@ -38,6 +38,7 @@ import org.apache.http.nio.NHttpClientEventHandler;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.protocol.HttpContext;
+import org.apache.log4j.MDC;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
@@ -56,6 +57,10 @@ import java.util.Properties;
  */
 public class TargetHandler implements NHttpClientEventHandler {
     private static Log log = LogFactory.getLog(TargetHandler.class);
+
+    /**log for correlationLog*/
+    private static final Log correlate = LogFactory.getLog("CORRELATION_LOGGER");
+
 
     /** Delivery agent */
     private final DeliveryAgent deliveryAgent;
@@ -263,6 +268,21 @@ public class TargetHandler implements NHttpClientEventHandler {
 
     public void responseReceived(NHttpClientConnection conn) {
         HttpContext context = conn.getContext();
+
+        //check correlation logs enabled
+        boolean correlationEnabled = context.getAttribute(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY).toString().equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
+
+        if(correlationEnabled) {
+            long cor_time = System.currentTimeMillis();
+            long start_time = (long) context.getAttribute(PassThroughConstants.CORRELATION_TIME);
+            MDC.put("Correlation-ID", context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+            correlate.info((cor_time - start_time) + "| HTTP");
+            MDC.remove("Correlation-ID");
+            context.setAttribute(PassThroughConstants.CORRELATION_TIME, cor_time);
+            //Observability code ends here
+        }
+
+
         if (isMessageSizeValidationEnabled) {
             context.setAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
         }
