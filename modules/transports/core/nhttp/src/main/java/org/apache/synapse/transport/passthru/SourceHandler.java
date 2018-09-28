@@ -33,6 +33,7 @@ import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
+import org.apache.log4j.MDC;
 import org.apache.synapse.commons.jmx.ThreadingView;
 import org.apache.synapse.commons.transaction.TranscationManger;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
@@ -47,6 +48,7 @@ import javax.ws.rs.HttpMethod;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Properties;
+import java.util.UUID;
 
 /**
  * This is the class where transport interacts with the client. This class
@@ -55,6 +57,9 @@ import java.util.Properties;
  */
 public class SourceHandler implements NHttpServerEventHandler {
     private static Log log = LogFactory.getLog(SourceHandler.class);
+
+    /**logger for correlationLog*/
+    private static final Log correlate = LogFactory.getLog("CORRELATION_LOGGER");
 
     private final SourceConfiguration sourceConfiguration;
 
@@ -129,6 +134,45 @@ public class SourceHandler implements NHttpServerEventHandler {
             if (request == null) {
                 return;
             }
+
+
+
+            //check correlationEnabling parameter
+            String correlation_status = System.getProperty(PassThroughConstants.CORRELATION_LOGS_SYS_PROPERTY);
+            if (correlation_status != null) {
+
+                httpContext.setAttribute(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY, correlation_status.toLowerCase());
+
+                boolean correlationEnabled = httpContext.getAttribute(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY).toString().equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
+                if (correlationEnabled) {
+
+                    log.info("correlationLogs Enabled");
+                    //setting correlation_id to httpContext: starting measurements
+                    String external_correlation_id = request.getHeaders().get(PassThroughConstants.CORRELATION_ID);
+                    String cor_id ;
+                    long cor_time = System.currentTimeMillis();
+
+                    if(external_correlation_id == null){
+
+                        cor_id = UUID.randomUUID().toString();
+                    }
+                    else {
+                        cor_id = external_correlation_id;
+                    }
+                    httpContext.setAttribute(PassThroughConstants.CORRELATION_ID, cor_id);
+                    httpContext.setAttribute(PassThroughConstants.CORRELATION_TIME, cor_time);
+                    MDC.put("Correlation-ID",httpContext.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+                    correlate.info("0 | HTTP");
+                    MDC.remove("Correlation-ID");
+                    //measurement code ends here
+                }
+
+            }
+            else {
+                httpContext.setAttribute(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY, PassThroughConstants.CORRELATION_DISABLE_STATE);
+            }
+
+
 
             String method = request.getRequest() != null ? request.getRequest().getRequestLine().getMethod().toUpperCase() : "";
 
@@ -347,6 +391,17 @@ public class SourceHandler implements NHttpServerEventHandler {
                 long departure = System.currentTimeMillis();
                 context.setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_END_TIME,departure);
                 context.setAttribute(PassThroughConstants.RES_DEPARTURE_TIME,departure);
+
+                boolean correlationEnabled = context.getAttribute(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY).toString().equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
+
+
+                if (correlationEnabled) {
+                    long start_time = (long) context.getAttribute("correlation_time");
+                    MDC.put("Correlation-ID", context.getAttribute("correlation_id").toString());
+                    correlate.info((System.currentTimeMillis() - start_time) + " | " + context.getAttribute("http.connection"));
+                    MDC.remove("Correlation-ID");
+                }
+
                 updateLatencyView(context);
 			}
 			endTransaction(conn);

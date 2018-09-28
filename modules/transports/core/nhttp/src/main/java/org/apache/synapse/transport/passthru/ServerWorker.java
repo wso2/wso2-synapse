@@ -464,7 +464,19 @@ public class ServerWorker implements Runnable {
 //        msgContext.setProperty(Constants.OUT_TRANSPORT_INFO, this);
         
         NHttpServerConnection conn = request.getConnection();
-        
+
+
+        //observability measurements
+        boolean correlationEnabled = conn.getContext().getAttribute(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY).toString().equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
+        if(correlationEnabled) {
+            msgContext.setProperty(PassThroughConstants.CORRELATION_ID, conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID));
+            msgContext.setProperty(PassThroughConstants.CORRELATION_TIME, conn.getContext().getAttribute(PassThroughConstants.CORRELATION_TIME));
+        }
+        msgContext.setProperty(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY, conn.getContext().getAttribute(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY));
+        //observability code ends here
+
+
+
         if (sourceConfiguration.getScheme().isSSL()) {
             msgContext.setTransportOut(cfgCtx.getAxisConfiguration()
                 .getTransportOut(Constants.TRANSPORT_HTTPS));

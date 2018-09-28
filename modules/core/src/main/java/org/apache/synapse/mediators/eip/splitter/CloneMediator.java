@@ -44,6 +44,7 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.eip.SharedDataHolder;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.Target;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.util.MessageHelper;
 
 import java.util.ArrayList;
@@ -103,6 +104,17 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         synCtx.setProperty(id != null ? EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id :
                            EIPConstants.EIP_SHARED_DATA_HOLDER, new SharedDataHolder());
 
+
+
+        //observability code starts here
+        String originalCorrelationId=null;
+        boolean correlationEnabled = ((Axis2MessageContext)synCtx).getAxis2MessageContext().getProperty(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY).toString().equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
+        if (correlationEnabled) {
+             originalCorrelationId = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(PassThroughConstants.CORRELATION_ID).toString();
+        }
+        //observability code ends here
+
+
         // get the targets list, clone the message for the number of targets and then
         // mediate the cloned messages using the targets
         Iterator<Target> iter = targets.iterator();
@@ -112,6 +124,13 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
                 synLog.traceOrDebug("Submitting " + (i+1) + " of " + targets.size() +
                     " messages for " + (isSequential() ? "sequential processing" : "parallel processing"));
             }
+
+
+            //Observability code
+            if (correlationEnabled) {
+                ((Axis2MessageContext) synCtx).getAxis2MessageContext().setProperty(PassThroughConstants.CORRELATION_ID, originalCorrelationId + "_" + i);
+            }
+            //Observability code ends here
 
             MessageContext clonedMsgCtx = getClonedMessageContext(synCtx, i++, targets.size());
             ContinuationStackManager.addReliantContinuationState(clonedMsgCtx, i - 1, getMediatorPosition());
