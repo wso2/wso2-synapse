@@ -53,9 +53,8 @@ import java.util.concurrent.locks.ReentrantLock;
 public class DeliveryAgent {
 
     private static final Log log = LogFactory.getLog(DeliveryAgent.class);
-
     /**log for correlationLog*/
-    private static final Log correlate = LogFactory.getLog("CORRELATION_LOGGER");
+    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
 
     /**
      * This Map holds the messages that need to be delivered. But at the moment maximum
@@ -274,25 +273,20 @@ public class DeliveryAgent {
         }
         TargetRequest request = TargetRequestFactory.create(msgContext, route, targetConfiguration);
         TargetContext.setRequest(conn, request);
-
-
-        //check whether correlation logs are enabled
-        conn.getContext().setAttribute(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY, msgContext.getProperty(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY).toString());
-        boolean correlationEnabled = msgContext.getProperty(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY).toString().equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
-
-        if (correlationEnabled) {
-
-            long cor_time = System.currentTimeMillis();
-            long start_time = (long) msgContext.getProperty(PassThroughConstants.CORRELATION_TIME);
-            MDC.put("Correlation-ID", msgContext.getProperty(PassThroughConstants.CORRELATION_ID).toString());
-            correlate.info((cor_time - start_time) + "| HTTP");
-            MDC.remove("Correlation-ID");
-            //setting the correlation_id to response [observability]
-            conn.getContext().setAttribute(PassThroughConstants.CORRELATION_ID, msgContext.getProperty("correlation_id"));
-            conn.getContext().setAttribute(PassThroughConstants.CORRELATION_TIME, cor_time);
-
-            //observability code ends here
-
+        //check whether correlation logs are enabled for correlation logs
+        conn.getContext().
+                setAttribute(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY, msgContext.getProperty(PassThroughConstants.
+                        CORRELATION_LOG_STATE_PROPERTY).toString());
+        boolean correlationLoggingEnabled = msgContext.getProperty(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY).toString().
+                equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
+        if (correlationLoggingEnabled) {
+            long corTime = System.currentTimeMillis();
+            long startTime = (long) msgContext.getProperty(PassThroughConstants.CORRELATION_TIME);
+            MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, msgContext.getProperty(PassThroughConstants.CORRELATION_ID).toString());
+            correlationLog.info((corTime - startTime) + "| HTTP | " +conn.getContext().getAttribute("http.connection"));
+            MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+            conn.getContext().setAttribute(PassThroughConstants.CORRELATION_ID, msgContext.getProperty(PassThroughConstants.CORRELATION_ID));
+            conn.getContext().setAttribute(PassThroughConstants.CORRELATION_TIME, corTime);
         }
 
         Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);

@@ -59,7 +59,7 @@ public class TargetHandler implements NHttpClientEventHandler {
     private static Log log = LogFactory.getLog(TargetHandler.class);
 
     /**log for correlationLog*/
-    private static final Log correlate = LogFactory.getLog("CORRELATION_LOGGER");
+    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
 
 
     /** Delivery agent */
@@ -268,17 +268,16 @@ public class TargetHandler implements NHttpClientEventHandler {
 
     public void responseReceived(NHttpClientConnection conn) {
         HttpContext context = conn.getContext();
-
         //check correlation logs enabled
-        boolean correlationEnabled = context.getAttribute(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY).toString().equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
-
-        if(correlationEnabled) {
-            long cor_time = System.currentTimeMillis();
-            long start_time = (long) context.getAttribute(PassThroughConstants.CORRELATION_TIME);
-            MDC.put("Correlation-ID", context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
-            correlate.info((cor_time - start_time) + "| HTTP");
-            MDC.remove("Correlation-ID");
-            context.setAttribute(PassThroughConstants.CORRELATION_TIME, cor_time);
+        boolean correlationLoggingEnabled = context.getAttribute(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY).toString().
+                equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
+        if(correlationLoggingEnabled) {
+            long corTime = System.currentTimeMillis();
+            long startTime = (long) context.getAttribute(PassThroughConstants.CORRELATION_TIME);
+            MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+            correlationLog.info((corTime - startTime) + "| HTTP | "+ context.getAttribute("http.connection"));
+            MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+            context.setAttribute(PassThroughConstants.CORRELATION_TIME, corTime);
             //Observability code ends here
         }
 

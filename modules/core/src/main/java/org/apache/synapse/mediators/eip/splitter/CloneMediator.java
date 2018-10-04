@@ -103,17 +103,13 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
 
         synCtx.setProperty(id != null ? EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id :
                            EIPConstants.EIP_SHARED_DATA_HOLDER, new SharedDataHolder());
-
-
-
         //observability code starts here
-        String originalCorrelationId=null;
-        boolean correlationEnabled = ((Axis2MessageContext)synCtx).getAxis2MessageContext().getProperty(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY).toString().equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
-        if (correlationEnabled) {
-             originalCorrelationId = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(PassThroughConstants.CORRELATION_ID).toString();
+        String originalCorrelationId = null;
+        boolean correlationLoggingEnabled = ((Axis2MessageContext) synCtx).getAxis2MessageContext().isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY);
+        if (correlationLoggingEnabled) {
+            originalCorrelationId = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(PassThroughConstants.CORRELATION_ID).toString();
         }
         //observability code ends here
-
 
         // get the targets list, clone the message for the number of targets and then
         // mediate the cloned messages using the targets
@@ -125,9 +121,8 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
                     " messages for " + (isSequential() ? "sequential processing" : "parallel processing"));
             }
 
-
             //Observability code
-            if (correlationEnabled) {
+            if (correlationLoggingEnabled) {
                 ((Axis2MessageContext) synCtx).getAxis2MessageContext().setProperty(PassThroughConstants.CORRELATION_ID, originalCorrelationId + "_" + i);
             }
             //Observability code ends here
