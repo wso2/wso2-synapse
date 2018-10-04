@@ -57,9 +57,8 @@ import java.util.UUID;
  */
 public class SourceHandler implements NHttpServerEventHandler {
     private static Log log = LogFactory.getLog(SourceHandler.class);
-
     /**logger for correlationLog*/
-    private static final Log correlate = LogFactory.getLog("CORRELATION_LOGGER");
+    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
 
     private final SourceConfiguration sourceConfiguration;
 
@@ -117,7 +116,6 @@ public class SourceHandler implements NHttpServerEventHandler {
         // we have to have these two operations in order
         sourceConfiguration.getSourceConnections().addConnection(conn);
         SourceContext.create(conn, ProtocolState.REQUEST_READY, sourceConfiguration);
-
         metrics.connected();
     }
 
@@ -129,51 +127,26 @@ public class SourceHandler implements NHttpServerEventHandler {
             if (isMessageSizeValidationEnabled) {
                 httpContext.setAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
             }
-
             SourceRequest request = getSourceRequest(conn);
             if (request == null) {
                 return;
+
             }
-
-
-
             //check correlationEnabling parameter
-            String correlation_status = System.getProperty(PassThroughConstants.CORRELATION_LOGS_SYS_PROPERTY);
-            if (correlation_status != null) {
-
-                httpContext.setAttribute(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY, correlation_status.toLowerCase());
-
-                boolean correlationEnabled = httpContext.getAttribute(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY).toString().equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
-                if (correlationEnabled) {
-
-                    log.info("correlationLogs Enabled");
-                    //setting correlation_id to httpContext: starting measurements
-                    String external_correlation_id = request.getHeaders().get(PassThroughConstants.CORRELATION_ID);
-                    String cor_id ;
-                    long cor_time = System.currentTimeMillis();
-
-                    if(external_correlation_id == null){
-
-                        cor_id = UUID.randomUUID().toString();
-                    }
-                    else {
-                        cor_id = external_correlation_id;
-                    }
-                    httpContext.setAttribute(PassThroughConstants.CORRELATION_ID, cor_id);
-                    httpContext.setAttribute(PassThroughConstants.CORRELATION_TIME, cor_time);
-                    MDC.put("Correlation-ID",httpContext.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
-                    correlate.info("0 | HTTP");
-                    MDC.remove("Correlation-ID");
-                    //measurement code ends here
+            String correlationStatus = sourceConfiguration.getConfigurationContext().getProperty(PassThroughConstants.CORRELATION_LOGS_SYS_PROPERTY).toString();
+            if (correlationStatus != null) {
+                httpContext.setAttribute(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY, correlationStatus.toLowerCase());
+                boolean correlationLoggingEnabled = httpContext.getAttribute(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY).toString()
+                        .equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
+                if (correlationLoggingEnabled) {
+                    setCorrelationId(httpContext, request);
+                    MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, httpContext.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+                    correlationLog.info("0 | HTTP | " + httpContext.getAttribute("http.connection"));
+                    MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
                 }
-
-            }
-            else {
+            } else {
                 httpContext.setAttribute(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY, PassThroughConstants.CORRELATION_DISABLE_STATE);
             }
-
-
-
             String method = request.getRequest() != null ? request.getRequest().getRequestLine().getMethod().toUpperCase() : "";
 
             if (!request.isEntityEnclosing()) {
@@ -196,6 +169,20 @@ public class SourceHandler implements NHttpServerEventHandler {
             SourceContext.updateState(conn, ProtocolState.CLOSED);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
         }
+    }
+
+    private void setCorrelationId(HttpContext httpContext, SourceRequest request) {
+
+        String externalCorrelationId = request.getHeaders().get(PassThroughConstants.CORRELATION_ID);
+        String corId;
+        long corTime = System.currentTimeMillis();
+        if (externalCorrelationId == null) {
+            corId = UUID.randomUUID().toString();
+        } else {
+            corId = externalCorrelationId;
+        }
+        httpContext.setAttribute(PassThroughConstants.CORRELATION_ID, corId);
+        httpContext.setAttribute(PassThroughConstants.CORRELATION_TIME, corTime);
     }
 
     public void inputReady(NHttpServerConnection conn,
@@ -392,14 +379,13 @@ public class SourceHandler implements NHttpServerEventHandler {
                 context.setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_END_TIME,departure);
                 context.setAttribute(PassThroughConstants.RES_DEPARTURE_TIME,departure);
 
-                boolean correlationEnabled = context.getAttribute(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY).toString().equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
-
-
-                if (correlationEnabled) {
-                    long start_time = (long) context.getAttribute("correlation_time");
-                    MDC.put("Correlation-ID", context.getAttribute("correlation_id").toString());
-                    correlate.info((System.currentTimeMillis() - start_time) + " | " + context.getAttribute("http.connection"));
-                    MDC.remove("Correlation-ID");
+                boolean correlationLoggingEnabled = context.getAttribute(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY).
+                        toString().equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
+                if (correlationLoggingEnabled) {
+                    long startTime = (long) context.getAttribute(PassThroughConstants.CORRELATION_TIME);
+                    MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+                    correlationLog.info((System.currentTimeMillis() - startTime) + "| HTTP | " + context.getAttribute("http.connection"));
+                    MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
                 }
 
                 updateLatencyView(context);
