@@ -21,11 +21,9 @@ package org.apache.synapse.rest;
 import org.apache.axiom.util.UIDGenerator;
 import org.apache.axis2.Constants;
 import org.apache.http.HttpHeaders;
+import org.apache.http.HttpStatus;
 import org.apache.http.protocol.HTTP;
-import org.apache.synapse.ManagedLifecycle;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseException;
+import org.apache.synapse.*;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -330,7 +328,17 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
                             value = URLDecoder.decode(entry.substring(index + 1),
                                     RESTConstants.DEFAULT_ENCODING);
                             synCtx.setProperty(RESTConstants.REST_QUERY_PARAM_PREFIX + name, value);
-                        } catch (UnsupportedEncodingException ignored) {
+                        } catch (UnsupportedEncodingException uee) {
+                            handleException("Error processing " + method + " request for : " + path, uee);
+                        } catch (IllegalArgumentException e) {
+                            String errorMessage = "Error processing " + method + " request for : " + path
+                                    + " due to an error in the request sent by the client";
+                            synCtx.setProperty(SynapseConstants.ERROR_CODE, HttpStatus.SC_BAD_REQUEST);
+                            synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, errorMessage);
+                            org.apache.axis2.context.MessageContext inAxisMsgCtx =
+                                    ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+                            inAxisMsgCtx.setProperty(SynapseConstants.HTTP_SC, HttpStatus.SC_BAD_REQUEST);
+                            handleException(errorMessage, e);
 
                         }
                     } else {
