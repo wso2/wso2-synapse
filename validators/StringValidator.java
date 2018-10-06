@@ -22,6 +22,7 @@ public class StringValidator {
     public static final String MAX_LENGTH = "maxLength";
     public static final String STR_PATTERN = "pattern";
     public static final String ENUM = "enum";
+    public static final String CONST = "const";
 
     /**
      * Validate a given string against its schema.
@@ -66,20 +67,17 @@ public class StringValidator {
         // Enum validations
         // TODO : Improve logic to return at once
         if (inputObject.has(ENUM)) {
-            boolean matchFound = false;
             JsonArray enumElements = inputObject.getAsJsonArray(ENUM);
-            if (enumElements.size() > 0) {
-                for (JsonElement element : enumElements) {
-                    // valid if value matches with any enum
-                    if (value.equals(element.getAsString())) {
-                        matchFound = true;
-                    }
-                }
-                if (!matchFound) {
-                    throw new ValidatorException("String \"" + value + "\" not contains any element from the enum");
-                }
+            if (enumElements.size() > 0 && !enumElements.contains(new JsonPrimitive(value))) {
+                throw new ValidatorException("String \"" + value + "\" not contains any element from the enum");
+
             }
         }
+        //Const validation
+        if (inputObject.has(CONST) && !value.equals(inputObject.getAsJsonPrimitive(CONST).getAsString())) {
+            throw new ValidatorException("String \"" + value + "\" is not equal to the const value");
+        }
+
         return new JsonPrimitive(value);
     }
 }
