@@ -12,6 +12,8 @@ public class ValidatorConstants {
     public static final String REGEX = "^\"|\"$";
     public static final String TYPE_KEY = "type";
     public static final String ITEM_KEY = "items";
+    public static final String ENUM = "enum";
+    public static final String CONST = "const";
 
     public static final Set<String> NUMERIC_KEYS = new HashSet<>(Arrays.asList(
             new String[]{"numeric", "integer"}

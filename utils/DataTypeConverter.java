@@ -21,7 +21,7 @@ public class DataTypeConverter {
         throw new ParserException("Empty value cannot convert to int");
     }
 
-    public static double converToDouble(String value) throws ParserException {
+    public static double convertToDouble(String value) throws ParserException {
         if (!value.isEmpty()) {
             try {
                 double i = Double.parseDouble(value.trim());
