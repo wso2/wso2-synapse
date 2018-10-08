@@ -1,12 +1,18 @@
 package utils;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import exceptions.ParserException;
 import org.apache.commons.lang.BooleanUtils;
 
 public class DataTypeConverter {
-    public static Boolean convertToBoolean(String value) {
-        boolean result = BooleanUtils.toBoolean(value);
-        return result;
+
+
+    public static Boolean convertToBoolean(String value) throws ParserException {
+        if (value.equals("true") || value.equals("false")) {
+            boolean result = Boolean.parseBoolean(value);
+            return result;
+        }
+        throw new ParserException("Cannot convert the sting : " + value + " to boolean");
     }
 
     public static int convertToInt(String value) throws ParserException {
@@ -33,3 +39,5 @@ public class DataTypeConverter {
         throw new ParserException("Empty value cannot convert to double");
     }
 }
+
+

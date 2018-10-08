@@ -9,6 +9,9 @@ import exceptions.ValidatorException;
 import org.apache.commons.lang3.math.NumberUtils;
 import utils.DataTypeConverter;
 
+/**
+ * validate numeric instances according to the given schema.
+ */
 public class NumericValidator {
 
     // use without instantiating.
@@ -25,6 +28,14 @@ public class NumericValidator {
     private static final String EXCLUSIVE_MAXIMUM = "exclusiveMaximum";
     private static final String MULTIPLE_OF = "multipleOf";
 
+    /**
+     * Take JSON schema, number as a string input and validate.
+     * @param inputObject JSON schema.
+     * @param value numeric value
+     * @return JsonPrimitive contains a number
+     * @throws ParserException Exception occurred in data type conversions.
+     * @throws ValidatorException Exception occurred in schema validations.
+     */
     public static JsonPrimitive validateNumeric(JsonObject inputObject, String value) throws ParserException,
             ValidatorException {
         if (value == null) {
@@ -91,9 +102,9 @@ public class NumericValidator {
                     (ValidatorConstants.CONST).getAsDouble())) {
                 throw new ValidatorException("Number \"" + value + "\" is not equal to the const value");
             }
-            // convert to integer of give value is a float [ERROR CORRECT]
+            // convert to integer of give value is a float
             if (type != null && type.equals(INTEGER_STRING)) {
-                return new JsonPrimitive(Math.round(doubleValue));
+                return new JsonPrimitive(DataTypeConverter.convertToInt(value));
             } else {
                 // this condition address both type number and empty json schemas
                 return new JsonPrimitive(doubleValue);
