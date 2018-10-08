@@ -411,6 +411,40 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
         return api;
     }
 
+    /**
+     * Add api with the option of re-ordering the api collection based on the context
+     *
+     * @param config SynapseConfiguration
+     * @param elem OMElement element
+     * @param properties Properties
+     * @param reOrder reorder the deployment order based on the context
+     * @return API api object
+     */
+    public static API defineAPI(SynapseConfiguration config, OMElement elem, Properties properties, boolean reOrder) {
+        API api = null;
+        try {
+            api = APIFactory.createAPI(elem, properties);
+            config.addAPI(api.getName(), api, reOrder);
+        } catch (Exception e) {
+            String msg = "API configuration cannot be built";
+            handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_API, msg, e);
+        }
+        return api;
+    }
+
+    /**
+     * Re-order the apis based on the context
+     *
+     * @param config SynapseConfiguration
+     */
+    public static void reOrderAPIs(SynapseConfiguration config) {
+        try {
+            config.reconstructAPITable();
+        } catch (Exception e) {
+            String msg = "Error while re-ordering apis";
+            handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_API, msg, e);
+        }
+    }
 
     public static InboundEndpoint defineInboundEndpoint(SynapseConfiguration config, OMElement elem, Properties properties) {
         InboundEndpoint inboundEndpoint = null;
