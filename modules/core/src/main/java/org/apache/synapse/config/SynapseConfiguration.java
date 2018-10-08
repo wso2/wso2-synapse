@@ -401,7 +401,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 		} else {
 			handleException("No Inbound Endpoint exists by the name: " + name);
 		}
-	}
+    }
 
     public synchronized void addAPI(String name, API api) {
         addAPI(name, api, true);

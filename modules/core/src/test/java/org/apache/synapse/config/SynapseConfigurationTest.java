@@ -34,6 +34,7 @@ public class SynapseConfigurationTest extends TestCase {
         //api3 with context /context/test/ctx should be first in the list
         assertEquals("Order is not correct", api3, apisArray[0]);
     }
+
     public void testAPITableOrderWithAddAPIwithoutReOrder() {
         SynapseConfiguration config = new SynapseConfiguration();
         API api1 = new API("API1", "/context/test");
