@@ -53,8 +53,6 @@ import java.util.concurrent.locks.ReentrantLock;
 public class DeliveryAgent {
 
     private static final Log log = LogFactory.getLog(DeliveryAgent.class);
-    /**log for correlationLog*/
-    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
 
     /**
      * This Map holds the messages that need to be delivered. But at the moment maximum
@@ -273,11 +271,9 @@ public class DeliveryAgent {
         }
         TargetRequest request = TargetRequestFactory.create(msgContext, route, targetConfiguration);
         TargetContext.setRequest(conn, request);
-        //check whether correlation logs are enabled for correlation logs
-        if (PassThroughConstants.CORRELATION_ENABLE_STATE.equals(targetConfiguration.getCorrelationStatus())) {
-            long startTime = (long) msgContext.getProperty(PassThroughConstants.CORRELATION_REQUEST_ARRIVED);
-            conn.getContext().setAttribute(PassThroughConstants.CORRELATION_ID, msgContext.getProperty(PassThroughConstants.CORRELATION_ID));
-            conn.getContext().setAttribute(PassThroughConstants.CORRELATION_REQUEST_ARRIVED, startTime);
+        if (targetConfiguration.getCorrelationStatus()) {
+            conn.getContext().setAttribute(PassThroughConstants.CORRELATION_ID,
+                    msgContext.getProperty(PassThroughConstants.CORRELATION_ID));
         }
 
         Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
