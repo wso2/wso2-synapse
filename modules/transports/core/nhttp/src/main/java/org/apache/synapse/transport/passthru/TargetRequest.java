@@ -24,6 +24,8 @@ import org.apache.axis2.transport.MessageFormatter;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.util.MessageProcessorSelector;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.http.Header;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
@@ -40,6 +42,7 @@ import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
+import org.apache.log4j.MDC;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.nhttp.util.MessageFormatterDecoratorFactory;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
@@ -87,7 +90,10 @@ public class TargetRequest {
     private boolean hasEntityBody = true;
     /** Keep alive request */
     private boolean keepAlive = true;
-    
+    /**logger for correlation log*/
+    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
+
+
     /**
      * Create a target request.
      *
@@ -375,6 +381,13 @@ public class TargetRequest {
         if (encoder.isCompleted()) {
           conn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
           conn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,System.currentTimeMillis());
+            String correlationStatus = targetConfiguration.getCorrelationStatus();
+            boolean correlationLoggingEnabled = correlationStatus.equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
+            if (correlationLoggingEnabled) {
+                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+                correlationLog.info(" | HTTP | " + conn.getContext().getAttribute("http.connection") + " | REQUEST WRITE COMPLETE");
+                MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+            }
             targetConfiguration.getMetrics().
                     notifySentMessageSize(conn.getMetrics().getSentBytesCount());
 

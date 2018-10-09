@@ -105,7 +105,8 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
                            EIPConstants.EIP_SHARED_DATA_HOLDER, new SharedDataHolder());
         //observability code starts here
         String originalCorrelationId = null;
-        boolean correlationLoggingEnabled = ((Axis2MessageContext) synCtx).getAxis2MessageContext().isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY);
+        boolean correlationLoggingEnabled = ((Axis2MessageContext) synCtx).getAxis2MessageContext().
+                isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY);
         if (correlationLoggingEnabled) {
             originalCorrelationId = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(PassThroughConstants.CORRELATION_ID).toString();
         }
@@ -117,8 +118,8 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         int i = 0;
         while (iter.hasNext()) {
             if (synLog.isTraceOrDebugEnabled()) {
-                synLog.traceOrDebug("Submitting " + (i+1) + " of " + targets.size() +
-                    " messages for " + (isSequential() ? "sequential processing" : "parallel processing"));
+                synLog.traceOrDebug("Submitting " + (i + 1) + " of " + targets.size() +
+                        " messages for " + (isSequential() ? "sequential processing" : "parallel processing"));
             }
 
             //Observability code

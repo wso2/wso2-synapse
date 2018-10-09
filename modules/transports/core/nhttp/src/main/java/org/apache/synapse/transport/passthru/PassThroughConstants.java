@@ -16,6 +16,8 @@
 
 package org.apache.synapse.transport.passthru;
 
+import org.omg.CORBA.PUBLIC_MEMBER;
+
 public class PassThroughConstants {
 
     public static final int DEFAULT_IO_THREAD_COUNT = Runtime.getRuntime().availableProcessors();
@@ -240,8 +242,9 @@ public class PassThroughConstants {
     public static final String CORRELATION_DISABLE_STATE = "false";
     public static final String CORRELATION_LOG_STATE_PROPERTY = "correlationLogState";
     public static final String CORRELATION_ID = "correlation_id";
-    public  static final  String CORRELATION_TIME= "correlation_time";
-    public  static final  String CORRELATION_LOGS_SYS_PROPERTY= "EnableCorrelationLogs";
-    public static  final String CORRELATION_MDC_PROPERTY = "Correlation-ID";
+    public static final String CORRELATION_LOGS_SYS_PROPERTY = "EnableCorrelationLogs";
+    public static final String CORRELATION_MDC_PROPERTY = "Correlation-ID";
     public static final String CORRELATION_LOGGER = "CORRELATION_LOGGER";
+    public static final String CORRELATION_REQ_SEND_TO_BACKEND = "REQUEST_SENT_TIME";
+    public static final String CORRELATION_REQUEST_ARRIVED = "REQUEST_RECEIVED_TIME";
 }
