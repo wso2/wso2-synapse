@@ -274,8 +274,7 @@ public class DeliveryAgent {
         TargetRequest request = TargetRequestFactory.create(msgContext, route, targetConfiguration);
         TargetContext.setRequest(conn, request);
         //check whether correlation logs are enabled for correlation logs
-        boolean correlationLoggingEnabled = targetConfiguration.getCorrelationStatus().equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
-        if (correlationLoggingEnabled) {
+        if (PassThroughConstants.CORRELATION_ENABLE_STATE.equals(targetConfiguration.getCorrelationStatus())) {
             long startTime = (long) msgContext.getProperty(PassThroughConstants.CORRELATION_REQUEST_ARRIVED);
             conn.getContext().setAttribute(PassThroughConstants.CORRELATION_ID, msgContext.getProperty(PassThroughConstants.CORRELATION_ID));
             conn.getContext().setAttribute(PassThroughConstants.CORRELATION_REQUEST_ARRIVED, startTime);

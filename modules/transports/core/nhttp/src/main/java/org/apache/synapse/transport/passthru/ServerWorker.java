@@ -465,8 +465,7 @@ public class ServerWorker implements Runnable {
         
         NHttpServerConnection conn = request.getConnection();
         //observability measurements
-        boolean correlationLoggingEnabled = sourceConfiguration.getCorrelationStatus().equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
-        if (correlationLoggingEnabled) {
+        if (PassThroughConstants.CORRELATION_ENABLE_STATE.equals(sourceConfiguration.getCorrelationStatus())) {
             msgContext.setProperty(PassThroughConstants.CORRELATION_ID, conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID));
             msgContext.setProperty(PassThroughConstants.CORRELATION_REQUEST_ARRIVED, conn.getContext().getAttribute(PassThroughConstants.CORRELATION_REQUEST_ARRIVED));
         }
