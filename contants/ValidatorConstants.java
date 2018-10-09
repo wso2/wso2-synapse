@@ -30,4 +30,7 @@ public class ValidatorConstants {
     public static final Set<String> ARRAY_KEYS = new HashSet<>(Arrays.asList(
             new String[]{"array"}
     ));
+    public static final Set<String> NULL_KEYS = new HashSet<>(Arrays.asList(
+            new String[]{"null"}
+    ));
 }

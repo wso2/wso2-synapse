@@ -11,7 +11,6 @@ import utils.DataTypeConverter;
 /**
  * This class validate boolean values against a given schema.
  */
-
 public class BooleanValidator {
 
     // Use without instantiating.
