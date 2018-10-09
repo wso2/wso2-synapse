@@ -105,9 +105,7 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
                            EIPConstants.EIP_SHARED_DATA_HOLDER, new SharedDataHolder());
         //observability code starts here
         String originalCorrelationId = null;
-        boolean correlationLoggingEnabled = ((Axis2MessageContext) synCtx).getAxis2MessageContext().
-                isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY);
-        if (correlationLoggingEnabled) {
+        if (((Axis2MessageContext) synCtx).getAxis2MessageContext().isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
             originalCorrelationId = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(PassThroughConstants.CORRELATION_ID).toString();
         }
         //observability code ends here
@@ -123,7 +121,7 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
             }
 
             //Observability code
-            if (correlationLoggingEnabled) {
+            if (((Axis2MessageContext) synCtx).getAxis2MessageContext().isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
                 ((Axis2MessageContext) synCtx).getAxis2MessageContext().setProperty(PassThroughConstants.CORRELATION_ID, originalCorrelationId + "_" + i);
             }
             //Observability code ends here

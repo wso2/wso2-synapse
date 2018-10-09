@@ -133,9 +133,7 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             }
             //check correlationEnabling parameter
-            String correlationStatus = sourceConfiguration.getCorrelationStatus();
-            boolean correlationLoggingEnabled = correlationStatus.equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
-            if (correlationLoggingEnabled) {
+            if (PassThroughConstants.CORRELATION_ENABLE_STATE.equals(sourceConfiguration.getCorrelationStatus())) {
                 setCorrelationId(httpContext, request);
                 MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, httpContext.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
                 correlationLog.info(" | HTTP | " + httpContext.getAttribute("http.connection") + " | "
@@ -304,9 +302,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                 response.start(conn);
                 conn.getContext().setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_START_TIME,
                         System.currentTimeMillis());
-                String correlationStatus = sourceConfiguration.getCorrelationStatus();
-                boolean correlationLoggingEnabled = correlationStatus.equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
-                if (correlationLoggingEnabled) {
+                if (PassThroughConstants.CORRELATION_ENABLE_STATE.equals(sourceConfiguration.getCorrelationStatus())) {
                     MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
                     correlationLog.info(" | HTTP | " + conn.getContext().getAttribute("http.connection") + " | RESPONSE WRITE STARTED");
                     MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
@@ -383,8 +379,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                 context.setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_END_TIME,departure);
                 context.setAttribute(PassThroughConstants.RES_DEPARTURE_TIME,departure);
 
-                boolean correlationLoggingEnabled = sourceConfiguration.getCorrelationStatus().equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
-                if (correlationLoggingEnabled) {
+                if (PassThroughConstants.CORRELATION_ENABLE_STATE.equals(sourceConfiguration.getCorrelationStatus())) {
                     long startTime = (long) context.getAttribute(PassThroughConstants.CORRELATION_REQUEST_ARRIVED);
                     MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
                     correlationLog.info(" | HTTP | " + context.getAttribute("http.connection") + " | RESPONSE WRITE COMPLETE");

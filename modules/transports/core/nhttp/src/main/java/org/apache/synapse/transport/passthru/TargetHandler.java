@@ -174,9 +174,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                 targetConfiguration.getMetrics().incrementMessagesSent();
             }
             context.setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME, System.currentTimeMillis());
-            String correlationStatus = targetConfiguration.getCorrelationStatus();
-            boolean correlationLoggingEnabled = correlationStatus.equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
-            if (correlationLoggingEnabled) {
+            if (PassThroughConstants.CORRELATION_ENABLE_STATE.equals(targetConfiguration.getCorrelationStatus())) {
                 long corTime = System.currentTimeMillis();
                 context.setAttribute(PassThroughConstants.CORRELATION_REQ_SEND_TO_BACKEND, corTime);
                 MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, context.getAttribute(PassThroughConstants.CORRELATION_ID));
@@ -324,8 +322,7 @@ public class TargetHandler implements NHttpClientEventHandler {
             NHttpServerConnection sourceConn =
                     (NHttpServerConnection) requestMsgContext.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
             //check correlation logs enabled
-            boolean correlationLoggingEnabled = targetConfiguration.getCorrelationStatus().equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
-            if (correlationLoggingEnabled) {
+            if (PassThroughConstants.CORRELATION_ENABLE_STATE.equals(targetConfiguration.getCorrelationStatus())) {
                 long corTime = System.currentTimeMillis();
                 long startTime = (long) context.getAttribute(PassThroughConstants.CORRELATION_REQ_SEND_TO_BACKEND);
                 MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());

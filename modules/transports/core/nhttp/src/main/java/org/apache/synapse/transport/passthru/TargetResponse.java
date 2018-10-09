@@ -149,9 +149,7 @@ public class TargetResponse {
             conn.getContext().setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME,System.currentTimeMillis());
             conn.getContext().setAttribute(PassThroughConstants.RES_ARRIVAL_TIME,System.currentTimeMillis());
             TargetContext.updateState(conn, ProtocolState.RESPONSE_DONE);
-            String correlationStatus = targetConfiguration.getCorrelationStatus();
-            boolean correlationLoggingEnabled = correlationStatus.equals(PassThroughConstants.CORRELATION_ENABLE_STATE);
-            if (correlationLoggingEnabled) {
+            if (PassThroughConstants.CORRELATION_ENABLE_STATE.equals(targetConfiguration.getCorrelationStatus())) {
                 MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
                 correlationLog.info(" | HTTP | " + conn.getContext().getAttribute("http.connection") + " | RESPONSE READ COMPLETE");
                 MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
