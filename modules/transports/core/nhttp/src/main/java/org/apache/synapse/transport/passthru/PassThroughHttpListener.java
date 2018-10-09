@@ -152,8 +152,6 @@ public class PassThroughHttpListener implements TransportListener {
         portParam.getParameterElement().setText(String.valueOf(operatingPort));
 
         System.setProperty(transportInDescription.getName() + ".nio.port", String.valueOf(operatingPort));
-        String correlationSysStatus = System.getProperty(PassThroughConstants.CORRELATION_LOGS_SYS_PROPERTY);
-        cfgCtx.setProperty(PassThroughConstants.CORRELATION_LOGS_SYS_PROPERTY, correlationSysStatus);
 
         Object obj = cfgCtx.getProperty(PassThroughConstants.PASS_THROUGH_TRANSPORT_WORKER_POOL);
         WorkerPool workerPool = null;
