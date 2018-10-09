@@ -62,7 +62,7 @@ public class TargetResponse {
     private boolean expectResponseBody = true;
     /** Whether to shutdown connection after response completion*/
     private boolean forceShutdownConnectionOnComplete = false;
-    /**logger for correlation log*/
+    /** logger for correlation.log */
     private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
 
     public TargetResponse(TargetConfiguration targetConfiguration,
@@ -149,9 +149,11 @@ public class TargetResponse {
             conn.getContext().setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME,System.currentTimeMillis());
             conn.getContext().setAttribute(PassThroughConstants.RES_ARRIVAL_TIME,System.currentTimeMillis());
             TargetContext.updateState(conn, ProtocolState.RESPONSE_DONE);
-            if (PassThroughConstants.CORRELATION_ENABLE_STATE.equals(targetConfiguration.getCorrelationStatus())) {
-                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
-                correlationLog.info(" | HTTP | " + conn.getContext().getAttribute("http.connection") + " | RESPONSE READ COMPLETE");
+            if (targetConfiguration.getCorrelationStatus()) {
+                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, conn.getContext().
+                        getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+                correlationLog.info(" | HTTP State | "
+                        + conn.getContext().getAttribute("http.connection") + " | RESPONSE READ COMPLETE");
                 MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
             }
             targetConfiguration.getMetrics().notifyReceivedMessageSize(

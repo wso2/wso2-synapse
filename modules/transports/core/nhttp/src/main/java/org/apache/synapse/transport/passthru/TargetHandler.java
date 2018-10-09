@@ -58,7 +58,7 @@ import java.util.Properties;
 public class TargetHandler implements NHttpClientEventHandler {
     private static Log log = LogFactory.getLog(TargetHandler.class);
 
-    /**log for correlationLog*/
+    /** log for correlation.log */
     private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
 
 
@@ -174,11 +174,13 @@ public class TargetHandler implements NHttpClientEventHandler {
                 targetConfiguration.getMetrics().incrementMessagesSent();
             }
             context.setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME, System.currentTimeMillis());
-            if (PassThroughConstants.CORRELATION_ENABLE_STATE.equals(targetConfiguration.getCorrelationStatus())) {
+            if (targetConfiguration.getCorrelationStatus()) {
                 long corTime = System.currentTimeMillis();
-                context.setAttribute(PassThroughConstants.CORRELATION_REQ_SEND_TO_BACKEND, corTime);
-                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, context.getAttribute(PassThroughConstants.CORRELATION_ID));
-                correlationLog.info(" | HTTP | " + context.getAttribute("http.connection") + " | REQUEST WRITE STARTED");
+                context.setAttribute(PassThroughConstants.CORRELATION_REQ_SEND_TO_BACKEND_TIME, corTime);
+                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
+                        context.getAttribute(PassThroughConstants.CORRELATION_ID));
+                correlationLog.info(" | HTTP State | " + context.getAttribute("http.connection")
+                        + " | REQUEST WRITE STARTED");
                 MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
             }
             context.setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
@@ -322,12 +324,15 @@ public class TargetHandler implements NHttpClientEventHandler {
             NHttpServerConnection sourceConn =
                     (NHttpServerConnection) requestMsgContext.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
             //check correlation logs enabled
-            if (PassThroughConstants.CORRELATION_ENABLE_STATE.equals(targetConfiguration.getCorrelationStatus())) {
+            if (targetConfiguration.getCorrelationStatus()) {
                 long corTime = System.currentTimeMillis();
-                long startTime = (long) context.getAttribute(PassThroughConstants.CORRELATION_REQ_SEND_TO_BACKEND);
-                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
-                correlationLog.info(" | HTTP | " + context.getAttribute("http.connection")+" | RESPONSE READ STARTED");
-                correlationLog.info((corTime-startTime)+" | HTTP | "+context.getAttribute("http.request")+" | BACKEND LATENCY" );
+                long startTime = (long) context.getAttribute(PassThroughConstants.CORRELATION_REQ_SEND_TO_BACKEND_TIME);
+                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
+                        context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+                correlationLog.info(" | HTTP State | " +
+                        context.getAttribute("http.connection") + " | RESPONSE READ STARTED");
+                correlationLog.info((corTime - startTime) + " | HTTP | " +
+                        context.getAttribute("http.request") + " | BACKEND LATENCY");
                 MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
                 //Observability code ends here
             }
