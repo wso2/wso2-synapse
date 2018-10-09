@@ -37,4 +37,16 @@ public class GSONDataTypeConverter {
         Iterator itr = entries.iterator();
         return (Map.Entry<String, JsonElement>) itr.next();
     }
+
+    /**
+     * Given a json array, this method will return the map
+     * @param array input array.
+     * @return map entry of json array
+     */
+    public static Map.Entry<String, JsonElement> getMapFromJsonArray(JsonArray array) {
+        JsonObject sample = new JsonObject();
+        sample.add("test", array);
+        Set<Map.Entry<String, JsonElement>> entries = sample.entrySet();
+        return entries.iterator().next();
+    }
 }

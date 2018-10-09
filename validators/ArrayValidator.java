@@ -1,16 +1,15 @@
 package validators;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import com.google.gson.*;
 import contants.ValidatorConstants;
 import exceptions.ParserException;
 import exceptions.ValidatorException;
 import utils.DataTypeConverter;
 import utils.GSONDataTypeConverter;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This class will validate json arrays according to the schema.
@@ -26,12 +25,7 @@ public class ArrayValidator {
     private static final String MAX_ITEMS = "maxItems";
     private static final String ITEMS = "items";
     private static final String UNIQUE_ITEMS = "uniqueItems";
-
-    private static int minItems;
-    private static int maxItems;
-    private static String arrayItems;
-    private static boolean uniqueItems;
-    private static int currentCount;
+    private static final String ADDITIONAL_ITEMS = "additionalItems";
 
     /**
      * This method will validates an input array according to a given schema.
@@ -44,9 +38,13 @@ public class ArrayValidator {
      */
     public static JsonArray validateArray(Map.Entry<String, JsonElement> input, JsonObject
             schema) throws ValidatorException, ParserException {
+        JsonParser parser;
+        int minItems = -1;
+        int maxItems = -1;
+        boolean uniqueItems = false;
+        boolean notAllowAdditional = false;
         minItems = -1;
         maxItems = -1;
-        currentCount = 0;
         if (schema.has(UNIQUE_ITEMS)) {
             String uniqueItemsString = schema.get(UNIQUE_ITEMS).getAsString().replaceAll(ValidatorConstants.REGEX, "");
             if (!uniqueItemsString.isEmpty()) {
@@ -71,15 +69,47 @@ public class ArrayValidator {
                 }
             }
         }
+
+        // parsing additionalItems
+        // We are wrapping the additionalItems schema inside a json array schema object and calling this same method
+        // again
+        JsonObject additionalItemsSchema = null;
+        if (schema.has(ADDITIONAL_ITEMS)) {
+            JsonElement tempElement = schema.get(ADDITIONAL_ITEMS);
+            if (tempElement.isJsonPrimitive() && !tempElement.getAsBoolean()) {
+                notAllowAdditional = true;
+            } else if (tempElement.isJsonObject() && tempElement.getAsJsonObject().entrySet().size() > 0) {
+                String jsonString = "{\"type\": \"array\",\"items\": " + schema.get(ADDITIONAL_ITEMS).toString() + "}";
+                parser = new JsonParser();
+                additionalItemsSchema = parser.parse(jsonString).getAsJsonObject();
+            }
+        }
+
         // Convert the input to an array. If possible, do the single element array correction. Ex 45 -> [45]
         // else throw an error
         JsonArray inputArray = null;
         if (input.getValue().isJsonArray()) {
             inputArray = input.getValue().getAsJsonArray();
         } else if (input.getValue().isJsonPrimitive()) {
-            inputArray = SingleElementArrayCorrection(input.getValue().getAsString());
+            inputArray = singleElementArrayCorrection(input.getValue().getAsString());
         } else {
             throw new ValidatorException("Expected array but found " + input.getValue().getAsString());
+        }
+
+        // Structural validations
+        if (minItems != -1 && inputArray.size() < minItems) {
+            throw new ValidatorException("Array violated the minItems constraint");
+        }
+        if (maxItems != -1 && inputArray.size() > maxItems) {
+            throw new ValidatorException("Array violated the maxItems constraint");
+        }
+        if (uniqueItems) {
+            Set<JsonElement> temporarySet = new HashSet();
+            for (JsonElement element : inputArray) {
+                if (!temporarySet.add(element)) {
+                    throw new ValidatorException("Array violated the uniqueItems constraint");
+                }
+            }
         }
 
         // processing the items property in JSON array.
@@ -88,43 +118,14 @@ public class ArrayValidator {
             if (schema.get(ITEMS).isJsonArray()) {
                 // Items - valid JSON array.
                 JsonArray schemaArray = schema.get(ITEMS).getAsJsonArray();
-                ProcessSchemaWithItemsArray(inputArray, schemaArray);
+                processSchemaWithItemsArray(inputArray, schemaArray, additionalItemsSchema, notAllowAdditional);
                 // take all instances from json array and iteratively validate them.
             } else if (schema.get(ITEMS).isJsonObject()) {
                 // Item is a JSON object
                 JsonObject schemaObject = schema.get(ITEMS).getAsJsonObject();
-                ProcessSchemaWithOneItem(inputArray, schemaObject);
+                processSchemaWithOneItem(inputArray, schemaObject);
             }
         }
-
-
-        /*if (input.getValue().isJsonPrimitive() || input.getValue().isJsonNull()) {
-            if (minItems != -1 && minItems > 1) {
-                throw new ValidatorException("Array violated the minimum no of items constraint");
-            }
-        } else {
-            JsonArray arr;
-            if (input.getValue().isJsonArray()) {
-                arr = (JsonArray) input.getValue();
-                int arrSize = arr.size();
-                if (minItems != -1 && minItems > arrSize) {
-                    throw new ValidatorException("Array violated the minimum no of items constraint");
-                } else if (maxItems != -1 && maxItems < arrSize) {
-                    throw new ValidatorException("Array violated the maximum no of items constraint");
-                }
-                if(uniqueItems) {
-                    JsonArray tempArray = new JsonArray();
-                    tempArray.add(arr.get(0));
-                    if(arrSize>1) {
-                        for(int i=1;i<arrSize;i++) {
-                            if(tempArray.contains(arr.get(i))) {
-                                throw new ValidatorException("Array has duplicate elements");
-                            } tempArray.add(arr.get(i));
-                        }
-                    }
-                }
-            }
-        }*/
         return inputArray;
     }
 
@@ -134,7 +135,7 @@ public class ArrayValidator {
      * @param element String payload.
      * @return Json array.
      */
-    private static JsonArray SingleElementArrayCorrection(String element) {
+    private static JsonArray singleElementArrayCorrection(String element) {
         JsonElement jsonElement = new JsonPrimitive(element);
         JsonArray array = new JsonArray();
         array.add(jsonElement);
@@ -150,8 +151,11 @@ public class ArrayValidator {
      * @throws ValidatorException validation exception occurs.
      * @throws ParserException    parsing exception occurs.
      */
-    private static void ProcessSchemaWithItemsArray(JsonArray inputArray, JsonArray schemaArray) throws
-            ValidatorException, ParserException {
+    private static void processSchemaWithItemsArray(JsonArray inputArray, JsonArray schemaArray, JsonObject
+            additionalItemsSchema, boolean notAllowAdditional) throws ValidatorException, ParserException {
+        if (notAllowAdditional && inputArray.size() > schemaArray.size()) {
+            throw new ValidatorException("Array contains additional items than in the schema");
+        }
         int i = 0;
         for (JsonElement element : schemaArray) {
             JsonObject tempObj = element.getAsJsonObject();
@@ -174,6 +178,19 @@ public class ArrayValidator {
             }
             i++;
         }
+        // additional schema validating the reset of the array
+        if (additionalItemsSchema != null && inputArray.size() > schemaArray.size()) {
+            JsonArray extraArray = new JsonArray();
+            for (int j = i; j < inputArray.size(); j++) {
+                extraArray.add(inputArray.get(j));
+            }
+            extraArray = ArrayValidator.validateArray(GSONDataTypeConverter.getMapFromJsonArray(extraArray),
+                    additionalItemsSchema);
+            // putting back the values again after validation
+            for (int j = 0; j < extraArray.size(); j++) {
+                inputArray.set(i + j, extraArray.get(j));
+            }
+        }
     }
 
     /**
@@ -185,7 +202,7 @@ public class ArrayValidator {
      * @throws ValidatorException validation exception occurs.
      * @throws ParserException    parsing exception occurs.
      */
-    private static void ProcessSchemaWithOneItem(JsonArray inputArray, JsonObject schemaObject) throws
+    private static void processSchemaWithOneItem(JsonArray inputArray, JsonObject schemaObject) throws
             ValidatorException, ParserException {
         String type = schemaObject.get(ValidatorConstants.TYPE_KEY).toString().replaceAll(ValidatorConstants
                 .REGEX, "");
