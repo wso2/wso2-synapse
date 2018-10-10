@@ -133,8 +133,10 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             }
             //check correlationEnabling parameter
-            if (sourceConfiguration.getCorrelationStatus()) {
+            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                 setCorrelationId(httpContext, request);
+                long corTime = System.currentTimeMillis();
+                httpContext.setAttribute(PassThroughConstants.CORRELATION_REQUEST_ARRIVED_TIME, corTime);
                 MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
                         httpContext.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
                 correlationLog.info(" | HTTP State | " + httpContext.getAttribute("http.connection") + " | "
@@ -170,14 +172,12 @@ public class SourceHandler implements NHttpServerEventHandler {
 
         String externalCorrelationId = request.getHeaders().get(PassThroughConstants.CORRELATION_ID);
         String corId;
-        long corTime = System.currentTimeMillis();
         if (externalCorrelationId == null) {
             corId = UUID.randomUUID().toString();
         } else {
             corId = externalCorrelationId;
         }
         httpContext.setAttribute(PassThroughConstants.CORRELATION_ID, corId);
-        httpContext.setAttribute(PassThroughConstants.CORRELATION_REQUEST_ARRIVED_TIME, corTime);
     }
 
     public void inputReady(NHttpServerConnection conn,
@@ -282,6 +282,7 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             // because the duplex nature of http core we can reach hear without a actual response
             SourceResponse response = SourceContext.getResponse(conn);
+            SourceRequest request = SourceContext.getRequest(conn);
             if (response != null) {
 
                 // Handle Http ETag
@@ -302,7 +303,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                 response.start(conn);
                 conn.getContext().setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_START_TIME,
                         System.currentTimeMillis());
-                if (sourceConfiguration.getCorrelationStatus()) {
+                if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                     MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
                             conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
                     correlationLog.info(" | HTTP State | " + conn.getContext().
@@ -313,6 +314,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                 if (!response.hasEntity()) {
                    // Update stats as outputReady will not be triggered for no entity responses
                     HttpContext context = conn.getContext();
+                    if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+                        logCorrelationRoundTrip(context,request);
+                    }
                     updateLatencyView(context);
                 }
             }
@@ -368,7 +372,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                 endTransaction(conn);
                 return;
             }
-
+            SourceRequest request = SourceContext.getRequest(conn);
             SourceContext.updateState(conn, ProtocolState.RESPONSE_BODY);
 
             SourceResponse response = SourceContext.getResponse(conn);
@@ -381,15 +385,13 @@ public class SourceHandler implements NHttpServerEventHandler {
                 context.setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_END_TIME,departure);
                 context.setAttribute(PassThroughConstants.RES_DEPARTURE_TIME,departure);
 
-                if (sourceConfiguration.getCorrelationStatus()) {
-                    long startTime = (long) context.getAttribute(PassThroughConstants.CORRELATION_REQUEST_ARRIVED_TIME);
+                if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                     MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
                             context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
                     correlationLog.info(" | HTTP State | "
                             + context.getAttribute("http.connection") + " | RESPONSE WRITE COMPLETE");
-                    correlationLog.info((System.currentTimeMillis() - startTime) + " | HTTP | "
-                            + context.getAttribute("http.connection") + " | ROUND-TRIP LATENCY ");
                     MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+                    logCorrelationRoundTrip(context, request);
                 }
                 updateLatencyView(context);
 			}
@@ -405,7 +407,16 @@ public class SourceHandler implements NHttpServerEventHandler {
         }
     }
 
+    private void logCorrelationRoundTrip(HttpContext context, SourceRequest request) {
 
+
+        MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
+                context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+        long startTime = (long) context.getAttribute(PassThroughConstants.CORRELATION_REQUEST_ARRIVED_TIME);
+        correlationLog.info((System.currentTimeMillis() - startTime) + " | HTTP | "
+                + context.getAttribute("http.connection") + " | "+request.getMethod()+" | "+request.getUri()+"| ROUND-TRIP LATENCY ");
+        MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+    }
 
     public void logIOException(NHttpServerConnection conn, IOException e) {
         // this check feels like crazy! But weird things happened, when load testing.

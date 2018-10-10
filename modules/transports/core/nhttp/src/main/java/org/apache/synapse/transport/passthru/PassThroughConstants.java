@@ -245,6 +245,6 @@ public class PassThroughConstants {
     public static final String CORRELATION_LOGS_SYS_PROPERTY = "EnableCorrelationLogs";
     public static final String CORRELATION_MDC_PROPERTY = "Correlation-ID";
     public static final String CORRELATION_LOGGER = "CORRELATION_LOGGER";
-    public static final String CORRELATION_REQ_SEND_TO_BACKEND_TIME = "REQUEST_SENT_TIME";
-    public static final String CORRELATION_REQUEST_ARRIVED_TIME = "REQUEST_RECEIVED_TIME";
+    public static final String CORRELATION_REQ_SEND_TO_BACKEND_TIME = "CORRELATION_REQ_SEND_TO_BACKEND_TIME";
+    public static final String CORRELATION_REQUEST_ARRIVED_TIME = "CORRELATION_REQUEST_ARRIVED_TIME";
 }

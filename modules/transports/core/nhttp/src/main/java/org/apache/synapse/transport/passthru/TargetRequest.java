@@ -381,7 +381,7 @@ public class TargetRequest {
         if (encoder.isCompleted()) {
           conn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
           conn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,System.currentTimeMillis());
-            if (targetConfiguration.getCorrelationStatus()) {
+            if (targetConfiguration.isCorrelationLoggingEnabled()) {
                 MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
                         conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
                 correlationLog.info(" | HTTP State | "

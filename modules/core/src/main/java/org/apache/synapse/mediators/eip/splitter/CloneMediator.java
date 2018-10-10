@@ -123,8 +123,7 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
             }
 
             //Observability code
-            if (((Axis2MessageContext) synCtx).getAxis2MessageContext().
-                    isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
+            if (originalCorrelationId != null) {
                 ((Axis2MessageContext) synCtx).getAxis2MessageContext().
                         setProperty(PassThroughConstants.CORRELATION_ID, originalCorrelationId + "_" + i);
             }
