@@ -61,7 +61,6 @@ public class TargetHandler implements NHttpClientEventHandler {
     /** log for correlation.log */
     private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
 
-
     /** Delivery agent */
     private final DeliveryAgent deliveryAgent;
 
@@ -174,7 +173,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                 targetConfiguration.getMetrics().incrementMessagesSent();
             }
             context.setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME, System.currentTimeMillis());
-            if (targetConfiguration.getCorrelationStatus()) {
+            if (targetConfiguration.isCorrelationLoggingEnabled()) {
                 long corTime = System.currentTimeMillis();
                 context.setAttribute(PassThroughConstants.CORRELATION_REQ_SEND_TO_BACKEND_TIME, corTime);
                 MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
@@ -324,7 +323,7 @@ public class TargetHandler implements NHttpClientEventHandler {
             NHttpServerConnection sourceConn =
                     (NHttpServerConnection) requestMsgContext.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
             //check correlation logs enabled
-            if (targetConfiguration.getCorrelationStatus()) {
+            if (targetConfiguration.isCorrelationLoggingEnabled()) {
                 long corTime = System.currentTimeMillis();
                 long startTime = (long) context.getAttribute(PassThroughConstants.CORRELATION_REQ_SEND_TO_BACKEND_TIME);
                 MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,

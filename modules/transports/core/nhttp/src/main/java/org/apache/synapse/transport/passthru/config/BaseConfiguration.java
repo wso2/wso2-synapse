@@ -61,7 +61,7 @@ public abstract class BaseConfiguration {
 
     protected PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
 
-    private Boolean correlationStatus = false;
+    private Boolean correlationLoggingEnabled = false;
 
     private static final String PASSTHROUGH_THREAD_GROUP = "Pass-through Message Processing Thread Group";
     private static final String PASSTHROUGH_THREAD_ID ="PassThroughMessageProcessor";
@@ -93,7 +93,7 @@ public abstract class BaseConfiguration {
         ioReactorConfig = buildIOReactorConfig();
         String sysCorrelationStatus = System.getProperty(PassThroughConstants.CORRELATION_LOGS_SYS_PROPERTY);
         if (sysCorrelationStatus != null) {
-            correlationStatus = sysCorrelationStatus.equalsIgnoreCase("true");
+            correlationLoggingEnabled = sysCorrelationStatus.equalsIgnoreCase("true");
         }
 
         bufferFactory = new BufferFactory(iOBufferSize, new HeapByteBufferAllocator(), 512);
@@ -180,6 +180,6 @@ public abstract class BaseConfiguration {
         return metrics;
     }
 
-    public Boolean getCorrelationStatus(){return correlationStatus;}
+    public Boolean isCorrelationLoggingEnabled(){return correlationLoggingEnabled;}
 
 }
