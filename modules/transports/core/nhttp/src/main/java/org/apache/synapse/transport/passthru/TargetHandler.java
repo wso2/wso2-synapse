@@ -38,6 +38,7 @@ import org.apache.http.nio.NHttpClientEventHandler;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.protocol.HttpContext;
+import org.apache.log4j.MDC;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
@@ -56,6 +57,9 @@ import java.util.Properties;
  */
 public class TargetHandler implements NHttpClientEventHandler {
     private static Log log = LogFactory.getLog(TargetHandler.class);
+
+    /** log for correlation.log */
+    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
 
     /** Delivery agent */
     private final DeliveryAgent deliveryAgent;
@@ -120,7 +124,6 @@ public class TargetHandler implements NHttpClientEventHandler {
         
         HttpContext context = conn.getContext();
         context.setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
-
         metrics.connected();
         
         if (route.isTunnelled()) {
@@ -170,6 +173,15 @@ public class TargetHandler implements NHttpClientEventHandler {
                 targetConfiguration.getMetrics().incrementMessagesSent();
             }
             context.setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME, System.currentTimeMillis());
+            if (targetConfiguration.isCorrelationLoggingEnabled()) {
+                long corTime = System.currentTimeMillis();
+                context.setAttribute(PassThroughConstants.CORRELATION_REQ_SEND_TO_BACKEND_TIME, corTime);
+                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
+                        context.getAttribute(PassThroughConstants.CORRELATION_ID));
+                correlationLog.info(" | HTTP State | " + context.getAttribute("http.connection")
+                        + " | REQUEST WRITE STARTED");
+                MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+            }
             context.setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
         } catch (IOException e) {
             logIOException(conn, e);
@@ -310,6 +322,19 @@ public class TargetHandler implements NHttpClientEventHandler {
             MessageContext requestMsgContext = TargetContext.get(conn).getRequestMsgCtx();
             NHttpServerConnection sourceConn =
                     (NHttpServerConnection) requestMsgContext.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
+            //check correlation logs enabled
+            if (targetConfiguration.isCorrelationLoggingEnabled()) {
+                long corTime = System.currentTimeMillis();
+                long startTime = (long) context.getAttribute(PassThroughConstants.CORRELATION_REQ_SEND_TO_BACKEND_TIME);
+                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
+                        context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+                correlationLog.info(" | HTTP State | " +
+                        context.getAttribute("http.connection") + " | RESPONSE READ STARTED");
+                correlationLog.info((corTime - startTime) + " | HTTP | " +
+                        context.getAttribute("http.request") + " | BACKEND LATENCY");
+                MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+                //Observability code ends here
+            }
 
             if (connState != ProtocolState.REQUEST_DONE) {
                 isError = true;

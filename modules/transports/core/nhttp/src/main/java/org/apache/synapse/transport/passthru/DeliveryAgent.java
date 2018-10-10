@@ -26,6 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHost;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.nio.NHttpClientConnection;
+import org.apache.log4j.MDC;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
@@ -270,6 +271,10 @@ public class DeliveryAgent {
         }
         TargetRequest request = TargetRequestFactory.create(msgContext, route, targetConfiguration);
         TargetContext.setRequest(conn, request);
+        if (targetConfiguration.isCorrelationLoggingEnabled()) {
+            conn.getContext().setAttribute(PassThroughConstants.CORRELATION_ID,
+                    msgContext.getProperty(PassThroughConstants.CORRELATION_ID));
+        }
 
         Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
         if (pipe != null) {

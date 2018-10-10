@@ -44,6 +44,7 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.eip.SharedDataHolder;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.Target;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.util.MessageHelper;
 
 import java.util.ArrayList;
@@ -102,6 +103,14 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
 
         synCtx.setProperty(id != null ? EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id :
                            EIPConstants.EIP_SHARED_DATA_HOLDER, new SharedDataHolder());
+        //observability code starts here
+        String originalCorrelationId = null;
+        if (((Axis2MessageContext) synCtx).getAxis2MessageContext().
+                isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
+            originalCorrelationId = ((Axis2MessageContext) synCtx).getAxis2MessageContext().
+                    getProperty(PassThroughConstants.CORRELATION_ID).toString();
+        }
+        //observability code ends here
 
         // get the targets list, clone the message for the number of targets and then
         // mediate the cloned messages using the targets
@@ -109,9 +118,16 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         int i = 0;
         while (iter.hasNext()) {
             if (synLog.isTraceOrDebugEnabled()) {
-                synLog.traceOrDebug("Submitting " + (i+1) + " of " + targets.size() +
-                    " messages for " + (isSequential() ? "sequential processing" : "parallel processing"));
+                synLog.traceOrDebug("Submitting " + (i + 1) + " of " + targets.size() +
+                        " messages for " + (isSequential() ? "sequential processing" : "parallel processing"));
             }
+
+            //Observability code
+            if (originalCorrelationId != null) {
+                ((Axis2MessageContext) synCtx).getAxis2MessageContext().
+                        setProperty(PassThroughConstants.CORRELATION_ID, originalCorrelationId + "_" + i);
+            }
+            //Observability code ends here
 
             MessageContext clonedMsgCtx = getClonedMessageContext(synCtx, i++, targets.size());
             ContinuationStackManager.addReliantContinuationState(clonedMsgCtx, i - 1, getMediatorPosition());
