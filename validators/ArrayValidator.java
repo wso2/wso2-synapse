@@ -13,7 +13,6 @@ import java.util.Set;
 
 /**
  * This class will validate json arrays according to the schema.
- * Structural validations only.
  */
 public class ArrayValidator {
 
@@ -26,6 +25,7 @@ public class ArrayValidator {
     private static final String ITEMS = "items";
     private static final String UNIQUE_ITEMS = "uniqueItems";
     private static final String ADDITIONAL_ITEMS = "additionalItems";
+    private static final String CONTAINS = "contains";
 
     /**
      * This method will validates an input array according to a given schema.
@@ -78,7 +78,7 @@ public class ArrayValidator {
             JsonElement tempElement = schema.get(ADDITIONAL_ITEMS);
             if (tempElement.isJsonPrimitive() && !tempElement.getAsBoolean()) {
                 notAllowAdditional = true;
-            } else if (tempElement.isJsonObject() && tempElement.getAsJsonObject().entrySet().size() > 0) {
+            } else if (tempElement.isJsonObject() && !tempElement.getAsJsonObject().entrySet().isEmpty()) {
                 String jsonString = "{\"type\": \"array\",\"items\": " + schema.get(ADDITIONAL_ITEMS).toString() + "}";
                 parser = new JsonParser();
                 additionalItemsSchema = parser.parse(jsonString).getAsJsonObject();
@@ -97,20 +97,7 @@ public class ArrayValidator {
         }
 
         // Structural validations
-        if (minItems != -1 && inputArray.size() < minItems) {
-            throw new ValidatorException("Array violated the minItems constraint");
-        }
-        if (maxItems != -1 && inputArray.size() > maxItems) {
-            throw new ValidatorException("Array violated the maxItems constraint");
-        }
-        if (uniqueItems) {
-            Set<JsonElement> temporarySet = new HashSet();
-            for (JsonElement element : inputArray) {
-                if (!temporarySet.add(element)) {
-                    throw new ValidatorException("Array violated the uniqueItems constraint");
-                }
-            }
-        }
+        doStructuralValidations(inputArray, minItems, maxItems, uniqueItems);
 
         // processing the items property in JSON array.
         if (schema.has(ITEMS)) {
@@ -126,6 +113,12 @@ public class ArrayValidator {
                 processSchemaWithOneItem(inputArray, schemaObject);
             }
         }
+/*
+        // processing the contains condition
+        JsonObject containsSchema = null;
+        if (schema.has(CONTAINS)) {
+            JsonElement tempElement = schema.get(CONTAINS);
+        }*/
         return inputArray;
     }
 
@@ -159,22 +152,25 @@ public class ArrayValidator {
         int i = 0;
         for (JsonElement element : schemaArray) {
             JsonObject tempObj = element.getAsJsonObject();
-            String type = tempObj.get(ValidatorConstants.TYPE_KEY).toString().replaceAll(ValidatorConstants
-                    .REGEX, "");
-            if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
-                inputArray.set(i, BooleanValidator.validateBoolean(tempObj, inputArray.get(i)
-                        .getAsString()));
-            } else if (ValidatorConstants.NOMINAL_KEYS.contains(type)) {
-                inputArray.set(i, StringValidator.validateNominal(tempObj, inputArray.get(i)
-                        .getAsString()));
-            } else if (ValidatorConstants.NUMERIC_KEYS.contains(type)) {
-                inputArray.set(i, NumericValidator.validateNumeric(tempObj, inputArray.get(i)
-                        .getAsString()));
-            } else if (ValidatorConstants.ARRAY_KEYS.contains(type)) {
-                inputArray.set(i, ArrayValidator.validateArray(
-                        GSONDataTypeConverter.getMapFromString(inputArray.get(i).getAsString()), tempObj));
-            } else if (ValidatorConstants.NULL_KEYS.contains(type)) {
-                // todo add null implementation
+            // Checking for empty input schema Ex:- {}
+            if (tempObj.entrySet().size() > 0) {
+                String type = tempObj.get(ValidatorConstants.TYPE_KEY).toString().replaceAll(ValidatorConstants
+                        .REGEX, "");
+                if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
+                    inputArray.set(i, BooleanValidator.validateBoolean(tempObj, inputArray.get(i)
+                            .getAsString()));
+                } else if (ValidatorConstants.NOMINAL_KEYS.contains(type)) {
+                    inputArray.set(i, StringValidator.validateNominal(tempObj, inputArray.get(i)
+                            .getAsString()));
+                } else if (ValidatorConstants.NUMERIC_KEYS.contains(type)) {
+                    inputArray.set(i, NumericValidator.validateNumeric(tempObj, inputArray.get(i)
+                            .getAsString()));
+                } else if (ValidatorConstants.ARRAY_KEYS.contains(type)) {
+                    inputArray.set(i, ArrayValidator.validateArray(
+                            GSONDataTypeConverter.getMapFromString(inputArray.get(i).getAsString()), tempObj));
+                } else if (ValidatorConstants.NULL_KEYS.contains(type)) {
+                    // todo add null implementation
+                }
             }
             i++;
         }
@@ -232,6 +228,33 @@ public class ArrayValidator {
             // todo add object implementation
         } else if (ValidatorConstants.NULL_KEYS.contains(type)) {
             // todo add null implementation
+        }
+    }
+
+    /**
+     * This method validates the structure of given JSON array against constraints.
+     *
+     * @param inputArray  input JSON array.
+     * @param minItems    minimum items allowed.
+     * @param maxItems    maximum items allowed.
+     * @param uniqueItems array items should be unique.
+     * @throws ValidatorException validation exception occurs.
+     */
+    private static void doStructuralValidations(JsonArray inputArray, int minItems, int maxItems, boolean
+            uniqueItems) throws ValidatorException {
+        if (minItems != -1 && inputArray.size() < minItems) {
+            throw new ValidatorException("Array violated the minItems constraint");
+        }
+        if (maxItems != -1 && inputArray.size() > maxItems) {
+            throw new ValidatorException("Array violated the maxItems constraint");
+        }
+        if (uniqueItems) {
+            Set<JsonElement> temporarySet = new HashSet();
+            for (JsonElement element : inputArray) {
+                if (!temporarySet.add(element)) {
+                    throw new ValidatorException("Array violated the uniqueItems constraint");
+                }
+            }
         }
     }
 }
