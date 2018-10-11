@@ -46,6 +46,8 @@ public class TargetContext {
     private Pipe writer;
     /** logger for correlation.log */
     private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
+    /** Time that state got updated*/
+    private long lastStateUpdatedTime;
 
     public TargetContext(TargetConfiguration targetConfiguration) {
         this.targetConfiguration = targetConfiguration;
@@ -137,11 +139,12 @@ public class TargetContext {
 
     public static void create(NHttpConnection conn, ProtocolState state, 
                               TargetConfiguration configuration) {
-        TargetContext info = new TargetContext(configuration);
-
-        conn.getContext().setAttribute(CONNECTION_INFORMATION, info);
-
-        info.setState(state);
+        TargetContext targetContext = new TargetContext(configuration);
+        conn.getContext().setAttribute(CONNECTION_INFORMATION, targetContext);
+        targetContext.setState(state);
+        if (targetContext.getTargetConfiguration().isCorrelationLoggingEnabled()) {
+            targetContext.updateLastStateUpdatedTime();
+        }
     }
 
     public static void updateState(NHttpConnection conn, ProtocolState state) {
@@ -150,9 +153,11 @@ public class TargetContext {
         if (targetContext != null) {
             targetContext.setState(state);
             if (targetContext.getTargetConfiguration().isCorrelationLoggingEnabled()) {
+                long lastStateUpdateTime = targetContext.getLastStateUpdatedTime();
                 MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
                         conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
-                correlationLog.info(" | HTTP State Change | "
+                correlationLog.info((targetContext.updateLastStateUpdatedTime() - lastStateUpdateTime)
+                        + " | HTTP State Transition | "
                         + conn.getContext().getAttribute("http.connection") + " | "
                         + targetContext.getRequest().getMethod() + " | " + targetContext.getRequest().getUrl()
                         + state.name());
@@ -218,4 +223,12 @@ public class TargetContext {
         return (TargetContext) conn.getContext().getAttribute(CONNECTION_INFORMATION);
     }
 
+    public long getLastStateUpdatedTime() {
+        return lastStateUpdatedTime;
+    }
+
+    public long updateLastStateUpdatedTime() {
+        this.lastStateUpdatedTime = System.currentTimeMillis();
+        return this.lastStateUpdatedTime;
+    }
 }

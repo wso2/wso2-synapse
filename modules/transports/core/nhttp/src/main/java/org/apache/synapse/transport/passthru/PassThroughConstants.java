@@ -237,8 +237,8 @@ public class PassThroughConstants {
     //Check for invalid json message by parsing the input message
     public static final String FORCE_JSON_MESSAGE_VALIDATION = "force.json.message.validation";
 
-    /**
-     * constants for the EI observability
+    /*
+     * constants for correlation logging
      */
     public static final String CORRELATION_LOG_STATE_PROPERTY = "correlationLogState";
     public static final String CORRELATION_ID = "correlation_id";

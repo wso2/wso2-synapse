@@ -53,6 +53,9 @@ public class SourceContext {
 
     private Lock lock = new ReentrantLock();
 
+    /** Time that state got updated*/
+    private long lastStateUpdatedTime;
+
     public SourceContext(SourceConfiguration sourceConfiguration) {
         this.sourceConfiguration = sourceConfiguration;
     }
@@ -148,11 +151,13 @@ public class SourceContext {
 
     public static void create(NHttpConnection conn, ProtocolState state,
                               SourceConfiguration configuration) {
-        SourceContext info = new SourceContext(configuration);
+        SourceContext sourceContext = new SourceContext(configuration);
+        conn.getContext().setAttribute(CONNECTION_INFORMATION, sourceContext);
+        sourceContext.setState(state);
 
-        conn.getContext().setAttribute(CONNECTION_INFORMATION, info);
-
-        info.setState(state);
+        if (sourceContext.getSourceConfiguration().isCorrelationLoggingEnabled()) {
+            sourceContext.updateLastStateUpdatedTime();
+        }
     }
 
     public static void updateState(NHttpConnection conn, ProtocolState state) {
@@ -161,9 +166,11 @@ public class SourceContext {
 
         if (sourceContext != null) {
             if (sourceContext.getSourceConfiguration().isCorrelationLoggingEnabled()) {
+                long lastStateUpdateTime = sourceContext.getLastStateUpdatedTime();
                 MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
                         conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
-                correlationLog.info(" | HTTP State Change | "
+                correlationLog.info((sourceContext.updateLastStateUpdatedTime() - lastStateUpdateTime)
+                        + " | HTTP State Transition | "
                         + conn.getContext().getAttribute("http.connection") + " | "
                         + sourceContext.getRequest().getMethod() + " | " + sourceContext.getRequest().getUri()
                         + " | " + state.name());
@@ -235,5 +242,14 @@ public class SourceContext {
                 conn.getContext().getAttribute(CONNECTION_INFORMATION);
 
         return info != null ? info.getLock() : null;
+    }
+
+    public long getLastStateUpdatedTime() {
+        return lastStateUpdatedTime;
+    }
+
+    public long updateLastStateUpdatedTime() {
+        this.lastStateUpdatedTime = System.currentTimeMillis();
+        return this.lastStateUpdatedTime;
     }
 }

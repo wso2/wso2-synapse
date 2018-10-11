@@ -323,7 +323,6 @@ public class TargetHandler implements NHttpClientEventHandler {
                         context.getAttribute("http.request") + " | BACKEND LATENCY");
                 MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
             }
-            //Observability code ends here
 
             if (connState != ProtocolState.REQUEST_DONE) {
                 isError = true;
