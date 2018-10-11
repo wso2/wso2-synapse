@@ -23,20 +23,16 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.clustering.Member;
 import org.apache.axis2.util.JavaUtils;
-import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.endpoints.utils.LoadbalanceAlgorithmFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
-import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.config.xml.endpoints.resolvers.ResolverFactory;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.LoadbalanceEndpoint;
 import org.apache.synapse.endpoints.algorithms.LoadbalanceAlgorithm;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
@@ -163,13 +159,17 @@ public final class LoadbalanceEndpointFactory extends EndpointFactory {
         for(Iterator memberIter = loadbalanceElement.getChildrenWithName(MEMBER);
             memberIter.hasNext();){
             OMElement memberEle = (OMElement) memberIter.next();
-            Member member = new Member(memberEle.getAttributeValue(new QName("hostName")), -1);
+            String memberHostname = memberEle.getAttributeValue(new QName("hostName"));
+            memberHostname = ResolverFactory.getInstance().getResolver(memberHostname).resolve(memberHostname);
+            Member member = new Member(memberHostname, -1);
             String http = memberEle.getAttributeValue(new QName("httpPort"));
             if (http != null) {
+                http = ResolverFactory.getInstance().getResolver(http).resolve(http);
                 member.setHttpPort(Integer.parseInt(http));
             }
             String https = memberEle.getAttributeValue(new QName("httpsPort"));
             if (https != null && https.trim().length() != 0) {
+                https = ResolverFactory.getInstance().getResolver(https).resolve(https);
                 member.setHttpsPort(Integer.parseInt(https.trim()));
             }
             members.add(member);

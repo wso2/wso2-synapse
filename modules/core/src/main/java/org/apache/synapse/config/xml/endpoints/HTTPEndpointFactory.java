@@ -25,6 +25,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.Constants;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.XMLConfigConstants;
+import org.apache.synapse.config.xml.endpoints.resolvers.ResolverFactory;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.HTTPEndpoint;
@@ -75,18 +76,20 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
             OMAttribute uriTemplateAttr = httpElement.getAttribute(new QName("uri-template"));
             if (uriTemplateAttr != null) {
 
-                    if (uriTemplateAttr.getAttributeValue().startsWith(HTTPEndpoint.legacyPrefix)) {
+                String uriValue = uriTemplateAttr.getAttributeValue();
+                uriValue = ResolverFactory.getInstance().getResolver(uriValue).resolve(uriValue);
+                //get object and and resolve
+                    if (uriValue.startsWith(HTTPEndpoint.legacyPrefix)) {
                         httpEndpoint.setUriTemplate(UriTemplate.fromTemplate(
-                                uriTemplateAttr.getAttributeValue().substring(HTTPEndpoint.legacyPrefix.length())));
+                                uriValue.substring(HTTPEndpoint.legacyPrefix.length())));
                         // Set the address to the initial template value.
-                        definition.setAddress(uriTemplateAttr.getAttributeValue().
-                                substring(HTTPEndpoint.legacyPrefix.length()));
+                        definition.setAddress(uriValue.substring(HTTPEndpoint.legacyPrefix.length()));
                         httpEndpoint.setLegacySupport(true);
                     } else {
 
-                        httpEndpoint.setUriTemplate(UriTemplate.fromTemplate(uriTemplateAttr.getAttributeValue()));
+                        httpEndpoint.setUriTemplate(UriTemplate.fromTemplate(uriValue));
                         // Set the address to the initial template value.
-                        definition.setAddress(uriTemplateAttr.getAttributeValue());
+                        definition.setAddress(uriValue);
                         httpEndpoint.setLegacySupport(false);
                     }
 

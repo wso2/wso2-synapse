@@ -33,6 +33,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.ValueFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
+import org.apache.synapse.config.xml.endpoints.resolvers.ResolverFactory;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.RecipientListEndpoint;
 import org.apache.synapse.mediators.Value;
@@ -67,7 +68,7 @@ public class RecipientListEndpointFactory extends EndpointFactory {
 	protected Endpoint createEndpoint(OMElement epConfig,
 			boolean anonymousEndpoint, Properties properties) {
 		
-		OMElement recipientListElement = epConfig.getFirstChildWithName(
+    		OMElement recipientListElement = epConfig.getFirstChildWithName(
                 new QName(SynapseConstants.SYNAPSE_NAMESPACE, "recipientlist"));
 		
 		if(recipientListElement != null){
@@ -159,13 +160,17 @@ public class RecipientListEndpointFactory extends EndpointFactory {
         	}
         	
             OMElement memberEle = (OMElement) memberIter.next();
-            Member member = new Member(memberEle.getAttributeValue(new QName("hostName")), -1);
+            String memberHostname = memberEle.getAttributeValue(new QName("hostName"));
+            memberHostname = ResolverFactory.getInstance().getResolver(memberHostname).resolve(memberHostname);
+            Member member = new Member(memberHostname, -1);
             String http = memberEle.getAttributeValue(new QName("httpPort"));
             if (http != null) {
+                http = ResolverFactory.getInstance().getResolver(http).resolve(http);
                 member.setHttpPort(Integer.parseInt(http));
             }
             String https = memberEle.getAttributeValue(new QName("httpsPort"));
             if (https != null && https.trim().length() != 0) {
+                https = ResolverFactory.getInstance().getResolver(https).resolve(https);
                 member.setHttpsPort(Integer.parseInt(https.trim()));
             }
             members.add(member);

@@ -22,6 +22,7 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.commons.datasource.DataSourceInformation;
+import org.apache.synapse.config.xml.endpoints.resolvers.ResolverFactory;
 import org.wso2.securevault.secret.SecretInformation;
 import org.apache.synapse.mediators.db.AbstractDBMediator;
 import org.apache.synapse.mediators.db.Statement;
@@ -167,6 +168,7 @@ public abstract class AbstractDBMediatorFactory extends AbstractMediatorFactory 
         } else {
             driver = getValue(pool, DRIVER_Q);
         }
+        driver = ResolverFactory.getInstance().getResolver(driver).resolve(driver);
         dataSourceInformation.setDriver(driver);
         mediator.addDataSourceProperty(DRIVER_Q, driver);
 
@@ -176,6 +178,7 @@ public abstract class AbstractDBMediatorFactory extends AbstractMediatorFactory 
         } else {
             url = getValue(pool, URL_Q);
         }
+        url = ResolverFactory.getInstance().getResolver(url).resolve(url);
         dataSourceInformation.setUrl(url);
         mediator.addDataSourceProperty(URL_Q, url);
 
@@ -187,6 +190,7 @@ public abstract class AbstractDBMediatorFactory extends AbstractMediatorFactory 
         } else {
             user = getValue(pool, USER_Q);
         }
+        user = ResolverFactory.getInstance().getResolver(user).resolve(user);
         secretInformation.setUser(user);
         mediator.addDataSourceProperty(USER_Q, user);
 
@@ -196,6 +200,7 @@ public abstract class AbstractDBMediatorFactory extends AbstractMediatorFactory 
         } else {
             password = getValue(pool, PASS_Q);
         }
+        password = ResolverFactory.getInstance().getResolver(password).resolve(password);
         secretInformation.setAliasSecret(password);
         mediator.addDataSourceProperty(PASS_Q, password);
 

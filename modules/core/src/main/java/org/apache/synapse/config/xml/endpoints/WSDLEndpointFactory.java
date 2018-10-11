@@ -27,6 +27,7 @@ import org.apache.axis2.description.WSDL2Constants;
 import org.apache.axis2.util.JavaUtils;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapseConfigUtils;
+import org.apache.synapse.config.xml.endpoints.resolvers.ResolverFactory;
 import org.apache.synapse.config.xml.endpoints.utils.WSDL11EndpointBuilder;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.WSDLEndpoint;
@@ -116,7 +117,7 @@ public class WSDLEndpointFactory extends DefaultEndpointFactory {
             String portName = wsdlElement.getAttributeValue(new QName("port"));
             // check if wsdl is supplied as a URI
             String wsdlURI = wsdlElement.getAttributeValue(new QName("uri"));
-
+            wsdlURI = ResolverFactory.getInstance().getResolver(wsdlURI).resolve(wsdlURI);
             // set serviceName and portName in the endpoint. it does not matter if these are
             // null at this point. we are setting them only for serialization purpose.
             wsdlEndpoint.setServiceName(serviceName);

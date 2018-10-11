@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.XMLConfigConstants;
+import org.apache.synapse.config.xml.endpoints.resolvers.ResolverFactory;
 import org.apache.synapse.endpoints.AddressEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
@@ -115,7 +116,9 @@ public class AddressEndpointFactory extends DefaultEndpointFactory {
         }
 
         if (address != null) {
-            endpointDefinition.setAddress(address.getAttributeValue().trim());
+            String addressURI = address.getAttributeValue();
+            addressURI = ResolverFactory.getInstance().getResolver(addressURI).resolve(addressURI);
+            endpointDefinition.setAddress(addressURI.trim());
         } else {
             handleException("Invalid endpoint definition. " +
                     "\"uri\" attribute of the address endpoint cannot be empty.");
