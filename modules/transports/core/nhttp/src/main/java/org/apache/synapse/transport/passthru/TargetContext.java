@@ -164,7 +164,6 @@ public class TargetContext {
                     method = targetContext.getRequest().getMethod();
                 } else {
                     HttpRequest httpRequest = conn.getHttpRequest();
-
                     if (httpRequest != null) {
                         url = httpRequest.getRequestLine().getUri();
                         method = httpRequest.getRequestLine().getMethod();
