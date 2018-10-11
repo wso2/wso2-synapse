@@ -17,7 +17,10 @@
 package org.apache.synapse.transport.passthru;
 
 import org.apache.axis2.context.MessageContext;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.http.nio.NHttpConnection;
+import org.apache.log4j.MDC;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.util.ControlledByteBuffer;
 
@@ -41,6 +44,8 @@ public class TargetContext {
     private Pipe reader;
     /** The current writer */
     private Pipe writer;
+    /** logger for correlation.log */
+    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
 
     public TargetContext(TargetConfiguration targetConfiguration) {
         this.targetConfiguration = targetConfiguration;
@@ -52,6 +57,10 @@ public class TargetContext {
 
     public void setState(ProtocolState state) {
         this.state = state;
+    }
+
+    public TargetConfiguration getTargetConfiguration() {
+        return targetConfiguration;
     }
 
     public TargetRequest getRequest() {
@@ -136,12 +145,20 @@ public class TargetContext {
     }
 
     public static void updateState(NHttpConnection conn, ProtocolState state) {
-        TargetContext info = (TargetContext)
+        TargetContext targetContext = (TargetContext)
                 conn.getContext().getAttribute(CONNECTION_INFORMATION);
-
-        if (info != null) {
-            info.setState(state);
-        }  else {
+        if (targetContext != null) {
+            targetContext.setState(state);
+            if (targetContext.getTargetConfiguration().isCorrelationLoggingEnabled()) {
+                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
+                        conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+                correlationLog.info(" | HTTP State Change | "
+                        + conn.getContext().getAttribute("http.connection") + " | "
+                        + targetContext.getRequest().getMethod() + " | " + targetContext.getRequest().getUrl()
+                        + state.name());
+                MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+            }
+        } else {
             throw new IllegalStateException("Connection information should be present");
         }
     }

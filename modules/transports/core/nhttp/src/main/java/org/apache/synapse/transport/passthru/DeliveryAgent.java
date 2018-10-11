@@ -244,6 +244,10 @@ public class DeliveryAgent {
     private void tryNextMessage(MessageContext messageContext, HttpRoute route, NHttpClientConnection conn) {
         if (conn != null) {
             try {
+                if (targetConfiguration.isCorrelationLoggingEnabled()) {
+                    conn.getContext().setAttribute(PassThroughConstants.CORRELATION_ID,
+                            messageContext.getProperty(PassThroughConstants.CORRELATION_ID));
+                }
                 TargetContext.updateState(conn, ProtocolState.REQUEST_READY);
                 TargetContext.get(conn).setRequestMsgCtx(messageContext);
                 if (log.isDebugEnabled()) {
@@ -271,10 +275,6 @@ public class DeliveryAgent {
         }
         TargetRequest request = TargetRequestFactory.create(msgContext, route, targetConfiguration);
         TargetContext.setRequest(conn, request);
-        if (targetConfiguration.isCorrelationLoggingEnabled()) {
-            conn.getContext().setAttribute(PassThroughConstants.CORRELATION_ID,
-                    msgContext.getProperty(PassThroughConstants.CORRELATION_ID));
-        }
 
         Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
         if (pipe != null) {
