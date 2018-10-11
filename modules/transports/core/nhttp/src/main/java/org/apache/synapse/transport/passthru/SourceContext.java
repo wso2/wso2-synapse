@@ -18,6 +18,7 @@ package org.apache.synapse.transport.passthru;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpRequest;
 import org.apache.http.nio.NHttpConnection;
 import org.apache.log4j.MDC;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
@@ -167,24 +168,29 @@ public class SourceContext {
         if (sourceContext != null) {
             if (sourceContext.getSourceConfiguration().isCorrelationLoggingEnabled()) {
                 long lastStateUpdateTime = sourceContext.getLastStateUpdatedTime();
-
                 String url = "", method = "";
-                if (sourceContext.getRequest() != null){
+                if (sourceContext.getRequest() != null) {
                     url = sourceContext.getRequest().getUri();
                     method = sourceContext.getRequest().getMethod();
+                } else {
+                    HttpRequest httpRequest = conn.getHttpRequest();
+
+                    if (httpRequest != null) {
+                        url = httpRequest.getRequestLine().getUri();
+                        method = httpRequest.getRequestLine().getMethod();
+                    }
                 }
-                else {
-                    url = conn.getHttpRequest().getRequestLine().getUri();
-                    method = conn.getHttpRequest().getRequestLine().getMethod();
+
+                if ((method.length() != 0) && (url.length() != 0)) {
+                    MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
+                            conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+                    correlationLog.info((sourceContext.updateLastStateUpdatedTime() - lastStateUpdateTime)
+                            + " | HTTP State Transition | "
+                            + conn.getContext().getAttribute("http.connection") + " | "
+                            + method + " | " + url + " | "
+                            + state.name());
+                    MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
                 }
-                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
-                        conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
-                correlationLog.info((sourceContext.updateLastStateUpdatedTime() - lastStateUpdateTime)
-                        + " | HTTP State Transition | "
-                        + conn.getContext().getAttribute("http.connection") + " | "
-                        + sourceContext.getRequest().getMethod() + " | " + sourceContext.getRequest().getUri()
-                        + " | " + state.name());
-                MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
             }
             sourceContext.setState(state);
         }  else {
