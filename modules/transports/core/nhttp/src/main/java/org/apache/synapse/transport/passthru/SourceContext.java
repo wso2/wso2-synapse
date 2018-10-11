@@ -16,7 +16,10 @@
 
 package org.apache.synapse.transport.passthru;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.http.nio.NHttpConnection;
+import org.apache.log4j.MDC;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.util.ControlledByteBuffer;
 
@@ -29,6 +32,9 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class SourceContext {
     public static final String CONNECTION_INFORMATION = "CONNECTION_INFORMATION";
+
+    /** logger for correlation.log */
+    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
 
     private SourceConfiguration sourceConfiguration;
 
@@ -47,8 +53,15 @@ public class SourceContext {
 
     private Lock lock = new ReentrantLock();
 
+    /** Time that state got updated*/
+    private long lastStateUpdatedTime;
+
     public SourceContext(SourceConfiguration sourceConfiguration) {
         this.sourceConfiguration = sourceConfiguration;
+    }
+
+    public SourceConfiguration getSourceConfiguration() {
+        return sourceConfiguration;
     }
 
     public ProtocolState getState() {
@@ -138,19 +151,42 @@ public class SourceContext {
 
     public static void create(NHttpConnection conn, ProtocolState state,
                               SourceConfiguration configuration) {
-        SourceContext info = new SourceContext(configuration);
+        SourceContext sourceContext = new SourceContext(configuration);
+        conn.getContext().setAttribute(CONNECTION_INFORMATION, sourceContext);
+        sourceContext.setState(state);
 
-        conn.getContext().setAttribute(CONNECTION_INFORMATION, info);
-
-        info.setState(state);
+        if (sourceContext.getSourceConfiguration().isCorrelationLoggingEnabled()) {
+            sourceContext.updateLastStateUpdatedTime();
+        }
     }
 
     public static void updateState(NHttpConnection conn, ProtocolState state) {
-        SourceContext info = (SourceContext)
+        SourceContext sourceContext = (SourceContext)
                 conn.getContext().getAttribute(CONNECTION_INFORMATION);
 
-        if (info != null) {
-            info.setState(state);
+        if (sourceContext != null) {
+            if (sourceContext.getSourceConfiguration().isCorrelationLoggingEnabled()) {
+                long lastStateUpdateTime = sourceContext.getLastStateUpdatedTime();
+
+                String url = "", method = "";
+                if (sourceContext.getRequest() != null){
+                    url = sourceContext.getRequest().getUri();
+                    method = sourceContext.getRequest().getMethod();
+                }
+                else {
+                    url = conn.getHttpRequest().getRequestLine().getUri();
+                    method = conn.getHttpRequest().getRequestLine().getMethod();
+                }
+                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
+                        conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+                correlationLog.info((sourceContext.updateLastStateUpdatedTime() - lastStateUpdateTime)
+                        + " | HTTP State Transition | "
+                        + conn.getContext().getAttribute("http.connection") + " | "
+                        + sourceContext.getRequest().getMethod() + " | " + sourceContext.getRequest().getUri()
+                        + " | " + state.name());
+                MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+            }
+            sourceContext.setState(state);
         }  else {
             throw new IllegalStateException("Connection information should be present");
         }
@@ -216,5 +252,14 @@ public class SourceContext {
                 conn.getContext().getAttribute(CONNECTION_INFORMATION);
 
         return info != null ? info.getLock() : null;
+    }
+
+    public long getLastStateUpdatedTime() {
+        return lastStateUpdatedTime;
+    }
+
+    public long updateLastStateUpdatedTime() {
+        this.lastStateUpdatedTime = System.currentTimeMillis();
+        return this.lastStateUpdatedTime;
     }
 }
