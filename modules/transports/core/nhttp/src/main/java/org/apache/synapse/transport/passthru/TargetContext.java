@@ -157,7 +157,6 @@ public class TargetContext {
             targetContext.setState(state);
             if (targetContext.getTargetConfiguration().isCorrelationLoggingEnabled()) {
                 long lastStateUpdateTime = targetContext.getLastStateUpdatedTime();
-
                 String url = "", method = "";
                 if (targetContext.getRequest() != null) {
                     url = targetContext.getRequest().getUrl().toString();
@@ -169,7 +168,6 @@ public class TargetContext {
                         method = httpRequest.getRequestLine().getMethod();
                     }
                 }
-
                 if ((method.length() != 0) && (url.length() != 0)) {
                     MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
                             conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
@@ -180,7 +178,6 @@ public class TargetContext {
                             + state.name());
                     MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
                 }
-
             }
         } else {
             throw new IllegalStateException("Connection information should be present");
