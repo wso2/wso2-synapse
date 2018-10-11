@@ -122,6 +122,9 @@ public class SourceHandler implements NHttpServerEventHandler {
     public void requestReceived(NHttpServerConnection conn) {
         try {
             HttpContext httpContext = conn.getContext();
+            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+                setCorrelationId(conn);
+            }
             httpContext.setAttribute(PassThroughConstants.REQ_ARRIVAL_TIME, System.currentTimeMillis());
             httpContext.setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_START_TIME, System.currentTimeMillis());
             if (isMessageSizeValidationEnabled) {
@@ -131,9 +134,6 @@ public class SourceHandler implements NHttpServerEventHandler {
             if (request == null) {
                 return;
 
-            }
-            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
-                setCorrelationId(httpContext, request);
             }
 
             String method = request.getRequest() != null ? request.getRequest().getRequestLine().getMethod().toUpperCase() : "";
@@ -160,14 +160,14 @@ public class SourceHandler implements NHttpServerEventHandler {
         }
     }
 
-    private void setCorrelationId(HttpContext httpContext, SourceRequest request) {
-
-        String externalCorrelationId = request.getHeaders().get(PassThroughConstants.CORRELATION_ID);
+    private void setCorrelationId(NHttpServerConnection conn) {
+        HttpContext httpContext = conn.getContext();
+        Header[] correlationHeader = conn.getHttpRequest().getHeaders(PassThroughConstants.CORRELATION_ID);
         String corId;
-        if (externalCorrelationId == null) {
-            corId = UUID.randomUUID().toString();
+        if (correlationHeader.length != 0) {
+            corId = correlationHeader[0].getValue();
         } else {
-            corId = externalCorrelationId;
+            corId = UUID.randomUUID().toString();
         }
         httpContext.setAttribute(PassThroughConstants.CORRELATION_ID, corId);
     }

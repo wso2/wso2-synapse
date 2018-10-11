@@ -19,6 +19,8 @@ package org.apache.synapse.transport.passthru;
 import org.apache.axis2.context.MessageContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import org.apache.http.HttpRequest;
 import org.apache.http.nio.NHttpConnection;
 import org.apache.log4j.MDC;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
@@ -148,20 +150,38 @@ public class TargetContext {
     }
 
     public static void updateState(NHttpConnection conn, ProtocolState state) {
+
         TargetContext targetContext = (TargetContext)
                 conn.getContext().getAttribute(CONNECTION_INFORMATION);
         if (targetContext != null) {
             targetContext.setState(state);
             if (targetContext.getTargetConfiguration().isCorrelationLoggingEnabled()) {
                 long lastStateUpdateTime = targetContext.getLastStateUpdatedTime();
-                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
-                        conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
-                correlationLog.info((targetContext.updateLastStateUpdatedTime() - lastStateUpdateTime)
-                        + " | HTTP State Transition | "
-                        + conn.getContext().getAttribute("http.connection") + " | "
-                        + targetContext.getRequest().getMethod() + " | " + targetContext.getRequest().getUrl()
-                        + state.name());
-                MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+
+                String url = "", method = "";
+                if (targetContext.getRequest() != null) {
+                    url = targetContext.getRequest().getUrl().toString();
+                    method = targetContext.getRequest().getMethod();
+                } else {
+                    HttpRequest httpRequest = conn.getHttpRequest();
+
+                    if (httpRequest != null) {
+                        url = httpRequest.getRequestLine().getUri();
+                        method = httpRequest.getRequestLine().getMethod();
+                    }
+                }
+
+                if ((method.length() != 0) && (url.length() != 0)) {
+                    MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
+                            conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+                    correlationLog.info((targetContext.updateLastStateUpdatedTime() - lastStateUpdateTime)
+                            + " | HTTP State Transition | "
+                            + conn.getContext().getAttribute("http.connection") + " | "
+                            + method + " | " + url + " | "
+                            + state.name());
+                    MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+                }
+
             }
         } else {
             throw new IllegalStateException("Connection information should be present");
