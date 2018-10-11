@@ -107,7 +107,7 @@ public class MessageHelper {
                 ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         if (originalAxis2Ctx.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
             String originalCorrelationId = originalAxis2Ctx.getProperty(PassThroughConstants.CORRELATION_ID).toString();
-            axis2MC.setProperty(PassThroughConstants.CORRELATION_ID, originalCorrelationId
+            axis2MC.getAxis2MessageContext().setProperty(PassThroughConstants.CORRELATION_ID, originalCorrelationId
                     + "_" + UUID.randomUUID().toString());
         }
         //Correlation logging code ends here
