@@ -381,13 +381,6 @@ public class TargetRequest {
         if (encoder.isCompleted()) {
           conn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
           conn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,System.currentTimeMillis());
-            if (targetConfiguration.isCorrelationLoggingEnabled()) {
-                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
-                        conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
-                correlationLog.info(" | HTTP State | "
-                        + conn.getContext().getAttribute("http.connection") + " | REQUEST WRITE COMPLETE");
-                MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
-            }
             targetConfiguration.getMetrics().
                     notifySentMessageSize(conn.getMetrics().getSentBytesCount());
 
@@ -463,5 +456,9 @@ public class TargetRequest {
 
     public Pipe getPipe() {
         return pipe;
+    }
+
+    public URL getUrl() {
+        return url;
     }
 }
