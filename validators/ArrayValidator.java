@@ -25,7 +25,6 @@ public class ArrayValidator {
     private static final String ITEMS = "items";
     private static final String UNIQUE_ITEMS = "uniqueItems";
     private static final String ADDITIONAL_ITEMS = "additionalItems";
-    private static final String CONTAINS = "contains";
 
     /**
      * This method will validates an input array according to a given schema.
@@ -113,12 +112,6 @@ public class ArrayValidator {
                 processSchemaWithOneItem(inputArray, schemaObject);
             }
         }
-/*
-        // processing the contains condition
-        JsonObject containsSchema = null;
-        if (schema.has(CONTAINS)) {
-            JsonElement tempElement = schema.get(CONTAINS);
-        }*/
         return inputArray;
     }
 
@@ -170,6 +163,8 @@ public class ArrayValidator {
                             GSONDataTypeConverter.getMapFromString(inputArray.get(i).getAsString()), tempObj));
                 } else if (ValidatorConstants.NULL_KEYS.contains(type)) {
                     // todo add null implementation
+                } else if (ValidatorConstants.OBJECT_KEYS.contains(type)) {
+                    inputArray.set(i,ObjectValidator.validateObject(inputArray.get(i).getAsJsonObject(),tempObj));
                 }
             }
             i++;
@@ -225,7 +220,10 @@ public class ArrayValidator {
                 i++;
             }
         } else if (ValidatorConstants.OBJECT_KEYS.contains(type)) {
-            // todo add object implementation
+            for (JsonElement element : inputArray) {
+                inputArray.set(i, ObjectValidator.validateObject(element.getAsJsonObject(), schemaObject));
+                i++;
+            }
         } else if (ValidatorConstants.NULL_KEYS.contains(type)) {
             // todo add null implementation
         }
