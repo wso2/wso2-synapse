@@ -10,13 +10,14 @@ public class ValidatorConstants {
     }
 
     public static final String REGEX = "^\"|\"$";
+    public static String QUOTE_REPLACE_REGEX = "^\"|\"$";
     public static final String TYPE_KEY = "type";
     public static final String ITEM_KEY = "items";
     public static final String ENUM = "enum";
     public static final String CONST = "const";
 
     public static final Set<String> NUMERIC_KEYS = new HashSet<>(Arrays.asList(
-            new String[]{"numeric", "integer"}
+            new String[]{"number", "integer"}
     ));
     public static final Set<String> BOOLEAN_KEYS = new HashSet<>(Arrays.asList(
             new String[]{"boolean"}

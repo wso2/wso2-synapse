@@ -41,6 +41,8 @@ public class NumericValidator {
         if (value == null) {
             throw new ValidatorException("Expected a number but found null");
         }
+        //replacing enclosing quotes
+        value = value.replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX,"");
         if (NumberUtils.isCreatable(value)) {
             String type = null;
             if (inputObject.has(ValidatorConstants.TYPE_KEY)) {
