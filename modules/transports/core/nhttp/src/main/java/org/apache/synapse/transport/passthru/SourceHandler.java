@@ -39,6 +39,7 @@ import org.apache.synapse.commons.transaction.TranscationManger;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.transport.http.conn.LoggingNHttpServerConnection;
 import org.apache.synapse.transport.http.conn.Scheme;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.jmx.LatencyCollector;
 import org.apache.synapse.transport.passthru.jmx.LatencyView;
@@ -162,7 +163,8 @@ public class SourceHandler implements NHttpServerEventHandler {
 
     private void setCorrelationId(NHttpServerConnection conn) {
         HttpContext httpContext = conn.getContext();
-        Header[] correlationHeader = conn.getHttpRequest().getHeaders(PassThroughConstants.CORRELATION_ID);
+        String correlationHeaderName = PassThroughConfiguration.getInstance().getCorrelationHeaderName();
+        Header[] correlationHeader = conn.getHttpRequest().getHeaders(correlationHeaderName);
         String corId;
         if (correlationHeader.length != 0) {
             corId = correlationHeader[0].getValue();
