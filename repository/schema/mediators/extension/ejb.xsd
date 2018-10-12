@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!--
+ Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+-->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified"
+           targetNamespace="http://ws.apache.org/ns/synapse"
+           xmlns="http://ws.apache.org/ns/synapse">
+
+    <xs:element name="ejb">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Calls an enterprise JavaBean (EJB) and stores the result in the message payload or a message context
+                property. Supports EJB3 Stateless/Stateful session beans.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="args">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="arg" minOccurs="0" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:attribute name="value" type="xs:string" use="required"/>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+            <xs:attribute name="beanstalk" type="xs:string" use="required"/>
+            <xs:attribute name="class" type="xs:string" use="required"/>
+            <xs:attribute name="sessionId" type="xs:string" use="optional"/>
+            <xs:attribute name="remove" type="xs:boolean" use="optional"/>
+            <xs:attribute name="method" type="xs:string" use="optional"/>
+            <xs:attribute name="target" type="xs:string" use="optional"/>
+            <xs:attribute name="jndiName" type="xs:string" use="optional"/>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

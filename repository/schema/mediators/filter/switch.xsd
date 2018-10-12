@@ -27,9 +27,9 @@
     <xs:element name="switch">
         <xs:annotation>
             <xs:documentation source="description">
-                Switch mediator to filter messages by looking at the
-                provided conditions by evaluating xpath over the current message
-                and to route them on various paths in different cases
+                Creates two or more alternative routes (switch cases) in the message flow. Messages are filtered by an
+                XPath or JSONPath and matched against a regular expression specified in the switch cases. Messages are
+                then routed through the matching switch case.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>
@@ -43,7 +43,7 @@
                     </xs:annotation>
                     <xs:complexType>
                         <xs:group ref="mediatorList" minOccurs="0" maxOccurs="unbounded"/>
-                        <xs:attribute name="regex" type="xs:string" use="optional"/>
+                        <xs:attribute name="regex" type="xs:string" use="required"/>
                     </xs:complexType>
                 </xs:element>
                 <xs:element name="default" minOccurs="0" maxOccurs="1">

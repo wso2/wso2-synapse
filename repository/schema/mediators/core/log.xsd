@@ -27,7 +27,9 @@
     <xs:element name="log">
         <xs:annotation>
             <xs:documentation source="description">
-                Log mediator to log the messages and any properties
+                Generates logs for messages (mediated by a sequence or proxy service). By default, only the minimum
+                details are logged. If required, you can log the full message payload, headers, and even custom
+                user-defined properties.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>

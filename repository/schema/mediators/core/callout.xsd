@@ -25,7 +25,8 @@
     <xs:element name="callout">
         <xs:annotation>
             <xs:documentation source="description">
-                Callout mediator to do a blocking send or a callout to a service
+                Invokes an external service in blocking mode. The service response is received by the next mediator in
+                the mediation flow.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>
@@ -39,6 +40,7 @@
                     <xs:complexType>
                         <xs:attribute name="xpath" type="xs:int" use="optional"/>
                         <xs:attribute name="key" type="xs:int" use="optional"/>
+                        <xs:attribute name="type" type="xs:string" use="optional"/>
                     </xs:complexType>
                 </xs:element>
                 <xs:element name="target" minOccurs="0" maxOccurs="1">
@@ -54,13 +56,22 @@
                 </xs:element>
                 <xs:element name="configuration" maxOccurs="1" minOccurs="0">
                     <xs:complexType>
-                        <xs:attribute name="axis2XML" type="xs:string" use="optional"/>
+                        <xs:attribute name="axis2xml" type="xs:string" use="optional"/>
                         <xs:attribute name="repository" type="xs:string" use="optional"/>
                     </xs:complexType>
                 </xs:element>
+                <xs:element name="enableSec" minOccurs="0" maxOccurs="1">
+                    <xs:complexType>
+                        <xs:attribute name="policy" type="xs:string" use="optional"/>
+                        <xs:attribute name="outboundPolicy" type="xs:string" use="optional"/>
+                        <xs:attribute name="inboundPolicy" type="xs:string" use="optional"/>
+                    </xs:complexType>
+                </xs:element>
             </xs:choice>
-            <xs:attribute name="serviceURL" type="xs:string" use="required"/>
+            <xs:attribute name="serviceURL" type="xs:string" use="optional"/>
             <xs:attribute name="action" type="xs:string" use="optional"/>
+            <xs:attribute name="initAxis2ClientOptions" type="xs:boolean" use="optional"/>
+            <xs:attribute name="endpointKey" type="xs:string" use="optional"/>
         </xs:complexType>
     </xs:element>
 

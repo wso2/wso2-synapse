@@ -25,7 +25,7 @@
     <xs:element name="transaction">
         <xs:annotation>
             <xs:documentation source="description">
-                Transaction mediator to initiate/continue/commit/rollback a transaction
+                Provides transaction facilities for a set of mediators defined as its child mediators.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>

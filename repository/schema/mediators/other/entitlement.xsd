@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!--
+ Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+-->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified"
+           targetNamespace="http://ws.apache.org/ns/synapse"
+           xmlns="http://ws.apache.org/ns/synapse">
+
+    <xs:include schemaLocation="../mediators.xsd"/>
+
+    <xs:element name="entitlementService">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Intercepts messages and evaluates them against a XACML policy. The ESB profile becomes the XACML policy
+                enforcement point (PEP), and WSO2 Identity Server can be the XACML policy decision point (PDP).
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="onAccept" minOccurs="0" maxOccurs="1">
+                    <xs:complexType>
+                        <xs:group ref="mediatorList" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="onReject" minOccurs="0" maxOccurs="1">
+                    <xs:complexType>
+                        <xs:group ref="mediatorList" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="advice" minOccurs="0" maxOccurs="1">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:any minOccurs="0" maxOccurs="1" processContents="skip"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="obligations" minOccurs="0" maxOccurs="1">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:any minOccurs="0" maxOccurs="1" processContents="skip"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+            <xs:attribute name="remoteServiceUrl" type="xs:string" use="required"/>
+            <xs:attribute name="remoteServiceUserName" type="xs:string" use="optional"/>
+            <xs:attribute name="remoteServicePassword" type="xs:string" use="optional"/>
+            <xs:attribute name="callbackClass" type="xs:string" use="required">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration
+                                value="org.wso2.carbon.identity.entitlement.mediator.callback.UTEntitlementCallbackHandler"/>
+                        <xs:enumeration
+                                value="org.wso2.carbon.identity.entitlement.mediator.callback.X509EntitlementCallbackHandler"/>
+                        <xs:enumeration
+                                value="org.wso2.carbon.identity.entitlement.mediator.callback.SAMLEntitlementCallbackHandler"/>
+                        <xs:enumeration
+                                value="org.wso2.carbon.identity.entitlement.mediator.callback.KerberosEntitlementCallbackHandler"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="client" type="xs:string" use="required">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="soap"/>
+                        <xs:enumeration value="basicAuth"/>
+                        <xs:enumeration value="thrift"/>
+                        <xs:enumeration value="wsXacml"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

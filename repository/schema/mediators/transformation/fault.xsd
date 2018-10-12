@@ -27,7 +27,7 @@
     <xs:element name="makefault">
         <xs:annotation>
             <xs:documentation source="description">
-                Fault mediator to convert the messages into a fault
+                Transforms the current message into a fault message, which is returned to the client.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>
@@ -54,16 +54,7 @@
                 </xs:element>
                 <xs:element name="node" minOccurs="0" maxOccurs="1" type="xs:anyType"/>
                 <xs:element name="role" minOccurs="0" maxOccurs="1" type="xs:anyType"/>
-                <xs:element name="detail" minOccurs="0" maxOccurs="1">
-                    <xs:annotation>
-                        <xs:documentation source="description">
-                            The fault Detail
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:complexType mixed="true">
-                        <xs:attribute name="expression" type="xs:string" use="optional"/>
-                    </xs:complexType>
-                </xs:element>
+                <xs:element name="detail" minOccurs="0" maxOccurs="1" type="xs:anyType"/>
             </xs:sequence>
             <xs:attribute name="version" use="optional" default="soap12">
                 <xs:simpleType>
@@ -74,7 +65,6 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:attribute>
-            <xs:attribute name="response" type="xs:boolean" use="optional" default="true"/>
         </xs:complexType>
     </xs:element>
 

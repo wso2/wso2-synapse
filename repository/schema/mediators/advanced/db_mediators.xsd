@@ -22,10 +22,13 @@
            targetNamespace="http://ws.apache.org/ns/synapse"
            xmlns="http://ws.apache.org/ns/synapse">
 
+    <xs:include schemaLocation="../../misc/common.xsd"/>
+
     <xs:element name="dblookup" type="db-mediator">
         <xs:annotation>
             <xs:documentation source="description">
-                DBLookup mediator to lookup content from a DB and enrich the message
+                Executes arbitrary SQL SELECT statements. The resulting values can be set to the message context as
+                local properties.
             </xs:documentation>
         </xs:annotation>
     </xs:element>
@@ -33,7 +36,8 @@
     <xs:element name="dbreport" type="db-mediator">
         <xs:annotation>
             <xs:documentation source="description">
-                DBReport mediator to report content from a message to a database
+                Executes SQL statements (insert/update/delete). The resulting values can be set to the message context
+                as local properties.
             </xs:documentation>
         </xs:annotation>
     </xs:element>
@@ -47,7 +51,10 @@
                             <xs:complexType>
                                 <xs:choice maxOccurs="1" minOccurs="1">
                                     <xs:group ref="defined-db-connection"/>
-                                    <xs:element name="dsName" type="xs:string"/>
+                                    <xs:element name="dsName" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                                    <xs:element name="icClass" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                                    <xs:element name="property" type="mediatorProperty" minOccurs="0"
+                                                maxOccurs="unbounded"/>
                                 </xs:choice>
                             </xs:complexType>
                         </xs:element>
@@ -60,8 +67,29 @@
                         <xs:element name="sql" minOccurs="1" maxOccurs="1" type="xs:string"/>
                         <xs:element name="parameter" minOccurs="0" maxOccurs="1">
                             <xs:complexType>
-                                <xs:attribute name="expression" type="xs:string" use="required"/>
-                                <xs:attribute name="type" type="xs:string" use="required"/>
+                                <xs:attributeGroup ref="valueOrExpression"/>
+                                <xs:attribute name="type" use="required">
+                                    <xs:simpleType>
+                                        <xs:restriction base="xs:string">
+                                            <xs:enumeration value="CHAR"/>
+                                            <xs:enumeration value="VARCHAR"/>
+                                            <xs:enumeration value="LONGVARCHAR"/>
+                                            <xs:enumeration value="NUMERIC"/>
+                                            <xs:enumeration value="DECIMAL"/>
+                                            <xs:enumeration value="BIT"/>
+                                            <xs:enumeration value="TINYINT"/>
+                                            <xs:enumeration value="SMALLINT"/>
+                                            <xs:enumeration value="INTEGER"/>
+                                            <xs:enumeration value="BIGINT"/>
+                                            <xs:enumeration value="REAL"/>
+                                            <xs:enumeration value="FLOAT"/>
+                                            <xs:enumeration value="DOUBLE"/>
+                                            <xs:enumeration value="DATE"/>
+                                            <xs:enumeration value="TIME"/>
+                                            <xs:enumeration value="TIMESTAMP"/>
+                                        </xs:restriction>
+                                    </xs:simpleType>
+                                </xs:attribute>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="result" minOccurs="0" maxOccurs="1">
@@ -75,7 +103,7 @@
             </xs:element>
         </xs:all>
     </xs:complexType>
-    
+
     <xs:group name="defined-db-connection">
         <xs:all>
             <xs:element name="driver" minOccurs="1" maxOccurs="1" type="xs:string"/>

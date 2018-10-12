@@ -27,8 +27,8 @@
     <xs:element name="aggregate">
         <xs:annotation>
             <xs:documentation source="description">
-                Aggregate mediator to aggregate a set of messages over a given xpath or
-                a set of messages which are previously iterated or cloned
+                Combines the responses to a message that has been split into several sub messages (using the Iterate or
+                Clone mediators)
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>
@@ -55,6 +55,7 @@
                     <xs:complexType>
                         <xs:group ref="mediatorList"/>
                         <xs:attribute name="expression" type="xs:string" use="optional"/>
+                        <xs:attribute name="sequence" type="xs:string" use="optional"/>
                     </xs:complexType>
                 </xs:element>
             </xs:choice>
