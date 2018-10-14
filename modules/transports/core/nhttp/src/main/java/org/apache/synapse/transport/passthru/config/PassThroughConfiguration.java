@@ -136,6 +136,10 @@ public class PassThroughConfiguration {
         return getStringProperty(PassThroughConfigPNames.HTTP_HEADERS_PRESERVE, "");
     }
 
+    public String getCorrelationHeaderName(){
+        return getStringProperty(PassThroughConfigPNames.CORRELATION_HEADER_NAME_PROPERTY, "activity_id");
+    }
+
     /**
      * Loads the properties from a given property file path
      *
