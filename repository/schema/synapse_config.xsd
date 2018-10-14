@@ -22,14 +22,17 @@
            targetNamespace="http://ws.apache.org/ns/synapse"
            xmlns="http://ws.apache.org/ns/synapse">
 
-    <xs:include schemaLocation="sequence.xsd"/>
-    <xs:include schemaLocation="endpoint.xsd"/>
+    <xs:include schemaLocation="api.xsd"/>
     <xs:include schemaLocation="proxy.xsd"/>
-    <xs:include schemaLocation="event_source.xsd"/>
+    <xs:include schemaLocation="endpoint.xsd"/>
+    <xs:include schemaLocation="inbound.xsd"/>
     <xs:include schemaLocation="local_entry.xsd"/>
-    <xs:include schemaLocation="registry.xsd"/>
+    <xs:include schemaLocation="messagestore.xsd"/>
+    <xs:include schemaLocation="messageprocessor.xsd"/>
+    <xs:include schemaLocation="sequence.xsd"/>
     <xs:include schemaLocation="task.xsd"/>
-    <xs:include schemaLocation="priority_executor.xsd"/>
+    <xs:include schemaLocation="template.xsd"/>
+    <xs:include schemaLocation="registry.xsd"/>
 
     <xs:element name="definitions" type="Definition">
         <xs:annotation>
@@ -50,13 +53,16 @@
         </xs:annotation>
         <xs:choice maxOccurs="unbounded" minOccurs="1">
             <xs:element ref="registry" minOccurs="0" maxOccurs="1"/>
-            <xs:element ref="localEntry" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element ref="priorityExecutor" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element ref="endpoint" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element ref="sequence" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element ref="api" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element ref="proxy" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element ref="eventSource" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element ref="endpoint" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element ref="inboundEndpoint" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element ref="localEntry" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element ref="messageStore" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element ref="messageProcessor" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element ref="sequence" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element ref="task" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element ref="template" minOccurs="0" maxOccurs="unbounded"/>
         </xs:choice>
     </xs:complexType>
 

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!--
+ Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+-->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified"
+           targetNamespace="http://ws.apache.org/ns/synapse"
+           xmlns="http://ws.apache.org/ns/synapse">
+
+    <xs:include schemaLocation="../mediators/mediators.xsd"/>
+
+    <xs:complexType name="APIResource">
+        <xs:annotation>
+            <xs:documentation>
+                This denotes the resource for a REST API
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="inSequence" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:group ref="mediatorList" minOccurs="1" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="outSequence" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:group ref="mediatorList" minOccurs="1" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="faultSequence" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:group ref="mediatorList" minOccurs="1" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="methods" use="required">
+            <xs:simpleType>
+                <xs:restriction>
+                    <xs:simpleType>
+                        <xs:list>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:token">
+                                    <xs:enumeration value="GET"/>
+                                    <xs:enumeration value="POST"/>
+                                    <xs:enumeration value="PUT"/>
+                                    <xs:enumeration value="DELETE"/>
+                                    <xs:enumeration value="OPTIONS"/>
+                                    <xs:enumeration value="HEAD"/>
+                                    <xs:enumeration value="PATCH"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:list>
+                    </xs:simpleType>
+                    <xs:minLength value="1"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attributeGroup ref="templateOrMapping"/>
+    </xs:complexType>
+
+    <xs:attributeGroup name="templateOrMapping">
+        <xs:annotation>
+            <xs:documentation>
+                This is used to define whether uri-template or url-mapping is used for the resource
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="uri-template" type="xs:string" use="optional"/>
+        <xs:attribute name="url-mapping" type="xs:string" use="optional"/>
+    </xs:attributeGroup>
+
+</xs:schema>

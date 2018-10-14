@@ -27,13 +27,15 @@
     <xs:element name="send">
         <xs:annotation>
             <xs:documentation source="description">
-                Send mediator to send out the messages
+                Invokes an external service in non-blocking mode. The service response is always received by the outflow
+                (out sequence) and passed back to the client.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="endpoint" type="Endpoint" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
+            <xs:attribute name="receive" type="xs:string" use="optional"/>
         </xs:complexType>
     </xs:element>
 

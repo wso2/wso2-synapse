@@ -25,7 +25,7 @@
     <xs:element name="spring">
         <xs:annotation>
             <xs:documentation source="description">
-                Spring mediator to process messages using spring beans
+                Exposes a spring bean as a mediator.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>

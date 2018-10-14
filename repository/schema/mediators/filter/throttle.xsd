@@ -27,7 +27,8 @@
     <xs:element name="throttle">
         <xs:annotation>
             <xs:documentation source="description">
-                Throttle mediator to throttle the message
+                Restricts access to services by applying rate limits or concurrency limits. The throttling configuration
+                is given in a WS policy that is specified inline or stored in the registry.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>
@@ -35,7 +36,8 @@
                 <xs:element name="policy" minOccurs="0" maxOccurs="1">
                     <xs:complexType>
                         <xs:all>
-                            <xs:element ref="wsp:Policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" minOccurs="1" maxOccurs="1"/>
+                            <xs:element ref="wsp:Policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy"
+                                        minOccurs="0" maxOccurs="1"/>
                         </xs:all>
                         <xs:attribute name="key" type="xs:string" use="optional"/>
                     </xs:complexType>

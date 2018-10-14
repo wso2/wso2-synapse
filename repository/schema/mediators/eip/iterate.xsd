@@ -27,15 +27,19 @@
     <xs:element name="iterate">
         <xs:annotation>
             <xs:documentation source="description">
-                Iterate mediator to iterate a message over a given xpath
+                Splits a message into several different messages and passes them to another sequence or endpoint. These
+                messages are processed in parallel (by default). The mediator splits messages by matching elements of
+                the original message with an XPath expression.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="target" minOccurs="1" maxOccurs="1"/>
+                <xs:element ref="target" minOccurs="1" maxOccurs="unbounded"/>
             </xs:sequence>
+            <xs:attribute name="sequential" type="xs:boolean" use="optional"/>
+            <xs:attribute name="continueParent" type="xs:boolean" use="optional"/>
             <xs:attribute name="expression" type="xs:string" use="required"/>
-            <xs:attribute name="preservePayload" type="xs:string" use="optional"/>
+            <xs:attribute name="preservePayload" type="xs:boolean" use="optional"/>
             <xs:attribute name="attachPath" type="xs:string" use="optional"/>
         </xs:complexType>
     </xs:element>

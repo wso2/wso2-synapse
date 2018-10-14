@@ -27,7 +27,7 @@
     <xs:element name="class">
         <xs:annotation>
             <xs:documentation source="description">
-                Class mediator to process messages using the specified java class
+                Uses an instance of a custom class as a mediator.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>

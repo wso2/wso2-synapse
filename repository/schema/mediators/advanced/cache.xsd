@@ -27,30 +27,23 @@
     <xs:element name="cache">
         <xs:annotation>
             <xs:documentation source="description">
-                Cache mediator to cache the response messages
+                Looks for a previously cached message (which is similar to the current message) and, if found, the
+                cached response is used for the current message.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="implementation" minOccurs="0" maxOccurs="1">
+                <xs:element name="implementation" minOccurs="1" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>
                             The cache implementation type and configurations
                         </xs:documentation>
                     </xs:annotation>
                     <xs:complexType>
-                        <xs:attribute name="type" use="optional">
-                            <xs:simpleType>
-                                <xs:restriction base="xs:string">
-                                    <xs:enumeration value="memory"/>
-                                    <xs:enumeration value="disk"/>
-                                </xs:restriction>
-                            </xs:simpleType>
-                        </xs:attribute>
                         <xs:attribute name="maxSize" type="xs:int" use="optional"/>
                     </xs:complexType>
                 </xs:element>
-                <xs:element name="onCacheHit" minOccurs="0" maxOccurs="1">
+                <xs:element name="onCacheHit" minOccurs="1" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>
                             If a cache hit occurs, the sequence or the mediator list to be invoked
@@ -61,20 +54,23 @@
                         <xs:attribute name="sequence" type="xs:string" use="optional"/>
                     </xs:complexType>
                 </xs:element>
+                <xs:element name="protocol" minOccurs="1" maxOccurs="1">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="methods" minOccurs="1" maxOccurs="1"/>
+                            <xs:element name="headersToExcludeInHash" minOccurs="1" maxOccurs="1"/>
+                            <xs:element name="responseCodes" minOccurs="1" maxOccurs="1"/>
+                            <xs:element name="enableCacheControl" minOccurs="1" maxOccurs="1"/>
+                            <xs:element name="includeAgeHeader" minOccurs="1" maxOccurs="1"/>
+                            <xs:element name="hashGenerator" minOccurs="1" maxOccurs="1"/>
+                        </xs:sequence>
+                        <xs:attribute name="type" type="xs:string" default="http"/>
+                    </xs:complexType>
+                </xs:element>
             </xs:sequence>
-            <xs:attribute name="id" type="xs:string" use="optional"/>
-            <xs:attribute name="hashGenerator" type="xs:string" use="optional" default="org.wso2.caching.digest.DOMHASHGenerator"/>
             <xs:attribute name="timeout" type="xs:int" use="optional"/>
-            <xs:attribute name="collector" type="xs:boolean" use="required"/>
+            <xs:attribute name="collector" type="xs:boolean" use="required" default="false"/>
             <xs:attribute name="maxMessageSize" type="xs:int" use="optional"/>
-            <xs:attribute name="scope" use="optional" default="per-host">
-                <xs:simpleType>
-                    <xs:restriction base="xs:string">
-                        <xs:enumeration value="per-host"/>
-                        <xs:enumeration value="per-mediator"/>
-                    </xs:restriction>
-                </xs:simpleType>
-            </xs:attribute>
         </xs:complexType>
     </xs:element>
 

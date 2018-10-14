@@ -27,8 +27,8 @@
     <xs:element name="filter">
         <xs:annotation>
             <xs:documentation source="description">
-                Filter mediator to filter messages by looking at the
-                provided conditions by evaluating xpath over the current message
+                Filters messages based on an XPath, JSONPath, or a regular expression. The filtering logic resembles the
+                "if-else" control structure.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>

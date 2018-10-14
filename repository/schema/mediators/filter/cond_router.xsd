@@ -28,8 +28,7 @@
     <xs:element name="conditionalRouter">
         <xs:annotation>
             <xs:documentation source="description">
-                ConditionalRouter mediator to route messages by looking at the
-                provided conditions by evaluating xpath over the current message
+                Routes messages to the given target sequence only if the specified conditions are fulfilled.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>
@@ -48,10 +47,11 @@
                             </xs:element>
                             <xs:element ref="target" minOccurs="1" maxOccurs="1"/>
                         </xs:sequence>
+                        <xs:attribute name="breakRoute" type="xs:boolean" default="false"/>
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>
-            <xs:attribute name="continueAfter" type="xs:boolean" use="optional"/>
+            <xs:attribute name="continueAfter" type="xs:boolean" use="optional" default="false"/>
         </xs:complexType>
     </xs:element>
 

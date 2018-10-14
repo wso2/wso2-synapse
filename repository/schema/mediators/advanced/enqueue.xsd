@@ -25,8 +25,7 @@
     <xs:element name="enqueue">
         <xs:annotation>
             <xs:documentation source="description">
-                Enqueue mediator to publish the current message as a priority mediation to
-                the given priority queue
+                Used to execute diferent sequences for messages with different properties (in high-load scenarios).
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>

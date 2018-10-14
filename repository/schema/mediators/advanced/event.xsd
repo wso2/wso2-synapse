@@ -22,15 +22,15 @@
            targetNamespace="http://ws.apache.org/ns/synapse"
            xmlns="http://ws.apache.org/ns/synapse">
 
-    <xs:element name="eventPublisher">
+    <xs:element name="event">
         <xs:annotation>
             <xs:documentation source="description">
-                EventPublisher mediator to publish the current message as an event
-                to the given event source
+                Sends event notifications to an event source, publishes messages to predefined topics.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attribute name="eventSourceName" type="xs:string" use="required"/>
+            <xs:attribute name="topic" type="xs:string" use="required"/>
+            <xs:attribute name="expression" type="xs:string" use="optional"/>
         </xs:complexType>
     </xs:element>
 
