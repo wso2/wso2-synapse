@@ -151,7 +151,7 @@ public class ObjectValidator {
                 entry.setValue(NumericValidator.validateNumeric(schema, entry.getValue().getAsString()));
             } else if (ValidatorConstants.ARRAY_KEYS.contains(type)) {
                 entry.setValue(ArrayValidator.validateArray(GSONDataTypeConverter.getMapFromString(entry.getValue()
-                        .getAsString()), schema));
+                        .toString()), schema));
             } else if (ValidatorConstants.OBJECT_KEYS.contains(type)) {
                 entry.setValue(ObjectValidator.validateObject(entry.getValue().getAsJsonObject(), schema));
             }

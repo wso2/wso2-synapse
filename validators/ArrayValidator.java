@@ -6,6 +6,8 @@ import exceptions.ParserException;
 import exceptions.ValidatorException;
 import utils.DataTypeConverter;
 import utils.GSONDataTypeConverter;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -19,6 +21,8 @@ public class ArrayValidator {
     // Use without instantiation
     private ArrayValidator() {
     }
+
+    private static Log logger = LogFactory.getLog(ArrayValidator.class.getName());
 
     private static final String MIN_ITEMS = "minItems";
     private static final String MAX_ITEMS = "maxItems";
@@ -44,6 +48,7 @@ public class ArrayValidator {
         boolean notAllowAdditional = false;
         minItems = -1;
         maxItems = -1;
+        // parsing the properties related to arrays from the schema, if they exists.
         if (schema.has(UNIQUE_ITEMS)) {
             String uniqueItemsString = schema.get(UNIQUE_ITEMS).getAsString().replaceAll(ValidatorConstants.REGEX, "");
             if (!uniqueItemsString.isEmpty()) {
@@ -146,7 +151,7 @@ public class ArrayValidator {
         for (JsonElement element : schemaArray) {
             JsonObject tempObj = element.getAsJsonObject();
             // Checking for empty input schema Ex:- {}
-            if (tempObj.entrySet().size() > 0) {
+            if (!tempObj.entrySet().isEmpty()) {
                 String type = tempObj.get(ValidatorConstants.TYPE_KEY).toString().replaceAll(ValidatorConstants
                         .REGEX, "");
                 if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
@@ -160,7 +165,7 @@ public class ArrayValidator {
                             .getAsString()));
                 } else if (ValidatorConstants.ARRAY_KEYS.contains(type)) {
                     inputArray.set(i, ArrayValidator.validateArray(
-                            GSONDataTypeConverter.getMapFromString(inputArray.get(i).getAsString()), tempObj));
+                            GSONDataTypeConverter.getMapFromString(inputArray.get(i).toString()), tempObj));
                 } else if (ValidatorConstants.NULL_KEYS.contains(type)) {
                     // todo add null implementation
                 } else if (ValidatorConstants.OBJECT_KEYS.contains(type)) {
