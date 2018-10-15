@@ -19,7 +19,6 @@ package org.apache.synapse.transport.passthru;
 import org.apache.axis2.context.MessageContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.http.HttpRequest;
 import org.apache.http.nio.NHttpConnection;
 import org.apache.log4j.MDC;

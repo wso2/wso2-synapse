@@ -447,7 +447,9 @@ public class SourceHandler implements NHttpServerEventHandler {
             log.warn("Connection time out while reading the request: " + conn +
                      " Socket Timeout : " + conn.getSocketTimeout() +
                      getConnectionLoggingInfo(conn));
-
+            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+                logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
+            }
         } else if (state == ProtocolState.RESPONSE_BODY ||
                 state == ProtocolState.RESPONSE_HEAD) {
             informWriterError(conn);
@@ -455,12 +457,18 @@ public class SourceHandler implements NHttpServerEventHandler {
             log.warn("Connection time out while writing the response: " + conn +
                      " Socket Timeout : " + conn.getSocketTimeout() +
                      getConnectionLoggingInfo(conn));
+            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+                logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
+            }
         } else if (state == ProtocolState.REQUEST_DONE) {
             informWriterError(conn);
         	isTimeoutOccurred = true;
             log.warn("Connection time out after request is read: " + conn +
                      " Socket Timeout : " + conn.getSocketTimeout() +
                      getConnectionLoggingInfo(conn));
+            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+                logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
+            }
         }
 
         SourceContext.updateState(conn, ProtocolState.CLOSED);
@@ -484,15 +492,24 @@ public class SourceHandler implements NHttpServerEventHandler {
         	isFault = true;
             informReaderError(conn);
             log.warn("Connection closed while reading the request: " + conn + getConnectionLoggingInfo(conn));
+            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+                logHttpRequestErrorInCorrelationLog(conn, "Connection Closed in " + state.name());
+            }
         } else if (state == ProtocolState.RESPONSE_BODY ||
                 state == ProtocolState.RESPONSE_HEAD) {
         	isFault = true;
             informWriterError(conn);
             log.warn("Connection closed while writing the response: " + conn + getConnectionLoggingInfo(conn));
+            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+                logHttpRequestErrorInCorrelationLog(conn, "Connection Closed in " + state.name());
+            }
         } else if (state == ProtocolState.REQUEST_DONE) {
         	isFault = true;
             informWriterError(conn);
             log.warn("Connection closed by the client after request is read: " + conn + getConnectionLoggingInfo(conn));
+            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+                logHttpRequestErrorInCorrelationLog(conn, "Connection Closed in " + state.name());
+            }
         }
 
         metrics.disconnected();
@@ -532,6 +549,9 @@ public class SourceHandler implements NHttpServerEventHandler {
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
         } else if (ex instanceof HttpException) {
             log.error("HttpException occurred ", ex);
+            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+                logHttpRequestErrorInCorrelationLog(conn, "HTTP Exception");
+            }
             try {
                 if (conn.isResponseSubmitted()) {
                     sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
@@ -743,5 +763,32 @@ public class SourceHandler implements NHttpServerEventHandler {
             }
         }
 	    return "";
+    }
+
+    private void logHttpRequestErrorInCorrelationLog(NHttpServerConnection conn, String state) {
+
+        SourceContext sourceContext = SourceContext.get(conn);
+        if (sourceContext != null) {
+            String url = "", method = "";
+            if (sourceContext.getRequest() != null) {
+                url = sourceContext.getRequest().getUri();
+                method = sourceContext.getRequest().getMethod();
+            } else {
+                HttpRequest httpRequest = conn.getHttpRequest();
+                if (httpRequest != null) {
+                    url = httpRequest.getRequestLine().getUri();
+                    method = httpRequest.getRequestLine().getMethod();
+                }
+            }
+            if ((method.length() != 0) && (url.length() != 0)) {
+                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
+                        conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+                long startTime = (long) conn.getContext().getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME);
+                correlationLog.info((System.currentTimeMillis() - startTime) + "|HTTP|"
+                        + conn.getContext().getAttribute("http.connection") + "|" + method + "|" + url
+                        + "|" + state);
+                MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+            }
+        }
     }
 }

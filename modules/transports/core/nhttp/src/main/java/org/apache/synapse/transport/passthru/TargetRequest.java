@@ -42,7 +42,6 @@ import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
-import org.apache.log4j.MDC;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.nhttp.util.MessageFormatterDecoratorFactory;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
@@ -50,7 +49,6 @@ import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.transport.passthru.util.TargetRequestFactory;
 
-import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -61,6 +59,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import javax.xml.stream.XMLStreamException;
 
 /**
  * This is a class for representing a request to be sent to a target.
@@ -394,6 +393,8 @@ public class TargetRequest {
     public boolean hasEntityBody() {
         return hasEntityBody;
     }
+
+    public URL getUrl(){return url; }
     
 
     public void setHasEntityBody(boolean hasEntityBody) {
@@ -458,7 +459,5 @@ public class TargetRequest {
         return pipe;
     }
 
-    public URL getUrl() {
-        return url;
-    }
+
 }

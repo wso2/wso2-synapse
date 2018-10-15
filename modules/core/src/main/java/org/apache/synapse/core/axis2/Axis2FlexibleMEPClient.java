@@ -142,6 +142,11 @@ public class Axis2FlexibleMEPClient {
             headers.put("Cookie", session);
         }
 
+        if (originalInMsgCtx.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
+            headers.put(PassThroughConstants.CORRELATION_ID,
+                    originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID).toString());
+        }
+
         // create a new MessageContext to be sent out as this should not corrupt the original
         // we need to create the response to the original message later on
         String preserveAddressingProperty = (String) synapseOutMessageContext.getProperty(
