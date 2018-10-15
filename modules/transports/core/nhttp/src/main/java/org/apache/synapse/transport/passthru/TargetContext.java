@@ -171,9 +171,9 @@ public class TargetContext {
                     MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
                             conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
                     correlationLog.info((targetContext.updateLastStateUpdatedTime() - lastStateUpdateTime)
-                            + " | HTTP State Transition | "
-                            + conn.getContext().getAttribute("http.connection") + " | "
-                            + method + " | " + url + " | "
+                            + "|HTTP State Transition|"
+                            + conn.getContext().getAttribute("http.connection") + "|"
+                            + method + "|" + url + "|"
                             + state.name());
                     MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
                 }

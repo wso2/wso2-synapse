@@ -19,14 +19,13 @@
 package org.apache.synapse.transport.passthru;
 
 import org.apache.axis2.AxisFault;
-import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.addressing.EndpointReference;
+import org.apache.axis2.context.MessageContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHost;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.nio.NHttpClientConnection;
-import org.apache.log4j.MDC;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
@@ -34,12 +33,12 @@ import org.apache.synapse.transport.passthru.connections.TargetConnections;
 import org.apache.synapse.transport.passthru.util.TargetRequestFactory;
 
 import java.io.OutputStream;
-import java.util.Queue;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.net.URL;
-import java.net.MalformedURLException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 

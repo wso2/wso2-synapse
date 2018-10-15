@@ -393,9 +393,9 @@ public class SourceHandler implements NHttpServerEventHandler {
         MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
                 context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
         long startTime = (long) context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME);
-        correlationLog.info((System.currentTimeMillis() - startTime) + " | HTTP | "
-                + context.getAttribute("http.connection") + " | " + request.getMethod() + " | " + request.getUri()
-                + " | ROUND-TRIP LATENCY ");
+        correlationLog.info((System.currentTimeMillis() - startTime) + "|HTTP|"
+                + context.getAttribute("http.connection") + "|" + request.getMethod() + "|" + request.getUri()
+                + "|ROUND-TRIP LATENCY ");
         MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
     }
 
