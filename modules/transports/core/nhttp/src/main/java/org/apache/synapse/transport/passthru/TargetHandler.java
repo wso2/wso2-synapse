@@ -320,7 +320,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                 MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
                         context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
                 correlationLog.info((System.currentTimeMillis() - startTime) + " | HTTP | " +
-                        TargetContext.getRequest(conn).getUrl().toString()+ " | BACKEND LATENCY");
+                        TargetContext.getRequest(conn).getRequest().getRequestLine().getUri()+" | BACKEND LATENCY");
                 MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
             }
 

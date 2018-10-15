@@ -159,7 +159,7 @@ public class TargetContext {
                 long lastStateUpdateTime = targetContext.getLastStateUpdatedTime();
                 String url = "", method = "";
                 if (targetContext.getRequest() != null) {
-                    url = targetContext.getRequest().getUrl().toString();
+                    url = targetContext.getRequest().getMethod();
                     method = targetContext.getRequest().getMethod();
                 } else {
                     HttpRequest httpRequest = conn.getHttpRequest();
