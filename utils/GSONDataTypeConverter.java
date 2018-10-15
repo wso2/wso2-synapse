@@ -12,12 +12,13 @@ import java.util.Set;
 public class GSONDataTypeConverter {
 
     // use without instantiating
-    private GSONDataTypeConverter(){
+    private GSONDataTypeConverter() {
     }
 
     /**
      * Given a string contains a json array, this method will return the Map.
      * This is where the single element array correction happens.
+     *
      * @param input JsonArray as a string.
      * @return map entry of json array.
      */
@@ -28,7 +29,7 @@ public class GSONDataTypeConverter {
         JsonArray arrayObject = null;
         if (inputElement.isJsonArray()) {
             arrayObject = (JsonArray) parser.parse(input);
-        } else if (inputElement.isJsonPrimitive()) {
+        } else if (inputElement.isJsonPrimitive() || inputElement.isJsonObject()) {
             arrayObject = new JsonArray();
             arrayObject.add(inputElement);
         }
@@ -40,6 +41,7 @@ public class GSONDataTypeConverter {
 
     /**
      * Given a json array, this method will return the map
+     *
      * @param array input array.
      * @return map entry of json array
      */

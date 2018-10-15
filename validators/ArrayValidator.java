@@ -22,6 +22,7 @@ public class ArrayValidator {
     private ArrayValidator() {
     }
 
+    // Logger instance
     private static Log logger = LogFactory.getLog(ArrayValidator.class.getName());
 
     private static final String MIN_ITEMS = "minItems";
@@ -94,10 +95,14 @@ public class ArrayValidator {
         JsonArray inputArray = null;
         if (input.getValue().isJsonArray()) {
             inputArray = input.getValue().getAsJsonArray();
-        } else if (input.getValue().isJsonPrimitive()) {
-            inputArray = singleElementArrayCorrection(input.getValue().getAsString());
         } else {
-            throw new ValidatorException("Expected array but found " + input.getValue().getAsString());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Structural corrections : Wrapping " + input.getValue().toString() + " inside an array");
+            }
+            inputArray = singleElementArrayCorrection(input.getValue());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Structural correction converting an");
+            }
         }
 
         // Structural validations
@@ -123,13 +128,12 @@ public class ArrayValidator {
     /**
      * JSON structure correction. Convert single elements to arrays.
      *
-     * @param element String payload.
+     * @param element JsonElement payload.
      * @return Json array.
      */
-    private static JsonArray singleElementArrayCorrection(String element) {
-        JsonElement jsonElement = new JsonPrimitive(element);
+    private static JsonArray singleElementArrayCorrection(JsonElement element) {
         JsonArray array = new JsonArray();
-        array.add(jsonElement);
+        array.add(element);
         return array;
     }
 
@@ -145,7 +149,9 @@ public class ArrayValidator {
     private static void processSchemaWithItemsArray(JsonArray inputArray, JsonArray schemaArray, JsonObject
             additionalItemsSchema, boolean notAllowAdditional) throws ValidatorException, ParserException {
         if (notAllowAdditional && inputArray.size() > schemaArray.size()) {
-            throw new ValidatorException("Array contains additional items than in the schema");
+            ValidatorException exception = new ValidatorException("Array contains additional items than in the schema");
+            logger.error("Array : " + inputArray.toString() + " has more items than allowed in the schema", exception);
+            throw exception;
         }
         int i = 0;
         for (JsonElement element : schemaArray) {
@@ -169,7 +175,7 @@ public class ArrayValidator {
                 } else if (ValidatorConstants.NULL_KEYS.contains(type)) {
                     // todo add null implementation
                 } else if (ValidatorConstants.OBJECT_KEYS.contains(type)) {
-                    inputArray.set(i,ObjectValidator.validateObject(inputArray.get(i).getAsJsonObject(),tempObj));
+                    inputArray.set(i, ObjectValidator.validateObject(inputArray.get(i).getAsJsonObject(), tempObj));
                 }
             }
             i++;
@@ -245,17 +251,24 @@ public class ArrayValidator {
      */
     private static void doStructuralValidations(JsonArray inputArray, int minItems, int maxItems, boolean
             uniqueItems) throws ValidatorException {
+        final String errorMsg = "Error occurs while validating the structure of array : ";
         if (minItems != -1 && inputArray.size() < minItems) {
-            throw new ValidatorException("Array violated the minItems constraint");
+            ValidatorException exception = new ValidatorException("Array violated the minItems constraint");
+            logger.error(errorMsg + inputArray.toString(), exception);
+            throw exception;
         }
         if (maxItems != -1 && inputArray.size() > maxItems) {
-            throw new ValidatorException("Array violated the maxItems constraint");
+            ValidatorException exception = new ValidatorException("Array violated the maxItems constraint");
+            logger.error(errorMsg + inputArray.toString(), exception);
+            throw exception;
         }
         if (uniqueItems) {
             Set<JsonElement> temporarySet = new HashSet();
             for (JsonElement element : inputArray) {
                 if (!temporarySet.add(element)) {
-                    throw new ValidatorException("Array violated the uniqueItems constraint");
+                    ValidatorException exception = new ValidatorException("Array violated the uniqueItems constraint");
+                    logger.error(errorMsg + inputArray.toString(), exception);
+                    throw exception;
                 }
             }
         }

@@ -6,6 +6,8 @@ import com.google.gson.JsonObject;
 import contants.ValidatorConstants;
 import exceptions.ParserException;
 import exceptions.ValidatorException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import utils.DataTypeConverter;
 import utils.GSONDataTypeConverter;
 
@@ -23,6 +25,9 @@ public class ObjectValidator {
     // Use without instantiating.
     private ObjectValidator() {
     }
+
+    // Logger instance
+    private static Log logger = LogFactory.getLog(NumericValidator.class.getName());
 
     private final static String ADDITIONAL_PROPERTIES = "additionalProperties";
     private final static String MAX_PROPERTIES = "maxProperties";
@@ -49,7 +54,11 @@ public class ObjectValidator {
             JsonArray requiredArray = schema.getAsJsonArray(REQUIRED);
             for (JsonElement element : requiredArray) {
                 if (!object.has(element.getAsString())) {
-                    throw new ValidatorException("Object does not have all the elements required in the schema");
+                    ValidatorException exception = new ValidatorException("Object does not have all the elements " +
+                            "required in the schema");
+                    logger.error("Input object : " + object.toString() + " does not contains all the elements " +
+                            "required in the schema : " + schema.toString(), exception);
+                    throw exception;
                 }
             }
         }
@@ -179,7 +188,11 @@ public class ObjectValidator {
                 boolean allowAdditional = DataTypeConverter.convertToBoolean(schema.get(ADDITIONAL_PROPERTIES)
                         .getAsString());
                 if (!allowAdditional && !inputProperties.isEmpty()) {
-                    throw new ValidatorException("Object has additional properties than allowed in schema");
+                    ValidatorException exception = new ValidatorException("Object has additional properties than " +
+                            "allowed in schema");
+                    logger.error("Input object " + object.toString() + " has additional properties than schema " +
+                            schema.toString() + " and additional properties are not allowed", exception);
+                    throw exception;
                 }
             } else if (schema.get(ADDITIONAL_PROPERTIES).isJsonObject()) {
                 JsonObject additionalSchema = schema.get(ADDITIONAL_PROPERTIES).getAsJsonObject();
@@ -253,10 +266,18 @@ public class ObjectValidator {
         int numOfProperties = entryInput.size();
 
         if (minimumProperties != -1 && numOfProperties < minimumProperties) {
-            throw new ValidatorException("Object violates the minimum number of properties constraint");
+            ValidatorException exception = new ValidatorException("Object violates the minimum number of properties " +
+                    "constraint");
+            logger.error("Input object has less number of properties than allowed minimum " + minimumProperties,
+                    exception);
+            throw exception;
         }
         if (maximumProperties != -1 && numOfProperties > maximumProperties) {
-            throw new ValidatorException("Object violates the maximum number of properties constraint");
+            ValidatorException exception = new ValidatorException("Object violates the maximum number of properties " +
+                    "constraint");
+            logger.error("Input object has higher number of properties than allowed maximum " + maximumProperties,
+                    exception);
+            throw exception;
         }
     }
 
