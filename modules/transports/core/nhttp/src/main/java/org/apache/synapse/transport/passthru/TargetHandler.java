@@ -319,18 +319,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                 long startTime = (long) context.getAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME);
                 MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
                         context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
-                correlationLog.info((System.currentTimeMillis() - startTime) + " | HTTP | " +
-                        TargetContext.getRequest(conn).getUrl().toString()+ " | BACKEND LATENCY");
-                MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
-            }
-
-            //check correlation logs enabled
-            if (targetConfiguration.isCorrelationLoggingEnabled()) {
-                long startTime = (long) context.getAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME);
-                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
-                        context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
                 correlationLog.info((System.currentTimeMillis() - startTime) + "|HTTP|" +
-                        TargetContext.getRequest(conn).getUrl().toString()+"|BACKEND LATENCY");
+                        TargetContext.getRequest(conn).getUrl().toString()+ "|BACKEND LATENCY");
                 MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
             }
 

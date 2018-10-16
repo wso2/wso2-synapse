@@ -184,7 +184,7 @@ public class SourceContext {
                     correlationLog.info((sourceContext.updateLastStateUpdatedTime() - lastStateUpdateTime)
                             + "|HTTP State Transition|"
                             + conn.getContext().getAttribute("http.connection") + "|"
-                            + method + "|" + url + ""
+                            + method + "|" + url + "|"
                             + state.name());
                     MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
                 }
