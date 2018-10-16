@@ -58,6 +58,7 @@ import javax.mail.internet.ParseException;
 import javax.xml.namespace.QName;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * This is a simple client that handles both in only and in out
@@ -143,6 +144,9 @@ public class Axis2FlexibleMEPClient {
         }
 
         if (originalInMsgCtx.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
+           if (originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID) == null){
+               originalInMsgCtx.setProperty(PassThroughConstants.CORRELATION_ID, UUID.randomUUID().toString());
+           }
             headers.put(PassThroughConstants.CORRELATION_ID,
                     originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID).toString());
         }

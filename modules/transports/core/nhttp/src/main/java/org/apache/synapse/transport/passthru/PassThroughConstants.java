@@ -16,8 +16,6 @@
 
 package org.apache.synapse.transport.passthru;
 
-import org.omg.CORBA.PUBLIC_MEMBER;
-
 public class PassThroughConstants {
 
     public static final int DEFAULT_IO_THREAD_COUNT = Runtime.getRuntime().availableProcessors();
