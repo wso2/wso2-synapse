@@ -6,7 +6,6 @@ import com.google.gson.JsonPrimitive;
 import contants.ValidatorConstants;
 import exceptions.ParserException;
 import exceptions.ValidatorException;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import utils.DataTypeConverter;
@@ -49,7 +48,7 @@ public class NumericValidator {
         }
         //replacing enclosing quotes
         value = value.replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
-        if (NumberUtils.isCreatable(value)) {
+        if (isNumeric(value)) {
             String type = null;
             if (inputObject.has(ValidatorConstants.TYPE_KEY)) {
                 type = inputObject.get(ValidatorConstants.TYPE_KEY).getAsString().replaceAll(ValidatorConstants
@@ -147,5 +146,19 @@ public class NumericValidator {
         ParserException exception = new ParserException("\"" + value + "\"" + " is not a number");
         logger.error("A number expected in the schema " + inputObject.toString() + " but received " + value, exception);
         throw exception;
+    }
+
+    /**
+     * Check whether a given number is numeric. (alternative :- commons-lang3 isCreatable())
+     * @param str input string.
+     * @return number or not.
+     */
+    private static boolean isNumeric(String str) {
+        try {
+            Double.parseDouble(str);
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+        return true;
     }
 }

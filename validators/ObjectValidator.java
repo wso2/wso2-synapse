@@ -27,7 +27,7 @@ public class ObjectValidator {
     }
 
     // Logger instance
-    private static Log logger = LogFactory.getLog(NumericValidator.class.getName());
+    private static Log logger = LogFactory.getLog(ObjectValidator.class.getName());
 
     private final static String ADDITIONAL_PROPERTIES = "additionalProperties";
     private final static String MAX_PROPERTIES = "maxProperties";

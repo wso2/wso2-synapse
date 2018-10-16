@@ -6,6 +6,8 @@ import com.google.gson.JsonParser;
 import contants.ValidatorConstants;
 import exceptions.ParserException;
 import exceptions.ValidatorException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import utils.GSONDataTypeConverter;
 import validators.*;
 
@@ -18,6 +20,9 @@ public class JavaJsonParser {
     // Use without instantiating
     private JavaJsonParser() {
     }
+
+    // Logger instance
+    private static Log logger = LogFactory.getLog(JavaJsonParser.class.getName());
 
     // JSON parser instance
     private static JsonParser parser = new JsonParser();
@@ -41,10 +46,19 @@ public class JavaJsonParser {
             boolean valid = schema.getAsBoolean();
             if (valid) {
                 return inputString;
-            } else if (!valid) throw new ValidatorException("JSON schema is not valid for all elements");
-            else throw new ValidatorException("Unexpected JSON schema");
+            } else if (!valid) {
+                ValidatorException exception = new ValidatorException("JSON schema is not valid for all elements");
+                logger.error("JSON schema is false, so all validations will fail", exception);
+                throw exception;
+            } else {
+                ValidatorException exception = new ValidatorException("Unexpected JSON schema");
+                logger.error("JSON schema should be an object or boolean", exception);
+                throw exception;
+            }
         } else {
-            throw new ValidatorException("Unexpected JSON schema");
+            ValidatorException exception = new ValidatorException("Unexpected JSON schema");
+            logger.error("JSON schema should be an object or boolean", exception);
+            throw exception;
         }
         return parseJson(inputString, schemaObject);
     }
@@ -80,7 +94,9 @@ public class JavaJsonParser {
             if (input.isJsonObject()) {
                 result = ObjectValidator.validateObject(input.getAsJsonObject(), schemaObject);
             } else {
-                throw new ValidatorException("Expected a json object input");
+                ValidatorException exception = new ValidatorException("Expected a json object input");
+                logger.error("Expected a JSON as input but found : " + input.toString(), exception);
+                throw exception;
             }
         }
         return result.toString();
