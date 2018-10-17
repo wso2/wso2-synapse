@@ -753,11 +753,20 @@ public class TargetHandler implements NHttpClientEventHandler {
 
         if (state == ProtocolState.REQUEST_HEAD || state == ProtocolState.REQUEST_BODY) {
             informWriterError(conn);
+            if (targetConfiguration.isCorrelationLoggingEnabled()){
+                logHttpRequestErrorInCorrelationLog(conn, "Exception in "+state.name());
+            }
             log.warn("Exception occurred while sending the request " + getConnectionLoggingInfo(conn));
         } else if (state == ProtocolState.RESPONSE_HEAD || state == ProtocolState.RESPONSE_BODY) {
             informReaderError(conn);
+            if (targetConfiguration.isCorrelationLoggingEnabled()){
+                logHttpRequestErrorInCorrelationLog(conn, "Exception in "+state.name());
+            }
             log.warn("Exception occurred while reading the response " + getConnectionLoggingInfo(conn));
         } else if (state == ProtocolState.REQUEST_DONE) {
+            if (targetConfiguration.isCorrelationLoggingEnabled()){
+                logHttpRequestErrorInCorrelationLog(conn, "Exception in "+state.name());
+            }
             log.warn("Exception occurred before reading the response " + getConnectionLoggingInfo(conn));
         }
         
