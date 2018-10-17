@@ -144,7 +144,8 @@ public class PassThroughConfiguration {
     }
 
     public String getCorrelationHeaderName(){
-        return getStringProperty(PassThroughConfigPNames.CORRELATION_HEADER_NAME_PROPERTY, PassThroughConstants.CORRELATION_ID);
+        return getStringProperty(PassThroughConfigPNames.CORRELATION_HEADER_NAME_PROPERTY,
+                PassThroughConstants.CORRELATION_DEFAULT_HEADER);
     }
 
     /**

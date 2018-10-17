@@ -243,4 +243,5 @@ public class PassThroughConstants {
     public static final String CORRELATION_LOGS_SYS_PROPERTY = "EnableCorrelationLogs";
     public static final String CORRELATION_MDC_PROPERTY = "Correlation-ID";
     public static final String CORRELATION_LOGGER = "CORRELATION_LOGGER";
+    public static final String CORRELATION_DEFAULT_HEADER = "activityid";
 }

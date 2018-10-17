@@ -51,6 +51,7 @@ import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.MessageHelper;
 
 import javax.mail.internet.ContentType;
@@ -147,7 +148,7 @@ public class Axis2FlexibleMEPClient {
            if (originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID) == null){
                originalInMsgCtx.setProperty(PassThroughConstants.CORRELATION_ID, UUID.randomUUID().toString());
            }
-            headers.put(PassThroughConstants.CORRELATION_ID,
+            headers.put(PassThroughConfiguration.getInstance().getCorrelationHeaderName(),
                     originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID).toString());
         }
 
