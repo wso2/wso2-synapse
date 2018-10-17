@@ -529,7 +529,9 @@ public class SourceHandler implements NHttpServerEventHandler {
     	boolean isFault = false;
         if (ex instanceof IOException) {
             logIOException(conn, (IOException) ex);
-
+            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+                logHttpRequestErrorInCorrelationLog(conn, "IO Exception");
+            }
             metrics.incrementFaultsReceiving();
 
             ProtocolState state = SourceContext.getState(conn);
