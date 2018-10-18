@@ -123,6 +123,8 @@ public class TargetResponse {
 
                 }
             } else {
+                // Complete the state transition
+                TargetContext.updateState(conn, ProtocolState.RESPONSE_DONE);
                 targetConfiguration.getConnections().releaseConnection(conn);
             }
         }
