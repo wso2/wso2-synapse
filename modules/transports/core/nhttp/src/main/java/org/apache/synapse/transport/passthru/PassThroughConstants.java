@@ -16,8 +16,6 @@
 
 package org.apache.synapse.transport.passthru;
 
-import org.omg.CORBA.PUBLIC_MEMBER;
-
 public class PassThroughConstants {
 
     public static final int DEFAULT_IO_THREAD_COUNT = Runtime.getRuntime().availableProcessors();
@@ -245,4 +243,5 @@ public class PassThroughConstants {
     public static final String CORRELATION_LOGS_SYS_PROPERTY = "EnableCorrelationLogs";
     public static final String CORRELATION_MDC_PROPERTY = "Correlation-ID";
     public static final String CORRELATION_LOGGER = "CORRELATION_LOGGER";
+    public static final String CORRELATION_DEFAULT_HEADER = "activityid";
 }

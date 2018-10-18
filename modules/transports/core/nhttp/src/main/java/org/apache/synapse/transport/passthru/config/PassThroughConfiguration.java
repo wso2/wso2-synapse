@@ -143,6 +143,11 @@ public class PassThroughConfiguration {
         return getIntProperty(PassThroughConfigPNames.MAXIMUM_CONNECTION_LIFESPAN, Integer.MAX_VALUE);
     }
 
+    public String getCorrelationHeaderName(){
+        return getStringProperty(PassThroughConfigPNames.CORRELATION_HEADER_NAME_PROPERTY,
+                PassThroughConstants.CORRELATION_DEFAULT_HEADER);
+    }
+
     /**
      * Loads the properties from a given property file path
      *

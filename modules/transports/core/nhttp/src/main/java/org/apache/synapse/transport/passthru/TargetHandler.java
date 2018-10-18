@@ -319,8 +319,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                 long startTime = (long) context.getAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME);
                 MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
                         context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
-                correlationLog.info((System.currentTimeMillis() - startTime) + " | HTTP | " +
-                        TargetContext.getRequest(conn).getUrl().toString()+ " | BACKEND LATENCY");
+                correlationLog.info((System.currentTimeMillis() - startTime) + "|HTTP|" +
+                        TargetContext.getRequest(conn).getUrl().toString()+ "|BACKEND LATENCY");
                 MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
             }
 
@@ -654,6 +654,9 @@ public class TargetHandler implements NHttpClientEventHandler {
                 log.warn("Connection time out after while in state : " + state +
                          " Socket Timeout : " + conn.getSocketTimeout() +
                          getConnectionLoggingInfo(conn));
+                if (targetConfiguration.isCorrelationLoggingEnabled()) {
+                    logHttpRequestErrorInCorrelationLog(conn, "Timeout in " + state);
+                }
                 if (requestMsgCtx != null) {
                     targetErrorHandler.handleError(requestMsgCtx,
                             ErrorCodes.CONNECTION_TIMEOUT,
@@ -761,7 +764,9 @@ public class TargetHandler implements NHttpClientEventHandler {
         if (ex instanceof IOException) {
 
             logIOException(conn, (IOException) ex);
-
+            if (targetConfiguration.isCorrelationLoggingEnabled()){
+                logHttpRequestErrorInCorrelationLog(conn, "IO Exception in " + state.name());
+            }
             if (requestMsgCtx != null) {
                 targetErrorHandler.handleError(requestMsgCtx,
                         ErrorCodes.SND_IO_ERROR,
@@ -774,7 +779,9 @@ public class TargetHandler implements NHttpClientEventHandler {
         } else if (ex instanceof HttpException) {
             String message = getErrorMessage("HTTP protocol violation : " + ex.getMessage(), conn);
             log.error(message, ex);
-
+            if (targetConfiguration.isCorrelationLoggingEnabled()){
+                logHttpRequestErrorInCorrelationLog(conn, "HTTP Exception in " + state.name());
+            }
             if (requestMsgCtx != null) {
                 targetErrorHandler.handleError(requestMsgCtx,
                         ErrorCodes.PROTOCOL_VIOLATION,
@@ -789,6 +796,9 @@ public class TargetHandler implements NHttpClientEventHandler {
                 log.error("Unexpected error: " + ex.getMessage(), ex);
             } else {
                 log.error("Unexpected error.");
+            }
+            if (targetConfiguration.isCorrelationLoggingEnabled()) {
+                logHttpRequestErrorInCorrelationLog(conn, "Unexpected error");
             }
             TargetContext.updateState(conn, ProtocolState.CLOSED);
         }
@@ -812,5 +822,37 @@ public class TargetHandler implements NHttpClientEventHandler {
             }
         }
         return "";
+    }
+
+    private void logHttpRequestErrorInCorrelationLog(NHttpClientConnection conn, String state) {
+
+        TargetContext targetContext = TargetContext.get(conn);
+        if (targetContext != null) {
+            String url = "", method = "";
+            if (targetContext.getRequest() != null) {
+                url = targetContext.getRequest().getUrl().toString();
+                method = targetContext.getRequest().getMethod();
+            } else {
+                HttpRequest httpRequest = conn.getHttpRequest();
+                if (httpRequest != null) {
+                    url = httpRequest.getRequestLine().getUri();
+                    method = httpRequest.getRequestLine().getMethod();
+                }
+            }
+            if ((method.length() != 0) && (url.length() != 0)) {
+                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
+                        conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+                Object requestStartTime =
+                        conn.getContext().getAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME);
+                long startTime = 0;
+                if (requestStartTime != null) {
+                    startTime = (long) requestStartTime;
+                }
+                correlationLog.info((System.currentTimeMillis() - startTime) + "|HTTP|"
+                        + conn.getContext().getAttribute("http.connection") + "|" + method + "|" + url
+                        + "|" + state);
+                MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+            }
+        }
     }
 }

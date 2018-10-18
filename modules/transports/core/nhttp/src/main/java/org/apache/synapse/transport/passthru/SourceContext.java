@@ -164,7 +164,6 @@ public class SourceContext {
     public static void updateState(NHttpConnection conn, ProtocolState state) {
         SourceContext sourceContext = (SourceContext)
                 conn.getContext().getAttribute(CONNECTION_INFORMATION);
-
         if (sourceContext != null) {
             if (sourceContext.getSourceConfiguration().isCorrelationLoggingEnabled()) {
                 long lastStateUpdateTime = sourceContext.getLastStateUpdatedTime();
@@ -174,20 +173,18 @@ public class SourceContext {
                     method = sourceContext.getRequest().getMethod();
                 } else {
                     HttpRequest httpRequest = conn.getHttpRequest();
-
                     if (httpRequest != null) {
                         url = httpRequest.getRequestLine().getUri();
                         method = httpRequest.getRequestLine().getMethod();
                     }
                 }
-
                 if ((method.length() != 0) && (url.length() != 0)) {
                     MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
                             conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
                     correlationLog.info((sourceContext.updateLastStateUpdatedTime() - lastStateUpdateTime)
-                            + " | HTTP State Transition | "
-                            + conn.getContext().getAttribute("http.connection") + " | "
-                            + method + " | " + url + " | "
+                            + "|HTTP State Transition|"
+                            + conn.getContext().getAttribute("http.connection") + "|"
+                            + method + "|" + url + "|"
                             + state.name());
                     MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
                 }

@@ -51,6 +51,7 @@ import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.MessageHelper;
 
 import javax.mail.internet.ContentType;
@@ -58,6 +59,7 @@ import javax.mail.internet.ParseException;
 import javax.xml.namespace.QName;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * This is a simple client that handles both in only and in out
@@ -140,6 +142,14 @@ public class Axis2FlexibleMEPClient {
         String session = (String) synapseOutMessageContext.getProperty("LB_COOKIE_HEADER");
         if (session != null) {
             headers.put("Cookie", session);
+        }
+
+        if (originalInMsgCtx.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
+           if (originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID) == null){
+               originalInMsgCtx.setProperty(PassThroughConstants.CORRELATION_ID, UUID.randomUUID().toString());
+           }
+            headers.put(PassThroughConfiguration.getInstance().getCorrelationHeaderName(),
+                    originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID).toString());
         }
 
         // create a new MessageContext to be sent out as this should not corrupt the original

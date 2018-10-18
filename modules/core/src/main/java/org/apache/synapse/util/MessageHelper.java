@@ -234,6 +234,16 @@ public class MessageHelper {
         newCtx.setEnvironment(synCtx.getEnvironment());
         newCtx.setContextEntries(synCtx.getContextEntries());
 
+        //Correlation logging code starts here
+        org.apache.axis2.context.MessageContext originalAxis2Ctx =
+                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        if (originalAxis2Ctx.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
+            String originalCorrelationId = originalAxis2Ctx.getProperty(PassThroughConstants.CORRELATION_ID).toString();
+            axis2MC.getAxis2MessageContext().setProperty(PassThroughConstants.CORRELATION_ID, originalCorrelationId
+                    + "_" + UUID.randomUUID().toString());
+        }
+        //Correlation logging code ends here
+
         // set the parent correlation details to the cloned MC -
         //                              for the use of aggregation like tasks
         newCtx.setProperty(EIPConstants.AGGREGATE_CORRELATION, synCtx.getMessageID());
