@@ -303,8 +303,35 @@ public class ClientWorker implements Runnable {
 
         // When the response from backend does not have the body(Content-Length is 0 )
         // and Content-Type is not set; ESB should not do any modification to the response and pass-through as it is.
-        if ((headers.get(HTTP.CONTENT_LEN) == null && headers.get(HTTP.TRANSFER_ENCODING) == null)
-                || "0".equals(headers.get(HTTP.CONTENT_LEN))) {
+        boolean contentLengthHeaderPresent = false;
+        String contentLengthHeader = headers.get(HTTP.CONTENT_LEN);
+
+        if (contentLengthHeader != null) {
+            contentLengthHeaderPresent = true;
+        } else {
+            for (String header : headers.keySet()) {
+                if (HTTP.CONTENT_LEN.equalsIgnoreCase(header)) {
+                    contentLengthHeader = headers.get(header);
+                    contentLengthHeaderPresent = true;
+                    break;
+                }
+            }
+        }
+
+        boolean transferEncodingHeaderPresent = headers.containsKey(HTTP.TRANSFER_ENCODING);
+
+        if (!transferEncodingHeaderPresent) {
+
+            for (String header : headers.keySet()) {
+                if (HTTP.TRANSFER_ENCODING.equalsIgnoreCase(header)) {
+                    transferEncodingHeaderPresent = true;
+                    break;
+                }
+            }
+        }
+
+        if ((!contentLengthHeaderPresent && !transferEncodingHeaderPresent)
+                || "0".equals(contentLengthHeader)) {
             responseMsgCtx.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
             return null;
         }
