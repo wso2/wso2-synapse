@@ -765,7 +765,7 @@ public class TargetHandler implements NHttpClientEventHandler {
 
             logIOException(conn, (IOException) ex);
             if (targetConfiguration.isCorrelationLoggingEnabled()){
-                logHttpRequestErrorInCorrelationLog(conn, "IO Exception in "+state.name());
+                logHttpRequestErrorInCorrelationLog(conn, "IO Exception in " + state.name());
             }
             if (requestMsgCtx != null) {
                 targetErrorHandler.handleError(requestMsgCtx,
@@ -780,7 +780,7 @@ public class TargetHandler implements NHttpClientEventHandler {
             String message = getErrorMessage("HTTP protocol violation : " + ex.getMessage(), conn);
             log.error(message, ex);
             if (targetConfiguration.isCorrelationLoggingEnabled()){
-                logHttpRequestErrorInCorrelationLog(conn, "HTTP Exception in "+state.name());
+                logHttpRequestErrorInCorrelationLog(conn, "HTTP Exception in " + state.name());
             }
             if (requestMsgCtx != null) {
                 targetErrorHandler.handleError(requestMsgCtx,
@@ -796,6 +796,9 @@ public class TargetHandler implements NHttpClientEventHandler {
                 log.error("Unexpected error: " + ex.getMessage(), ex);
             } else {
                 log.error("Unexpected error.");
+            }
+            if (targetConfiguration.isCorrelationLoggingEnabled()) {
+                logHttpRequestErrorInCorrelationLog(conn, "Unexpected error");
             }
             TargetContext.updateState(conn, ProtocolState.CLOSED);
         }
