@@ -50,7 +50,8 @@ import java.util.regex.Pattern;
 public abstract class AbstractListMediator extends AbstractMediator
         implements ListMediator {
 
-    private static final String MSG_BUILD_FAILURE_EXCEPTION_PATTERN = ".*(Wstx)(.*Exception)|.*MalformedJsonException";
+    private static final String MSG_BUILD_FAILURE_EXCEPTION_PATTERN = ".*(Wstx)(.*Exception)" +
+            "|.*MalformedJsonException|.*(synapse\\.commons\\.staxon\\.core)";
 
     // Create a Pattern object
     protected Pattern msgBuildFailureExpattern = Pattern.compile(MSG_BUILD_FAILURE_EXCEPTION_PATTERN);
