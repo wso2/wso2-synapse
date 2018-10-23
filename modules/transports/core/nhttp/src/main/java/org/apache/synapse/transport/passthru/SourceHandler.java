@@ -170,6 +170,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             corId = correlationHeader[0].getValue();
         } else {
             corId = UUID.randomUUID().toString();
+            conn.getHttpRequest().setHeader(correlationHeaderName, corId);
         }
         httpContext.setAttribute(PassThroughConstants.CORRELATION_ID, corId);
     }
