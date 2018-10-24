@@ -2,6 +2,7 @@ package validators;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import contants.ValidatorConstants;
 import exceptions.ParserException;
@@ -163,6 +164,11 @@ public class ObjectValidator {
                         .toString()), schema));
             } else if (ValidatorConstants.OBJECT_KEYS.contains(type)) {
                 entry.setValue(ObjectValidator.validateObject(entry.getValue().getAsJsonObject(), schema));
+            } else if (ValidatorConstants.NULL_KEYS.contains(type)) {
+                if (entry.getValue() != null) {
+                    NullValidator.validateNull(schema, entry.getValue().toString());
+                }
+                entry.setValue(JsonNull.INSTANCE);
             }
         }
     }
@@ -325,6 +331,11 @@ public class ObjectValidator {
                     input.get(key).toString()), schema);
         } else if (ValidatorConstants.OBJECT_KEYS.contains(type)) {
             result = ObjectValidator.validateObject(input.get(key).getAsJsonObject(), schema);
+        } else if (ValidatorConstants.NULL_KEYS.contains(type)) {
+            if (input.get(key) != null) {
+                NullValidator.validateNull(schema, input.get(key).toString());
+            }
+            result = JsonNull.INSTANCE;
         }
         input.remove(key);
         input.add(key, result);

@@ -1,8 +1,6 @@
 package validators;
 
-import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import exceptions.ValidatorException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -28,7 +26,8 @@ public class NullValidator {
      * @throws ValidatorException exception occurs in validation.
      */
     public static void validateNull(JsonObject inputObject, String value) throws ValidatorException {
-        if (value != null && !(value.equals("") || value.equals("null"))) {
+        if (value != null && !(value.equals("") || value.equals("null") || value.equals("\"\"") || value.equals
+                ("\"null\""))) {
             ValidatorException exception = new ValidatorException("Expected a null but found a value");
             logger.error("Received not null input" + value + " to be validated with : " + inputObject
                     .toString(), exception);

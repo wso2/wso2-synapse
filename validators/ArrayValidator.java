@@ -161,19 +161,19 @@ public class ArrayValidator {
                 String type = tempObj.get(ValidatorConstants.TYPE_KEY).toString().replaceAll(ValidatorConstants
                         .REGEX, "");
                 if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
-                    inputArray.set(i, BooleanValidator.validateBoolean(tempObj, inputArray.get(i)
-                            .getAsString()));
+                    inputArray.set(i, BooleanValidator.validateBoolean(tempObj, inputArray.get(i).getAsString()));
                 } else if (ValidatorConstants.NOMINAL_KEYS.contains(type)) {
-                    inputArray.set(i, StringValidator.validateNominal(tempObj, inputArray.get(i)
-                            .getAsString()));
+                    inputArray.set(i, StringValidator.validateNominal(tempObj, inputArray.get(i).getAsString()));
                 } else if (ValidatorConstants.NUMERIC_KEYS.contains(type)) {
-                    inputArray.set(i, NumericValidator.validateNumeric(tempObj, inputArray.get(i)
-                            .getAsString()));
+                    inputArray.set(i, NumericValidator.validateNumeric(tempObj, inputArray.get(i).getAsString()));
                 } else if (ValidatorConstants.ARRAY_KEYS.contains(type)) {
                     inputArray.set(i, ArrayValidator.validateArray(
                             GSONDataTypeConverter.getMapFromString(inputArray.get(i).toString()), tempObj));
                 } else if (ValidatorConstants.NULL_KEYS.contains(type)) {
-                    // todo add null implementation
+                    if(inputArray.get(i)!=null) {
+                        NullValidator.validateNull(tempObj,inputArray.get(i).toString());
+                    }
+                    inputArray.set(i,JsonNull.INSTANCE);
                 } else if (ValidatorConstants.OBJECT_KEYS.contains(type)) {
                     inputArray.set(i, ObjectValidator.validateObject(inputArray.get(i).getAsJsonObject(), tempObj));
                 }
@@ -236,7 +236,13 @@ public class ArrayValidator {
                 i++;
             }
         } else if (ValidatorConstants.NULL_KEYS.contains(type)) {
-            // todo add null implementation
+            for (JsonElement element : inputArray) {
+                if (element != null) {
+                    NullValidator.validateNull(schemaObject, element.toString());
+                }
+                inputArray.set(i, JsonNull.INSTANCE);
+                i++;
+            }
         }
     }
 
