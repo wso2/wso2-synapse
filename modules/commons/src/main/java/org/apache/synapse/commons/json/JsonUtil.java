@@ -21,6 +21,9 @@ package org.apache.synapse.commons.json;
 import org.apache.axiom.om.impl.llom.OMElementImpl;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.synapse.commons.SynapseCommonsException;
+import org.apache.synapse.commons.json.jsonparser.exceptions.ParserException;
+import org.apache.synapse.commons.json.jsonparser.exceptions.ValidatorException;
+import org.apache.synapse.commons.json.jsonparser.parser.JavaJsonParser;
 import org.apache.synapse.commons.staxon.core.json.JsonXMLConfig;
 import org.apache.synapse.commons.staxon.core.json.JsonXMLConfigBuilder;
 import org.apache.synapse.commons.staxon.core.json.JsonXMLInputFactory;
@@ -50,12 +53,15 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Properties;
 
@@ -70,6 +76,18 @@ public final class JsonUtil {
     private static final QName JSON_ARRAY = new QName("jsonArray");
 
     private static final QName JSON_VALUE = new QName("jsonValue");
+
+    /**
+     * This is a boolean property which used to enable the payload correction using a JSON schema.
+     */
+    public static String  USE_JSON_SCHEMA_VALIDATOR = "use.json.schema.validator";
+
+    /**
+     * If payload correction is enabled JSON schema should be set in this property.
+     */
+    private static final String JSON_SCHEMA_INPUT = "Json.schema.input";
+
+
     /**
      * If this property is set to <tt>true</tt> the input stream of the JSON payload will be reset
      * after writing to the output stream within the #writeAsJson method.
@@ -267,18 +285,21 @@ public final class JsonUtil {
         if (o instanceof String) {
             jsonStr = (String) o;
         }
+        Boolean parseEnabled = messageContext.isPropertyTrue(USE_JSON_SCHEMA_VALIDATOR, false);
+        String schema = messageContext.getProperty(JSON_SCHEMA_INPUT) != null ? messageContext.getProperty
+                (JSON_SCHEMA_INPUT).toString() : null;
         if (json != null) { // there is a JSON stream
             try {
                 if (element instanceof OMSourcedElementImpl) {
                     if (isAJsonPayloadElement(element)) {
-                        writeJsonStream(json, messageContext, out);
+                        writeJsonStream(json, messageContext, out, parseEnabled, schema);
                     } else { // Ignore the JSON stream
-                        writeAsJson(element, out);
+                        writeAsJson(element, out, parseEnabled, schema);
                     }
                 } else if (element != null) { // element is not an OMSourcedElementImpl. But we ignore the JSON stream.
-                    writeAsJson(element, out);
+                    writeAsJson(element, out, parseEnabled, schema);
                 } else { // element == null.
-                    writeJsonStream(json, messageContext, out);
+                    writeJsonStream(json, messageContext, out, parseEnabled, schema);
                 }
             } catch (Exception e) {
                 //Close the stream
@@ -286,7 +307,7 @@ public final class JsonUtil {
                 throw new AxisFault("Could not write JSON stream.", e);
             }
         } else if (element != null) { // No JSON stream found. Convert the existing element to JSON.
-            writeAsJson(element, out);
+            writeAsJson(element, out, parseEnabled, schema);
         } else if (jsonStr != null) { // No JSON stream or element found. See if there's a JSON_STRING set.
             try {
                 out.write(jsonStr.getBytes());
@@ -358,16 +379,24 @@ public final class JsonUtil {
                 org.apache.synapse.commons.staxon.core.json.stream.impl.Constants.SCANNER.SCANNER_1), processNCNames);
     }
 
+    public static void writeAsJson(OMElement element, OutputStream outputStream) throws AxisFault {
+        writeAsJson(element, outputStream, false, null);
+    }
+
     /**
      * Converts an XML element to its JSON representation and writes it to an output stream.<br/>
-     * Note that this method removes all existing namespace declarations and namespace prefixes of the provided XML element<br/>
+     * Note that this method removes all existing namespace declarations and namespace prefixes of the provided XML
+     * element<br/>
      *
      * @param element      XML element of which JSON representation is expected.
      * @param outputStream Output Stream to write the JSON representation.<br/>
      *                     At the end of a successful conversion, its flush method will be called.
+     * @param parseEnabled JSON schema parser enabled / disabled.
+     * @param schema       JSON schema as string.
      * @throws AxisFault
      */
-    public static void writeAsJson(OMElement element, OutputStream outputStream) throws AxisFault {
+    public static void writeAsJson(OMElement element, OutputStream outputStream, boolean parseEnabled, String schema)
+            throws AxisFault {
         XMLEventReader xmlEventReader = null;
         XMLEventWriter jsonWriter = null;
         if (element == null) {
@@ -393,9 +422,26 @@ public final class JsonUtil {
                             new ByteArrayInputStream(xmlStream.toByteArray())
                     ), processNCNames)
             );
-            jsonWriter = jsonOutputFactory.createXMLEventWriter(outputStream);
-            jsonWriter.add(xmlEventReader);
-            outputStream.flush();
+            // if a schema is found and the property is set parse the json to valid format using the schema.
+            if (parseEnabled && schema != null && !schema.isEmpty()) {
+                schemaOutputStream schemaOutputStream = new schemaOutputStream();
+                jsonWriter = jsonOutputFactory.createXMLEventWriter(schemaOutputStream);
+                jsonWriter.add(xmlEventReader);
+                String jsonPayload = schemaOutputStream.getContent();
+                try {
+                    String result = JavaJsonParser.parseJson(jsonPayload, schema);
+                    outputStream.write(result.getBytes(Charset.forName("UTF-8")));
+                    outputStream.flush();
+                } catch (ValidatorException | ParserException ex) {
+                    logger.error("Error occur while parsing the payload using the given schema", ex);
+                    outputStream.write(jsonPayload.getBytes(Charset.forName("UTF-8")));
+                    outputStream.flush();
+                }
+            } else {
+                jsonWriter = jsonOutputFactory.createXMLEventWriter(outputStream);
+                jsonWriter.add(xmlEventReader);
+                outputStream.flush();
+            }
         } catch (XMLStreamException e) {
             logger.error("#writeAsJson. Could not convert OMElement to JSON. Invalid XML payload. Error>>> " + e.getLocalizedMessage());
             throw new AxisFault("Could not convert OMElement to JSON. Invalid XML payload.", e);
@@ -948,12 +994,47 @@ public final class JsonUtil {
         return null;
     }
 
-    private static void writeJsonStream(InputStream json, MessageContext messageContext, OutputStream out) throws AxisFault {
+    /**
+     * Write a given JSON stream to the output stream.
+     * Do the JSON schema validation if its enabled and schema is provided.
+     * @param json  JSON input stream
+     * @param messageContext Axis2 message context.
+     * @param out output stream.
+     * @param parseEnabled  JSON schema parser enabled / disabled.
+     * @param schema input JSON schema.
+     * @throws AxisFault Exception occurs while writing to the output stream.
+     */
+    private static void writeJsonStream(InputStream json, MessageContext messageContext, OutputStream out, boolean
+            parseEnabled, String schema) throws AxisFault {
         try {
             if (json.markSupported()) {
                 json.reset();
             }
-            IOUtils.copy(json, out); // Write the JSON stream
+            // if a schema is found and the property is set parse the json to valid format using the schema.
+            if (parseEnabled && schema != null && !schema.isEmpty()) {
+                StringBuilder sb = new StringBuilder();
+                BufferedReader br = new BufferedReader(new InputStreamReader(json));
+                String line;
+                try {
+                    while ((line = br.readLine()) != null) {
+                        sb.append(line);
+                    }
+                } catch (Exception io) {
+                    System.out.println(io.getMessage());
+                }
+                String valid = "";
+                try {
+                    valid = JavaJsonParser.parseJson(sb.toString(), schema);
+                    InputStream stream = new ByteArrayInputStream(valid.getBytes(StandardCharsets.UTF_8));
+                    IOUtils.copy(stream, out); // Write the JSON stream
+                } catch (ParserException | ValidatorException ex) {
+                    logger.error("Error occurred when validating the JSON payload with the schema", ex);
+                    //continue with not validated payload
+                    IOUtils.copy(json, out);
+                }
+            } else {
+                IOUtils.copy(json, out);
+            }
             if (messageContext.getProperty(PRESERVE_JSON_STREAM) != null) {
                 if (json.markSupported()) {
                     json.reset();
@@ -1302,5 +1383,25 @@ public final class JsonUtil {
      */
     public static boolean isPiEnabled() {
         return isJsonToXmlPiEnabled;
+    }
+
+    /**
+     * Custom implementation of an Output stream to be used in JSON schema validation.
+     */
+    private static class schemaOutputStream extends OutputStream {
+
+        private StringBuilder sb = new StringBuilder();
+
+        @Override
+        public void write(int b) throws IOException {
+            sb.append((char) b);
+        }
+
+        // return the contest of stream as string
+        public String getContent() {
+            String result = sb.toString();
+            sb.delete(0, sb.length());
+            return result;
+        }
     }
 }
