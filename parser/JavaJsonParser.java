@@ -34,26 +34,6 @@ public class JavaJsonParser {
     private static JsonParser parser = new JsonParser();
 
     /**
-     * Stream wrapper method. Accept input stream and output an output stream.
-     *
-     * @param inputStream inputStream of the incoming payload.
-     * @param inputSchema JSON schema as string.
-     * @return Output stream contains the validated payload.
-     * @throws ValidatorException Exception occurs in validation process.
-     * @throws ParserException    Exception occurs in data type parsing.
-     * @throws IOException        Exception occurs when reading from the stream.
-     */
-    public static OutputStream parseJson(InputStream inputStream, String inputSchema) throws ValidatorException,
-            ParserException, IOException {
-        String payload = IOUtils.toString(inputStream, "UTF-8");
-        String result = parseJson(payload, inputSchema);
-        org.apache.commons.io.output.ByteArrayOutputStream xmlStream =
-                new org.apache.commons.io.output.ByteArrayOutputStream();
-        xmlStream.write(result.getBytes());
-        return xmlStream;
-    }
-
-    /**
      * This method parse a given JSON string according to the given schema. Both as string.
      *
      * @param inputString input String.
