@@ -84,7 +84,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
         // create the Timer object and a TimeoutHandler task
         TimeoutHandler timeoutHandler = new TimeoutHandler(callbackStore, contextInformation);
-
+        
         Timer timeOutTimer = synCfg.getSynapseTimer();
         long timeoutHandlerInterval = SynapseConfigUtils.getTimeoutHandlerInterval();
 
@@ -367,8 +367,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             response.setServerSide(true);
             response.setProperty(PassThroughConstants.CORRELATION_ID,
                     axisOutMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID));
-            response.setProperty(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY,
-                    axisOutMsgCtx.getProperty(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY));
             response.setProperty(SynapseConstants.ISRESPONSE_PROPERTY, Boolean.TRUE);
             response.setProperty(MessageContext.TRANSPORT_OUT,
                     axisOutMsgCtx.getProperty(MessageContext.TRANSPORT_OUT));
@@ -410,7 +408,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             // property state to original state.
             if (axisOutMsgCtx.getProperty(
                     AddressingConstants.DISABLE_ADDRESSING_FOR_OUT_MESSAGES) != null) {
-
+                
                 response.setProperty(AddressingConstants.DISABLE_ADDRESSING_FOR_OUT_MESSAGES,
                         axisOutMsgCtx.getProperty(
                                 AddressingConstants.DISABLE_ADDRESSING_FOR_OUT_MESSAGES));
@@ -428,7 +426,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             }
 
             // compare original received message (axisOutMsgCtx) soap version with the response
-            // if they are different change to original version
+            // if they are different change to original version 
             /*if(axisOutMsgCtx.isSOAP11() != response.isSOAP11()) { //Removing since logic moved to Axis2Sender
             	if(axisOutMsgCtx.isSOAP11()) {
             		SOAPUtils.convertSOAP12toSOAP11(response);
@@ -469,7 +467,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 if(log.isDebugEnabled()){
                     log.debug("FORCE_ERROR_ON_SOAP_FAULT is true, checking for SOAPFault");
                 }
-
+                
                 try {
                     RelayUtils.buildMessage(((Axis2MessageContext) synapseInMessageContext).getAxis2MessageContext(),true);
                 } catch (Exception e) {
@@ -477,12 +475,12 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 }
 
                 if ((synapseInMessageContext.getEnvelope() != null) && synapseInMessageContext.getEnvelope().hasFault()) {
-
+                
                     if(log.isDebugEnabled()){
                         log.debug("SOAPFault found in response message, forcing endpoint "+
                                 successfulEndpoint.getName()+" to fail");
                     }
-
+                    
                     //setup new pipe configuration..if failure happens (this will be setup as the source writer and during the TargetContext
                     //clean up operation the writer will be reset and pull to the buffer
                 	MessageContext axis2OUTMC =((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext();
@@ -496,7 +494,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
                     synapseOutMsgCtx.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
                     synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_CODE, SynapseConstants.ENDPOINT_CUSTOM_ERROR);
-
+                    
                     boolean failOver =false;
                     if(successfulEndpoint instanceof AbstractEndpoint){
                     	Endpoint endpoint =((AbstractEndpoint)successfulEndpoint).getParentEndpoint();
@@ -504,16 +502,16 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     		failOver =true;
                     	}
                     }
-
+                    
                  // set the properties of the original MC to the new MC
 
                     for (Object key : synapseOutMsgCtx.getPropertyKeySet()) {
                         synapseInMessageContext.setProperty(
                                 (String) key, synapseOutMsgCtx.getProperty((String) key));
                     }
-
+                   
                     if(failOver){
-                    	 //we may required to handle same message for failover cases only other than that
+                    	 //we may required to handle same message for failover cases only other than that 
                     	 //should treat based on the incoming message
                     	 ((FaultHandler) successfulEndpoint).handleFault(synapseOutMsgCtx, null);
                     }else{
