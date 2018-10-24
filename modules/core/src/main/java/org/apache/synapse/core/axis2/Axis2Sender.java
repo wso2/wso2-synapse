@@ -341,6 +341,10 @@ public class Axis2Sender {
             return; // Skip the conversion for REST
         }
 
+        if (Constants.VALUE_TRUE.equals(((Axis2MessageContext) synCtx).getAxis2MessageContext().
+                getProperty(Constants.Configuration.ENABLE_MTOM))) {
+            return; // Skip the conversion if MTOM is enabled
+        }
 
         Object isClientDoingSOAP11Obj = synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11);
 
