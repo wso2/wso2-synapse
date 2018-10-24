@@ -318,11 +318,13 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
 		}
         if (synCtx.isResponse()){
             org.apache.axis2.context.MessageContext context = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-            SourceConfiguration sourceConfiguration = (SourceConfiguration)context.getProperty("PASS_THROUGH_SOURCE_CONFIGURATION");
-            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+            //SourceConfiguration sourceConfiguration = (SourceConfiguration)context.getProperty("PASS_THROUGH_SOURCE_CONFIGURATION");
+            if (context.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
                 Map headers = (Map) context.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-                headers.put(PassThroughConfiguration.getInstance().getCorrelationHeaderName(),
-                        context.getProperty(PassThroughConstants.CORRELATION_ID));
+                if (headers != null) {
+                    headers.put(PassThroughConfiguration.getInstance().getCorrelationHeaderName(),
+                            context.getProperty(PassThroughConstants.CORRELATION_ID));
+                }
             }
         }
 
