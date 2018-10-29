@@ -71,6 +71,7 @@ import java.io.OutputStream;
 import java.rmi.RemoteException;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import javax.xml.stream.XMLStreamException;
 
 /**
@@ -568,8 +569,15 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 //when there is no SOAPAction.
                 if (Constants.VALUE_TRUE.equals(msgContext.getProperty(Constants.Configuration.ENABLE_MTOM)) ||
                         Constants.VALUE_TRUE.equals(msgContext.getProperty(Constants.Configuration.ENABLE_SWA))) {
-                    msgContext.setProperty(Constants.Configuration.CONTENT_TYPE, PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED);
-                    msgContext.setProperty(Constants.Configuration.MESSAGE_TYPE, PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED);
+                    Object contentType = msgContext.getProperty(Constants.Configuration.CONTENT_TYPE);
+                    if (Objects.isNull(contentType) ||
+                            !((String) contentType).trim()
+                                                   .startsWith(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
+                        msgContext.setProperty(Constants.Configuration.CONTENT_TYPE,
+                                               PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED);
+                    }
+                    msgContext.setProperty(Constants.Configuration.MESSAGE_TYPE,
+                                           PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED);
                 }
 
                 MessageFormatter formatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);

@@ -312,6 +312,15 @@ public class Axis2FlexibleMEPClient {
                         org.apache.axis2.Constants.Configuration.ENABLE_MTOM,
                         org.apache.axis2.Constants.VALUE_TRUE);
                 axisOutMsgCtx.setDoingMTOM(true);
+                // Remove the Content-Type transport header if it is not multipart/related to honor the content
+                // type extracted from the SOAPMessageFormatter
+                Object trpHeaders = axisOutMsgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
+                if (trpHeaders != null && trpHeaders instanceof Map &&
+                        ((Map) trpHeaders).get(HTTPConstants.HEADER_CONTENT_TYPE) != null &&
+                        !isMultipartContent(((Map) trpHeaders).get(HTTPConstants.HEADER_CONTENT_TYPE).toString())) {
+                    ((Map) trpHeaders).remove(HTTPConstants.HEADER_CONTENT_TYPE);
+                }
+
 
             } else if (endpoint.isUseSwa()) {
                 axisOutMsgCtx.setDoingSwA(true);
@@ -715,10 +724,16 @@ public class Axis2FlexibleMEPClient {
         return synCtx.getProperty(SynapseConstants.LAST_ENDPOINT) + ", URI : " + axisCtx.getTo().getAddress();
     }
 
+    /**
+     * Check whether the content type is multipart or not
+     * @param contentType
+     * @return true for multipart content types
+     */
+    public static boolean isMultipartContent(String contentType) {
+        if (contentType.contains(HTTPConstants.MEDIA_TYPE_MULTIPART_FORM_DATA)
+                || contentType.contains(HTTPConstants.HEADER_ACCEPT_MULTIPART_RELATED)) {
+            return true;
+        }
+        return false;
+    }
 }
-
-// if(Utils.isClientThreadNonBlockingPropertySet(axisOutMsgCtx) ){
-//SynapseCallbackReceiver synapseCallbackReceiver=(SynapseCallbackReceiver)  axisOutMsgCtx.getAxisOperation().getMessageReceiver();
-//synapseCallbackReceiver.addCallback(synapseOutMessageContext.getMessageID(),new AsyncCallback(synapseOutMessageContext));
-//
-//}
