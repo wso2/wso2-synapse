@@ -47,7 +47,6 @@ import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.POXUtils;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -350,6 +349,7 @@ public class Axis2Sender {
 
         // Determine whether generated response is in SOAP11 format.
         boolean isResponseSOAP11 = false;
+        boolean isResponseSOAP12 = false;
         MessageContext responseCtx = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         Object headers = responseCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
         if (headers != null && headers instanceof Map) {
@@ -359,13 +359,17 @@ public class Axis2Sender {
                 if (((String) responseContentType).trim().startsWith(SynapseConstants.SOAP11_CONTENT_TYPE) &&
                         !responseCtx.isDoingREST()) {   // REST can also have text/xml
                     isResponseSOAP11 = true;
+                } else if (((String) responseContentType).trim().startsWith(SynapseConstants.SOAP12_CONTENT_TYPE)) {
+                    isResponseSOAP12 = true;
                 }
             }
         }
 
         if ((Boolean) isClientDoingSOAP11Obj) {     // If request is in SOAP11 format
 
-            if (isResponseSOAP11) {  // Response is also in the SOAP11 format - no conversion required
+            // Response is not in SOAP12 format (i.e. can be SOAP11 or any other (non REST) format)
+            // Hence, no conversion required is required
+            if (!isResponseSOAP12 && !responseCtx.isDoingREST()) {
                 return;
             }
 
