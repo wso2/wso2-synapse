@@ -268,7 +268,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                         && msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH) != null) {
                     msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH, Long.parseLong(
                             (String) msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH)));
-                } else if(msgContext.getProperty(PassThroughConstants.DISABLE_CHUNKING) == null) {
+                } else if (msgContext.getProperty(PassThroughConstants.DISABLE_CHUNKING) == null) {
                     msgContext.setProperty(PassThroughConstants.DISABLE_CHUNKING_CHECK, false);
                 }
 
