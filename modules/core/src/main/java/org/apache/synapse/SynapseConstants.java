@@ -488,6 +488,8 @@ public final class SynapseConstants {
     // Blocking sender operation failure
     public static final int BLOCKING_SENDER_OPERATION_FAILED    = 401002;
 
+    public static final int NON_BLOCKING_CALL_OPERATION_FAILED = 401003;
+
     public static final String FORCE_ERROR_PROPERTY = "FORCE_ERROR_ON_SOAP_FAULT";
     public static final int ENDPOINT_CUSTOM_ERROR = 500000;
 
