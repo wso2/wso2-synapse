@@ -56,6 +56,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -91,7 +92,8 @@ public class TargetRequest {
     private boolean keepAlive = true;
     /** logger for correlation.log */
     private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
-
+    /** Chunked */
+    private String chunked = "chunked";
 
     /**
      * Create a target request.
@@ -212,7 +214,7 @@ public class TargetRequest {
 
             if (forceContentLength) {
                 entity.setChunked(false);
-                if (forceContentLengthCopy && contentLength > 0) {
+                if (forceContentLengthCopy && contentLength >= 0) {
                     entity.setContentLength(contentLength);
                 }
             }else{
@@ -230,6 +232,12 @@ public class TargetRequest {
         } else {
             request = new BasicHttpRequest(method, path,
                     version != null ? version : HttpVersion.HTTP_1_1);
+            if (requestMsgCtx.getProperty(PassThroughConstants.DISABLE_CHUNKING_CHECK) != null &&
+                    requestMsgCtx.getProperty(PassThroughConstants.DISABLE_CHUNKING_CHECK).equals(false)) {
+                //TODO : Add "Transfer-Encoding: chunked" header
+            } else {
+                request.setHeader(HTTP.CONTENT_LEN, "0");
+            }
         }
 
         Set<Map.Entry<String, LinkedHashSet<String>>> entries = headers.entrySet();

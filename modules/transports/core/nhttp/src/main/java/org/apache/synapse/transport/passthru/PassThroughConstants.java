@@ -35,6 +35,7 @@ public class PassThroughConstants {
     public static final String HTTP_SC = "HTTP_SC";
     public static final String FORCE_HTTP_1_0 = "FORCE_HTTP_1.0";
     public static final String DISABLE_CHUNKING = "DISABLE_CHUNKING";
+    public static final String DISABLE_CHUNKING_CHECK = "DISABLE_CHUNKING_CHECK";
     public static final String FULL_URI = "FULL_URI";
     public static final String NO_KEEPALIVE = "NO_KEEPALIVE";
     public static final String DISABLE_KEEPALIVE = "http.connection.disable.keepalive";
