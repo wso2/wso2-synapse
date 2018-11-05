@@ -373,6 +373,17 @@ public class VFSUtils {
         return false;
     }
 
+    public static boolean canBeRead(FileObject fo, Long waitTimeBeforeRead) {
+        if(waitTimeBeforeRead != null) {
+            try {
+                return fo.getContent().getLastModifiedTime() < (new Date().getTime() - waitTimeBeforeRead);
+            } catch (FileSystemException e) {
+                log.warn("Unable to determine whether the file can be read or not", e);
+            }
+        }
+        return true;
+    }
+
     public static void releaseFail(FileSystemManager fsManager, FileObject fo) {
         try {
 	    String fullPath = fo.getName().getURI();	
