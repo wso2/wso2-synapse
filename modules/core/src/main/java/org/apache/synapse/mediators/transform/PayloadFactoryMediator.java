@@ -334,7 +334,10 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     String trimmedReplacementValue = replacementValue.trim();
                     // This is to replace " with \" and \\ with \\\\
                     //replacing other json special characters i.e \b, \f, \n \r, \t
-                    if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(STRING_TYPE) &&
+                    if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) {
+                        replacementValue = escapeXMLSpecialChars(replacementValue);
+                    }
+                    else if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(STRING_TYPE) &&
                             (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
                         replacementValue = escapeSpecialChars(replacementValue);
                         // Check for following property which will force the string to include quotes
@@ -371,6 +374,20 @@ public class PayloadFactoryMediator extends AbstractMediator {
         return replaceString.replaceAll(Matcher.quoteReplacement("\\\\"), ESCAPE_BACK_SLASH_WITH_SIXTEEN_BACK_SLASHES)
                 .replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES)
                 .replaceAll("\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\t", ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES);
+    }
+
+    /**
+     * Helper method to replace required char values with escape characters for XML.
+     *
+     * @param replaceString
+     * @return replacedString
+     */
+    private String escapeXMLSpecialChars(String replaceString) {
+        return replaceString.replaceAll("\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
                 .replaceAll("\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
                 .replaceAll("\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
                 .replaceAll("\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
