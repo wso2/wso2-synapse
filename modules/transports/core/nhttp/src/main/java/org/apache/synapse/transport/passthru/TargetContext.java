@@ -17,7 +17,12 @@
 package org.apache.synapse.transport.passthru;
 
 import org.apache.axis2.context.MessageContext;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import org.apache.http.HttpRequest;
 import org.apache.http.nio.NHttpConnection;
+import org.apache.log4j.MDC;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.util.ControlledByteBuffer;
 
@@ -41,6 +46,10 @@ public class TargetContext {
     private Pipe reader;
     /** The current writer */
     private Pipe writer;
+    /** logger for correlation.log */
+    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
+    /** Time that state got updated*/
+    private long lastStateUpdatedTime;
 
     public TargetContext(TargetConfiguration targetConfiguration) {
         this.targetConfiguration = targetConfiguration;
@@ -52,6 +61,10 @@ public class TargetContext {
 
     public void setState(ProtocolState state) {
         this.state = state;
+    }
+
+    public TargetConfiguration getTargetConfiguration() {
+        return targetConfiguration;
     }
 
     public TargetRequest getRequest() {
@@ -128,20 +141,45 @@ public class TargetContext {
 
     public static void create(NHttpConnection conn, ProtocolState state, 
                               TargetConfiguration configuration) {
-        TargetContext info = new TargetContext(configuration);
-
-        conn.getContext().setAttribute(CONNECTION_INFORMATION, info);
-
-        info.setState(state);
+        TargetContext targetContext = new TargetContext(configuration);
+        conn.getContext().setAttribute(CONNECTION_INFORMATION, targetContext);
+        targetContext.setState(state);
+        if (targetContext.getTargetConfiguration().isCorrelationLoggingEnabled()) {
+            targetContext.updateLastStateUpdatedTime();
+        }
     }
 
     public static void updateState(NHttpConnection conn, ProtocolState state) {
-        TargetContext info = (TargetContext)
-                conn.getContext().getAttribute(CONNECTION_INFORMATION);
 
-        if (info != null) {
-            info.setState(state);
-        }  else {
+        TargetContext targetContext = (TargetContext)
+                conn.getContext().getAttribute(CONNECTION_INFORMATION);
+        if (targetContext != null) {
+            targetContext.setState(state);
+            if (targetContext.getTargetConfiguration().isCorrelationLoggingEnabled()) {
+                long lastStateUpdateTime = targetContext.getLastStateUpdatedTime();
+                String url = "", method = "";
+                if (targetContext.getRequest() != null) {
+                    url = targetContext.getRequest().getUrl().toString();
+                    method = targetContext.getRequest().getMethod();
+                } else {
+                    HttpRequest httpRequest = conn.getHttpRequest();
+                    if (httpRequest != null) {
+                        url = httpRequest.getRequestLine().getUri();
+                        method = httpRequest.getRequestLine().getMethod();
+                    }
+                }
+                if ((method.length() != 0) && (url.length() != 0)) {
+                    MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
+                            conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+                    correlationLog.info((targetContext.updateLastStateUpdatedTime() - lastStateUpdateTime)
+                            + "|HTTP State Transition|"
+                            + conn.getContext().getAttribute("http.connection") + "|"
+                            + method + "|" + url + "|"
+                            + state.name());
+                    MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+                }
+            }
+        } else {
             throw new IllegalStateException("Connection information should be present");
         }
     }
@@ -201,4 +239,12 @@ public class TargetContext {
         return (TargetContext) conn.getContext().getAttribute(CONNECTION_INFORMATION);
     }
 
+    public long getLastStateUpdatedTime() {
+        return lastStateUpdatedTime;
+    }
+
+    public long updateLastStateUpdatedTime() {
+        this.lastStateUpdatedTime = System.currentTimeMillis();
+        return this.lastStateUpdatedTime;
+    }
 }

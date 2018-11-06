@@ -62,6 +62,7 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
+import java.util.UUID;
 
 import static org.apache.synapse.SynapseConstants.PASSWORD_PATTERN;
 import static org.apache.synapse.SynapseConstants.URL_PATTERN;
@@ -100,6 +101,16 @@ public class MessageHelper {
         newCtx.setConfiguration(synCtx.getConfiguration());
         newCtx.setEnvironment(synCtx.getEnvironment());
         newCtx.setContextEntries(synCtx.getContextEntries());
+
+        //Correlation logging code starts here
+        org.apache.axis2.context.MessageContext originalAxis2Ctx =
+                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        if (originalAxis2Ctx.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
+            String originalCorrelationId = originalAxis2Ctx.getProperty(PassThroughConstants.CORRELATION_ID).toString();
+            axis2MC.getAxis2MessageContext().setProperty(PassThroughConstants.CORRELATION_ID, originalCorrelationId
+                    + "_" + UUID.randomUUID().toString());
+        }
+        //Correlation logging code ends here
 
         // set the parent correlation details to the cloned MC -
         //                              for the use of aggregation like tasks
@@ -222,6 +233,16 @@ public class MessageHelper {
         newCtx.setConfiguration(synCtx.getConfiguration());
         newCtx.setEnvironment(synCtx.getEnvironment());
         newCtx.setContextEntries(synCtx.getContextEntries());
+
+        //Correlation logging code starts here
+        org.apache.axis2.context.MessageContext originalAxis2Ctx =
+                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        if (originalAxis2Ctx.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
+            String originalCorrelationId = originalAxis2Ctx.getProperty(PassThroughConstants.CORRELATION_ID).toString();
+            axis2MC.getAxis2MessageContext().setProperty(PassThroughConstants.CORRELATION_ID, originalCorrelationId
+                    + "_" + UUID.randomUUID().toString());
+        }
+        //Correlation logging code ends here
 
         // set the parent correlation details to the cloned MC -
         //                              for the use of aggregation like tasks

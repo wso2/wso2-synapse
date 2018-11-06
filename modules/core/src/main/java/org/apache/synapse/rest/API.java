@@ -44,6 +44,9 @@ import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.http.conn.SynapseWireLogHolder;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
+import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 
 import java.util.*;
 
@@ -313,6 +316,21 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
 			((Axis2MessageContext) synCtx).getAxis2MessageContext().
 							setProperty(NhttpConstants.REST_URL_POSTFIX,restURLPostfix);
 		}
+        if (synCtx.isResponse()) {
+            org.apache.axis2.context.MessageContext context = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+            if (context.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
+                Map headers = (Map) context.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+                if (headers != null) {
+                    headers.put(PassThroughConfiguration.getInstance().getCorrelationHeaderName(),
+                            context.getProperty(PassThroughConstants.CORRELATION_ID));
+                } else {
+                    Map<String, String> transportHeaders = new HashMap();
+                    transportHeaders.put(PassThroughConfiguration.getInstance().getCorrelationHeaderName(),
+                            context.getProperty(PassThroughConstants.CORRELATION_ID).toString());
+                    context.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, transportHeaders);
+                }
+            }
+        }
 
         for (Handler handler : handlers) {
             auditDebug("Processing message with ID: " + synCtx.getMessageID() + " through " +

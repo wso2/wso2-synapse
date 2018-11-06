@@ -17,11 +17,14 @@
 package org.apache.synapse.transport.passthru;
 
 import org.apache.commons.collections.map.MultiValueMap;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.http.*;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.NHttpClientConnection;
+import org.apache.log4j.MDC;
 import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
@@ -59,6 +62,8 @@ public class TargetResponse {
     private boolean expectResponseBody = true;
     /** Whether to shutdown connection after response completion*/
     private boolean forceShutdownConnectionOnComplete = false;
+    /** logger for correlation.log */
+    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
 
     public TargetResponse(TargetConfiguration targetConfiguration,
                           HttpResponse response,
@@ -144,7 +149,6 @@ public class TargetResponse {
             conn.getContext().setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME,System.currentTimeMillis());
             conn.getContext().setAttribute(PassThroughConstants.RES_ARRIVAL_TIME,System.currentTimeMillis());
             TargetContext.updateState(conn, ProtocolState.RESPONSE_DONE);
-
             targetConfiguration.getMetrics().notifyReceivedMessageSize(
                     conn.getMetrics().getReceivedBytesCount());
 

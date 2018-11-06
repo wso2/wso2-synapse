@@ -109,8 +109,8 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         int i = 0;
         while (iter.hasNext()) {
             if (synLog.isTraceOrDebugEnabled()) {
-                synLog.traceOrDebug("Submitting " + (i+1) + " of " + targets.size() +
-                    " messages for " + (isSequential() ? "sequential processing" : "parallel processing"));
+                synLog.traceOrDebug("Submitting " + (i + 1) + " of " + targets.size() +
+                        " messages for " + (isSequential() ? "sequential processing" : "parallel processing"));
             }
 
             MessageContext clonedMsgCtx = getClonedMessageContext(synCtx, i++, targets.size());
