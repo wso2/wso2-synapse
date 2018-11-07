@@ -373,8 +373,14 @@ public class VFSUtils {
         return false;
     }
 
+    /**
+     *
+     * @param fo representing the processed file
+     * @param waitTimeBeforeRead representing the time period in milliseconds to wait before reading the file
+     * @return boolean true if the can be processed or false if not
+     */
     public static boolean canBeRead(FileObject fo, Long waitTimeBeforeRead) {
-        if(waitTimeBeforeRead != null) {
+        if(waitTimeBeforeRead != null && waitTimeBeforeRead > 0) {
             try {
                 return fo.getContent().getLastModifiedTime() < (new Date().getTime() - waitTimeBeforeRead);
             } catch (FileSystemException e) {
