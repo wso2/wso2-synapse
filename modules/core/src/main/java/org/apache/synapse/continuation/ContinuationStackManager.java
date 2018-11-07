@@ -27,6 +27,7 @@ import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.axis2.ProxyService;
+import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.API;
@@ -447,6 +448,27 @@ public class ContinuationStackManager {
             return;
         }
 
+        // For Inbound Endpoints
+        if (synCtx.getProperty(SynapseConstants.IS_INBOUND) != null) {
+            String inboundEndpointName = (String) synCtx.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME);
+            if (inboundEndpointName != null) {
+                InboundEndpoint inboundEndpoint = synCtx.getConfiguration().getInboundEndpoint(inboundEndpointName);
+                if (inboundEndpoint != null) {
+                    String errorSeqName = inboundEndpoint.getOnErrorSeq();
+                    if (errorSeqName != null) {
+                        SequenceMediator errorSeq = (SequenceMediator) synCtx.getConfiguration().getSequence(errorSeqName);
+                        if (errorSeq !=  null) {
+                            synCtx.pushFaultHandler(new MediatorFaultHandler(errorSeq));
+                            return;
+                        } else {
+                            handleException("Sequence Mediator : " + errorSeqName + "not found");
+                        }
+                    }
+                } else {
+                    handleException("Inbound Endpoint : " + inboundEndpointName + "not found");
+                }
+            }
+        }
         //For main sequence/MessageInjector etc, push the default fault handler
         synCtx.pushFaultHandler(new MediatorFaultHandler(synCtx.getFaultSequence()));
 
