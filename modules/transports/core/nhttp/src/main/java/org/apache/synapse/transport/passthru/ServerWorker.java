@@ -189,10 +189,20 @@ public class ServerWorker implements Runnable {
         // When POST request doesn't contain a Content-Type,
         // recipient should consider it as application/octet-stream (rfc2616)
         if (contentType == null || contentType.isEmpty()) {
-            contentType = PassThroughConstants.APPLICATION_OCTET_STREAM;
+            String httpMethod = (String) msgContext.getProperty(HTTP_METHOD);
             // Temp fix for https://github.com/wso2/product-ei/issues/2001
-            if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(HTTP_METHOD))) {
+            // Else if block is added to prevent the content-type assignment as application/octet-stream
+            // for all incoming requests. Current fix sets content-type as application/octet-stream only
+            // for POST requests which has body and no content-type
+            // as per spec: https://tools.ietf.org/html/rfc2616#page-43
+            if (HTTPConstants.HTTP_METHOD_GET.equals(httpMethod)) {
                 contentType = HTTPConstants.MEDIA_TYPE_X_WWW_FORM;
+            } else {
+                Map transportHeaders = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
+                String contentLength = transportHeaders.get(PassThroughConstants.HTTP_CONTENT_LENGTH).toString();
+                if (HTTPConstants.HTTP_METHOD_POST.equals(httpMethod) && Integer.parseInt(contentLength) != 0 ) {
+                    contentType = PassThroughConstants.APPLICATION_OCTET_STREAM;
+                }
             }
         }
         if (HTTPConstants.MEDIA_TYPE_X_WWW_FORM.equals(contentType) ||
