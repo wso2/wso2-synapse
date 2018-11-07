@@ -373,6 +373,23 @@ public class VFSUtils {
         return false;
     }
 
+    /**
+     *
+     * @param fo representing the processed file
+     * @param waitTimeBeforeRead representing the time period in milliseconds to wait before reading the file
+     * @return boolean true if the can be processed or false if not
+     */
+    public static boolean isReadyToRead(FileObject fo, Long waitTimeBeforeRead) {
+        if(waitTimeBeforeRead != null && waitTimeBeforeRead > 0) {
+            try {
+                return fo.getContent().getLastModifiedTime() < (System.currentTimeMillis() - waitTimeBeforeRead);
+            } catch (FileSystemException e) {
+                log.warn("Unable to determine whether the file can be read or not", e);
+            }
+        }
+        return true;
+    }
+
     public static void releaseFail(FileSystemManager fsManager, FileObject fo) {
         try {
 	    String fullPath = fo.getName().getURI();	
