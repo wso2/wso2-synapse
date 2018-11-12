@@ -51,6 +51,7 @@ import org.apache.axis2.transport.http.HTTPTransportUtils;
 import org.apache.axis2.util.MessageContextBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpInetConnection;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -197,10 +198,9 @@ public class ServerWorker implements Runnable {
             // as per spec: https://tools.ietf.org/html/rfc2616#page-43
             if (HTTPConstants.HTTP_METHOD_GET.equals(httpMethod)) {
                 contentType = HTTPConstants.MEDIA_TYPE_X_WWW_FORM;
-            } else {
-                Map transportHeaders = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
-                String contentLength = transportHeaders.get(PassThroughConstants.HTTP_CONTENT_LENGTH).toString();
-                if (HTTPConstants.HTTP_METHOD_POST.equals(httpMethod) && Integer.parseInt(contentLength) != 0 ) {
+            } else if (HTTPConstants.HTTP_METHOD_POST.equals(httpMethod)) {
+                if (request.isEntityEnclosing() &&
+                        ((HttpEntityEnclosingRequest) request.getRequest()).getEntity().getContentLength() != 0) {
                     contentType = PassThroughConstants.APPLICATION_OCTET_STREAM;
                 }
             }
