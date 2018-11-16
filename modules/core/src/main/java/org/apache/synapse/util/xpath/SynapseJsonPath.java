@@ -19,6 +19,8 @@
 package org.apache.synapse.util.xpath;
 
 import com.jayway.jsonpath.JsonPath;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -141,5 +143,86 @@ public class SynapseJsonPath extends SynapsePath {
 
     public void setJsonPathExpression(String jsonPathExpression) {
         this.expression = jsonPathExpression;
+    }
+
+
+    /**
+     * Read the JSON Stream and returns a list of objects using the jsonPath.
+     */
+    @Override
+    public Object evaluate(Object object) {
+        List result = null;
+        if (object != null) {
+            if (object instanceof MessageContext) {
+                MessageContext synCtx = (MessageContext) object;
+                result = listValueOf(synCtx);
+            } else if (object instanceof String) {
+                result = listValueOf(IOUtils.toInputStream(object.toString()));
+            }
+        }
+        return result;
+    }
+
+    /*
+     * Read JSON stream and return and object
+     */
+    private List listValueOf(MessageContext synCtx) {
+        org.apache.axis2.context.MessageContext amc = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        InputStream stream;
+        if (!JsonUtil.hasAJsonPayload(amc) || "true".equals(enableStreamingJsonPath)) {
+            try {
+                if (null == amc.getEnvelope().getBody().getFirstElement()) {
+                    // Get message from PT Pipe.
+                    stream = getMessageInputStreamPT(amc);
+                    if (stream == null) {
+                        stream = JsonUtil.getJsonPayload(amc);
+                    } else {
+                        JsonUtil.getNewJsonPayload(amc, stream, true, true);
+                    }
+                } else {
+                    // Message Already built.
+                    stream = JsonUtil.toJsonStream(amc.getEnvelope().getBody().getFirstElement());
+                }
+                return listValueOf(stream);
+            } catch (IOException e) {
+                handleException("Could not find JSON Stream in PassThrough Pipe during JSON path evaluation.", e);
+            }
+        } else {
+            stream = JsonUtil.getJsonPayload(amc);
+            return listValueOf(stream);
+        }
+        return null;
+    }
+
+    /**
+     * This method always return a List and it will contains a list as the 0th
+     * value, if the path is definite. if the path is not a definite list will
+     * contain multiple element. NULL will return if the path is invalid. Empty
+     * list will return if the path points to null.
+     */
+    private List listValueOf(final InputStream jsonStream) {
+        if (jsonStream == null) {
+            return null;
+        }
+        List result = new ArrayList();
+        try {
+            Object object = jsonPath.read(jsonStream);
+            if (object != null) {
+                if (object instanceof List && !jsonPath.isPathDefinite()) {
+                    result = (List) object;
+                } else {
+                    result.add(object);
+                }
+            }
+        } catch (IOException e) {
+            // catch invalid json paths that do not match with the existing JSON payload.
+            // not throwing the exception as done in Xpath
+            log.error("AggregateMediator Failed to evaluate correlate expression: " + jsonPath.getPath());
+            return null;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("#listValueOf. Evaluated JSON path <" + jsonPath.getPath() + "> : <null>.");
+        }
+        return result;
     }
 }
