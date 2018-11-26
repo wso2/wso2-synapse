@@ -64,6 +64,11 @@ public class TemplateMediatorFactory extends AbstractListMediatorFactory {
             log.error(msg);
             throw new SynapseException(msg);
         }
+
+        OMAttribute onErrorAttr = elem.getAttribute(ATT_ONERROR);
+        if (onErrorAttr != null) {
+            templateTemplateMediator.setErrorHandler(onErrorAttr.getAttributeValue());
+        }
         return templateTemplateMediator;
     }
 

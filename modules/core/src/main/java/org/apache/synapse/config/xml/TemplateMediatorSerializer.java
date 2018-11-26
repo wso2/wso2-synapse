@@ -52,6 +52,10 @@ public class TemplateMediatorSerializer extends AbstractListMediatorSerializer {
             saveTracingState(templateElem, mediator);
         }
 
+        if (mediator.getErrorHandler() != null) {
+            templateElem.addAttribute(fac.createOMAttribute("onError", nullNS, mediator.getErrorHandler()));
+        }
+
         return templateElem;
     }
 
