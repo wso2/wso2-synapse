@@ -40,6 +40,7 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
     private static final String EVALUATOR = "evaluator";
     private final String JSON_TYPE="json";
     private final String MEDIA_TYPE="media-type";
+    private final String ESCAPE_XML_CHARS="escapeXmlChars";
 
     private final String XML = "xml";
     private final String JSON = "json";
@@ -67,6 +68,11 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
 
         if(mediator.getType()!=null){
             payloadFactoryElem.addAttribute(fac.createOMAttribute(MEDIA_TYPE,null,mediator.getType()));
+        }
+
+        if (mediator.isEscapeXmlChars()) {
+            payloadFactoryElem.addAttribute(fac.createOMAttribute(ESCAPE_XML_CHARS,null,
+                    Boolean.toString(mediator.isEscapeXmlChars())));
         }
 
         saveTracingState(payloadFactoryElem, mediator);

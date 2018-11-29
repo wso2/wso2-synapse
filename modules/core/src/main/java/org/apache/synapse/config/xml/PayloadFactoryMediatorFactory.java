@@ -45,6 +45,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
     private static final QName ATT_LITERAL = new QName("literal");
 
     private static final QName TYPE_Q = new QName("media-type");// media-type attribute in payloadFactory
+    private static final QName ESCAPE_XML_CHARS_Q = new QName("escapeXmlChars");// escape xml chars attribute in payloadFactory
 
     private final String JSON_TYPE="json";
     private final String XML_TYPE="xml";
@@ -62,6 +63,9 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
         } else {
             payloadFactoryMediator.setType(XML_TYPE);
         }
+
+        boolean escapeXmlCharsValue = Boolean.parseBoolean(elem.getAttributeValue(ESCAPE_XML_CHARS_Q));
+        payloadFactoryMediator.setEscapeXmlChars(escapeXmlCharsValue); //set the escape xml chars in json payloads for the PF
 
         OMElement formatElem = elem.getFirstChildWithName(FORMAT_Q);
         if (formatElem != null) {
