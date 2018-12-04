@@ -145,8 +145,8 @@ public class RelayUtils {
             try {
                 bufferedInputStream.reset();
                 bufferedInputStream.mark(0);
-            } catch (Exception e) {
-                // just ignore the error
+            } catch (IOException e) {
+                handleException("Error while checking bufferedInputStream", e);
             }
 
         } else {
@@ -210,7 +210,6 @@ public class RelayUtils {
         }
         return;
     }
-
 
 
     /**
