@@ -401,6 +401,10 @@ public class TargetRequest {
 		this.hasEntityBody = hasEntityBody;
 	}
 
+	public Map<String, LinkedHashSet<String>> getHeaders() {
+		return headers;
+	}
+
 	public void addHeader(String name, String value) {
 		if (headers.get(name) == null) {
 			LinkedHashSet<String> values = new LinkedHashSet<String>();
