@@ -19,13 +19,18 @@
 
 package org.apache.synapse.mediators.eip;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
@@ -214,5 +219,38 @@ public class EIPUtils {
         return envelope;
     }
 
+    /**
+     * Evaluate JSON path and retrieve the result as JsonElement. If multiple matches found, combine matching results
+     * in a comma separated list and parse as a JSON array.
+     *
+     * @param messageContext messageContext which contains the JSON payload.
+     * @return JsonArray or a JsonPrimitive depending on the JsonPath response.
+     */
+    public static JsonElement getJSONElement(MessageContext messageContext, SynapseJsonPath jsonPath) {
+        JsonParser parser = new JsonParser();
 
+        Object objectList = jsonPath.evaluate(messageContext);
+        if (objectList instanceof List) {
+            List list = (List) objectList;
+            if (!list.isEmpty()) {
+                if (list.size() > 1) {
+                    String result = "[" + StringUtils.join(list, ',') + "]";
+                    JsonElement element = parser.parse(result);
+                    return element.getAsJsonArray();
+                }
+                JsonElement result;
+                String resultString = list.get(0).toString().trim();
+                try {
+                    result = parser.parse(resultString);
+                } catch (JsonSyntaxException e) {
+                    // Enclosing using quotes due to the following issue
+                    // https://github.com/google/gson/issues/1286
+                    resultString = "\"" + resultString + "\"";
+                    result = parser.parse(resultString);
+                }
+                return result;
+            }
+        }
+        return null;
+    }
 }
