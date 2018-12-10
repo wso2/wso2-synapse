@@ -27,10 +27,19 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Random;
 
+import org.apache.axis2.AxisFault;
+import org.apache.axis2.context.MessageContext;
 import org.apache.commons.io.IOUtils;
+import org.apache.synapse.commons.SynapseCommonsException;
+import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.commons.json.Util;
 import org.apache.synapse.commons.util.TemporaryData;
 
 import junit.framework.TestCase;
+import org.junit.Assert;
+import org.junit.Test;
+
+import static org.hamcrest.core.Is.is;
 
 public class TemporaryDataTest extends TestCase {
     private final static Random random = new Random();
@@ -124,7 +133,39 @@ public class TemporaryDataTest extends TestCase {
             tmp.release();
         }
     }
-    
+
+    @Test
+    public void testGetNewJsonForMalformedPayload() throws AxisFault {
+        String malformedJson = "{\n"
+                + " \"categoryCode\": \"RejectedClaim\",\n"
+                + " \"messageCode\": \"JBUPRENORP\",\n"
+                + " \"messageText\": \"DOCUMENT ID OR \"X\" NUMBER ON\"\n"
+                + " }";
+        String json = "{\"menu\": {\n"
+                + "  \"id\": \"file\",\n"
+                + "  \"value\": \"File\",\n"
+                + "  \"popup\": {\n"
+                + "    \"menuItem\": [\n"
+                + "      {\"value\": \"New\", \"onclick\": \"CreateNewDoc()\"},\n"
+                + "      {\"value\": \"Open\", \"onclick\": \"OpenDoc()\"},\n"
+                + "      {\"value\": \"Close\", \"onclick\": \"CloseDoc()\"}\n"
+                + "    ]\n"
+                + "  }\n"
+                + "}}";
+        InputStream malformedInputStream = new ByteArrayInputStream(malformedJson.getBytes());
+        InputStream inputStream = new ByteArrayInputStream(json.getBytes());
+
+        MessageContext messageContext = Util.newMessageContext();
+        try {
+            JsonUtil.getNewJsonPayload(messageContext, malformedInputStream, true, true);
+            JsonUtil.getNewJsonPayload(messageContext, inputStream, true, false);
+        } catch (SynapseCommonsException exp) {
+            Assert.assertThat("Required SynapseCommonsException not thrown, Fault sequence will not be invoked",
+                              exp.getMessage(), is("Existing json payload is malformed. MessageID : "
+                                                           + messageContext.getMessageID()));
+        }
+    }
+
     public void testReadFromInMemory() throws IOException {
         testReadFrom(10000);
     }

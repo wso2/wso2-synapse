@@ -35,9 +35,11 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
+import org.apache.synapse.transport.passthru.TargetRequest;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 
 import javax.xml.stream.XMLStreamException;
@@ -46,7 +48,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 
 public class RelayUtils {
 
@@ -145,8 +149,8 @@ public class RelayUtils {
             try {
                 bufferedInputStream.reset();
                 bufferedInputStream.mark(0);
-            } catch (Exception e) {
-                // just ignore the error
+            } catch (IOException e) {
+                handleException("Error while checking bufferedInputStream", e);
             }
 
         } else {
@@ -212,7 +216,6 @@ public class RelayUtils {
     }
 
 
-
     /**
      * Function to check whether the processing request (enclosed within MessageContext) is a DELETE request without
      * entity body since we allow to have payload for DELETE requests, we treat same as POST. Hence this function can be
@@ -220,20 +223,82 @@ public class RelayUtils {
      * @param msgContext MessageContext
      * @return whether the request is a DELETE without payload
      */
-    public static boolean isDeleteRequestWithoutPayload (MessageContext msgContext) {
+    public static boolean isDeleteRequestWithoutPayload (MessageContext msgContext) throws AxisFault {
         if (PassThroughConstants.HTTP_DELETE.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD))) {
 
             //If message builder not invoked (Passthrough may contain entity body) OR delete with payload
             if (!Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)) ||
                     !Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.NO_ENTITY_BODY))) {
                 //HTTP DELETE request with payload
-                return false;
+                if (!isEmptyPayloadStream(msgContext)) {
+                    return false;
+                }
             }
             //Empty payload delete request
             return true;
         }
         //Not a HTTP DELETE request
         return false;
+    }
+
+    private static boolean isEmptyPayloadStream(MessageContext messageContext) throws AxisFault {
+
+        boolean isEmpty = false;
+        BufferedInputStream bufferedInputStream = (BufferedInputStream) messageContext
+                .getProperty(PassThroughConstants.BUFFERED_INPUT_STREAM);
+        if (bufferedInputStream != null) {
+            try {
+                bufferedInputStream.reset();
+                bufferedInputStream.mark(0);
+            } catch (Exception e) {
+                // just ignore the error
+            }
+
+        } else {
+            final Pipe pipe = (Pipe) messageContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+            if (pipe != null) {
+                InputStream in = pipe.getInputStream();
+                bufferedInputStream = new BufferedInputStream(in);
+                // TODO: need to handle properly for the moment lets use around 100k
+                // buffer.
+                bufferedInputStream.mark(128 * 1024);
+                messageContext.setProperty(PassThroughConstants.BUFFERED_INPUT_STREAM,
+                        bufferedInputStream);
+            }
+        }
+        try {
+            isEmpty = RelayUtils.isEmptyPayloadStream(bufferedInputStream);
+        } catch (IOException e) {
+            handleException("Error while checking Message Payload Exists ", e);
+        }
+        return isEmpty;
+    }
+
+    /**
+     * Check whether the we should overwrite the content type for the outgoing request.
+     * @param msgContext MessageContext
+     * @return whether to overwrite the content type for the outgoing request
+     *
+     */
+    public static boolean shouldOverwriteContentType(MessageContext msgContext, TargetRequest request) {
+
+        boolean builderInvoked = Boolean.TRUE.equals(msgContext
+                .getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED));
+
+        boolean noEntityBodySet =
+                Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.NO_ENTITY_BODY));
+
+        Map<String, LinkedHashSet<String>> headers = request.getHeaders();
+        boolean contentTypeInRequest = false;
+        if (headers.size() != 0 && (headers.get("Content-Type") != null || headers.get("content-type") != null)) {
+            contentTypeInRequest = true;
+        }
+        
+        // If builder is not invoked, which means the passthrough scenario, we should overwrite the content-type 
+        // depending on the presence of the incoming content-type.
+        // If builder is invoked and no entity body property is not set (which means there is a payload in the request)
+        // we should consider overwriting the content-type.
+        return (builderInvoked && !noEntityBodySet) || contentTypeInRequest;
     }
 
     /**

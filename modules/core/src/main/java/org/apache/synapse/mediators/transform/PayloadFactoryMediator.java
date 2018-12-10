@@ -70,6 +70,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private boolean isFormatDynamic = false;
     private String formatRaw;
     private String mediaType = XML_TYPE;
+    private boolean escapeXmlChars = false;
     private final static String JSON_CONTENT_TYPE = "application/json";
     private final static String XML_CONTENT_TYPE  = "application/xml";
     private final static String TEXT_CONTENT_TYPE  = "text/plain";
@@ -338,7 +339,11 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     String trimmedReplacementValue = replacementValue.trim();
                     // This is to replace " with \" and \\ with \\\\
                     //replacing other json special characters i.e \b, \f, \n \r, \t
-                    if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) {
+                    if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE) &&
+                            isEscapeXmlChars()) {
+                        //checks whether the escapeXmlChars attribute is true when media-type and evaluator is json and
+                        //escapes xml chars. otherwise json messages with non escaped xml characters will fail to build
+                        //in content aware mediators.
                         replacementValue = escapeXMLSpecialChars(replacementValue);
                     }
                     else if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(STRING_TYPE) &&
@@ -709,4 +714,11 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     }
 
+    public boolean isEscapeXmlChars() {
+        return escapeXmlChars;
+    }
+
+    public void setEscapeXmlChars(boolean escapeXmlChars) {
+        this.escapeXmlChars = escapeXmlChars;
+    }
 }
