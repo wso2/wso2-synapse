@@ -255,7 +255,7 @@ public class Target {
             return sequenceMediator.mediate(synCtx);
         } catch (SynapseException syne) {
             if (!synCtx.getFaultStack().isEmpty()) {
-                log.warn("Executing fault handler due to exception encountered");
+                log.warn("Executing fault handler due to exception encountered", syne);
                 ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, syne);
             } else {
                 log.warn("Exception encountered but no fault handler found - message dropped");
