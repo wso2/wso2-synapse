@@ -22,8 +22,10 @@ package org.apache.synapse.util.resolver;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.mediators.Value;
 import org.xml.sax.InputSource;
 
 import javax.xml.stream.XMLStreamException;
@@ -45,17 +47,17 @@ import java.util.Map;
  */
 public class ResourceMap {
     private static final Log log = LogFactory.getLog(ResourceMap.class);
-    
-    private final Map<String,String> resources = new LinkedHashMap<String,String>();
-    
+
+    private final Map<String, Value> resourceValueMap = new LinkedHashMap<>();
+
     /**
      * Add a resource.
      * 
      * @param location the location as it appears in referencing documents
      * @param key the registry key that points to the referenced document
      */
-    public void addResource(String location, String key) {
-        resources.put(location, key);
+    public void addResource(String location, Value key) {
+        resourceValueMap.put(location, key);
     }
     
     /**
@@ -64,18 +66,43 @@ public class ResourceMap {
      * @return a map containing the (location, registry key) pairs
      */
     public Map<String,String> getResources() {
-        return Collections.unmodifiableMap(resources);
+        Map<String, String> resourceMap = new LinkedHashMap<>();
+        for (Map.Entry<String, Value> entry : resourceValueMap.entrySet()) {
+            resourceMap.put(entry.getKey(), entry.getValue().getKeyValue() == null ?
+                                            "{".concat(entry.getValue().getExpression().getExpression()).concat("}") :
+                                            entry.getValue().getKeyValue());
+        }
+        return Collections.unmodifiableMap(resourceMap);
     }
-    
+
     /**
      * Resolve a resource for a given location.
-     * 
+     *
      * @param synCfg the Synapse configuration (used to access the registry)
      * @param location the location of of the resource at is appears in the referencing document
      * @return an <code>InputSource</code> object for the referenced resource
      */
     public InputSource resolve(SynapseConfiguration synCfg, String location) {
-        String key = resources.get(location);
+        return resolve(synCfg, location, null);
+    }
+
+    /**
+     * Resolve a resource for a given location.
+     * 
+     * @param synCfg the Synapse configuration (used to access the registry)
+     * @param location the location of of the resource at is appears in the referencing document
+     * @param messageContext current message context of the received request
+     * @return an <code>InputSource</code> object for the referenced resource
+     */
+    public InputSource resolve(SynapseConfiguration synCfg, String location, MessageContext messageContext) {
+        String key;
+        if (messageContext != null && resourceValueMap.get(location) != null) {
+            key = resourceValueMap.get(location).evaluateValue(messageContext);
+        } else {
+            key = resourceValueMap.get(location).getKeyValue() == null ?
+                  resourceValueMap.get(location).getExpression().getExpression() :
+                  resourceValueMap.get(location).getKeyValue();
+        }
         if (key == null) {
             if (log.isDebugEnabled()) {
                 log.debug("No resource mapping is defined for location '" + location + "'");

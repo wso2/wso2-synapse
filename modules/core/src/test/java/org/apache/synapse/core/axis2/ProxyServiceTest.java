@@ -47,6 +47,7 @@ import org.apache.synapse.endpoints.AddressEndpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.resolver.ResourceMap;
 import org.junit.Assert;
 import org.mockito.Mockito;
@@ -98,8 +99,8 @@ public class ProxyServiceTest extends TestCase {
         ProxyService proxyService = new ProxyService("Test");
         proxyService.setWSDLKey("root_wsdl");
         ResourceMap resourceMap = new ResourceMap();
-        resourceMap.addResource("imported.wsdl", "imported_wsdl");
-        resourceMap.addResource("imported.xsd", "imported_xsd");
+        resourceMap.addResource("imported.wsdl", new Value("imported_wsdl"));
+        resourceMap.addResource("imported.xsd", new Value("imported_xsd"));
         proxyService.setResourceMap(resourceMap);
         AxisService axisService = proxyService.buildAxisService(synCfg, axisCfg);
         // Serialize the WSDL. Note that we can't parse the WSDL because it will have imports

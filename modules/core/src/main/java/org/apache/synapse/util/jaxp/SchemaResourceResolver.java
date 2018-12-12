@@ -2,6 +2,7 @@ package org.apache.synapse.util.jaxp;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.util.resolver.ResourceMap;
 import org.w3c.dom.ls.LSInput;
@@ -18,11 +19,13 @@ public class SchemaResourceResolver implements LSResourceResolver {
 
     private ResourceMap resourceMap;
     private SynapseConfiguration synCfg;
+    private MessageContext messageContext;
     private static final Log log = LogFactory.getLog(SchemaResourceResolver.class);
 
-    public SchemaResourceResolver(SynapseConfiguration synCfg, ResourceMap resourceMap) {
+    public SchemaResourceResolver(SynapseConfiguration synCfg, ResourceMap resourceMap, MessageContext messageContext) {
         this.resourceMap = resourceMap;
         this.synCfg = synCfg;
+        this.messageContext = messageContext;
     }
 
     /**
@@ -44,7 +47,7 @@ public class SchemaResourceResolver implements LSResourceResolver {
             return null;
         }
 
-        InputSource inputSource = resourceMap.resolve(synCfg, systemId);
+        InputSource inputSource = resourceMap.resolve(synCfg, systemId, messageContext);
         if (inputSource == null) {
             log.warn("Unable to resolve schema resource " + systemId);
             return null;

@@ -467,8 +467,7 @@ public class XSLTMediator extends AbstractMediator {
         // Set an error listener (SYNAPSE-307).
         transFact.setErrorListener(new ErrorListenerImpl(synLog, STYLESHEET_PARSING_ACTIVITY));
         // Allow xsl:import and xsl:include resolution
-        transFact.setURIResolver(new CustomJAXPURIResolver(resourceMap,
-                synCtx.getConfiguration()));
+        transFact.setURIResolver(new CustomJAXPURIResolver(resourceMap, synCtx.getConfiguration(), synCtx));
 
         try {
             cachedTemplates = transFact.newTemplates(
