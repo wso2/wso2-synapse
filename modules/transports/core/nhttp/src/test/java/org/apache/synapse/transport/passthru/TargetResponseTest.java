@@ -25,13 +25,16 @@ import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpResponse;
+import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.NHttpClientConnection;
+import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.TargetConnections;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -47,7 +50,7 @@ import static org.mockito.ArgumentMatchers.any;
  */
 @RunWith(PowerMockRunner.class)
 @PowerMockIgnore("javax.management.*")
-@PrepareForTest({ TargetContext.class })
+@PrepareForTest({ TargetContext.class, TargetResponse.class })
 public class TargetResponseTest extends TestCase {
     private static Log logger = LogFactory.getLog(TargetResponseTest.class.getName());
 
@@ -144,5 +147,43 @@ public class TargetResponseTest extends TestCase {
         int result = targetResponse.read(conn, decoder);
 
         Assert.assertEquals(12, result);
+    }
+
+    /**
+     * Testing the starting of target response when response body is not expected and Keep alive equal to true
+     *
+     * @throws Exception
+     */
+    @Mock
+    DefaultConnectionReuseStrategy connStrategy;
+    @Test
+    public void testCompletingStateTransition() throws Exception {
+        PowerMockito.whenNew(DefaultConnectionReuseStrategy.class).withNoArguments().thenReturn(connStrategy);
+        PowerMockito.when(connStrategy.keepAlive(any(HttpResponse.class), any(HttpContext.class))).thenReturn(true);
+        ConfigurationContext configurationContext = new ConfigurationContext(new AxisConfiguration());
+        WorkerPool workerPool = new NativeWorkerPool(3, 4, 5, 5, "name", "id");
+        PassThroughTransportMetricsCollector metrics = new PassThroughTransportMetricsCollector(true, "testScheme");
+
+        TargetConfiguration targetConfiguration = new TargetConfiguration(configurationContext, null, workerPool,
+                metrics, null);
+        HttpResponse response = PowerMockito.mock(HttpResponse.class, Mockito.RETURNS_DEEP_STUBS);
+        NHttpClientConnection conn = PowerMockito.mock(NHttpClientConnection.class, Mockito.RETURNS_DEEP_STUBS);
+        TargetConnections connections = PowerMockito.mock(TargetConnections.class);
+        targetConfiguration.setConnections(connections);
+
+        PowerMockito.mockStatic(TargetContext.class);
+
+        TargetResponse targetResponse = new TargetResponse(targetConfiguration, response, conn, false, false);
+
+        try {
+            targetResponse.start(conn);
+            PowerMockito.verifyStatic( Mockito.times(1)); // Verify that the following mock method was called exactly 1 time
+            TargetContext.updateState(conn, ProtocolState.RESPONSE_DONE);
+
+
+        } catch (Exception e) {
+            logger.error(e);
+            Assert.fail("Unable to start the target response!");
+        }
     }
 }
