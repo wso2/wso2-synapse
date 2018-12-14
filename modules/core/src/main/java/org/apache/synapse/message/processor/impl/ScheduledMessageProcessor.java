@@ -36,6 +36,7 @@ import org.apache.synapse.message.processor.impl.forwarder.ForwardingService;
 import org.apache.synapse.message.processor.impl.sampler.SamplingService;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.registry.Registry;
+import org.apache.synapse.task.SynapseTaskException;
 import org.apache.synapse.task.Task;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskManager;
@@ -249,7 +250,13 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		 * There could be servers that are disabled at startup time.
 		 * therefore not started but initiated.
 		 */
-		return stopTasks(memberCount);
+		boolean isStopped = false;
+		try {
+			isStopped = stopTasks(memberCount);
+		} catch (SynapseTaskException e) {
+			logger.error("Cannot stop tasks. Error: " + e.getLocalizedMessage(), e);
+		}
+		return isStopped;
 	}
 
 	private boolean stopTasks(int taskCount) {
@@ -300,51 +307,47 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		destroy(false);
 	}
 
-
+	@Override
 	public void destroy(boolean preserveState) {
-        try {
-            stop();
-        }
 
-        finally {
-            /*
-             * If the Task is scheduled with an interval value < 1000 ms, it is
-             * executed outside Quartz. For an example Task with interval 200ms.
-             * Here we directly pause the task, move on and cleanup the JMS
-             * connection.But actual pausing the task through TaskManager takes
-             * few ms (say 300 ms). During this time the Task is executed
-             * outside Quartz and
-             * a new JMS connection is created (After the previous cleanup).
-             * Once
-             * the task is paused and destroyed successfully, we create a new
-             * task, for which a new JMS
-             * connection is created. This leads to multiple JMS connections and
-             * is a Bug. This 1000 ms sleep is used to make sure that the task
-             * is paused before cleaning up the JMS connection, which prevents
-             * multiple JMS connections being created.
-             */
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                logger.error("The thread was interrupted while sleeping");
-            }
-            if (getMessageConsumer() != null && messageConsumers.size() > 0) {
-                cleanupLocalResources();
-            } else {
-                logger.warn("[" + getName() + "] Could not find the message consumer to cleanup.");
-            }
-            /*
-             * Cleaning up the resources in the cluster mode here.
-             */
-            taskManager.sendClusterMessage(getMessageProcessorCleanupTask());
-        }
+		if (!preserveState) {
+			stop();
+			deleteMessageProcessorState();
+		}
+		/*
+		 * If the Task is scheduled with an interval value < 1000 ms, it is
+		 * executed outside Quartz. For an example Task with interval 200ms.
+		 * Here we directly pause the task, move on and cleanup the JMS
+		 * connection.But actual pausing the task through TaskManager takes
+		 * few ms (say 300 ms). During this time the Task is executed
+		 * outside Quartz and
+		 * a new JMS connection is created (After the previous cleanup).
+		 * Once
+		 * the task is paused and destroyed successfully, we create a new
+		 * task, for which a new JMS
+		 * connection is created. This leads to multiple JMS connections and
+		 * is a Bug. This 1000 ms sleep is used to make sure that the task
+		 * is paused before cleaning up the JMS connection, which prevents
+		 * multiple JMS connections being created.
+		 */
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			logger.error("The thread was interrupted while sleeping", e);
+			Thread.currentThread().interrupt();
+		}
+		if (getMessageConsumer() != null && !messageConsumers.isEmpty()) {
+			cleanupLocalResources();
+		} else {
+			logger.warn("[" + getName() + "] Could not find the message consumer to cleanup.");
+		}
+		/*
+		 * Cleaning up the resources in the cluster mode here.
+		 */
+		taskManager.sendClusterMessage(getMessageProcessorCleanupTask());
 
         if (logger.isDebugEnabled()) {
             logger.info("Successfully destroyed message processor [" + getName() + "].");
-        }
-
-        if (!preserveState) {
-            deleteMessageProcessorState();
         }
     }
 
