@@ -324,7 +324,7 @@ public class RelayUtils {
      * @param msgContext Axis2 Message context which contains the data
      * @throws AxisFault
      */
-    public static void consumeAndDiscardMessage(MessageContext msgContext) throws AxisFault {
+    public static void consume(MessageContext msgContext) throws AxisFault {
         final Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
         if (pipe != null) {
             InputStream in = pipe.getInputStream();
@@ -339,6 +339,22 @@ public class RelayUtils {
             }
         }
     }
+
+    /**
+     * Consumes the data in pipe completely in the given message context and discard it
+     *
+     * @param msgContext Axis2 Message context which contains the data
+     * @throws AxisFault AxisFault
+     */
+    public static void consumeAndDiscardMessage(org.apache.axis2.context.MessageContext msgContext) throws IOException {
+        final Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+        if (pipe != null) {
+            while (!pipe.isProducerCompleted() || pipe.isConsumeRequired()) {
+                consume(msgContext);
+            }
+        }
+    }
+
 
     /**
      * An Un-closable, Read-Only, Reusable, BufferedInputStream
