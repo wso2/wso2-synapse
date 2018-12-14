@@ -59,6 +59,17 @@ public class ResourceMap {
     public void addResource(String location, Value key) {
         resourceValueMap.put(location, key);
     }
+
+    /**
+     * Add a resource.
+     *
+     * @param location the location as it appears in referencing documents
+     * @param key the registry key that points to the referenced document
+     */
+    public void addResource(String location, String key) {
+        //todo - What should we do if an expression passes as the key
+        addResource(location, new Value(key));
+    }
     
     /**
      * Get the (location, registry key) mappings.
