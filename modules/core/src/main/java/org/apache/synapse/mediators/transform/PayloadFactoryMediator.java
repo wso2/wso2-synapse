@@ -212,9 +212,9 @@ public class PayloadFactoryMediator extends AbstractMediator {
             }
             String text = "";
             if (entry instanceof OMElement) {
-                OMElement e = (OMElement) entry;
-                removeIndentations(e);
-                text = e.toString();
+                OMElement omElement = ((OMElement) entry).cloneOMElement();
+                removeIndentations(omElement);
+                text = omElement.toString();
             } else if (entry instanceof OMText) {
                 text = ((OMText) entry).getText();
             } else if (entry instanceof String) {
