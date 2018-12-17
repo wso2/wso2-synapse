@@ -125,8 +125,8 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
     private int socketTimeout = 0;
 
     protected ClientConnFactoryBuilder initConnFactoryBuilder(
-            final TransportOutDescription transportOut) throws AxisFault {
-        return new ClientConnFactoryBuilder(transportOut);
+            final TransportOutDescription transportOut, ConfigurationContext configurationContext) throws AxisFault {
+        return new ClientConnFactoryBuilder(transportOut, configurationContext);
     }
 
     /**
@@ -153,7 +153,7 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
 
         name = transportOut.getName().toUpperCase(Locale.US) + " Sender";
         
-        ClientConnFactoryBuilder contextBuilder = initConnFactoryBuilder(transportOut);
+        ClientConnFactoryBuilder contextBuilder = initConnFactoryBuilder(transportOut, cfgCtx);
         connFactory = contextBuilder.createConnFactory(params);
 
         connpool = new ConnectionPool();
@@ -1026,7 +1026,7 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
         log.info("HttpCoreNIOSender reloading SSL Config..");
         try {
             //create new connection factory
-            ClientConnFactoryBuilder contextBuilder = initConnFactoryBuilder(transportOut);
+            ClientConnFactoryBuilder contextBuilder = initConnFactoryBuilder(transportOut, this.configurationContext);
             connFactory = contextBuilder.createConnFactory(params);
 
             //set new connection factory

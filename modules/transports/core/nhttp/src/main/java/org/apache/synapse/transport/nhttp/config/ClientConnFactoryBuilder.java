@@ -43,6 +43,7 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axis2.AxisFault;
+import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.axis2.transport.base.ParamUtils;
@@ -71,7 +72,13 @@ public class ClientConnFactoryBuilder {
 
     private SSLContextDetails ssl = null;
     private Map<String, SSLContext> sslByHostMap = null;
-    
+    private  ConfigurationContext configurationContext;
+
+    public ClientConnFactoryBuilder(final TransportOutDescription transportOut, ConfigurationContext configurationContext) {
+        this(transportOut);
+        this.configurationContext = configurationContext;
+    }
+
     public ClientConnFactoryBuilder(final TransportOutDescription transportOut) {
         super();
         this.transportOut = transportOut;
@@ -286,13 +293,26 @@ public class ClientConnFactoryBuilder {
 
         KeyManager[] keymanagers = null;
         TrustManager[] trustManagers = null;
-
+        SecretResolver resolver;
+        if (configurationContext != null && configurationContext.getAxisConfiguration() != null) {
+            resolver = configurationContext.getAxisConfiguration().getSecretResolver();
+        } else {
+            resolver = SecretResolverFactory.create(keyStoreElt, false);
+        }
 
         if (keyStoreElt != null) {
             String location = keyStoreElt.getFirstChildWithName(new QName("Location")).getText();
             String type = keyStoreElt.getFirstChildWithName(new QName("Type")).getText();
-            String storePassword = keyStoreElt.getFirstChildWithName(new QName("Password")).getText();
-            String keyPassword = keyStoreElt.getFirstChildWithName(new QName("KeyPassword")).getText();
+            OMElement passwordElement = keyStoreElt.getFirstChildWithName(new QName("Password"));
+            OMElement keyPasswordElement = keyStoreElt.getFirstChildWithName(new QName("KeyPassword"));
+            if (passwordElement == null) {
+                throw new AxisFault("Cannot proceed because Password element is missing in KeyStore");
+            }
+            if (keyPasswordElement == null) {
+                throw new AxisFault("Cannot proceed because KeyPassword element is missing in KeyStore");
+            }
+            String  storePassword = getSecureVaultValue(resolver, passwordElement);
+            String keyPassword = getSecureVaultValue(resolver, keyPasswordElement);
 
             FileInputStream fis = null;
             try {
@@ -331,7 +351,11 @@ public class ClientConnFactoryBuilder {
 
             String location = trustStoreElt.getFirstChildWithName(new QName("Location")).getText();
             String type = trustStoreElt.getFirstChildWithName(new QName("Type")).getText();
-            String storePassword = trustStoreElt.getFirstChildWithName(new QName("Password")).getText();
+            OMElement passwordElement = trustStoreElt.getFirstChildWithName(new QName("Password"));
+            if (passwordElement == null) {
+                throw new AxisFault("Cannot proceed because Password element is missing in TrustStore");
+            }
+            String storePassword = getSecureVaultValue(resolver, passwordElement);
 
             FileInputStream fis = null;
             try {
