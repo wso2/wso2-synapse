@@ -48,7 +48,8 @@
 			                org.apache.synapse.transport.passthru.*,
 			                org.apache.synapse.transport.certificatevalidation.*,
                             org.apache.synapse.transport.dynamicconfigurations.*,
-                            org.apache.synapse.transport.customlogsetter.*
+                            org.apache.synapse.transport.customlogsetter.*,
+                            org.apache.synapse.transport.exceptions.*
                         </Export-Package>
                         <Import-Package>
                             !javax.xml.namespace,
