@@ -52,6 +52,7 @@ import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.params.HttpParams;
 import org.apache.synapse.commons.crypto.CryptoConstants;
 import org.apache.synapse.transport.certificatevalidation.RevocationVerificationManager;
+import org.apache.synapse.transport.exceptions.InvalidConfigurationException;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ClientSSLSetupHandler;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
@@ -248,8 +249,15 @@ public class ClientConnFactoryBuilder {
             OMElement trElt = profile.getFirstChildWithName(new QName("TrustStore"));
             String noValCert = profile.getAttributeValue(new QName("novalidatecert"));
             boolean novalidatecert = "true".equals(noValCert);
-            SSLContext sslContext = createSSLContext(ksElt, trElt, novalidatecert, secretResolver);
 
+            SSLContext sslContext = null;
+            try {
+                sslContext = createSSLContext(ksElt, trElt, novalidatecert, secretResolver);
+            } catch (AxisFault axisFault) {
+                String err = "Error occurred while creating SSL context for the servers " + serversElt.getText();
+                // This runtime exception stop the server startup But it will not affect for dynamic change
+                throw new InvalidConfigurationException(err, axisFault);
+            }
             for (String server : servers) {
                 server = server.trim();
                 if (!contextMap.containsKey(server)) {

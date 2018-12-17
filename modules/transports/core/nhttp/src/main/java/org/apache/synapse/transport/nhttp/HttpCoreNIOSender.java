@@ -74,6 +74,7 @@ import org.apache.http.params.CoreProtocolPNames;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.commons.util.TemporaryData;
+import org.apache.synapse.transport.exceptions.InvalidConfigurationException;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.nhttp.config.ClientConnFactoryBuilder;
@@ -1023,18 +1024,22 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
      */
     public void reload(TransportOutDescription transportOut) throws AxisFault {
         log.info("HttpCoreNIOSender reloading SSL Config..");
-        //create new connection factory
-        ClientConnFactoryBuilder contextBuilder = initConnFactoryBuilder(transportOut);
-        connFactory = contextBuilder.createConnFactory(params);
+        try {
+            //create new connection factory
+            ClientConnFactoryBuilder contextBuilder = initConnFactoryBuilder(transportOut);
+            connFactory = contextBuilder.createConnFactory(params);
 
-        //set new connection factory
-        handler.setConnFactory(connFactory);
-        iodispatch.setConnFactory(connFactory);
+            //set new connection factory
+            handler.setConnFactory(connFactory);
+            iodispatch.setConnFactory(connFactory);
 
-        //close existing connections to apply new settings
-        handler.resetConnectionPool(connFactory.getHostList());
+            //close existing connections to apply new settings
+            handler.resetConnectionPool(connFactory.getHostList());
 
-        log.info("HttpCoreNIO " + name + " Sender updated with Dynamic Configuration Updates ...");
+            log.info("HttpCoreNIO " + name + " Sender updated with Dynamic Configuration Updates ...");
+        } catch (InvalidConfigurationException configFault) {
+            log.error("Ignoring reload SSL config since there is an invalid configuration.", configFault);
+        }
     }
 
 }

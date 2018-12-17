@@ -45,6 +45,7 @@ import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.nio.reactor.IOReactorExceptionHandler;
 import org.apache.http.protocol.HTTP;
+import org.apache.synapse.transport.exceptions.InvalidConfigurationException;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.Scheme;
@@ -697,18 +698,22 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
      */
     public void reloadDynamicSSLConfig(TransportOutDescription transport) throws AxisFault {
         log.info("PassThroughHttpSender reloading SSL Config..");
+        try {
+            ClientConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transport);
+            connFactory = connFactoryBuilder.createConnFactory(targetConfiguration.getHttpParams());
 
-        ClientConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transport);
-        connFactory = connFactoryBuilder.createConnFactory(targetConfiguration.getHttpParams());
+            //Set new configurations
+            handler.setConnFactory(connFactory);
+            ioEventDispatch.setConnFactory(connFactory);
 
-        //Set new configurations
-        handler.setConnFactory(connFactory);
-        ioEventDispatch.setConnFactory(connFactory);
+            //close existing connections to apply new settings
+            targetConnections.resetConnectionPool(connFactory.getHostList());
 
-        //close existing connections to apply new settings
-        targetConnections.resetConnectionPool(connFactory.getHostList());
+            log.info("Pass-through " + namePrefix + " Sender updated with Dynamic Configuration Updates ...");
 
-        log.info("Pass-through " + namePrefix + " Sender updated with Dynamic Configuration Updates ...");
+        } catch (InvalidConfigurationException configFault) {
+            log.error("Ignoring reload SSL config since there is an invalid configuration.", configFault);
+        }
     }
 
 
