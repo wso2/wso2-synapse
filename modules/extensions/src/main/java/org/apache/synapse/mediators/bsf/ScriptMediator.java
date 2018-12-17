@@ -38,6 +38,7 @@ import org.apache.synapse.config.Entry;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
+import org.apache.synapse.mediators.eip.EIPUtils;
 import org.mozilla.javascript.Context;
 import javax.activation.DataHandler;
 import javax.script.Bindings;
@@ -420,7 +421,7 @@ public class ScriptMediator extends AbstractMediator {
                         e.getColumnNumber());
             }
         } else if (jsonString != null) {
-            String jsonPayload = jsonParser.parse(jsonString).toString();
+            String jsonPayload = EIPUtils.tryParseJsonString(jsonParser, jsonString).toString();
             jsonObject = this.jsEngine.eval('(' + jsonPayload + ')');
         }
         if (jsonObject != null) {

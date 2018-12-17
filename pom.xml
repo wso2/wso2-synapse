@@ -476,13 +476,8 @@
              <version>${spring.version}</version>
          </dependency>
          <dependency>
-             <groupId>com.jayway.jsonpath</groupId>
+             <groupId>org.wso2.orbit.com.jayway.jsonpath</groupId>
              <artifactId>json-path</artifactId>
-             <version>${com.jayway.jsonpath.version}</version>
-         </dependency>
-         <dependency>
-             <groupId>com.jayway.jsonpath</groupId>
-             <artifactId>json-path-assert</artifactId>
              <version>${com.jayway.jsonpath.version}</version>
          </dependency>
          <dependency>
@@ -1105,7 +1100,7 @@
       <com.damnhandy.version>2.1.6</com.damnhandy.version>
       <javax.jms.version>1.1</javax.jms.version>
       <org.antlr.version>3.4</org.antlr.version>
-      <com.jayway.jsonpath.version>0.8.0</com.jayway.jsonpath.version>
+      <com.jayway.jsonpath.version>2.4.0.wso2v1</com.jayway.jsonpath.version>
       <qfj.version>1.5.3</qfj.version>
       <org.bouncycastle.version>1.60</org.bouncycastle.version>
       <hc.httpcore.version>4.3.3</hc.httpcore.version>

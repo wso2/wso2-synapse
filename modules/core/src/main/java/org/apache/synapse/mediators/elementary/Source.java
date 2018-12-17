@@ -19,7 +19,9 @@
 
 package org.apache.synapse.mediators.elementary;
 
+import com.jayway.jsonpath.JsonPath;
 import org.apache.axiom.om.*;
+import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.axiom.om.util.ElementHelper;
 import org.apache.axiom.soap.SOAP12Constants;
 import org.apache.axiom.soap.SOAPEnvelope;
@@ -28,8 +30,11 @@ import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.axiom.soap.impl.builder.StAXSOAPModelBuilder;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.config.xml.SynapsePath;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.util.MessageHelper;
-import org.apache.synapse.util.xpath.SynapseXPath;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.jaxen.JaxenException;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +60,7 @@ import java.util.List;
  */
 
 public class Source {
-    private SynapseXPath xpath = null;
+    private SynapsePath xpath = null;
 
     private String property = null;
 
@@ -232,11 +237,93 @@ public class Source {
         return builder.getSOAPEnvelope();
     }
 
-    public SynapseXPath getXpath() {
+    /**
+     * This method will evaluate a specified source json element.
+     *
+     * @param synCtx - Current Message Context
+     * @param synLog - Default Logger for the package
+     * @return A HashMap with the following keys: <br/>
+     * [1] "errorsExistInSrcTag" - holds either true or false <br/>
+     * [2] "evaluatedSrcJsonElement" - holds the evaluated Json Element as an Object
+     * @throws JaxenException
+     */
+    public Object evaluateJson(MessageContext synCtx, SynapseLog synLog) throws JaxenException {
+
+        Object object = "";
+        String jsonPath = null;
+        if (xpath != null) {
+            SynapseJsonPath sourceJsonPath = (SynapseJsonPath) this.xpath;
+            jsonPath = sourceJsonPath.getJsonPath().getPath();
+        }
+
+        org.apache.axis2.context.MessageContext context = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+
+        if(!JsonUtil.hasAJsonPayload(context)) {
+            synLog.error("JSON payload not found in message context");
+        }
+
+        switch (sourceType) {
+            case EnrichMediator.CUSTOM : {
+                assert jsonPath != null : "JSONPath should be non null in case of CUSTOM";
+                String jsonString = JsonUtil.jsonPayloadToString(context);
+                object = JsonPath.parse(jsonString).read(jsonPath);
+                if (!clone) {
+                    // when cloning is false, remove the element in JSON path from payload
+                    String modifiedJsonString = JsonPath.parse(jsonString).delete(jsonPath).jsonString();
+                    try {
+                        JsonUtil.getNewJsonPayload(context, modifiedJsonString, true, true);
+                    } catch (Exception ex) {
+                        synLog.error("Error while setting json payload, when cloning is false");
+                    }
+                }
+                break;
+            }
+            case EnrichMediator.BODY: {
+                object = JsonUtil.jsonPayloadToString(context);
+                if (!clone){
+                    JsonUtil.removeJsonPayload(context);}
+                break;
+            }
+            case EnrichMediator.INLINE: {
+                assert inlineOMNode != null || inlineKey != null : "inlineJSONNode or key shouldn't be null when type is INLINE";
+                if (inlineOMNode != null && inlineOMNode instanceof OMText) {
+                    object = JsonPath.parse(((OMTextImpl) inlineOMNode).getText()).json();
+                } else if (inlineKey != null && !inlineKey.trim().equals("")) {
+                    Object inlineObj = synCtx.getEntry(inlineKey);
+                    if ((inlineObj instanceof String) && !(((String) inlineObj).trim().equals(""))) {
+                        object = JsonPath.parse(((String) inlineObj)).json();
+                    } else {
+                        synLog.error("Source failed to get inline JSON" + "inlineKey=" + inlineKey);
+                    }
+                } else {
+                    synLog.error("Source failed to get inline JSON" + "inlineJSONNode=" + inlineOMNode + ", inlineKey=" + inlineKey);
+                }
+                break;
+            }
+            case EnrichMediator.PROPERTY: {
+                assert property != null : "property shouldn't be null when type is PROPERTY";
+                Object propertyObject = synCtx.getProperty(property);
+                if (propertyObject instanceof String) {
+                    String sourceStr = (String) propertyObject;
+                    object = sourceStr;
+                } else {
+                    synLog.error("Invalid source property type");
+                }
+                break;
+            }
+            default: {
+                synLog.error("Case mismatch for type: " + sourceType);
+            }
+        }
+
+        return object;
+    }
+
+    public SynapsePath getXpath() {
         return xpath;
     }
 
-    public void setXpath(SynapseXPath xpath) {
+    public void setXpath(SynapsePath xpath) {
         this.xpath = xpath;
     }
 

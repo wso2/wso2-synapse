@@ -69,6 +69,8 @@ public class EnrichMediator extends AbstractMediator {
 
     private Target target = null;
 
+    private boolean isNativeJsonSupportEnabled = false;
+
     public boolean mediate(MessageContext synCtx) {
 
         if (synCtx.getEnvironment().isDebuggerEnabled()) {
@@ -87,17 +89,31 @@ public class EnrichMediator extends AbstractMediator {
             }
         }
 
-        ArrayList<OMNode> sourceNodeList;
-
-        try {
-            sourceNodeList = source.evaluate(synCtx, synLog);
-            if (sourceNodeList == null) {
-                handleException("Failed to get the source for Enriching : ", synCtx);
-            } else {
-                target.insert(synCtx, sourceNodeList, synLog);
+        boolean hasJSONPayload = JsonUtil.hasAJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext());
+        if (isNativeJsonSupportEnabled && hasJSONPayload) {
+            Object sourceNode;
+            try {
+                sourceNode = source.evaluateJson(synCtx, synLog);
+                if (sourceNode == null) {
+                    handleException("Failed to get the source for Enriching : ", synCtx);
+                } else {
+                    target.insertJson(synCtx, sourceNode, synLog);
+                }
+            } catch (JaxenException e) {
+                handleException("Failed to get the source for Enriching", e, synCtx);
             }
-        } catch (JaxenException e) {
-            handleException("Failed to get the source for Enriching", e, synCtx);
+        } else {
+            ArrayList<OMNode> sourceNodeList;
+            try {
+                sourceNodeList = source.evaluate(synCtx, synLog);
+                if (sourceNodeList == null) {
+                    handleException("Failed to get the source for Enriching : ", synCtx);
+                } else {
+                    target.insert(synCtx, sourceNodeList, synLog);
+                }
+            } catch (JaxenException e) {
+                handleException("Failed to get the source for Enriching", e, synCtx);
+            }
         }
 
         //If enrich mediator modifies JSON payload update JSON stream in the axis2MessageContext
@@ -107,7 +123,6 @@ public class EnrichMediator extends AbstractMediator {
             JsonUtil.setJsonStream(axis2MsgCtx,
                                    JsonUtil.toJsonStream(axis2MsgCtx.getEnvelope().getBody().getFirstElement()));
         }
-
         synLog.traceOrDebug("End : Enrich mediator");
         return true;
     }
@@ -133,4 +148,7 @@ public class EnrichMediator extends AbstractMediator {
         return true;
     }
 
+    public void setNativeJsonSupportEnabled(boolean nativeJsonSupportEnabled) {
+        isNativeJsonSupportEnabled = nativeJsonSupportEnabled;
+    }
 }

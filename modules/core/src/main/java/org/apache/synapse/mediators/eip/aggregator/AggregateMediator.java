@@ -526,7 +526,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         MessageContext newCtx = null;
         JsonArray jsonArray = new JsonArray();
         JsonElement result;
-        boolean isJSONAggregation = aggregationExpression instanceof SynapseJsonPath ? true : false;
+        boolean isJSONAggregation = aggregationExpression instanceof SynapseJsonPath;
 
         for (MessageContext synCtx : aggregate.getMessages()) {
             
