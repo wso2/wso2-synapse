@@ -465,21 +465,38 @@ public class RelayUtils {
     /**
      * Consumes the data in pipe completely in the given message context and discard it
      *
-     * @param msgContext Axis2 Message context which contains the data
+     * @param pipe Pass through pipe
      * @throws AxisFault
+     */
+    private static void consume(Pipe pipe) throws AxisFault {
+        InputStream in = pipe.getInputStream();
+        if (in != null) {
+            try {
+                if (pipe.isConsumeRequired()) {
+                    IOUtils.copy(in, new NullOutputStream());
+                }
+            } catch (IOException exception) {
+                handleException("Error when consuming the input stream to discard", exception);
+            }
+        }
+
+    }
+
+    /**
+     * Consumes the data in pipe completely in the given message context and discard it
+     *
+     * @param msgContext Axis2 Message context which contains the data
+     * @throws AxisFault AxisFault
      */
     public static void consumeAndDiscardMessage(MessageContext msgContext) throws AxisFault {
         final Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
         if (pipe != null) {
-            InputStream in = pipe.getInputStream();
-            if (in != null) {
-                try {
-                    if (pipe.isConsumeRequired()) {
-                        IOUtils.copy(in, new NullOutputStream());
-                    }
-                } catch (IOException exception) {
-                    handleException("Error when consuming the input stream to discard ", exception);
+            try {
+                while (!pipe.isProducerCompleted() || pipe.isConsumeRequired()) {
+                    consume(pipe);
                 }
+            } catch (IOException exception) {
+                handleException("Error when consuming the input stream to discard", exception);
             }
         }
     }
