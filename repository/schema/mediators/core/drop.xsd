@@ -25,7 +25,7 @@
     <xs:element name="drop">
         <xs:annotation>
             <xs:documentation source="description">
-                Drop mediator to stop a mediation flow of a message
+                Drops the current message that is being process, and terminates the message flow.
             </xs:documentation>
         </xs:annotation>
     </xs:element>

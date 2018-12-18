@@ -31,7 +31,6 @@ import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
@@ -44,15 +43,20 @@ import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.AXIOMUtils;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
+import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 import javax.xml.namespace.QName;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -66,6 +70,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private boolean isFormatDynamic = false;
     private String formatRaw;
     private String mediaType = XML_TYPE;
+    private boolean escapeXmlChars = false;
     private final static String JSON_CONTENT_TYPE = "application/json";
     private final static String XML_CONTENT_TYPE  = "application/xml";
     private final static String TEXT_CONTENT_TYPE  = "text/plain";
@@ -207,9 +212,9 @@ public class PayloadFactoryMediator extends AbstractMediator {
             }
             String text = "";
             if (entry instanceof OMElement) {
-                OMElement e = (OMElement) entry;
-                removeIndentations(e);
-                text = e.toString();
+                OMElement omElement = ((OMElement) entry).cloneOMElement();
+                removeIndentations(omElement);
+                text = omElement.toString();
             } else if (entry instanceof OMText) {
                 text = ((OMText) entry).getText();
             } else if (entry instanceof String) {
@@ -334,7 +339,14 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     String trimmedReplacementValue = replacementValue.trim();
                     // This is to replace " with \" and \\ with \\\\
                     //replacing other json special characters i.e \b, \f, \n \r, \t
-                    if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(STRING_TYPE) &&
+                    if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE) &&
+                            isEscapeXmlChars()) {
+                        //checks whether the escapeXmlChars attribute is true when media-type and evaluator is json and
+                        //escapes xml chars. otherwise json messages with non escaped xml characters will fail to build
+                        //in content aware mediators.
+                        replacementValue = escapeXMLSpecialChars(replacementValue);
+                    }
+                    else if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(STRING_TYPE) &&
                             (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
                         replacementValue = escapeSpecialChars(replacementValue);
                         // Check for following property which will force the string to include quotes
@@ -371,6 +383,20 @@ public class PayloadFactoryMediator extends AbstractMediator {
         return replaceString.replaceAll(Matcher.quoteReplacement("\\\\"), ESCAPE_BACK_SLASH_WITH_SIXTEEN_BACK_SLASHES)
                 .replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES)
                 .replaceAll("\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\t", ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES);
+    }
+
+    /**
+     * Helper method to replace required char values with escape characters for XML.
+     *
+     * @param replaceString
+     * @return replacedString
+     */
+    private String escapeXMLSpecialChars(String replaceString) {
+        return replaceString.replaceAll("\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
                 .replaceAll("\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
                 .replaceAll("\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
                 .replaceAll("\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
@@ -495,7 +521,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 value = arg.getValue();
                 details.setXml(isXML(value));
                 if (!details.isXml()) {
-                    value = StringEscapeUtils.escapeXml(value);
+                    value = escapeXMLEnvelope(synCtx, value);
                 }
                 value = Matcher.quoteReplacement(value);
             } else if (arg.getExpression() != null) {
@@ -506,7 +532,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     // of the payload is XML.
                     details.setXml(isXML(value));
                     if (!details.isXml() && XML_TYPE.equals(getType()) && !isJson(value.trim(), arg.getExpression())) {
-                        value = StringEscapeUtils.escapeXml(value);
+                        value = escapeXMLEnvelope(synCtx, value);
                     }
                     value = Matcher.quoteReplacement(value);
                 } else {
@@ -643,4 +669,56 @@ public class PayloadFactoryMediator extends AbstractMediator {
         return true;
     }
 
+    /**
+     * Checks and returns XML version of the envelope
+     *
+     * @param msgCtx Message Context
+     * @return xmlVersion in XML Declaration
+     * @throws ParserConfigurationException failure in building message envelope document
+     * @throws IOException Error reading message envelope
+     * @throws SAXException Error parsing message envelope
+     */
+    private String checkXMLVersion(MessageContext msgCtx) throws IOException, SAXException, ParserConfigurationException {
+        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+        InputSource inputSource = new InputSource(new StringReader(msgCtx.getEnvelope().toString()));
+        Document document = documentBuilder.parse(inputSource);
+        return document.getXmlVersion();
+    }
+
+    /**
+     * Escapes XML special characters
+     *
+     * @param msgCtx Message Context
+     * @param value XML String which needs to be escaped
+     * @return XML special char escaped string
+     */
+    private String escapeXMLEnvelope(MessageContext msgCtx, String value) {
+        String xmlVersion = "1.0"; //Default is set to 1.0
+
+        try {
+            xmlVersion = checkXMLVersion(msgCtx);
+        } catch (IOException e) {
+            log.error("Error reading message envelope", e);
+        } catch (SAXException e) {
+            log.error("Error parsing message envelope", e);
+        } catch (ParserConfigurationException e) {
+            log.error("Error building message envelope document", e);
+        }
+
+        if("1.1".equals(xmlVersion)) {
+            return org.apache.commons.text.StringEscapeUtils.escapeXml11(value);
+        } else {
+            return org.apache.commons.text.StringEscapeUtils.escapeXml10(value);
+        }
+
+    }
+
+    public boolean isEscapeXmlChars() {
+        return escapeXmlChars;
+    }
+
+    public void setEscapeXmlChars(boolean escapeXmlChars) {
+        this.escapeXmlChars = escapeXmlChars;
+    }
 }

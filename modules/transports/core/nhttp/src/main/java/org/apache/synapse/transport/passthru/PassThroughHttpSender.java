@@ -45,6 +45,7 @@ import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.nio.reactor.IOReactorExceptionHandler;
 import org.apache.http.protocol.HTTP;
+import org.apache.synapse.transport.exceptions.InvalidConfigurationException;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.Scheme;
@@ -71,6 +72,7 @@ import java.io.OutputStream;
 import java.rmi.RemoteException;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import javax.xml.stream.XMLStreamException;
 
 /**
@@ -568,8 +570,15 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 //when there is no SOAPAction.
                 if (Constants.VALUE_TRUE.equals(msgContext.getProperty(Constants.Configuration.ENABLE_MTOM)) ||
                         Constants.VALUE_TRUE.equals(msgContext.getProperty(Constants.Configuration.ENABLE_SWA))) {
-                    msgContext.setProperty(Constants.Configuration.CONTENT_TYPE, PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED);
-                    msgContext.setProperty(Constants.Configuration.MESSAGE_TYPE, PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED);
+                    Object contentType = msgContext.getProperty(Constants.Configuration.CONTENT_TYPE);
+                    if (Objects.isNull(contentType) ||
+                            !((String) contentType).trim()
+                                                   .startsWith(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
+                        msgContext.setProperty(Constants.Configuration.CONTENT_TYPE,
+                                               PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED);
+                    }
+                    msgContext.setProperty(Constants.Configuration.MESSAGE_TYPE,
+                                           PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED);
                 }
 
                 MessageFormatter formatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
@@ -689,18 +698,22 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
      */
     public void reloadDynamicSSLConfig(TransportOutDescription transport) throws AxisFault {
         log.info("PassThroughHttpSender reloading SSL Config..");
+        try {
+            ClientConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transport);
+            connFactory = connFactoryBuilder.createConnFactory(targetConfiguration.getHttpParams());
 
-        ClientConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transport);
-        connFactory = connFactoryBuilder.createConnFactory(targetConfiguration.getHttpParams());
+            //Set new configurations
+            handler.setConnFactory(connFactory);
+            ioEventDispatch.setConnFactory(connFactory);
 
-        //Set new configurations
-        handler.setConnFactory(connFactory);
-        ioEventDispatch.setConnFactory(connFactory);
+            //close existing connections to apply new settings
+            targetConnections.resetConnectionPool(connFactory.getHostList());
 
-        //close existing connections to apply new settings
-        targetConnections.resetConnectionPool(connFactory.getHostList());
+            log.info("Pass-through " + namePrefix + " Sender updated with Dynamic Configuration Updates ...");
 
-        log.info("Pass-through " + namePrefix + " Sender updated with Dynamic Configuration Updates ...");
+        } catch (InvalidConfigurationException configFault) {
+            log.error("Ignoring reload SSL config since there is an invalid configuration.", configFault);
+        }
     }
 
 

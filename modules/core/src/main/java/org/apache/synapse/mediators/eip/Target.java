@@ -107,7 +107,7 @@ public class Target {
                 if (log.isDebugEnabled()) {
                     log.debug("Synchronously mediating using the in-lined anonymous sequence");
                 }
-                returnValue = sequence.mediate(synCtx);
+                returnValue = mediateMessage(sequence, synCtx);
             }
         } else if (sequenceRef != null) {
             SequenceMediator refSequence = (SequenceMediator) synCtx.getSequence(sequenceRef);
@@ -129,28 +129,7 @@ public class Target {
                         log.debug("Synchronously mediating using the sequence " +
                                 "named : " + sequenceRef);
                     }
-                    try {
-                        returnValue = refSequence.mediate(synCtx);
-                    } catch (SynapseException syne) {
-                        if (!synCtx.getFaultStack().isEmpty()) {
-                            log.warn("Executing fault handler due to exception encountered");
-                            ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, syne);
-                        } else {
-                            log.warn("Exception encountered but no fault handler found - message dropped");
-                        }
-                    } catch (Exception e) {
-                        String msg = "Unexpected error occurred executing the Target";
-                        log.error(msg, e);
-                        if (synCtx.getServiceLog() != null) {
-                            synCtx.getServiceLog().error(msg, e);
-                        }
-                        if (!synCtx.getFaultStack().isEmpty()) {
-                            log.warn("Executing fault handler due to exception encountered");
-                            ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, e);
-                        } else {
-                            log.warn("Exception encountered but no fault handler found - message dropped");
-                        }
-                    }
+                    returnValue = mediateMessage(refSequence, synCtx);
                 }
             } else {
                 handleException("Couldn't find the sequence named : " + sequenceRef);
@@ -270,4 +249,31 @@ public class Target {
         }
         StatisticIdentityGenerator.reportingEndBranchingEvent(holder);
     }
+
+    private boolean mediateMessage(SequenceMediator sequenceMediator, MessageContext synCtx) {
+        try {
+            return sequenceMediator.mediate(synCtx);
+        } catch (SynapseException syne) {
+            if (!synCtx.getFaultStack().isEmpty()) {
+                log.warn("Executing fault handler due to exception encountered");
+                ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, syne);
+            } else {
+                log.warn("Exception encountered but no fault handler found - message dropped");
+            }
+        } catch (Exception e) {
+            String msg = "Unexpected error occurred executing the Target";
+            log.error(msg, e);
+            if (synCtx.getServiceLog() != null) {
+                synCtx.getServiceLog().error(msg, e);
+            }
+            if (!synCtx.getFaultStack().isEmpty()) {
+                log.warn("Executing fault handler due to exception encountered");
+                ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, e);
+            } else {
+                log.warn("Exception encountered but no fault handler found - message dropped");
+            }
+        }
+        return true;
+    }
+
 }

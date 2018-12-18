@@ -51,6 +51,7 @@ import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.MessageHelper;
 
 import javax.mail.internet.ContentType;
@@ -58,6 +59,7 @@ import javax.mail.internet.ParseException;
 import javax.xml.namespace.QName;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * This is a simple client that handles both in only and in out
@@ -140,6 +142,14 @@ public class Axis2FlexibleMEPClient {
         String session = (String) synapseOutMessageContext.getProperty("LB_COOKIE_HEADER");
         if (session != null) {
             headers.put("Cookie", session);
+        }
+
+        if (originalInMsgCtx.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
+           if (originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID) == null){
+               originalInMsgCtx.setProperty(PassThroughConstants.CORRELATION_ID, UUID.randomUUID().toString());
+           }
+            headers.put(PassThroughConfiguration.getInstance().getCorrelationHeaderName(),
+                    originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID).toString());
         }
 
         // create a new MessageContext to be sent out as this should not corrupt the original
@@ -302,6 +312,15 @@ public class Axis2FlexibleMEPClient {
                         org.apache.axis2.Constants.Configuration.ENABLE_MTOM,
                         org.apache.axis2.Constants.VALUE_TRUE);
                 axisOutMsgCtx.setDoingMTOM(true);
+                // Remove the Content-Type transport header if it is not multipart/related to honor the content
+                // type extracted from the SOAPMessageFormatter
+                Object trpHeaders = axisOutMsgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
+                if (trpHeaders != null && trpHeaders instanceof Map &&
+                        ((Map) trpHeaders).get(HTTPConstants.HEADER_CONTENT_TYPE) != null &&
+                        !isMultipartContent(((Map) trpHeaders).get(HTTPConstants.HEADER_CONTENT_TYPE).toString())) {
+                    ((Map) trpHeaders).remove(HTTPConstants.HEADER_CONTENT_TYPE);
+                }
+
 
             } else if (endpoint.isUseSwa()) {
                 axisOutMsgCtx.setDoingSwA(true);
@@ -705,10 +724,16 @@ public class Axis2FlexibleMEPClient {
         return synCtx.getProperty(SynapseConstants.LAST_ENDPOINT) + ", URI : " + axisCtx.getTo().getAddress();
     }
 
+    /**
+     * Check whether the content type is multipart or not
+     * @param contentType
+     * @return true for multipart content types
+     */
+    public static boolean isMultipartContent(String contentType) {
+        if (contentType.contains(HTTPConstants.MEDIA_TYPE_MULTIPART_FORM_DATA)
+                || contentType.contains(HTTPConstants.HEADER_ACCEPT_MULTIPART_RELATED)) {
+            return true;
+        }
+        return false;
+    }
 }
-
-// if(Utils.isClientThreadNonBlockingPropertySet(axisOutMsgCtx) ){
-//SynapseCallbackReceiver synapseCallbackReceiver=(SynapseCallbackReceiver)  axisOutMsgCtx.getAxisOperation().getMessageReceiver();
-//synapseCallbackReceiver.addCallback(synapseOutMessageContext.getMessageID(),new AsyncCallback(synapseOutMessageContext));
-//
-//}

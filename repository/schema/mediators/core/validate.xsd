@@ -28,7 +28,8 @@
     <xs:element name="validate">
         <xs:annotation>
             <xs:documentation source="description">
-                Validate mediator to validate the messages over a given schema
+                Validates an XML message against a specific XML schema or validates a JSON message against a JSON
+                schema.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>
@@ -55,6 +56,7 @@
                     </xs:complexType>
                 </xs:element>
                 <xs:element ref="feature" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="property" type="mediatorProperty" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
             <xs:attribute name="source" type="xs:string" use="optional"/>
         </xs:complexType>

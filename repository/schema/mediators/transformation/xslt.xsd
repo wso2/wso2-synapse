@@ -27,11 +27,28 @@
     <xs:element name="xslt">
         <xs:annotation>
             <xs:documentation source="description">
-                XSLT mediator to transform messages
+                Transforms the message payload based on an XSLT script. For a faster XSLT transformation, use the
+                FastXSLT mediator.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>
+            <xs:sequence>
+                <xs:element name="property" type="mediatorProperty" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="feature" minOccurs="0" maxOccurs="unbounded">
+                    <xs:complexType>
+                        <xs:attribute name="name" type="xs:string" use="required"/>
+                        <xs:attribute name="value" type="xs:boolean" use="required" default="false"/>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="resource" minOccurs="0" maxOccurs="unbounded">
+                    <xs:complexType>
+                        <xs:attribute name="location" type="xs:string" use="required"/>
+                        <xs:attribute name="key" type="xs:string" use="required"/>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
             <xs:attribute name="key" use="required" type="xs:string"/>
+            <xs:attribute name="source" type="xs:string" use="optional"/>
         </xs:complexType>
     </xs:element>
 

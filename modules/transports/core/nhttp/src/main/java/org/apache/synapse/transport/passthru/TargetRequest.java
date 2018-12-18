@@ -24,6 +24,8 @@ import org.apache.axis2.transport.MessageFormatter;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.util.MessageProcessorSelector;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.http.Header;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
@@ -47,7 +49,6 @@ import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.transport.passthru.util.TargetRequestFactory;
 
-import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -58,6 +59,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import javax.xml.stream.XMLStreamException;
 
 /**
  * This is a class for representing a request to be sent to a target.
@@ -87,7 +89,10 @@ public class TargetRequest {
     private boolean hasEntityBody = true;
     /** Keep alive request */
     private boolean keepAlive = true;
-    
+    /** logger for correlation.log */
+    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
+
+
     /**
      * Create a target request.
      *
@@ -388,10 +393,16 @@ public class TargetRequest {
     public boolean hasEntityBody() {
         return hasEntityBody;
     }
+
+    public URL getUrl(){return url; }
     
 
     public void setHasEntityBody(boolean hasEntityBody) {
 		this.hasEntityBody = hasEntityBody;
+	}
+
+	public Map<String, LinkedHashSet<String>> getHeaders() {
+		return headers;
 	}
 
 	public void addHeader(String name, String value) {
@@ -451,4 +462,6 @@ public class TargetRequest {
     public Pipe getPipe() {
         return pipe;
     }
+
+
 }

@@ -62,6 +62,7 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
+import java.util.UUID;
 
 import static org.apache.synapse.SynapseConstants.PASSWORD_PATTERN;
 import static org.apache.synapse.SynapseConstants.URL_PATTERN;
@@ -74,32 +75,48 @@ public class MessageHelper {
 
     private static Log log = LogFactory.getLog(MessageHelper.class);
 
+    public static MessageContext cloneMessageContext(MessageContext synCtx, boolean cloneSoapEnvelope) throws AxisFault {
+        return cloneMessageContext(synCtx, cloneSoapEnvelope, true);
+    }
+
     /**
      * This method will simulate cloning the message context and creating an exact copy of the
      * passed message. One should use this method with care; that is because, inside the new MC,
      * most of the attributes of the MC like opCtx and so on are still kept as references inside
      * the axis2 MessageContext for performance improvements. (Note: U dont have to worrie
      * about the SOAPEnvelope, it is a cloned copy and not a reference from any other MC)
-     * @param synCtx - this will be cloned
-     * @param cloneSoapEnvelope whether to clone the soap envelope
-     * @return cloned Synapse MessageContext
+     * @param synCtx - this will be cloned.
+     * @param cloneSoapEnvelope whether to clone the soap envelope.
+     * @param isCloneJson whether to clone the JSON payload.
+     * @return cloned Synapse MessageContext.
      * @throws AxisFault if there is a failure in creating the new Synapse MC or in a failure in
-     *          clonning the underlying axis2 MessageContext
-     *
+     *                   clonning the underlying axis2 MessageContext.
      * @see MessageHelper#cloneAxis2MessageContext
      */
-    public static MessageContext cloneMessageContext(MessageContext synCtx, boolean cloneSoapEnvelope) throws AxisFault {
+    public static MessageContext cloneMessageContext(MessageContext synCtx, boolean cloneSoapEnvelope,
+                                                     boolean isCloneJson) throws AxisFault {
 
         // creates the new MessageContext and clone the internal axis2 MessageContext
         // inside the synapse message context and place that in the new one
         MessageContext newCtx = synCtx.getEnvironment().createMessageContext();
         Axis2MessageContext axis2MC = (Axis2MessageContext) newCtx;
         axis2MC.setAxis2MessageContext(
-            cloneAxis2MessageContext(((Axis2MessageContext) synCtx).getAxis2MessageContext(), cloneSoapEnvelope));
+                cloneAxis2MessageContext(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
+                        cloneSoapEnvelope, isCloneJson));
 
         newCtx.setConfiguration(synCtx.getConfiguration());
         newCtx.setEnvironment(synCtx.getEnvironment());
         newCtx.setContextEntries(synCtx.getContextEntries());
+
+        //Correlation logging code starts here
+        org.apache.axis2.context.MessageContext originalAxis2Ctx =
+                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        if (originalAxis2Ctx.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
+            String originalCorrelationId = originalAxis2Ctx.getProperty(PassThroughConstants.CORRELATION_ID).toString();
+            axis2MC.getAxis2MessageContext().setProperty(PassThroughConstants.CORRELATION_ID, originalCorrelationId
+                    + "_" + UUID.randomUUID().toString());
+        }
+        //Correlation logging code ends here
 
         // set the parent correlation details to the cloned MC -
         //                              for the use of aggregation like tasks
@@ -222,6 +239,16 @@ public class MessageHelper {
         newCtx.setConfiguration(synCtx.getConfiguration());
         newCtx.setEnvironment(synCtx.getEnvironment());
         newCtx.setContextEntries(synCtx.getContextEntries());
+
+        //Correlation logging code starts here
+        org.apache.axis2.context.MessageContext originalAxis2Ctx =
+                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        if (originalAxis2Ctx.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
+            String originalCorrelationId = originalAxis2Ctx.getProperty(PassThroughConstants.CORRELATION_ID).toString();
+            axis2MC.getAxis2MessageContext().setProperty(PassThroughConstants.CORRELATION_ID, originalCorrelationId
+                    + "_" + UUID.randomUUID().toString());
+        }
+        //Correlation logging code ends here
 
         // set the parent correlation details to the cloned MC -
         //                              for the use of aggregation like tasks
@@ -379,6 +406,11 @@ public class MessageHelper {
 		return newArrayList;
 	}
 
+    public static org.apache.axis2.context.MessageContext cloneAxis2MessageContext(
+            org.apache.axis2.context.MessageContext mc, boolean cloneSoapEnvelope) throws AxisFault {
+        return cloneAxis2MessageContext(mc, cloneSoapEnvelope, true);
+    }
+
     /**
      * This method will simulate cloning the message context and creating an exact copy of the
      * passed message. One should use this method with care; that is because, inside the new MC,
@@ -391,12 +423,13 @@ public class MessageHelper {
      *
      * @param mc - this will be cloned for getting an exact copy
      * @param cloneSoapEnvelope The flag to say whether to clone the SOAP envelope or not.
+     * @param isCloneJson The flag to say whether to clone the JSON payload or not.
      * @return cloned MessageContext from the given mc
      * @throws AxisFault if there is a failure in copying the certain attributes of the
      *          provided message context
      */
     public static org.apache.axis2.context.MessageContext cloneAxis2MessageContext(
-        org.apache.axis2.context.MessageContext mc, boolean cloneSoapEnvelope) throws AxisFault {
+        org.apache.axis2.context.MessageContext mc, boolean cloneSoapEnvelope, boolean isCloneJson) throws AxisFault {
 
         //building the message payload since buffer can not be cloned. otherwise cloned message will have
         //empty buffer in PASS_THROUGH_PIPE without the message payload.
@@ -414,7 +447,9 @@ public class MessageHelper {
         }
         // XXX: always this section must come after the above step. ie. after applying Envelope.
         // That is to get the existing headers into the new envelope.
-        JsonUtil.cloneJsonPayload(mc, newMC);
+        if (isCloneJson) {
+            JsonUtil.cloneJsonPayload(mc, newMC);
+        }
         newMC.setOptions(cloneOptions(mc.getOptions()));
 
         newMC.setServiceContext(mc.getServiceContext());

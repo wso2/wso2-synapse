@@ -25,7 +25,9 @@
     <xs:element name="script">
         <xs:annotation>
             <xs:documentation source="description">
-                Script mediator to process messages using the specified script
+                Invokes the functions of a scripting language (such as JavaScript, Python, and Ruby). The script program
+                statements can be embedded within the Synapse configuration, or they can be taken from a separate file
+                (stored in the registry).
             </xs:documentation>
         </xs:annotation>
         <xs:complexType mixed="true">
@@ -34,6 +36,8 @@
                     <xs:restriction base="xs:string">
                         <xs:enumeration value="js"/>
                         <xs:enumeration value="rb"/>
+                        <xs:enumeration value="groovy"/>
+                        <xs:enumeration value="nashornJs"/>
                     </xs:restriction>
                 </xs:simpleType>
             </xs:attribute>

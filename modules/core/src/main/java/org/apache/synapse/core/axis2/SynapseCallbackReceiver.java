@@ -365,6 +365,10 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
             // set properties on response
             response.setServerSide(true);
+            response.setProperty(PassThroughConstants.CORRELATION_ID,
+                    axisOutMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID));
+            response.setProperty(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY,
+                    axisOutMsgCtx.getProperty(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY));
             response.setProperty(SynapseConstants.ISRESPONSE_PROPERTY, Boolean.TRUE);
             response.setProperty(MessageContext.TRANSPORT_OUT,
                     axisOutMsgCtx.getProperty(MessageContext.TRANSPORT_OUT));

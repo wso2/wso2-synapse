@@ -27,7 +27,7 @@
     <xs:element name="xquery">
         <xs:annotation>
             <xs:documentation source="description">
-                XQuery mediator to transform messages
+                Performs XQuery transformation on messages.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>

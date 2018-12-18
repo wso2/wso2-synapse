@@ -234,4 +234,14 @@ public class PassThroughConstants {
 
     //Check for invalid json message by parsing the input message
     public static final String FORCE_JSON_MESSAGE_VALIDATION = "force.json.message.validation";
+
+    /*
+     * constants for correlation logging
+     */
+    public static final String CORRELATION_LOG_STATE_PROPERTY = "correlationLogState";
+    public static final String CORRELATION_ID = "correlation_id";
+    public static final String CORRELATION_LOGS_SYS_PROPERTY = "EnableCorrelationLogs";
+    public static final String CORRELATION_MDC_PROPERTY = "Correlation-ID";
+    public static final String CORRELATION_LOGGER = "CORRELATION_LOGGER";
+    public static final String CORRELATION_DEFAULT_HEADER = "activityid";
 }

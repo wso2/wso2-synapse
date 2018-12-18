@@ -18,11 +18,13 @@
  */
 package org.apache.synapse.mediators.template;
 
+import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractListMediator;
+import org.apache.synapse.mediators.MediatorFaultHandler;
 
 import java.util.Collection;
 import java.util.Stack;
@@ -48,6 +50,8 @@ public class TemplateMediator extends AbstractListMediator {
     private String artifactContainerName;
     /** whether the template edited via the management console or not */
     private boolean isEdited;
+
+    private String errorHandler = null;
 
     public void setParameters(Collection<String> paramNames) {
         this.paramNames = paramNames;
@@ -81,6 +85,14 @@ public class TemplateMediator extends AbstractListMediator {
         this.isEdited = isEdited;
     }
 
+    public String getErrorHandler() {
+        return errorHandler;
+    }
+
+    public void setErrorHandler(String errorHandler) {
+        this.errorHandler = errorHandler;
+    }
+
     public boolean mediate(MessageContext synCtx) {
 
         if (synCtx.getEnvironment().isDebuggerEnabled()) {
@@ -90,6 +102,23 @@ public class TemplateMediator extends AbstractListMediator {
         }
 
         SynapseLog synLog = getLog(synCtx);
+
+        Mediator errorHandlerMediator = null;
+
+        if (errorHandler != null) {
+            errorHandlerMediator = synCtx.getSequence(errorHandler);
+
+            if (errorHandlerMediator != null) {
+                if (synLog.isTraceOrDebugEnabled()) {
+                    synLog.traceOrDebug("Setting the onError handler : " + errorHandler +
+                            " for sequence template : " + eipPatternName);
+                }
+                synCtx.pushFaultHandler(new MediatorFaultHandler(errorHandlerMediator));
+            } else {
+                synLog.auditWarn("onError handler : " + errorHandler + " for sequence template: " +
+                        eipPatternName + " cannot be found");
+            }
+        }
 
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Start : EIP Sequence " + "paramNames : " + paramNames);
@@ -105,6 +134,16 @@ public class TemplateMediator extends AbstractListMediator {
         } finally {
             if (result) {
                 popFuncContextFrom(synCtx);
+            }
+            if (errorHandlerMediator != null) {
+                Stack faultStack = synCtx.getFaultStack();
+                if (faultStack != null && !faultStack.isEmpty()) {
+                    Object faultHandler = faultStack.peek();
+                    if (faultHandler instanceof MediatorFaultHandler && errorHandlerMediator
+                            .equals(((MediatorFaultHandler) faultHandler).getFaultMediator())) {
+                        faultStack.pop();
+                    }
+                }
             }
         }
         return result;

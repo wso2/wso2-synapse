@@ -41,6 +41,7 @@ import org.apache.axis2.context.ConfigurationContextFactory;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.SynapseException;
 
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Set;
 
@@ -253,27 +254,31 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         synOutCtx.setProperty(SynapseConstants.CONTINUATION_CALL, true);
         ContinuationStackManager.updateSeqContinuationState(synOutCtx, getMediatorPosition());
 
-        // If no endpoints are defined, send where implicitly stated
-        if (endpoint == null) {
+        try {
+            // If no endpoints are defined, send where implicitly stated
+            if (endpoint == null) {
 
-            if (synLog.isTraceOrDebugEnabled()) {
-                StringBuffer sb = new StringBuffer();
-                sb.append("Calling ").append(synOutCtx.isResponse() ? "response" : "request")
-                        .append(" message using implicit message properties..");
-                sb.append("\nCalling To: ").append(synOutCtx.getTo() != null ?
-                        synOutCtx.getTo().getAddress() : "null");
-                sb.append("\nSOAPAction: ").append(synOutCtx.getWSAAction() != null ?
-                        synOutCtx.getWSAAction() : "null");
-                synLog.traceOrDebug(sb.toString());
+                if (synLog.isTraceOrDebugEnabled()) {
+                    StringBuffer sb = new StringBuffer();
+                    sb.append("Calling ").append(synOutCtx.isResponse() ? "response" : "request")
+                            .append(" message using implicit message properties..");
+                    sb.append("\nCalling To: ").append(synOutCtx.getTo() != null ?
+                            synOutCtx.getTo().getAddress() : "null");
+                    sb.append("\nSOAPAction: ").append(synOutCtx.getWSAAction() != null ?
+                            synOutCtx.getWSAAction() : "null");
+                    synLog.traceOrDebug(sb.toString());
+                }
+
+                if (synLog.isTraceTraceEnabled()) {
+                    synLog.traceTrace("Envelope : " + synOutCtx.getEnvelope());
+                }
+                synOutCtx.getEnvironment().send(null, synOutCtx);
+
+            } else {
+                endpoint.send(synOutCtx);
             }
-
-            if (synLog.isTraceTraceEnabled()) {
-                synLog.traceTrace("Envelope : " + synOutCtx.getEnvelope());
-            }
-            synOutCtx.getEnvironment().send(null, synOutCtx);
-
-        } else {
-            endpoint.send(synOutCtx);
+        } catch (Exception e) {
+            handleFault(synInCtx, e);
         }
 
         if (synLog.isTraceOrDebugEnabled()) {
@@ -371,41 +376,54 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         this.axis2xml = axis2xml;
     }
 
+    /**
+     * Handle the exception and set the appropriate properties to the message context.
+     *
+     * @param synCtx    Message Context
+     * @param ex        Exception
+     */
     private void handleFault(MessageContext synCtx, Exception ex) {
         synCtx.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
+        AxisFault axisFault = null;
 
-        if (ex != null && ex instanceof AxisFault) {
-            AxisFault axisFault = (AxisFault) ex;
+        if (ex instanceof SynapseException) {
+            if (ex.getCause() != null && ex.getCause() instanceof AxisFault) {
+                axisFault = (AxisFault) ex.getCause();
+            }
+        } else if (ex instanceof AxisFault) {
+            axisFault = (AxisFault) ex;
+        }
 
-            int errorCode = SynapseConstants.BLOCKING_CALL_OPERATION_FAILED;
+        int errorCode = SynapseConstants.NON_BLOCKING_CALL_OPERATION_FAILED;
+        if (axisFault != null) {
             if (axisFault.getFaultCodeElement() != null && !"".equals(axisFault.getFaultCodeElement().getText())) {
                 try {
                     errorCode = Integer.parseInt(axisFault.getFaultCodeElement().getText());
                 } catch (NumberFormatException e) {
-                    errorCode = SynapseConstants.BLOCKING_CALL_OPERATION_FAILED;
+                    //Do Nothing
                 }
             }
             synCtx.setProperty(SynapseConstants.ERROR_CODE, errorCode);
 
-            if (axisFault.getMessage() != null) {
-                synCtx.setProperty(SynapseConstants.ERROR_MESSAGE,
-                        axisFault.getMessage());
+            if (axisFault.getCause() != null && axisFault.getCause().getCause() != null &&
+                    axisFault.getCause().getCause() instanceof IOException) {
+                //Set the error message for RabbitMQ nack when publishing
+                synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, axisFault.getCause().getCause().getMessage());
+            } else if (axisFault.getMessage() != null) {
+                synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, axisFault.getMessage());
             } else {
-                synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, "Error while performing " +
-                        "the call operation");
+                synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, "Error while performing the call operation");
             }
 
             if (axisFault.getFaultDetailElement() != null) {
                 if (axisFault.getFaultDetailElement().getFirstElement() != null) {
-                    synCtx.setProperty(SynapseConstants.ERROR_DETAIL,
-                            axisFault.getFaultDetailElement().getFirstElement());
+                    synCtx.setProperty(SynapseConstants.ERROR_DETAIL, axisFault.getFaultDetailElement()
+                            .getFirstElement());
                 } else {
-                    synCtx.setProperty(SynapseConstants.ERROR_DETAIL,
-                            axisFault.getFaultDetailElement().getText());
+                    synCtx.setProperty(SynapseConstants.ERROR_DETAIL, axisFault.getFaultDetailElement().getText());
                 }
             }
         }
-
         synCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, ex);
         throw new SynapseException("Error while performing the call operation", ex);
     }

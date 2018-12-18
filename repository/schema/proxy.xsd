@@ -36,11 +36,17 @@
     <xs:complexType name="Proxy">
         <xs:annotation>
             <xs:documentation source="description">
-                This is the element type representing the proxy services
-                in the Synapse Configuration
+                This is the element type representing the proxy services in the Synapse Configuration
             </xs:documentation>
         </xs:annotation>
         <xs:choice maxOccurs="unbounded">
+            <xs:element name="description" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        This is the representation of the proxy service description.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="target" type="ProxyTarget" minOccurs="1" maxOccurs="1"/>
             <xs:element name="publishWSDL" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
@@ -55,22 +61,16 @@
                         <xs:element ref="resource" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:sequence>
                     <xs:attribute name="uri" type="xs:anyURI" use="optional"/>
-                    <xs:attribute name="key" type="xs:string" use="optional"/>
+                    <xs:attribute name="key" type="xs:string" use="required"/>
                 </xs:complexType>
             </xs:element>
             <xs:element name="enableAddressing" minOccurs="0" maxOccurs="1"/>
             <xs:element name="enableSec" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="enableRM" minOccurs="0" maxOccurs="1"/>
             <xs:element name="policy" minOccurs="0" maxOccurs="unbounded">
                 <xs:complexType>
                     <xs:attribute name="key" type="xs:string" use="required"/>
-                    <xs:attribute name="type" use="optional">
-                        <xs:simpleType>
-                            <xs:restriction>
-                                <xs:enumeration value="in"/>
-                                <xs:enumeration value="out"/>
-                            </xs:restriction>
-                        </xs:simpleType>
-                    </xs:attribute>
+                    <xs:attribute name="type" type="policyType" use="optional" default="in"/>
                 </xs:complexType>
             </xs:element>
             <xs:element ref="parameter" minOccurs="0" maxOccurs="unbounded"/>
@@ -79,7 +79,21 @@
         <xs:attribute name="name" type="xs:string" use="required"/>
         <xs:attribute name="transports" type="xs:string" use="optional"/>
         <xs:attribute name="pinnedServers" type="xs:string" use="optional"/>
+        <xs:attribute name="serviceGroup" type="xs:string" use="optional"/>
         <xs:attribute name="startOnLoad" type="xs:boolean" use="optional"/>
     </xs:complexType>
 
+    <xs:simpleType name="policyType">
+        <xs:annotation>
+            <xs:documentation source="description">
+                These are policy types including in and out.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="in"/>
+            <xs:enumeration value="out"/>
+        </xs:restriction>
+    </xs:simpleType>
+
 </xs:schema>
+

@@ -44,6 +44,7 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.eip.SharedDataHolder;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.Target;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.util.MessageHelper;
 
 import java.util.ArrayList;
@@ -109,8 +110,8 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         int i = 0;
         while (iter.hasNext()) {
             if (synLog.isTraceOrDebugEnabled()) {
-                synLog.traceOrDebug("Submitting " + (i+1) + " of " + targets.size() +
-                    " messages for " + (isSequential() ? "sequential processing" : "parallel processing"));
+                synLog.traceOrDebug("Submitting " + (i + 1) + " of " + targets.size() +
+                        " messages for " + (isSequential() ? "sequential processing" : "parallel processing"));
             }
 
             MessageContext clonedMsgCtx = getClonedMessageContext(synCtx, i++, targets.size());

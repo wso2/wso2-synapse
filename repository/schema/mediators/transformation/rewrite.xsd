@@ -27,7 +27,8 @@
     <xs:element name="rewrite">
         <xs:annotation>
             <xs:documentation source="description">
-                XQuery mediator to transform messages
+                Modifies and transforms the URL values in the message. By default, this mediator takes the 'To' header
+                of the message and applies the rewrite rules.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>

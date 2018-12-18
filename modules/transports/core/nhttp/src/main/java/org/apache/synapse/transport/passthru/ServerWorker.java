@@ -464,7 +464,14 @@ public class ServerWorker implements Runnable {
 //        msgContext.setProperty(Constants.OUT_TRANSPORT_INFO, this);
         
         NHttpServerConnection conn = request.getConnection();
-        
+        // propagate correlation logging related properties
+        if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+            msgContext.setProperty(PassThroughConstants.CORRELATION_ID,
+                    conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID));
+            msgContext.setProperty(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY,
+                    sourceConfiguration.isCorrelationLoggingEnabled());
+        }
+
         if (sourceConfiguration.getScheme().isSSL()) {
             msgContext.setTransportOut(cfgCtx.getAxisConfiguration()
                 .getTransportOut(Constants.TRANSPORT_HTTPS));
