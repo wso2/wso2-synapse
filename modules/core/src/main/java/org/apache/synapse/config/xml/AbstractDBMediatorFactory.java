@@ -168,7 +168,7 @@ public abstract class AbstractDBMediatorFactory extends AbstractMediatorFactory 
         } else {
             driver = getValue(pool, DRIVER_Q);
         }
-        driver = ResolverFactory.getInstance().getResolver(driver).resolve(driver);
+        driver = ResolverFactory.getInstance().getResolver(driver).resolve();
         dataSourceInformation.setDriver(driver);
         mediator.addDataSourceProperty(DRIVER_Q, driver);
 
@@ -178,7 +178,7 @@ public abstract class AbstractDBMediatorFactory extends AbstractMediatorFactory 
         } else {
             url = getValue(pool, URL_Q);
         }
-        url = ResolverFactory.getInstance().getResolver(url).resolve(url);
+        url = ResolverFactory.getInstance().getResolver(url).resolve();
         dataSourceInformation.setUrl(url);
         mediator.addDataSourceProperty(URL_Q, url);
 
@@ -190,7 +190,7 @@ public abstract class AbstractDBMediatorFactory extends AbstractMediatorFactory 
         } else {
             user = getValue(pool, USER_Q);
         }
-        user = ResolverFactory.getInstance().getResolver(user).resolve(user);
+        user = ResolverFactory.getInstance().getResolver(user).resolve();
         secretInformation.setUser(user);
         mediator.addDataSourceProperty(USER_Q, user);
 
@@ -200,7 +200,7 @@ public abstract class AbstractDBMediatorFactory extends AbstractMediatorFactory 
         } else {
             password = getValue(pool, PASS_Q);
         }
-        password = ResolverFactory.getInstance().getResolver(password).resolve(password);
+        password = ResolverFactory.getInstance().getResolver(password).resolve();
         secretInformation.setAliasSecret(password);
         mediator.addDataSourceProperty(PASS_Q, password);
 

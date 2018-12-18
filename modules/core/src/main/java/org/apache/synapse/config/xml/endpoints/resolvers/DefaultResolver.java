@@ -15,18 +15,28 @@
  */
 package org.apache.synapse.config.xml.endpoints.resolvers;
 
-import java.util.regex.Pattern;
+/**
+ * Default Resolver is the class used in general case where any resolver is not used
+ */
+public class DefaultResolver implements Resolver {
 
-public class DefaultResolver extends Resolver {
+    private String input;
 
-    public DefaultResolver(Pattern pattern) {
-
-        super(pattern);
-    }
-
+    /**
+     * Return the variable passed
+     * @return input
+     */
     @Override
-    public String resolve(String input) {
+    public String resolve() {
 
         return input;
+    }
+
+    /**
+     * sets the input value
+     */
+    @Override
+    public void setVariable(String input) {
+        this.input = input;
     }
 }

@@ -117,7 +117,7 @@ public class WSDLEndpointFactory extends DefaultEndpointFactory {
             String portName = wsdlElement.getAttributeValue(new QName("port"));
             // check if wsdl is supplied as a URI
             String wsdlURI = wsdlElement.getAttributeValue(new QName("uri"));
-            wsdlURI = ResolverFactory.getInstance().getResolver(wsdlURI).resolve(wsdlURI);
+            wsdlURI = ResolverFactory.getInstance().getResolver(wsdlURI).resolve();
             // set serviceName and portName in the endpoint. it does not matter if these are
             // null at this point. we are setting them only for serialization purpose.
             wsdlEndpoint.setServiceName(serviceName);

@@ -49,12 +49,9 @@ public class TemplateEndpointFactory extends EndpointFactory {
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "uri"));
         if (endpointURIAttribute != null) {
             String endpointURI = endpointURIAttribute.getAttributeValue();
-            endpointURI = ResolverFactory.getInstance().getResolver(endpointURI).resolve(endpointURI);
+            endpointURI = ResolverFactory.getInstance().getResolver(endpointURI).resolve();
             templateEndpoint.addParameter("uri", endpointURI);
-        } /* else {
-            handleException("Error loading the configuration from Template Endpoint, " +
-                    templateEndpoint.getName() + " uri attribute is missing");
-        }*/
+        }
 
         OMAttribute endpointTemplateAttribute = endpointElement.getAttribute(
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "template"));

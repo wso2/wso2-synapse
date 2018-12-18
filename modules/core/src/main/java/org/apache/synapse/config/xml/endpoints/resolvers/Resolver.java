@@ -15,22 +15,11 @@
  */
 package org.apache.synapse.config.xml.endpoints.resolvers;
 
-import java.util.regex.Pattern;
-
 /**
  *  Interface which can be used to resolve variables in the synapse config.
  */
-public abstract class Resolver {
+public interface Resolver {
 
-    private Pattern pattern;
-
-    public Resolver(Pattern pattern) {
-        this.pattern = pattern;
-    }
-
-    public Pattern getPattern() {
-        return pattern;
-    }
-
-    public abstract String resolve(String input);
+    void setVariable(String input);
+    String resolve();
 }

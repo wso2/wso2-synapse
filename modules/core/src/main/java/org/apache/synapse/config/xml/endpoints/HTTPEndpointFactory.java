@@ -77,7 +77,7 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
             if (uriTemplateAttr != null) {
 
                 String uriValue = uriTemplateAttr.getAttributeValue();
-                uriValue = ResolverFactory.getInstance().getResolver(uriValue).resolve(uriValue);
+                uriValue = ResolverFactory.getInstance().getResolver(uriValue).resolve();
                 //get object and and resolve
                     if (uriValue.startsWith(HTTPEndpoint.legacyPrefix)) {
                         httpEndpoint.setUriTemplate(UriTemplate.fromTemplate(

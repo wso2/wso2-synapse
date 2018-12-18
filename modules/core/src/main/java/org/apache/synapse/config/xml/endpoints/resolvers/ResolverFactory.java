@@ -18,12 +18,10 @@ package org.apache.synapse.config.xml.endpoints.resolvers;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.config.xml.MediatorFactoryFinder;
-import sun.misc.Service;
-
-import java.lang.reflect.InvocationTargetException;
+import java.util.ServiceLoader;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,10 +30,10 @@ import java.util.regex.Pattern;
  */
 public class ResolverFactory {
 
+    private final int RESOLVER_INDEX = 2;
     private static ResolverFactory resolverFactory = new ResolverFactory();
     private final Pattern startPattern = Pattern.compile("(^[a-zA-Z0-9])|(^$)");
-    private final Pattern classPattern = Pattern.compile("(^[a-z0-9A-Z]+)(Resolver)");
-    private final Pattern rePattern = Pattern.compile("(\\${1})([a-zA-Z0-9]+):([[a-zA-Z0-9]_[a-zA-Z0-9]]+)");
+    private final Pattern rePattern = Pattern.compile("(\\$)([a-zA-Z0-9]+):([_a-zA-Z0-9]+)");
     private static final Log log = LogFactory.getLog(MediatorFactoryFinder.class);
 
     private Map<String, Class<? extends Resolver>> resolverMap = new HashMap<>();
@@ -61,28 +59,29 @@ public class ResolverFactory {
     public Resolver getResolver(String input) {
         Matcher matcher = startPattern.matcher(input);
         if (matcher.find()) {
-            return new DefaultResolver(startPattern);
+            Resolver resolver = new DefaultResolver();
+            resolver.setVariable(input);
+            return resolver;
         }
         matcher = rePattern.matcher(input);
+        Resolver resolverObject = null;
         if (matcher.find()) {
-            Class resolverClass = resolverMap.get(matcher.group(2).toLowerCase());
+            Class<? extends Resolver> resolverClass = resolverMap.get(matcher.group(RESOLVER_INDEX).toLowerCase());
             if (resolverClass != null) {
-                Resolver resolverObject = null;
                 try {
-                    resolverObject = (Resolver) resolverClass.getDeclaredConstructor(new Class[] {Pattern.class})
-                                                            .newInstance(rePattern);
-                } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException |
-                        InstantiationException e) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Resolver could not be created "+ matcher.group(2).toLowerCase());
-                    }
-                }
-                if (resolverObject != null) {
-                    return resolverObject;
+                    resolverObject = resolverClass.newInstance();
+                    resolverObject.setVariable(matcher.group(3));
+                } catch (IllegalAccessException | InstantiationException e) {
+                    throw new ResolverException("Resolver could not be found");
                 }
             }
         }
-        throw new ResolverException("Resolver could not be found");
+        if (resolverObject != null) {
+            return resolverObject;
+        }
+        else {
+            throw new ResolverException("Resolver could not be found");
+        }
     }
 
     private void registerResolvers() {
@@ -90,22 +89,20 @@ public class ResolverFactory {
     }
 
     private void registerExterns() {
-        Iterator<Resolver> it = Service.providers(Resolver.class);
-        while (it.hasNext()) {
-            Resolver resolver = it.next();
+        ServiceLoader<Resolver> loaders = ServiceLoader.load(Resolver.class);
+        for (Resolver resolver : loaders) {
             String className = resolver.getClass().getName();
             String[] packageList = className.split(".");
             className = packageList[packageList.length - 1];
-            Matcher classMatch = classPattern.matcher(className);
-            if (classMatch.find()) {
-                resolverMap.put(classMatch.group(1).toLowerCase(), resolver.getClass());
+            if (resolverMap.get(className.toLowerCase()) == null) {
+                resolverMap.put(className.toLowerCase(), resolver.getClass());
                 if (log.isDebugEnabled()) {
                     log.debug("Added Resolver " + className + " to resolver factory ");
                 }
             }
             else {
                 if (log.isDebugEnabled()) {
-                    log.debug("Failed to Resolver " + className + " to resolver factory ");
+                    log.debug("Failed to Resolver " + className + " to resolver factory. Already exist");
                 }
             }
         }

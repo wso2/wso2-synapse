@@ -161,16 +161,16 @@ public class RecipientListEndpointFactory extends EndpointFactory {
         	
             OMElement memberEle = (OMElement) memberIter.next();
             String memberHostname = memberEle.getAttributeValue(new QName("hostName"));
-            memberHostname = ResolverFactory.getInstance().getResolver(memberHostname).resolve(memberHostname);
+            memberHostname = ResolverFactory.getInstance().getResolver(memberHostname).resolve();
             Member member = new Member(memberHostname, -1);
             String http = memberEle.getAttributeValue(new QName("httpPort"));
             if (http != null) {
-                http = ResolverFactory.getInstance().getResolver(http).resolve(http);
+                http = ResolverFactory.getInstance().getResolver(http).resolve();
                 member.setHttpPort(Integer.parseInt(http));
             }
             String https = memberEle.getAttributeValue(new QName("httpsPort"));
             if (https != null && https.trim().length() != 0) {
-                https = ResolverFactory.getInstance().getResolver(https).resolve(https);
+                https = ResolverFactory.getInstance().getResolver(https).resolve();
                 member.setHttpsPort(Integer.parseInt(https.trim()));
             }
             members.add(member);
