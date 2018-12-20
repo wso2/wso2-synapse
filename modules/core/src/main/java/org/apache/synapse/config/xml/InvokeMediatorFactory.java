@@ -20,14 +20,15 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.template.InvokeMediator;
 
-import javax.xml.namespace.QName;
 import java.util.Iterator;
 import java.util.Properties;
+import javax.xml.namespace.QName;
 
 /**
  * Builds Invoke mediator from a configuration as
@@ -59,8 +60,14 @@ public class InvokeMediatorFactory extends AbstractMediatorFactory {
         processAuditStatus(invoker, elem);
         OMAttribute targetTemplateAttr = elem.getAttribute(ATT_TARGET);
         if (targetTemplateAttr != null) {
-            invoker.setTargetTemplate(targetTemplateAttr.getAttributeValue());
-            buildParameters(elem);
+            if (StringUtils.isNotEmpty(targetTemplateAttr.getAttributeValue())) {
+                invoker.setTargetTemplate(targetTemplateAttr.getAttributeValue());
+                buildParameters(elem);
+            } else {
+                String msg = "EIP Invoke mediator should have a non empty target name specified.";
+                log.error(msg);
+                throw new SynapseException(msg);
+            }
         } else {
             String msg = "EIP Invoke mediator should have a target template specified.";
             log.error(msg);
@@ -77,8 +84,14 @@ public class InvokeMediatorFactory extends AbstractMediatorFactory {
                 OMAttribute paramNameAttr = child.getAttribute(ATT_NAME);
                 Value paramValue = new ValueFactory().createValue("value", child);
                 if (paramNameAttr != null) {
-                    //set parameter value
-                    invoker.addExpressionForParamName(paramNameAttr.getAttributeValue(), paramValue);
+                    if (StringUtils.isNotEmpty(paramNameAttr.getAttributeValue())) {
+                        //set parameter value
+                        invoker.addExpressionForParamName(paramNameAttr.getAttributeValue(), paramValue);
+                    } else {
+                        String msg = "Call template mediator parameters should have non empty name.";
+                        log.error(msg);
+                        throw new SynapseException(msg);
+                    }
                 }
             }
         }

@@ -21,11 +21,10 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.impl.builder.StAXOMBuilder;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
@@ -125,7 +124,6 @@ public class ValueFactory {
         return key;
     }
 
-
     /**
      * Validate the given key to identify whether it is static or dynamic key
      * If the key is in the {} format then it is dynamic key(XPath)
@@ -135,16 +133,18 @@ public class ValueFactory {
      * @return isDynamicKey representing key type
      */
     public boolean isDynamicKey(String keyValue) {
+
         boolean dynamicKey = false;
+        if (StringUtils.isNotEmpty(keyValue)) {
+            final char startExpression = '{';
+            final char endExpression = '}';
 
-        final char startExpression = '{';
-        final char endExpression = '}';
+            char firstChar = keyValue.charAt(0);
+            char lastChar = keyValue.charAt(keyValue.length() - 1);
 
-        char firstChar = keyValue.charAt(0);
-        char lastChar = keyValue.charAt(keyValue.length() - 1);
-
-        if (startExpression == firstChar && endExpression == lastChar) {
-            dynamicKey = true;
+            if (startExpression == firstChar && endExpression == lastChar) {
+                dynamicKey = true;
+            }
         }
         return dynamicKey;
     }
