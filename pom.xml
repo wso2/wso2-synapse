@@ -1107,7 +1107,7 @@
       <org.antlr.version>3.4</org.antlr.version>
       <com.jayway.jsonpath.version>0.8.0</com.jayway.jsonpath.version>
       <qfj.version>1.5.3</qfj.version>
-      <org.bouncycastle.version>1.52</org.bouncycastle.version>
+      <org.bouncycastle.version>1.60</org.bouncycastle.version>
       <hc.httpcore.version>4.3.3</hc.httpcore.version>
       <httpcore-nio.wso2.version>4.3.3-wso2v4</httpcore-nio.wso2.version>
       <hc.httpclient.version>4.3.2</hc.httpclient.version>
