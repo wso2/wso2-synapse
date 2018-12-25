@@ -320,52 +320,62 @@ public class VFSUtils {
     }
     
     public synchronized static void markFailRecord(FileSystemManager fsManager, FileObject fo) {
-        
+        markFailRecord(fsManager, fo, null);
+    }
+
+    public synchronized static void markFailRecord(FileSystemManager fsManager, FileObject fo, FileSystemOptions fso) {
+
         // generate a random fail value to ensure that there are no two parties
         // processing the same file
         byte[] failValue = (Long.toString((new Date()).getTime())).getBytes();
-        
+
         try {
-	        String fullPath = fo.getName().getURI();	
+            String fullPath = fo.getName().getURI();
             int pos = fullPath.indexOf("?");
             if (pos != -1) {
                 fullPath = fullPath.substring(0, pos);
             }
-            FileObject failObject = fsManager.resolveFile(fullPath + ".fail");
+            FileObject failObject = fsManager.resolveFile(fullPath + ".fail", fso);
             if (!failObject.exists()) {
-            	failObject.createFile();
+                failObject.createFile();
             }
 
-             // write a lock file before starting of the processing, to ensure that the
-             // item is not processed by any other parties
-                
-             OutputStream stream = failObject.getContent().getOutputStream();
-             try {
-                 stream.write(failValue);
-                 stream.flush();
-                 stream.close();
-             } catch (IOException e) {
-              	 failObject.delete();
-                 log.error("Couldn't create the fail file before processing the file " + maskURLPassword(fullPath), e);
-             } finally {
-             	failObject.close();
-             }
+            // write a lock file before starting of the processing, to ensure that the
+            // item is not processed by any other parties
+
+            OutputStream stream = failObject.getContent().getOutputStream();
+            try {
+                stream.write(failValue);
+                stream.flush();
+                stream.close();
+            } catch (IOException e) {
+                failObject.delete();
+                log.error("Couldn't create the fail file before processing the file " + maskURLPassword(fullPath), e);
+            } finally {
+                failObject.close();
+            }
         } catch (FileSystemException fse) {
             log.error("Cannot get the lock for the file : " + maskURLPassword(fo.getName().getURI()) + " before processing");
-        }       
+        }
     }
+
     public static boolean isFailRecord(FileSystemManager fsManager, FileObject fo) {
+        return isFailRecord(fsManager, fo, null);
+    }
+
+    public static boolean isFailRecord(FileSystemManager fsManager, FileObject fo, FileSystemOptions fso) {
+
         try {
-	    String fullPath = fo.getName().getURI();
-	    String queryParams = "";
+            String fullPath = fo.getName().getURI();
+            String queryParams = "";
             int pos = fullPath.indexOf("?");
             if (pos > -1) {
                 queryParams = fullPath.substring(pos);
                 fullPath = fullPath.substring(0, pos);
             }
-            FileObject failObject = fsManager.resolveFile(fullPath + ".fail" + queryParams);
+            FileObject failObject = fsManager.resolveFile(fullPath + ".fail" + queryParams, fso);
             if (failObject.exists()) {
-            	return true;
+                return true;
             }
         } catch (FileSystemException e) {
             log.error("Couldn't release the fail for the file : " + maskURLPassword(fo.getName().getURI()));
@@ -391,20 +401,24 @@ public class VFSUtils {
     }
 
     public static void releaseFail(FileSystemManager fsManager, FileObject fo) {
+        releaseFail(fsManager, fo, null);
+    }
+
+    public static void releaseFail(FileSystemManager fsManager, FileObject fo, FileSystemOptions fso) {
         try {
-	    String fullPath = fo.getName().getURI();	
+            String fullPath = fo.getName().getURI();
             int pos = fullPath.indexOf("?");
             if (pos > -1) {
                 fullPath = fullPath.substring(0, pos);
             }
-            FileObject failObject = fsManager.resolveFile(fullPath + ".fail");
+            FileObject failObject = fsManager.resolveFile(fullPath + ".fail", fso);
             if (failObject.exists()) {
-            	failObject.delete();
+                failObject.delete();
             }
         } catch (FileSystemException e) {
             log.error("Couldn't release the fail for the file : " + maskURLPassword(fo.getName().getURI()));
         }
-    }    
+    }
     
     private static boolean releaseLock(byte[] bLockValue, String sLockValue, FileObject lockObject,
         Boolean autoLockReleaseSameNode, Long autoLockReleaseInterval) {
