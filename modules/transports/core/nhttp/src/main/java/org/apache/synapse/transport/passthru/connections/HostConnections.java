@@ -112,7 +112,7 @@ public class HostConnections {
                     try {
                         conn.shutdown();
                     } catch (IOException io) {
-                        log.error("Error occurred while shutting down connection." + io.getMessage());
+                        log.error("Error occurred while shutting down connection." + io.getMessage(), io);
                     }
                 } else {
                     freeConnections.remove(conn);
