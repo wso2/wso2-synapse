@@ -113,6 +113,8 @@ public class HostConnections {
                         conn.shutdown();
                     } catch (IOException io) {
                         log.error("Error occurred while shutting down connection." + io.getMessage());
+                    } catch (Throwable throwable) {
+                        log.error("Error occurred while obtaining the connecction." + throwable.getMessage());
                     }
                 } else {
                     freeConnections.remove(conn);
