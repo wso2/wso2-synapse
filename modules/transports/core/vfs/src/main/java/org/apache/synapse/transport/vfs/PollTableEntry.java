@@ -557,7 +557,13 @@ public class PollTableEntry extends AbstractPollTableEntry {
                 moveTimestampFormat = new SimpleDateFormat(moveFileTimestampFormat);
             }
 
-            setVfsSchemeProperties(VFSUtils.parseSchemeFileOptions(fileURI, params));
+            Map<String, String> schemeFileOptions = VFSUtils.parseSchemeFileOptions(fileURI, params);
+            if (schemeFileOptions != null) {
+                for (Map.Entry<String, String> schemeFileOption : schemeFileOptions.entrySet()) {
+                    schemeFileOption.setValue(decryptIfRequired(schemeFileOption.getValue()));
+                }
+            }
+            setVfsSchemeProperties(schemeFileOptions);
 
             String strStreaming = ParamUtils.getOptionalParam(params, VFSConstants.STREAMING);
             if (strStreaming != null) {
