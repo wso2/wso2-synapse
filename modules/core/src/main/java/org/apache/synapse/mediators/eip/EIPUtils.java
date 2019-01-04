@@ -240,17 +240,30 @@ public class EIPUtils {
                 }
                 JsonElement result;
                 String resultString = list.get(0).toString().trim();
-                try {
-                    result = parser.parse(resultString);
-                } catch (JsonSyntaxException e) {
-                    // Enclosing using quotes due to the following issue
-                    // https://github.com/google/gson/issues/1286
-                    resultString = "\"" + resultString + "\"";
-                    result = parser.parse(resultString);
-                }
+                result = tryParseJsonString(parser, resultString);
                 return result;
             }
         }
         return null;
+    }
+
+    /**
+     * Given a json string and a parser this method will return the parsed string.
+     *
+     * @param parser JSON parser instance.
+     * @param inputJson input JSON string.
+     * @return parsed JsonElement.
+     */
+    public static JsonElement tryParseJsonString(JsonParser parser, String inputJson) {
+        JsonElement result;
+        try {
+            result = parser.parse(inputJson);
+        } catch (JsonSyntaxException e) {
+            // Enclosing using quotes due to the following issue
+            // https://github.com/google/gson/issues/1286
+            inputJson = "\"" + inputJson + "\"";
+            result = parser.parse(inputJson);
+        }
+        return result;
     }
 }

@@ -18,6 +18,14 @@
  */
 package org.apache.synapse.config.xml;
 
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.spi.json.GsonJsonProvider;
+import com.jayway.jsonpath.spi.json.JsonProvider;
+import com.jayway.jsonpath.spi.mapper.GsonMappingProvider;
+import com.jayway.jsonpath.spi.mapper.MappingProvider;
+import java.util.EnumSet;
+import java.util.Set;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMText;
 import org.apache.synapse.Mediator;
@@ -45,7 +53,30 @@ public class EnrichMediatorSerializer extends AbstractMediatorSerializer {
         enrichEle.addChild(sourceEle);
         enrichEle.addChild(targetEle);
 
+        setJsonPathConfiguration();
+
         return enrichEle;
+    }
+
+    // Set default configuration for Jayway JsonPath
+    private void setJsonPathConfiguration() {
+        Configuration.setDefaults(new Configuration.Defaults() {
+
+            private final JsonProvider jsonProvider = new GsonJsonProvider();
+            private final MappingProvider mappingProvider = new GsonMappingProvider();
+
+            public JsonProvider jsonProvider() {
+                return jsonProvider;
+            }
+
+            public MappingProvider mappingProvider() {
+                return mappingProvider;
+            }
+
+            public Set<Option> options() {
+                return EnumSet.noneOf(Option.class);
+            }
+        });
     }
 
     private OMElement serializeSource(Source source) {
@@ -61,7 +92,7 @@ public class EnrichMediatorSerializer extends AbstractMediatorSerializer {
         if (source.getSourceType() == EnrichMediator.PROPERTY) {
             sourceEle.addAttribute(fac.createOMAttribute("property", nullNS, source.getProperty()));
         } else if (source.getSourceType() == EnrichMediator.CUSTOM) {
-            SynapseXPathSerializer.serializeXPath(source.getXpath(), sourceEle, "xpath");
+            SynapsePathSerializer.serializePath(source.getXpath(), sourceEle, "xpath");
         } else if (source.getSourceType() == EnrichMediator.INLINE) {
             if (source.getInlineOMNode() instanceof OMElement) {
                 sourceEle.addChild(((OMElement) source.getInlineOMNode()).cloneOMElement());
@@ -91,7 +122,7 @@ public class EnrichMediatorSerializer extends AbstractMediatorSerializer {
         if (target.getTargetType() == EnrichMediator.PROPERTY) {
             targetEle.addAttribute(fac.createOMAttribute("property", nullNS, target.getProperty()));
         } else if (target.getTargetType() == EnrichMediator.CUSTOM) {
-            SynapseXPathSerializer.serializeXPath(target.getXpath(), targetEle, "xpath");
+            SynapsePathSerializer.serializePath(target.getXpath(), targetEle, "xpath");
         }
 
         return targetEle;

@@ -18,10 +18,22 @@
  */
 package org.apache.synapse.util.xpath;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.spi.json.GsonJsonProvider;
+import com.jayway.jsonpath.spi.json.JsonProvider;
+import com.jayway.jsonpath.spi.mapper.GsonMappingProvider;
+import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -42,20 +54,73 @@ public class SynapseJsonPath extends SynapsePath {
     private String enableStreamingJsonPath = SynapsePropertiesLoader.loadSynapseProperties().
     getProperty(SynapseConstants.STREAMING_JSONPATH_PROCESSING);
 
+    public JsonPath getJsonPath() {
+        return jsonPath;
+    }
+
+    // Given a json-path this method will return the parent json-path.
+    public String getParentPath() {
+        String[] array = expression.split("\\.");
+        if (array.length > 1) {
+            // handle json-path expressions ends with array notation Ex:- $.student.marks[0]
+            if (array[array.length - 1].endsWith("]")) {
+                array[array.length - 1] = array[array.length - 1].replaceAll("\\[(.*?)\\]", "");
+                return StringUtils.join(array, ".");
+            } else {
+                String[] parent = Arrays.copyOf(array, array.length - 1);
+                return StringUtils.join(parent, ".");
+            }
+        }
+        return null;
+    }
+
+    public void setJsonPath(JsonPath jsonPath) {
+        this.jsonPath = jsonPath;
+    }
+
     private JsonPath jsonPath;
 
     private boolean isWholeBody = false;
 
     public SynapseJsonPath(String jsonPathExpression)  throws JaxenException {
         super(jsonPathExpression, SynapsePath.JSON_PATH, log);
+
+        // Set default configuration for Jayway JsonPath
+        setJsonPathConfiguration();
+
         this.contentAware = true;
         this.expression = jsonPathExpression;
-        jsonPath = JsonPath.compile(jsonPathExpression);
+        // Though SynapseJsonPath support "$.", the JSONPath implementation does not support it
+        if (expression.endsWith(".")) {
+            expression = expression.substring(0, expression.length() - 1);
+        }
+        jsonPath = JsonPath.compile(expression);
         // Check if the JSON path expression evaluates to the whole payload. If so no point in evaluating the path.
         if ("$".equals(jsonPath.getPath().trim()) || "$.".equals(jsonPath.getPath().trim())) {
             isWholeBody = true;
         }
         this.setPathType(SynapsePath.JSON_PATH);
+    }
+
+    // Set default configuration for Jayway JsonPath
+    private void setJsonPathConfiguration() {
+        Configuration.setDefaults(new Configuration.Defaults() {
+
+            private final JsonProvider jsonProvider = new GsonJsonProvider();
+            private final MappingProvider mappingProvider = new GsonMappingProvider();
+
+            public JsonProvider jsonProvider() {
+                return jsonProvider;
+            }
+
+            public MappingProvider mappingProvider() {
+                return mappingProvider;
+            }
+
+            public Set<Option> options() {
+                return EnumSet.noneOf(Option.class);
+            }
+        });
     }
 
     public String stringValueOf(final String jsonString) {
@@ -66,7 +131,7 @@ public class SynapseJsonPath extends SynapsePath {
             return jsonString;
         }
         Object read;
-        read = jsonPath.read(jsonString);
+        read = formatJsonPathResponse(jsonPath.read(jsonString));
         return (null == read ? "null" : read.toString());
     }
 
@@ -117,7 +182,7 @@ public class SynapseJsonPath extends SynapsePath {
         }
         Object read;
         try {
-            read = jsonPath.read(jsonStream);
+            read = formatJsonPathResponse(jsonPath.read(jsonStream));
             if (log.isDebugEnabled()) {
                 log.debug("#stringValueOf. Evaluated JSON path <" + jsonPath.getPath() + "> : <" + (read == null ? null : read.toString()) + ">");
             }
@@ -207,8 +272,9 @@ public class SynapseJsonPath extends SynapsePath {
         List result = new ArrayList();
         try {
             Object object = jsonPath.read(jsonStream);
+            object = formatJsonPathResponse(jsonPath.read(jsonStream));
             if (object != null) {
-                if (object instanceof List && !jsonPath.isPathDefinite()) {
+                if (object instanceof List && !jsonPath.isDefinite()) {
                     result = (List) object;
                 } else {
                     result.add(object);
@@ -224,5 +290,28 @@ public class SynapseJsonPath extends SynapsePath {
             log.debug("#listValueOf. Evaluated JSON path <" + jsonPath.getPath() + "> : <null>.");
         }
         return result;
+    }
+
+    /**
+     * JayWay json-path response have additional elements like "members"(for objects) and "elements"(for arrays)
+     * This method will correct such strings by removing additional elements.
+     *
+     * @param input input jsonElement.
+     * @return corrected jsonObject.
+     */
+    private Object formatJsonPathResponse(Object input) {
+        JsonElement jsonElement = (JsonElement) input;
+        if (jsonElement.isJsonPrimitive()) {
+            return jsonElement.getAsString();
+        } else if(jsonElement.isJsonObject()) {
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            if (jsonObject.has("members")) {
+                return jsonObject.get("members");
+            } else if (jsonObject.has("elements")) {
+                return jsonObject.get("elements");
+            }
+            return jsonObject.toString();
+        }
+        return jsonElement.isJsonArray() ? jsonElement : null;
     }
 }

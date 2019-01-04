@@ -86,6 +86,29 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         populateSource(source, sourceEle);
         populateTarget(target, targetEle);
 
+        // Check the enrich mediator configuration to see whether it can support JSON natively
+        boolean sourceHasCustom = (source.getSourceType() == EnrichMediator.CUSTOM);
+        boolean targetHasCustom = (target.getTargetType() == EnrichMediator.CUSTOM);
+        boolean enrichHasCustom = (sourceHasCustom || targetHasCustom);
+
+        boolean sourceHasACustomJsonPath = false;
+        boolean targetHasACustomJsonPath = false;
+
+        if (sourceHasCustom) {
+            sourceHasACustomJsonPath = SynapsePath.JSON_PATH.equals(source.getXpath().getPathType());
+        }
+
+        if (targetHasCustom) {
+            targetHasACustomJsonPath = SynapsePath.JSON_PATH.equals(target.getXpath().getPathType());
+        }
+
+        // conditions where native-json-processing is supported
+        boolean condition1 = (!enrichHasCustom);
+        boolean condition2 = (sourceHasACustomJsonPath && !targetHasCustom);
+        boolean condition3 = (!sourceHasCustom && targetHasACustomJsonPath);
+        boolean condition4 = (sourceHasACustomJsonPath && targetHasACustomJsonPath);
+
+        enrich.setNativeJsonSupportEnabled(condition1 || condition2 || condition3 || condition4);
         return enrich;
     }
 
@@ -106,7 +129,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
             OMAttribute xpathAttr = sourceEle.getAttribute(ATT_XPATH);
             if (xpathAttr != null && xpathAttr.getAttributeValue() != null) {
                 try {
-                    source.setXpath(SynapseXPathFactory.getSynapseXPath(sourceEle, ATT_XPATH));
+                    source.setXpath(SynapsePathFactory.getSynapsePath(sourceEle, ATT_XPATH));
                 } catch (JaxenException e) {
                     handleException("Invalid XPath expression: " + xpathAttr);
                 }
@@ -167,7 +190,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
             OMAttribute xpathAttr = sourceEle.getAttribute(ATT_XPATH);
             if (xpathAttr != null && xpathAttr.getAttributeValue() != null) {
                 try {
-                    target.setXpath(SynapseXPathFactory.getSynapseXPath(sourceEle, ATT_XPATH));
+                    target.setXpath(SynapsePathFactory.getSynapsePath(sourceEle, ATT_XPATH));
                 } catch (JaxenException e) {
                     handleException("Invalid XPath expression: " + xpathAttr);
                 }
