@@ -457,7 +457,7 @@ public class VFSUtils {
         schemeFileOptions.put(VFSConstants.SCHEME, scheme);
 
         try {
-            addOptions(scheme, schemeFileOptions, params);
+            addOptions(schemeFileOptions, params);
         } catch (AxisFault axisFault) {
             log.error("Error while loading VFS parameter. " + axisFault.getMessage());
         }
@@ -465,14 +465,10 @@ public class VFSUtils {
         return schemeFileOptions;
     }
 
-    private static void addOptions(String scheme, Map<String, String> schemeFileOptions, ParameterInclude params) throws AxisFault {
-        if (scheme.equals(VFSConstants.SCHEME_SFTP)) {
-            for (VFSConstants.SFTP_FILE_OPTION option : VFSConstants.SFTP_FILE_OPTION.values()) {
-                schemeFileOptions.put(option.toString(), ParamUtils.getOptionalParam(
-                        params, VFSConstants.SFTP_PREFIX + WordUtils.capitalize(option.toString())));
-            }
-
-            return;
+    private static void addOptions(Map<String, String> schemeFileOptions, ParameterInclude params) throws AxisFault {
+        for (VFSConstants.SFTP_FILE_OPTION option : VFSConstants.SFTP_FILE_OPTION.values()) {
+            schemeFileOptions.put(option.toString(), ParamUtils.getOptionalParam(
+                    params, VFSConstants.SFTP_PREFIX + WordUtils.capitalize(option.toString())));
         }
     }
 
@@ -484,12 +480,10 @@ public class VFSUtils {
         FileSystemOptions opts = new FileSystemOptions();
         DelegatingFileSystemOptionsBuilder delegate = new DelegatingFileSystemOptionsBuilder(fsManager);
 
-        if (VFSConstants.SCHEME_SFTP.equals(options.get(VFSConstants.SCHEME))) {
-            for (String key: options.keySet()) {
-                for (VFSConstants.SFTP_FILE_OPTION o: VFSConstants.SFTP_FILE_OPTION.values()) {
-                    if (key.equals(o.toString()) && null != options.get(key)) {
-                        delegate.setConfigString(opts, VFSConstants.SCHEME_SFTP, key.toLowerCase(), options.get(key));
-                    }
+        for (String key : options.keySet()) {
+            for (VFSConstants.SFTP_FILE_OPTION o : VFSConstants.SFTP_FILE_OPTION.values()) {
+                if (key.equals(o.toString()) && null != options.get(key)) {
+                    delegate.setConfigString(opts, VFSConstants.SCHEME_SFTP, key.toLowerCase(), options.get(key));
                 }
             }
         }
