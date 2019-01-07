@@ -49,6 +49,7 @@ import org.apache.axis2.transport.TransportUtils;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HTTPTransportUtils;
 import org.apache.axis2.util.MessageContextBuilder;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpInetConnection;
@@ -340,9 +341,8 @@ public class ServerWorker implements Runnable {
             handleException("Error processing " + request.getMethod() +
                 " request for : " + request.getUri(), axisFault);
         } catch (Exception e) {
-            handleException(
-                    "Error processing " + request.getMethod() + " request for : "
-                            + request.getUri() + ". Error detail: " + e.getMessage() + ". ", e);          
+            String encodedURL = StringEscapeUtils.escapeHtml(request.getUri());
+            handleException("Error processing " + request.getMethod() + " request for : " + encodedURL + ". ", e);
         }
     }
 
@@ -590,7 +590,7 @@ public class ServerWorker implements Runnable {
                         + "Failed to process the request" + "</h1><p>" + msg
                         + "</p>";
                 if (e != null) {
-                    body = body + "<p>" + e.getMessage() + "</p></body></html>";
+                    body = body + "<p>" + msg + "</p></body></html>";
                 }
                 if (ex != null) {
                     body = body + "<p>" + ex.getMessage()
