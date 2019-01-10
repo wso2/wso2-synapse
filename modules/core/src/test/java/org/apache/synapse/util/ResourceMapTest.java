@@ -61,7 +61,7 @@ public class ResourceMapTest extends TestCase {
         setUp();
 
         ResourceMap resourceMap = new ResourceMap();
-        resourceMap.addResource(helloLocation, new Value(helloKey));
+        resourceMap.addResource(new Value(helloLocation), new Value(helloKey));
         PowerMockito.when(synapseConfiguration.getEntry(anyString())).thenReturn(omElement);
         InputSource inputSource = resourceMap.resolve(synapseConfiguration, helloLocation, null);
         Assert.assertNotNull("Stream should not be null", inputSource.getByteStream());
@@ -72,7 +72,7 @@ public class ResourceMapTest extends TestCase {
 
     public void testResolveFromMapExpression() {
         ResourceMap resourceMap = new ResourceMap();
-        resourceMap.addResource(helloLocation, new Value(synapsePath));
+        resourceMap.addResource(new Value(helloLocation), new Value(synapsePath));
         PowerMockito.when(synapsePath.getExpression()).thenReturn(helloKey);
         PowerMockito.when(synapseConfiguration.getEntry(anyString())).thenReturn(omElement);
         InputSource inputSource = resourceMap.resolve(synapseConfiguration, helloLocation, null);
@@ -84,7 +84,7 @@ public class ResourceMapTest extends TestCase {
 
     public void testResolveFromMessageContext() {
         ResourceMap resourceMap = new ResourceMap();
-        resourceMap.addResource(helloLocation, value);
+        resourceMap.addResource(new Value(helloLocation), value);
         PowerMockito.when(synapseConfiguration.getEntry(anyString())).thenReturn(omElement);
         PowerMockito.when(value.evaluateValue(((MessageContext) anyObject()))).thenReturn(helloKey);
         InputSource inputSource = resourceMap.resolve(synapseConfiguration, helloLocation, messageContext);
