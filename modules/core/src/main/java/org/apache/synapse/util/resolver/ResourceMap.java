@@ -50,9 +50,27 @@ import java.util.Map;
  * object.
  */
 public class ResourceMap {
+
+    /*
+    We need this class to keep a pair of location and key values in resource attribute
+     */
+    class Pair {
+
+        private Value location;
+        private Value key;
+
+        Pair(Value location, Value key) {
+            this.location = location;
+            this.key = key;
+        }
+
+        public Value getKey() { return location; }
+        public Value getValue() { return key; }
+    }
+
     private static final Log log = LogFactory.getLog(ResourceMap.class);
 
-    private final List<Pair<Value, Value>> resourceValueMap = new ArrayList<>();
+    private final List<Pair> resourceLocationList = new ArrayList<>();
 
     /**
      * Add a resource.
@@ -61,7 +79,7 @@ public class ResourceMap {
      * @param key the registry key that points to the referenced document
      */
     public void addResource(Value location, Value key) {
-        resourceValueMap.add(new Pair<>(location, key));
+        resourceLocationList.add(new Pair(location, key));
     }
 
     /**
@@ -82,7 +100,7 @@ public class ResourceMap {
      */
     public Map<String,String> getResources() {
         Map<String, String> resourceMap = new LinkedHashMap<>();
-        for (Pair<Value,Value> entry : resourceValueMap) {
+        for (Pair entry : resourceLocationList) {
             resourceMap.put(entry.getKey().getKeyValue() == null ?
                             "{".concat(entry.getKey().getExpression().getExpression()).concat("}") :
                             entry.getKey().getKeyValue(),
@@ -115,7 +133,7 @@ public class ResourceMap {
     public InputSource resolve(SynapseConfiguration synCfg, String location, MessageContext messageContext) {
         String key = null;
         Map<String, String> locationMap = new HashMap<>();
-        for(Pair<Value, Value> entry : resourceValueMap) {
+        for(Pair entry : resourceLocationList) {
             if (messageContext != null) {
                 locationMap.put(entry.getKey().evaluateValue(messageContext),
                                 entry.getValue().evaluateValue(messageContext));
