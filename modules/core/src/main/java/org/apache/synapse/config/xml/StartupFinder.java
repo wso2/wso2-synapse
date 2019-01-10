@@ -34,7 +34,6 @@ import org.apache.synapse.Startup;
 import org.apache.synapse.config.XMLToObjectMapper;
 import org.apache.synapse.startup.quartz.SimpleQuartzFactory;
 
-import sun.misc.Service;
 
 public class StartupFinder implements XMLToObjectMapper {
 
@@ -112,7 +111,7 @@ public class StartupFinder implements XMLToObjectMapper {
         // + System.getResource("java.class.path"));
 
         // register MediatorFactory extensions
-        Iterator<?> it = Service.providers(StartupFactory.class);
+        Iterator<?> it = java.util.ServiceLoader.load(StartupFactory.class).iterator();
         while (it.hasNext()) {
             StartupFactory sf = (StartupFactory) it.next();
             QName tag = sf.getTagQName();
