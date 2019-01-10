@@ -24,7 +24,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.config.xml.eventing.EventPublisherMediatorSerializer;
-import sun.misc.Service;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -117,7 +116,7 @@ public class MediatorSerializerFinder {
             log.debug("Registering mediator extensions found in the classpath.. ");
         }
         // register MediatorSerializer extensions
-        Iterator it = Service.providers(MediatorSerializer.class);
+        Iterator it = java.util.ServiceLoader.load(MediatorSerializer.class).iterator();
         while (it.hasNext()) {
             MediatorSerializer ms = (MediatorSerializer) it.next();
             String name = ms.getMediatorClassName();

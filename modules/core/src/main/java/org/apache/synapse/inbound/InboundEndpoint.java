@@ -31,7 +31,6 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
-import sun.misc.Service;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -102,7 +101,7 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
         if (log.isDebugEnabled()) {
             log.debug("Trying to fetch InboundRequestProcessor from classpath.. ");
         }
-        Iterator<InboundRequestProcessorFactory> it = Service.providers(InboundRequestProcessorFactory.class);
+        Iterator<InboundRequestProcessorFactory> it = java.util.ServiceLoader.load(InboundRequestProcessorFactory.class).iterator();
         InboundProcessorParams params = populateParams();
         while (it.hasNext()) {
             InboundRequestProcessorFactory factory = it.next();
