@@ -63,7 +63,8 @@ public class ResourceMapFactory {
                 handleException("The 'key' attribute is required for a resource definition");
             }
             Value generatedKey = keyFac.createValue(XMLConfigConstants.KEY, resourceElem);
-            resourceMap.addResource(location.getAttributeValue(), generatedKey);
+            Value generatedLocation = keyFac.createValue(XMLConfigConstants.LOCATION, resourceElem);
+            resourceMap.addResource(generatedLocation, generatedKey);
         }
         return resourceMap;
     }

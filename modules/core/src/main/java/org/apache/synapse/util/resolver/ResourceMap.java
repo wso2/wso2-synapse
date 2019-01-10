@@ -19,6 +19,7 @@
 
 package org.apache.synapse.util.resolver;
 
+import javafx.util.Pair;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -31,8 +32,11 @@ import org.xml.sax.InputSource;
 import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -48,7 +52,7 @@ import java.util.Map;
 public class ResourceMap {
     private static final Log log = LogFactory.getLog(ResourceMap.class);
 
-    private final Map<String, Value> resourceValueMap = new LinkedHashMap<>();
+    private final List<Pair<Value, Value>> resourceValueMap = new ArrayList<>();
 
     /**
      * Add a resource.
@@ -56,8 +60,8 @@ public class ResourceMap {
      * @param location the location as it appears in referencing documents
      * @param key the registry key that points to the referenced document
      */
-    public void addResource(String location, Value key) {
-        resourceValueMap.put(location, key);
+    public void addResource(Value location, Value key) {
+        resourceValueMap.add(new Pair<>(location, key));
     }
 
     /**
@@ -68,7 +72,7 @@ public class ResourceMap {
      */
     public void addResource(String location, String key) {
         //todo - What should we do if an expression passes as the key
-        addResource(location, new Value(key));
+        addResource(new Value(location), new Value(key));
     }
     
     /**
@@ -78,10 +82,13 @@ public class ResourceMap {
      */
     public Map<String,String> getResources() {
         Map<String, String> resourceMap = new LinkedHashMap<>();
-        for (Map.Entry<String, Value> entry : resourceValueMap.entrySet()) {
-            resourceMap.put(entry.getKey(), entry.getValue().getKeyValue() == null ?
-                                            "{".concat(entry.getValue().getExpression().getExpression()).concat("}") :
-                                            entry.getValue().getKeyValue());
+        for (Pair<Value,Value> entry : resourceValueMap) {
+            resourceMap.put(entry.getKey().getKeyValue() == null ?
+                            "{".concat(entry.getKey().getExpression().getExpression()).concat("}") :
+                            entry.getKey().getKeyValue(),
+                            entry.getValue().getKeyValue() == null ?
+                            "{".concat(entry.getValue().getExpression().getExpression()).concat("}") :
+                            entry.getValue().getKeyValue());
         }
         return Collections.unmodifiableMap(resourceMap);
     }
@@ -106,13 +113,24 @@ public class ResourceMap {
      * @return an <code>InputSource</code> object for the referenced resource
      */
     public InputSource resolve(SynapseConfiguration synCfg, String location, MessageContext messageContext) {
-        String key;
-        if (messageContext != null && resourceValueMap.get(location) != null) {
-            key = resourceValueMap.get(location).evaluateValue(messageContext);
-        } else {
-            key = resourceValueMap.get(location).getKeyValue() == null ?
-                  resourceValueMap.get(location).getExpression().getExpression() :
-                  resourceValueMap.get(location).getKeyValue();
+        String key = null;
+        Map<String, String> locationMap = new HashMap<>();
+        for(Pair<Value, Value> entry : resourceValueMap) {
+            if (messageContext != null) {
+                locationMap.put(entry.getKey().evaluateValue(messageContext),
+                                entry.getValue().evaluateValue(messageContext));
+            } else {
+                locationMap.put(entry.getKey().getKeyValue() == null ?
+                                entry.getKey().getExpression().getExpression() :
+                                entry.getKey().getKeyValue(),
+                                entry.getValue().getKeyValue() == null ?
+                                entry.getValue().getExpression().getExpression() :
+                                entry.getValue().getKeyValue());
+            }
+        }
+
+        if (locationMap.get(location) != null) {
+            key = locationMap.get(location);
         }
         if (key == null) {
             if (log.isDebugEnabled()) {
