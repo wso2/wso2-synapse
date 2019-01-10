@@ -19,7 +19,6 @@
 
 package org.apache.synapse.util.resolver;
 
-import javafx.util.Pair;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -50,23 +49,6 @@ import java.util.Map;
  * object.
  */
 public class ResourceMap {
-
-    /*
-    We need this class to keep a pair of location and key values in resource attribute
-     */
-    class Pair {
-
-        private Value location;
-        private Value key;
-
-        Pair(Value location, Value key) {
-            this.location = location;
-            this.key = key;
-        }
-
-        public Value getKey() { return location; }
-        public Value getValue() { return key; }
-    }
 
     private static final Log log = LogFactory.getLog(ResourceMap.class);
 
@@ -185,5 +167,22 @@ public class ResourceMap {
                 throw new SynapseException(msg);
             }
         }
+    }
+
+    /*
+    We need this class to keep a pair of location and key values in resource attribute
+     */
+    class Pair {
+
+        private Value location;
+        private Value key;
+
+        Pair(Value location, Value key) {
+            this.location = location;
+            this.key = key;
+        }
+
+        public Value getKey() { return location; }
+        public Value getValue() { return key; }
     }
 }
