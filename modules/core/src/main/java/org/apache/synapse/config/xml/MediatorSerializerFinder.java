@@ -43,6 +43,7 @@ public class MediatorSerializerFinder {
             HeaderMediatorSerializer.class,
             FaultMediatorSerializer.class,
             PropertyMediatorSerializer.class,
+            PropertyGroupMediatorSerializer.class,
             SwitchMediatorSerializer.class,
             InMediatorSerializer.class,
             OutMediatorSerializer.class,
