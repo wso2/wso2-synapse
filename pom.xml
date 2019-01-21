@@ -1116,7 +1116,7 @@
       <synapse.version>${project.version}</synapse.version>
       <commons.dbcp.version>1.2.2</commons.dbcp.version>
       <commons.pool.version>1.3</commons.pool.version>
-      <commons.vfs.version>2.2-wso2v4</commons.vfs.version>
+      <commons.vfs.version>2.2-wso2v5</commons.vfs.version>
       <truezip.version>6.6</truezip.version>
       <commons.net.version>1.4.1</commons.net.version>
       <jsch.version>0.1.51.wso2v1</jsch.version>
