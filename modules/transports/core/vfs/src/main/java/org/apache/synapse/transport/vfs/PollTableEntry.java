@@ -133,7 +133,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
      * At usage default id 'false' which lead hostname resolution at deployment
      */
     private boolean resolveHostsDynamically = false;
-    
+
+    private ParameterInclude params;
+
     private static final Log log = LogFactory.getLog(PollTableEntry.class);
     
     public PollTableEntry(boolean fileLocking) {
@@ -436,7 +438,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
         this.vfsSchemeProperties = vfsSchemeProperties;
     }
 
-    
+    public ParameterInclude getParams() {
+        return params;
+    }
     
     /**
      * @return the forceCreateFolder
@@ -469,6 +473,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
     @Override
     public boolean loadConfiguration(ParameterInclude params) throws AxisFault {
 
+        this.params = params;
         resolveHostsDynamically = ParamUtils.getOptionalParamBoolean(params,
                 VFSConstants.TRANSPORT_FILE_RESOLVEHOST_DYNAMICALLY, false);
 
