@@ -1009,6 +1009,12 @@
               <version>${slf4j.log4j.version}</version>
               <scope>test</scope>
           </dependency>
+          <dependency>
+              <groupId>com.github.stefanbirkner</groupId>
+              <artifactId>system-rules</artifactId>
+              <version>${system.rules.version}</version>
+              <scope>test</scope>
+          </dependency>
       </dependencies>
    </dependencyManagement>
     <reporting>
@@ -1199,6 +1205,7 @@
       <java.version>1.8</java.version>
        <activemq.broker.version>5.9.1</activemq.broker.version>
        <slf4j.log4j.version>1.5.2</slf4j.log4j.version>
+       <system.rules.version>1.17.0</system.rules.version>
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->
