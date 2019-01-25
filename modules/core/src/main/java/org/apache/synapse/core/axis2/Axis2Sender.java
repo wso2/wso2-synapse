@@ -194,6 +194,9 @@ public class Axis2Sender {
 
             doSOAPFormatConversion(smc);
 
+            //isServerSide should always be true because we are sending the response back to the client
+            messageContext.setServerSide(true);
+
             // handles concurrent throttling based on the messagecontext.
             handleConcurrentThrottleCount(smc);
 
