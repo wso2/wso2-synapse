@@ -41,8 +41,8 @@ public class PassThroughHttpSSLSender extends PassThroughHttpSender implements S
 
     @Override
     protected ClientConnFactoryBuilder initConnFactoryBuilder(
-            final TransportOutDescription transportOut) throws AxisFault {
-        return new ClientConnFactoryBuilder(transportOut).parseSSL();
+            final TransportOutDescription transportOut, ConfigurationContext configurationContext) throws AxisFault {
+        return new ClientConnFactoryBuilder(transportOut, configurationContext).parseSSL();
     }
 
 

@@ -37,8 +37,8 @@ public class HttpCoreNIOSSLSender extends HttpCoreNIOSender implements SSLProfil
 
     @Override
     protected ClientConnFactoryBuilder initConnFactoryBuilder(
-            final TransportOutDescription transportOut) throws AxisFault {
-        return new ClientConnFactoryBuilder(transportOut)
+            final TransportOutDescription transportOut, ConfigurationContext configurationContext) throws AxisFault {
+        return new ClientConnFactoryBuilder(transportOut, configurationContext)
             .parseSSL();
     }
 

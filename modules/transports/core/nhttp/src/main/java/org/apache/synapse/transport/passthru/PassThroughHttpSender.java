@@ -112,6 +112,8 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 
     private DigestGenerator digestGenerator  = CachingConstants.DEFAULT_XML_IDENTIFIER;
 
+    private ConfigurationContext configurationContext;
+
     public PassThroughHttpSender() {
         log = LogFactory.getLog(this.getClass().getName());
     }
@@ -121,14 +123,15 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
     }
     
     protected ClientConnFactoryBuilder initConnFactoryBuilder(
-            final TransportOutDescription transportOut) throws AxisFault {
-        return new ClientConnFactoryBuilder(transportOut);
+            final TransportOutDescription transportOut, ConfigurationContext configurationContext) throws AxisFault {
+        return new ClientConnFactoryBuilder(transportOut, configurationContext);
     }
     
     public void init(ConfigurationContext configurationContext,
                      TransportOutDescription transportOutDescription) throws AxisFault {
         log.info("Initializing Pass-through HTTP/S Sender...");
 
+        this.configurationContext = configurationContext;
         namePrefix = transportOutDescription.getName().toUpperCase(Locale.US);
         scheme = getScheme();
         
@@ -161,7 +164,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         configurationContext.setProperty(PassThroughConstants.PASS_THROUGH_TRANSPORT_WORKER_POOL,
                 targetConfiguration.getWorkerPool());
         
-        ClientConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportOutDescription);
+        ClientConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportOutDescription, configurationContext);
         connFactory = connFactoryBuilder.createConnFactory(targetConfiguration.getHttpParams());
         
         try {
@@ -699,7 +702,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
     public void reloadDynamicSSLConfig(TransportOutDescription transport) throws AxisFault {
         log.info("PassThroughHttpSender reloading SSL Config..");
         try {
-            ClientConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transport);
+            ClientConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transport, this.configurationContext);
             connFactory = connFactoryBuilder.createConnFactory(targetConfiguration.getHttpParams());
 
             //Set new configurations
