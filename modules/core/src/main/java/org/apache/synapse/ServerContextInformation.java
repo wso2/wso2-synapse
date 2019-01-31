@@ -23,6 +23,7 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.SynapseCallbackReceiver;
 import org.apache.synapse.debug.SynapseDebugInterface;
 import org.apache.synapse.debug.SynapseDebugManager;
+import org.apache.synapse.unittest.Agent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +32,7 @@ import java.util.Map;
  * Encapsulates server context information
  */
 public class ServerContextInformation {
-    
+
     /* Underlying server's context - EX : Axis2 ConfigurationContext */
     private Object serverContext;
     /* A map to hold any context information*/
@@ -40,78 +41,109 @@ public class ServerContextInformation {
     private SynapseConfiguration synapseConfiguration;
     /* Keeps the SynapseEnvironment */
     private SynapseEnvironment synapseEnvironment;
-    /** Callback receiver */    
+    /**
+     * Callback receiver
+     */
     private SynapseCallbackReceiver synapseCallbackReceiver;
-    /** State of the server */
+    /**
+     * State of the server
+     */
     private ServerState serverState = ServerState.UNDETERMINED;
-    /** Reference to the server configuration */
+    /**
+     * Reference to the server configuration
+     */
     private ServerConfigurationInformation serverConfigurationInformation;
-    /** Reference to the debug manager instance */
+    /**
+     * Reference to the debug manager instance
+     */
     private SynapseDebugManager debugManager;
-    /** Reference to the debug interface instance */
+    /**
+     * Reference to the debug interface instance
+     */
     private SynapseDebugInterface debugInterface;
-    /** whether debug mode is enabled or not */
-    private boolean isDebugModeEnabled=false;
+    /**
+     * whether debug mode is enabled or not
+     */
+    private boolean isDebugModeEnabled = false;
+    /**
+     * whether unit testing mode is enabled or not
+     */
+    private boolean isUnitTestingModeEnabled = false;
 
     public ServerContextInformation(ServerConfigurationInformation serverConfigurationInformation) {
+
         this.serverConfigurationInformation = serverConfigurationInformation;
     }
 
     public ServerContextInformation(Object serverContext,
                                     ServerConfigurationInformation serverConfigurationInformation) {
+
         this.serverContext = serverContext;
         this.serverConfigurationInformation = serverConfigurationInformation;
     }
 
     public Object getServerContext() {
+
         return serverContext;
     }
 
     public void setServerContext(Object serverContext) {
+
         this.serverContext = serverContext;
     }
 
     public void addProperty(String key, Object value) {
+
         properties.put(key, value);
     }
 
     public Object getProperty(String key) {
+
         return properties.get(key);
     }
 
     public ServerState getServerState() {
+
         return serverState;
     }
 
     public void setServerState(ServerState serverState) {
+
         this.serverState = serverState;
     }
 
     public SynapseConfiguration getSynapseConfiguration() {
+
         return synapseConfiguration;
     }
 
     public void setSynapseConfiguration(SynapseConfiguration synapseConfiguration) {
+
         this.synapseConfiguration = synapseConfiguration;
     }
 
     public SynapseEnvironment getSynapseEnvironment() {
+
         return synapseEnvironment;
     }
 
     public void setSynapseEnvironment(SynapseEnvironment synapseEnvironment) {
+
         this.synapseEnvironment = synapseEnvironment;
     }
 
     public SynapseCallbackReceiver getSynapseCallbackReceiver() {
+
         return synapseCallbackReceiver;
     }
 
     public void setSynapseCallbackReceiver(SynapseCallbackReceiver synapseCallbackReceiver) {
+
         this.synapseCallbackReceiver = synapseCallbackReceiver;
     }
 
     public ServerConfigurationInformation getServerConfigurationInformation() {
+
         return serverConfigurationInformation;
     }
 
@@ -121,32 +153,58 @@ public class ServerContextInformation {
      * @return the number of current callbacks.
      */
     public int getCallbackCount() {
+
         if (synapseCallbackReceiver != null) {
             return synapseCallbackReceiver.getCallbackCount();
         }
         return 0;
     }
 
-    public SynapseDebugManager getSynapseDebugManager(){
+    public SynapseDebugManager getSynapseDebugManager() {
+
         return debugManager;
     }
 
-    public void setSynapseDebugManager(SynapseDebugManager debugManager){this.debugManager=debugManager;}
+    public void setSynapseDebugManager(SynapseDebugManager debugManager) {
 
-    public SynapseDebugInterface getSynapseDebugInterface(){
+        this.debugManager = debugManager;
+    }
+
+    public SynapseDebugInterface getSynapseDebugInterface() {
+
         return debugInterface;
     }
 
     public void setSynapseDebugInterface(SynapseDebugInterface debugInterface) {
+
         this.debugInterface = debugInterface;
     }
 
-    public boolean isServerDebugModeEnabled(){
+    public boolean isServerDebugModeEnabled() {
+
         return isDebugModeEnabled;
     }
 
-    public void setServerDebugModeEnabled(boolean isDebugModeEnabled){
-        this.isDebugModeEnabled=isDebugModeEnabled;
+    public boolean isUnitTestingModeEnabled() {
+
+        return setUnitTestingModeEnabled();
     }
 
+    public void setServerDebugModeEnabled(boolean isDebugModeEnabled) {
+
+        this.isDebugModeEnabled = isDebugModeEnabled;
+    }
+
+    public boolean setUnitTestingModeEnabled() {
+
+        String unitTestValue = System.getProperty("org.apache.synapse.ServerContextInformation");
+        boolean enabled = Boolean.valueOf(unitTestValue);
+        if (enabled){
+            this.isUnitTestingModeEnabled = true;
+            return isUnitTestingModeEnabled;
+        }
+        else return false;
+
+    }
 }
+

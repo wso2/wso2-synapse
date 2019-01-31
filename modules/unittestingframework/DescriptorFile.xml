@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<synapse-unitTest>
+        <artifact>/home/hirushi/NewProxy.xml</artifact>
+        <fileName>NewProxy</fileName>
+        <artifactType>proxy</artifactType>
+
+        <properties></properties>
+
+    <NoOfTestCases>1</NoOfTestCases>
+    <testCase1>
+        <set-inputXmlPayload><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/\">\n"
+            + "   <soapenv:Header/>\n"
+            + "   <soapenv:Body>\n"
+            + "        <addCustomer>\n"
+            + "            <name>Smith</name>\n"
+            + "            <tpNumber>0834558649</tpNumber>\n"
+            + "            <address>No. 456, Gregory Road, Los Angeles</address>\n"
+            + "        </addCustomer>\n"
+            + "   </soapenv:Body>\n"
+            + "</soapenv:Envelope>]]></set-inputXmlPayload>
+
+        <expectedPropVal><![CDATA[<?xml version='1.0' encoding='utf-8'?>" +
+            "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+            "<soapenv:Body>" + <echoInt> xmlns=\"http://echo.services.core.carbon.wso2.org\">"
+                    + "      <!--0 to 1 occurrence-->" + "<in>35</in>" + "</echoInt> +
+                "</soapenv:Body></soapenv:Envelope>]]></expectedPropVal>
+
+        <expectedPayload><![CDATA[<soapenv:Body xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><a>newPayload</a></soapenv:Body>]]></expectedPayload>
+    </testCase1>
+
+    <testCase2>
+        <set-inputXmlPayload><![CDATA[<soapenv:Body xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><a>newPayload</a></soapenv:Body>]]></set-inputXmlPayload>
+
+        <set-mocks>""</set-mocks>
+
+        <expectedPropVal><![CDATA[<?xml version='1.0' encoding='utf-8'?>" +
+            "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+            "<soapenv:Body>" + <echoInt> xmlns=\"http://echo.services.core.carbon.wso2.org\">"
+                    + "      <!--0 to 1 occurrence-->" + "<in>35</in>" + "</echoInt> +
+                "</soapenv:Body></soapenv:Envelope>]]></expectedPropVal>
+
+        <expectedPayload><![CDATA[<soapenv:Body xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><a>newPayload</a></soapenv:Body>]]></expectedPayload>
+    </testCase2>
+
+</synapse-unitTest>

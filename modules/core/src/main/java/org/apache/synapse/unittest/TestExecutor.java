@@ -47,7 +47,7 @@ public class TestExecutor {
             msgCtxt = TestUtils.createLightweightSynapseMessageContext(inputXmlPayload);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Exception in creating message context", e);
         }
         return msgCtxt;
     }
@@ -89,7 +89,7 @@ public class TestExecutor {
             }
 
             catch (Exception e) {
-                e.printStackTrace();
+                log.error("Exception in invoking the proxy service", e);
                 return null;
             }
         }
