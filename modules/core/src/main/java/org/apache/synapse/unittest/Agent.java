@@ -84,6 +84,8 @@ public class Agent extends Thread {
                         Pair<SynapseConfiguration, String> pair = new Deployer().deploySequence(xmlFile, fileName);
                         synapseConfiguration = pair.getKey();
                         key = pair.getValue();
+                        log.info(key);
+                        log.info(fileName);
 
                     } else if (artifactType.equals("proxy")) {
                         Pair<SynapseConfiguration, String> pair = new Deployer().deployProxy(xmlFile, fileName);

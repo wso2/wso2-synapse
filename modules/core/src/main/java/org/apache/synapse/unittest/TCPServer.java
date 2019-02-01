@@ -72,7 +72,10 @@ public class TCPServer {
                 agent.processData(message);
                 message = bufferedReader.readLine();
             }
-            log.info("Closing resources");
+//            log.info("Closing resources");
+//            clientSocket.close();
+//            printWriter.close();
+//            bufferedReader.close();
 
         } catch (IOException e) {
             log.error("Exception in reading data from the buffer reader", e);

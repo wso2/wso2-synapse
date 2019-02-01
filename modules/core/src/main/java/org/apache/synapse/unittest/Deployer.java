@@ -19,15 +19,14 @@ package org.apache.synapse.unittest;
 
 import javafx.util.Pair;
 import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.engine.AxisConfiguration;
-import org.apache.log4j.Logger;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
+import org.apache.synapse.core.axis2.Initializer;
 import org.apache.synapse.deployers.ProxyServiceDeployer;
 import org.apache.synapse.deployers.SequenceDeployer;
 
@@ -60,7 +59,7 @@ public class Deployer {
 
         ProxyServiceDeployer proxyServiceDeployer = new ProxyServiceDeployer();
 
-        SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
+        SynapseConfiguration synapseConfiguration = Initializer.getInstance().getSynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
         ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
         SynapseEnvironment synapseEnvironment = new Axis2SynapseEnvironment(cfgCtx, synapseConfiguration);

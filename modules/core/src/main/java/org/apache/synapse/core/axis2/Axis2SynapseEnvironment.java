@@ -239,7 +239,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         if (contextInformation.isUnitTestingModeEnabled()) {
             setUnitTestingEnabled(true);
-            new Initializer().start();
+            Initializer initializer = Initializer.getInstance();
+            initializer.setSynapseConfiguration(this.synapseConfig);
+            initializer.run();
 
 
         }
