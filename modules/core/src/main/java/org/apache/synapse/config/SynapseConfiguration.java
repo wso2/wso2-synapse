@@ -928,7 +928,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 o.entryRemoved((Entry) entry);
             }
         } else {
-            handleException("No entry exists by the key : " + key);
+            if (log.isDebugEnabled()) {
+                log.debug("No entry exists by the key : " + key);
+            }
         }
     }
 
