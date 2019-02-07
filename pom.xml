@@ -552,7 +552,7 @@
              <version>${mina.version}</version>
          </dependency>
          <dependency>
-             <groupId>org.bouncycastle</groupId>
+             <groupId>org.wso2.orbit.org.bouncycastle</groupId>
              <artifactId>bcpkix-jdk15on</artifactId>
              <version>${org.bouncycastle.version}</version>
          </dependency>
@@ -1108,7 +1108,8 @@
       <org.antlr.version>3.4</org.antlr.version>
       <com.jayway.jsonpath.version>2.4.0.wso2v1</com.jayway.jsonpath.version>
       <qfj.version>1.5.3</qfj.version>
-      <org.bouncycastle.version>1.60</org.bouncycastle.version>
+      <org.bouncycastle.version>1.60.0.wso2v1</org.bouncycastle.version>
+      <imp.pkg.version.wso2.bouncycastle>[1.52.0,2.0.0)</imp.pkg.version.wso2.bouncycastle>
       <hc.httpcore.version>4.3.3</hc.httpcore.version>
       <httpcore-nio.wso2.version>4.3.3-wso2v4</httpcore-nio.wso2.version>
       <hc.httpclient.version>4.3.2</hc.httpclient.version>
