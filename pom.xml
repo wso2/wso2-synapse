@@ -591,6 +591,11 @@
              <artifactId>commons-lang</artifactId>
              <version>${commons-lang.version}</version>
          </dependency>
+         <dependency>
+             <groupId>org.wso2.orbit.commons-text</groupId>
+             <artifactId>commons-text</artifactId>
+             <version>${wso2.commons.text.orbit.version}</version>
+         </dependency>
           <dependency>
               <groupId>org.apache.commons</groupId>
               <artifactId>commons-text</artifactId>
@@ -1182,6 +1187,7 @@
       <groovy.version>1.1-rc-1</groovy.version>
       <servlet-api.version>2.3</servlet-api.version>
       <commons-lang.version>2.4</commons-lang.version>
+      <wso2.commons.text.orbit.version>1.6.wso2v1</wso2.commons.text.orbit.version>
       <commons-text.version>1.6</commons-text.version>
       <snmp4j.version>2.0.3</snmp4j.version>
       <snmp4j.agent.version>2.0.5</snmp4j.agent.version>
