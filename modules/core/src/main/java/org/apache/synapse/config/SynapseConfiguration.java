@@ -1998,8 +1998,6 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             //Fixing ESBJAVA-4225
             if (localRegistry.get(key.trim()) instanceof Entry && ((Entry) localRegistry.get(key.trim())).getValue() != null) {
                 handleException("Duplicate " + type + " definition for key : " + key);
-            } else {
-                handleException("Duplicate " + type + " definition for key : " + key);
             }
         }
     }
