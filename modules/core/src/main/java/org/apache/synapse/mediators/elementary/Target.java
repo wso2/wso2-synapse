@@ -18,7 +18,9 @@
  */
 package org.apache.synapse.mediators.elementary;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.jayway.jsonpath.Configuration;
@@ -352,7 +354,7 @@ public class Target {
      * @param synLog Default Logger for the package.
      */
     public void insertJson(MessageContext synCtx, Object sourceJsonElement, SynapseLog synLog) {
-        JsonParser jsonParser = new JsonParser();
+
         String jsonPath = null;
         SynapseJsonPath sourceJsonPath = null;
         if (xpath != null) {
@@ -367,49 +369,33 @@ public class Target {
                 break;
             }
             case EnrichMediator.BODY: {
-                org.apache.axis2.context.MessageContext context = ((Axis2MessageContext) synCtx).
-                        getAxis2MessageContext();
-                try {
-                    String jsonString = JsonPath.using(Configuration.defaultConfiguration()).parse(sourceJsonElement).
-                            json().toString();
-                    JsonUtil.getNewJsonPayload(context, jsonString, true, true);
-                } catch (AxisFault axisFault) {
-                    synLog.error("Error occurred while adding a new JSON payload");
-                }
-                break;
-            }
-            case EnrichMediator.PROPERTY: {
-                JsonElement jsonElement = jsonParser.parse(sourceJsonElement.toString());
                 if (action.equalsIgnoreCase(ACTION_REPLACE)) {
-                    // replacing the property with new value
-                    synCtx.setProperty(property, jsonElement.toString());
-                } else if (action.equalsIgnoreCase(ACTION_ADD_CHILD)) {
-                    Object propertyObj = synCtx.getProperty(property);
-                    if (propertyObj != null) {
-                        try {
-                            JsonElement sourceElement = EIPUtils.tryParseJsonString(jsonParser, propertyObj.toString());
-                            // Add as a new element if the value contains in the property is an array.
-                            if (sourceElement.isJsonArray()) {
-                                sourceElement.getAsJsonArray().add(jsonElement);
-                                synCtx.setProperty(property, sourceElement.toString());
-                            } else {
-                                synLog.error("Cannot add child, since the target " + sourceElement.toString() + " is " +
-                                        "not an JSON array");
-                            }
-                        } catch (JsonSyntaxException ex) {
-                            synLog.error("Value inside the given property : " + property + " is not a valid JSON");
+                    org.apache.axis2.context.MessageContext context = ((Axis2MessageContext) synCtx).
+                            getAxis2MessageContext();
+                    try {
+                        String jsonString = sourceJsonElement.toString();
+                        JsonElement element = jsonParser.parse(jsonString);
+                        if (element instanceof JsonObject || element instanceof JsonArray) {
+                            JsonUtil.getNewJsonPayload(context, jsonString, true, true);
+                        } else {
+                            synLog.error("Unsupported JSON payload : " + jsonString
+                                    + ".Only JSON arrays and objects can be enriched to the body");
                         }
-                    } else {
-                        synLog.error("Cannot find the property with name \"" + property + "\" to enrich");
+
+                    } catch (AxisFault axisFault) {
+                        synLog.error("Error occurred while adding a new JSON payload");
                     }
-                } else if (action.equalsIgnoreCase(ACTION_ADD_SIBLING)) {
-                    synLog.error("Action sibling is not supported when enriching properties with JSON data");
+                } else {
+                    synLog.error("Unsupported action : " + action + ".Only replace is supported for target body.");
                 }
                 break;
             }
-            default: synLog.error("Case mismatch for type: " + targetType);
+            default: {
+                synLog.error("Case mismatch for type: " + targetType);
+            }
         }
     }
+
 
     /**
      * Set the enriched JSON result to body.
@@ -440,12 +426,7 @@ public class Target {
         } else if (action.equalsIgnoreCase(ACTION_ADD_CHILD)) {
             newJsonString = getNewJSONString(sourceNode, expression, jsonString, expression, false);
         } else if (action.equalsIgnoreCase(ACTION_ADD_SIBLING)) {
-            String parentPath = synapseJsonPath.getParentPath();
-            if (parentPath != null) {
-                newJsonString = getNewJSONString(sourceNode, expression, jsonString, parentPath, true);
-            } else {
-                log.error("Cannot add as a sibling since current element is the root element");
-            }
+            log.error("Action sibling is not supported. Please use child action instead");
         } else {
             // invalid action
             log.error("Invalid action set: " + action);

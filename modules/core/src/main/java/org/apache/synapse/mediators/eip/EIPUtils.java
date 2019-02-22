@@ -255,15 +255,41 @@ public class EIPUtils {
      * @return parsed JsonElement.
      */
     public static JsonElement tryParseJsonString(JsonParser parser, String inputJson) {
-        JsonElement result;
         try {
-            result = parser.parse(inputJson);
+            return parser.parse(validateStringForGson(inputJson));
         } catch (JsonSyntaxException e) {
-            // Enclosing using quotes due to the following issue
-            // https://github.com/google/gson/issues/1286
-            inputJson = "\"" + inputJson + "\"";
-            result = parser.parse(inputJson);
+            log.error(inputJson + " cannot be parsed to a valid JSON payload", e);
+            return null;
         }
-        return result;
+    }
+
+    /**
+     * Enclose the string with quotes before parsing with Gson library.
+     * Due to : https://github.com/google/gson/issues/1286
+     *
+     * @param input input String.
+     * @return validated String.
+     */
+    private static String validateStringForGson(String input) {
+        String output = input;
+        try {
+            Double.parseDouble(input);
+        } catch (NumberFormatException e) {
+            // not a number
+            if (!(input.equals("true") || input.equals("false"))) {
+                // not a boolean
+                if (!(input.startsWith("[") && input.endsWith("]"))) {
+                    // not a JSON array
+                    if (!(input.startsWith("{") && input.endsWith("}"))) {
+                        // not a JSON object
+                        if(!(input.startsWith("\"") && input.endsWith("\""))) {
+                            // not a string with quotes -> then add quotes
+                            output = "\"" + input + "\"";
+                        }
+                    }
+                }
+            }
+        }
+        return output;
     }
 }
