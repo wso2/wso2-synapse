@@ -928,7 +928,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 o.entryRemoved((Entry) entry);
             }
         } else {
-            handleException("No entry exists by the key : " + key);
+            if (log.isDebugEnabled()) {
+                log.debug("No entry exists by the key : " + key);
+            }
         }
     }
 
@@ -1995,8 +1997,6 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         if (localRegistry.containsKey(key.trim())) {
             //Fixing ESBJAVA-4225
             if (localRegistry.get(key.trim()) instanceof Entry && ((Entry) localRegistry.get(key.trim())).getValue() != null) {
-                handleException("Duplicate " + type + " definition for key : " + key);
-            } else {
                 handleException("Duplicate " + type + " definition for key : " + key);
             }
         }

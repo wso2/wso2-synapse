@@ -42,7 +42,7 @@ public class PropertyGroupMediatorSerializer extends AbstractMediatorSerializer 
         }
         PropertyGroupMediator propertyGroupMediator = (PropertyGroupMediator) mediator;
         PropertyMediatorSerializer propertyMediatorSerializer = new PropertyMediatorSerializer();
-        OMElement propertyGroup = fac.createOMElement(PropertyGroupMediatorFactory.PROPERTY_GROUP_Q);
+        OMElement propertyGroup = fac.createOMElement("propertyGroup", synNS);
         saveTracingState(propertyGroup, propertyGroupMediator);
         List<PropertyMediator> propertyGroupList = propertyGroupMediator.getPropGroupList();
 

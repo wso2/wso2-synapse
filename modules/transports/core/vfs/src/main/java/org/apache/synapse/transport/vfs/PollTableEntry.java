@@ -21,6 +21,7 @@ package org.apache.synapse.transport.vfs;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.description.AxisService;
+import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.ParameterInclude;
 import org.apache.axis2.transport.base.AbstractPollTableEntry;
 import org.apache.axis2.transport.base.ParamUtils;
@@ -133,7 +134,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
      * At usage default id 'false' which lead hostname resolution at deployment
      */
     private boolean resolveHostsDynamically = false;
-    
+
+    private ParameterInclude params;
+
     private static final Log log = LogFactory.getLog(PollTableEntry.class);
     
     public PollTableEntry(boolean fileLocking) {
@@ -436,7 +439,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
         this.vfsSchemeProperties = vfsSchemeProperties;
     }
 
-    
+    public ParameterInclude getParams() {
+        return params;
+    }
     
     /**
      * @return the forceCreateFolder
@@ -469,11 +474,12 @@ public class PollTableEntry extends AbstractPollTableEntry {
     @Override
     public boolean loadConfiguration(ParameterInclude params) throws AxisFault {
 
+        decryptParamsIfRequired(params);
+        this.params = params;
         resolveHostsDynamically = ParamUtils.getOptionalParamBoolean(params,
                 VFSConstants.TRANSPORT_FILE_RESOLVEHOST_DYNAMICALLY, false);
 
         fileURI = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_FILE_FILE_URI);
-        fileURI = decryptIfRequired(fileURI);
         if (fileURI == null) {
         	log.warn("transport.vfs.FileURI parameter is missing in the proxy service configuration");
             return false;
@@ -485,7 +491,6 @@ public class PollTableEntry extends AbstractPollTableEntry {
             fileURI = resolveHostAtDeployment(fileURI);
 
             replyFileURI = ParamUtils.getOptionalParam(params, VFSConstants.REPLY_FILE_URI);
-            replyFileURI = decryptIfRequired(replyFileURI);
             replyFileURI = resolveHostAtDeployment(replyFileURI);
 
             fileNamePattern = ParamUtils.getOptionalParam(params,
@@ -538,17 +543,14 @@ public class PollTableEntry extends AbstractPollTableEntry {
 
             String moveDirectoryAfterProcess = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FILE_MOVE_AFTER_PROCESS);
-            moveDirectoryAfterProcess = decryptIfRequired(moveDirectoryAfterProcess);
             setMoveAfterProcess(moveDirectoryAfterProcess);
 
             String moveDirectoryAfterErrors = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FILE_MOVE_AFTER_ERRORS);
-            moveDirectoryAfterErrors = decryptIfRequired(moveDirectoryAfterErrors);
             setMoveAfterErrors(moveDirectoryAfterErrors);
 
             String moveDirectoryAfterFailure = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FILE_MOVE_AFTER_FAILURE);
-            moveDirectoryAfterFailure = decryptIfRequired(moveDirectoryAfterFailure);
             setMoveAfterFailure(moveDirectoryAfterFailure);
 
             String moveFileTimestampFormat = ParamUtils.getOptionalParam(
@@ -558,11 +560,6 @@ public class PollTableEntry extends AbstractPollTableEntry {
             }
 
             Map<String, String> schemeFileOptions = VFSUtils.parseSchemeFileOptions(fileURI, params);
-            if (schemeFileOptions != null) {
-                for (Map.Entry<String, String> schemeFileOption : schemeFileOptions.entrySet()) {
-                    schemeFileOption.setValue(decryptIfRequired(schemeFileOption.getValue()));
-                }
-            }
             setVfsSchemeProperties(schemeFileOptions);
 
             String strStreaming = ParamUtils.getOptionalParam(params, VFSConstants.STREAMING);
@@ -602,7 +599,6 @@ public class PollTableEntry extends AbstractPollTableEntry {
 
             moveAfterMoveFailure = ParamUtils.getOptionalParam(params,
                     VFSConstants.TRANSPORT_FILE_MOVE_AFTER_FAILED_MOVE);
-            moveAfterMoveFailure = decryptIfRequired(moveAfterMoveFailure);
             moveAfterMoveFailure = resolveHostAtDeployment(moveAfterMoveFailure);
 
             String nextRetryDuration = ParamUtils.getOptionalParam(
@@ -765,6 +761,20 @@ public class PollTableEntry extends AbstractPollTableEntry {
             }
         }
         return uri;
+    }
+
+    /**
+     * Iterate ParameterInclude and decrypt parameters if required.
+     *
+     * @param params ParameterInclude instance
+     * @throws AxisFault
+     */
+    private void decryptParamsIfRequired(ParameterInclude params) throws AxisFault {
+        for (Parameter param : params.getParameters()) {
+            if (param != null && param.getValue() != null && param.getValue() instanceof String) {
+                param.setValue(decryptIfRequired(param.getValue().toString()));
+            }
+        }
     }
 
     /**

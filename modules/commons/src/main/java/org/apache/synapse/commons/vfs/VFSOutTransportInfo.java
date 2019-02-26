@@ -254,7 +254,7 @@ public class VFSOutTransportInfo implements OutTransportInfo {
     }
 
     private void setOutFileSystemOptionsMap(Map<String, String> fso) {
-        HashMap<String, String> options = new HashMap<String, String>();
+        HashMap<String, String> options = new HashMap<>();
         if (VFSConstants.SCHEME_SFTP.equals(fso.get(VFSConstants.SCHEME))) {
             for (String key: fso.keySet()) {
                 options.put(key.replaceAll(VFSConstants.SFTP_PREFIX, ""), fso.get(key));
@@ -263,9 +263,10 @@ public class VFSOutTransportInfo implements OutTransportInfo {
 
         if (VFSConstants.SCHEME_FTP.equals(fso.get(VFSConstants.SCHEME)) ||
                 VFSConstants.SCHEME_FTPS.equals(fso.get(VFSConstants.SCHEME))) {
-            if (fso.get(VFSConstants.FILE_TYPE_PREFIX) != null) {
-                options.put(VFSConstants.FILE_TYPE, fso.get(VFSConstants.FILE_TYPE_PREFIX));
-                options.put(VFSConstants.SCHEME, fso.get(VFSConstants.SCHEME));
+            options.putAll(fso);
+            String fileType = fso.remove(VFSConstants.FILE_TYPE_PREFIX);
+            if (fileType != null) {
+                options.put(VFSConstants.FILE_TYPE, fileType);
             }
         }
 

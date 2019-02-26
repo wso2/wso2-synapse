@@ -573,23 +573,6 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
      * @param synapseEnvironment synapse environment
      */
     public void init(SynapseEnvironment synapseEnvironment) {
-        if (Boolean.parseBoolean(synapseEnvironment.getSynapseConfiguration()
-                .getProperty(SYNAPSE_VALIDATE_MEDIATOR_REDEPLOYMENT_CACHE_CLEAR))) {
-            for (Value schemaKey : schemaKeys) {
-                Entry entry = synapseEnvironment.getSynapseConfiguration().getEntryDefinition(schemaKey.getKeyValue());
-                if (entry != null) {
-                    synapseEnvironment.getSynapseConfiguration().removeEntry(schemaKey.getKeyValue());
-                }
-            }
-            if (resourceMap != null && resourceMap.getResources().size() > 0) {
-                for (Map.Entry<String, String> resource : resourceMap.getResources().entrySet()) {
-                    Entry entry = synapseEnvironment.getSynapseConfiguration().getEntryDefinition(resource.getValue());
-                    if (entry != null) {
-                        synapseEnvironment.getSynapseConfiguration().removeEntry(resource.getValue());
-                    }
-                }
-            }
-        }
         super.init(synapseEnvironment);
     }
 
