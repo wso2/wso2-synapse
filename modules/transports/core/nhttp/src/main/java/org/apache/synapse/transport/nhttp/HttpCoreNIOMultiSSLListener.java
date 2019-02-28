@@ -44,9 +44,9 @@ public class HttpCoreNIOMultiSSLListener extends HttpCoreNIOListener implements 
     }
 
     @Override
-    protected ServerConnFactoryBuilder initConnFactoryBuilder(
-            final TransportInDescription transportIn, final HttpHost host) throws AxisFault {
-        return new ServerConnFactoryBuilder(transportIn, host)
+    protected ServerConnFactoryBuilder initConnFactoryBuilder(final TransportInDescription transportIn,
+            final HttpHost host, ConfigurationContext configurationContext) throws AxisFault {
+        return new ServerConnFactoryBuilder(transportIn, host, configurationContext)
             .parseSSL()
             .parseMultiProfileSSL();
     }
