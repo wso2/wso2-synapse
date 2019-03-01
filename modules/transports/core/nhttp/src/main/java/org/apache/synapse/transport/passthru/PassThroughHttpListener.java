@@ -123,6 +123,9 @@ public class PassThroughHttpListener implements TransportListener {
     private AxisServiceTracker serviceTracker;
 
     private TransportInDescription pttInDescription;
+
+    private ConfigurationContext configurationContext;
+
     /**
      * HttpListener Running port
      */
@@ -131,15 +134,17 @@ public class PassThroughHttpListener implements TransportListener {
         return new Scheme("http", 80, false);
     }
 
-    protected ServerConnFactoryBuilder initConnFactoryBuilder(
-            final TransportInDescription transportIn, final HttpHost host) throws AxisFault {
-        return new ServerConnFactoryBuilder(transportIn, host);
+    protected ServerConnFactoryBuilder initConnFactoryBuilder(final TransportInDescription transportIn,
+            final HttpHost host, ConfigurationContext configurationContext) throws AxisFault {
+        return new ServerConnFactoryBuilder(transportIn, host, configurationContext);
     }
 
     public void init(ConfigurationContext cfgCtx, TransportInDescription transportInDescription)
             throws AxisFault {
 
         log.info("Initializing Pass-through HTTP/S Listener...");
+
+        this.configurationContext = cfgCtx;
         pttInDescription = transportInDescription;
         namePrefix = transportInDescription.getName().toUpperCase(Locale.US);
         scheme = initScheme();
@@ -174,7 +179,7 @@ public class PassThroughHttpListener implements TransportListener {
                 sourceConfiguration.getHostname(),
                 sourceConfiguration.getPort(),
                 sourceConfiguration.getScheme().getName());
-        ServerConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportInDescription, host);
+        ServerConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportInDescription, host, cfgCtx);
         connFactory = connFactoryBuilder.build(sourceConfiguration.getHttpParams());
 
         handler = new SourceHandler(sourceConfiguration);
@@ -487,7 +492,8 @@ public class PassThroughHttpListener implements TransportListener {
                 sourceConfiguration.getHostname(),
                 sourceConfiguration.getPort(),
                 sourceConfiguration.getScheme().getName());
-        ServerConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportIn, host);
+        ServerConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportIn, host,
+                this.configurationContext);
         connFactory = connFactoryBuilder.build(sourceConfiguration.getHttpParams());
         passThroughListeningIOReactorManager.getServerIODispatch(operatingPort).update(connFactory);
 
@@ -512,7 +518,8 @@ public class PassThroughHttpListener implements TransportListener {
                 sourceConfiguration.getPort(),
                 sourceConfiguration.getScheme().getName());
         // Rebuild connection factory
-        ServerConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportIn, host);
+        ServerConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportIn, host,
+                this.configurationContext);
         connFactory = connFactoryBuilder.build(sourceConfiguration.getHttpParams());
 
         // Close listener endpoints and stop accepting new connections
