@@ -18,6 +18,7 @@
  */
 package org.apache.synapse.util.xpath;
 
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jayway.jsonpath.Configuration;
@@ -106,7 +107,7 @@ public class SynapseJsonPath extends SynapsePath {
     private void setJsonPathConfiguration() {
         Configuration.setDefaults(new Configuration.Defaults() {
 
-            private final JsonProvider jsonProvider = new GsonJsonProvider();
+            private final JsonProvider jsonProvider = new GsonJsonProvider(new GsonBuilder().serializeNulls().create());
             private final MappingProvider mappingProvider = new GsonMappingProvider();
 
             public JsonProvider jsonProvider() {
