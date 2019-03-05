@@ -117,7 +117,7 @@ public class RelayUtils {
                     }
                 }
 
-                builldMessage(messageContext, earlyBuild, in);
+                buildMessage(messageContext, earlyBuild, in);
                 return;
             }
         } else {
@@ -130,7 +130,7 @@ public class RelayUtils {
         }
     }
 
-    public static void builldMessage(MessageContext messageContext, boolean earlyBuild,
+    public static void buildMessage(MessageContext messageContext, boolean earlyBuild,
                                      InputStream in) throws IOException, AxisFault {
         ByteArrayOutputStream byteArrayOutputStream = null;
         if (forceXmlValidation || forceJSONValidation) {
