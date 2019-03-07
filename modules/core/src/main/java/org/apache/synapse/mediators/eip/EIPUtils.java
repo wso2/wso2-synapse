@@ -20,6 +20,7 @@
 package org.apache.synapse.mediators.eip;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import org.apache.axiom.om.OMElement;
@@ -45,6 +46,9 @@ public class EIPUtils {
 
     private static final Log log = LogFactory.getLog(EIPUtils.class);
 
+    private static final String JSON_MEMBERS = "members";
+
+    private static final String JSON_ELEMENTS = "elements";
     /**
      * Return the set of elements specified by the XPath over the given envelope
      *
@@ -266,4 +270,29 @@ public class EIPUtils {
         }
         return result;
     }
+
+    /**
+     * Formats the response from jsonpath operations
+     * JayWay json-path response have additional elements like "members"(for objects) and "elements"(for arrays)
+     * This method will correct such strings by removing additional elements.
+     *
+     * @param input input jsonElement.
+     * @return corrected jsonObject.
+     */
+    public static Object formatJsonPathResponse(Object input) {
+        JsonElement jsonElement = (JsonElement) input;
+        if (jsonElement.isJsonPrimitive()) {
+            return jsonElement.getAsString();
+        } else if(jsonElement.isJsonObject()) {
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            if (jsonObject.has(JSON_MEMBERS)) {
+                return jsonObject.get(JSON_MEMBERS);
+            } else if (jsonObject.has(JSON_ELEMENTS)) {
+                return jsonObject.get(JSON_ELEMENTS);
+            }
+            return jsonObject.toString();
+        }
+        return jsonElement.isJsonArray() ? jsonElement : null;
+    }
+
 }
