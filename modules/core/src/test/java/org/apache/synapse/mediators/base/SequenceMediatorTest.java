@@ -66,7 +66,7 @@ public class SequenceMediatorTest extends TestCase {
         seq.addChild(t2);
         seq.addChild(t3);
 
-        // invoke transformation, with static enveope
+        // invoke transformation, with static envelope
         MessageContext synCtx = TestUtils.getTestContext("<empty/>");
         seq.mediate(synCtx);
 

@@ -31,7 +31,7 @@ import org.apache.synapse.message.processor.impl.AbstractMessageProcessor;
 import java.io.File;
 import java.util.Properties;
 
-public class    MessageProcessorDeployer extends AbstractSynapseArtifactDeployer {
+public class MessageProcessorDeployer extends AbstractSynapseArtifactDeployer {
 
     private static Log log = LogFactory.getLog(MessageProcessorDeployer.class);
 

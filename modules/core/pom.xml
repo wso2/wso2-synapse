@@ -184,6 +184,7 @@
 							org.apache.synapse.inbound.*,
 							org.apache.synapse.startup.*,
 							org.apache.synapse.util.*,
+							org.apache.synapse.unittest.*,
 							org.apache.synapse.libraries.*,
 							org.apache.synapse.carbonext.*,
                             org.apache.synapse.continuation.*,
@@ -405,7 +406,12 @@
             <artifactId>powermock-module-junit4</artifactId>
             <scope>test</scope>
         </dependency>
-    </dependencies>
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20180130</version>
+		</dependency>
+	</dependencies>
 <properties>
 		<version.orbit.rabbitmq>3.6.6.wso2v1</version.orbit.rabbitmq>
 	</properties>
