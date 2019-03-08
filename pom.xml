@@ -650,11 +650,6 @@
              <artifactId>commons-cli</artifactId>
              <version>${commons-cli.version}</version>
          </dependency>
-         <dependency>
-             <groupId>javax.activation</groupId>
-             <artifactId>activation</artifactId>
-             <version>${javax.activation.version}</version>
-         </dependency>
          <!-- Synapse -->
          <dependency>
             <groupId>org.wso2.securevault</groupId>
@@ -1176,7 +1171,6 @@
       <aspectj.version>1.8.5</aspectj.version>
       <spring.version>1.2.8</spring.version>
       <commons-codec.version>1.12</commons-codec.version>
-      <javax.activation.version>1.1</javax.activation.version>
       <!-- Sets the source encoding to UTF-8 -->
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
       <!-- Synapse and related components -->
@@ -1269,7 +1263,7 @@
        <slf4j.log4j.version>1.5.2</slf4j.log4j.version>
        <system.rules.version>1.17.0</system.rules.version>
        <io.netty.version>4.0.30.Final</io.netty.version>
-       <version.org.wso2.orbit.javax.activation>1.1.1.wso2v1</version.org.wso2.orbit.javax.activation>
+       <version.org.wso2.orbit.javax.activation>1.1.1.wso2v2</version.org.wso2.orbit.javax.activation>
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->
