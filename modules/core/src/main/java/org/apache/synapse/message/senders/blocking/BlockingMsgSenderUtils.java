@@ -214,7 +214,8 @@ public class BlockingMsgSenderUtils {
 
         if (endpoint.getAddress() != null) {
             String address = endpoint.getAddress(synapseInMsgCtx);
-            if (isRest && restURLPostfix != null && !"".equals(restURLPostfix)) {
+            if (isRest && restURLPostfix != null && !"".equals(restURLPostfix)
+                    && (address.startsWith("http://") || address.startsWith("https://"))) {
                 address = getEPRWithRestURLPostfix(restURLPostfix, address);
             }
             axisOutMsgCtx.setTo(new EndpointReference(address));
