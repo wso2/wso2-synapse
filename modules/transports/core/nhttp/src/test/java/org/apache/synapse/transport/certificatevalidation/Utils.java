@@ -18,10 +18,19 @@
  */
 package org.apache.synapse.transport.certificatevalidation;
 
-import org.bouncycastle.x509.X509V1CertificateGenerator;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
+import org.apache.synapse.commons.crypto.CryptoConstants;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 
-import javax.security.auth.x500.X500Principal;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -38,17 +47,24 @@ public class Utils {
 
 
     public X509Certificate generateFakeRootCert(KeyPair pair) throws Exception {
-        
-        X509V1CertificateGenerator  certGen = new X509V1CertificateGenerator();
-        certGen.setSerialNumber(BigInteger.valueOf(1));
-        certGen.setIssuerDN(new X500Principal("CN=Test CA Certificate"));
-        certGen.setNotBefore(new Date(System.currentTimeMillis()));
-        certGen.setNotAfter(new Date(System.currentTimeMillis() + TestConstants.VALIDITY_PERIOD));
-        certGen.setSubjectDN(new X500Principal("CN=Test CA Certificate"));
-        certGen.setPublicKey(pair.getPublic());
-        certGen.setSignatureAlgorithm("SHA1WithRSAEncryption");
 
-        return certGen.generateX509Certificate(pair.getPrivate(), "BC");
+        X500Name subjectDN = new X500Name("CN=Test End Certificate");
+        Date notBefore = new Date(System.currentTimeMillis());
+        Date notAfter = new Date(System.currentTimeMillis() + TestConstants.VALIDITY_PERIOD);
+        SubjectPublicKeyInfo subPubKeyInfo = SubjectPublicKeyInfo.getInstance(pair.getPublic().getEncoded());
+        X509v3CertificateBuilder builder = new X509v3CertificateBuilder(subjectDN, BigInteger.valueOf(1),
+                notBefore, notAfter, subjectDN, subPubKeyInfo);
+
+        AlgorithmIdentifier sigAlgId = new DefaultSignatureAlgorithmIdentifierFinder()
+                .find("SHA1WithRSAEncryption");
+        AlgorithmIdentifier digAlgId = new DefaultDigestAlgorithmIdentifierFinder().find(sigAlgId);
+
+        ContentSigner contentSigner = new BcRSAContentSignerBuilder(sigAlgId, digAlgId)
+                .build(PrivateKeyFactory.createKey(pair.getPrivate().getEncoded()));
+        X509CertificateHolder certificateHolder = builder.build(contentSigner);
+
+        return new JcaX509CertificateConverter().setProvider(CryptoConstants.BOUNCY_CASTLE_PROVIDER)
+                .getCertificate(certificateHolder);
     }
 
 
@@ -62,24 +78,20 @@ public class Utils {
     /**
      * CRLVerifierTest and OCSPVerifierTest both will use this method. This has common code for both test classes
      * in creating fake peer certificates.
-     * @param caCert Certificate of CA which signs the peer certificate which will be generated.
      * @param peerPublicKey public key of the peer certificate which will be generated.
      * @param serialNumber  serial number of the peer certificate.
      * @return
      */
-    public X509V3CertificateGenerator getUsableCertificateGenerator(X509Certificate caCert,
-                                                                    PublicKey peerPublicKey, BigInteger serialNumber){
-        X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();
+    public X509v3CertificateBuilder getUsableCertificateBuilder(PublicKey peerPublicKey,
+                                                                BigInteger serialNumber) {
+        X500Name subjectDN = new X500Name("CN=Test End Certificate");
+        Date notBefore = new Date(System.currentTimeMillis());
+        Date notAfter = new Date(System.currentTimeMillis() + TestConstants.VALIDITY_PERIOD);
+        SubjectPublicKeyInfo subPubKeyInfo = SubjectPublicKeyInfo.getInstance(peerPublicKey.getEncoded());
 
-        certGen.setSerialNumber(serialNumber);
-        certGen.setIssuerDN(caCert.getSubjectX500Principal());
-        certGen.setNotBefore(new Date(System.currentTimeMillis()));
-        certGen.setNotAfter(new Date(System.currentTimeMillis() + TestConstants.VALIDITY_PERIOD));
-        certGen.setSubjectDN(new X500Principal("CN=Test End Certificate"));
-        certGen.setPublicKey(peerPublicKey);
-        certGen.setSignatureAlgorithm("SHA1WithRSAEncryption");
-
-        return certGen;
+        return new X509v3CertificateBuilder(
+                subjectDN, serialNumber, notBefore, notAfter,
+                subjectDN, subPubKeyInfo);
     }
 
     /**
@@ -116,9 +128,18 @@ public class Utils {
         X509Certificate rootCert = generateFakeRootCert(rootKeyPair);
         KeyPair entityKeyPair = generateRSAKeyPair();
         BigInteger entitySerialNum =BigInteger.valueOf(111);
-        X509V3CertificateGenerator certGen = getUsableCertificateGenerator(rootCert,
-                entityKeyPair.getPublic(), entitySerialNum);
-        X509Certificate entityCert = certGen.generateX509Certificate(rootKeyPair.getPrivate(), "BC");
+
+        X509v3CertificateBuilder certBuilder = getUsableCertificateBuilder(entityKeyPair.getPublic(), entitySerialNum);
+        AlgorithmIdentifier sigAlgId = new DefaultSignatureAlgorithmIdentifierFinder()
+                .find("SHA1WithRSAEncryption");
+        AlgorithmIdentifier digAlgId = new DefaultDigestAlgorithmIdentifierFinder().find(sigAlgId);
+
+        ContentSigner contentSigner = new BcRSAContentSignerBuilder(sigAlgId, digAlgId)
+                .build(PrivateKeyFactory.createKey(entityKeyPair.getPrivate().getEncoded()));
+
+        X509CertificateHolder certificateHolder = certBuilder.build(contentSigner);
+        X509Certificate entityCert = new JcaX509CertificateConverter()
+                .setProvider(CryptoConstants.BOUNCY_CASTLE_PROVIDER).getCertificate(certificateHolder);
         return new X509Certificate[]{entityCert, rootCert};
     }
 
