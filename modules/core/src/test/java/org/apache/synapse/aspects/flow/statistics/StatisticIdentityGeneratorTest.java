@@ -140,8 +140,9 @@ public class StatisticIdentityGeneratorTest {
      */
     @Test
     public void testReportingEndEvent() {
-        cleanUp();
+        addElementsForReportingEndEvent();
         StatisticIdentityGenerator.reportingEndEvent(COMPONENT, ComponentType.API, artifactHolder);
+        StatisticIdentityGenerator.reportingEndEvent(COMPONENT, ComponentType.SEQUENCE, artifactHolder);
         Assert.assertEquals("validating new parent value set by the method",
                 COMPONENT_ID, artifactHolder.getLastParent());
         Assert.assertEquals("stack must be empty since popped by the method", artifactHolder.getStack().size(), 0);
@@ -214,5 +215,17 @@ public class StatisticIdentityGeneratorTest {
         }
         artifactHolder.getList().add(structuringElement);
         artifactHolder.setId(0);
+    }
+
+    private void addElementsForReportingEndEvent() {
+        int size = artifactHolder.getStack().size();
+        if (size >= 1) {
+            while (size != 0) {
+                artifactHolder.getStack().pop();
+                size = artifactHolder.getStack().size();
+            }
+        }
+        artifactHolder.getStack().add(structuringElement);
+        artifactHolder.getStack().add(structuringElement);
     }
 }
