@@ -18,20 +18,12 @@
 package org.apache.synapse.unittest;
 
 import org.apache.log4j.Logger;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
 /**
+ * Class is responsible for configurations of TCP connection.
  */
 public class TCPServer {
 
@@ -39,6 +31,10 @@ public class TCPServer {
 
     private ServerSocket serverSocket;
 
+    /**
+     * Initializing TCP server for main unit testing server
+     * @param port port server starts
+     */
     public void initialize(int port) {
         try {
             serverSocket = new ServerSocket(port);
@@ -52,12 +48,15 @@ public class TCPServer {
         }
     }
 
+    /**
+     * Create RequestHandler threads for load balancing
+     */
     public void acceptConnection() throws IOException {
         while (true) {
             Socket socket = serverSocket.accept();
             RequestHandler requestHandler = new RequestHandler(socket);
-            Thread t = new Thread(requestHandler);
-            t.start();
+            Thread threadForClient = new Thread(requestHandler);
+            threadForClient.start();
         }
     }
 }

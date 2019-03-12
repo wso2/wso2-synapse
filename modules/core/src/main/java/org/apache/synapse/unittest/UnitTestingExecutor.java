@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 import org.apache.synapse.config.SynapseConfiguration;
 
 /**
- * Class of executing unit test agent parallel to the Synapse engine
+ * Class of executing unit test agent parallel to the Synapse engine.
  * Class extends with Thread class
  */
 public class UnitTestingExecutor extends Thread {
@@ -32,7 +32,7 @@ public class UnitTestingExecutor extends Thread {
     private static UnitTestingExecutor initializeThread = null;
 
     /**
-     * Initializing initializeThread if it is null
+     * Initializing initializeThread if it is null.
      */
     public static synchronized UnitTestingExecutor getExeuteInstance() {
 
@@ -43,16 +43,16 @@ public class UnitTestingExecutor extends Thread {
     }
 
     /**
-     * Method of executing thread of agent
+     * Method of executing thread of agent.
      */
     public void run() {
         logger.info("Unit testing agent started");
-        TestingAgent testAgent = new TestingAgent();
-        testAgent.startServer();
+        TCPServer tcpConnection = new TCPServer();
+        tcpConnection.initialize(7777);
     }
 
     /**
-     * get the current SynapseConfiguration
+     * get the current SynapseConfiguration.
      * @return SynapseConfiguration
      */
     public SynapseConfiguration getSynapseConfiguration() {
@@ -61,7 +61,7 @@ public class UnitTestingExecutor extends Thread {
     }
 
     /**
-     * set the current SynapseConfiguration
+     * set the current SynapseConfiguration.
      */
     public void setSynapseConfiguration(SynapseConfiguration synapseConfiguration) {
 

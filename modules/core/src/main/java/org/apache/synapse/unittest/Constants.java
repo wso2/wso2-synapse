@@ -19,7 +19,7 @@
 package org.apache.synapse.unittest;
 
 /**
- * Constants for unit testing framework for synapse
+ * Constants for unit testing framework for synapse.
  */
 public class Constants {
 
@@ -35,10 +35,13 @@ public class Constants {
     public static final String TYPE_PROXY = "proxy";
     public static final String TYPE_API = "api";
     public static final String API_CONTEXT = "context";
+
     public static final String RESOURCE_METHODS = "methods";
     public static final String GET_METHOD = "GET";
     public static final String POST_METHOD = "POST";
     public static final String PUT_METHOD = "PUT";
     public static final String DELETE_METHOD = "DELETE";
+
+    public static final String WHITESPACE_REGEX = "\\s(?=(\"[^\"]*\"|[^\"])*$)";
 
 }

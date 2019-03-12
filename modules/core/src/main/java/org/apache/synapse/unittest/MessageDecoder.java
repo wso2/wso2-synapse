@@ -18,11 +18,11 @@
 
 package org.apache.synapse.unittest;
 
-import org.json.JSONArray;
-
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.log4j.Logger;
+
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -30,66 +30,99 @@ import java.util.Base64;
 
 import static org.apache.synapse.unittest.Constants.*;
 
+/**
+ * Class responsible for the decode relevant data from received message.
+ */
 public class MessageDecoder {
 
     private static Logger logger = Logger.getLogger(UnitTestingExecutor.class.getName());
 
-    public static String getArtifactType(JSONObject inputMessage){
+    /**
+     * Get artifact type from the received message from unit testing client
+     *
+     * @param inputMessage received JSON message from unit testing client
+     * @return artifact type
+     */
+    public static String getArtifactType(JSONObject inputMessage) {
         String artifactType = null;
 
-        try{
+        try {
             artifactType = new String(Base64.getDecoder().decode(inputMessage.getString(ARTIFACT_TYPE)));
-        }catch (Exception e){
+        } catch (Exception e) {
             logger.error(e);
         }
 
         return artifactType;
     }
 
-    public static OMElement getConfigurationArtifact(JSONObject inputMessage){
+    /**
+     * Get artifact from the received message from unit testing client
+     *
+     * @param inputMessage received JSON message from unit testing client
+     * @return artifact
+     */
+    public static OMElement getConfigurationArtifact(JSONObject inputMessage) {
         OMElement artifact = null;
 
-        try{
+        try {
             String artifactAsString = new String(Base64.getDecoder().decode(inputMessage.getString(ARTIFACT)));
             artifact = AXIOMUtil.stringToOM(artifactAsString);
-        }catch (Exception e){
+        } catch (Exception e) {
             logger.error(e);
         }
 
         return artifact;
     }
 
-    public static String getArtifactName(JSONObject inputMessage){
+    /**
+     * Get artifact name from the received message from unit testing client
+     *
+     * @param inputMessage received JSON message from unit testing client
+     * @return artifact name
+     */
+    public static String getArtifactName(JSONObject inputMessage) {
         String artifactName = null;
 
-        try{
+        try {
             artifactName = new String(Base64.getDecoder().decode(inputMessage.getString(ARTIFACT_NAME)));
 
-        }catch (Exception e){
+        } catch (Exception e) {
             logger.error(e);
         }
 
         return artifactName;
     }
 
-    public static int getTestCasesCount(JSONObject inputMessage){
-        int testCasesCount=0;
+    /**
+     * Get test cases count from the received message from unit testing client
+     *
+     * @param inputMessage received JSON message from unit testing client
+     * @return test cases count
+     */
+    public static int getTestCasesCount(JSONObject inputMessage) {
+        int testCasesCount = 0;
 
-        try{
+        try {
             testCasesCount = inputMessage.getInt(TEST_CASES_COUNT);
 
-        }catch (Exception e){
+        } catch (Exception e) {
             logger.error(e);
         }
 
         return testCasesCount;
     }
 
-    public static ArrayList<ArrayList<String>> receivedMessage(JSONObject inputMessage){
+    /**
+     * Get test cases data from the received message from unit testing client
+     *
+     * @param inputMessage received JSON message from unit testing client
+     * @return test cases data as ArrayList of ArrayList
+     */
+    public static ArrayList<ArrayList<String>> getTestCasesData(JSONObject inputMessage) {
         ArrayList<ArrayList<String>> testCasesData = new ArrayList<ArrayList<String>>();
         JSONArray testCases = inputMessage.getJSONArray(TEST_CASES);
 
-        try{
+        try {
             for (int x = 0; x < testCases.length(); x++) {
                 ArrayList<String> testCaseData = new ArrayList<String>();
 
@@ -105,7 +138,7 @@ public class MessageDecoder {
                 testCasesData.add(testCaseData);
             }
 
-        }catch (Exception e){
+        } catch (Exception e) {
             logger.error(e);
         }
 

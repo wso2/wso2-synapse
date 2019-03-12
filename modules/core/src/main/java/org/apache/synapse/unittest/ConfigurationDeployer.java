@@ -31,16 +31,23 @@ import org.apache.synapse.deployers.ProxyServiceDeployer;
 import org.apache.synapse.deployers.SequenceDeployer;
 
 /**
- * Util class for deploying synapse artifacts to the synapse engine
+ * Util class for deploying synapse artifacts to the synapse engine.
  */
-
 public class ConfigurationDeployer {
 
-    public Pair<SynapseConfiguration, String> deploySequenceArtifact(OMElement inputElement, String fileName) throws Exception {
+    /**
+     * Method of deploying sequence artifact in synapse
+     * @param inputElement synapse configuration artifact as OMElement type
+     * @param fileName name of the file
+     * @return response of the artifact deployment and the synapse configuration as a Pair<>
+     */
+    public Pair<SynapseConfiguration, String> deploySequenceArtifact(OMElement inputElement, String fileName)
+            throws Exception {
 
         //create new sequence deployer object
         SequenceDeployer sequenceDeployer = new SequenceDeployer();
 
+        //create a synapse configuration and set all axis2 configuration to it
         SynapseConfiguration synapseConfiguration = UnitTestingExecutor.getExeuteInstance().getSynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
         ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
@@ -50,16 +57,28 @@ public class ConfigurationDeployer {
         axisConfiguration.addParameter(new Parameter(SynapseConstants.SYNAPSE_CONFIG, synapseConfiguration));
         cfgCtx.setAxisConfiguration(axisConfiguration);
 
+        //initialize sequence deployer using created configuration context
         sequenceDeployer.init(cfgCtx);
+
+        //deploy synapse artifact
         String deployedArtifact = sequenceDeployer.deploySynapseArtifact(inputElement, fileName, null);
 
         return new Pair<>(synapseConfiguration, deployedArtifact);
     }
 
-    public Pair<SynapseConfiguration, String> deployProxyArtifact(OMElement inputElement, String fileName) throws Exception {
+    /**
+     * Method of deploying proxy artifact in synapse
+     * @param inputElement synapse configuration artifact as OMElement type
+     * @param fileName name of the file
+     * @return response of the artifact deployment and the synapse configuration as a Pair<>
+     */
+    public Pair<SynapseConfiguration, String> deployProxyArtifact(OMElement inputElement, String fileName)
+            throws Exception {
 
+        //create new proxy service deployer object
         ProxyServiceDeployer proxyServiceDeployer = new ProxyServiceDeployer();
 
+        //create a synapse configuration and set all axis2 configuration to it
         SynapseConfiguration synapseConfiguration = UnitTestingExecutor.getExeuteInstance().getSynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
         ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
@@ -68,16 +87,28 @@ public class ConfigurationDeployer {
         axisConfiguration.addParameter(new Parameter(SynapseConstants.SYNAPSE_CONFIG, synapseConfiguration));
         cfgCtx.setAxisConfiguration(axisConfiguration);
 
+        //initialize proxy service deployer using created configuration context
         proxyServiceDeployer.init(cfgCtx);
+
+        //deploy synapse artifact
         String deployedArtifact = proxyServiceDeployer.deploySynapseArtifact(inputElement, fileName, null);
 
         return new Pair<>(synapseConfiguration, deployedArtifact);
     }
 
-    public Pair<SynapseConfiguration, String> deployApiArtifact(OMElement inputElement, String fileName) throws Exception {
+    /**
+     * Method of deploying API artifact in synapse
+     * @param inputElement synapse configuration artifact as OMElement type
+     * @param fileName name of the file
+     * @return response of the artifact deployment and the synapse configuration as a Pair<>
+     */
+    public Pair<SynapseConfiguration, String> deployApiArtifact(OMElement inputElement, String fileName)
+            throws Exception {
 
+        //create new API deployer object
         APIDeployer apiResourceDeployer = new APIDeployer();
 
+        //create a synapse configuration and set all axis2 configuration to it
         SynapseConfiguration synapseConfiguration = UnitTestingExecutor.getExeuteInstance().getSynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
         ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
@@ -87,7 +118,10 @@ public class ConfigurationDeployer {
         axisConfiguration.addParameter(new Parameter(SynapseConstants.SYNAPSE_CONFIG, synapseConfiguration));
         cfgCtx.setAxisConfiguration(axisConfiguration);
 
+        //initialize API deployer using created configuration context
         apiResourceDeployer.init(cfgCtx);
+
+        //deploy synapse artifact
         String deployedArtifact = apiResourceDeployer.deploySynapseArtifact(inputElement, fileName, null);
 
         return new Pair<>(synapseConfiguration, deployedArtifact);

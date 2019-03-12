@@ -46,11 +46,23 @@ import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 
 import static org.apache.synapse.unittest.Constants.*;
 
+/**
+ * Class is responsible for mediating incoming payload with relevant configuration.
+ */
 public class TestCasesMediator {
 
     private static Logger logger = Logger.getLogger(UnitTestingExecutor.class.getName());
 
-    static Pair<Boolean, MessageContext> sequenceMediate(String inputXmlPayload, SynapseConfiguration synConfig, String key){
+    /**
+     * Sequence mediation of receiving test cases using deployed sequence deployer
+     *
+     * @param inputXmlPayload received input payload for particular test case
+     * @param synConfig synapse configuration used to deploy sequenceDeployer
+     * @param key key of the sequence deployer
+     * @return result of mediation and message context as a Pair<>
+     */
+    static Pair<Boolean, MessageContext> sequenceMediate(String inputXmlPayload, SynapseConfiguration synConfig,
+                                                         String key) {
         Mediator sequenceMediator = synConfig.getSequence(key);
         MessageContext msgCtxt = createSynapseMessageContext(inputXmlPayload, synConfig);
 
@@ -59,12 +71,19 @@ public class TestCasesMediator {
         return new Pair<>(mediationResult, msgCtxt);
     }
 
-    static String proxyServiceExecutor(String inputXmlPayload, String key){
+    /**
+     * Proxy service invoke using http client for receiving test cases
+     *
+     * @param inputXmlPayload received input payload for particular test case
+     * @param key key of the proxy service
+     * @return response received from the proxy service
+     */
+    static String proxyServiceExecutor(String inputXmlPayload, String key) {
         String responseOfRevoke = null;
         try {
 
             String url = "http://localhost:8280/services/" + key;
-            logger.info("Invoking URI - "+url);
+            logger.info("Invoking URI - " + url);
 
             HttpClient client = new DefaultHttpClient();
             HttpPost httpPost = new HttpPost(url);
@@ -74,67 +93,71 @@ public class TestCasesMediator {
             HttpResponse response = client.execute(httpPost);
 
             int responseCode = response.getStatusLine().getStatusCode();
-            if(responseCode == 200){
+            if (responseCode == 200) {
                 responseOfRevoke = EntityUtils.toString(response.getEntity(), "UTF-8");
-            }else{
+            } else {
                 responseOfRevoke = "failed";
             }
-        }
-
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.error("Exception in invoking the proxy service", e);
         }
 
         return responseOfRevoke;
     }
 
-    static String apiResourceExecutor(String inputXmlPayload, String context, String resourceMethod){
+    /**
+     * API resource invoke using http client for receiving test cases
+     *
+     * @param inputXmlPayload received input payload for particular test case
+     * @param resourceMethod resource method
+     * @param context context of the resource
+     * @return response received from the API resource
+     */
+    static String apiResourceExecutor(String inputXmlPayload, String context, String resourceMethod) {
         String responseOfRevoke = null;
         try {
 
             String url = "http://localhost:8280" + context;
-            logger.info("Invoking URI - "+url);
+            logger.info("Invoking URI - " + url);
 
             HttpClient clientConnector = new DefaultHttpClient();
             HttpResponse response;
 
             switch (resourceMethod.toUpperCase()) {
-                case GET_METHOD :
+                case GET_METHOD:
                     HttpGet httpGet = new HttpGet(url);
-                    httpGet.setHeader(HTTP.CONTENT_TYPE, "text/xml");
                     response = clientConnector.execute(httpGet);
                     break;
 
-                case POST_METHOD :
+                case POST_METHOD:
                     HttpPost httpPost = new HttpPost(url);
                     StringEntity postEntity = new StringEntity(inputXmlPayload);
                     httpPost.setEntity(postEntity);
                     response = clientConnector.execute(httpPost);
                     break;
 
-                case PUT_METHOD :
+                case PUT_METHOD:
                     HttpPut httpPut = new HttpPut(url);
                     StringEntity putEntity = new StringEntity(inputXmlPayload);
                     httpPut.setEntity(putEntity);
                     response = clientConnector.execute(httpPut);
                     break;
 
-                case DELETE_METHOD :
+                case DELETE_METHOD:
                     HttpDelete httpDelete = new HttpDelete(url);
                     response = clientConnector.execute(httpDelete);
                     break;
 
-                 default :
-                     httpGet = new HttpGet(url);
-                     httpGet.setHeader(HTTP.CONTENT_TYPE, "text/xml");
-                     response = clientConnector.execute(httpGet);
-                     break;
+                default:
+                    httpGet = new HttpGet(url);
+                    response = clientConnector.execute(httpGet);
+                    break;
             }
 
             int responseCode = response.getStatusLine().getStatusCode();
-            if(responseCode == 200){
+            if (responseCode == 200) {
                 responseOfRevoke = EntityUtils.toString(response.getEntity(), "UTF-8");
-            }else{
+            } else {
                 responseOfRevoke = "failed";
             }
 
@@ -145,10 +168,17 @@ public class TestCasesMediator {
         return responseOfRevoke;
     }
 
-    private static MessageContext createSynapseMessageContext(String payload, SynapseConfiguration config){
+    /**
+     * Creating message context using input payload and the synapse configuration
+     *
+     * @param payload received input payload for particular test case
+     * @param config synapse configuration used for deploy the sequence deployer
+     * @return message context
+     */
+    private static MessageContext createSynapseMessageContext(String payload, SynapseConfiguration config) {
 
         MessageContext synMc = null;
-        try{
+        try {
             org.apache.axis2.context.MessageContext mc =
                     new org.apache.axis2.context.MessageContext();
             AxisConfiguration axisConfig = config.getAxisConfiguration();
@@ -173,13 +203,19 @@ public class TestCasesMediator {
             envelope.getBody().addChild(createOMElement(payload));
 
             synMc.setEnvelope(envelope);
-        }catch (Exception e){
+        } catch (Exception e) {
             logger.error(e);
         }
 
         return synMc;
     }
 
+    /**
+     * Creating OMElement for payload
+     *
+     * @param xml input payload
+     * @return payload in OMElement type
+     */
     public static OMElement createOMElement(String xml) {
         return SynapseConfigUtils.stringToOM(xml);
     }
