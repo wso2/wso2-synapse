@@ -26,7 +26,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Base64;
 
 import static org.apache.synapse.unittest.Constants.*;
 
@@ -47,7 +46,7 @@ public class MessageDecoder {
         String artifactType = null;
 
         try {
-            artifactType = new String(Base64.getDecoder().decode(inputMessage.getString(ARTIFACT_TYPE)));
+            artifactType = inputMessage.getString(ARTIFACT_TYPE);
         } catch (Exception e) {
             logger.error(e);
         }
@@ -65,7 +64,7 @@ public class MessageDecoder {
         OMElement artifact = null;
 
         try {
-            String artifactAsString = new String(Base64.getDecoder().decode(inputMessage.getString(ARTIFACT)));
+            String artifactAsString = inputMessage.getString(ARTIFACT);
             artifact = AXIOMUtil.stringToOM(artifactAsString);
         } catch (Exception e) {
             logger.error(e);
@@ -84,7 +83,7 @@ public class MessageDecoder {
         String artifactName = null;
 
         try {
-            artifactName = new String(Base64.getDecoder().decode(inputMessage.getString(ARTIFACT_NAME)));
+            artifactName = inputMessage.getString(ARTIFACT_NAME);
 
         } catch (Exception e) {
             logger.error(e);
@@ -126,14 +125,9 @@ public class MessageDecoder {
             for (int x = 0; x < testCases.length(); x++) {
                 ArrayList<String> testCaseData = new ArrayList<String>();
 
-                testCaseData.add(new String(Base64.getDecoder().decode(testCases.getJSONObject(x).getString
-                        (INPUT_XML_PAYLOAD))));
-
-                testCaseData.add(new String(Base64.getDecoder().decode(testCases.getJSONObject(x).getString
-                        (EXPECTED_PAYLOAD))));
-
-                testCaseData.add(new String(Base64.getDecoder().decode(testCases.getJSONObject(x).getString
-                        (EXPECTED_PROPERTY_VALUES))));
+                testCaseData.add(testCases.getJSONObject(x).getString(INPUT_XML_PAYLOAD));
+                testCaseData.add(testCases.getJSONObject(x).getString(EXPECTED_PAYLOAD));
+                testCaseData.add(testCases.getJSONObject(x).getString(EXPECTED_PROPERTY_VALUES));
 
                 testCasesData.add(testCaseData);
             }

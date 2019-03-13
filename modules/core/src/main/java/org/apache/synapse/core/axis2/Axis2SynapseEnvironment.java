@@ -232,8 +232,18 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             contextInformation.setServerUnitTestModeEnabled(true);
             log.info("Synapse unit testing enabled");
 
-            //execute synapse unit testing agent
-            UnitTestingExecutor testExecutor = UnitTestingExecutor.getExeuteInstance();
+            //get unit test received port
+            String requestPort = System.getenv("UNIT_TEST_PORT");
+            if (requestPort.equals("")) {
+                //as a default value
+                requestPort = "7777";
+            }
+
+            int unitTestingAgentPort = Integer.parseInt(requestPort);
+
+            //execute synapse unit testing executor
+            UnitTestingExecutor testExecutor = UnitTestingExecutor.getExecuteInstance();
+            testExecutor.setServerPort(unitTestingAgentPort);
             testExecutor.setSynapseConfiguration(this.synapseConfig);
             testExecutor.start();
         }

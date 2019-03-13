@@ -48,7 +48,7 @@ public class ConfigurationDeployer {
         SequenceDeployer sequenceDeployer = new SequenceDeployer();
 
         //create a synapse configuration and set all axis2 configuration to it
-        SynapseConfiguration synapseConfiguration = UnitTestingExecutor.getExeuteInstance().getSynapseConfiguration();
+        SynapseConfiguration synapseConfiguration = UnitTestingExecutor.getExecuteInstance().getSynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
         ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
         SynapseEnvironment synapseEnvironment = new Axis2SynapseEnvironment(cfgCtx, synapseConfiguration);
@@ -79,7 +79,7 @@ public class ConfigurationDeployer {
         ProxyServiceDeployer proxyServiceDeployer = new ProxyServiceDeployer();
 
         //create a synapse configuration and set all axis2 configuration to it
-        SynapseConfiguration synapseConfiguration = UnitTestingExecutor.getExeuteInstance().getSynapseConfiguration();
+        SynapseConfiguration synapseConfiguration = UnitTestingExecutor.getExecuteInstance().getSynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
         ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
         SynapseEnvironment synapseEnvironment = new Axis2SynapseEnvironment(cfgCtx, synapseConfiguration);
@@ -109,7 +109,7 @@ public class ConfigurationDeployer {
         APIDeployer apiResourceDeployer = new APIDeployer();
 
         //create a synapse configuration and set all axis2 configuration to it
-        SynapseConfiguration synapseConfiguration = UnitTestingExecutor.getExeuteInstance().getSynapseConfiguration();
+        SynapseConfiguration synapseConfiguration = UnitTestingExecutor.getExecuteInstance().getSynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
         ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
 
