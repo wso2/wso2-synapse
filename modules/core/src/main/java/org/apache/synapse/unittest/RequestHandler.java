@@ -56,6 +56,8 @@ public class RequestHandler implements Runnable {
 
         } catch (Exception e) {
             logger.error(e);
+        } finally {
+            closeSocket();
         }
     }
 
