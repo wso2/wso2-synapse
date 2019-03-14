@@ -57,6 +57,7 @@ public class TestingAgent {
         OMElement artifact = MessageDecoder.getConfigurationArtifact(receivedMessage);
         boolean isArtifactDeployed = false;
 
+
         try {
             //check artifact type and pass the artifact to the relevant deployment
             if (artifactType.equals(TYPE_SEQUENCE)) {

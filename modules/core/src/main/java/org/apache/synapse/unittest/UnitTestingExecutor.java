@@ -35,7 +35,7 @@ public class UnitTestingExecutor extends Thread {
     /**
      * Initializing initializeThread if it is null.
      */
-    public static synchronized UnitTestingExecutor getExecuteInstance() {
+    public static UnitTestingExecutor getExecuteInstance() {
 
         if (initializeThread == null) {
             initializeThread = new UnitTestingExecutor();

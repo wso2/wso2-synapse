@@ -33,7 +33,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 import org.apache.synapse.Mediator;
@@ -87,7 +86,7 @@ public class TestCasesMediator {
 
             HttpClient client = new DefaultHttpClient();
             HttpPost httpPost = new HttpPost(url);
-            httpPost.setHeader(HTTP.CONTENT_TYPE, "text/xml");
+            httpPost.setHeader(org.apache.http.protocol.HTTP.CONTENT_TYPE, "text/xml");
             StringEntity postStringEntity = new StringEntity(inputXmlPayload);
             httpPost.setEntity(postStringEntity);
             HttpResponse response = client.execute(httpPost);

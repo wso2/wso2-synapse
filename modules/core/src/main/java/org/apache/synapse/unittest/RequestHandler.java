@@ -20,6 +20,9 @@ package org.apache.synapse.unittest;
 
 import javafx.util.Pair;
 import org.apache.log4j.Logger;
+import org.apache.synapse.unittest.data.holders.ArtifactData;
+import org.apache.synapse.unittest.data.holders.MockServiceData;
+import org.apache.synapse.unittest.data.holders.TestCaseData;
 import org.json.JSONObject;
 
 import java.io.*;
@@ -47,39 +50,70 @@ public class RequestHandler implements Runnable {
     @Override
     public void run() {
         try {
-            readData();
+            String receivedData = readData();
+            runTestingAgent(preProcessingData(receivedData));
             writeData(responseToClient);
 
         } catch (Exception e) {
             logger.error(e);
-
-        } finally {
-            closeSocket();
         }
     }
 
     /**
      * Read input data from the unit testing client
      */
-    private void readData() throws Exception {
-        TestingAgent agent = new TestingAgent();
-        InputStream inputStream = socket.getInputStream();
-        ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
+    private String readData() {
+        String inputFromClient = null;
+
+        try {
+            InputStream inputStream = socket.getInputStream();
+            ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
+            inputFromClient = (String) objectInputStream.readObject();
+
+        } catch (Exception e) {
+            logger.error("Failed to get input stream from TCP connection", e);
+        }
 
         //receiving message from the client
-        String receivedMessage = (String) objectInputStream.readObject();
+        return inputFromClient;
 
-        //convert the message into the JSON format
-        JSONObject jsonObject = new JSONObject(receivedMessage);
+    }
+
+    private JSONObject preProcessingData(String receivedMessage) {
+
+        DescriptorDataReader descriptorDataReader;
+        ArtifactData readArtifactData = null;
+        TestCaseData readTestCaseData = null;
+        MockServiceData readMockServiceData = null;
+
+        try {
+            descriptorDataReader = new DescriptorDataReader(receivedMessage);
+            readArtifactData = descriptorDataReader.readArtifactData();
+            readTestCaseData = descriptorDataReader.readTestCaseData();
+            readMockServiceData = descriptorDataReader.readMockServiceData();
+
+        } catch (Exception e) {
+            logger.error("Error while reading data from received message", e);
+        }
+
+        //create descriptor data as pre-processed JSON
+        MessageConstructor deployableMessage = new MessageConstructor();
+
+        return  deployableMessage.generateDeployableMessage(readArtifactData, readTestCaseData, readMockServiceData);
+    }
+
+    private void runTestingAgent(JSONObject processedMessage) {
+
+        TestingAgent agent = new TestingAgent();
 
         //get results of artifact deployer
-        Pair<Boolean, String> artifactDeployed = agent.processArtifact(jsonObject);
+        Pair<Boolean, String> artifactDeployed = agent.processArtifact(processedMessage);
 
         //check artifact deployer is success or not
         if (artifactDeployed.getKey()) {
 
             //performs test cases through the deployed synapse configuration
-            Pair<JSONObject, String> testCasesMediated = agent.processTestCases(jsonObject);
+            Pair<JSONObject, String> testCasesMediated = agent.processTestCases(processedMessage);
 
             //check mediation or invoke is success or failed
             if (testCasesMediated.getValue() == null) {
