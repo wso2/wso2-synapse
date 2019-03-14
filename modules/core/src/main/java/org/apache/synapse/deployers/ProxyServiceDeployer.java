@@ -24,6 +24,7 @@ import org.apache.axis2.deployment.DeploymentException;
 import org.apache.axis2.description.AxisService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.config.xml.ProxyServiceFactory;
@@ -79,32 +80,35 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                 }
 
                 getSynapseConfiguration().addProxyService(proxy.getName(), proxy);
-                AxisService axisService = proxy.buildAxisService(getSynapseConfiguration(),
-                                                  getSynapseConfiguration().getAxisConfiguration());
+                try {
+                    AxisService axisService = proxy.buildAxisService(getSynapseConfiguration(),
+                                                                     getSynapseConfiguration().getAxisConfiguration());
 
-                if (axisService == null) {
+                    if (axisService == null) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Skipping proxy Startup for ProxyService : " + proxy.getName());
+                        }
+                        return proxy.getName();
+                    }
+
                     if (log.isDebugEnabled()) {
-                        log.debug("Skipping proxy Startup for ProxyService : " + proxy.getName());
+                        log.debug("Started the ProxyService : " + proxy.getName());
+                        log.debug("ProxyService Deployment from file : " + filePath + " : Completed");
+                    }
+
+                    log.info("ProxyService named '" + proxy.getName()
+                             + "' has been deployed from file : " + filePath);
+
+                    if (!proxy.isStartOnLoad() || !axisService.isActive()) {
+                        proxy.stop(getSynapseConfiguration());
+                        log.info("ProxyService named '" + proxy.getName()
+                                 + "' has been stopped as startOnLoad parameter is set to false");
                     }
                     return proxy.getName();
+                } catch (SynapseException e) {
+                    getSynapseConfiguration().removeProxyService(proxy.getName());
+                    throw e;
                 }
-
-                if (log.isDebugEnabled()) {
-                    log.debug("Started the ProxyService : " + proxy.getName());
-                    log.debug("ProxyService Deployment from file : " + filePath + " : Completed");
-                }
-
-                log.info("ProxyService named '" + proxy.getName()
-                        + "' has been deployed from file : " + filePath);
-
-                if (!proxy.isStartOnLoad() || !axisService.isActive()) {
-                    proxy.stop(getSynapseConfiguration());
-                    log.info("ProxyService named '" + proxy.getName()
-                             + "' has been stopped as startOnLoad parameter is set to false");
-                }
-
-                return proxy.getName();
-
             } else {
                 handleSynapseArtifactDeploymentError("ProxyService Deployment Failed. The " +
                         "artifact described in the file " + filePath + " is not a ProxyService");
