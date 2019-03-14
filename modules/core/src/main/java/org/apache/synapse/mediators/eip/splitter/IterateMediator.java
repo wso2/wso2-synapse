@@ -133,17 +133,16 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
             // check whether expression contains jsonpath or xpath and process according to it
             if (expression != null && expression instanceof SynapseJsonPath) {
 
-                // SynapseJSONPath implementation read the JSON stream and execute the JSON path.
-                Object resultValue = null;
-                resultValue = expression.evaluate(synCtx);
+                // SynapseJSONPath implementation reads the JSON stream and execute the JSON path.
+                Object resultValue = expression.evaluate(synCtx);
 
                 //Gson parser to parse the string json objects
                 JsonParser parser = new JsonParser();
 
+                //Complete json payload read from the synCtx
                 Object rootJSON = parser.parse(
                         JsonUtil.jsonPayloadToString(((Axis2MessageContext) synCtx).getAxis2MessageContext())).
                         toString();
-                JsonUtil.removeJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext());
 
                 //delete the iterated json object if the attachPath is different from expression.
                 // If both are same, the json object will be replaced eventually, so no need to do it here
@@ -168,21 +167,36 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
 
                 }
 
-                int msgNumber = 0;
-                int msgCount = 0;
-
-                if (resultValue != null && resultValue instanceof List){
-
+                if (resultValue instanceof List) {
                     List list = (List) resultValue;
 
-                    msgCount = list.size();
+                    int msgNumber = 0;
+                    int msgCount = list.size();
 
-                    for (int i = 0; i < list.size(); i++) {
-                        MessageContext itereatedMsgCtx
-                                = getIteratedMessage(synCtx, msgNumber++, msgCount, rootJSON, list.get(i));
+                    for (Object o : list) {
+                        MessageContext iteratedMsgCtx
+                                = getIteratedMessage(synCtx, msgNumber++, msgCount, rootJSON, o);
                         ContinuationStackManager.
-                                addReliantContinuationState(itereatedMsgCtx, 0, getMediatorPosition());
-                        target.mediate(itereatedMsgCtx);
+                                addReliantContinuationState(iteratedMsgCtx, 0, getMediatorPosition());
+                        if (target.isAsynchronous()) {
+                            target.mediate(iteratedMsgCtx);
+                        } else {
+                            try {
+                                /*
+                                 * if Iteration is sequential we won't be able to execute correct fault
+                                 * handler as data are lost with clone message ending execution. So here we
+                                 * copy fault stack of clone message context to original message context
+                                 */
+                                target.mediate(iteratedMsgCtx);
+                            } catch (SynapseException synEx) {
+                                copyFaultyIteratedMessage(synCtx, iteratedMsgCtx);
+                                throw synEx;
+                            } catch (Exception e) {
+                                copyFaultyIteratedMessage(synCtx, iteratedMsgCtx);
+                                handleException("Exception occurred while executing sequential iteration " +
+                                        "in the Iterator Mediator", e, synCtx);
+                            }
+                        }
                     }
                 }
 
@@ -344,13 +358,14 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
     /**
      * Creates a new message context using the given original message context, the envelope
      *      * and the split result element. This is method is specific for JSON payloads
-     * @param synCtx
-     * @param msgNumber
-     * @param msgCount
-     * @param node
-     * @return
-     * @throws AxisFault
-     * @throws JaxenException
+     * @param synCtx original message context
+     * @param msgNumber message number in the iteration
+     * @param msgCount total number of messages in the split
+     * @param rootJsonObject total number of messages in the split
+     * @param node Json object to be attached
+     * @return newCtx created by the iteration
+     * @throws AxisFault if there is a message creation failure
+     * @throws JaxenException if the expression evaluation failure
      */
     private MessageContext getIteratedMessage(MessageContext synCtx, int msgNumber,
                                               int msgCount, Object rootJsonObject, Object node)
@@ -358,6 +373,9 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
 
         // clone the message for the mediation in iteration
         MessageContext newCtx = MessageHelper.cloneMessageContext(synCtx);
+
+        //Remove the original jsonstream from the context
+        JsonUtil.removeJsonPayload(((Axis2MessageContext) newCtx).getAxis2MessageContext());
 
         if (id != null) {
             // set the parent correlation details to the cloned MC -
@@ -392,6 +410,11 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
         // write the new JSON message to the stream
         JsonUtil.getNewJsonPayload(((Axis2MessageContext) newCtx).getAxis2MessageContext(),
                 rootObject.toString(), true, true);
+
+        // Set isServerSide property in the cloned message context
+        ((Axis2MessageContext) newCtx).getAxis2MessageContext().setServerSide(
+                ((Axis2MessageContext) synCtx).getAxis2MessageContext().isServerSide());
+
 
         return newCtx;
     }

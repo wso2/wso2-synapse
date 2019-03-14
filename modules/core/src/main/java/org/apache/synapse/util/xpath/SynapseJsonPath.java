@@ -342,17 +342,17 @@ public class SynapseJsonPath extends SynapsePath {
             JsonParser parser = new JsonParser();
             JsonElement jsonElement = parser.parse(rootObject.toString());
 
-            Object readObject = null;
+            Object attachPathObject = null;
 
             //this try catch block evaluates whether the attachPath is valid and available in the root Object
             try {
-                readObject = formatJsonPathResponse(JsonPath.parse(jsonElement.toString()).read(getJsonPath()));
+                attachPathObject = formatJsonPathResponse(JsonPath.parse(jsonElement.toString()).read(getJsonPath()));
 
             } catch (PathNotFoundException e) {
                 handleException("Unable to get the attach path specified by the expression " + expression, e);
             }
 
-            if (readObject != null) {
+            if (attachPathObject != null) {
                 rootObject =
                         JsonPath.parse(jsonElement.toString()).set(expression, newChild).jsonString();
 
