@@ -47,6 +47,7 @@
                         </Export-Package>
                         <Import-Package>
                             !org.apache.commons.io.output,
+                            javax.activation.*;version="[0.0.0, 1.0.0)",
                             org.apache.commons.io.output; version=0.0.0,
                             org.apache.commons.vfs2.*; version=0.0.0,
                             org.apache.commons.io.*; version=0.0.0,
