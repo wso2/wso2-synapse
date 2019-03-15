@@ -38,7 +38,7 @@ import static org.apache.synapse.unittest.Constants.TEST_CASES_COUNT;
  * Create deployable JSON object from data holders
  * Update deployable JSON object as Config Modifier
  */
-public class MessageConstructor {
+class MessageConstructor {
 
     private static Logger logger = Logger.getLogger(MessageDecoder.class.getName());
 
@@ -46,10 +46,10 @@ public class MessageConstructor {
      * Read artifact data from the artifactDataHolder.
      * Append artifact data into the JSON object
      *
-     * @param artifactDataHolder object of ArtifactData which contains artifact data read from descriptor file
+     * @param artifactDataHolder object of ArtifactData which contains artifact data read from descriptor data
      * @return JSONObject which is ready to deploy via TCP server
      */
-    public JSONObject generateDeployableMessage(ArtifactData artifactDataHolder, TestCaseData testCaseDataHolder,
+     JSONObject generateDeployableMessage(ArtifactData artifactDataHolder, TestCaseData testCaseDataHolder,
                                             MockServiceData mockServiceData) {
 
         JSONConstructor jsonDataHolder = new JSONConstructor();
@@ -70,13 +70,13 @@ public class MessageConstructor {
             jsonDataHolder.setAttribute(ARTIFACT , configuredArtifact);
             jsonDataHolder.setAttribute(ARTIFACT_TYPE , artifactDataHolder.getArtifactType());
             jsonDataHolder.setAttribute(ARTIFACT_NAME , artifactDataHolder.getArtifactName());
-            jsonDataHolder.setAttribute(TEST_CASES_COUNT , artifactDataHolder.getTestCaseCount());
+            jsonDataHolder.setAttribute(TEST_CASES_COUNT , testCaseDataHolder.getTestCaseCount());
 
             //Add  test-case data from data holder to json object
             JSONConstructor jsonTestCaseDataHolderArray = new JSONConstructor();
             jsonTestCaseDataHolderArray.initializeArray();
 
-            for (int i = 0; i < artifactDataHolder.getTestCaseCount(); i++) {
+            for (int i = 0; i < testCaseDataHolder.getTestCaseCount(); i++) {
                 JSONConstructor jsonTestCaseDataHolder = new JSONConstructor();
                 jsonTestCaseDataHolder.initialize();
 

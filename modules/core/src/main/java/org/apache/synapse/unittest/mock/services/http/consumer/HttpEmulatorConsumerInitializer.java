@@ -36,8 +36,8 @@ public class HttpEmulatorConsumerInitializer {
         workerGroup = new NioEventLoopGroup();
         try {
             ServerBootstrap serverBootstrap = new ServerBootstrap();
-            ChannelPipelineInitializer channelPipelineInitializer = new ChannelPipelineInitializer(sslCtx,
-                                                                                                   EmulatorType.HTTP_CONSUMER);
+            ChannelPipelineInitializer channelPipelineInitializer =
+                    new ChannelPipelineInitializer(sslCtx, EmulatorType.HTTP_CONSUMER);
             channelPipelineInitializer.setConsumerContext(consumerContext);
             serverBootstrap.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)

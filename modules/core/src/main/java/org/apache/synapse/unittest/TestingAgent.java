@@ -35,7 +35,7 @@ import static org.apache.synapse.unittest.Constants.*;
  * Testing agent deploy receiving artifact data in relevant deployer and mediate test cases on it.
  * Returns the results of artifact deployment and test case mediation to the RequestHandler
  */
-public class TestingAgent {
+class TestingAgent {
 
     private Logger logger = Logger.getLogger(TestingAgent.class.getName());
     private SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
@@ -51,14 +51,14 @@ public class TestingAgent {
      * @param receivedMessage message received from unit testing client
      * @return Result of the deployment and exception status
      */
-    public Pair<Boolean, String> processArtifact(JSONObject receivedMessage) {
+    Pair<Boolean, String> processArtifact(JSONObject receivedMessage) {
         artifactType = MessageDecoder.getArtifactType(receivedMessage);
         String artifactName = MessageDecoder.getArtifactName(receivedMessage);
         OMElement artifact = MessageDecoder.getConfigurationArtifact(receivedMessage);
         boolean isArtifactDeployed = false;
 
-
         try {
+
             //check artifact type and pass the artifact to the relevant deployment
             if (artifactType.equals(TYPE_SEQUENCE)) {
 
@@ -122,7 +122,7 @@ public class TestingAgent {
      * @param receivedMessage message received from unit testing client
      * @return Result of the mediation and exception status
      */
-    public Pair<JSONObject, String> processTestCases(JSONObject receivedMessage) {
+    Pair<JSONObject, String> processTestCases(JSONObject receivedMessage) {
         boolean isAssert = false;
         JSONObject resultOfTestCases = new JSONObject();
         int testCaseCount = MessageDecoder.getTestCasesCount(receivedMessage);
@@ -143,7 +143,7 @@ public class TestingAgent {
 
                     //check whether mediation is success or not
                     if (mediationResult) {
-                        isAssert = Assert.doAssertionSequence(testCasesData.get(i).get(1),
+                        isAssert = Assertor.doAssertionSequence(testCasesData.get(i).get(1),
                                 testCasesData.get(i).get(2), resultedMessageContext, i + 1);
 
                     } else {
@@ -154,7 +154,7 @@ public class TestingAgent {
                     String invokedResult = TestCasesMediator.proxyServiceExecutor(testCasesData.get(i).get(0), key);
 
                     if (!invokedResult.equals("failed")) {
-                        isAssert = Assert.doAssertionService(testCasesData.get(i).get(1), invokedResult, i + 1);
+                        isAssert = Assertor.doAssertionService(testCasesData.get(i).get(1), invokedResult, i + 1);
 
                     } else {
                         logger.error("Proxy service invoke failed");
@@ -166,7 +166,7 @@ public class TestingAgent {
                             (testCasesData.get(i).get(0), context, resourceMethod);
 
                     if (!invokedResult.equals("failed")) {
-                        isAssert = Assert.doAssertionService(testCasesData.get(i).get(1), invokedResult, i + 1);
+                        isAssert = Assertor.doAssertionService(testCasesData.get(i).get(1), invokedResult, i + 1);
 
                     } else {
                         logger.error("API resource invoke failed");

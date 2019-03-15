@@ -413,8 +413,8 @@
 		</dependency>
 		<dependency>
 			<groupId>org.awaitility</groupId>
-			<artifactId>awaitility-groovy</artifactId>
-			<version>3.0.0</version>
+			<artifactId>awaitility-proxy</artifactId>
+			<version>3.1.2</version>
 		</dependency>
 		<dependency>
 			<groupId>io.netty</groupId>

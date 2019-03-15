@@ -109,7 +109,7 @@ public class EndpointViewTest extends TestCase {
      * Performs the following operation to test destroy of an endpoint view.
      * 1. Increment suspension and timeout counts
      * 2. Call method destroy of endpoint view
-     * 3. Assert counts to be reset
+     * 3. Assertor counts to be reset
      */
     public void testDestroy() {
         EndpointView endpointView = new EndpointView("endpoint", null);
@@ -277,7 +277,7 @@ public class EndpointViewTest extends TestCase {
      */
     public void testGetActiveChildren() throws Exception {
 
-        //Assert with children
+        //Assertor with children
         AbstractEndpoint endpoint = createMockEndPoint(5);
         Mockito.when(endpoint.getChildren().get(0).getContext().isState(EndpointContext.ST_ACTIVE)).thenReturn(true);
         Mockito.when(endpoint.getChildren().get(1).getContext().isState(EndpointContext.ST_ACTIVE)).thenReturn(false);
@@ -287,7 +287,7 @@ public class EndpointViewTest extends TestCase {
         EndpointView endpointView = new EndpointView("endpoint", endpoint);
         Assert.assertEquals("Incorrect active children count", 3, endpointView.getActiveChildren());
 
-        //Assert when endpoint has no children
+        //Assertor when endpoint has no children
         EndpointView endpointViewWithoutChildren = createMockEndPointView(0);
         Assert.assertEquals("Incorrect active children count", 0,
                             endpointViewWithoutChildren.getActiveChildren());

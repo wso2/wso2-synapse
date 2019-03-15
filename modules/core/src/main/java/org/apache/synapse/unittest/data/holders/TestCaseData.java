@@ -24,9 +24,10 @@ import java.util.ArrayList;
  */
 public class TestCaseData {
 
-    private ArrayList<String> inputXmlPayloadArray = new ArrayList<String>();
-    private ArrayList<String> expectedPropertyValuesArray = new ArrayList<String>();
-    private ArrayList<String> expectedPayloadArray = new ArrayList<String>();
+    private int testCaseCount;
+    private ArrayList<String> inputXmlPayloadArray = new ArrayList<>();
+    private ArrayList<String> expectedPropertyValuesArray = new ArrayList<>();
+    private ArrayList<String> expectedPayloadArray = new ArrayList<>();
 
     /**
      * Get input payload of particular test case.
@@ -85,4 +86,21 @@ public class TestCaseData {
         this.expectedPayloadArray.add(expectedPayload);
     }
 
+    /**
+     * Get test cases count.
+     *
+     * @return test cases count in descriptor data
+     */
+    public int getTestCaseCount() {
+        return testCaseCount;
+    }
+
+    /**
+     * Set test cases count.
+     *
+     * @param testCaseCount test cases count in descriptor data
+     */
+    public void setTestCaseCount(int testCaseCount) {
+        this.testCaseCount =  testCaseCount;
+    }
 }

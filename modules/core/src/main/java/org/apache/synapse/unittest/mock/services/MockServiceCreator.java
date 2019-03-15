@@ -24,6 +24,7 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.apache.log4j.Logger;
 import org.apache.synapse.unittest.mock.services.core.Emulator;
+import org.apache.synapse.unittest.mock.services.core.EmulatorType;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -35,17 +36,18 @@ import static org.apache.synapse.unittest.mock.services.http.dsl.dto.consumer.Ou
 
 
 /**
- * Class is responsible for creating mock services as request in descriptor file.
+ * Class is responsible for creating mock services as request in descriptor data.
  */
 public class MockServiceCreator {
 
     private static Logger logger = Logger.getLogger(MockServiceCreator.class.getName());
-    public static ArrayList<Long> mockServiceThreadIds = new ArrayList<Long>();
+    private static boolean isMockServiceCreated = false;
 
+    private MockServiceCreator() {}
     /**
      * Start service for given parameters using emulator.
      *
-     * @param mockServiceName endpoint name given in descriptor file
+     * @param mockServiceName endpoint name given in descriptor data
      * @param host domain of the url
      * @param path path of the url
      * @param serviceMethod service method of the service
@@ -55,8 +57,12 @@ public class MockServiceCreator {
     public static void startServer(String mockServiceName, String host, int port, String path, String serviceMethod,
                                    String inputPayload, String responseBody) {
 
-        try {
+        //set flag to mock service started
+        if(!isMockServiceCreated) {
+            isMockServiceCreated = true;
+        }
 
+        try {
             switch (serviceMethod.toUpperCase()) {
                 case GET_METHOD :
                     Emulator.getHttpEmulator()
@@ -91,7 +97,6 @@ public class MockServiceCreator {
                             .operations().start();
             }
 
-
             logger.info("Mock service started for " + mockServiceName + "as [" + serviceMethod.toUpperCase() +
                             "] in - http://" + host + ":" + port + path);
 
@@ -106,19 +111,9 @@ public class MockServiceCreator {
      * Stop all services created from the emulator by checking thread-id.
      */
     public static void stopServices() {
-        //set of threads currently running
-        Set<Thread> setOfThread = Thread.getAllStackTraces().keySet();
-
-        //find the thread from thread-id and interrupt it
-        for (int x = 0; x < mockServiceThreadIds.size(); x++) {
-            for (Thread thread : setOfThread) {
-                if (thread.getId() == mockServiceThreadIds.get(x)) {
-                    thread.interrupt();
-                    break;
-                }
-            }
+        if (isMockServiceCreated) {
+            new Emulator().shutdown(EmulatorType.HTTP_CONSUMER);
+            isMockServiceCreated = false;
         }
-
-
     }
 }

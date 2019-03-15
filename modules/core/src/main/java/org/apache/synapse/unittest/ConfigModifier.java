@@ -20,7 +20,6 @@ package org.apache.synapse.unittest;
 
 
 import org.apache.log4j.Logger;
-import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.w3c.dom.*;
 import org.apache.synapse.unittest.data.holders.MockServiceData;
@@ -29,6 +28,7 @@ import org.xml.sax.InputSource;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -41,21 +41,22 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.apache.synapse.unittest.Constants.*;
+import static org.awaitility.Awaitility.await;
 
 
 /**
  * Class responsible for modify the artifact data.
- * creates mock services as in descriptor file.
+ * creates mock services as in descriptor data.
  */
-public class ConfigModifier {
+class ConfigModifier {
 
     private ConfigModifier() {}
 
     private static Logger logger = Logger.getLogger(ConfigModifier.class.getName());
 
     static String endPointModifier(String artifact, MockServiceData mockServiceData) {
-
-        ArrayList<Integer> mockServicePorts = new ArrayList<Integer>();
+        ArrayList<Integer> mockServicePorts = new ArrayList<>();
+        String updatedArtifact = artifact;
 
         try {
             DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
@@ -90,24 +91,7 @@ public class ConfigModifier {
                         String serviceURL = HTTP + serviceHostUrl + ":" + port + path;
                         mockServicePorts.add(port);
 
-                        NodeList childNodesOfEndPoint = endPointNode.getChildNodes();
-                        Node addressNode = childNodesOfEndPoint.item(1);
-
-                        NamedNodeMap attributeListOfAddress = addressNode.getAttributes();
-
-                        for (int y = 0; y < attributeListOfAddress.getLength(); y++) {
-                            Attr attribute = (Attr) attributeListOfAddress.item(y);
-
-                            if (attribute.getNodeName().equals(URI)) {
-                                attributeListOfAddress.getNamedItem(URI).setNodeValue(serviceURL);
-                                break;
-
-                            } else if (attribute.getNodeName().equals(URI_TEMPLATE)) {
-                                attributeListOfAddress.getNamedItem(URI_TEMPLATE).setNodeValue(serviceURL);
-                                attributeListOfAddress.getNamedItem(METHOD).setNodeValue(serviceMethod);
-                                break;
-                            }
-                        }
+                        updateEndPoint(endPointNode, serviceURL, serviceMethod);
 
                         logger.info("Mock service creator ready to start service for " + valueOfName);
                         MockServiceCreator.startServer(valueOfName, host , port, path , method ,
@@ -116,31 +100,55 @@ public class ConfigModifier {
                 }
             }
 
-            DOMSource domSource = new DOMSource(document);
-            StringWriter writer = new StringWriter();
-            StreamResult result = new StreamResult(writer);
+
             TransformerFactory tf = TransformerFactory.newInstance();
             Transformer transformer = tf.newTransformer();
-            transformer.transform(domSource, result);
-
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            StringWriter writer = new StringWriter();
+            transformer.transform(new DOMSource(document), new StreamResult(writer));
+            updatedArtifact = writer.getBuffer().toString().replaceAll("xmlns=\"\"", "");
 
             //check services are ready to serve
             logger.info("Thread waiting for mock service(s) starting");
-            for (int x = 0; x < mockServicePorts.size(); x++) {
-                int port = mockServicePorts.get(x);
-                Awaitility.await().atMost(Duration.ONE_SECOND).untilTrue(checkPortAvailability(port));
-            }
+//            for (int port : mockServicePorts) {
+//
+//                await().atMost(Duration.FIVE_SECONDS).untilTrue(checkPortAvailability(port));
+//            }
+            Thread.sleep(4000);
 
             logger.info("Mock service(s) started");
-
-            return  writer.toString();
 
         } catch (Exception e) {
             logger.error(e);
         }
 
+        return updatedArtifact;
+    }
 
-        return artifact;
+    private static void updateEndPoint(Node endPointNode, String serviceURL, String serviceMethod) {
+        NodeList childNodesOfEndPoint = endPointNode.getChildNodes();
+        Node addressNode = childNodesOfEndPoint.item(1);
+
+        NamedNodeMap attributeListOfAddress = addressNode.getAttributes();
+
+        boolean isFound = false;
+        for (int y = 0; y < attributeListOfAddress.getLength(); y++) {
+            Attr attribute = (Attr) attributeListOfAddress.item(y);
+
+            if (attribute.getNodeName().equals(URI)) {
+                attributeListOfAddress.getNamedItem(URI).setNodeValue(serviceURL);
+                isFound = true;
+
+            } else if (attribute.getNodeName().equals(URI_TEMPLATE)) {
+                attributeListOfAddress.getNamedItem(URI_TEMPLATE).setNodeValue(serviceURL);
+                attributeListOfAddress.getNamedItem(METHOD).setNodeValue(serviceMethod);
+                isFound = true;
+            }
+
+            if (isFound) {
+                break;
+            }
+        }
     }
 
     private static AtomicBoolean checkPortAvailability(int port) {

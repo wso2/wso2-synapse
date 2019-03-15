@@ -32,9 +32,11 @@ import static org.apache.synapse.unittest.Constants.WHITESPACE_REGEX;
 /**
  * Class responsible for the validation of testing with expected results.
  */
-public class Assert {
+class Assertor {
 
     private static Logger logger = Logger.getLogger(TestingAgent.class.getName());
+
+    private Assertor() {}
 
     /**
      * Assertion of results of sequence mediation and expected payload and properties
@@ -44,7 +46,7 @@ public class Assert {
      * @param testCaseNumber asserting test case number
      * @return true if assertion is success otherwise false
      */
-    public static boolean doAssertionSequence(String expectedPayload, String expectedPropertyValues,
+    static boolean doAssertionSequence(String expectedPayload, String expectedPropertyValues,
                                               MessageContext mediateMsgCtxt, int testCaseNumber) {
         JSONObject expectedPropertyValueJSON = new JSONObject(expectedPropertyValues);
 
@@ -53,20 +55,20 @@ public class Assert {
         boolean assertPayload = (trimStrings(expectedPayload)
                 .equals(trimStrings(mediateMsgCtxt.getEnvelope().getBody().getFirstElement().toString())));
 
-        System.out.println(" ");
-        System.out.println("---------------------Expected Payload---------------");
-        System.out.println(trimStrings(expectedPayload));
-        System.out.println("---------------------Mediated Payload---------------");
-        System.out.println(trimStrings(mediateMsgCtxt.getEnvelope().getBody().getFirstElement().toString()));
+        logger.info(" ");
+        logger.info("---------------------Expected Payload---------------");
+        logger.info(trimStrings(expectedPayload));
+        logger.info("---------------------Mediated Payload---------------");
+        logger.info(trimStrings(mediateMsgCtxt.getEnvelope().getBody().getFirstElement().toString()));
         logger.info("Payload assertion - " + assertPayload);
-        System.out.println(" ");
+        logger.info(" ");
 
-        System.out.println("---------------------Expected Property Values---------------");
-        System.out.println(trimStrings(expectedPropertyValueJSON.toString()));
-        System.out.println("---------------------Mediated Property Values---------------");
-        System.out.println(trimStrings(generatePropertyValues(mediateMsgCtxt)));
+        logger.info("---------------------Expected Property Values---------------");
+        logger.info(trimStrings(expectedPropertyValueJSON.toString()));
+        logger.info("---------------------Mediated Property Values---------------");
+        logger.info(trimStrings(generatePropertyValues(mediateMsgCtxt)));
         logger.info("Property assertion - " + assertProperty);
-        System.out.println(" ");
+        logger.info(" ");
 
         if (assertProperty && assertPayload) {
             logger.info("Unit testing passed for test case - " + testCaseNumber);
@@ -85,13 +87,13 @@ public class Assert {
      * @param testCaseNumber asserting test case number
      * @return true if assertion is success otherwise false
      */
-    public static boolean doAssertionService(String expectedPayload, String invokedResult, int testCaseNumber) {
+    static boolean doAssertionService(String expectedPayload, String invokedResult, int testCaseNumber) {
 
         boolean assertPayload = (trimStrings(expectedPayload).equals(trimStrings(invokedResult)));
-        System.out.println("---------------------Expected Payload---------------");
-        System.out.println(trimStrings(expectedPayload));
-        System.out.println("---------------------Response Payload---------------");
-        System.out.println(trimStrings(invokedResult));
+        logger.info("---------------------Expected Payload---------------");
+        logger.info(trimStrings(expectedPayload));
+        logger.info("---------------------Response Payload---------------");
+        logger.info(trimStrings(invokedResult));
         logger.info("Payload assertion - " + assertPayload);
 
         if (assertPayload) {

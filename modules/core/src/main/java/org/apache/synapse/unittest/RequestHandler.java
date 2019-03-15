@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import org.apache.synapse.unittest.data.holders.ArtifactData;
 import org.apache.synapse.unittest.data.holders.MockServiceData;
 import org.apache.synapse.unittest.data.holders.TestCaseData;
+import org.apache.synapse.unittest.mock.services.MockServiceCreator;
 import org.json.JSONObject;
 
 import java.io.*;
@@ -53,6 +54,7 @@ public class RequestHandler implements Runnable {
             String receivedData = readData();
             runTestingAgent(preProcessingData(receivedData));
             writeData(responseToClient);
+            MockServiceCreator.stopServices();
 
         } catch (Exception e) {
             logger.error(e);
@@ -81,6 +83,14 @@ public class RequestHandler implements Runnable {
 
     }
 
+    /**
+     * Processed received message data and stores those data in relevant data holders
+     * Construct JSON deployable mesage for synapse unit testing
+     * Uses configModifier if there are some mock services to start
+     *
+     * @param receivedMessage received descriptor data message as String
+     * @return processed deployable JSON message
+     */
     private JSONObject preProcessingData(String receivedMessage) {
 
         DescriptorDataReader descriptorDataReader;
@@ -104,6 +114,11 @@ public class RequestHandler implements Runnable {
         return  deployableMessage.generateDeployableMessage(readArtifactData, readTestCaseData, readMockServiceData);
     }
 
+    /**
+     * Execute test agent for artifact deployment and mediation using receiving JSON message
+     *
+     * @param processedMessage pre processed descriptor data as a JSON
+     */
     private void runTestingAgent(JSONObject processedMessage) {
 
         TestingAgent agent = new TestingAgent();

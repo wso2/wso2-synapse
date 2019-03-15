@@ -39,7 +39,7 @@ public class MockServiceData extends Thread {
     /**
      * Get mock services count.
      *
-     * @return mock services count in descriptor file
+     * @return mock services count in descriptor data
      */
     public int getMockServicesCount() {
         return this.mockServicesCount;
@@ -59,7 +59,7 @@ public class MockServiceData extends Thread {
      * Get mock service host.
      *
      * @param elementIndex service stored index
-     * @return mock service host as in descriptor file
+     * @return mock service host as in descriptor data
      */
     public String getServiceHost(int elementIndex) {
         return serviceHost.get(elementIndex);
@@ -69,7 +69,7 @@ public class MockServiceData extends Thread {
      * Get mock service port.
      *
      * @param elementIndex service stored index
-     * @return mock service port as in descriptor file
+     * @return mock service port as in descriptor data
      */
     public int getServicePort(int elementIndex) {
         return servicePort.get(elementIndex);
@@ -79,7 +79,7 @@ public class MockServiceData extends Thread {
      * Get mock service path.
      *
      * @param elementIndex service stored index
-     * @return mock service path as in descriptor file
+     * @return mock service path as in descriptor data
      */
     public String getServicePath(int elementIndex) {
         return servicePath.get(elementIndex);
@@ -89,7 +89,7 @@ public class MockServiceData extends Thread {
      * Get mock service type.
      *
      * @param elementIndex service stored index
-     * @return mock service type as in descriptor file
+     * @return mock service type as in descriptor data
      */
     public String getServiceType(int elementIndex) {
         return serviceType.get(elementIndex);
@@ -99,7 +99,7 @@ public class MockServiceData extends Thread {
      * Get mock service input payload.
      *
      * @param elementIndex service stored index
-     * @return mock service input payload as in descriptor file
+     * @return mock service input payload as in descriptor data
      */
     public String getServicePayload(int elementIndex) {
         return servicePayload.get(elementIndex);
@@ -109,7 +109,7 @@ public class MockServiceData extends Thread {
      * Get mock service response.
      *
      * @param elementIndex service stored index
-     * @return mock service response as in descriptor file
+     * @return mock service response as in descriptor data
      */
     public String getServiceResponse(int elementIndex) {
         return serviceResponse.get(elementIndex);
@@ -128,7 +128,7 @@ public class MockServiceData extends Thread {
     /**
      * Add mock service host inside the ArrayList.
      *
-     * @param serviceHost service host as in descriptor file
+     * @param serviceHost service host as in descriptor data
      */
     public void addServiceHost(String serviceHost) {
         this.serviceHost.add(serviceHost);
@@ -137,7 +137,7 @@ public class MockServiceData extends Thread {
     /**
      * Add mock service port inside the ArrayList.
      *
-     * @param servicePort service port as in descriptor file
+     * @param servicePort service port as in descriptor data
      */
     public void addServicePort(int servicePort) {
         this.servicePort.add(servicePort);
@@ -146,7 +146,7 @@ public class MockServiceData extends Thread {
     /**
      * Add mock service path inside the ArrayList.
      *
-     * @param servicePath service path as in descriptor file
+     * @param servicePath service path as in descriptor data
      */
     public void addServicePath(String servicePath) {
         this.servicePath.add(servicePath);
@@ -155,7 +155,7 @@ public class MockServiceData extends Thread {
     /**
      * Add mock service type inside the ArrayList.
      *
-     * @param serviceType service type as in descriptor file
+     * @param serviceType service type as in descriptor data
      */
     public void addServiceType(String serviceType) {
         this.serviceType.add(serviceType);
@@ -164,7 +164,7 @@ public class MockServiceData extends Thread {
     /**
      * Add mock service input payload inside the ArrayList.
      *
-     * @param servicePayload service input payload as in descriptor file
+     * @param servicePayload service input payload as in descriptor data
      */
     public void addServicePayload(String servicePayload) {
         this.servicePayload.add(servicePayload);
@@ -173,7 +173,7 @@ public class MockServiceData extends Thread {
     /**
      * Add mock service response inside the ArrayList.
      *
-     * @param serviceResponse service response as in descriptor file
+     * @param serviceResponse service response as in descriptor data
      */
     public void addServiceResponse(String serviceResponse) {
         this.serviceResponse.add(serviceResponse);
@@ -182,7 +182,7 @@ public class MockServiceData extends Thread {
     /**
      * Set mock service count.
      *
-     * @param mockServiceCount mock service count as in descriptor file
+     * @param mockServiceCount mock service count as in descriptor data
      */
     public void setMockServicesCount(int mockServiceCount) {
         this.mockServicesCount = mockServiceCount;

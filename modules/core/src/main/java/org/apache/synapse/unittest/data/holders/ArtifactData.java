@@ -24,13 +24,12 @@ public class ArtifactData {
 
     private String artifactType;
     private String artifact;
-    private int testCaseCount;
     private String artifactName;
 
     /**
      * Get artifact type.
      *
-     * @return artifact type in descriptor file
+     * @return artifact type in descriptor data
      */
     public String getArtifactType() {
         return artifactType;
@@ -39,7 +38,7 @@ public class ArtifactData {
     /**
      * Get artifact name.
      *
-     * @return artifact name in descriptor file
+     * @return artifact name in descriptor data
      */
     public String getArtifactName() {
         return artifactName;
@@ -48,25 +47,16 @@ public class ArtifactData {
     /**
      * Get artifact.
      *
-     * @return artifact in descriptor file
+     * @return artifact in descriptor data
      */
     public String getArtifact() {
         return artifact;
     }
 
     /**
-     * Get test cases count.
-     *
-     * @return test cases count in descriptor file
-     */
-    public int getTestCaseCount() {
-        return testCaseCount;
-    }
-
-    /**
      * Set artifact type.
      *
-     * @param artifactType type of the artifact in descriptor file
+     * @param artifactType type of the artifact in descriptor data
      */
     public void setArtifactType(String artifactType) {
         this.artifactType = artifactType;
@@ -75,7 +65,7 @@ public class ArtifactData {
     /**
      * Set artifact name.
      *
-     * @param artifactName name of the artifact in descriptor file
+     * @param artifactName name of the artifact in descriptor data
      */
     public void setArtifactName(String artifactName) {
         this.artifactName = artifactName;
@@ -84,18 +74,10 @@ public class ArtifactData {
     /**
      * Set artifact.
      *
-     * @param artifact receiving artifact in descriptor file
+     * @param artifact receiving artifact in descriptor data
      */
     public void setArtifact(String artifact) {
         this.artifact = artifact;
     }
 
-    /**
-     * Set test cases count.
-     *
-     * @param testCaseCount test cases count in descriptor file
-     */
-    public void setTestCaseCount(int testCaseCount) {
-        this.testCaseCount =  testCaseCount;
-    }
 }

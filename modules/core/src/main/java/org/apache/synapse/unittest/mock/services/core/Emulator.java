@@ -35,7 +35,6 @@ public class Emulator extends Thread {
     }
 
     public void run() {
-        MockServiceCreator.mockServiceThreadIds.add(Thread.currentThread().getId());
 
         try {
             if (EmulatorType.HTTP_CONSUMER.equals(emulatorType)) {
