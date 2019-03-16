@@ -30,9 +30,9 @@ public class TCPServer {
     private static Logger logger = Logger.getLogger(UnitTestingExecutor.class.getName());
 
     private ServerSocket serverSocket;
-
+    private boolean isUnitTestingOver = false;
     /**
-     * Initializing TCP server for main unit testing server
+     * Initializing TCP server for main unit testing server.
      * @param port port server starts
      */
     public void initialize(int port) {
@@ -49,15 +49,28 @@ public class TCPServer {
     }
 
     /**
-     * Create RequestHandler threads for load balancing
+     * Create RequestHandler threads for load balancing.
      */
-    public void acceptConnection() throws IOException {
-        while (true) {
+    private void acceptConnection() throws IOException {
+        //start thread for shutdown hook
+        shutDown();
+
+        while (!isUnitTestingOver) {
             Socket socket = serverSocket.accept();
             RequestHandler requestHandler = new RequestHandler(socket);
             Thread threadForClient = new Thread(requestHandler);
             threadForClient.start();
         }
+    }
+
+    private void shutDown() {
+        Runtime.getRuntime ().addShutdownHook ( new Thread () {
+            @Override
+            public void run () {
+                logger.info ( "Shutting down unit testing framework" );
+                isUnitTestingOver = true;
+            }
+        } );
     }
 }
 

@@ -19,6 +19,7 @@ package org.apache.synapse.unittest;
 
 import javafx.util.Pair;
 import org.apache.axiom.om.OMElement;
+import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.engine.AxisConfiguration;
@@ -33,16 +34,16 @@ import org.apache.synapse.deployers.SequenceDeployer;
 /**
  * Util class for deploying synapse artifacts to the synapse engine.
  */
-public class ConfigurationDeployer {
+class ConfigurationDeployer {
 
     /**
-     * Method of deploying sequence artifact in synapse
+     * Method of deploying sequence artifact in synapse.
      * @param inputElement synapse configuration artifact as OMElement type
      * @param fileName name of the file
      * @return response of the artifact deployment and the synapse configuration as a Pair<>
      */
-    public Pair<SynapseConfiguration, String> deploySequenceArtifact(OMElement inputElement, String fileName)
-            throws Exception {
+    Pair<SynapseConfiguration, String> deploySequenceArtifact(OMElement inputElement, String fileName)
+            throws AxisFault {
 
         //create new sequence deployer object
         SequenceDeployer sequenceDeployer = new SequenceDeployer();
@@ -67,13 +68,12 @@ public class ConfigurationDeployer {
     }
 
     /**
-     * Method of deploying proxy artifact in synapse
+     * Method of deploying proxy artifact in synapse.
      * @param inputElement synapse configuration artifact as OMElement type
      * @param fileName name of the file
      * @return response of the artifact deployment and the synapse configuration as a Pair<>
      */
-    public Pair<SynapseConfiguration, String> deployProxyArtifact(OMElement inputElement, String fileName)
-            throws Exception {
+     Pair<SynapseConfiguration, String> deployProxyArtifact(OMElement inputElement, String fileName) throws AxisFault {
 
         //create new proxy service deployer object
         ProxyServiceDeployer proxyServiceDeployer = new ProxyServiceDeployer();
@@ -97,13 +97,12 @@ public class ConfigurationDeployer {
     }
 
     /**
-     * Method of deploying API artifact in synapse
+     * Method of deploying API artifact in synapse.
      * @param inputElement synapse configuration artifact as OMElement type
      * @param fileName name of the file
      * @return response of the artifact deployment and the synapse configuration as a Pair<>
      */
-    public Pair<SynapseConfiguration, String> deployApiArtifact(OMElement inputElement, String fileName)
-            throws Exception {
+    Pair<SynapseConfiguration, String> deployApiArtifact(OMElement inputElement, String fileName) throws AxisFault {
 
         //create new API deployer object
         APIDeployer apiResourceDeployer = new APIDeployer();

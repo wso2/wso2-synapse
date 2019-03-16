@@ -19,10 +19,11 @@
 package org.apache.synapse.unittest;
 
 import org.apache.log4j.Logger;
-import org.json.JSONObject;
 import org.apache.synapse.unittest.data.holders.ArtifactData;
 import org.apache.synapse.unittest.data.holders.MockServiceData;
 import org.apache.synapse.unittest.data.holders.TestCaseData;
+
+import org.json.JSONObject;
 
 import static org.apache.synapse.unittest.Constants.ARTIFACT;
 import static org.apache.synapse.unittest.Constants.ARTIFACT_NAME;
@@ -30,8 +31,7 @@ import static org.apache.synapse.unittest.Constants.ARTIFACT_TYPE;
 import static org.apache.synapse.unittest.Constants.EXPECTED_PAYLOAD;
 import static org.apache.synapse.unittest.Constants.EXPECTED_PROPERTY_VALUES;
 import static org.apache.synapse.unittest.Constants.INPUT_XML_PAYLOAD;
-import static org.apache.synapse.unittest.Constants.TEST_CASES;
-import static org.apache.synapse.unittest.Constants.TEST_CASES_COUNT;
+
 
 /**
  * Class of the message constructor for Synapse unit test framework.
@@ -70,7 +70,7 @@ class MessageConstructor {
             jsonDataHolder.setAttribute(ARTIFACT , configuredArtifact);
             jsonDataHolder.setAttribute(ARTIFACT_TYPE , artifactDataHolder.getArtifactType());
             jsonDataHolder.setAttribute(ARTIFACT_NAME , artifactDataHolder.getArtifactName());
-            jsonDataHolder.setAttribute(TEST_CASES_COUNT , testCaseDataHolder.getTestCaseCount());
+            jsonDataHolder.setAttribute(testCaseDataHolder.getTestCaseCount());
 
             //Add  test-case data from data holder to json object
             JSONConstructor jsonTestCaseDataHolderArray = new JSONConstructor();
@@ -89,7 +89,7 @@ class MessageConstructor {
                 jsonTestCaseDataHolderArray.setAttributeForArray(jsonTestCaseDataHolder.getJSONDataHolder());
             }
 
-            jsonDataHolder.setAttribute(TEST_CASES, jsonTestCaseDataHolderArray.getJSONArrayDataHolder());
+            jsonDataHolder.setAttribute(jsonTestCaseDataHolderArray.getJSONArrayDataHolder());
 
             logger.info("Deployable JSON artifact data object created");
 

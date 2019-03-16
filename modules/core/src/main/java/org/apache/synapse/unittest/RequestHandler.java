@@ -26,7 +26,11 @@ import org.apache.synapse.unittest.data.holders.TestCaseData;
 import org.apache.synapse.unittest.mock.services.MockServiceCreator;
 import org.json.JSONObject;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 
 /**
@@ -42,7 +46,7 @@ public class RequestHandler implements Runnable {
     private JSONObject responseToClient;
 
     /**
-     * Initializing RequestHandler withe the client socket connection
+     * Initializing RequestHandler withe the client socket connection.
      */
     RequestHandler(Socket socket) {
         this.socket = socket;
@@ -64,7 +68,7 @@ public class RequestHandler implements Runnable {
     }
 
     /**
-     * Read input data from the unit testing client
+     * Read input data from the unit testing client.
      */
     private String readData() {
         String inputFromClient = null;
@@ -84,7 +88,7 @@ public class RequestHandler implements Runnable {
     }
 
     /**
-     * Processed received message data and stores those data in relevant data holders
+     * Processed received message data and stores those data in relevant data holders.
      * Construct JSON deployable mesage for synapse unit testing
      * Uses configModifier if there are some mock services to start
      *
@@ -115,7 +119,7 @@ public class RequestHandler implements Runnable {
     }
 
     /**
-     * Execute test agent for artifact deployment and mediation using receiving JSON message
+     * Execute test agent for artifact deployment and mediation using receiving JSON message.
      *
      * @param processedMessage pre processed descriptor data as a JSON
      */
@@ -149,7 +153,7 @@ public class RequestHandler implements Runnable {
     }
 
     /**
-     * Write output data to the unit testing client
+     * Write output data to the unit testing client.
      */
     private void writeData(JSONObject jsonObject) throws IOException {
 
@@ -160,7 +164,7 @@ public class RequestHandler implements Runnable {
     }
 
     /**
-     * close the TCP connection with client
+     * close the TCP connection with client.
      */
     private void closeSocket() {
         try {

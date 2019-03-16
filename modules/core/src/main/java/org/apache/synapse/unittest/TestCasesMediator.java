@@ -26,13 +26,14 @@ import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 import org.apache.synapse.Mediator;
@@ -43,17 +44,25 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 
-import static org.apache.synapse.unittest.Constants.*;
+import java.io.IOException;
+import java.util.Locale;
+
+import static org.apache.synapse.unittest.Constants.DELETE_METHOD;
+import static org.apache.synapse.unittest.Constants.GET_METHOD;
+import static org.apache.synapse.unittest.Constants.POST_METHOD;
+import static org.apache.synapse.unittest.Constants.PUT_METHOD;
 
 /**
  * Class is responsible for mediating incoming payload with relevant configuration.
  */
 public class TestCasesMediator {
 
+    private TestCasesMediator() {}
+
     private static Logger logger = Logger.getLogger(UnitTestingExecutor.class.getName());
 
     /**
-     * Sequence mediation of receiving test cases using deployed sequence deployer
+     * Sequence mediation of receiving test cases using deployed sequence deployer.
      *
      * @param inputXmlPayload received input payload for particular test case
      * @param synConfig synapse configuration used to deploy sequenceDeployer
@@ -71,104 +80,94 @@ public class TestCasesMediator {
     }
 
     /**
-     * Proxy service invoke using http client for receiving test cases
+     * Proxy service invoke using http client for receiving test cases.
      *
      * @param inputXmlPayload received input payload for particular test case
      * @param key key of the proxy service
      * @return response received from the proxy service
      */
-    static String proxyServiceExecutor(String inputXmlPayload, String key) {
-        String responseOfRevoke = null;
-        try {
+    static String proxyServiceExecutor(String inputXmlPayload, String key) throws IOException {
+        String responseOfRevoke;
 
-            String url = "http://localhost:8280/services/" + key;
-            logger.info("Invoking URI - " + url);
+        String url = "http://localhost:8280/services/" + key;
+        logger.info("Invoking URI - " + url);
 
-            HttpClient client = new DefaultHttpClient();
-            HttpPost httpPost = new HttpPost(url);
-            httpPost.setHeader(org.apache.http.protocol.HTTP.CONTENT_TYPE, "text/xml");
-            StringEntity postStringEntity = new StringEntity(inputXmlPayload);
-            httpPost.setEntity(postStringEntity);
-            HttpResponse response = client.execute(httpPost);
+        HttpClient client = HttpClientBuilder.create().build();
+        HttpPost httpPost = new HttpPost(url);
+        httpPost.setHeader(org.apache.http.protocol.HTTP.CONTENT_TYPE, "text/xml");
+        StringEntity postStringEntity = new StringEntity(inputXmlPayload);
+        httpPost.setEntity(postStringEntity);
+        HttpResponse response = client.execute(httpPost);
 
-            int responseCode = response.getStatusLine().getStatusCode();
-            if (responseCode == 200) {
-                responseOfRevoke = EntityUtils.toString(response.getEntity(), "UTF-8");
-            } else {
-                responseOfRevoke = "failed";
-            }
-        } catch (Exception e) {
-            logger.error("Exception in invoking the proxy service", e);
+        int responseCode = response.getStatusLine().getStatusCode();
+        if (responseCode == 200) {
+            responseOfRevoke = EntityUtils.toString(response.getEntity(), "UTF-8");
+        } else {
+            responseOfRevoke = "failed";
         }
 
         return responseOfRevoke;
     }
 
     /**
-     * API resource invoke using http client for receiving test cases
+     * API resource invoke using http client for receiving test cases.
      *
      * @param inputXmlPayload received input payload for particular test case
      * @param resourceMethod resource method
      * @param context context of the resource
      * @return response received from the API resource
      */
-    static String apiResourceExecutor(String inputXmlPayload, String context, String resourceMethod) {
-        String responseOfRevoke = null;
-        try {
+    static String apiResourceExecutor(String inputXmlPayload, String context, String resourceMethod)
+            throws IOException {
+        String responseOfRevoke;
 
-            String url = "http://localhost:8280" + context;
-            logger.info("Invoking URI - " + url);
+        String url = "http://localhost:8280" + context;
+        logger.info("Invoking URI - " + url);
 
-            HttpClient clientConnector = new DefaultHttpClient();
-            HttpResponse response;
+        HttpClient clientConnector = HttpClientBuilder.create().build();
+        HttpResponse response;
 
-            switch (resourceMethod.toUpperCase()) {
-                case GET_METHOD:
-                    HttpGet httpGet = new HttpGet(url);
-                    response = clientConnector.execute(httpGet);
-                    break;
+        switch (resourceMethod.toUpperCase(Locale.ENGLISH)) {
+            case GET_METHOD:
+                HttpGet httpGet = new HttpGet(url);
+                response = clientConnector.execute(httpGet);
+                break;
 
-                case POST_METHOD:
-                    HttpPost httpPost = new HttpPost(url);
-                    StringEntity postEntity = new StringEntity(inputXmlPayload);
-                    httpPost.setEntity(postEntity);
-                    response = clientConnector.execute(httpPost);
-                    break;
+            case POST_METHOD:
+                HttpPost httpPost = new HttpPost(url);
+                StringEntity postEntity = new StringEntity(inputXmlPayload);
+                httpPost.setEntity(postEntity);
+                response = clientConnector.execute(httpPost);
+                break;
 
-                case PUT_METHOD:
-                    HttpPut httpPut = new HttpPut(url);
-                    StringEntity putEntity = new StringEntity(inputXmlPayload);
-                    httpPut.setEntity(putEntity);
-                    response = clientConnector.execute(httpPut);
-                    break;
+            case PUT_METHOD:
+                HttpPut httpPut = new HttpPut(url);
+                StringEntity putEntity = new StringEntity(inputXmlPayload);
+                httpPut.setEntity(putEntity);
+                response = clientConnector.execute(httpPut);
+                break;
 
-                case DELETE_METHOD:
-                    HttpDelete httpDelete = new HttpDelete(url);
-                    response = clientConnector.execute(httpDelete);
-                    break;
+            case DELETE_METHOD:
+                HttpDelete httpDelete = new HttpDelete(url);
+                response = clientConnector.execute(httpDelete);
+                break;
 
-                default:
-                    httpGet = new HttpGet(url);
-                    response = clientConnector.execute(httpGet);
-                    break;
-            }
+            default:
+                throw new ClientProtocolException("HTTP client can't find proper request method");
+        }
 
-            int responseCode = response.getStatusLine().getStatusCode();
-            if (responseCode == 200) {
-                responseOfRevoke = EntityUtils.toString(response.getEntity(), "UTF-8");
-            } else {
-                responseOfRevoke = "failed";
-            }
-
-        } catch (Exception e) {
-            logger.error("Exception in invoking the api resource", e);
+        int responseCode = response.getStatusLine().getStatusCode();
+        if (responseCode == 200) {
+            responseOfRevoke = EntityUtils.toString(response.getEntity(), "UTF-8");
+        } else {
+            responseOfRevoke = "failed";
         }
 
         return responseOfRevoke;
     }
 
     /**
-     * Creating message context using input payload and the synapse configuration
+     * Creating message context using input payload and the synapse configuration.
      *
      * @param payload received input payload for particular test case
      * @param config synapse configuration used for deploy the sequence deployer
@@ -188,10 +187,6 @@ public class TestCasesMediator {
             ConfigurationContext cfgCtx = new ConfigurationContext(axisConfig);
             SynapseEnvironment env = new Axis2SynapseEnvironment(cfgCtx, config);
 
-//            mc.setConfigurationContext(cfgCtx);
-//            mc.setOperationContext(new OperationContext());
-//            mc.setAxisOperation(new InOutAxisOperation(SynapseConstants.SYNAPSE_OPERATION_NAME));
-
             synMc = new Axis2MessageContext(mc, config, env);
             SOAPEnvelope envelope =
                     OMAbstractFactory.getSOAP11Factory().getDefaultEnvelope();
@@ -210,7 +205,7 @@ public class TestCasesMediator {
     }
 
     /**
-     * Creating OMElement for payload
+     * Creating OMElement for payload.
      *
      * @param xml input payload
      * @return payload in OMElement type

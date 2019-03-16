@@ -39,7 +39,7 @@ class Assertor {
     private Assertor() {}
 
     /**
-     * Assertion of results of sequence mediation and expected payload and properties
+     * Assertion of results of sequence mediation and expected payload and properties.
      * @param expectedPayload expected payload
      * @param expectedPropertyValues expected property values
      * @param mediateMsgCtxt message context used for the mediation
@@ -81,7 +81,7 @@ class Assertor {
     }
 
     /**
-     * Assertion of results of proxy/API invoke and expected payload
+     * Assertion of results of proxy/API invoke and expected payload.
      * @param expectedPayload expected payload
      * @param invokedResult response from the procy service
      * @param testCaseNumber asserting test case number
@@ -106,7 +106,7 @@ class Assertor {
     }
 
     /**
-     * Create a JSON object using the property key and values of message context
+     * Create a JSON object using the property key and values of message context.
      * @param mediateMsgCtxt message context used for the mediation
      * @return String of created JSON object which include property set
      */
@@ -122,7 +122,7 @@ class Assertor {
     }
 
     /**
-     * Remove irrelevant whitespaces from the input string
+     * Remove irrelevant whitespaces from the input string.
      * @param inputString string which needs to remove whitespaces
      * @return trim string not include irrelevant whitespaces
      */

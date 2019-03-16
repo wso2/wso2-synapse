@@ -25,6 +25,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import javax.xml.namespace.QName;
 
@@ -56,58 +57,60 @@ class TestingAgent {
         String artifactName = MessageDecoder.getArtifactName(receivedMessage);
         OMElement artifact = MessageDecoder.getConfigurationArtifact(receivedMessage);
         boolean isArtifactDeployed = false;
+        ConfigurationDeployer config = new ConfigurationDeployer();
 
         try {
 
             //check artifact type and pass the artifact to the relevant deployment
-            if (artifactType.equals(TYPE_SEQUENCE)) {
+            switch (artifactType) {
+                case TYPE_SEQUENCE :
+                    Pair<SynapseConfiguration, String> pairOfSequenceDeployment =
+                            config.deploySequenceArtifact(artifact, artifactName);
+                    synapseConfiguration = pairOfSequenceDeployment.getKey();
+                    key = pairOfSequenceDeployment.getValue();
 
-                ConfigurationDeployer config = new ConfigurationDeployer();
-                Pair<SynapseConfiguration, String> pair = config.deploySequenceArtifact(artifact, artifactName);
-                synapseConfiguration = pair.getKey();
-                key = pair.getValue();
+                    if (key.equals(artifactName)) {
+                        isArtifactDeployed = true;
+                        logger.info("Sequence artifact deployed successfully");
+                    } else {
+                        logger.error("Sequence deployment failed");
+                    }
+                    break;
 
-                if (key.equals(artifactName)) {
-                    isArtifactDeployed = true;
-                    logger.info("Sequence artifact deployed successfully");
-                } else {
-                    logger.error("Sequence deployment failed");
-                }
+                case TYPE_PROXY :
+                    Pair<SynapseConfiguration, String> pairofProxyDeployment =
+                            config.deployProxyArtifact(artifact, artifactName);
+                    synapseConfiguration = pairofProxyDeployment.getKey();
+                    key = pairofProxyDeployment.getValue();
 
-            } else if (artifactType.equals(TYPE_PROXY)) {
-                ConfigurationDeployer config = new ConfigurationDeployer();
-                Pair<SynapseConfiguration, String> pair = config.deployProxyArtifact(artifact, artifactName);
-                synapseConfiguration = pair.getKey();
-                key = pair.getValue();
+                    if (key.equals(artifactName)) {
+                        isArtifactDeployed = true;
+                        logger.info("Proxy artifact deployed successfully");
+                    } else {
+                        logger.error("Proxy deployment failed");
+                    }
+                    break;
 
-                if (key.equals(artifactName)) {
-                    isArtifactDeployed = true;
-                    logger.info("Proxy artifact deployed successfully");
-                } else {
-                    logger.error("Proxy deployment failed");
-                }
+                case TYPE_API :
+                    Pair<SynapseConfiguration, String> pairofApiDeployment =
+                            config.deployApiArtifact(artifact, artifactName);
+                    synapseConfiguration = pairofApiDeployment.getKey();
+                    key = pairofApiDeployment.getValue();
+                    context = artifact.getAttributeValue(new QName(API_CONTEXT));
+                    resourceMethod = artifact.getFirstElement().getAttributeValue(new QName(RESOURCE_METHODS));
 
+                    if (key.equals(artifactName)) {
+                        isArtifactDeployed = true;
+                        logger.info("API artifact deployed successfully");
+                    } else {
+                        logger.error("API deployment failed");
+                    }
+                    break;
 
-            } else if (artifactType.equals(TYPE_API)) {
+                default:
+                    throw new IOException("Undefined operation type in unit testing agent");
 
-                ConfigurationDeployer config = new ConfigurationDeployer();
-                Pair<SynapseConfiguration, String> pair = config.deployApiArtifact(artifact, artifactName);
-                synapseConfiguration = pair.getKey();
-                key = pair.getValue();
-                context = artifact.getAttributeValue(new QName(API_CONTEXT));
-                resourceMethod = artifact.getFirstElement().getAttributeValue(new QName(RESOURCE_METHODS));
-
-                if (key.equals(artifactName)) {
-                    isArtifactDeployed = true;
-                    logger.info("API artifact deployed successfully");
-                } else {
-                    logger.error("API deployment failed");
-                }
-
-            } else {
-                logger.error("Undefined operation type in unit testing agent");
             }
-
         } catch (Exception e) {
             logger.error("Artifact deployment failed", e);
             exception = e.toString();
@@ -134,55 +137,112 @@ class TestingAgent {
         try {
             //execute test cases with synapse configurations and test data
             for (int i = 0; i < testCaseCount; i++) {
+                ArrayList<String> currentTestCase = testCasesData.get(i);
 
-                if (artifactType.equals(TYPE_SEQUENCE)) {
-                    Pair<Boolean, MessageContext> mediateResult =
-                            TestCasesMediator.sequenceMediate(testCasesData.get(i).get(0), synapseConfiguration, key);
-                    Boolean mediationResult = mediateResult.getKey();
-                    MessageContext resultedMessageContext = mediateResult.getValue();
+                switch (artifactType) {
+                    case TYPE_SEQUENCE :
+                        Pair<Boolean, MessageContext> mediateResult =
+                                TestCasesMediator.sequenceMediate(currentTestCase.get(0), synapseConfiguration, key);
 
-                    //check whether mediation is success or not
-                    if (mediationResult) {
-                        isAssert = Assertor.doAssertionSequence(testCasesData.get(i).get(1),
-                                testCasesData.get(i).get(2), resultedMessageContext, i + 1);
+                        Boolean mediationResult = mediateResult.getKey();
+                        MessageContext resultedMessageContext = mediateResult.getValue();
 
-                    } else {
-                        logger.error("Sequence mediation failed");
-                    }
+                        //check whether mediation is success or not
+                        isAssert = checkAssertionWithSequenceMediation(mediationResult, resultedMessageContext, currentTestCase, i);
+                        break;
 
-                } else if (artifactType.equals(TYPE_PROXY)) {
-                    String invokedResult = TestCasesMediator.proxyServiceExecutor(testCasesData.get(i).get(0), key);
+                    case TYPE_PROXY :
+                        String invokedProxyResult = TestCasesMediator
+                                .proxyServiceExecutor(testCasesData.get(i).get(0), key);
 
-                    if (!invokedResult.equals("failed")) {
-                        isAssert = Assertor.doAssertionService(testCasesData.get(i).get(1), invokedResult, i + 1);
+                        isAssert = checkAssertionWithProxyMediation(invokedProxyResult, currentTestCase, i);
+                        break;
 
-                    } else {
-                        logger.error("Proxy service invoke failed");
-                    }
+                    case TYPE_API :
+                        String invokedApiResult = TestCasesMediator.apiResourceExecutor
+                                (currentTestCase.get(0), context, resourceMethod);
 
-                } else if (artifactType.equals(TYPE_API)) {
+                        isAssert = checkAssertionWithAPIMediation(invokedApiResult, currentTestCase, i);
+                        break;
 
-                    String invokedResult = TestCasesMediator.apiResourceExecutor
-                            (testCasesData.get(i).get(0), context, resourceMethod);
-
-                    if (!invokedResult.equals("failed")) {
-                        isAssert = Assertor.doAssertionService(testCasesData.get(i).get(1), invokedResult, i + 1);
-
-                    } else {
-                        logger.error("API resource invoke failed");
-                    }
-                } else {
-                    break;
+                    default :
+                        break;
                 }
-
                 resultOfTestCases.put("test-case " + (i + 1), isAssert);
             }
-
         } catch (Exception e) {
-            logger.error("Error occured while running test cases", e);
+            logger.error("Error occurred while running test cases", e);
             exception = e.toString();
         }
 
         return new Pair<>(resultOfTestCases, exception);
     }
+
+    /**
+     * Check assertion results with results of sequence mediation.
+     *
+     * @param mediationResult result of mediation of sequence
+     * @param resultedMessageContext message context of mediation of sequence
+     * @param currentTestCase current running test case data
+     * @param index index of current running test case data
+     * @return result of assertion or mediation result
+     */
+    private boolean checkAssertionWithSequenceMediation(boolean mediationResult, MessageContext resultedMessageContext,
+                                                        ArrayList<String> currentTestCase, int index) {
+        boolean isAssert = false;
+        if (mediationResult) {
+            isAssert = Assertor.doAssertionSequence(currentTestCase.get(1),
+                    currentTestCase.get(2), resultedMessageContext, index + 1);
+
+        } else {
+            logger.error("Sequence mediation failed");
+        }
+
+        return isAssert;
+    }
+
+    /**
+     * Check assertion results with results of sequence mediation.
+     *
+     * @param invokedProxyResult result of proxy invoke
+     * @param currentTestCase current running test case data
+     * @param index index of current running test case data
+     * @return result of assertion or invoke result
+     */
+    private boolean checkAssertionWithProxyMediation(String invokedProxyResult,
+                                                     ArrayList<String> currentTestCase, int index) {
+        boolean isAssert = false;
+        if (!invokedProxyResult.equals("failed")) {
+            isAssert = Assertor.doAssertionService
+                    (currentTestCase.get(1), invokedProxyResult, index + 1);
+
+        } else {
+            logger.error("Proxy service invoke failed");
+        }
+
+        return isAssert;
+    }
+
+    /**
+     * Check assertion results with results of sequence mediation.
+     *
+     * @param invokedApiResult result of API invoke
+     * @param currentTestCase current running test case data
+     * @param index index of current running test case data
+     * @return result of assertion or invoke result
+     */
+    private boolean checkAssertionWithAPIMediation(String invokedApiResult,
+                                                   ArrayList<String> currentTestCase, int index) {
+        boolean isAssert = false;
+
+        if (!invokedApiResult.equals("failed")) {
+            isAssert = Assertor.doAssertionService
+                    (currentTestCase.get(1), invokedApiResult, index + 1);
+        } else {
+            logger.error("API resource invoke failed");
+        }
+
+        return isAssert;
+    }
+
 }

@@ -27,22 +27,31 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
-import static org.apache.synapse.unittest.Constants.*;
+import static org.apache.synapse.unittest.Constants.ARTIFACT;
+import static org.apache.synapse.unittest.Constants.ARTIFACT_NAME;
+import static org.apache.synapse.unittest.Constants.ARTIFACT_TYPE;
+import static org.apache.synapse.unittest.Constants.EXPECTED_PAYLOAD;
+import static org.apache.synapse.unittest.Constants.EXPECTED_PROPERTY_VALUES;
+import static org.apache.synapse.unittest.Constants.INPUT_XML_PAYLOAD;
+import static org.apache.synapse.unittest.Constants.TEST_CASES;
+import static org.apache.synapse.unittest.Constants.TEST_CASES_COUNT;
 
 /**
  * Class responsible for the decode relevant data from received message.
  */
-public class MessageDecoder {
+class MessageDecoder {
+
+    private MessageDecoder() {}
 
     private static Logger logger = Logger.getLogger(UnitTestingExecutor.class.getName());
 
     /**
-     * Get artifact type from the received message from unit testing client
+     * Get artifact type from the received message from unit testing client.
      *
      * @param inputMessage received JSON message from unit testing client
      * @return artifact type
      */
-    public static String getArtifactType(JSONObject inputMessage) {
+    static String getArtifactType(JSONObject inputMessage) {
         String artifactType = null;
 
         try {
@@ -55,12 +64,12 @@ public class MessageDecoder {
     }
 
     /**
-     * Get artifact from the received message from unit testing client
+     * Get artifact from the received message from unit testing client.
      *
      * @param inputMessage received JSON message from unit testing client
      * @return artifact
      */
-    public static OMElement getConfigurationArtifact(JSONObject inputMessage) {
+    static OMElement getConfigurationArtifact(JSONObject inputMessage) {
         OMElement artifact = null;
 
         try {
@@ -74,12 +83,12 @@ public class MessageDecoder {
     }
 
     /**
-     * Get artifact name from the received message from unit testing client
+     * Get artifact name from the received message from unit testing client.
      *
      * @param inputMessage received JSON message from unit testing client
      * @return artifact name
      */
-    public static String getArtifactName(JSONObject inputMessage) {
+    static String getArtifactName(JSONObject inputMessage) {
         String artifactName = null;
 
         try {
@@ -93,12 +102,12 @@ public class MessageDecoder {
     }
 
     /**
-     * Get test cases count from the received message from unit testing client
+     * Get test cases count from the received message from unit testing client.
      *
      * @param inputMessage received JSON message from unit testing client
      * @return test cases count
      */
-    public static int getTestCasesCount(JSONObject inputMessage) {
+    static int getTestCasesCount(JSONObject inputMessage) {
         int testCasesCount = 0;
 
         try {
@@ -112,18 +121,18 @@ public class MessageDecoder {
     }
 
     /**
-     * Get test cases data from the received message from unit testing client
+     * Get test cases data from the received message from unit testing client.
      *
      * @param inputMessage received JSON message from unit testing client
      * @return test cases data as ArrayList of ArrayList
      */
-    public static ArrayList<ArrayList<String>> getTestCasesData(JSONObject inputMessage) {
-        ArrayList<ArrayList<String>> testCasesData = new ArrayList<ArrayList<String>>();
+    static ArrayList<ArrayList<String>> getTestCasesData(JSONObject inputMessage) {
+        ArrayList<ArrayList<String>> testCasesData = new ArrayList<>();
         JSONArray testCases = inputMessage.getJSONArray(TEST_CASES);
 
         try {
             for (int x = 0; x < testCases.length(); x++) {
-                ArrayList<String> testCaseData = new ArrayList<String>();
+                ArrayList<String> testCaseData = new ArrayList<>();
 
                 testCaseData.add(testCases.getJSONObject(x).getString(INPUT_XML_PAYLOAD));
                 testCaseData.add(testCases.getJSONObject(x).getString(EXPECTED_PAYLOAD));

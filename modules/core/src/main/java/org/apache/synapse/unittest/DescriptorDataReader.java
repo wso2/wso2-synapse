@@ -25,24 +25,23 @@ import org.apache.synapse.unittest.data.holders.ArtifactData;
 import org.apache.synapse.unittest.data.holders.MockServiceData;
 import org.apache.synapse.unittest.data.holders.TestCaseData;
 
-import javax.xml.namespace.QName;
 import java.util.Iterator;
-
+import javax.xml.namespace.QName;
 
 import static org.apache.synapse.unittest.Constants.ARTIFACT;
 import static org.apache.synapse.unittest.Constants.ARTIFACT_NAME_ATTRIBUTE;
-import static org.apache.synapse.unittest.Constants.TEST_CASES;
-import static org.apache.synapse.unittest.Constants.INPUT_XML_PAYLOAD;
 import static org.apache.synapse.unittest.Constants.EXPECTED_PAYLOAD;
 import static org.apache.synapse.unittest.Constants.EXPECTED_PROPERTY_VALUES;
+import static org.apache.synapse.unittest.Constants.INPUT_XML_PAYLOAD;
 import static org.apache.synapse.unittest.Constants.MOCK_SERVICES;
-import static org.apache.synapse.unittest.Constants.SERVICE_NAME;
 import static org.apache.synapse.unittest.Constants.SERVICE_HOST;
-import static org.apache.synapse.unittest.Constants.SERVICE_PORT;
+import static org.apache.synapse.unittest.Constants.SERVICE_NAME;
 import static org.apache.synapse.unittest.Constants.SERVICE_PATH;
-import static org.apache.synapse.unittest.Constants.SERVICE_TYPE;
 import static org.apache.synapse.unittest.Constants.SERVICE_PAYLOAD;
+import static org.apache.synapse.unittest.Constants.SERVICE_PORT;
 import static org.apache.synapse.unittest.Constants.SERVICE_RESPONSE;
+import static org.apache.synapse.unittest.Constants.SERVICE_TYPE;
+import static org.apache.synapse.unittest.Constants.TEST_CASES;
 
 /**
  * descriptor data read class in unit test framework.

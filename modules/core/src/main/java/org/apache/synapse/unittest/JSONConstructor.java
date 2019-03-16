@@ -21,6 +21,9 @@ package org.apache.synapse.unittest;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import static org.apache.synapse.unittest.Constants.TEST_CASES;
+import static org.apache.synapse.unittest.Constants.TEST_CASES_COUNT;
+
 /**
  * Class of the JSON constructor for artifact data.
  */
@@ -39,7 +42,7 @@ public class JSONConstructor {
     /**
      * Initialized JSON Array.
      */
-    public void initializeArray() {
+    void initializeArray() {
         jsonArrayDataHolder = new JSONArray();
     }
 
@@ -49,7 +52,7 @@ public class JSONConstructor {
      * @param key   JSON key
      * @param value JSON string value of the key
      */
-    public void setAttribute(String key, String value) {
+    void setAttribute(String key, String value) {
         jsonDataHolder.put(key, value);
     }
 
@@ -58,28 +61,28 @@ public class JSONConstructor {
      *
      * @param jsonArrayElement as child in the array
      */
-    public void setAttributeForArray(JSONObject jsonArrayElement) {
-        jsonArrayDataHolder.put(jsonArrayElement);
+    void setAttributeForArray(JSONObject jsonArrayElement) {
+        if (jsonArrayDataHolder != null) {
+            jsonArrayDataHolder.put(jsonArrayElement);
+        }
     }
 
     /**
      * Append key-value pairs into the JSON object initiated.
      *
-     * @param key   JSON key
      * @param value JSON int value of the key
      */
-    public void setAttribute(String key, int value) {
-        jsonDataHolder.put(key, value);
+    void setAttribute(int value) {
+        jsonDataHolder.put(TEST_CASES_COUNT, value);
     }
 
     /**
      * Append key-value pairs into the JSON object initiated.
      *
-     * @param key   JSON key
      * @param value JSON value of the key
      */
-    public void setAttribute(String key, JSONArray value) {
-        jsonDataHolder.put(key, value);
+    void setAttribute(JSONArray value) {
+        jsonDataHolder.put(TEST_CASES, value);
     }
 
     /**
@@ -87,7 +90,7 @@ public class JSONConstructor {
      *
      * @return JSONObject
      */
-    public JSONObject getJSONDataHolder() {
+    JSONObject getJSONDataHolder() {
         return this.jsonDataHolder;
     }
 
@@ -96,7 +99,7 @@ public class JSONConstructor {
      *
      * @return JSONArray
      */
-    public JSONArray getJSONArrayDataHolder() {
+    JSONArray getJSONArrayDataHolder() {
         return this.jsonArrayDataHolder;
     }
 
