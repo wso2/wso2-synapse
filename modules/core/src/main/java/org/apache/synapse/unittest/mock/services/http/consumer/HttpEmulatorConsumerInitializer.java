@@ -8,13 +8,11 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.ssl.SslContext;
 import org.apache.synapse.unittest.mock.services.core.EmulatorType;
 import org.apache.synapse.unittest.mock.services.http.ChannelPipelineInitializer;
 import org.apache.synapse.unittest.mock.services.http.dsl.HttpConsumerContext;
 
 public class HttpEmulatorConsumerInitializer {
-    private static final boolean SSL = System.getProperty("ssl") != null;
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
     private HttpConsumerContext consumerContext;
@@ -23,21 +21,15 @@ public class HttpEmulatorConsumerInitializer {
         this.consumerContext = consumerContext;
     }
 
-    public void initialize() throws Exception {
-        final SslContext sslCtx = null;
-        /*if (SSL) {
-            SelfSignedCertificate ssc = new SelfSignedCertificate();
-            sslCtx = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey()).build();
-        } else {
-            sslCtx = null;
-        }*/
+    public void initialize() throws InterruptedException{
+
         // Configure the server.
         bossGroup = new NioEventLoopGroup(getCPUCoreSize());
         workerGroup = new NioEventLoopGroup();
         try {
             ServerBootstrap serverBootstrap = new ServerBootstrap();
             ChannelPipelineInitializer channelPipelineInitializer =
-                    new ChannelPipelineInitializer(sslCtx, EmulatorType.HTTP_CONSUMER);
+                    new ChannelPipelineInitializer(null, EmulatorType.HTTP_CONSUMER);
             channelPipelineInitializer.setConsumerContext(consumerContext);
             serverBootstrap.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)

@@ -21,7 +21,6 @@
 package org.apache.synapse.unittest.mock.services.core;
 
 import org.apache.log4j.Logger;
-import org.apache.synapse.unittest.mock.services.MockServiceCreator;
 import org.apache.synapse.unittest.mock.services.http.HTTPProtocolEmulator;
 
 public class Emulator extends Thread {
@@ -65,7 +64,7 @@ public class Emulator extends Thread {
         }
     }
 
-    public void setEmulatorType(EmulatorType emulatorType) {
+    void setEmulatorType(EmulatorType emulatorType) {
         this.emulatorType = emulatorType;
     }
 }

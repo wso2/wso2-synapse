@@ -64,7 +64,7 @@ public abstract class AbstractProtocolEmulator {
         }
     }
 
-    public void setEmulatorType(EmulatorType emulatorType) {
+    protected void setEmulatorType(EmulatorType emulatorType) {
         this.emulatorType = emulatorType;
     }
 }

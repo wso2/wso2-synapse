@@ -34,20 +34,20 @@ public class HttpRequestContext extends RequestContext {
 
     private Map<String, List<String>> headerParameters;
     private Map<String, List<String>> queryParameters;
-    private StringBuffer requestBody;
+    private StringBuilder requestBody;
     private String uri;
     private HttpMethod httpMethod;
     private HttpVersion httpVersion;
     private boolean isKeepAlive;
 
-    public void addHeaderParameter(String key, String value) {
+    void addHeaderParameter(String key, String value) {
         if (headerParameters == null) {
-            this.headerParameters = new HashMap<String, List<String>>();
+            this.headerParameters = new HashMap<>();
         }
 
         List<String> headerValues = this.headerParameters.get(key);
         if (headerValues == null) {
-            headerValues = new ArrayList<String>();
+            headerValues = new ArrayList<>();
         }
         headerValues.add(value);
         this.headerParameters.put(key, headerValues);
@@ -57,7 +57,7 @@ public class HttpRequestContext extends RequestContext {
         return queryParameters;
     }
 
-    public void setQueryParameters(Map<String, List<String>> queryParameters) {
+    void setQueryParameters(Map<String, List<String>> queryParameters) {
         this.queryParameters = queryParameters;
     }
 
@@ -65,9 +65,9 @@ public class HttpRequestContext extends RequestContext {
         return headerParameters;
     }
 
-    public void appendResponseContent(Object content) {
+    void appendResponseContent(Object content) {
         if (requestBody == null) {
-            this.requestBody = new StringBuffer();
+            this.requestBody = new StringBuilder();
         }
         this.requestBody.append(content);
     }
@@ -84,7 +84,7 @@ public class HttpRequestContext extends RequestContext {
         return httpMethod;
     }
 
-    public void setHttpMethod(HttpMethod httpMethod) {
+    void setHttpMethod(HttpMethod httpMethod) {
         this.httpMethod = httpMethod;
     }
 
@@ -92,15 +92,15 @@ public class HttpRequestContext extends RequestContext {
         return httpVersion;
     }
 
-    public void setHttpVersion(HttpVersion httpVersion) {
+    void setHttpVersion(HttpVersion httpVersion) {
         this.httpVersion = httpVersion;
     }
 
-    public boolean isKeepAlive() {
+    boolean isKeepAlive() {
         return isKeepAlive;
     }
 
-    public void setKeepAlive(boolean isKeepAlive) {
+    void setKeepAlive(boolean isKeepAlive) {
         this.isKeepAlive = isKeepAlive;
     }
 

@@ -51,7 +51,7 @@ public class HttpRequestInformationProcessor {
         }
     }
 
-    public void appendDecoderResult(HttpRequestContext requestContext, HttpObject httpObject, ByteBuf content) {
+    void appendDecoderResult(HttpRequestContext requestContext, HttpObject httpObject, ByteBuf content) {
         requestContext.appendResponseContent(content.toString(CharsetUtil.UTF_8));
         DecoderResult result = httpObject.getDecoderResult();
         if (result.isSuccess()) {

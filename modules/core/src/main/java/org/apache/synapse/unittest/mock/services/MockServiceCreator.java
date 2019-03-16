@@ -26,9 +26,6 @@ import org.apache.log4j.Logger;
 import org.apache.synapse.unittest.mock.services.core.Emulator;
 import org.apache.synapse.unittest.mock.services.core.EmulatorType;
 
-import java.util.ArrayList;
-import java.util.Set;
-
 import static org.apache.synapse.unittest.Constants.GET_METHOD;
 import static org.apache.synapse.unittest.Constants.POST_METHOD;
 import static org.apache.synapse.unittest.mock.services.http.dsl.dto.consumer.IncomingMessage.request;
@@ -58,7 +55,7 @@ public class MockServiceCreator {
                                    String inputPayload, String responseBody) {
 
         //set flag to mock service started
-        if(!isMockServiceCreated) {
+        if (!isMockServiceCreated) {
             isMockServiceCreated = true;
         }
 

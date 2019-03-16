@@ -63,6 +63,9 @@ public class TCPServer {
         }
     }
 
+    /**
+     * Shut down unit testing framework
+     */
     private void shutDown() {
         Runtime.getRuntime ().addShutdownHook ( new Thread () {
             @Override
