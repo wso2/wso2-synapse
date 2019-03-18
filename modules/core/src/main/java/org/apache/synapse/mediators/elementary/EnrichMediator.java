@@ -125,13 +125,6 @@ public class EnrichMediator extends AbstractMediator {
             }
         }
 
-        //If enrich mediator modifies JSON payload update JSON stream in the axis2MessageContext
-        org.apache.axis2.context.MessageContext axis2MsgCtx =
-                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-        if (JsonUtil.hasAJsonPayload(axis2MsgCtx)) {
-            JsonUtil.setJsonStream(axis2MsgCtx,
-                                   JsonUtil.toJsonStream(axis2MsgCtx.getEnvelope().getBody().getFirstElement()));
-        }
         synLog.traceOrDebug("End : Enrich mediator");
         return true;
     }
