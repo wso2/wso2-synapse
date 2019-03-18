@@ -359,7 +359,7 @@ public class Target {
         SynapseJsonPath sourceJsonPath = null;
         if (xpath != null) {
             sourceJsonPath = (SynapseJsonPath) this.xpath;
-            jsonPath = sourceJsonPath.getJsonPath().getPath();
+            jsonPath = sourceJsonPath.getJsonPathExpression();
         }
 
         switch (targetType) {
