@@ -28,34 +28,21 @@ import org.apache.synapse.unittest.data.holders.TestCaseData;
 import java.util.Iterator;
 import javax.xml.namespace.QName;
 
-import static org.apache.synapse.unittest.Constants.ARTIFACT;
-import static org.apache.synapse.unittest.Constants.ARTIFACT_NAME_ATTRIBUTE;
-import static org.apache.synapse.unittest.Constants.EXPECTED_PAYLOAD;
-import static org.apache.synapse.unittest.Constants.EXPECTED_PROPERTY_VALUES;
-import static org.apache.synapse.unittest.Constants.INPUT_XML_PAYLOAD;
-import static org.apache.synapse.unittest.Constants.MOCK_SERVICES;
-import static org.apache.synapse.unittest.Constants.SERVICE_HOST;
-import static org.apache.synapse.unittest.Constants.SERVICE_NAME;
-import static org.apache.synapse.unittest.Constants.SERVICE_PATH;
-import static org.apache.synapse.unittest.Constants.SERVICE_PAYLOAD;
-import static org.apache.synapse.unittest.Constants.SERVICE_PORT;
-import static org.apache.synapse.unittest.Constants.SERVICE_RESPONSE;
-import static org.apache.synapse.unittest.Constants.SERVICE_TYPE;
-import static org.apache.synapse.unittest.Constants.TEST_CASES;
+import static org.apache.synapse.unittest.Constants.*;
 
 /**
  * descriptor data read class in unit test framework.
  */
-class DescriptorDataReader {
+class SynapseTestcaseDataReader {
 
-    private static Logger logger = Logger.getLogger(DescriptorDataReader.class.getName());
+    private static Logger logger = Logger.getLogger(SynapseTestcaseDataReader.class.getName());
     private OMElement importXMLFile = null;
 
     /**
-     * Constructor of the DescriptorDataReader class.
+     * Constructor of the SynapseTestcaseDataReader class.
      * @param descriptorData defines the descriptor data of the received message
      */
-    DescriptorDataReader(String descriptorData) {
+    SynapseTestcaseDataReader(String descriptorData) {
         try {
             this.importXMLFile = AXIOMUtil.stringToOM(descriptorData);
 
@@ -118,20 +105,24 @@ class DescriptorDataReader {
                 testCasesCount++;
 
                 //Read input-xml-payload child attribute from test-case node
-                QName qualifiedInputXMLPayload = new QName("", INPUT_XML_PAYLOAD, "");
+                QName qualifiedInputXMLPayload = new QName("", INPUT_PAYLOAD, "");
                 OMElement inputXMLPayloadNode = testCaseNode.getFirstChildWithName(qualifiedInputXMLPayload);
                 String inputXMLPayload = inputXMLPayloadNode.getText();
                 testCaseDataHolder.addInputXmlPayload(inputXMLPayload);
 
+                //Read assertion tag from test-case node
+                QName qualifiedAssertion = new QName("", ASSERTION, "");
+                OMElement assertionNode = testCaseNode.getFirstChildWithName(qualifiedAssertion);
+
                 //Read expected-payload child attribute from test-case node
-                QName qualifiedExpectedPayload = new QName("", EXPECTED_PAYLOAD, "");
-                OMElement expectedPayloadNode = testCaseNode.getFirstChildWithName(qualifiedExpectedPayload);
+                QName qualifiedExpectedPayload = new QName("", ASSERT_EXPECTED_PAYLOAD, "");
+                OMElement expectedPayloadNode = assertionNode.getFirstChildWithName(qualifiedExpectedPayload);
                 String expectedPayload = expectedPayloadNode.getText();
                 testCaseDataHolder.addExpectedPayload(expectedPayload);
 
                 //Read expected-property-values child attribute from test-case node
-                QName qualifiedExpectedPropertyValues = new QName("", EXPECTED_PROPERTY_VALUES, "");
-                OMElement expectedPropertyValuesNode = testCaseNode
+                QName qualifiedExpectedPropertyValues = new QName("", ASSERT_EXPECTED_PROPERTIES, "");
+                OMElement expectedPropertyValuesNode = assertionNode
                         .getFirstChildWithName(qualifiedExpectedPropertyValues);
                 String expectedPropertyValues = expectedPropertyValuesNode.getText();
                 testCaseDataHolder.addExpectedPropertyValues(expectedPropertyValues);
@@ -189,7 +180,7 @@ class DescriptorDataReader {
                 mockServiceDataHolder.addServicePort(servicePort);
 
                 //Read service path child attribute from mock service node
-                QName qualifiedServicePath = new QName("", SERVICE_PATH, "");
+                QName qualifiedServicePath = new QName("", SERVICE_CONTEXT, "");
                 OMElement servicePathNode = mockServiceNode.getFirstChildWithName(qualifiedServicePath);
                 String servicePath = servicePathNode.getText();
                 mockServiceDataHolder.addServicePath(servicePath);

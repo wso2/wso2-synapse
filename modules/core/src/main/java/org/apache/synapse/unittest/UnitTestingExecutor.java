@@ -29,17 +29,13 @@ public class UnitTestingExecutor extends Thread {
 
     private static Logger logger = Logger.getLogger(UnitTestingExecutor.class.getName());
     private SynapseConfiguration synapseConfiguration;
-    private static UnitTestingExecutor initializeThread = null;
+    private static UnitTestingExecutor initializeThread = new UnitTestingExecutor();
     private int executingPort;
 
     /**
-     * Initializing initializeThread if it is null.
+     * Return initialized UnitTestingExecutor initializeThread object.
      */
     public static synchronized UnitTestingExecutor getExecuteInstance() {
-
-        if (initializeThread == null) {
-            initializeThread = new UnitTestingExecutor();
-        }
 
         return initializeThread;
     }
@@ -74,6 +70,8 @@ public class UnitTestingExecutor extends Thread {
 
     /**
      * set the current SynapseConfiguration.
+     *
+     * @param synapseConfiguration synapse configuration
      */
     public void setSynapseConfiguration(SynapseConfiguration synapseConfiguration) {
 

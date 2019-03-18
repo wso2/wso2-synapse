@@ -73,7 +73,7 @@ class ConfigModifier {
      * @param mockServiceData mock service data received from descriptor data
      * @return modified artifact data with mock urls
      */
-    static String endPointModifier(String artifact, MockServiceData mockServiceData) {
+    static String  endPointModifier(String artifact, MockServiceData mockServiceData) {
         ArrayList<Integer> mockServicePorts = new ArrayList<>();
         String updatedArtifact = artifact;
 

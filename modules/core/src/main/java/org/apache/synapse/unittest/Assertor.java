@@ -48,7 +48,14 @@ class Assertor {
      */
     static boolean doAssertionSequence(String expectedPayload, String expectedPropertyValues,
                                               MessageContext mediateMsgCtxt, int testCaseNumber) {
-        JSONObject expectedPropertyValueJSON = new JSONObject(expectedPropertyValues);
+
+        JSONObject expectedPropertyValueJSON;
+
+        if (!expectedPropertyValues.isEmpty()) {
+            expectedPropertyValueJSON = new JSONObject(expectedPropertyValues);
+        } else {
+            expectedPropertyValueJSON = new JSONObject();
+        }
 
         boolean assertProperty = (trimStrings(expectedPropertyValueJSON.toString())
                 .equals(trimStrings(generatePropertyValues(mediateMsgCtxt))));

@@ -226,20 +226,24 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      * this method is to set the unit test mode is enabled
      * unit test message context and environment initializes
      */
-    public void setSeverUnitTestMode(ServerContextInformation contextInformation) {
-        if(Boolean.parseBoolean(System.getenv("UNIT_TEST")) ){
+    private void setSeverUnitTestMode(ServerContextInformation contextInformation) {
+        if (Boolean.parseBoolean(System.getenv("UNIT_TEST"))) {
             setUnitTestEnabled(true);
             contextInformation.setServerUnitTestModeEnabled(true);
             log.info("Synapse unit testing enabled");
 
             //get unit test received port
             String requestPort = System.getenv("UNIT_TEST_PORT");
-            if (requestPort.equals("")) {
-                //as a default value
-                requestPort = "7777";
-            }
 
-            int unitTestingAgentPort = Integer.parseInt(requestPort);
+            //set default port for TCP server connection
+            int unitTestingAgentPort = 9007;
+            if (!requestPort.isEmpty()) {
+                try {
+                    unitTestingAgentPort = Integer.parseInt(requestPort);
+                } catch (NumberFormatException e) {
+                    log.error("Given port is not in valid format", e);
+                }
+            }
 
             //execute synapse unit testing executor
             UnitTestingExecutor testExecutor = UnitTestingExecutor.getExecuteInstance();

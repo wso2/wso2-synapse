@@ -37,14 +37,15 @@ public class Constants {
 
     static final String TEST_CASES = "test-cases";
     static final String TEST_CASES_COUNT = "test-cases-count";
-    static final String INPUT_XML_PAYLOAD = "input-xml-payload";
-    static final String EXPECTED_PROPERTY_VALUES = "expected-property-values";
-    static final String EXPECTED_PAYLOAD = "expected-payload";
+    static final String INPUT_PAYLOAD = "input-payload";
+    static final String ASSERTION = "assertion";
+    static final String ASSERT_EXPECTED_PROPERTIES = "expected-properties";
+    static final String ASSERT_EXPECTED_PAYLOAD = "expected-payload";
 
     static final String SERVICE_NAME = "service-name";
     static final String SERVICE_HOST = "mock-service-host";
     static final String SERVICE_PORT = "mock-service-port";
-    static final String SERVICE_PATH = "mock-service-path";
+    static final String SERVICE_CONTEXT = "mock-service-context";
     static final String SERVICE_PAYLOAD = "mock-service-payload";
     static final String SERVICE_TYPE = "mock-service-type";
     static final String SERVICE_RESPONSE = "mock-service-expected-response";

@@ -56,7 +56,15 @@ public class RequestHandler implements Runnable {
     public void run() {
         try {
             String receivedData = readData();
-            runTestingAgent(preProcessingData(receivedData));
+            JSONObject preProcessedMessage = preProcessingData(receivedData);
+
+            if (preProcessedMessage != null) {
+                runTestingAgent(preProcessedMessage);
+            } else {
+                logger.error("Reading Synapse testcase data failed");
+                responseToClient = new JSONObject("{'test-case':'failed'}");
+            }
+
             writeData(responseToClient);
             MockServiceCreator.stopServices();
 
@@ -92,36 +100,33 @@ public class RequestHandler implements Runnable {
      * Construct JSON deployable mesage for synapse unit testing
      * Uses configModifier if there are some mock services to start
      *
-     * @param receivedMessage received descriptor data message as String
+     * @param receivedMessage received synapseTestcase data message as String
      * @return processed deployable JSON message
      */
     private JSONObject preProcessingData(String receivedMessage) {
 
-        DescriptorDataReader descriptorDataReader;
-        ArtifactData readArtifactData = null;
-        TestCaseData readTestCaseData = null;
-        MockServiceData readMockServiceData = null;
+        //create synapseTestcase data as pre-processed JSON
+        MessageConstructor deployableMessage = new MessageConstructor();
+        SynapseTestcaseDataReader synapseTestcaseDataReader;
 
         try {
-            descriptorDataReader = new DescriptorDataReader(receivedMessage);
-            readArtifactData = descriptorDataReader.readArtifactData();
-            readTestCaseData = descriptorDataReader.readTestCaseData();
-            readMockServiceData = descriptorDataReader.readMockServiceData();
+            synapseTestcaseDataReader = new SynapseTestcaseDataReader(receivedMessage);
+            ArtifactData readArtifactData = synapseTestcaseDataReader.readArtifactData();
+            TestCaseData readTestCaseData = synapseTestcaseDataReader.readTestCaseData();
+            MockServiceData readMockServiceData = synapseTestcaseDataReader.readMockServiceData();
+
+            return  deployableMessage.generateDeployableMessage(readArtifactData, readTestCaseData, readMockServiceData);
 
         } catch (Exception e) {
             logger.error("Error while reading data from received message", e);
+            return null;
         }
-
-        //create descriptor data as pre-processed JSON
-        MessageConstructor deployableMessage = new MessageConstructor();
-
-        return  deployableMessage.generateDeployableMessage(readArtifactData, readTestCaseData, readMockServiceData);
     }
 
     /**
      * Execute test agent for artifact deployment and mediation using receiving JSON message.
      *
-     * @param processedMessage pre processed descriptor data as a JSON
+     * @param processedMessage pre processed synapseTestcase data as a JSON
      */
     private void runTestingAgent(JSONObject processedMessage) {
 

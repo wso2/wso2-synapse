@@ -28,9 +28,9 @@ import org.json.JSONObject;
 import static org.apache.synapse.unittest.Constants.ARTIFACT;
 import static org.apache.synapse.unittest.Constants.ARTIFACT_NAME;
 import static org.apache.synapse.unittest.Constants.ARTIFACT_TYPE;
-import static org.apache.synapse.unittest.Constants.EXPECTED_PAYLOAD;
-import static org.apache.synapse.unittest.Constants.EXPECTED_PROPERTY_VALUES;
-import static org.apache.synapse.unittest.Constants.INPUT_XML_PAYLOAD;
+import static org.apache.synapse.unittest.Constants.ASSERT_EXPECTED_PAYLOAD;
+import static org.apache.synapse.unittest.Constants.ASSERT_EXPECTED_PROPERTIES;
+import static org.apache.synapse.unittest.Constants.INPUT_PAYLOAD;
 
 
 /**
@@ -80,10 +80,10 @@ class MessageConstructor {
                 JSONConstructor jsonTestCaseDataHolder = new JSONConstructor();
                 jsonTestCaseDataHolder.initialize();
 
-                jsonTestCaseDataHolder.setAttribute(INPUT_XML_PAYLOAD, testCaseDataHolder.getInputXmlPayload(i));
-                jsonTestCaseDataHolder.setAttribute(EXPECTED_PROPERTY_VALUES,
+                jsonTestCaseDataHolder.setAttribute(INPUT_PAYLOAD, testCaseDataHolder.getInputXmlPayload(i));
+                jsonTestCaseDataHolder.setAttribute(ASSERT_EXPECTED_PROPERTIES,
                         testCaseDataHolder.getExpectedPropertyValues(i));
-                jsonTestCaseDataHolder.setAttribute(EXPECTED_PAYLOAD, testCaseDataHolder.getExpectedPayload(i));
+                jsonTestCaseDataHolder.setAttribute(ASSERT_EXPECTED_PAYLOAD, testCaseDataHolder.getExpectedPayload(i));
 
                 //Add test-case attributes to JSON array
                 jsonTestCaseDataHolderArray.setAttributeForArray(jsonTestCaseDataHolder.getJSONDataHolder());
