@@ -221,7 +221,9 @@ public class JDBCMessageStore extends AbstractMessageStore {
             } catch (ClassNotFoundException e) {
                 throw new SynapseException("Could not find the class", e);
             } finally {
-                closeStream(ios);
+                if (ios != null) {
+                    closeStream(ios);
+                }
             }
         } else {
             throw new SynapseException("Retrieved Object is null");

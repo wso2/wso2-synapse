@@ -18,6 +18,8 @@
  */
 package org.apache.synapse.mediators.elementary;
 
+import com.google.gson.JsonElement;
+import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axis2.AxisFault;
 import org.apache.synapse.MessageContext;
@@ -113,6 +115,13 @@ public class EnrichMediator extends AbstractMediator {
                 }
             } catch (JaxenException e) {
                 handleException("Failed to get the source for Enriching", e, synCtx);
+            }
+            //Adding this part for backward-compatibility where xpath is used with json payload
+            org.apache.axis2.context.MessageContext axis2MsgCtx = ((Axis2MessageContext) synCtx)
+                    .getAxis2MessageContext();
+            if (hasJSONPayload) {
+                JsonUtil.setJsonStream(axis2MsgCtx,
+                        JsonUtil.toJsonStream(axis2MsgCtx.getEnvelope().getBody().getFirstElement()));
             }
         }
 

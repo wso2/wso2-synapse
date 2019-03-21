@@ -469,18 +469,8 @@ public class MessageHelper {
         newMC.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
             getClonedTransportHeaders(mc));
 
-        if(newMC.getProperty(PassThroughConstants.PASS_THROUGH_PIPE) != null){
-        	//clone passthrough pipe here..writer...
-        	//newMC.setProperty(PassThroughConstants.CLONE_PASS_THROUGH_PIPE_REQUEST,true);
-        	 NHttpServerConnection conn = (NHttpServerConnection) newMC.getProperty("pass-through.Source-Connection");
-        	 if(conn != null){
-        		  SourceConfiguration sourceConfiguration = (SourceConfiguration) newMC.getProperty(
-                          "PASS_THROUGH_SOURCE_CONFIGURATION");
-        		  Pipe pipe = new Pipe(conn, sourceConfiguration.getBufferFactory().getBuffer(), "source", sourceConfiguration);
-        		  newMC.setProperty(PassThroughConstants.PASS_THROUGH_PIPE,pipe);
-        	 } else {
-        		   newMC.removeProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-        	 }
+        if (newMC.getProperty(PassThroughConstants.PASS_THROUGH_PIPE) != null) {
+            newMC.removeProperty(PassThroughConstants.PASS_THROUGH_PIPE);
         }
 
         return newMC;

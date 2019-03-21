@@ -27,6 +27,7 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.mediators.eip.splitter.IterateMediator;
 import org.apache.synapse.mediators.eip.Target;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
@@ -68,6 +69,9 @@ public class IterateMediatorFactory extends AbstractMediatorFactory {
     private static final QName ID_Q
             = new QName(XMLConfigConstants.NULL_NAMESPACE, "id");
 
+    private static final String DEFAULT_JSON_ATTACHPATH = "$";
+    private static final String DEFAULT_XML_ATTACHPATH = ".";
+
     /**
      * This method will create the IterateMediator by parsing the given xml configuration
      *
@@ -100,7 +104,7 @@ public class IterateMediatorFactory extends AbstractMediatorFactory {
         OMAttribute expression = elem.getAttribute(ATT_EXPRN);
         if (expression != null) {
             try {
-                mediator.setExpression(SynapseXPathFactory.getSynapseXPath(elem, ATT_EXPRN));
+                mediator.setExpression(SynapsePathFactory.getSynapsePath(elem, ATT_EXPRN));
             } catch (JaxenException e) {
                 handleException("Unable to build the IterateMediator. " + "Invalid XPATH " +
                     expression.getAttributeValue(), e);
@@ -111,21 +115,41 @@ public class IterateMediatorFactory extends AbstractMediatorFactory {
         }
 
         OMAttribute attachPath = elem.getAttribute(ATT_ATTACHPATH);
-        String attachPathValue = ".";
+
         if (attachPath != null && !mediator.isPreservePayload()) {
             handleException("Wrong configuration for the iterate mediator :: if the iterator " +
                 "should not preserve payload, then attachPath can not be present");
-        } else if (attachPath != null) {
-            attachPathValue = attachPath.getAttributeValue();
         }
-        
+
         try {
-            SynapseXPath xp = new SynapseXPath(attachPathValue);
-            OMElementUtils.addNameSpaces(xp, elem, log);
-            mediator.setAttachPath(xp);
+            SynapsePath attachSynapsePath;
+
+            if (attachPath != null) {
+                attachSynapsePath = SynapsePathFactory.getSynapsePath(elem, ATT_ATTACHPATH);
+                mediator.setAttachPathPresent(true);
+
+                if (mediator.getExpression().getClass() != attachSynapsePath.getClass()) {
+                    handleException("Wrong configuraton for the iterate mediator :: both expression and " +
+                            "attachPath should be either jsonpath or xpath");
+                }
+
+            } else {
+
+                if (mediator.getExpression() instanceof  SynapseJsonPath){
+                    attachSynapsePath = new SynapseJsonPath(DEFAULT_JSON_ATTACHPATH);
+                } else {
+                    attachSynapsePath = new SynapseXPath(DEFAULT_XML_ATTACHPATH);
+                }
+
+                mediator.setAttachPathPresent(false);
+            }
+
+            OMElementUtils.addNameSpaces(attachSynapsePath, elem, log);
+            mediator.setAttachPath(attachSynapsePath);
+
         } catch (JaxenException e) {
-            handleException("Unable to build the IterateMediator. Invalid XPATH " +
-                attachPathValue, e);
+            handleException("Unable to build the IterateMediator. Invalid PATH " +
+                attachPath.getAttributeValue(), e);
         }
 
         boolean asynchronous = true;
