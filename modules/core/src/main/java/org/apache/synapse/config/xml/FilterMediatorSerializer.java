@@ -102,6 +102,8 @@ public class FilterMediatorSerializer extends AbstractListMediatorSerializer {
             serializeChildren(filter, mediator.getList());
         }
 
+        serializeComments(filter, mediator.getCommentsList());
+
         return filter;
     }
 

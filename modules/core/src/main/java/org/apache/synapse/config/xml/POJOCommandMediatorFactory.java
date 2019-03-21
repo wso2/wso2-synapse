@@ -105,6 +105,8 @@ public class POJOCommandMediatorFactory extends AbstractMediatorFactory {
             }
         }
 
+        addAllCommentChildrenToList(elem, pojoMediator.getCommentsList());
+
         return pojoMediator;
     }
 

@@ -121,6 +121,8 @@ public class XSLTMediatorFactory extends AbstractMediatorFactory {
 
         transformMediator.setResourceMap(ResourceMapFactory.createResourceMap(elem));
 
+        addAllCommentChildrenToList(elem, transformMediator.getCommentsList());
+
         return transformMediator;
     }
 }

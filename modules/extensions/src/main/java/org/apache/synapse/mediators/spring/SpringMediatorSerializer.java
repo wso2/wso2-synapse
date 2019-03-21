@@ -58,6 +58,8 @@ public class SpringMediatorSerializer extends AbstractMediatorSerializer {
 
         // TODO add support for src attribute - or replace with a reg key!
 
+        serializeComments(spring, mediator.getCommentsList());
+
         return spring;
     }
 

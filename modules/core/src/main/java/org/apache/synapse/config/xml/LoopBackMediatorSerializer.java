@@ -37,6 +37,8 @@ public class LoopBackMediatorSerializer extends AbstractMediatorSerializer {
         OMElement loopBack = fac.createOMElement("loopback", synNS);
         saveTracingState(loopBack, mediator);
 
+        serializeComments(loopBack, mediator.getCommentsList());
+
         return loopBack;
     }
 

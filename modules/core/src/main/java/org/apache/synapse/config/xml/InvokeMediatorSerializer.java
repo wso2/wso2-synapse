@@ -72,6 +72,8 @@ public class InvokeMediatorSerializer extends AbstractMediatorSerializer{
             saveTracingState(invokeElem, mediator);
         }
 
+        serializeComments(invokeElem, mediator.getCommentsList());
+
         return invokeElem;
     }
 

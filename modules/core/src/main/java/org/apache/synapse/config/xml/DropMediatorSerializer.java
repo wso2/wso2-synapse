@@ -40,6 +40,8 @@ public class DropMediatorSerializer extends AbstractMediatorSerializer {
         OMElement drop = fac.createOMElement("drop", synNS);
         saveTracingState(drop, mediator);
 
+        serializeComments(drop, mediator.getCommentsList());
+
         return drop;
     }
 

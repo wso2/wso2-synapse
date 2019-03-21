@@ -84,6 +84,9 @@ public class HeaderMediatorSerializer extends AbstractMediatorSerializer {
                 header.addChild(e);
             }
         }
+
+        serializeComments(header, mediator.getCommentsList());
+
         return header;
     }
 

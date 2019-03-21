@@ -40,6 +40,7 @@ public class DBLookupMediatorSerializer extends AbstractDBMediatorSerializer {
         OMElement dbLookup = fac.createOMElement("dblookup", synNS);
         saveTracingState(dbLookup,mediator);
         serializeDBInformation(mediator, dbLookup);
+        serializeComments(dbLookup, mediator.getCommentsList());
 
         return dbLookup;
     }

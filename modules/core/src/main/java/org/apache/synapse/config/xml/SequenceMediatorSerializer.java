@@ -47,6 +47,9 @@ public class SequenceMediatorSerializer extends AbstractListMediatorSerializer {
         if (parent != null) {
             parent.addChild(sequence);
         }
+
+        serializeComments(sequence, mediator.getCommentsList());
+
         return sequence;
     }
 

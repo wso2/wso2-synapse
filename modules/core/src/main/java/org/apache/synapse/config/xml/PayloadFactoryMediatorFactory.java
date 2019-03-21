@@ -153,6 +153,8 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
             }
         }
 
+        addAllCommentChildrenToList(elem, payloadFactoryMediator.getCommentsList());
+
         return payloadFactoryMediator;
     }
 

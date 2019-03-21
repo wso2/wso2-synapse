@@ -59,6 +59,8 @@ public class EnqueueMediatorFactory extends AbstractMediatorFactory{
             handleException("Queue is a required attribue");
         }
 
+        addAllCommentChildrenToList(elem, mediator.getCommentsList());
+
         return mediator;
     }
 

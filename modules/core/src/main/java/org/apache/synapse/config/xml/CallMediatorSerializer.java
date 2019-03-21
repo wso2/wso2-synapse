@@ -59,6 +59,8 @@ public class CallMediatorSerializer extends AbstractMediatorSerializer {
             }
         }
 
+        serializeComments(call, mediator.getCommentsList());
+
         return call;
     }
 

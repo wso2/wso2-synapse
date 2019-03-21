@@ -64,6 +64,8 @@ public class TransactionMediatorFactory extends AbstractMediatorFactory {
             processAuditStatus(tm, elem);
             tm.setAction(action.getAttributeValue());
 
+            addAllCommentChildrenToList(elem, tm.getCommentsList());
+
             return tm;
         }
 

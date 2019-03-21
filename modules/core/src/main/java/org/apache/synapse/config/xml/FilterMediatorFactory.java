@@ -160,6 +160,8 @@ public class FilterMediatorFactory extends AbstractListMediatorFactory {
             addChildren(elem, filter, properties);
         }
 
+        addAllCommentChildrenToList(elem, filter.getCommentsList());
+
         return filter;
     }
 

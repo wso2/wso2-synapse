@@ -100,6 +100,9 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
                 handleException("Sequence cannot contain Call, Send or CallOut mediators");
             }
         }
+
+        addAllCommentChildrenToList(elem, mediator.getCommentsList());
+
         return mediator;
     }
 

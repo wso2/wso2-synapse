@@ -51,6 +51,8 @@ public class EnqueueMediatorSerializer extends AbstractMediatorSerializer{
         enqueue.addAttribute(fac.createOMAttribute(
                 "priority", nullNS, mediator.getPriority() + ""));
 
+        serializeComments(enqueue, mediator.getCommentsList());
+
         return enqueue;
     }
 

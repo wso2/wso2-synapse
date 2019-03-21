@@ -146,6 +146,8 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
         // set its common attributes such as tracing etc
         processAuditStatus(propMediator, elem);
 
+        addAllCommentChildrenToList(elem, propMediator.getCommentsList());
+
         return propMediator;
     }
 

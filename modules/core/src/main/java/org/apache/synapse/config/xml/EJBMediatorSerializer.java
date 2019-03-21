@@ -100,6 +100,8 @@ public class EJBMediatorSerializer extends AbstractMediatorSerializer {
             mediatorElem.addChild(argumentsElem);
         }
 
+        serializeComments(mediatorElem, mediator.getCommentsList());
+
         return mediatorElem;
     }
 

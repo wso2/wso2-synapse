@@ -55,6 +55,8 @@ public class EnrichMediatorSerializer extends AbstractMediatorSerializer {
 
         setJsonPathConfiguration();
 
+        serializeComments(enrichEle, mediator.getCommentsList());
+
         return enrichEle;
     }
 

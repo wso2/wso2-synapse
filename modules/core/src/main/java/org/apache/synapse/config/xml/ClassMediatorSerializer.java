@@ -53,6 +53,8 @@ public class ClassMediatorSerializer extends AbstractMediatorSerializer  {
 
         super.serializeProperties(clazz, mediator.getProperties());
 
+        serializeComments(clazz, mediator.getCommentsList());
+
         return clazz;
     }
 

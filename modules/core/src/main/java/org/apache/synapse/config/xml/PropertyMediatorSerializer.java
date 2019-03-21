@@ -86,6 +86,8 @@ public class PropertyMediatorSerializer extends AbstractMediatorSerializer {
             }
         }
 
+        serializeComments(property, mediator.getCommentsList());
+
         return property;
     }
 

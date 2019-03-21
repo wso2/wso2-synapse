@@ -109,6 +109,9 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         boolean condition4 = (sourceHasACustomJsonPath && targetHasACustomJsonPath);
 
         enrich.setNativeJsonSupportEnabled(condition1 || condition2 || condition3 || condition4);
+
+        addAllCommentChildrenToList(elem, enrich.getCommentsList());
+
         return enrich;
     }
 

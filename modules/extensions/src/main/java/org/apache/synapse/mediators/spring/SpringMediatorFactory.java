@@ -65,6 +65,8 @@ public class SpringMediatorFactory extends AbstractMediatorFactory {
             processAuditStatus(sm,elem);
             sm.setBeanName(bean.getAttributeValue());
             sm.setConfigKey(key.getAttributeValue());
+
+            addAllCommentChildrenToList(elem, sm.getCommentsList());
             return sm;
         }
         return null;

@@ -124,6 +124,8 @@ public class FaultMediatorSerializer extends AbstractMediatorSerializer {
             }
         }
 
+        serializeComments(fault, mediator.getCommentsList());
+
         return fault;
     }
 

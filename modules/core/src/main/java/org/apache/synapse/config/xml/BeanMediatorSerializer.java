@@ -68,6 +68,8 @@ public class BeanMediatorSerializer extends AbstractMediatorSerializer {
                 assert false;
         }
 
+        serializeComments(mediatorElem, mediator.getCommentsList());
+
         return mediatorElem;
     }
 

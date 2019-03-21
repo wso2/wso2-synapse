@@ -184,6 +184,8 @@ public class XQueryMediatorSerializer extends AbstractMediatorSerializer {
             }
         }
 
+        serializeComments(xquery, queryMediator.getCommentsList());
+
         return xquery;
     }
 

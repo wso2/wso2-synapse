@@ -75,6 +75,9 @@ public class CloneMediatorSerializer extends AbstractMediatorSerializer {
                 cloneElem.addChild(TargetSerializer.serializeTarget((Target) o));
             }
         }
+
+        serializeComments(cloneElem, clone.getCommentsList());
+
         return cloneElem;
     }
 

@@ -45,6 +45,8 @@ public class DropMediatorFactory extends AbstractMediatorFactory  {
         // set its common attributes such as tracing etc
         processAuditStatus(dropMediator,el);
 
+        addAllCommentChildrenToList(el, ((DropMediator) dropMediator).getCommentsList());
+
         return dropMediator;
     }
 
