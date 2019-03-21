@@ -41,7 +41,7 @@ import static org.apache.synapse.unittest.Constants.INPUT_PAYLOAD;
 class MessageConstructor {
 
     private static Logger logger = Logger.getLogger(MessageDecoder.class.getName());
-
+    private MessageConstructor(){}
     /**
      * Read artifact data from the artifactDataHolder.
      * Append artifact data into the JSON object
@@ -49,7 +49,7 @@ class MessageConstructor {
      * @param artifactDataHolder object of ArtifactData which contains artifact data read from descriptor data
      * @return JSONObject which is ready to deploy via TCP server
      */
-     JSONObject generateDeployableMessage(ArtifactData artifactDataHolder, TestCaseData testCaseDataHolder,
+     static JSONObject generateDeployableMessage(ArtifactData artifactDataHolder, TestCaseData testCaseDataHolder,
                                             MockServiceData mockServiceData) {
 
         JSONConstructor jsonDataHolder = new JSONConstructor();
@@ -63,38 +63,43 @@ class MessageConstructor {
             configuredArtifact = artifactDataHolder.getArtifact();
         }
 
-        try {
-            jsonDataHolder.initialize();
+        if (configuredArtifact != null) {
+            try {
+                jsonDataHolder.initialize();
 
-            //Add artifact data from data holder to json object
-            jsonDataHolder.setAttribute(ARTIFACT , configuredArtifact);
-            jsonDataHolder.setAttribute(ARTIFACT_TYPE , artifactDataHolder.getArtifactType());
-            jsonDataHolder.setAttribute(ARTIFACT_NAME , artifactDataHolder.getArtifactName());
-            jsonDataHolder.setAttribute(testCaseDataHolder.getTestCaseCount());
+                //Add artifact data from data holder to json object
+                jsonDataHolder.setAttribute(ARTIFACT , configuredArtifact);
+                jsonDataHolder.setAttribute(ARTIFACT_TYPE , artifactDataHolder.getArtifactType());
+                jsonDataHolder.setAttribute(ARTIFACT_NAME , artifactDataHolder.getArtifactName());
+                jsonDataHolder.setAttribute(testCaseDataHolder.getTestCaseCount());
 
-            //Add  test-case data from data holder to json object
-            JSONConstructor jsonTestCaseDataHolderArray = new JSONConstructor();
-            jsonTestCaseDataHolderArray.initializeArray();
+                //Add  test-case data from data holder to json object
+                JSONConstructor jsonTestCaseDataHolderArray = new JSONConstructor();
+                jsonTestCaseDataHolderArray.initializeArray();
 
-            for (int i = 0; i < testCaseDataHolder.getTestCaseCount(); i++) {
-                JSONConstructor jsonTestCaseDataHolder = new JSONConstructor();
-                jsonTestCaseDataHolder.initialize();
+                for (int i = 0; i < testCaseDataHolder.getTestCaseCount(); i++) {
+                    JSONConstructor jsonTestCaseDataHolder = new JSONConstructor();
+                    jsonTestCaseDataHolder.initialize();
 
-                jsonTestCaseDataHolder.setAttribute(INPUT_PAYLOAD, testCaseDataHolder.getInputXmlPayload(i));
-                jsonTestCaseDataHolder.setAttribute(ASSERT_EXPECTED_PROPERTIES,
-                        testCaseDataHolder.getExpectedPropertyValues(i));
-                jsonTestCaseDataHolder.setAttribute(ASSERT_EXPECTED_PAYLOAD, testCaseDataHolder.getExpectedPayload(i));
+                    jsonTestCaseDataHolder.setAttribute(INPUT_PAYLOAD, testCaseDataHolder.getInputXmlPayload(i));
+                    jsonTestCaseDataHolder.setAttribute(ASSERT_EXPECTED_PROPERTIES,
+                            testCaseDataHolder.getExpectedPropertyValues(i));
+                    jsonTestCaseDataHolder.setAttribute(ASSERT_EXPECTED_PAYLOAD, testCaseDataHolder.getExpectedPayload(i));
 
-                //Add test-case attributes to JSON array
-                jsonTestCaseDataHolderArray.setAttributeForArray(jsonTestCaseDataHolder.getJSONDataHolder());
+                    //Add test-case attributes to JSON array
+                    jsonTestCaseDataHolderArray.setAttributeForArray(jsonTestCaseDataHolder.getJSONDataHolder());
+                }
+
+                jsonDataHolder.setAttribute(jsonTestCaseDataHolderArray.getJSONArrayDataHolder());
+
+                logger.info("Deployable JSON artifact data object created");
+
+            } catch (Exception e) {
+                logger.error(e);
             }
 
-            jsonDataHolder.setAttribute(jsonTestCaseDataHolderArray.getJSONArrayDataHolder());
-
-            logger.info("Deployable JSON artifact data object created");
-
-        } catch (Exception e) {
-            logger.error(e);
+        } else {
+            return null;
         }
 
         return jsonDataHolder.getJSONDataHolder();

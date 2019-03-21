@@ -75,7 +75,7 @@ class ConfigModifier {
      */
     static String  endPointModifier(String artifact, MockServiceData mockServiceData) {
         ArrayList<Integer> mockServicePorts = new ArrayList<>();
-        String updatedArtifact = artifact;
+        String updatedArtifact;
 
         try {
             DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
@@ -149,6 +149,7 @@ class ConfigModifier {
 
         } catch (Exception e) {
             logger.error(e);
+            return null;
         }
 
         return updatedArtifact;

@@ -106,7 +106,6 @@ public class RequestHandler implements Runnable {
     private JSONObject preProcessingData(String receivedMessage) {
 
         //create synapseTestcase data as pre-processed JSON
-        MessageConstructor deployableMessage = new MessageConstructor();
         SynapseTestcaseDataReader synapseTestcaseDataReader;
 
         try {
@@ -115,7 +114,7 @@ public class RequestHandler implements Runnable {
             TestCaseData readTestCaseData = synapseTestcaseDataReader.readTestCaseData();
             MockServiceData readMockServiceData = synapseTestcaseDataReader.readMockServiceData();
 
-            return  deployableMessage.generateDeployableMessage(readArtifactData, readTestCaseData, readMockServiceData);
+            return  MessageConstructor.generateDeployableMessage(readArtifactData, readTestCaseData, readMockServiceData);
 
         } catch (Exception e) {
             logger.error("Error while reading data from received message", e);

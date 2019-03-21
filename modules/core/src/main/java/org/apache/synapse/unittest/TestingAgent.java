@@ -45,6 +45,7 @@ class TestingAgent {
     private String context = null;
     private String resourceMethod = null;
     private String exception = null;
+    private ArrayList<Boolean> testCasesResult = new ArrayList<>();
 
     /**
      * Check artifact type and pass the artifact data to the relevant deployment mechanism.
@@ -169,13 +170,16 @@ class TestingAgent {
                         break;
                 }
                 resultOfTestCases.put("test-case " + (i + 1), isAssert);
+                testCasesResult.add(isAssert);
             }
         } catch (Exception e) {
             logger.error("Error occurred while running test cases", e);
             exception = e.toString();
         }
 
-        return new Pair<>(resultOfTestCases, exception);
+        //check all test cases are success
+
+        return new Pair<>(checkAllTestCasesCorrect(resultOfTestCases), exception);
     }
 
     /**
@@ -245,4 +249,29 @@ class TestingAgent {
         return isAssert;
     }
 
+    /**
+     * Check all the test cases are run correctly as expected.
+     *
+     * @param currentAllTestCaseResult test cases results
+     * @return sucess message as a JSON
+     */
+    private JSONObject checkAllTestCasesCorrect(JSONObject currentAllTestCaseResult) {
+        boolean isAllSuccess = true;
+        JSONObject resultOfTestCases;
+
+        for (boolean testCase : testCasesResult) {
+            if (!testCase) {
+                isAllSuccess = false;
+                break;
+            }
+        }
+
+        if (isAllSuccess) {
+            resultOfTestCases = new JSONObject("{'test-cases':'SUCCESS'}");
+        } else {
+            resultOfTestCases = currentAllTestCaseResult;
+        }
+
+        return resultOfTestCases;
+    }
 }
