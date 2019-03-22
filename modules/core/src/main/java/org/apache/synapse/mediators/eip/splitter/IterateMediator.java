@@ -128,6 +128,9 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
             }
         }
 
+        synCtx.setProperty(id != null ? EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id :
+                EIPConstants.EIP_SHARED_DATA_HOLDER, new SharedDataHolder());
+
         try {
 
             // check whether expression contains jsonpath or xpath and process according to it
@@ -205,9 +208,6 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
                 // this original message can go in further mediations and hence we should not change
                 // the original message context
                 SOAPEnvelope envelope = MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
-
-                synCtx.setProperty(id != null ? EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id :
-                        EIPConstants.EIP_SHARED_DATA_HOLDER, new SharedDataHolder());
 
                 // get the iteration elements and iterate through the list,
                 // this call will also detach all the iteration elements
