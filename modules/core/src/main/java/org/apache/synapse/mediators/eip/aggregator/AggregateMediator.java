@@ -532,7 +532,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             
             if (newCtx == null) {
                 try {
-                    newCtx = MessageHelper.cloneMessageContextForAggregateMediator(synCtx);
+                    newCtx = MessageHelper.cloneMessageContext(synCtx, true, false, true);
                 } catch (AxisFault axisFault) {
                     handleException(aggregate, "Error creating a copy of the message", axisFault, synCtx);
                 }
