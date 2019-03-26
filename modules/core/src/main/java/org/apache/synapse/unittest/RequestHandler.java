@@ -57,16 +57,16 @@ public class RequestHandler implements Runnable {
         try {
             String receivedData = readData();
             JSONObject preProcessedMessage = preProcessingData(receivedData);
-
-            if (preProcessedMessage != null) {
-                runTestingAgent(preProcessedMessage);
-            } else {
-                logger.error("Reading Synapse testcase data failed");
-                responseToClient = new JSONObject("{'test-case':'failed'}");
-            }
+//
+//            if (preProcessedMessage != null) {
+//                runTestingAgent(preProcessedMessage);
+//            } else {
+//                logger.error("Reading Synapse testcase data failed");
+//                responseToClient = new JSONObject("{'test-case':'failed'}");
+//            }
 
             writeData(responseToClient);
-            MockServiceCreator.stopServices();
+//            MockServiceCreator.stopServices();
 
         } catch (Exception e) {
             logger.error(e);
@@ -111,11 +111,11 @@ public class RequestHandler implements Runnable {
         try {
             synapseTestcaseDataReader = new SynapseTestcaseDataReader(receivedMessage);
             ArtifactData readArtifactData = synapseTestcaseDataReader.readArtifactData();
-            TestCaseData readTestCaseData = synapseTestcaseDataReader.readTestCaseData();
-            MockServiceData readMockServiceData = synapseTestcaseDataReader.readMockServiceData();
-
-            return  MessageConstructor.generateDeployableMessage(readArtifactData, readTestCaseData, readMockServiceData);
-
+//            TestCaseData readTestCaseData = synapseTestcaseDataReader.readTestCaseData();
+//            MockServiceData readMockServiceData = synapseTestcaseDataReader.readMockServiceData();
+//
+//            return  MessageConstructor.generateDeployableMessage(readArtifactData, readTestCaseData, readMockServiceData);
+                return null;
         } catch (Exception e) {
             logger.error("Error while reading data from received message", e);
             return null;

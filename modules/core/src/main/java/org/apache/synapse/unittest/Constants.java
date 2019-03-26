@@ -28,12 +28,19 @@ public class Constants {
     static final String TYPE_SEQUENCE = "sequence";
     static final String TYPE_PROXY = "proxy";
     static final String TYPE_API = "api";
+    static final String TYPE_ENDPOINT = "endpoint";
+    static final String TYPE_LOCAL_ENTRY = "localEntry";
+
     static final String API_CONTEXT = "context";
     static final String RESOURCE_METHODS = "methods";
     static final String ARTIFACT_TYPE = "artifact-type";
     static final String ARTIFACT_NAME_ATTRIBUTE = "name";
+    static final String ARTIFACT_KEY_ATTRIBUTE = "key";
     static final String ARTIFACT_NAME = "artifact-name";
     static final String ARTIFACT = "artifact";
+    static final String TEST_ARTIFACT = "test-artifact";
+    static final String SUPPORTIVE_ARTIFACTS = "supportive-artifacts";
+    static final String ARTIFACTS = "artifacts";
 
     static final String TEST_CASES = "test-cases";
     static final String TEST_CASES_COUNT = "test-cases-count";

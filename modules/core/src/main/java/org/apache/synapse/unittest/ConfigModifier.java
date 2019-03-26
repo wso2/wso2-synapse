@@ -54,7 +54,7 @@ import static org.apache.synapse.unittest.Constants.URI_TEMPLATE;
 import static org.apache.synapse.unittest.Constants.WHITESPACE_REGEX;
 
 
-/**
+/**h
  * Class responsible for modify the artifact data.
  * creates mock services as in descriptor data.
  */
@@ -73,7 +73,7 @@ class ConfigModifier {
      * @param mockServiceData mock service data received from descriptor data
      * @return modified artifact data with mock urls
      */
-    static String  endPointModifier(String artifact, MockServiceData mockServiceData) {
+    static String endPointModifier(String artifact, MockServiceData mockServiceData) {
         ArrayList<Integer> mockServicePorts = new ArrayList<>();
         String updatedArtifact;
 

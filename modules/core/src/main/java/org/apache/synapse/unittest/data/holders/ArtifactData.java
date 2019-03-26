@@ -17,67 +17,131 @@
  */
 package org.apache.synapse.unittest.data.holders;
 
+import java.util.ArrayList;
+
 /**
  * Class responsible for the holding the data of synapse configuration data.
  */
 public class ArtifactData {
 
-    private String artifactType;
-    private String artifact;
-    private String artifactName;
+    //test-artifact data
+    private String testArtifactType;
+    private String testArtifact;
+    private String testArtifactNameOrKey;
+
+    //supportive-artifacts data
+    private ArrayList<String> supportiveArtifact = new ArrayList<>();
+    private ArrayList<String> supportiveArtifactNameOrKey = new ArrayList<>();
+    private ArrayList<String> supportiveArtifactType = new ArrayList<>();
 
     /**
-     * Get artifact type.
+     * Get test-artifact type.
      *
      * @return artifact type in descriptor data
      */
-    public String getArtifactType() {
-        return artifactType;
+    public String getTestArtifactType() {
+        return testArtifactType;
     }
 
     /**
-     * Get artifact name.
+     * Get test-artifact name or key.
      *
      * @return artifact name in descriptor data
      */
-    public String getArtifactName() {
-        return artifactName;
+    public String getTestArtifactNameOrKey() {
+        return testArtifactNameOrKey;
     }
 
     /**
-     * Get artifact.
+     * Get test-artifact.
      *
      * @return artifact in descriptor data
      */
-    public String getArtifact() {
-        return artifact;
+    public String getTestArtifact() {
+        return testArtifact;
     }
 
     /**
-     * Set artifact type.
+     * Set test-artifact type.
      *
      * @param artifactType type of the artifact in descriptor data
      */
-    public void setArtifactType(String artifactType) {
-        this.artifactType = artifactType;
+    public void setTestArtifactType(String artifactType) {
+        this.testArtifactType = artifactType;
     }
 
     /**
-     * Set artifact name.
+     * Set test-artifact name or key.
      *
      * @param artifactName name of the artifact in descriptor data
      */
-    public void setArtifactName(String artifactName) {
-        this.artifactName = artifactName;
+    public void setTestArtifactNameOrKey(String artifactName) {
+        this.testArtifactNameOrKey = artifactName;
     }
 
     /**
-     * Set artifact.
+     * Set test-artifact.
      *
      * @param artifact receiving artifact in descriptor data
      */
-    public void setArtifact(String artifact) {
-        this.artifact = artifact;
+    public void setTestArtifact(String artifact) {
+        this.testArtifact = artifact;
     }
 
+    /**
+     * Get supportive-artifact.
+     *
+     * @param elementIndex index of supportive artifact
+     * @return artifact
+     */
+    public String getSupportiveArtifact(int elementIndex) {
+        return supportiveArtifact.get(elementIndex);
+    }
+
+    /**
+     * Get supportive-artifact name or key.
+     *
+     * @param elementIndex index of supportive artifact
+     * @return name or key
+     */
+    public String getSupportiveArtifactNameOrKey(int elementIndex) {
+        return supportiveArtifactNameOrKey.get(elementIndex);
+    }
+
+    /**
+     * Get supportive-artifact type.
+     *
+     * @param elementIndex index of supportive artifact
+     * @return type
+     */
+    public String getSupportiveArtifactType(int elementIndex) {
+        return supportiveArtifactType.get(elementIndex);
+    }
+
+    /**
+     * Add supportive-artifact.
+     *
+     * @param supportiveArtifact artifact of supportive artifact
+     */
+    public void addSupportiveArtifact(String supportiveArtifact) {
+        this.supportiveArtifact.add(supportiveArtifact);
+    }
+
+    /**
+     * Add supportive-artifact name or key.
+     *
+     * @param supportiveArtifactNameOrKey name or key of supportive artifact
+     */
+    public void addSupportiveArtifactNameOrKey(String supportiveArtifactNameOrKey) {
+        this.supportiveArtifactNameOrKey.add(supportiveArtifactNameOrKey);
+    }
+
+    /**
+     * Add supportive-artifact type.
+     *
+     * @param supportiveArtifactType type of supportive artifact
+     */
+    public void addSupportiveArtifactType(String supportiveArtifactType) {
+        this.supportiveArtifactType.add(supportiveArtifactType);
+    }
 }

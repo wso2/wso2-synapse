@@ -62,18 +62,60 @@ class SynapseTestcaseDataReader {
         ArtifactData artifactDataHolder = new ArtifactData();
 
         //Read artifact from descriptor data
-        QName qualifiedArtifact = new QName("", ARTIFACT, "");
-        OMElement artifactNode = importXMLFile.getFirstChildWithName(qualifiedArtifact);
-        String artifact = artifactNode.getFirstElement().toString();
-        artifactDataHolder.setArtifact(artifact);
+        QName qualifiedArtifacts = new QName("", ARTIFACTS, "");
+        OMElement artifactNode = importXMLFile.getFirstChildWithName(qualifiedArtifacts);
 
-        //Read artifact type from descriptor data
-        String artifactType = artifactNode.getFirstElement().getLocalName();
-        artifactDataHolder.setArtifactType(artifactType);
+        QName qualifiedTestArtifact = new QName("", TEST_ARTIFACT, "");
+        OMElement testArtifactNode = artifactNode.getFirstChildWithName(qualifiedTestArtifact);
+
+        QName qualifiedArtifact = new QName("", ARTIFACT, "");
+        OMElement testArtifactDataNode = testArtifactNode.getFirstChildWithName(qualifiedArtifact);
+        String testArtifactData = testArtifactDataNode.getFirstElement().toString();
+        artifactDataHolder.setTestArtifact(testArtifactData);
+
+        //Read test artifact type from synapse test data
+        String testArtifactType = testArtifactDataNode.getFirstElement().getLocalName();
+        artifactDataHolder.setTestArtifactType(testArtifactType);
 
         //Read artifact name from descriptor data
-        String artifactName = artifactNode.getFirstElement().getAttributeValue(new QName(ARTIFACT_NAME_ATTRIBUTE));
-        artifactDataHolder.setArtifactName(artifactName);
+        String testArtifactNameOrKey;
+        if (testArtifactType.equals(TYPE_LOCAL_ENTRY)) {
+            testArtifactNameOrKey
+                    = testArtifactDataNode.getFirstElement().getAttributeValue(new QName(ARTIFACT_KEY_ATTRIBUTE));
+        } else {
+            testArtifactNameOrKey
+                    = testArtifactDataNode.getFirstElement().getAttributeValue(new QName(ARTIFACT_NAME_ATTRIBUTE));
+        }
+        artifactDataHolder.setTestArtifactNameOrKey(testArtifactNameOrKey);
+
+        //Read supportive test cases data
+        QName qualifiedSupportiveTestArtifact = new QName("", SUPPORTIVE_ARTIFACTS, "");
+        OMElement supportiveArtifactsNode = artifactNode.getFirstChildWithName(qualifiedSupportiveTestArtifact);
+
+        Iterator artifactIterator = supportiveArtifactsNode.getChildElements();
+        while (artifactIterator.hasNext()) {
+            OMElement artifact = (OMElement) artifactIterator.next();
+
+            //Read supportive artifact from synapse test data
+            String supportiveArtifactData = artifact.getFirstElement().toString();
+            artifactDataHolder.addSupportiveArtifact(supportiveArtifactData);
+
+            //Read supportive artifact type from synapse test data
+            String supportiveArtifactType = artifact.getFirstElement().getLocalName();
+            artifactDataHolder.addSupportiveArtifactType(supportiveArtifactType);
+
+            //Read artifact name from descriptor data
+            String supportiveArtifactNameOrKey;
+            if (testArtifactType.equals(TYPE_LOCAL_ENTRY)) {
+                supportiveArtifactNameOrKey
+                        = artifact.getFirstElement().getAttributeValue(new QName(ARTIFACT_KEY_ATTRIBUTE));
+            } else {
+                supportiveArtifactNameOrKey
+                        = artifact.getFirstElement().getAttributeValue(new QName(ARTIFACT_NAME_ATTRIBUTE));
+            }
+            artifactDataHolder.addSupportiveArtifactNameOrKey(supportiveArtifactNameOrKey);
+
+        }
 
         logger.info("Artifact data from descriptor data read successfully");
         return artifactDataHolder;

@@ -25,6 +25,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import org.apache.log4j.Logger;
 import org.apache.synapse.unittest.mock.services.core.Emulator;
 import org.apache.synapse.unittest.mock.services.core.EmulatorType;
+import org.apache.synapse.unittest.mock.services.http.dsl.HttpConsumerContext;
+
+import javax.xml.ws.spi.http.HttpContext;
 
 import static org.apache.synapse.unittest.Constants.GET_METHOD;
 import static org.apache.synapse.unittest.Constants.POST_METHOD;

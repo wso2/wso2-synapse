@@ -57,10 +57,10 @@ class MessageConstructor {
 
         //configure the artifact if there are mock-services to append
         if (mockServiceData.getMockServicesCount() > 0) {
-            configuredArtifact = ConfigModifier.endPointModifier(artifactDataHolder.getArtifact(), mockServiceData);
+            configuredArtifact = ConfigModifier.endPointModifier(artifactDataHolder.getTestArtifact(), mockServiceData);
 
         } else {
-            configuredArtifact = artifactDataHolder.getArtifact();
+            configuredArtifact = artifactDataHolder.getTestArtifact();
         }
 
         if (configuredArtifact != null) {
@@ -69,8 +69,8 @@ class MessageConstructor {
 
                 //Add artifact data from data holder to json object
                 jsonDataHolder.setAttribute(ARTIFACT , configuredArtifact);
-                jsonDataHolder.setAttribute(ARTIFACT_TYPE , artifactDataHolder.getArtifactType());
-                jsonDataHolder.setAttribute(ARTIFACT_NAME , artifactDataHolder.getArtifactName());
+                jsonDataHolder.setAttribute(ARTIFACT_TYPE , artifactDataHolder.getTestArtifactType());
+                jsonDataHolder.setAttribute(ARTIFACT_NAME , artifactDataHolder.getTestArtifactNameOrKey());
                 jsonDataHolder.setAttribute(testCaseDataHolder.getTestCaseCount());
 
                 //Add  test-case data from data holder to json object
