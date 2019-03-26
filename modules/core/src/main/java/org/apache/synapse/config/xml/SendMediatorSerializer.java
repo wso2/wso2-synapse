@@ -58,6 +58,8 @@ public class SendMediatorSerializer extends AbstractMediatorSerializer {
             send.addAttribute(fac.createOMAttribute("buildmessage", nullNS,"true"));
         }
 
+        serializeComments(send, mediator.getCommentsList());
+
         return send;
     }
 

@@ -75,6 +75,8 @@ public class LogMediatorSerializer extends AbstractMediatorSerializer {
 
         super.serializeProperties(log, mediator.getProperties());
 
+        serializeComments(log, mediator.getCommentsList());
+
         return log;
     }
 

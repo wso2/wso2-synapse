@@ -75,29 +75,21 @@ public class EventPublisherMediatorFactoryTest {
     public void testCreateSpecificMediator2() throws XMLStreamException {
         EventPublisherMediatorFactory mediatorFactory = new EventPublisherMediatorFactory();
         String inputXML =
-                "<publishEvent>\n" +
-                        "    <eventSink>String</eventSink>\n" +
-                        "    <streamName>String</streamName>\n" +
-                        "    <streamVersion>String</streamVersion>\n" +
-                        "    <attributes>\n" +
-                        "        <meta>\n" +
-                        "            <attribute name=\"string\" type=\"dataType\" default=\"\" " +
-                        "(value=\"literal\" | expression=\"[XPath\") />\n" +
-                        "        </meta>\n" +
-                        "        <correlation>\n" +
-                        "             <attribute name=\"string\" type=\"dataType\" default=\"\" " +
-                        "(value=\"literal\" | expression=\"[XPath\") />\n" +
-                        "        </correlation>\n" +
-                        "        <payload>\n" +
-                        "             <attribute name=\"string\" type=\"dataType\" default=\"\"" +
-                        " (value=\"literal\" | expression=\"[XPath\") />\n" +
-                        "        </payload>\n" +
-                        "    <arbitrary>\n" +
-                        "             <attribute name=\"string\" type=\"dataType\" default=\"\" " +
-                        "value=\"literal\" />\n" +
-                        "        </arbitrary>\n" +
-                        "    </attributes>\n" +
-                        "</publishEvent>";
+                "<publishEvent async=\"false\">\n" +
+                        "                <eventSink>String</eventSink>\n" +
+                        "                <streamName>String </streamName>\n" +
+                        "                <streamVersion>String</streamVersion>\n" +
+                        "                <attributes>\n" +
+                        "                    <meta/>\n" +
+                        "                    <correlation>\n" +
+                        "                        <attribute defaultValue=\"\" name=\"attribute1\" type=\"STRING\" value=\"string_val\"/>\n" +
+                        "                    </correlation>\n" +
+                        "                    <payload>\n" +
+                        "                        <attribute defaultValue=\"\" name=\"attribute2\" type=\"STRING\" value=\"attribute_val2\"/>\n" +
+                        "                    </payload>\n" +
+                        "                    <arbitrary/>\n" +
+                        "                </attributes>\n" +
+                        "            </publishEvent>";
         OMElement element = AXIOMUtil.stringToOM(inputXML);
         OMFactory fac = OMAbstractFactory.getOMFactory();
         element.addAttribute(fac.createOMAttribute("eventSourceName", null, "Test"));

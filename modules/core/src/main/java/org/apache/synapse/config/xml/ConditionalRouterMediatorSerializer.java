@@ -85,6 +85,8 @@ public class ConditionalRouterMediatorSerializer extends AbstractMediatorSeriali
             conditionalRouterElem.addChild(routeElem);
         }
 
+        serializeComments(conditionalRouterElem, conditionalRouterMediator.getCommentsList());
+
         return conditionalRouterElem;
     }
 

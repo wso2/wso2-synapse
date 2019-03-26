@@ -165,6 +165,9 @@ public class XQueryMediatorFactory extends AbstractMediatorFactory {
                 }
             }
         }
+
+        addAllCommentChildrenToList(elem, xQueryMediator.getCommentsList());
+
         return xQueryMediator;
     }
 

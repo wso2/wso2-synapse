@@ -140,6 +140,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         enrich.setNativeJsonSupportEnabled(
                 !isInlineSourceXML && condition5 && condition6 && (condition1 || condition2 || condition3 ||
                                                                    condition4));
+        addAllCommentChildrenToList(elem, enrich.getCommentsList());
 
         return enrich;
     }

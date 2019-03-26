@@ -130,6 +130,8 @@ public class POJOCommandMediatorSerializer extends AbstractMediatorSerializer {
             }
         }
 
+        serializeComments(pojoCommand, mediator.getCommentsList());
+
         return pojoCommand;
     }
 

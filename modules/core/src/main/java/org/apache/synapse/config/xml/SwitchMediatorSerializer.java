@@ -72,6 +72,8 @@ public class SwitchMediatorSerializer extends AbstractMediatorSerializer {
                 switchMed.addChild(caseDefaultElem);
             }
         }
+
+        serializeComments(switchMed, mediator.getCommentsList());
         
         return switchMed;
     }

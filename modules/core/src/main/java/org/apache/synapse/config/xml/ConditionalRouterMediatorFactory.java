@@ -124,6 +124,8 @@ public class ConditionalRouterMediatorFactory extends AbstractMediatorFactory {
             conditionalRoute.setTarget(target);
             conditionalRouterMediator.addRoute(conditionalRoute);
         }
+
+        addAllCommentChildrenToList(elem, conditionalRouterMediator.getCommentsList());
         return conditionalRouterMediator;
     }
 
