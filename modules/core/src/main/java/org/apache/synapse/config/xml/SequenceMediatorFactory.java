@@ -70,7 +70,7 @@ public class SequenceMediatorFactory extends AbstractListMediatorFactory {
         addChildren(elem, seqMediator, properties);
         seqMediator.setSequenceType(SequenceType.ANON);
 
-        addAllCommentChildrenToList(elem, seqMediator.getCommentsList());
+//        addAllCommentChildrenToList(elem, seqMediator.getCommentsList());
 
         return seqMediator;
     }
