@@ -79,6 +79,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 
+import static org.apache.synapse.endpoints.EndpointDefinition.DYNAMIC_URL_VALUE;
+
 /**
  * This is the Axis2 implementation of the SynapseEnvironment
  */
@@ -798,7 +800,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             // SendOn transport switching
             if (endpoint.getAddress() != null) {
                 // If the message is sent to an explicit non-HTTP endpoint, build the message
-                return !endpoint.getAddress().startsWith("http");
+                String dynamicUrl = (String) synCtx.getProperty(DYNAMIC_URL_VALUE);
+                return !dynamicUrl.startsWith("http");
             } else {
                 String address = synCtx.getTo().getAddress();
                 if (address != null) {
