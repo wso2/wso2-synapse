@@ -112,7 +112,7 @@ public class RequestHandler implements Runnable {
             synapseTestcaseDataReader = new SynapseTestcaseDataReader(receivedMessage);
             ArtifactData readArtifactData = synapseTestcaseDataReader.readArtifactData();
 //            TestCaseData readTestCaseData = synapseTestcaseDataReader.readTestCaseData();
-//            MockServiceData readMockServiceData = synapseTestcaseDataReader.readMockServiceData();
+            MockServiceData readMockServiceData = synapseTestcaseDataReader.readMockServiceData();
 //
 //            return  MessageConstructor.generateDeployableMessage(readArtifactData, readTestCaseData, readMockServiceData);
                 return null;

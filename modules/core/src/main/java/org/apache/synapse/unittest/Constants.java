@@ -50,10 +50,20 @@ public class Constants {
     static final String ASSERT_EXPECTED_PAYLOAD = "expected-payload";
 
     static final String SERVICE_NAME = "service-name";
-    static final String SERVICE_HOST = "mock-service-host";
-    static final String SERVICE_PORT = "mock-service-port";
-    static final String SERVICE_CONTEXT = "mock-service-context";
-    static final String SERVICE_PAYLOAD = "mock-service-payload";
+    static final String SERVICE_HOST = "localhost";
+    static final String SERVICE_PORT = "port";
+    static final String SERVICE_CONTEXT = "context";
+    static final String SERVICE_RESOURCES = "resources";
+    static final String SERVICE_RESOURCE = "resource";
+    static final String SERVICE_RESOURCE_SUBCONTEXT = "sub-context";
+    static final String SERVICE_RESOURCE_METHOD = "method";
+    static final String SERVICE_RESOURCE_REQUEST = "request";
+    static final String SERVICE_RESOURCE_RESPONSE = "response";
+    static final String SERVICE_RESOURCE_PAYLOAD = "payload";
+    static final String SERVICE_RESOURCE_HEADERS = "headers";
+    static final String SERVICE_RESOURCE_HEADER_NAME = "name";
+    static final String SERVICE_RESOURCE_HEADER_VALUE = "value";
+
     static final String SERVICE_TYPE = "mock-service-type";
     static final String SERVICE_RESPONSE = "mock-service-expected-response";
     static final String MOCK_SERVICES = "mock-services";

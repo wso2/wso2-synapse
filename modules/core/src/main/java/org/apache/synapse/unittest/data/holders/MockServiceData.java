@@ -18,23 +18,27 @@
 
 package org.apache.synapse.unittest.data.holders;
 
+import javafx.util.Pair;
+
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Mock service data holder class in unit test framework.
  */
-public class MockServiceData extends Thread {
+public class MockServiceData {
 
     private int mockServicesCount = 0;
-    private Map<String, Integer> serviceNameMap = new HashMap<String, Integer>();
-    private ArrayList<String> serviceHost = new ArrayList<String>();
-    private ArrayList<Integer> servicePort = new ArrayList<Integer>();
-    private ArrayList<String> servicePath = new ArrayList<String>();
-    private ArrayList<String> serviceType = new ArrayList<String>();
-    private ArrayList<String> servicePayload = new ArrayList<String>();
-    private ArrayList<String> serviceResponse = new ArrayList<String>();
+    private Map<String, Integer> serviceNameMap = new HashMap<>();
+    private ArrayList<Integer> servicePort = new ArrayList<>();
+    private ArrayList<String> serviceContext = new ArrayList<>();
+    private ArrayList<String> serviceType = new ArrayList<>();
+    private ArrayList<String> serviceRequestPayload = new ArrayList<>();
+    private ArrayList<List<Pair<String,String>>> serviceRequestHeaders = new ArrayList<>();
+    private ArrayList<String> serviceResponsePayload = new ArrayList<>();
+    private ArrayList<List<Pair<String,String>>> serviceResponseHeaders = new ArrayList<>();
 
     /**
      * Get mock services count.
@@ -56,16 +60,6 @@ public class MockServiceData extends Thread {
     }
 
     /**
-     * Get mock service host.
-     *
-     * @param elementIndex service stored index
-     * @return mock service host as in descriptor data
-     */
-    public String getServiceHost(int elementIndex) {
-        return serviceHost.get(elementIndex);
-    }
-
-    /**
      * Get mock service port.
      *
      * @param elementIndex service stored index
@@ -76,13 +70,13 @@ public class MockServiceData extends Thread {
     }
 
     /**
-     * Get mock service path.
+     * Get mock service context.
      *
      * @param elementIndex service stored index
-     * @return mock service path as in descriptor data
+     * @return mock service context as in descriptor data
      */
-    public String getServicePath(int elementIndex) {
-        return servicePath.get(elementIndex);
+    public String getServiceContext(int elementIndex) {
+        return serviceContext.get(elementIndex);
     }
 
     /**
@@ -101,8 +95,8 @@ public class MockServiceData extends Thread {
      * @param elementIndex service stored index
      * @return mock service input payload as in descriptor data
      */
-    public String getServicePayload(int elementIndex) {
-        return servicePayload.get(elementIndex);
+    public String getServiceRequestPayload(int elementIndex) {
+        return serviceRequestPayload.get(elementIndex);
     }
 
     /**
@@ -111,8 +105,28 @@ public class MockServiceData extends Thread {
      * @param elementIndex service stored index
      * @return mock service response as in descriptor data
      */
-    public String getServiceResponse(int elementIndex) {
-        return serviceResponse.get(elementIndex);
+    public String getServiceResponsePayload(int elementIndex) {
+        return serviceResponsePayload.get(elementIndex);
+    }
+
+    /**
+     * Get mock service request headers.
+     *
+     * @param elementIndex service stored index
+     * @return mock service request headers as in descriptor data
+     */
+    public List<Pair<String,String>> getServiceRequestHeaders(int elementIndex) {
+        return serviceRequestHeaders.get(elementIndex);
+    }
+
+    /**
+     * Get mock service response headers.
+     *
+     * @param elementIndex service stored index
+     * @return mock service response headers as in descriptor data
+     */
+    public List<Pair<String,String>> getServiceResponseHeaders(int elementIndex) {
+        return serviceResponseHeaders.get(elementIndex);
     }
 
     /**
@@ -123,15 +137,6 @@ public class MockServiceData extends Thread {
      */
     public void addServiceName(String serviceName, int indexValue) {
         serviceNameMap.put(serviceName, indexValue);
-    }
-
-    /**
-     * Add mock service host inside the ArrayList.
-     *
-     * @param serviceHost service host as in descriptor data
-     */
-    public void addServiceHost(String serviceHost) {
-        this.serviceHost.add(serviceHost);
     }
 
     /**
@@ -146,10 +151,10 @@ public class MockServiceData extends Thread {
     /**
      * Add mock service path inside the ArrayList.
      *
-     * @param servicePath service path as in descriptor data
+     * @param serviceContext service path as in descriptor data
      */
-    public void addServicePath(String servicePath) {
-        this.servicePath.add(servicePath);
+    public void addServiceContext(String serviceContext) {
+        this.serviceContext.add(serviceContext);
     }
 
     /**
@@ -166,8 +171,8 @@ public class MockServiceData extends Thread {
      *
      * @param servicePayload service input payload as in descriptor data
      */
-    public void addServicePayload(String servicePayload) {
-        this.servicePayload.add(servicePayload);
+    public void addServiceRequestPayload(String servicePayload) {
+        this.serviceRequestPayload.add(servicePayload);
     }
 
     /**
@@ -175,8 +180,8 @@ public class MockServiceData extends Thread {
      *
      * @param serviceResponse service response as in descriptor data
      */
-    public void addServiceResponse(String serviceResponse) {
-        this.serviceResponse.add(serviceResponse);
+    public void addServiceResponsePayload(String serviceResponse) {
+        this.serviceResponsePayload.add(serviceResponse);
     }
 
     /**
@@ -186,6 +191,24 @@ public class MockServiceData extends Thread {
      */
     public void setMockServicesCount(int mockServiceCount) {
         this.mockServicesCount = mockServiceCount;
+    }
+
+    /**
+     * Get mock service headers.
+     *
+     * @param requestHeader service request headers
+     */
+    public void addServiceRequestHeaders(ArrayList<Pair<String,String>> requestHeader) {
+        serviceRequestHeaders.add(requestHeader);
+    }
+
+    /**
+     * Get mock service headers.
+     *
+     * @param responseHeader service request headers
+     */
+    public void addServiceResponseHeaders(ArrayList<Pair<String,String>> responseHeader) {
+        serviceResponseHeaders.add(responseHeader);
     }
 
     /**

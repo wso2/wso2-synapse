@@ -46,12 +46,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import static org.apache.synapse.unittest.Constants.END_POINT;
-import static org.apache.synapse.unittest.Constants.HTTP;
-import static org.apache.synapse.unittest.Constants.METHOD;
-import static org.apache.synapse.unittest.Constants.URI;
-import static org.apache.synapse.unittest.Constants.URI_TEMPLATE;
-import static org.apache.synapse.unittest.Constants.WHITESPACE_REGEX;
+import static org.apache.synapse.unittest.Constants.*;
 
 
 /**h
@@ -97,23 +92,21 @@ class ConfigModifier {
 
                     if (isServiceExists) {
                         int serviceElementIndex = mockServiceData.getServiceNameIndex(valueOfName);
-                        String serviceHostUrl = mockServiceData.getServiceHost(serviceElementIndex);
                         String serviceMethod = mockServiceData.getServiceType(serviceElementIndex);
-                        String host = mockServiceData.getServiceHost(serviceElementIndex);
                         int port = mockServiceData.getServicePort(serviceElementIndex);
-                        String path = mockServiceData.getServicePath(serviceElementIndex);
+                        String path = mockServiceData.getServiceContext(serviceElementIndex);
                         String method = mockServiceData.getServiceType(serviceElementIndex);
-                        String inputPayloadWithoutWhitespace = mockServiceData.getServicePayload(serviceElementIndex)
+                        String inputPayloadWithoutWhitespace = mockServiceData.getServiceRequestPayload(serviceElementIndex)
                                 .replaceAll(WHITESPACE_REGEX, "");
-                        String responseWithoutWhitespace = mockServiceData.getServiceResponse(serviceElementIndex)
+                        String responseWithoutWhitespace = mockServiceData.getServiceResponsePayload(serviceElementIndex)
                                 .replaceAll(WHITESPACE_REGEX, "");
-                        String serviceURL = HTTP + serviceHostUrl + ":" + port + path;
+                        String serviceURL = HTTP + SERVICE_HOST + ":" + port + path;
                         mockServicePorts.add(port);
 
                         updateEndPoint(endPointNode, serviceURL, serviceMethod);
 
                         logger.info("Mock service creator ready to start service for " + valueOfName);
-                        MockServiceCreator.startServer(valueOfName, host , port, path , method ,
+                        MockServiceCreator.startServer(valueOfName, SERVICE_HOST , port, path , method ,
                                 inputPayloadWithoutWhitespace , responseWithoutWhitespace);
                     }
                 }
