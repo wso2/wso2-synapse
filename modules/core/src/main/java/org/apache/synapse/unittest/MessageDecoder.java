@@ -30,9 +30,6 @@ import java.util.ArrayList;
 import static org.apache.synapse.unittest.Constants.ARTIFACT;
 import static org.apache.synapse.unittest.Constants.ARTIFACT_NAME;
 import static org.apache.synapse.unittest.Constants.ARTIFACT_TYPE;
-import static org.apache.synapse.unittest.Constants.ASSERT_EXPECTED_PAYLOAD;
-import static org.apache.synapse.unittest.Constants.ASSERT_EXPECTED_PROPERTIES;
-import static org.apache.synapse.unittest.Constants.INPUT_PAYLOAD;
 import static org.apache.synapse.unittest.Constants.TEST_CASES;
 import static org.apache.synapse.unittest.Constants.TEST_CASES_COUNT;
 
@@ -134,9 +131,9 @@ class MessageDecoder {
             for (int x = 0; x < testCases.length(); x++) {
                 ArrayList<String> testCaseData = new ArrayList<>();
 
-                testCaseData.add(testCases.getJSONObject(x).getString(INPUT_PAYLOAD));
-                testCaseData.add(testCases.getJSONObject(x).getString(ASSERT_EXPECTED_PAYLOAD));
-                testCaseData.add(testCases.getJSONObject(x).getString(ASSERT_EXPECTED_PROPERTIES));
+//                testCaseData.add(testCases.getJSONObject(x).getString(INPUT_PAYLOAD));
+//                testCaseData.add(testCases.getJSONObject(x).getString(ASSERT_EXPECTED_PAYLOAD));
+//                testCaseData.add(testCases.getJSONObject(x).getString(ASSERT_EXPECTED_PROPERTIES));
 
                 testCasesData.add(testCaseData);
             }

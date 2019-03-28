@@ -17,6 +17,8 @@
  */
 package org.apache.synapse.unittest.data.holders;
 
+import org.apache.synapse.unittest.data.classes.TestCase;
+
 import java.util.ArrayList;
 
 /**
@@ -25,65 +27,16 @@ import java.util.ArrayList;
 public class TestCaseData {
 
     private int testCaseCount;
-    private ArrayList<String> inputXmlPayloadArray = new ArrayList<>();
-    private ArrayList<String> expectedPropertyValuesArray = new ArrayList<>();
-    private ArrayList<String> expectedPayloadArray = new ArrayList<>();
+    private ArrayList<TestCase> testCases = new ArrayList<>();
 
     /**
-     * Get input payload of particular test case.
+     * Get test case data.
      *
-     * @param elementIndex index value of the test case
-     * @return input payload of requested test case
+     * @param  elementIndex index of the object
+     * @return test case object in descriptor data
      */
-    public String getInputXmlPayload(int elementIndex) {
-        return inputXmlPayloadArray.get(elementIndex);
-    }
-
-    /**
-     * Get expected property values of particular test case.
-     *
-     * @param elementIndex index value of the test case
-     * @return expected property values of requested test case
-     */
-    public String getExpectedPropertyValues(int elementIndex) {
-        return expectedPropertyValuesArray.get(elementIndex);
-    }
-
-    /**
-     * Get expected payload values of particular test case.
-     *
-     * @param elementIndex index value of the test case
-     * @return expected payload of requested test case
-     */
-    public String getExpectedPayload(int elementIndex) {
-        return expectedPayloadArray.get(elementIndex);
-    }
-
-    /**
-     * Add input payload into a ArrayList.
-     *
-     * @param inputXmlPayload input payload of a particular test case
-     */
-    public void addInputXmlPayload(String inputXmlPayload) {
-        this.inputXmlPayloadArray.add(inputXmlPayload);
-    }
-
-    /**
-     * Add expected property values into a ArrayList.
-     *
-     * @param expectedPropertyValues expected property values of a particular test case
-     */
-    public void addExpectedPropertyValues(String expectedPropertyValues) {
-        this.expectedPropertyValuesArray.add(expectedPropertyValues);
-    }
-
-    /**
-     * Add expected payload into a ArrayList.
-     *
-     * @param expectedPayload expected payload of a particular test case
-     */
-    public void addExpectedPayload(String expectedPayload) {
-        this.expectedPayloadArray.add(expectedPayload);
+    public TestCase getTestCase(int elementIndex) {
+        return testCases.get(elementIndex);
     }
 
     /**
@@ -93,6 +46,15 @@ public class TestCaseData {
      */
     public int getTestCaseCount() {
         return testCaseCount;
+    }
+
+    /**
+     * Get test case data.
+     *
+     * @param  testCases test case object
+     */
+    public void setTestCases(TestCase testCases) {
+        this.testCases.add(testCases);
     }
 
     /**

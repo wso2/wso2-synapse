@@ -91,23 +91,23 @@ class ConfigModifier {
                     boolean isServiceExists = mockServiceData.isServiceNameExist(valueOfName);
 
                     if (isServiceExists) {
-                        int serviceElementIndex = mockServiceData.getServiceNameIndex(valueOfName);
-                        String serviceMethod = mockServiceData.getServiceType(serviceElementIndex);
-                        int port = mockServiceData.getServicePort(serviceElementIndex);
-                        String path = mockServiceData.getServiceContext(serviceElementIndex);
-                        String method = mockServiceData.getServiceType(serviceElementIndex);
-                        String inputPayloadWithoutWhitespace = mockServiceData.getServiceRequestPayload(serviceElementIndex)
-                                .replaceAll(WHITESPACE_REGEX, "");
-                        String responseWithoutWhitespace = mockServiceData.getServiceResponsePayload(serviceElementIndex)
-                                .replaceAll(WHITESPACE_REGEX, "");
-                        String serviceURL = HTTP + SERVICE_HOST + ":" + port + path;
-                        mockServicePorts.add(port);
-
-                        updateEndPoint(endPointNode, serviceURL, serviceMethod);
-
-                        logger.info("Mock service creator ready to start service for " + valueOfName);
-                        MockServiceCreator.startServer(valueOfName, SERVICE_HOST , port, path , method ,
-                                inputPayloadWithoutWhitespace , responseWithoutWhitespace);
+//                        int serviceElementIndex = mockServiceData.getServiceNameIndex(valueOfName);
+//                        String serviceMethod = mockServiceData.getServiceType(serviceElementIndex);
+//                        int port = mockServiceData.getServicePort(serviceElementIndex);
+//                        String path = mockServiceData.getServiceContext(serviceElementIndex);
+//                        String method = mockServiceData.getServiceType(serviceElementIndex);
+//                        String inputPayloadWithoutWhitespace = mockServiceData.getServiceRequestPayload(serviceElementIndex)
+//                                .replaceAll(WHITESPACE_REGEX, "");
+//                        String responseWithoutWhitespace = mockServiceData.getServiceResponsePayload(serviceElementIndex)
+//                                .replaceAll(WHITESPACE_REGEX, "");
+//                        String serviceURL = HTTP + SERVICE_HOST + ":" + port + path;
+//                        mockServicePorts.add(port);
+//
+//                        updateEndPoint(endPointNode, serviceURL, serviceMethod);
+//
+//                        logger.info("Mock service creator ready to start service for " + valueOfName);
+//                        MockServiceCreator.startServer(valueOfName, SERVICE_HOST , port, path , method ,
+//                                inputPayloadWithoutWhitespace , responseWithoutWhitespace);
                     }
                 }
             }

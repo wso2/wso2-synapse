@@ -44,18 +44,24 @@ public class Constants {
 
     static final String TEST_CASES = "test-cases";
     static final String TEST_CASES_COUNT = "test-cases-count";
-    static final String INPUT_PAYLOAD = "input-payload";
-    static final String ASSERTION = "assertion";
-    static final String ASSERT_EXPECTED_PROPERTIES = "expected-properties";
-    static final String ASSERT_EXPECTED_PAYLOAD = "expected-payload";
+    static final String TEST_CASE_INPUT = "input";
+    static final String TEST_CASE_INPUT_PAYLOAD = "payload";
+    static final String TEST_CASE_INPUT_PROPERTIES = "properties";
+    static final String TEST_CASE_INPUT_PROPERTY_NAME = "name";
+    static final String TEST_CASE_INPUT_PROPERTY_VALUE = "value";
+    static final String TEST_CASE_INPUT_PROPERTY_SCOPE = "scope";
+    static final String TEST_CASE_ASSERTIONS = "assertions";
+    static final String TEST_CASE_ASSERTION_EQUALS = "assertEquals";
+    static final String TEST_CASE_ASSERTION_NOTNULL = "assertNotNull";
+    static final String ASSERTION_ACTUAL = "actual";
+    static final String ASSERTION_EXPECTED = "expected";
+    static final String ASSERTION_MESSAGE = "message";
 
     static final String SERVICE_NAME = "service-name";
     static final String SERVICE_HOST = "localhost";
     static final String SERVICE_PORT = "port";
     static final String SERVICE_CONTEXT = "context";
-    static final String SERVICE_RESOURCES = "resources";
     static final String SERVICE_RESOURCE = "resource";
-    static final String SERVICE_RESOURCE_SUBCONTEXT = "sub-context";
     static final String SERVICE_RESOURCE_METHOD = "method";
     static final String SERVICE_RESOURCE_REQUEST = "request";
     static final String SERVICE_RESOURCE_RESPONSE = "response";

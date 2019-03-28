@@ -111,11 +111,11 @@ public class RequestHandler implements Runnable {
         try {
             synapseTestcaseDataReader = new SynapseTestcaseDataReader(receivedMessage);
             ArtifactData readArtifactData = synapseTestcaseDataReader.readArtifactData();
-//            TestCaseData readTestCaseData = synapseTestcaseDataReader.readTestCaseData();
+            TestCaseData readTestCaseData = synapseTestcaseDataReader.readTestCaseData();
             MockServiceData readMockServiceData = synapseTestcaseDataReader.readMockServiceData();
-//
-//            return  MessageConstructor.generateDeployableMessage(readArtifactData, readTestCaseData, readMockServiceData);
-                return null;
+
+            return  MessageConstructor.generateDeployableMessage(readArtifactData, readTestCaseData, readMockServiceData);
+
         } catch (Exception e) {
             logger.error("Error while reading data from received message", e);
             return null;

@@ -18,11 +18,10 @@
 
 package org.apache.synapse.unittest.data.holders;
 
-import javafx.util.Pair;
+import org.apache.synapse.unittest.data.classes.MockService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,13 +31,7 @@ public class MockServiceData {
 
     private int mockServicesCount = 0;
     private Map<String, Integer> serviceNameMap = new HashMap<>();
-    private ArrayList<Integer> servicePort = new ArrayList<>();
-    private ArrayList<String> serviceContext = new ArrayList<>();
-    private ArrayList<String> serviceType = new ArrayList<>();
-    private ArrayList<String> serviceRequestPayload = new ArrayList<>();
-    private ArrayList<List<Pair<String,String>>> serviceRequestHeaders = new ArrayList<>();
-    private ArrayList<String> serviceResponsePayload = new ArrayList<>();
-    private ArrayList<List<Pair<String,String>>> serviceResponseHeaders = new ArrayList<>();
+    private ArrayList<MockService> mockServices = new ArrayList<>();
 
     /**
      * Get mock services count.
@@ -60,128 +53,32 @@ public class MockServiceData {
     }
 
     /**
-     * Get mock service port.
+     * Get mock service from index of service.
      *
-     * @param elementIndex service stored index
-     * @return mock service port as in descriptor data
+     * @param indexOfService service index
+     * @return mock service
      */
-    public int getServicePort(int elementIndex) {
-        return servicePort.get(elementIndex);
+    public MockService getMockServices(int indexOfService) {
+        return mockServices.get(indexOfService);
     }
 
     /**
-     * Get mock service context.
+     * Set mock services index from the stored service name map.
      *
-     * @param elementIndex service stored index
-     * @return mock service context as in descriptor data
+     * @param serviceName service name
+     * @param serviceIndex service index
      */
-    public String getServiceContext(int elementIndex) {
-        return serviceContext.get(elementIndex);
+    public void setServiceNameIndex(String serviceName, int serviceIndex) {
+        serviceNameMap.put(serviceName, serviceIndex);
     }
 
     /**
-     * Get mock service type.
+     * Add mock service.
      *
-     * @param elementIndex service stored index
-     * @return mock service type as in descriptor data
+     * @param service mock service
      */
-    public String getServiceType(int elementIndex) {
-        return serviceType.get(elementIndex);
-    }
-
-    /**
-     * Get mock service input payload.
-     *
-     * @param elementIndex service stored index
-     * @return mock service input payload as in descriptor data
-     */
-    public String getServiceRequestPayload(int elementIndex) {
-        return serviceRequestPayload.get(elementIndex);
-    }
-
-    /**
-     * Get mock service response.
-     *
-     * @param elementIndex service stored index
-     * @return mock service response as in descriptor data
-     */
-    public String getServiceResponsePayload(int elementIndex) {
-        return serviceResponsePayload.get(elementIndex);
-    }
-
-    /**
-     * Get mock service request headers.
-     *
-     * @param elementIndex service stored index
-     * @return mock service request headers as in descriptor data
-     */
-    public List<Pair<String,String>> getServiceRequestHeaders(int elementIndex) {
-        return serviceRequestHeaders.get(elementIndex);
-    }
-
-    /**
-     * Get mock service response headers.
-     *
-     * @param elementIndex service stored index
-     * @return mock service response headers as in descriptor data
-     */
-    public List<Pair<String,String>> getServiceResponseHeaders(int elementIndex) {
-        return serviceResponseHeaders.get(elementIndex);
-    }
-
-    /**
-     * Add mock service name inside the map.
-     *
-     * @param serviceName service name as key
-     * @param indexValue  storing index as value
-     */
-    public void addServiceName(String serviceName, int indexValue) {
-        serviceNameMap.put(serviceName, indexValue);
-    }
-
-    /**
-     * Add mock service port inside the ArrayList.
-     *
-     * @param servicePort service port as in descriptor data
-     */
-    public void addServicePort(int servicePort) {
-        this.servicePort.add(servicePort);
-    }
-
-    /**
-     * Add mock service path inside the ArrayList.
-     *
-     * @param serviceContext service path as in descriptor data
-     */
-    public void addServiceContext(String serviceContext) {
-        this.serviceContext.add(serviceContext);
-    }
-
-    /**
-     * Add mock service type inside the ArrayList.
-     *
-     * @param serviceType service type as in descriptor data
-     */
-    public void addServiceType(String serviceType) {
-        this.serviceType.add(serviceType);
-    }
-
-    /**
-     * Add mock service input payload inside the ArrayList.
-     *
-     * @param servicePayload service input payload as in descriptor data
-     */
-    public void addServiceRequestPayload(String servicePayload) {
-        this.serviceRequestPayload.add(servicePayload);
-    }
-
-    /**
-     * Add mock service response inside the ArrayList.
-     *
-     * @param serviceResponse service response as in descriptor data
-     */
-    public void addServiceResponsePayload(String serviceResponse) {
-        this.serviceResponsePayload.add(serviceResponse);
+    public void addMockServices(MockService service) {
+        mockServices.add(service);
     }
 
     /**
@@ -193,23 +90,6 @@ public class MockServiceData {
         this.mockServicesCount = mockServiceCount;
     }
 
-    /**
-     * Get mock service headers.
-     *
-     * @param requestHeader service request headers
-     */
-    public void addServiceRequestHeaders(ArrayList<Pair<String,String>> requestHeader) {
-        serviceRequestHeaders.add(requestHeader);
-    }
-
-    /**
-     * Get mock service headers.
-     *
-     * @param responseHeader service request headers
-     */
-    public void addServiceResponseHeaders(ArrayList<Pair<String,String>> responseHeader) {
-        serviceResponseHeaders.add(responseHeader);
-    }
 
     /**
      * Check is service name is exist inside the map.
