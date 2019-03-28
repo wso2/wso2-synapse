@@ -22,11 +22,8 @@ import javafx.util.Pair;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.log4j.Logger;
-import org.apache.synapse.unittest.data.classes.AssertEqual;
-import org.apache.synapse.unittest.data.classes.AssertNotNull;
-import org.apache.synapse.unittest.data.classes.TestCase;
+import org.apache.synapse.unittest.data.classes.*;
 import org.apache.synapse.unittest.data.holders.ArtifactData;
-import org.apache.synapse.unittest.data.classes.MockService;
 import org.apache.synapse.unittest.data.holders.MockServiceData;
 import org.apache.synapse.unittest.data.holders.TestCaseData;
 
@@ -66,8 +63,9 @@ class SynapseTestcaseDataReader {
      *
      * @return dataHolder object with artifact data
      */
-    ArtifactData readArtifactData() {
+    ArtifactData readAndStoreArtifactData() {
         ArtifactData artifactDataHolder = new ArtifactData();
+        Artifact testArtifact = new Artifact();
 
         //Read artifact from descriptor data
         QName qualifiedArtifacts = new QName("", ARTIFACTS, "");
@@ -79,11 +77,11 @@ class SynapseTestcaseDataReader {
         QName qualifiedArtifact = new QName("", ARTIFACT, "");
         OMElement testArtifactDataNode = testArtifactNode.getFirstChildWithName(qualifiedArtifact);
         String testArtifactData = testArtifactDataNode.getFirstElement().toString();
-        artifactDataHolder.setTestArtifact(testArtifactData);
+        testArtifact.setArtifact(testArtifactData);
 
         //Read test artifact type from synapse test data
         String testArtifactType = testArtifactDataNode.getFirstElement().getLocalName();
-        artifactDataHolder.setTestArtifactType(testArtifactType);
+        testArtifact.setArtifactType(testArtifactType);
 
         //Read artifact name from descriptor data
         String testArtifactNameOrKey;
@@ -94,23 +92,27 @@ class SynapseTestcaseDataReader {
             testArtifactNameOrKey
                     = testArtifactDataNode.getFirstElement().getAttributeValue(new QName(ARTIFACT_NAME_ATTRIBUTE));
         }
-        artifactDataHolder.setTestArtifactNameOrKey(testArtifactNameOrKey);
+        testArtifact.setArtifactNameOrKey(testArtifactNameOrKey);
+        artifactDataHolder.setTestArtifact(testArtifact);
 
         //Read supportive test cases data
         QName qualifiedSupportiveTestArtifact = new QName("", SUPPORTIVE_ARTIFACTS, "");
         OMElement supportiveArtifactsNode = artifactNode.getFirstChildWithName(qualifiedSupportiveTestArtifact);
 
         Iterator artifactIterator = supportiveArtifactsNode.getChildElements();
+        int supportiveArtifactCount = 0;
+
         while (artifactIterator.hasNext()) {
             OMElement artifact = (OMElement) artifactIterator.next();
+            Artifact supportiveArtifact = new Artifact();
 
             //Read supportive artifact from synapse test data
             String supportiveArtifactData = artifact.getFirstElement().toString();
-            artifactDataHolder.addSupportiveArtifact(supportiveArtifactData);
+            supportiveArtifact.setArtifact(supportiveArtifactData);
 
             //Read supportive artifact type from synapse test data
             String supportiveArtifactType = artifact.getFirstElement().getLocalName();
-            artifactDataHolder.addSupportiveArtifactType(supportiveArtifactType);
+            supportiveArtifact.setArtifactType(supportiveArtifactType);
 
             //Read artifact name from descriptor data
             String supportiveArtifactNameOrKey;
@@ -121,9 +123,14 @@ class SynapseTestcaseDataReader {
                 supportiveArtifactNameOrKey
                         = artifact.getFirstElement().getAttributeValue(new QName(ARTIFACT_NAME_ATTRIBUTE));
             }
-            artifactDataHolder.addSupportiveArtifactNameOrKey(supportiveArtifactNameOrKey);
+            supportiveArtifact.setArtifactNameOrKey(supportiveArtifactNameOrKey);
 
+            artifactDataHolder.addSupportiveArtifact(supportiveArtifact);
+            supportiveArtifactCount++;
         }
+
+        //set supportive artifact count
+        artifactDataHolder.setSupportiveArtifactCount(supportiveArtifactCount);
 
         logger.info("Artifact data from descriptor data read successfully");
         return artifactDataHolder;
@@ -135,7 +142,7 @@ class SynapseTestcaseDataReader {
      *
      * @return testCaseDataHolder object with test case data
      */
-    TestCaseData readTestCaseData() {
+    TestCaseData readAndStoreTestCaseData() {
 
         TestCaseData testCaseDataHolder = new TestCaseData();
 
@@ -267,7 +274,7 @@ class SynapseTestcaseDataReader {
      *
      * @return mockServiceDataHolder object with test case data
      */
-    MockServiceData readMockServiceData() {
+    MockServiceData readAndStoreMockServiceData() {
 
         MockServiceData mockServiceDataHolder = new MockServiceData();
 

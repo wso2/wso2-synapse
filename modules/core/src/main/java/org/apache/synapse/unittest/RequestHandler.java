@@ -56,7 +56,7 @@ public class RequestHandler implements Runnable {
     public void run() {
         try {
             String receivedData = readData();
-            JSONObject preProcessedMessage = preProcessingData(receivedData);
+            preProcessingData(receivedData);
 //
 //            if (preProcessedMessage != null) {
 //                runTestingAgent(preProcessedMessage);
@@ -97,28 +97,29 @@ public class RequestHandler implements Runnable {
 
     /**
      * Processed received message data and stores those data in relevant data holders.
-     * Construct JSON deployable mesage for synapse unit testing
      * Uses configModifier if there are some mock services to start
      *
      * @param receivedMessage received synapseTestcase data message as String
-     * @return processed deployable JSON message
      */
-    private JSONObject preProcessingData(String receivedMessage) {
+    private void preProcessingData(String receivedMessage) {
 
         //create synapseTestcase data as pre-processed JSON
         SynapseTestcaseDataReader synapseTestcaseDataReader;
 
         try {
             synapseTestcaseDataReader = new SynapseTestcaseDataReader(receivedMessage);
-            ArtifactData readArtifactData = synapseTestcaseDataReader.readArtifactData();
-            TestCaseData readTestCaseData = synapseTestcaseDataReader.readTestCaseData();
-            MockServiceData readMockServiceData = synapseTestcaseDataReader.readMockServiceData();
+            ArtifactData readArtifactData = synapseTestcaseDataReader.readAndStoreArtifactData();
+            MockServiceData readMockServiceData = synapseTestcaseDataReader.readAndStoreMockServiceData();
+            synapseTestcaseDataReader.readAndStoreTestCaseData();
 
-            return  MessageConstructor.generateDeployableMessage(readArtifactData, readTestCaseData, readMockServiceData);
+            //configure the artifact if there are mock-services to append
+            if (readMockServiceData.getMockServicesCount() > 0) {
+                ConfigModifier.endPointModifier(readArtifactData, readMockServiceData);
+
+            }
 
         } catch (Exception e) {
             logger.error("Error while reading data from received message", e);
-            return null;
         }
     }
 
