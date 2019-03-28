@@ -1015,6 +1015,18 @@
               <version>${system.rules.version}</version>
               <scope>test</scope>
           </dependency>
+          <dependency>
+              <groupId>org.powermock</groupId>
+              <artifactId>powermock-api-mockito2</artifactId>
+              <version>${powermock.version}</version>
+              <scope>test</scope>
+          </dependency>
+          <dependency>
+              <groupId>org.powermock</groupId>
+              <artifactId>powermock-module-junit4</artifactId>
+              <version>${powermock.version}</version>
+              <scope>test</scope>
+          </dependency>
       </dependencies>
    </dependencyManagement>
     <reporting>
@@ -1187,6 +1199,7 @@
       <project.scm.id>wso2-scm-server</project.scm.id>
       <javax.cache.version>0.5</javax.cache.version>
       <javax.servlet.version>3.0.1</javax.servlet.version>
+       <powermock.version>1.7.1</powermock.version>
       <fge.json.schema.validator.version>2.2.6.wso2v3</fge.json.schema.validator.version>
       <fasterxml.jackson.version>2.6.1.wso2v1</fasterxml.jackson.version>
       <fasterxml.jackson.databind.version>2.6.1.wso2v3</fasterxml.jackson.databind.version>

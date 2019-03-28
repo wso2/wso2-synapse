@@ -422,7 +422,7 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                             setUserDefinedSchemaResourceResolver(synCtx);
                         } else {
                             factory.setResourceResolver(
-                                    new SchemaResourceResolver(synCtx.getConfiguration(), resourceMap));
+                                    new SchemaResourceResolver(synCtx.getConfiguration(), resourceMap, synCtx));
                         }
                         if (cacheSchema) {
                             cachedSchema = factory.newSchema(sources);

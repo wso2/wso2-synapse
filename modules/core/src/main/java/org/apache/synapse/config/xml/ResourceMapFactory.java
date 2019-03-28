@@ -28,6 +28,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.resolver.ResourceMap;
 
 /**
@@ -43,6 +44,7 @@ public class ResourceMapFactory {
         ResourceMap resourceMap = null;
         Iterator it = elem.getChildrenWithName(
             new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "resource"));
+        ValueFactory keyFac = new ValueFactory();
         while (it.hasNext()) {
             // Lazily create the ResourceMap, so that when no <resource> 
             // elements are found, the method returns null.
@@ -60,7 +62,9 @@ public class ResourceMapFactory {
             if (key == null) {
                 handleException("The 'key' attribute is required for a resource definition");
             }
-            resourceMap.addResource(location.getAttributeValue(), key.getAttributeValue());
+            Value generatedKey = keyFac.createValue(XMLConfigConstants.KEY, resourceElem);
+            Value generatedLocation = keyFac.createValue(XMLConfigConstants.LOCATION, resourceElem);
+            resourceMap.addResource(generatedLocation, generatedKey);
         }
         return resourceMap;
     }
