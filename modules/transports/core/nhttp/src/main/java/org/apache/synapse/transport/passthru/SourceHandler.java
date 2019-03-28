@@ -123,9 +123,9 @@ public class SourceHandler implements NHttpServerEventHandler {
     public void requestReceived(NHttpServerConnection conn) {
         try {
             HttpContext httpContext = conn.getContext();
-            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+//            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                 setCorrelationId(conn);
-            }
+//            }
             httpContext.setAttribute(PassThroughConstants.REQ_ARRIVAL_TIME, System.currentTimeMillis());
             httpContext.setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_START_TIME, System.currentTimeMillis());
             if (isMessageSizeValidationEnabled) {

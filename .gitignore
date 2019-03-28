@@ -6,7 +6,7 @@
 *.settings
 *.project
 *.idea
-
+.DS_Store
 
 # ignore logs
 *.log
