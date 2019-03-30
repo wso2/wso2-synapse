@@ -22,15 +22,20 @@ package org.apache.synapse.util.resolver;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.mediators.Value;
 import org.xml.sax.InputSource;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -44,18 +49,30 @@ import java.util.Map;
  * object.
  */
 public class ResourceMap {
+
     private static final Log log = LogFactory.getLog(ResourceMap.class);
-    
-    private final Map<String,String> resources = new LinkedHashMap<String,String>();
-    
+
+    private final List<Pair> resourceLocationList = new ArrayList<>();
+
     /**
      * Add a resource.
      * 
      * @param location the location as it appears in referencing documents
      * @param key the registry key that points to the referenced document
      */
+    public void addResource(Value location, Value key) {
+        resourceLocationList.add(new Pair(location, key));
+    }
+
+    /**
+     * Add a resource.
+     *
+     * @param location the location as it appears in referencing documents
+     * @param key the registry key that points to the referenced document
+     */
     public void addResource(String location, String key) {
-        resources.put(location, key);
+        //todo - What should we do if an expression passes as the key
+        addResource(new Value(location), new Value(key));
     }
     
     /**
@@ -64,18 +81,57 @@ public class ResourceMap {
      * @return a map containing the (location, registry key) pairs
      */
     public Map<String,String> getResources() {
-        return Collections.unmodifiableMap(resources);
+        Map<String, String> resourceMap = new LinkedHashMap<>();
+        for (Pair entry : resourceLocationList) {
+            resourceMap.put(entry.getKey().getKeyValue() == null ?
+                            "{".concat(entry.getKey().getExpression().getExpression()).concat("}") :
+                            entry.getKey().getKeyValue(),
+                            entry.getValue().getKeyValue() == null ?
+                            "{".concat(entry.getValue().getExpression().getExpression()).concat("}") :
+                            entry.getValue().getKeyValue());
+        }
+        return Collections.unmodifiableMap(resourceMap);
     }
-    
+
     /**
      * Resolve a resource for a given location.
-     * 
+     *
      * @param synCfg the Synapse configuration (used to access the registry)
      * @param location the location of of the resource at is appears in the referencing document
      * @return an <code>InputSource</code> object for the referenced resource
      */
     public InputSource resolve(SynapseConfiguration synCfg, String location) {
-        String key = resources.get(location);
+        return resolve(synCfg, location, null);
+    }
+
+    /**
+     * Resolve a resource for a given location.
+     * 
+     * @param synCfg the Synapse configuration (used to access the registry)
+     * @param location the location of of the resource at is appears in the referencing document
+     * @param messageContext current message context of the received request
+     * @return an <code>InputSource</code> object for the referenced resource
+     */
+    public InputSource resolve(SynapseConfiguration synCfg, String location, MessageContext messageContext) {
+        String key = null;
+        Map<String, String> locationMap = new HashMap<>();
+        for(Pair entry : resourceLocationList) {
+            if (messageContext != null) {
+                locationMap.put(entry.getKey().evaluateValue(messageContext),
+                                entry.getValue().evaluateValue(messageContext));
+            } else {
+                locationMap.put(entry.getKey().getKeyValue() == null ?
+                                entry.getKey().getExpression().getExpression() :
+                                entry.getKey().getKeyValue(),
+                                entry.getValue().getKeyValue() == null ?
+                                entry.getValue().getExpression().getExpression() :
+                                entry.getValue().getKeyValue());
+            }
+        }
+
+        if (locationMap.get(location) != null) {
+            key = locationMap.get(location);
+        }
         if (key == null) {
             if (log.isDebugEnabled()) {
                 log.debug("No resource mapping is defined for location '" + location + "'");
@@ -111,5 +167,22 @@ public class ResourceMap {
                 throw new SynapseException(msg);
             }
         }
+    }
+
+    /*
+    We need this class to keep a pair of location and key values in resource attribute
+     */
+    class Pair {
+
+        private Value location;
+        private Value key;
+
+        Pair(Value location, Value key) {
+            this.location = location;
+            this.key = key;
+        }
+
+        public Value getKey() { return location; }
+        public Value getValue() { return key; }
     }
 }
