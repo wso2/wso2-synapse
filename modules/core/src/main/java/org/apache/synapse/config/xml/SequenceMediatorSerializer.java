@@ -47,6 +47,7 @@ public class SequenceMediatorSerializer extends AbstractListMediatorSerializer {
         if (parent != null) {
             parent.addChild(sequence);
         }
+
         return sequence;
     }
 

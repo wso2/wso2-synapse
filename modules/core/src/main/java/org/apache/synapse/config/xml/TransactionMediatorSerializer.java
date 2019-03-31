@@ -42,6 +42,8 @@ public class TransactionMediatorSerializer extends AbstractMediatorSerializer {
 
         saveTracingState(transaction, mediator);
 
+        serializeComments(transaction, mediator.getCommentsList());
+
         return transaction;
     }
 

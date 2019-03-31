@@ -52,6 +52,7 @@ public class XMLConfigConstants {
     /** The scope name for system properties */
     public static final String SCOPE_SYSTEM = "system";
     public static final String KEY = "key";
+    public static final String LOCATION = "location";
     public static final String RECEIVE = "receive";
 
     /** The set of supported data types */

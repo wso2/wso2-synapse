@@ -24,6 +24,7 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamSource;
 
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.xml.sax.InputSource;
@@ -34,30 +35,32 @@ import org.xml.sax.InputSource;
 public class CustomJAXPURIResolver implements URIResolver {
     private final ResourceMap resourceMap;
     private final SynapseConfiguration synCfg;
-    
+    private final MessageContext messageContext;
+
     /**
      * Constructor.
      * 
      * @param resourceMap the resource map; may be null if no resource map is configured
      * @param synCfg the Synapse configuration
      */
-    public CustomJAXPURIResolver(ResourceMap resourceMap, SynapseConfiguration synCfg) {
+    public CustomJAXPURIResolver(ResourceMap resourceMap, SynapseConfiguration synCfg, MessageContext messageContext) {
         this.resourceMap = resourceMap;
         this.synCfg = synCfg;
+        this.messageContext = messageContext;
     }
 
     /**
      * Resolve an xsl:import or xsl:include.
      * This method will first attempt to resolve the location using the configured
      * {@link ResourceMap} object. If this fails (because no {@link ResourceMap} is
-     * configured or because {@link ResourceMap#resolve(SynapseConfiguration, String)}
+     * configured or because {@link ResourceMap#resolve(SynapseConfiguration, String, MessageContext)}
      * returns null, it will resolve the location using
      * {@link SynapseConfigUtils#resolveRelativeURI(String, String)}.
      */
     public Source resolve(String href, String base) throws TransformerException {
         Source result = null;
         if (resourceMap != null) {
-            InputSource is = resourceMap.resolve(synCfg, href);
+            InputSource is = resourceMap.resolve(synCfg, href, messageContext);
             if (is != null) {
                 result = new StreamSource(is.getByteStream());
             }

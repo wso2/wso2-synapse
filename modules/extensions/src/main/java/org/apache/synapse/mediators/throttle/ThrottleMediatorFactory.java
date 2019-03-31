@@ -112,6 +112,7 @@ public class ThrottleMediatorFactory extends AbstractMediatorFactory {
                         onAcceptMediatorElement, properties));
             }
         }
+        addAllCommentChildrenToList(elem, throttleMediator.getCommentsList());
         return throttleMediator;
     }
 

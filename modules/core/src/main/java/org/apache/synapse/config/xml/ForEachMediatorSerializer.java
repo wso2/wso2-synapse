@@ -73,6 +73,8 @@ public class ForEachMediatorSerializer extends AbstractMediatorSerializer {
             forEachElem.addChild(seqElement);
         }
 
+        serializeComments(forEachElem, forEachMed.getCommentsList());
+
         return forEachElem;
     }
 }

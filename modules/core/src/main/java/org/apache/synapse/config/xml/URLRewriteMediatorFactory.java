@@ -99,7 +99,8 @@ public class URLRewriteMediatorFactory extends AbstractMediatorFactory {
             mediator.addRule(parseRule((OMElement) rules.next()));
         }
         processAuditStatus(mediator, element);
-        
+
+        addAllCommentChildrenToList(element, mediator.getCommentsList());
         return mediator;
     }
 

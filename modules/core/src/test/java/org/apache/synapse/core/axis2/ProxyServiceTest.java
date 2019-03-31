@@ -47,6 +47,7 @@ import org.apache.synapse.endpoints.AddressEndpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.resolver.ResourceMap;
 import org.junit.Assert;
 import org.mockito.Mockito;

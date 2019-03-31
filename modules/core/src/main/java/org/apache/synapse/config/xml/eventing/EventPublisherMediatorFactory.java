@@ -55,6 +55,8 @@ public class EventPublisherMediatorFactory extends AbstractMediatorFactory {
             handleException(
                     "The 'eventSourceName' attribute is required for the EventPublisher mediator");
         }
+
+        addAllCommentChildrenToList(elem, eventPublisherMediator.getCommentsList());
         return eventPublisherMediator;
     }
 }

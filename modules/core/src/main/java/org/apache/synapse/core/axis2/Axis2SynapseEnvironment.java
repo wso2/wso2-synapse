@@ -798,7 +798,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             // SendOn transport switching
             if (endpoint.getAddress() != null) {
                 // If the message is sent to an explicit non-HTTP endpoint, build the message
-                return !endpoint.getAddress().startsWith("http");
+                return !endpoint.getDynamicAddress(synCtx).startsWith("http");
             } else {
                 String address = synCtx.getTo().getAddress();
                 if (address != null) {

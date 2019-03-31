@@ -20,9 +20,15 @@
  */
 package org.apache.synapse.config.xml;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMText;
+import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
@@ -86,10 +92,31 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         populateSource(source, sourceEle);
         populateTarget(target, targetEle);
 
+        // check whether the inline element of the source is XML
+        boolean isInlineSourceXML = false;
+        if (source.getInlineOMNode() != null) {
+            if (source.getInlineOMNode() instanceof OMText) {
+                String inlineString = ((OMTextImpl) source.getInlineOMNode()).getText();
+                JsonParser parser = new JsonParser();
+                JsonElement element = parser.parse(inlineString);
+                if (!(element instanceof JsonObject || element instanceof JsonArray)) {
+                    isInlineSourceXML = true;
+                }
+            } else if (source.getInlineOMNode() instanceof OMElement){
+                isInlineSourceXML = true;
+            }
+        }
+
         // Check the enrich mediator configuration to see whether it can support JSON natively
         boolean sourceHasCustom = (source.getSourceType() == EnrichMediator.CUSTOM);
         boolean targetHasCustom = (target.getTargetType() == EnrichMediator.CUSTOM);
         boolean enrichHasCustom = (sourceHasCustom || targetHasCustom);
+        boolean sourceHasEnvelope = (source.getSourceType() == EnrichMediator.ENVELOPE);
+        boolean targetHasEnvelope = (target.getTargetType() == EnrichMediator.ENVELOPE);
+        boolean enrichHasEnvelope = (sourceHasEnvelope || targetHasEnvelope);
+        boolean sourceHasProperty = (source.getSourceType() == EnrichMediator.PROPERTY);
+        boolean targetHasProperty = (target.getTargetType() == EnrichMediator.PROPERTY);
+        boolean enrichHasProperty = (sourceHasProperty || targetHasProperty);
 
         boolean sourceHasACustomJsonPath = false;
         boolean targetHasACustomJsonPath = false;
@@ -107,8 +134,14 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         boolean condition2 = (sourceHasACustomJsonPath && !targetHasCustom);
         boolean condition3 = (!sourceHasCustom && targetHasACustomJsonPath);
         boolean condition4 = (sourceHasACustomJsonPath && targetHasACustomJsonPath);
+        boolean condition5 = !enrichHasEnvelope;
+        boolean condition6 = !enrichHasProperty;
 
-        enrich.setNativeJsonSupportEnabled(condition1 || condition2 || condition3 || condition4);
+        enrich.setNativeJsonSupportEnabled(
+                !isInlineSourceXML && condition5 && condition6 && (condition1 || condition2 || condition3 ||
+                                                                   condition4));
+        addAllCommentChildrenToList(elem, enrich.getCommentsList());
+
         return enrich;
     }
 

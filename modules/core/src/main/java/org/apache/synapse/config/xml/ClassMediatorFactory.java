@@ -121,6 +121,8 @@ public class ClassMediatorFactory extends AbstractMediatorFactory {
         classMediator.setMediator(mediator);
         processAuditStatus(classMediator, elem);
 
+        addAllCommentChildrenToList(elem, classMediator.getCommentsList());
+
         return classMediator;
     }
 

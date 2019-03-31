@@ -34,6 +34,7 @@ public class LoopBackMediatorFactory extends AbstractMediatorFactory {
     protected Mediator createSpecificMediator(OMElement elem, Properties properties) {
         Mediator loopBackMediator = new LoopBackMediator();
         processAuditStatus(loopBackMediator,elem);
+        addAllCommentChildrenToList(elem, ((LoopBackMediator) loopBackMediator).getCommentsList());
         return loopBackMediator;
     }
 

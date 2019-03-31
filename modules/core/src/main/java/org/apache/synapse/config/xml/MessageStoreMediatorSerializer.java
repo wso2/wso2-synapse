@@ -81,6 +81,8 @@ public class MessageStoreMediatorSerializer extends AbstractMediatorSerializer {
             storeElem.addAttribute(sequenceAtt);
         }
 
+        serializeComments(storeElem, messageStoreMediator.getCommentsList());
+
         return storeElem;
 
     }

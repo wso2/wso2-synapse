@@ -69,6 +69,7 @@ public class DBLookupMediatorFactory extends AbstractDBMediatorFactory {
         processAuditStatus(mediator, elem);
         buildDataSource(elem, mediator);
         processStatements(elem, mediator);
+        addAllCommentChildrenToList(elem, mediator.getCommentsList());
         return mediator;
     }
 

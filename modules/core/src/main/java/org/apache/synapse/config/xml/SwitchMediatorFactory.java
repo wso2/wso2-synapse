@@ -108,6 +108,9 @@ public class SwitchMediatorFactory extends AbstractMediatorFactory {
             switchMediator.setDefaultCase(aCase);
             break; // add only the *first* default if multiple are specified, ignore rest if any
         }
+
+        addAllCommentChildrenToList(elem, switchMediator.getCommentsList());
+
         return switchMediator;
     }
 

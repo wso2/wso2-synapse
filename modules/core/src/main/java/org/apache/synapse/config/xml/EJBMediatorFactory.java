@@ -120,6 +120,8 @@ public class EJBMediatorFactory extends AbstractMediatorFactory {
                     "bean removal.");
         }
 
+        addAllCommentChildrenToList(elem, mediator.getCommentsList());
+
         return mediator;
     }
 

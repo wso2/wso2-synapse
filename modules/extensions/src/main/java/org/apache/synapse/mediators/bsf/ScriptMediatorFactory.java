@@ -106,6 +106,9 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
         }
 
         processAuditStatus(mediator, elem);
+
+        addAllCommentChildrenToList(elem, mediator.getCommentsList());
+
         return mediator;
     }
 

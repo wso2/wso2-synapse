@@ -44,6 +44,8 @@ public class DBReportMediatorSerializer extends AbstractDBMediatorSerializer {
         saveTracingState(dbReport, mediator);
         serializeDBInformation(mediator, dbReport);
 
+        serializeComments(dbReport, mediator.getCommentsList());
+
         return dbReport;
     }
 

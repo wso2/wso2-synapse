@@ -80,6 +80,9 @@ public class ScriptMediatorSerializer extends AbstractMediatorSerializer {
         }
 
         saveTracingState(script, scriptMediator);
+
+        serializeComments(script, scriptMediator.getCommentsList());
+
         return script;
     }
 

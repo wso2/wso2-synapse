@@ -142,6 +142,9 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
         }
 
         payloadFactoryElem.addChild(argumentsElem);
+
+        serializeComments(payloadFactoryElem, mediator.getCommentsList());
+
         return payloadFactoryElem;
     }
 

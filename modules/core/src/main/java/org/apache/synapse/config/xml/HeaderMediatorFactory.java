@@ -146,6 +146,9 @@ public class HeaderMediatorFactory extends AbstractMediatorFactory  {
                 headerMediator.addEmbeddedXml((OMElement)i.next());
             }
         }
+
+        addAllCommentChildrenToList(elem, headerMediator.getCommentsList());
+
         return headerMediator;
     }
 

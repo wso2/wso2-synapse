@@ -67,6 +67,8 @@ public class URLRewriteMediatorSerializer extends AbstractMediatorSerializer {
             handleException("Error while serializing the rewrite rule", e);
         }
 
+        serializeComments(rewrite, mediator.getCommentsList());
+
         return rewrite;
     }
 

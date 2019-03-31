@@ -296,6 +296,26 @@ public class EndpointDefinition implements AspectConfigurable {
     }
 
     /**
+     * This should return the absolute EPR address referenced by the named endpoint. This method
+     * is implemented to avoid the pattern matching computation in getAddress(MessageContext messageContext) method.
+     *
+     * @param messageContext the current message context against the address is computed
+     * @return an absolute address to be used to reference the named endpoint
+     */
+    public String getDynamicAddress(MessageContext messageContext) {
+        if (address == null) {
+            return null;
+        }
+        String addressString = address;
+        String dynamicUrl = (String) messageContext.getProperty(DYNAMIC_URL_VALUE);
+        if (dynamicUrl != null && !dynamicUrl.isEmpty()) {
+            addressString = dynamicUrl;
+        }
+
+        return addressString;
+    }
+
+    /**
      * Set an absolute URL as the address for this named endpoint
      *
      * @param address the absolute address to be used
