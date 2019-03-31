@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.apache.synapse.unittest.data.classes;
+package org.apache.synapse.unittest.testcase.data.classes;
 
 public class AssertNotNull {
 

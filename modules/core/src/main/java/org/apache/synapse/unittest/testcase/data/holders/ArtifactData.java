@@ -15,9 +15,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.synapse.unittest.data.holders;
+package org.apache.synapse.unittest.testcase.data.holders;
 
-import org.apache.synapse.unittest.data.classes.Artifact;
+import org.apache.synapse.unittest.testcase.data.classes.Artifact;
 
 import java.util.ArrayList;
 

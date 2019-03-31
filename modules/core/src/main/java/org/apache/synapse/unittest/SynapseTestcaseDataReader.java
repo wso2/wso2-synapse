@@ -22,16 +22,14 @@ import javafx.util.Pair;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.log4j.Logger;
-import org.apache.synapse.unittest.data.classes.*;
-import org.apache.synapse.unittest.data.holders.ArtifactData;
-import org.apache.synapse.unittest.data.holders.MockServiceData;
-import org.apache.synapse.unittest.data.holders.TestCaseData;
+import org.apache.synapse.unittest.testcase.data.classes.*;
+import org.apache.synapse.unittest.testcase.data.holders.ArtifactData;
+import org.apache.synapse.unittest.testcase.data.holders.MockServiceData;
+import org.apache.synapse.unittest.testcase.data.holders.TestCaseData;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
 
 import static org.apache.synapse.unittest.Constants.*;
 
@@ -63,7 +61,7 @@ class SynapseTestcaseDataReader {
      *
      * @return dataHolder object with artifact data
      */
-    ArtifactData readAndStoreArtifactData() {
+    ArtifactData readAndStoreArtifactData() throws XMLStreamException {
         ArtifactData artifactDataHolder = new ArtifactData();
         Artifact testArtifact = new Artifact();
 
@@ -187,7 +185,7 @@ class SynapseTestcaseDataReader {
 
                             String propName = propertyNode.getAttributeValue(new QName(TEST_CASE_INPUT_PROPERTY_NAME));
                             String propValue = propertyNode.getAttributeValue(new QName(TEST_CASE_INPUT_PROPERTY_VALUE));
-                            String propScope = null;
+                            String propScope = "default";
 
                             if (propertyNode.getAttributeValue(new QName(TEST_CASE_INPUT_PROPERTY_SCOPE)) != null) {
                                 propScope = propertyNode.getAttributeValue(new QName(TEST_CASE_INPUT_PROPERTY_SCOPE));
@@ -312,21 +310,40 @@ class SynapseTestcaseDataReader {
                 String servicePath = servicePathNode.getText();
                 service.setContext(servicePath);
 
-                //Read resource of the mock service
-                QName qualifiedServiceResource = new QName("", SERVICE_RESOURCE, "");
-                OMElement serviceResourceNode = mockServiceNode.getFirstChildWithName(qualifiedServiceResource);
+                //Read resources of the mock service
+                QName qualifiedServiceResources = new QName("", SERVICE_RESOURCES, "");
+                OMElement serviceResourcesNode = mockServiceNode.getFirstChildWithName(qualifiedServiceResources);
 
-                //Read service type child attribute from mock service node
-                QName qualifiedServiceMethod = new QName("", SERVICE_RESOURCE_METHOD, "");
-                OMElement serviceMethodNode = serviceResourceNode.getFirstChildWithName(qualifiedServiceMethod);
-                String serviceMethod = serviceMethodNode.getText();
-                service.setMethod(serviceMethod);
+                //Read resource of the resources
+                Iterator<?> resourceIterator = serviceResourcesNode.getChildElements();
+                List<ServiceResource> resources = new ArrayList<>();
 
-                //Read service request data of payload and headers
-                readMockServicesRequest(serviceResourceNode,service);
+                while (resourceIterator.hasNext()) {
+                    OMElement mockServiceResourceNode = (OMElement) (resourceIterator.next());
+                    ServiceResource resource  = new ServiceResource();
 
-                //Read service response data of payload and headers
-                readMockServicesResponse(serviceResourceNode,service);
+                    //Read service type child attribute from mock service node
+                    QName qualifiedServiceMethod = new QName("", SERVICE_RESOURCE_METHOD, "");
+                    OMElement serviceMethodNode = mockServiceResourceNode.getFirstChildWithName(qualifiedServiceMethod);
+                    String serviceMethod = serviceMethodNode.getText();
+                    resource.setMethod(serviceMethod);
+
+                    //Read service sub-context child attribute from mock service node
+                    QName qualifiedServiceSubContext = new QName("", SERVICE_RESOURCE_SUBCONTEXT, "");
+                    OMElement serviceMethodSubContextNode = mockServiceResourceNode.getFirstChildWithName(qualifiedServiceSubContext);
+                    String serviceSubContext = serviceMethodSubContextNode.getText();
+                    resource.setSubContext(serviceSubContext);
+
+                    //Read service request data of payload and headers
+                    readMockServicesRequest(mockServiceResourceNode, resource);
+
+                    //Read service response data of payload and headers
+                    readMockServicesResponse(mockServiceResourceNode, resource);
+                    resources.add(resource);
+                }
+
+                //adding resource to the service
+                service.setResources(resources);
 
                 //adding created mock service object to data holder
                 mockServiceDataHolder.setServiceNameIndex(service.getServiceName(), mockServiceCount);
@@ -349,7 +366,7 @@ class SynapseTestcaseDataReader {
      * @param mockService object with test case data
      * @param serviceResourceNode OMElement of resource node
      */
-    private void readMockServicesRequest(OMElement serviceResourceNode, MockService mockService) {
+    private void readMockServicesRequest(OMElement serviceResourceNode, ServiceResource mockService) {
         QName qualifiedServiceRequest = new QName("", SERVICE_RESOURCE_REQUEST, "");
         OMElement serviceRequestNode = serviceResourceNode.getFirstChildWithName(qualifiedServiceRequest);
 
@@ -394,7 +411,7 @@ class SynapseTestcaseDataReader {
      * @param mockService object with test case data
      * @param serviceResourceNode OMElement of resource node
      */
-    private void readMockServicesResponse(OMElement serviceResourceNode, MockService mockService) {
+    private void readMockServicesResponse(OMElement serviceResourceNode, ServiceResource mockService) {
         QName qualifiedServiceResponse = new QName("", SERVICE_RESOURCE_RESPONSE, "");
         OMElement serviceResponseNode = serviceResourceNode.getFirstChildWithName(qualifiedServiceResponse);
 

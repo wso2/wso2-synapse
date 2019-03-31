@@ -27,9 +27,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
-import org.apache.synapse.deployers.APIDeployer;
-import org.apache.synapse.deployers.ProxyServiceDeployer;
-import org.apache.synapse.deployers.SequenceDeployer;
+import org.apache.synapse.deployers.*;
 
 /**
  * Util class for deploying synapse artifacts to the synapse engine.
@@ -122,6 +120,68 @@ class ConfigurationDeployer {
 
         //deploy synapse artifact
         String deployedArtifact = apiResourceDeployer.deploySynapseArtifact(inputElement, fileName, null);
+
+        return new Pair<>(synapseConfiguration, deployedArtifact);
+    }
+
+    /**
+     * Method of deploying endpoint artifact in synapse.
+     * @param inputElement synapse configuration artifact as OMElement type
+     * @param fileName name of the file
+     * @return response of the artifact deployment and the synapse configuration as a Pair<>
+     */
+    Pair<SynapseConfiguration, String> deployEndpointArtifact(OMElement inputElement, String fileName)
+            throws AxisFault {
+
+        //create new sequence deployer object
+        EndpointDeployer endpointDeployer = new EndpointDeployer();
+
+        //create a synapse configuration and set all axis2 configuration to it
+        SynapseConfiguration synapseConfiguration = UnitTestingExecutor.getExecuteInstance().getSynapseConfiguration();
+        AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
+        ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
+        SynapseEnvironment synapseEnvironment = new Axis2SynapseEnvironment(cfgCtx, synapseConfiguration);
+
+        axisConfiguration.addParameter(new Parameter(SynapseConstants.SYNAPSE_ENV, synapseEnvironment));
+        axisConfiguration.addParameter(new Parameter(SynapseConstants.SYNAPSE_CONFIG, synapseConfiguration));
+        cfgCtx.setAxisConfiguration(axisConfiguration);
+
+        //initialize sequence deployer using created configuration context
+        endpointDeployer.init(cfgCtx);
+
+        //deploy synapse artifact
+        String deployedArtifact = endpointDeployer.deploySynapseArtifact(inputElement, fileName, null);
+
+        return new Pair<>(synapseConfiguration, deployedArtifact);
+    }
+
+    /**
+     * Method of deploying endpoint artifact in synapse.
+     * @param inputElement synapse configuration artifact as OMElement type
+     * @param fileName name of the file
+     * @return response of the artifact deployment and the synapse configuration as a Pair<>
+     */
+    Pair<SynapseConfiguration, String> deployLocalEntryArtifact(OMElement inputElement, String fileName)
+            throws AxisFault {
+
+        //create new sequence deployer object
+        LocalEntryDeployer localEntryDeployer = new LocalEntryDeployer();
+
+        //create a synapse configuration and set all axis2 configuration to it
+        SynapseConfiguration synapseConfiguration = UnitTestingExecutor.getExecuteInstance().getSynapseConfiguration();
+        AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
+        ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
+        SynapseEnvironment synapseEnvironment = new Axis2SynapseEnvironment(cfgCtx, synapseConfiguration);
+
+        axisConfiguration.addParameter(new Parameter(SynapseConstants.SYNAPSE_ENV, synapseEnvironment));
+        axisConfiguration.addParameter(new Parameter(SynapseConstants.SYNAPSE_CONFIG, synapseConfiguration));
+        cfgCtx.setAxisConfiguration(axisConfiguration);
+
+        //initialize sequence deployer using created configuration context
+        localEntryDeployer.init(cfgCtx);
+
+        //deploy synapse artifact
+        String deployedArtifact = localEntryDeployer.deploySynapseArtifact(inputElement, fileName, null);
 
         return new Pair<>(synapseConfiguration, deployedArtifact);
     }

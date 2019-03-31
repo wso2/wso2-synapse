@@ -56,12 +56,16 @@ public class Constants {
     static final String ASSERTION_ACTUAL = "actual";
     static final String ASSERTION_EXPECTED = "expected";
     static final String ASSERTION_MESSAGE = "message";
+    static final String INPUT_PROPERTY_SCOPE_DEFAULT = "default";
+    static final String INPUT_PROPERTY_SCOPE_AXIS2 = "axis2";
+    static final String INPUT_PROPERTY_SCOPE_TRANSPORT = "transport";
 
     static final String SERVICE_NAME = "service-name";
     static final String SERVICE_HOST = "localhost";
     static final String SERVICE_PORT = "port";
     static final String SERVICE_CONTEXT = "context";
-    static final String SERVICE_RESOURCE = "resource";
+    static final String SERVICE_RESOURCES = "resources";
+    static final String SERVICE_RESOURCE_SUBCONTEXT = "sub-context";
     static final String SERVICE_RESOURCE_METHOD = "method";
     static final String SERVICE_RESOURCE_REQUEST = "request";
     static final String SERVICE_RESOURCE_RESPONSE = "response";
@@ -84,6 +88,6 @@ public class Constants {
     static final String PUT_METHOD = "PUT";
     static final String DELETE_METHOD = "DELETE";
 
-    static final String WHITESPACE_REGEX = "\\s(?=(\"[^\"]*\"|[^\"])*$)";
+    public static final String WHITESPACE_REGEX = "\\s(?=(\"[^\"]*\"|[^\"])*$)";
 
 }

@@ -16,16 +16,15 @@
  * under the License.
  */
 
-package org.apache.synapse.unittest.data.classes;
+package org.apache.synapse.unittest.testcase.data.classes;
 
 import javafx.util.Pair;
+
 import java.util.List;
 
-public class MockService {
+public class ServiceResource {
 
-    private int port;
-    private String serviceName;
-    private String context;
+    private String subContext;
     private String method;
     private String requestPayload;
     private String responsePayload;
@@ -33,30 +32,12 @@ public class MockService {
     private List<Pair<String,String>> responseHeaders;
 
     /**
-     * Get mock service port.
+     * Get mock service sub-context.
      *
-     * @return mock service port as in descriptor data
+     * @return mock service type as in descriptor data
      */
-    public int getPort() {
-        return port;
-    }
-
-    /**
-     * Get mock services name.
-     *
-     * @return mock services stored index
-     */
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    /**
-     * Get mock service context.
-     *
-     * @return mock service context as in descriptor data
-     */
-    public String getContext() {
-        return context;
+    public String getSubContext() {
+        return subContext;
     }
 
     /**
@@ -105,33 +86,6 @@ public class MockService {
     }
 
     /**
-     * Add mock service port inside the ArrayList.
-     *
-     * @param port service port as in descriptor data
-     */
-    public void setPort(int port) {
-        this.port = port;
-    }
-
-    /**
-     * Add mock service name inside the map.
-     *
-     * @param serviceName service name as key
-     */
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
-    }
-
-    /**
-     * Add mock service path inside the ArrayList.
-     *
-     * @param context service path as in descriptor data
-     */
-    public void setContext(String context) {
-        this.context = context;
-    }
-
-    /**
      * Add mock service type inside the ArrayList.
      *
      * @param method service type as in descriptor data
@@ -174,5 +128,14 @@ public class MockService {
      */
     public void setResponseHeaders(List<Pair<String, String>> responseHeaders) {
         this.responseHeaders = responseHeaders;
+    }
+
+    /**
+     * Set mock service sub-context.
+     *
+     * @return mock service sub-context as in descriptor data
+     */
+    public void setSubContext(String subContext) {
+        this.subContext = subContext;
     }
 }

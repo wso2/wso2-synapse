@@ -43,14 +43,12 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
+import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 
 import java.io.IOException;
-import java.util.Locale;
+import java.util.*;
 
-import static org.apache.synapse.unittest.Constants.DELETE_METHOD;
-import static org.apache.synapse.unittest.Constants.GET_METHOD;
-import static org.apache.synapse.unittest.Constants.POST_METHOD;
-import static org.apache.synapse.unittest.Constants.PUT_METHOD;
+import static org.apache.synapse.unittest.Constants.*;
 
 /**
  * Class is responsible for mediating incoming payload with relevant configuration.
@@ -63,18 +61,24 @@ public class TestCasesMediator {
 
     /**
      * Sequence mediation of receiving test cases using deployed sequence deployer.
+     * set input properties for the Message Context
      *
-     * @param inputXmlPayload received input payload for particular test case
+     * @param currentTestCase current test case
      * @param synConfig synapse configuration used to deploy sequenceDeployer
      * @param key key of the sequence deployer
      * @return result of mediation and message context as a Pair<>
      */
-    static Pair<Boolean, MessageContext> sequenceMediate(String inputXmlPayload, SynapseConfiguration synConfig,
+    static Pair<Boolean, MessageContext> sequenceMediate(TestCase currentTestCase, SynapseConfiguration synConfig,
                                                          String key) {
         Mediator sequenceMediator = synConfig.getSequence(key);
-        MessageContext msgCtxt = createSynapseMessageContext(inputXmlPayload, synConfig);
+        MessageContext msgCtxt = createSynapseMessageContext(currentTestCase.getInputPayload(), synConfig);
 
-        boolean mediationResult = sequenceMediator.mediate(msgCtxt);
+        boolean mediationResult = false;
+
+        if (msgCtxt != null) {
+            mediationResult = sequenceMediator
+                    .mediate(setInputMessageProperties(msgCtxt, currentTestCase.getPropertyMap()));
+        }
 
         return new Pair<>(mediationResult, msgCtxt);
     }
@@ -82,44 +86,52 @@ public class TestCasesMediator {
     /**
      * Proxy service invoke using http client for receiving test cases.
      *
-     * @param inputXmlPayload received input payload for particular test case
+     * @param currentTestCase current test case
      * @param key key of the proxy service
      * @return response received from the proxy service
      */
-    static String proxyServiceExecutor(String inputXmlPayload, String key) throws IOException {
-        String responseOfRevoke;
+    static HttpResponse proxyServiceExecutor(TestCase currentTestCase, String key) throws IOException {
 
         String url = "http://localhost:8280/services/" + key;
         logger.info("Invoking URI - " + url);
 
-        HttpClient client = HttpClientBuilder.create().build();
+        HttpClient clientConnector = HttpClientBuilder.create().build();
         HttpPost httpPost = new HttpPost(url);
-        httpPost.setHeader(org.apache.http.protocol.HTTP.CONTENT_TYPE, "text/xml");
-        StringEntity postStringEntity = new StringEntity(inputXmlPayload);
-        httpPost.setEntity(postStringEntity);
-        HttpResponse response = client.execute(httpPost);
+
+        //set headers
+        for (Map<String, String> property : currentTestCase.getPropertyMap()) {
+            String scope = property.get(TEST_CASE_INPUT_PROPERTY_SCOPE);
+
+            //Setting Synapse properties
+            if (scope.equals(INPUT_PROPERTY_SCOPE_TRANSPORT)) {
+                httpPost.setHeader(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
+                        property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
+            }
+        }
+
+        StringEntity postEntity = new StringEntity(currentTestCase.getInputPayload());
+        httpPost.setEntity(postEntity);
+        HttpResponse response = clientConnector.execute(httpPost);
 
         int responseCode = response.getStatusLine().getStatusCode();
         if (responseCode == 200) {
-            responseOfRevoke = EntityUtils.toString(response.getEntity(), "UTF-8");
+            return response;
         } else {
-            responseOfRevoke = "failed";
+            return null;
         }
 
-        return responseOfRevoke;
     }
 
     /**
      * API resource invoke using http client for receiving test cases.
      *
-     * @param inputXmlPayload received input payload for particular test case
+     * @param currentTestCase current test case
      * @param resourceMethod resource method
      * @param context context of the resource
      * @return response received from the API resource
      */
-    static String apiResourceExecutor(String inputXmlPayload, String context, String resourceMethod)
+    static HttpResponse apiResourceExecutor(TestCase currentTestCase, String context, String resourceMethod)
             throws IOException {
-        String responseOfRevoke;
 
         String url = "http://localhost:8280" + context;
         logger.info("Invoking URI - " + url);
@@ -130,19 +142,52 @@ public class TestCasesMediator {
         switch (resourceMethod.toUpperCase(Locale.ENGLISH)) {
             case GET_METHOD:
                 HttpGet httpGet = new HttpGet(url);
+                //set headers
+                for (Map<String, String> property : currentTestCase.getPropertyMap()) {
+                    String scope = property.get(TEST_CASE_INPUT_PROPERTY_SCOPE);
+
+                    //Setting Synapse properties
+                    if (scope.equals(INPUT_PROPERTY_SCOPE_TRANSPORT)) {
+                        httpGet.setHeader(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
+                                property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
+                    }
+                }
+
                 response = clientConnector.execute(httpGet);
                 break;
 
             case POST_METHOD:
                 HttpPost httpPost = new HttpPost(url);
-                StringEntity postEntity = new StringEntity(inputXmlPayload);
+                //set headers
+                for (Map<String, String> property : currentTestCase.getPropertyMap()) {
+                    String scope = property.get(TEST_CASE_INPUT_PROPERTY_SCOPE);
+
+                    //Setting Synapse properties
+                    if (scope.equals(INPUT_PROPERTY_SCOPE_TRANSPORT)) {
+                        httpPost.setHeader(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
+                                property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
+                    }
+                }
+
+                StringEntity postEntity = new StringEntity(currentTestCase.getInputPayload());
                 httpPost.setEntity(postEntity);
                 response = clientConnector.execute(httpPost);
                 break;
 
             case PUT_METHOD:
                 HttpPut httpPut = new HttpPut(url);
-                StringEntity putEntity = new StringEntity(inputXmlPayload);
+                //set headers
+                for (Map<String, String> property : currentTestCase.getPropertyMap()) {
+                    String scope = property.get(TEST_CASE_INPUT_PROPERTY_SCOPE);
+
+                    //Setting Synapse properties
+                    if (scope.equals(INPUT_PROPERTY_SCOPE_TRANSPORT)) {
+                        httpPut.setHeader(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
+                                property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
+                    }
+                }
+
+                StringEntity putEntity = new StringEntity(currentTestCase.getInputPayload());
                 httpPut.setEntity(putEntity);
                 response = clientConnector.execute(httpPut);
                 break;
@@ -158,12 +203,11 @@ public class TestCasesMediator {
 
         int responseCode = response.getStatusLine().getStatusCode();
         if (responseCode == 200) {
-            responseOfRevoke = EntityUtils.toString(response.getEntity(), "UTF-8");
+//            responseOfRevoke = EntityUtils.toString(response.getEntity(), "UTF-8");
+            return response;
         } else {
-            responseOfRevoke = "failed";
+            return null;
         }
-
-        return responseOfRevoke;
     }
 
     /**
@@ -214,4 +258,65 @@ public class TestCasesMediator {
         return SynapseConfigUtils.stringToOM(xml);
     }
 
+    private static MessageContext setInputMessageProperties(MessageContext msgCtxt,
+                                                            ArrayList<Map<String, String>> properties) {
+
+        try {
+            for (Map<String, String> property : properties) {
+                String scope = property.get(TEST_CASE_INPUT_PROPERTY_SCOPE);
+                System.out.println("SCOPE ##### - " + scope);
+                //Setting Synapse properties
+                if (scope.equals(INPUT_PROPERTY_SCOPE_DEFAULT)) {
+                    msgCtxt.setProperty(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
+                            property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
+
+                } else if (scope.equals(INPUT_PROPERTY_SCOPE_AXIS2)) {
+
+                    //Setting Axis2 properties
+                    Axis2MessageContext axis2smc = (Axis2MessageContext) msgCtxt;
+                    org.apache.axis2.context.MessageContext axis2MessageCtx =
+                            axis2smc.getAxis2MessageContext();
+                    axis2MessageCtx.setProperty(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
+                            property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
+
+                } else if (scope.equals(INPUT_PROPERTY_SCOPE_TRANSPORT)) {
+
+                    //Setting Transport Headers
+                    Axis2MessageContext axis2smc = (Axis2MessageContext) msgCtxt;
+                    org.apache.axis2.context.MessageContext axis2MessageCtx =
+                            axis2smc.getAxis2MessageContext();
+                    Object headers = axis2MessageCtx.getProperty(
+                            org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+
+                    /*
+                     * if null is passed as header value at AbstractHTTPSender in Axis2 when header
+                     * value is read causes a null-pointer issue
+                     */
+
+                    if (headers != null) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> headersMap = (Map) headers;
+                        headersMap.put(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
+                                property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
+                    }
+                    if (headers == null) {
+                        Map<String, Object> headersMap = new TreeMap<>(new Comparator<String>() {
+                            public int compare(String o1, String o2) {
+                                return o1.compareToIgnoreCase(o2);
+                            }
+                        });
+                        headersMap.put(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
+                                property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
+                        axis2MessageCtx.setProperty(
+                                org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
+                                headersMap);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error while setting properties to the Message Context", e);
+        }
+
+        return msgCtxt;
+    }
 }

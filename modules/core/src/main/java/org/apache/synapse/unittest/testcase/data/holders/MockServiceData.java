@@ -16,9 +16,9 @@
  * under the License.
  */
 
-package org.apache.synapse.unittest.data.holders;
+package org.apache.synapse.unittest.testcase.data.holders;
 
-import org.apache.synapse.unittest.data.classes.MockService;
+import org.apache.synapse.unittest.testcase.data.classes.MockService;
 
 import java.util.ArrayList;
 import java.util.HashMap;

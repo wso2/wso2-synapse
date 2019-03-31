@@ -18,12 +18,11 @@
 
 package org.apache.synapse.unittest;
 
-import javafx.util.Pair;
 import org.apache.log4j.Logger;
 
-import org.apache.synapse.unittest.data.classes.Artifact;
-import org.apache.synapse.unittest.data.holders.ArtifactData;
-import org.apache.synapse.unittest.data.holders.MockServiceData;
+import org.apache.synapse.unittest.testcase.data.classes.Artifact;
+import org.apache.synapse.unittest.testcase.data.holders.ArtifactData;
+import org.apache.synapse.unittest.testcase.data.holders.MockServiceData;
 import org.apache.synapse.unittest.mock.services.MockServiceCreator;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -39,7 +38,6 @@ import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.List;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -84,7 +82,7 @@ class ConfigModifier {
             try {
                 DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
                 DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
-                Document document = docBuilder.parse(new InputSource(new StringReader(artifact.getArtifact())));
+                Document document = docBuilder.parse(new InputSource(new StringReader(artifact.getArtifact().toString())));
 
                 NodeList xmlElementNodes = document.getElementsByTagName("*");
 
@@ -101,25 +99,16 @@ class ConfigModifier {
 
                         if (isServiceExists) {
                             int serviceElementIndex = mockServiceData.getServiceNameIndex(valueOfName);
-                            String serviceMethod = mockServiceData.getMockServices(serviceElementIndex).getMethod();
                             int port = mockServiceData.getMockServices(serviceElementIndex).getPort();
-                            String path = mockServiceData.getMockServices(serviceElementIndex).getContext();
-                            String method = mockServiceData.getMockServices(serviceElementIndex).getMethod();
-                            String inputPayloadWithoutWhitespace = mockServiceData.getMockServices(serviceElementIndex).getRequestPayload()
-                                    .replaceAll(WHITESPACE_REGEX, "");
-                            String responseWithoutWhitespace = mockServiceData.getMockServices(serviceElementIndex).getResponsePayload()
-                                    .replaceAll(WHITESPACE_REGEX, "");
-                            String serviceURL = HTTP + SERVICE_HOST + ":" + port + path;
+                            String context = mockServiceData.getMockServices(serviceElementIndex).getContext();
+                            String serviceURL = HTTP + SERVICE_HOST + ":" + port + context;
 
-                            List<Pair<String,String>> requestHeaders = mockServiceData.getMockServices(serviceElementIndex).getRequestHeaders();
-                            List<Pair<String,String>> responseHeaders = mockServiceData.getMockServices(serviceElementIndex).getResponseHeaders();
                             mockServicePorts.add(port);
-
-                            updateEndPoint(endPointNode, serviceURL, serviceMethod);
+                            updateEndPoint(endPointNode, serviceURL);
 
                             logger.info("Mock service creator ready to start service for " + valueOfName);
-                            MockServiceCreator.startServer(valueOfName, SERVICE_HOST, port, path, method,
-                                    inputPayloadWithoutWhitespace, responseWithoutWhitespace, requestHeaders,responseHeaders);
+                            MockServiceCreator.startServer(valueOfName, SERVICE_HOST, port, context,
+                                    mockServiceData.getMockServices(serviceElementIndex).getResources());
                         }
                     }
                 }
@@ -134,7 +123,7 @@ class ConfigModifier {
                 artifact.setArtifact(writer.getBuffer().toString().replaceAll("xmlns=\"\"", ""));
 
                 //check services are ready to serve
-                logger.info("Thread waiting for mock service(s) starting");
+                logger.info("Thread waiting for mock service(s) starting if exists");
 
                 for (int port : mockServicePorts) {
                     boolean isAvailable = true;
@@ -150,8 +139,6 @@ class ConfigModifier {
                     }
                 }
 
-                logger.info("Mock service(s) started");
-
             } catch (Exception e) {
                 logger.error(e);
             }
@@ -165,9 +152,8 @@ class ConfigModifier {
      *
      * @param endPointNode endpoint node in document
      * @param serviceURL mock service url
-     * @param serviceMethod mock service method
      */
-    private static void updateEndPoint(Node endPointNode, String serviceURL, String serviceMethod) {
+    private static void updateEndPoint(Node endPointNode, String serviceURL) {
         NodeList childNodesOfEndPoint = endPointNode.getChildNodes();
         Node addressNode = childNodesOfEndPoint.item(1);
 
@@ -183,7 +169,6 @@ class ConfigModifier {
 
             } else if (attribute.getNodeName().equals(URI_TEMPLATE)) {
                 attributeListOfAddress.getNamedItem(URI_TEMPLATE).setNodeValue(serviceURL);
-                attributeListOfAddress.getNamedItem(METHOD).setNodeValue(serviceMethod);
                 isFound = true;
             }
 

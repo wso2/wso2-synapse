@@ -16,12 +16,17 @@
  * under the License.
  */
 
-package org.apache.synapse.unittest.data.classes;
+package org.apache.synapse.unittest.testcase.data.classes;
+
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.util.AXIOMUtil;
+
+import javax.xml.stream.XMLStreamException;
 
 public class Artifact {
 
     private String artifactType;
-    private String artifactData;
+    private OMElement artifactData;
     private String artifactNameOrKey;
 
     /**
@@ -38,7 +43,7 @@ public class Artifact {
      *
      * @return artifact in descriptor data
      */
-    public String getArtifact() {
+    public OMElement getArtifact() {
         return artifactData;
     }
 
@@ -65,8 +70,8 @@ public class Artifact {
      *
      * @param artifact receiving artifact in descriptor data
      */
-    public void setArtifact(String artifact) {
-        this.artifactData = artifact;
+    public void setArtifact(String artifact) throws XMLStreamException {
+        this.artifactData = AXIOMUtil.stringToOM(artifact);
     }
 
     /**
