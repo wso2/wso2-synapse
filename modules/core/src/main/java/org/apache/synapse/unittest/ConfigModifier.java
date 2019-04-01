@@ -89,7 +89,7 @@ class ConfigModifier {
                         .parse(new InputSource(new StringReader(artifact.getArtifact().toString())));
 
                 //Find relevant endpoint and update actual one. Start the mock service
-                configureEndpointsAndStartService(document, mockServiceData, mockServicePorts);
+                Document parsedDocument = configureEndpointsAndStartService(document, mockServiceData, mockServicePorts);
 
                 //Transform the document to the string and store it in artifact data holder
                 TransformerFactory tf = TransformerFactory.newInstance();
@@ -97,7 +97,7 @@ class ConfigModifier {
                 Transformer transformer = tf.newTransformer();
                 transformer.setOutputProperty(OutputKeys.INDENT, "yes");
                 StringWriter writer = new StringWriter();
-                transformer.transform(new DOMSource(document), new StreamResult(writer));
+                transformer.transform(new DOMSource(parsedDocument), new StreamResult(writer));
                 artifact.setArtifact(writer.getBuffer().toString().replaceAll("xmlns=\"\"", ""));
 
                 //check services are ready to serve by checking the ports
@@ -121,7 +121,7 @@ class ConfigModifier {
      * @param mockServiceData  mock service data holder
      * @param mockServicePorts mock service port array
      */
-    private static void configureEndpointsAndStartService(Document document, MockServiceData mockServiceData,
+    private static Document configureEndpointsAndStartService(Document document, MockServiceData mockServiceData,
                                                           ArrayList<Integer> mockServicePorts) {
         NodeList xmlElementNodes = document.getElementsByTagName("*");
 
@@ -151,6 +151,8 @@ class ConfigModifier {
                 }
             }
         }
+
+        return document;
     }
 
     /**

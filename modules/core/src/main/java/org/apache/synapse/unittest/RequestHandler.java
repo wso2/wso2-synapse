@@ -57,6 +57,8 @@ public class RequestHandler implements Runnable {
     public void run() {
         try {
 
+            logger.info("\n");
+            logger.info("---------------------START TEST-CASE--------------------------\n");
             String receivedData = readData();
             SynapseTestCase synapseTestCases = preProcessingData(receivedData);
 
@@ -70,6 +72,7 @@ public class RequestHandler implements Runnable {
             writeData(responseToClient);
             MockServiceCreator.stopServices();
 
+            logger.info("---------------------END TEST-CASE--------------------------\n");
         } catch (Exception e) {
             logger.error(e);
         } finally {
@@ -154,7 +157,7 @@ public class RequestHandler implements Runnable {
         }
 
         //check supportive-artifact deployment is success or not
-        if (supportiveArtifactDeployment.getKey()) {
+        if (supportiveArtifactDeployment.getKey() || synapseTestCase.getArtifacts().getSupportiveArtifactCount() == 0) {
             logger.info("Test artifact deployment started");
             testArtifactDeployment = agent.processTestArtifact(synapseTestCase);
 
@@ -173,7 +176,7 @@ public class RequestHandler implements Runnable {
             Pair<JSONObject, String> testCasesMediated = agent.processTestCases(synapseTestCase);
 
             //check mediation or invoke is success or failed
-            if (testCasesMediated.getValue() != null) {
+            if (testCasesMediated.getValue() == null) {
                 responseToClient = testCasesMediated.getKey();
             } else {
                 responseToClient = new JSONObject("{'mediation':'failed', 'exception':'"

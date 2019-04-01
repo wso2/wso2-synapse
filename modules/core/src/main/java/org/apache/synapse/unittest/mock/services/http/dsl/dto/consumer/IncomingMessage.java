@@ -90,11 +90,7 @@ public class IncomingMessage {
     }
 
     private boolean isContextMatch(HttpRequestContext requestContext) {
-        System.out.println("############");
-        System.out.println("RECEIVED - " + this.context);
         this.context = extractContext(requestContext.getUri());
-        System.out.println("pathRegex - " + pathRegex);
-        System.out.println(pathRegex.matcher(context).find());
         return pathRegex.matcher(context).find();
     }
 
@@ -200,7 +196,6 @@ public class IncomingMessage {
             fullPath = fullPath.substring(0, fullPath.length() - 1);
         }
 
-        System.out.println("^" + fullPath + "/$");
         return "^" + fullPath + "/$";
     }
 
