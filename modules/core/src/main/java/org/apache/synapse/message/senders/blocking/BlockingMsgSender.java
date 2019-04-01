@@ -184,6 +184,8 @@ public class BlockingMsgSender {
                 axisInMsgCtx.getProperty(HTTPConstants.ERROR_HTTP_STATUS_CODES));
 		axisOutMsgCtx.setProperty(SynapseConstants.DISABLE_CHUNKING,
                 axisInMsgCtx.getProperty(SynapseConstants.DISABLE_CHUNKING));
+		axisOutMsgCtx.setProperty(SynapseConstants.NO_KEEPALIVE,
+                axisInMsgCtx.getProperty(SynapseConstants.NO_KEEPALIVE));
         //Can't refer to the Axis2 constant 'NO_DEFAULT_CONTENT_TYPE' defined in 1.6.1.wso2v23-SNAPSHOT until
         //an API change is done.
         axisOutMsgCtx.setProperty(SynapseConstants.NO_DEFAULT_CONTENT_TYPE,
