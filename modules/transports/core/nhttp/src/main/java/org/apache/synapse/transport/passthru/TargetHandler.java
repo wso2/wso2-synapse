@@ -652,8 +652,9 @@ public class TargetHandler implements NHttpClientEventHandler {
                 MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
 
                 log.warn("Connection time out after while in state : " + state +
-                         " Socket Timeout : " + conn.getSocketTimeout() +
-                         getConnectionLoggingInfo(conn));
+                        " Socket Timeout : " + conn.getSocketTimeout() +
+                        " correlation_id : " + conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID) +
+                        getConnectionLoggingInfo(conn));
                 if (targetConfiguration.isCorrelationLoggingEnabled()) {
                     logHttpRequestErrorInCorrelationLog(conn, "Timeout in " + state);
                 }

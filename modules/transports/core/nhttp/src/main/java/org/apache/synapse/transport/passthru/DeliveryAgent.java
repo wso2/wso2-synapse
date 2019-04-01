@@ -243,10 +243,8 @@ public class DeliveryAgent {
     private void tryNextMessage(MessageContext messageContext, HttpRoute route, NHttpClientConnection conn) {
         if (conn != null) {
             try {
-                if (targetConfiguration.isCorrelationLoggingEnabled()) {
-                    conn.getContext().setAttribute(PassThroughConstants.CORRELATION_ID,
-                            messageContext.getProperty(PassThroughConstants.CORRELATION_ID));
-                }
+                conn.getContext().setAttribute(PassThroughConstants.CORRELATION_ID,
+                        messageContext.getProperty(PassThroughConstants.CORRELATION_ID));
                 TargetContext.updateState(conn, ProtocolState.REQUEST_READY);
                 TargetContext.get(conn).setRequestMsgCtx(messageContext);
                 if (log.isDebugEnabled()) {
