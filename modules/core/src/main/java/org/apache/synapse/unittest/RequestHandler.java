@@ -64,7 +64,7 @@ public class RequestHandler implements Runnable {
                 runTestingAgent(synapseTestCases);
             } else {
                 logger.error("Reading Synapse testcase data failed");
-                responseToClient = new JSONObject("{'test-case':'failed while reading synapseTestCase data'}");
+                responseToClient = new JSONObject("{'test-cases':'Failed while reading synapseTestCase data'}");
             }
 
             writeData(responseToClient);
@@ -79,6 +79,8 @@ public class RequestHandler implements Runnable {
 
     /**
      * Read input data from the unit testing client.
+     *
+     * @return read data from the client
      */
     private String readData() {
         String inputFromClient = null;
@@ -102,20 +104,24 @@ public class RequestHandler implements Runnable {
      * Uses configModifier if there are some mock services to start
      *
      * @param receivedMessage received synapseTestcase data message as String
+     * @return SynapaseTestCase object contains artifact, test cases and mock services data
      */
     private SynapseTestCase preProcessingData(String receivedMessage) {
 
         try {
+            //Read relevant data from the received message and add to the relevant data holders
             SynapseTestcaseDataReader synapseTestcaseDataReader = new SynapseTestcaseDataReader(receivedMessage);
+
             ArtifactData readArtifactData = synapseTestcaseDataReader.readAndStoreArtifactData();
-            MockServiceData readMockServiceData = synapseTestcaseDataReader.readAndStoreMockServiceData();
             TestCaseData readTestCaseData = synapseTestcaseDataReader.readAndStoreTestCaseData();
+            MockServiceData readMockServiceData = synapseTestcaseDataReader.readAndStoreMockServiceData();
 
             //configure the artifact if there are mock-services to append
             if (readMockServiceData.getMockServicesCount() > 0) {
                 ConfigModifier.endPointModifier(readArtifactData, readMockServiceData);
             }
 
+            //wrap the artifact data, testcase data and mock service data as one
             SynapseTestCase synapseTestCases = new SynapseTestCase();
             synapseTestCases.setArtifacts(readArtifactData);
             synapseTestCases.setMockServices(readMockServiceData);
@@ -138,48 +144,48 @@ public class RequestHandler implements Runnable {
     private void runTestingAgent(SynapseTestCase synapseTestCase) {
 
         TestingAgent agent = new TestingAgent();
+        Pair<Boolean, String> supportiveArtifactDeployment = new Pair<>(false, null);
+        Pair<Boolean, String> testArtifactDeployment = new Pair<>(false, null);
 
-        //get results of artifact deployer
-        logger.info("Supportive artifacts deployment started");
-        Pair<Boolean, String> supportiveArtifactDeployed = agent.processSupportiveArtifacts(synapseTestCase);
-        Pair<Boolean, String> testArtifactDeployed = new Pair<>(false,null);
+        //get results of supportive-artifact deployment if exists
+        if (synapseTestCase.getArtifacts().getSupportiveArtifactCount() > 0) {
+            logger.info("Supportive artifacts deployment started");
+            supportiveArtifactDeployment = agent.processSupportiveArtifacts(synapseTestCase);
+        }
 
         //check supportive-artifact deployment is success or not
-        if (supportiveArtifactDeployed.getKey()) {
-
+        if (supportiveArtifactDeployment.getKey()) {
             logger.info("Test artifact deployment started");
-            testArtifactDeployed = agent.processTestArtifact(synapseTestCase);
+            testArtifactDeployment = agent.processTestArtifact(synapseTestCase);
 
-        } else if (!supportiveArtifactDeployed.getKey() && supportiveArtifactDeployed.getValue() != null) {
+        } else if (!supportiveArtifactDeployment.getKey() && supportiveArtifactDeployment.getValue() != null) {
             responseToClient = new JSONObject("{'deployment':'failed', 'exception':'"
-                    + supportiveArtifactDeployed.getValue() + "'}");
+                    + supportiveArtifactDeployment.getValue() + "'}");
         } else {
             responseToClient = new JSONObject("{'supportive-deployment':'failed'}");
         }
 
         //check test-artifact deployment is success or not
-        if (testArtifactDeployed.getKey()) {
+        if (testArtifactDeployment.getKey()) {
 
             logger.info("Synapse testing agent ready to mediate test cases through deployments");
             //performs test cases through the deployed synapse configuration
             Pair<JSONObject, String> testCasesMediated = agent.processTestCases(synapseTestCase);
 
             //check mediation or invoke is success or failed
-            if (testCasesMediated.getValue().contains("null")) {
+            if (testCasesMediated.getValue() != null) {
                 responseToClient = testCasesMediated.getKey();
             } else {
                 responseToClient = new JSONObject("{'mediation':'failed', 'exception':'"
                         + testCasesMediated.getValue() + "'}");
             }
 
-        } else if (!testArtifactDeployed.getKey() && testArtifactDeployed.getValue() != null) {
+        } else if (!testArtifactDeployment.getKey() && testArtifactDeployment.getValue() != null) {
             responseToClient = new JSONObject("{'deployment':'failed', 'exception':'"
-                    + testArtifactDeployed.getValue() + "'}");
+                    + testArtifactDeployment.getValue() + "'}");
         } else {
             responseToClient = new JSONObject("{'test-deployment':'failed'}");
         }
-
-
     }
 
     /**

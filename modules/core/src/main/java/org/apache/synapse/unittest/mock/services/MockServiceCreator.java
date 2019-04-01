@@ -47,17 +47,19 @@ public class MockServiceCreator {
     private static Logger logger = Logger.getLogger(MockServiceCreator.class.getName());
     private static boolean isMockServiceCreated = false;
 
-    private MockServiceCreator() {}
+    private MockServiceCreator() {
+    }
+
     /**
      * Start service for given parameters using emulator.
      *
      * @param mockServiceName endpoint name given in descriptor data
-     * @param host domain of the url
-     * @param context path of the url
-     * @param resources resources of the service
+     * @param host            domain of the url
+     * @param context         path of the url
+     * @param resources       resources of the service
      */
-    public static void startServer(String mockServiceName, String host, int port, String context,
-                                   List<ServiceResource> resources) {
+    public static void startMockServiceServer(String mockServiceName, String host, int port, String context,
+                                              List<ServiceResource> resources) {
 
         //set flag to mock service started
         if (!isMockServiceCreated) {
@@ -71,78 +73,8 @@ public class MockServiceCreator {
                     .port(port)
                     .context(context);
 
-            for (ServiceResource resource :  resources) {
-                String serviceMethod = resource.getMethod();
-                String serviceSubContext = resource.getSubContext();
-                String serviceRequestPayload = resource.getRequestPayload().replaceAll(WHITESPACE_REGEX, "");
-                String serviceResponsePayload = resource.getResponsePayload().replaceAll(WHITESPACE_REGEX, "");
-                List<Pair<String,String>> requestHeaders = resource.getRequestHeaders();
-                List<Pair<String,String>> responseHeaders = resource.getResponseHeaders();
-
-                System.out.println(serviceMethod);
-                System.out.println(serviceSubContext);
-                System.out.println(serviceRequestPayload);
-                System.out.println(serviceResponsePayload);
-                System.out.println(requestHeaders.toString());
-                System.out.println(responseHeaders.toString());
-
-                switch (serviceMethod.toUpperCase()) {
-                    case GET_METHOD :
-                        System.out.println("YES");
-                        //adding headers of request
-                        IncomingMessage incomingMessage = request().withMethod(HttpMethod.GET).withPath(serviceSubContext);
-                        for (Pair<String,String> header : requestHeaders) {
-                            System.out.println("INPUT_HEADERS");
-                            incomingMessage.withHeader(header.getKey(),header.getValue());
-                        }
-                        emulator.when(incomingMessage);
-
-                        //adding headers of response
-                        OutgoingMessage outGoingMessage = response().withBody(serviceResponsePayload).withStatusCode(HttpResponseStatus.OK);
-                        for (Pair<String,String> header : responseHeaders) {
-                            System.out.println("OUT_HEADERS"+header.getKey()+header.getValue());
-                            outGoingMessage.withHeader(header.getKey(),header.getValue());
-                        }
-
-                        emulator.respond(outGoingMessage);
-                        break;
-
-                    case POST_METHOD :
-                        //adding headers of request
-                        incomingMessage = request().withMethod(HttpMethod.POST).withBody(serviceRequestPayload).withPath(serviceSubContext);
-                        for (Pair<String,String> header : requestHeaders) {
-                            incomingMessage.withHeader(header.getKey(),header.getValue());
-                        }
-                        emulator.when(incomingMessage);
-
-                        //adding headers of response
-                        outGoingMessage = response().withBody(serviceResponsePayload).withStatusCode(HttpResponseStatus.OK);
-                        for (Pair<String,String> header : responseHeaders) {
-                            outGoingMessage.withHeader(header.getKey(),header.getValue());
-                        }
-
-                        emulator.respond(outGoingMessage);
-                        break;
-
-                    default:
-
-                        //adding headers of request
-                        incomingMessage = request().withMethod(HttpMethod.GET).withPath(serviceSubContext);
-                        for (Pair<String,String> header : requestHeaders) {
-                            incomingMessage.withHeader(header.getKey(),header.getValue());
-                        }
-                        emulator.when(incomingMessage);
-
-                        //adding headers of response
-                        outGoingMessage = response().withBody(serviceResponsePayload).withStatusCode(HttpResponseStatus.OK);
-                        for (Pair<String,String> header : responseHeaders) {
-                            outGoingMessage.withHeader(header.getKey(),header.getValue());
-                        }
-
-                        emulator.respond(outGoingMessage);
-                        break;
-                }
-
+            for (ServiceResource resource : resources) {
+                routeThroughResourceMethod(resource, emulator);
             }
 
             emulator.operations().start();
@@ -150,9 +82,84 @@ public class MockServiceCreator {
             logger.info("Mock service started for " + mockServiceName + " in - http://" + host + ":" + port + context);
 
         } catch (Exception e) {
-            logger.error("Error in initiating mock service named " + mockServiceName , e);
+            logger.error("Error in initiating mock service named " + mockServiceName, e);
         }
 
+    }
+
+    /**
+     * Start service for given parameters using emulator.
+     *
+     * @param resource mock service resource data
+     * @param emulator HttpConsumerContext emulator object
+     */
+    private static void routeThroughResourceMethod(ServiceResource resource, HttpConsumerContext emulator) {
+        String serviceMethod = resource.getMethod();
+        String serviceSubContext = resource.getSubContext();
+        String serviceRequestPayload = resource.getRequestPayload()
+                .replaceAll(WHITESPACE_REGEX, "");
+        String serviceResponsePayload = resource.getResponsePayload()
+                .replaceAll(WHITESPACE_REGEX, "");
+        List<Pair<String, String>> requestHeaders = resource.getRequestHeaders();
+        List<Pair<String, String>> responseHeaders = resource.getResponseHeaders();
+
+        switch (serviceMethod.toUpperCase()) {
+            case GET_METHOD:
+                //adding headers of request
+                IncomingMessage incomingMessage =
+                        request().withMethod(HttpMethod.GET).withPath(serviceSubContext);
+                for (Pair<String, String> header : requestHeaders) {
+                    incomingMessage.withHeader(header.getKey(), header.getValue());
+                }
+                emulator.when(incomingMessage);
+
+                //adding headers of response
+                OutgoingMessage outGoingMessage =
+                        response().withBody(serviceResponsePayload).withStatusCode(HttpResponseStatus.OK);
+                for (Pair<String, String> header : responseHeaders) {
+                    outGoingMessage.withHeader(header.getKey(), header.getValue());
+                }
+
+                emulator.respond(outGoingMessage);
+                break;
+
+            case POST_METHOD:
+                //adding headers of request
+                incomingMessage = request().withMethod(HttpMethod.POST)
+                        .withBody(serviceRequestPayload).withPath(serviceSubContext);
+                for (Pair<String, String> header : requestHeaders) {
+                    incomingMessage.withHeader(header.getKey(), header.getValue());
+                }
+                emulator.when(incomingMessage);
+
+                //adding headers of response
+                outGoingMessage =
+                        response().withBody(serviceResponsePayload).withStatusCode(HttpResponseStatus.OK);
+                for (Pair<String, String> header : responseHeaders) {
+                    outGoingMessage.withHeader(header.getKey(), header.getValue());
+                }
+
+                emulator.respond(outGoingMessage);
+                break;
+
+            default:
+                //adding headers of request
+                incomingMessage = request().withMethod(HttpMethod.GET).withPath(serviceSubContext);
+                for (Pair<String, String> header : requestHeaders) {
+                    incomingMessage.withHeader(header.getKey(), header.getValue());
+                }
+                emulator.when(incomingMessage);
+
+                //adding headers of response
+                outGoingMessage =
+                        response().withBody(serviceResponsePayload).withStatusCode(HttpResponseStatus.OK);
+                for (Pair<String, String> header : responseHeaders) {
+                    outGoingMessage.withHeader(header.getKey(), header.getValue());
+                }
+
+                emulator.respond(outGoingMessage);
+                break;
+        }
     }
 
     /**

@@ -43,6 +43,7 @@ class SynapseTestcaseDataReader {
 
     /**
      * Constructor of the SynapseTestcaseDataReader class.
+     *
      * @param descriptorData defines the descriptor data of the received message
      */
     SynapseTestcaseDataReader(String descriptorData) {
@@ -67,10 +68,10 @@ class SynapseTestcaseDataReader {
 
         //Read artifact from descriptor data
         QName qualifiedArtifacts = new QName("", ARTIFACTS, "");
-        OMElement artifactNode = importXMLFile.getFirstChildWithName(qualifiedArtifacts);
+        OMElement artifactsNode = importXMLFile.getFirstChildWithName(qualifiedArtifacts);
 
         QName qualifiedTestArtifact = new QName("", TEST_ARTIFACT, "");
-        OMElement testArtifactNode = artifactNode.getFirstChildWithName(qualifiedTestArtifact);
+        OMElement testArtifactNode = artifactsNode.getFirstChildWithName(qualifiedTestArtifact);
 
         QName qualifiedArtifact = new QName("", ARTIFACT, "");
         OMElement testArtifactDataNode = testArtifactNode.getFirstChildWithName(qualifiedArtifact);
@@ -95,10 +96,14 @@ class SynapseTestcaseDataReader {
 
         //Read supportive test cases data
         QName qualifiedSupportiveTestArtifact = new QName("", SUPPORTIVE_ARTIFACTS, "");
-        OMElement supportiveArtifactsNode = artifactNode.getFirstChildWithName(qualifiedSupportiveTestArtifact);
+        OMElement supportiveArtifactsNode = artifactsNode.getFirstChildWithName(qualifiedSupportiveTestArtifact);
 
-        Iterator artifactIterator = supportiveArtifactsNode.getChildElements();
+        Iterator artifactIterator = Collections.emptyIterator();
         int supportiveArtifactCount = 0;
+
+        if (supportiveArtifactsNode != null) {
+            artifactIterator = supportiveArtifactsNode.getChildElements();
+        }
 
         while (artifactIterator.hasNext()) {
             OMElement artifact = (OMElement) artifactIterator.next();
@@ -151,112 +156,39 @@ class SynapseTestcaseDataReader {
         QName qualifiedTestCases = new QName("", TEST_CASES, "");
         OMElement testCasesNode = importXMLFile.getFirstChildWithName(qualifiedTestCases);
 
+        //Iterate through test-cases in descriptor data
+        Iterator<?> testCaseIterator = Collections.emptyIterator();
         if (testCasesNode != null) {
-            //Iterate through test-cases in descriptor data
-            Iterator<?> iterator = testCasesNode.getChildElements();
+            testCaseIterator = testCasesNode.getChildElements();
+        }
 
-            while (iterator.hasNext()) {
-                OMElement testCaseNode = (OMElement) (iterator.next());
-                TestCase testCase = new TestCase();
+        while (testCaseIterator.hasNext()) {
+            OMElement testCaseNode = (OMElement) (testCaseIterator.next());
+            TestCase testCase = new TestCase();
 
-                //Read input child from test-case node
-                QName qualifiedInput = new QName("", TEST_CASE_INPUT , "");
-                OMElement testCaseInputNode = testCaseNode.getFirstChildWithName(qualifiedInput);
+            //Read input child from test-case node
+            QName qualifiedInput = new QName("", TEST_CASE_INPUT, "");
+            OMElement testCaseInputNode = testCaseNode.getFirstChildWithName(qualifiedInput);
 
-                //Read input node data of payload and properties if not null
-                if (testCaseInputNode != null) {
-                    QName qualifiedInputPayload = new QName("", TEST_CASE_INPUT_PAYLOAD , "");
-                    OMElement testCaseInputPayloadNode = testCaseInputNode.getFirstChildWithName(qualifiedInputPayload);
-
-                    if (testCaseInputPayloadNode != null) {
-                        String inputPayload = testCaseInputPayloadNode.getText();
-                        testCase.setInputPayload(inputPayload);
-                    }
-
-                    QName qualifiedInputProperties = new QName("", TEST_CASE_INPUT_PROPERTIES , "");
-                    OMElement testCaseInputPropertyNode = testCaseInputNode.getFirstChildWithName(qualifiedInputProperties);
-
-                    if (testCaseInputPropertyNode != null) {
-                        Iterator<?> propertyIterator = testCaseInputPropertyNode.getChildElements();
-
-                        ArrayList<Map<String,String>> properties = new ArrayList<>();
-                        while (propertyIterator.hasNext()) {
-                            OMElement propertyNode = (OMElement) (propertyIterator.next());
-
-                            String propName = propertyNode.getAttributeValue(new QName(TEST_CASE_INPUT_PROPERTY_NAME));
-                            String propValue = propertyNode.getAttributeValue(new QName(TEST_CASE_INPUT_PROPERTY_VALUE));
-                            String propScope = "default";
-
-                            if (propertyNode.getAttributeValue(new QName(TEST_CASE_INPUT_PROPERTY_SCOPE)) != null) {
-                                propScope = propertyNode.getAttributeValue(new QName(TEST_CASE_INPUT_PROPERTY_SCOPE));
-                            }
-
-                            Map<String,String> propertyMap = new HashMap<>();
-                            propertyMap.put(TEST_CASE_INPUT_PROPERTY_NAME, propName);
-                            propertyMap.put(TEST_CASE_INPUT_PROPERTY_VALUE, propValue);
-                            propertyMap.put(TEST_CASE_INPUT_PROPERTY_SCOPE, propScope);
-                            properties.add(propertyMap);
-                        }
-
-                        testCase.setPropertyMap(properties);
-                    }
-                }
-
-                //Read assertions of test-case node
-                QName qualifiedAssertions = new QName("", TEST_CASE_ASSERTIONS , "");
-                OMElement testCaseAssertionNode = testCaseNode.getFirstChildWithName(qualifiedAssertions);
-
-                //Read assertions - AssertEquals of test-case node
-                ArrayList<AssertEqual> assertEquals = new ArrayList<>();
-                Iterator<?> assertEqualsIterator = testCaseAssertionNode.getChildrenWithName(new QName(TEST_CASE_ASSERTION_EQUALS));
-                while (assertEqualsIterator.hasNext()) {
-                    AssertEqual assertion = new AssertEqual();
-
-                    OMElement assertEqualNode = (OMElement) (assertEqualsIterator.next());
-                    QName qualifiedAssertActual = new QName("", ASSERTION_ACTUAL , "");
-                    OMElement assertActualNode = assertEqualNode.getFirstChildWithName(qualifiedAssertActual);
-                    String actual = assertActualNode.getText();
-                    assertion.setActual(actual);
-
-                    QName qualifiedAssertMessage = new QName("", ASSERTION_MESSAGE , "");
-                    OMElement assertMessageNode = assertEqualNode.getFirstChildWithName(qualifiedAssertMessage);
-                    String message = assertMessageNode.getText();
-                    assertion.setMessage(message);
-
-                    QName qualifiedExpectedMessage = new QName("", ASSERTION_EXPECTED , "");
-                    OMElement assertExpectedNode = assertEqualNode.getFirstChildWithName(qualifiedExpectedMessage);
-                    String expected = assertExpectedNode.getText();
-                    assertion.setExpected(expected);
-
-                    assertEquals.add(assertion);
-                }
-
-                //Read assertions - AssertNotNull of test-case node
-                ArrayList<AssertNotNull> assertNotNulls = new ArrayList<>();
-                Iterator<?> assertNotNullIterator = testCaseAssertionNode.getChildrenWithName(new QName(TEST_CASE_ASSERTION_NOTNULL));
-                while (assertNotNullIterator.hasNext()) {
-                    AssertNotNull assertion = new AssertNotNull();
-
-                    OMElement assertEqualNode = (OMElement) (assertNotNullIterator.next());
-                    QName qualifiedAssertActual = new QName("", ASSERTION_ACTUAL , "");
-                    OMElement assertActualNode = assertEqualNode.getFirstChildWithName(qualifiedAssertActual);
-                    String actual = assertActualNode.getText();
-                    assertion.setActual(actual);
-
-                    QName qualifiedAssertMessage = new QName("", ASSERTION_MESSAGE , "");
-                    OMElement assertMessageNode = assertEqualNode.getFirstChildWithName(qualifiedAssertMessage);
-                    String message = assertMessageNode.getText();
-                    assertion.setMessage(message);
-
-                    assertNotNulls.add(assertion);
-                }
-
-                testCase.setAssertEquals(assertEquals);
-                testCase.setAssertNotNull(assertNotNulls);
-
-                testCaseDataHolder.setTestCases(testCase);
-                testCasesCount++;
+            //Read input node data of payload and properties if not null
+            if (testCaseInputNode != null) {
+                readTestCaseInputData(testCaseInputNode, testCase);
             }
+
+            //Read assertions of test-case node
+            QName qualifiedAssertions = new QName("", TEST_CASE_ASSERTIONS, "");
+            OMElement testCaseAssertionNode = testCaseNode.getFirstChildWithName(qualifiedAssertions);
+            ArrayList<AssertEqual> assertEquals = new ArrayList<>();
+            ArrayList<AssertNotNull> assertNotNulls = new ArrayList<>();
+            readTestCaseAssertions(testCaseAssertionNode, assertEquals, assertNotNulls);
+
+            //set assertion values in testCase object
+            testCase.setAssertEquals(assertEquals);
+            testCase.setAssertNotNull(assertNotNulls);
+
+            //set testCase object in testCase data holder
+            testCaseDataHolder.setTestCases(testCase);
+            testCasesCount++;
         }
 
         //Set test case count in test data holder
@@ -264,6 +196,109 @@ class SynapseTestcaseDataReader {
 
         logger.info("Test case data from descriptor data read successfully");
         return testCaseDataHolder;
+    }
+
+    /**
+     * Read test case input data from the descriptor data.
+     * Read payload and properties if exists
+     *
+     * @param testCaseInputNode node of test cases
+     * @param testCase          test case object
+     */
+    private void readTestCaseInputData(OMElement testCaseInputNode, TestCase testCase) {
+        QName qualifiedInputPayload = new QName("", TEST_CASE_INPUT_PAYLOAD, "");
+        OMElement testCaseInputPayloadNode = testCaseInputNode.getFirstChildWithName(qualifiedInputPayload);
+
+        if (testCaseInputPayloadNode != null) {
+            String inputPayload = testCaseInputPayloadNode.getText();
+            testCase.setInputPayload(inputPayload);
+        }
+
+        QName qualifiedInputProperties = new QName("", TEST_CASE_INPUT_PROPERTIES, "");
+        OMElement testCaseInputPropertyNode = testCaseInputNode.getFirstChildWithName(qualifiedInputProperties);
+
+        if (testCaseInputPropertyNode != null) {
+            Iterator<?> propertyIterator = testCaseInputPropertyNode.getChildElements();
+
+            ArrayList<Map<String, String>> properties = new ArrayList<>();
+            while (propertyIterator.hasNext()) {
+                OMElement propertyNode = (OMElement) (propertyIterator.next());
+
+                String propName = propertyNode.getAttributeValue(new QName(TEST_CASE_INPUT_PROPERTY_NAME));
+                String propValue = propertyNode.getAttributeValue(new QName(TEST_CASE_INPUT_PROPERTY_VALUE));
+                String propScope = "default";
+
+                if (propertyNode.getAttributeValue(new QName(TEST_CASE_INPUT_PROPERTY_SCOPE)) != null) {
+                    propScope = propertyNode.getAttributeValue(new QName(TEST_CASE_INPUT_PROPERTY_SCOPE));
+                }
+
+                Map<String, String> propertyMap = new HashMap<>();
+                propertyMap.put(TEST_CASE_INPUT_PROPERTY_NAME, propName);
+                propertyMap.put(TEST_CASE_INPUT_PROPERTY_VALUE, propValue);
+                propertyMap.put(TEST_CASE_INPUT_PROPERTY_SCOPE, propScope);
+                properties.add(propertyMap);
+            }
+
+            testCase.setPropertyMap(properties);
+        }
+    }
+
+
+    /**
+     * Read test case assertion data from the descriptor data.
+     * Read assertEquals and assertNotNull data if exists
+     *
+     * @param testCaseAssertionNode node of test case assertions
+     * @param assertEquals          array of assertEquals
+     * @param assertNotNulls        array of assertNotNulls
+     */
+    private void readTestCaseAssertions(OMElement testCaseAssertionNode, ArrayList<AssertEqual> assertEquals,
+                                        ArrayList<AssertNotNull> assertNotNulls) {
+
+        //Read assertions - AssertEquals of test-case node
+        Iterator<?> assertEqualsIterator =
+                testCaseAssertionNode.getChildrenWithName(new QName(TEST_CASE_ASSERTION_EQUALS));
+
+        while (assertEqualsIterator.hasNext()) {
+            AssertEqual assertion = new AssertEqual();
+
+            OMElement assertEqualNode = (OMElement) (assertEqualsIterator.next());
+            QName qualifiedAssertActual = new QName("", ASSERTION_ACTUAL, "");
+            OMElement assertActualNode = assertEqualNode.getFirstChildWithName(qualifiedAssertActual);
+            String actual = assertActualNode.getText();
+            assertion.setActual(actual);
+
+            QName qualifiedAssertMessage = new QName("", ASSERTION_MESSAGE, "");
+            OMElement assertMessageNode = assertEqualNode.getFirstChildWithName(qualifiedAssertMessage);
+            String message = assertMessageNode.getText();
+            assertion.setMessage(message);
+
+            QName qualifiedExpectedMessage = new QName("", ASSERTION_EXPECTED, "");
+            OMElement assertExpectedNode = assertEqualNode.getFirstChildWithName(qualifiedExpectedMessage);
+            String expected = assertExpectedNode.getText();
+            assertion.setExpected(expected);
+
+            assertEquals.add(assertion);
+        }
+
+        //Read assertions - AssertNotNull of test-case node
+        Iterator<?> assertNotNullIterator = testCaseAssertionNode.getChildrenWithName(new QName(TEST_CASE_ASSERTION_NOTNULL));
+        while (assertNotNullIterator.hasNext()) {
+            AssertNotNull assertion = new AssertNotNull();
+
+            OMElement assertEqualNode = (OMElement) (assertNotNullIterator.next());
+            QName qualifiedAssertActual = new QName("", ASSERTION_ACTUAL, "");
+            OMElement assertActualNode = assertEqualNode.getFirstChildWithName(qualifiedAssertActual);
+            String actual = assertActualNode.getText();
+            assertion.setActual(actual);
+
+            QName qualifiedAssertMessage = new QName("", ASSERTION_MESSAGE, "");
+            OMElement assertMessageNode = assertEqualNode.getFirstChildWithName(qualifiedAssertMessage);
+            String message = assertMessageNode.getText();
+            assertion.setMessage(message);
+
+            assertNotNulls.add(assertion);
+        }
     }
 
     /**
@@ -320,7 +355,7 @@ class SynapseTestcaseDataReader {
 
                 while (resourceIterator.hasNext()) {
                     OMElement mockServiceResourceNode = (OMElement) (resourceIterator.next());
-                    ServiceResource resource  = new ServiceResource();
+                    ServiceResource resource = new ServiceResource();
 
                     //Read service type child attribute from mock service node
                     QName qualifiedServiceMethod = new QName("", SERVICE_RESOURCE_METHOD, "");
@@ -363,7 +398,7 @@ class SynapseTestcaseDataReader {
     /**
      * Read mock service request
      *
-     * @param mockService object with test case data
+     * @param mockService         object with test case data
      * @param serviceResourceNode OMElement of resource node
      */
     private void readMockServicesRequest(OMElement serviceResourceNode, ServiceResource mockService) {
@@ -408,7 +443,7 @@ class SynapseTestcaseDataReader {
     /**
      * Read mock service response
      *
-     * @param mockService object with test case data
+     * @param mockService         object with test case data
      * @param serviceResourceNode OMElement of resource node
      */
     private void readMockServicesResponse(OMElement serviceResourceNode, ServiceResource mockService) {

@@ -61,6 +61,7 @@ public class UnitTestingExecutor extends Thread {
 
     /**
      * get the current SynapseConfiguration.
+     *
      * @return SynapseConfiguration
      */
     public SynapseConfiguration getSynapseConfiguration() {

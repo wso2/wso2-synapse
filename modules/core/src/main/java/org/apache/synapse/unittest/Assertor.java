@@ -35,7 +35,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Map;
 
-import static org.apache.synapse.unittest.Constants.WHITESPACE_REGEX;
+import static org.apache.synapse.unittest.Constants.*;
 
 /**
  * Class responsible for the validation of testing with expected results.
@@ -44,16 +44,18 @@ class Assertor {
 
     private static Logger logger = Logger.getLogger(TestingAgent.class.getName());
 
-    private Assertor() {}
+    private Assertor() {
+    }
 
     /**
      * Assertion of results of sequence mediation and expected payload and properties.
      *
      * @param currentTestCase current test case
-     * @param mediateMsgCtxt message context used for the mediation
+     * @param mediateMsgCtxt  message context used for the mediation
      * @return true if assertion is success otherwise false
      */
-    static Pair<Boolean,String> doAssertionSequence(TestCase currentTestCase, MessageContext mediateMsgCtxt, int testCaseNumber) {
+    static Pair<Boolean, String> doAssertionSequence(TestCase currentTestCase,
+                                                     MessageContext mediateMsgCtxt, int testCaseNumber) {
 
         boolean isSequenceAssertComplete = false;
         boolean isAssertEqualComplete = false;
@@ -64,15 +66,15 @@ class Assertor {
         ArrayList<AssertNotNull> assertNotNulls = currentTestCase.getAssertNotNull();
 
         if (!assertEquals.isEmpty()) {
-            Pair<Boolean,String> assertSequence = startAssertEqualsForSequence(assertEquals, mediateMsgCtxt);
+            Pair<Boolean, String> assertSequence = startAssertEqualsForSequence(assertEquals, mediateMsgCtxt);
             isAssertEqualComplete = assertSequence.getKey();
-            assertMessage += assertSequence.getValue();
+            assertMessage = assertSequence.getValue();
         }
 
-        if (!assertNotNulls.isEmpty()) {
-            Pair<Boolean,String> assertSequence = startAssertNotNullsForSequence(assertNotNulls, mediateMsgCtxt);
+        if (!assertNotNulls.isEmpty() && assertMessage == null) {
+            Pair<Boolean, String> assertSequence = startAssertNotNullsForSequence(assertNotNulls, mediateMsgCtxt);
             isAssertNotNullComplete = assertSequence.getKey();
-            assertMessage += assertSequence.getValue();
+            assertMessage = assertSequence.getValue();
         }
 
 
@@ -88,12 +90,14 @@ class Assertor {
 
     /**
      * Assertion of results of proxy/API invoke and expected payload.
+     *
      * @param currentTestCase current testcase
-     * @param response response from the service
-     * @param testCaseNumber asserting test case number
+     * @param response        response from the service
+     * @param testCaseNumber  asserting test case number
      * @return true if assertion is success otherwise false
      */
-    static Pair<Boolean,String> doAssertionService(TestCase currentTestCase, HttpResponse response, int testCaseNumber) {
+    static Pair<Boolean, String> doAssertionService(TestCase currentTestCase,
+                                                    HttpResponse response, int testCaseNumber) {
 
         boolean isServiceAssertComplete = false;
         boolean isAssertEqualComplete = false;
@@ -108,15 +112,15 @@ class Assertor {
             Header[] responseHeaders = response.getAllHeaders();
 
             if (!assertEquals.isEmpty()) {
-                Pair<Boolean,String> assertService = startAssertEqualsForServices(assertEquals, responseAsString, responseHeaders);
+                Pair<Boolean, String> assertService = startAssertEqualsForServices(assertEquals, responseAsString, responseHeaders);
                 isAssertEqualComplete = assertService.getKey();
-                assertMessage += assertService.getValue();
+                assertMessage = assertService.getValue();
             }
 
-            if (!assertNotNulls.isEmpty()) {
-                Pair<Boolean,String> assertService = startAssertNotNullsForServices(assertNotNulls, responseAsString, responseHeaders);
+            if (!assertNotNulls.isEmpty() && assertMessage == null) {
+                Pair<Boolean, String> assertService = startAssertNotNullsForServices(assertNotNulls, responseAsString, responseHeaders);
                 isAssertNotNullComplete = assertService.getKey();
-                assertMessage += assertService.getValue();
+                assertMessage = assertService.getValue();
             }
         } catch (IOException e) {
             logger.error("Error while reading response from the service HttpResponse", e);
@@ -134,6 +138,7 @@ class Assertor {
 
     /**
      * Remove irrelevant whitespaces from the input string.
+     *
      * @param inputString string which needs to remove whitespaces
      * @return trim string not include irrelevant whitespaces
      */
@@ -146,7 +151,7 @@ class Assertor {
             while ((line = reader.readLine()) != null) {
                 result.append(line.trim());
             }
-            trimedString =  result.toString();
+            trimedString = result.toString();
         } catch (IOException e) {
             logger.error(e);
             trimedString = inputString;
@@ -155,9 +160,18 @@ class Assertor {
         return trimedString.replaceAll(WHITESPACE_REGEX, "");
     }
 
-    private static Pair<Boolean, String> startAssertEqualsForSequence(ArrayList<AssertEqual> assertEquals, MessageContext msgCtxt) {
+    /**
+     * Method of assertionEquals for Sequence test cases.
+     *
+     * @param assertEquals array of assertEquals
+     * @param msgCtxt      message context
+     * @return Pair<Boolean, String> which has status of assertEquals and message if any error occurred
+     */
+    private static Pair<Boolean, String> startAssertEqualsForSequence(ArrayList<AssertEqual> assertEquals,
+                                                                      MessageContext msgCtxt) {
 
-        logger.info("\n---------------------Assert Equals---------------------\n");
+        logger.info("\n");
+        logger.info("---------------------Assert Equals---------------------\n");
         boolean isAssertEqualFailed = false;
         String messageOfAssertEqual = null;
 
@@ -170,25 +184,25 @@ class Assertor {
                 String message = assertItem.getMessage();
                 boolean isAssert;
                 String[] actualType = actual.split(":");
-                String mediatedResult = null;
+                String mediatedResult;
 
-                switch(actualType[0]) {
+                switch (actualType[0]) {
 
-                    case "$body" :
+                    case INPUT_PROPERTY_BODY:
                         mediatedResult = trimStrings(msgCtxt.getEnvelope().getBody().getFirstElement().toString());
                         isAssert = trimStrings(expected)
                                 .equals(mediatedResult);
 
                         break;
 
-                    case "$ctx" :
+                    case INPUT_PROPERTY_CONTEXT:
                         mediatedResult = trimStrings(msgCtxt.getProperty(actualType[1]).toString());
                         isAssert = trimStrings(expected)
                                 .equals(mediatedResult);
 
                         break;
 
-                    case "$axis2" :
+                    case INPUT_PROPERTY_AXIS2:
                         Axis2MessageContext axis2smc = (Axis2MessageContext) msgCtxt;
                         org.apache.axis2.context.MessageContext axis2MessageCtx =
                                 axis2smc.getAxis2MessageContext();
@@ -199,7 +213,7 @@ class Assertor {
 
                         break;
 
-                    case "$trp" :
+                    case INPUT_PROPERTY_TRANSPORT:
                         Axis2MessageContext axis2smcTra = (Axis2MessageContext) msgCtxt;
                         org.apache.axis2.context.MessageContext axis2MessageCtxTransport =
                                 axis2smcTra.getAxis2MessageContext();
@@ -218,18 +232,18 @@ class Assertor {
                     default:
                         isAssert = false;
                         mediatedResult = message;
-                        message = "Received assert actual value not defined";
+                        message = "Received assert actual value for sequences not defined";
                 }
 
-                logger.info("\nAssert Actual - " + trimStrings(actual));
-                logger.info("Assert Expected - " + trimStrings(expected));
-                logger.info("Mediated result for actual - " + mediatedResult);
+                logger.info("Sequence Assert Actual - " + trimStrings(actual));
+                logger.info("Sequence Assert Expected - " + trimStrings(expected));
+                logger.info("Sequence mediated result for actual - " + mediatedResult);
                 if (isAssert) {
-                    logger.info("AssertEqual for " +actualType[0] + " passed successfully");
+                    logger.info("Sequence assertEqual for " + actualType[0] + " type passed successfully");
                 } else {
                     isAssertEqualFailed = true;
                     messageOfAssertEqual = message;
-                    logger.error("AssertEqual for " +actualType[0] + " failed - " + message);
+                    logger.error("Sequence assertEqual for " + actualType[0] + " type failed - " + message + "\n");
                 }
             }
 
@@ -239,9 +253,17 @@ class Assertor {
         return new Pair<>(!isAssertEqualFailed, messageOfAssertEqual);
     }
 
-    private static Pair<Boolean, String> startAssertNotNullsForSequence(ArrayList<AssertNotNull> assertNotNull, MessageContext msgCtxt) {
-
-        logger.info("\n---------------------Assert Not Null---------------------\n");
+    /**
+     * Method of assertionNotNull for Sequence test cases.
+     *
+     * @param assertNotNull array of assertNotNull
+     * @param msgCtxt       message context
+     * @return Pair<Boolean, String> which has status of assertNotNull and message if any error occurred
+     */
+    private static Pair<Boolean, String> startAssertNotNullsForSequence(ArrayList<AssertNotNull> assertNotNull,
+                                                                        MessageContext msgCtxt) {
+        logger.info("\n");
+        logger.info("---------------------Assert Not Null---------------------\n");
         boolean isAssertNotNullFailed = false;
         String messageOfAssertNotNull = null;
 
@@ -253,23 +275,23 @@ class Assertor {
                 String message = assertItem.getMessage();
                 boolean isAssertNull;
                 String[] actualType = actual.split(":");
-                String mediatedResult = null;
+                String mediatedResult;
 
-                switch(actualType[0]) {
+                switch (actualType[0]) {
 
-                    case "$body" :
+                    case INPUT_PROPERTY_BODY:
                         mediatedResult = trimStrings(msgCtxt.getEnvelope().getBody().getFirstElement().toString());
                         isAssertNull = mediatedResult.isEmpty();
 
                         break;
 
-                    case "$ctx" :
+                    case INPUT_PROPERTY_CONTEXT:
                         mediatedResult = trimStrings(msgCtxt.getProperty(actualType[1]).toString());
                         isAssertNull = mediatedResult.isEmpty();
 
                         break;
 
-                    case "$axis2" :
+                    case INPUT_PROPERTY_AXIS2:
                         Axis2MessageContext axis2smc = (Axis2MessageContext) msgCtxt;
                         org.apache.axis2.context.MessageContext axis2MessageCtx =
                                 axis2smc.getAxis2MessageContext();
@@ -279,7 +301,7 @@ class Assertor {
 
                         break;
 
-                    case "$trp" :
+                    case INPUT_PROPERTY_TRANSPORT:
                         Axis2MessageContext axis2smcTra = (Axis2MessageContext) msgCtxt;
                         org.apache.axis2.context.MessageContext axis2MessageCtxTransport =
                                 axis2smcTra.getAxis2MessageContext();
@@ -297,18 +319,18 @@ class Assertor {
                     default:
                         isAssertNull = true;
                         mediatedResult = message;
-                        message = "Received assert actual value not defined";
+                        message = "Received assert actual value for sequences not defined";
                 }
 
-                logger.info("\nAssert Actual - " + actual);
-                logger.info("Mediated result for actual - " + mediatedResult);
+                logger.info("Sequence Assert Actual - " + actual);
+                logger.info("Sequence mediated result for actual - " + mediatedResult);
 
                 if (!isAssertNull) {
-                    logger.info("AssertNotNull for " +actualType[0] + " passed successfully");
+                    logger.info("Sequence assertNotNull for " + actualType[0] + " type passed successfully");
                 } else {
                     isAssertNotNullFailed = true;
                     messageOfAssertNotNull = message;
-                    logger.error("AssertNotNull for " +actualType[0] + " failed - " + message);
+                    logger.error("Sequence assertNotNull for " + actualType[0] + " type failed - " + message + "/n");
                 }
             }
 
@@ -318,117 +340,136 @@ class Assertor {
         return new Pair<>(!isAssertNotNullFailed, messageOfAssertNotNull);
     }
 
-    private static Pair<Boolean, String> startAssertEqualsForServices(ArrayList<AssertEqual> assertEquals, String response, Header[] headers) throws IOException{
+    /**
+     * Method of assertionEquals for Service test cases.
+     *
+     * @param assertEquals array of assertEquals
+     * @param response     service response body
+     * @param headers      service response headers
+     * @return Pair<Boolean, String> which has status of assertEquals and message if any error occurred
+     */
+    private static Pair<Boolean, String> startAssertEqualsForServices(
+            ArrayList<AssertEqual> assertEquals, String response, Header[] headers) {
 
-        logger.info("\n---------------------Assert Equals---------------------\n");
+        logger.info("\n");
+        logger.info("---------------------Assert Equals---------------------\n");
         boolean isAssertEqualFailed = false;
         String messageOfAssertEqual = null;
 
         for (AssertEqual assertItem : assertEquals) {
 
-            if (!isAssertEqualFailed) {
-
-                String actual = assertItem.getActual();
-                String expected = assertItem.getExpected();
-                String message = assertItem.getMessage();
-                boolean isAssert = false;
-                String[] actualType = actual.split(":");
-                String mediatedResult = null;
-
-                switch(actualType[0]) {
-
-                    case "$body" :
-                        mediatedResult = response;
-                        isAssert = trimStrings(expected)
-                                .equals(mediatedResult);
-
-                        break;
-
-                    case "$trp" :
-
-                        for (Header header : headers) {
-                            if (header.getName().equals(actualType[1])) {
-                                mediatedResult = trimStrings(header.getValue());
-                                isAssert = trimStrings(expected).equals(mediatedResult);
-                                break;
-                            }
-                        }
-                        break;
-
-                    default:
-                        message = "Received assert actual value not defined";
-                        mediatedResult = message;
-                }
-
-                logger.info("\nAssert Actual - " + actual);
-                logger.info("Assert Expected - " + trimStrings(expected));
-                logger.info("Mediated result for actual - " + mediatedResult);
-                if (isAssert) {
-                    logger.info("AssertEqual for " +actualType[0] + " passed successfully");
-                } else {
-                    isAssertEqualFailed = true;
-                    messageOfAssertEqual = message;
-                    logger.error("AssertEqual for " +actualType[0] + " failed - " + message);
-                }
+            if (isAssertEqualFailed) {
+                break;
             }
 
+            String actual = assertItem.getActual();
+            String expected = assertItem.getExpected();
+            String message = assertItem.getMessage();
+            boolean isAssert = false;
+            String[] actualType = actual.split(":");
+            String mediatedResult = null;
+
+            switch (actualType[0]) {
+
+                case INPUT_PROPERTY_BODY:
+                    mediatedResult = response;
+                    isAssert = trimStrings(expected).equals(mediatedResult);
+                    break;
+
+                case INPUT_PROPERTY_TRANSPORT:
+
+                    for (Header header : headers) {
+                        if (header.getName().equals(actualType[1])) {
+                            mediatedResult = trimStrings(header.getValue());
+                            isAssert = trimStrings(expected).equals(mediatedResult);
+                            break;
+                        }
+                    }
+                    break;
+
+                default:
+                    message = "Received assert actual value not defined";
+                    mediatedResult = message;
+            }
+
+            logger.info("Service Assert Actual - " + actual);
+            logger.info("Service Assert Expected - " + trimStrings(expected));
+            logger.info("Service mediated result for actual - " + mediatedResult);
+
+            if (isAssert) {
+                logger.info("Service assertEqual for " + actualType[0] + " passed successfully");
+            } else {
+                isAssertEqualFailed = true;
+                messageOfAssertEqual = message;
+                logger.error("Service assertEqual for " + actualType[0] + " failed - " + message + "\n");
+            }
         }
 
         logger.info("AssertEquals assertion success - " + !isAssertEqualFailed);
         return new Pair<>(!isAssertEqualFailed, messageOfAssertEqual);
     }
 
-    private static Pair<Boolean, String> startAssertNotNullsForServices(ArrayList<AssertNotNull> assertNotNull, String response, Header[] headers) throws IOException{
+    /**
+     * Method of assertNotNull for Service test cases.
+     *
+     * @param assertNotNull array of assertNotNull
+     * @param response      service response body
+     * @param headers       service response headers
+     * @return Pair<Boolean, String> which has status of assertNotNull and message if any error occurred
+     */
+    private static Pair<Boolean, String> startAssertNotNullsForServices(
+            ArrayList<AssertNotNull> assertNotNull, String response, Header[] headers) {
 
-        logger.info("\n---------------------Assert Not Null---------------------\n");
+        logger.info("\n");
+        logger.info("---------------------Assert Not Null---------------------\n");
         boolean isAssertNotNullFailed = false;
         String messageOfAssertNotNull = null;
 
         for (AssertNotNull assertItem : assertNotNull) {
 
-            if (!isAssertNotNullFailed) {
-
-                String actual = assertItem.getActual();
-                String message = assertItem.getMessage();
-                boolean isAssertNull = false;
-                String[] actualType = actual.split(":");
-                String mediatedResult = null;
-
-                switch(actualType[0]) {
-
-                    case "$body" :
-                        mediatedResult = response;
-                        isAssertNull = mediatedResult.isEmpty();
-
-                        break;
-
-                    case "$trp" :
-                        for (Header header : headers) {
-                            if (header.getName().equals(actualType[1])) {
-                                mediatedResult = trimStrings(header.getValue());
-                                isAssertNull = mediatedResult.isEmpty();
-                                break;
-                            }
-                        }
-                        break;
-
-                    default:
-                        message = "Received assert actual value not defined";
-                        mediatedResult = message;
-                }
-
-                logger.info("Assert Actual - " + actual);
-                logger.info("Mediated result for actual - " + mediatedResult + "\n");
-
-                if (!isAssertNull) {
-                    logger.info("AssertEqual for " +actualType[0] + " passed successfully");
-                } else {
-                    isAssertNotNullFailed = true;
-                    messageOfAssertNotNull = message;
-                    logger.error("AssertEqual for " +actualType[0] + " failed - " + message);
-                }
+            if (isAssertNotNullFailed) {
+                break;
             }
 
+            String actual = assertItem.getActual();
+            String message = assertItem.getMessage();
+            boolean isAssertNull = false;
+            String[] actualType = actual.split(":");
+            String mediatedResult = null;
+
+            switch (actualType[0]) {
+
+                case INPUT_PROPERTY_BODY:
+                    mediatedResult = response;
+                    isAssertNull = mediatedResult.isEmpty();
+
+                    break;
+
+                case INPUT_PROPERTY_TRANSPORT:
+                    for (Header header : headers) {
+                        if (header.getName().equals(actualType[1])) {
+                            mediatedResult = trimStrings(header.getValue());
+                            isAssertNull = mediatedResult.isEmpty();
+                            break;
+                        }
+                    }
+                    break;
+
+                default:
+                    message = "Received assert actual value for service not defined";
+                    mediatedResult = message;
+            }
+
+            logger.info("Service Assert Actual - " + actual);
+            logger.info("Service mediated result for actual - " + mediatedResult);
+
+            if (!isAssertNull) {
+                logger.info("Service assertNotNull for " + actualType[0] + " passed successfully");
+            } else {
+                isAssertNotNullFailed = true;
+                messageOfAssertNotNull = message;
+                logger.error("Service assertNotNull for " + actualType[0] + " failed - " + message + "\n");
+            }
         }
 
         logger.info("AssertNotNull assertion success - " + !isAssertNotNullFailed);

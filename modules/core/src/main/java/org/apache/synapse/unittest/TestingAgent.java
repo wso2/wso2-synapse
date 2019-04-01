@@ -133,102 +133,92 @@ class TestingAgent {
         boolean isArtifactDeployed = true;
 
         for (int x=0; x < synapseTestCase.getArtifacts().getSupportiveArtifactCount(); x++) {
-            String supportiveArtifactType = synapseTestCase.getArtifacts().getSupportiveArtifact(x).getArtifactType();
-            String artifactNameOrKey = synapseTestCase.getArtifacts().getSupportiveArtifact(x).getArtifactNameOrKey();
-            OMElement artifact = synapseTestCase.getArtifacts().getSupportiveArtifact(x).getArtifact();
-            ConfigurationDeployer config = new ConfigurationDeployer();
+            if (isArtifactDeployed) {
+                try {
+                    //check artifact type and pass the artifact to the relevant deployment
+                    isArtifactDeployed = processForArtifactTypes(synapseTestCase,x);
 
-            try {
-                //check artifact type and pass the artifact to the relevant deployment
-                switch (supportiveArtifactType) {
-                    case TYPE_SEQUENCE :
-                        Pair<SynapseConfiguration, String> pairOfSequenceDeployment =
-                                config.deploySequenceArtifact(artifact, artifactNameOrKey);
-                        synapseConfiguration = pairOfSequenceDeployment.getKey();
-                        key = pairOfSequenceDeployment.getValue();
-
-                        if (key.equals(artifactNameOrKey)) {
-                            logger.info("Sequence artifact deployed successfully");
-                        } else {
-                            isArtifactDeployed = false;
-                            throw new IOException("Sequence deployment failed");
-                        }
-                        break;
-
-                    case TYPE_PROXY :
-                        Pair<SynapseConfiguration, String> pairofProxyDeployment =
-                                config.deployProxyArtifact(artifact, artifactNameOrKey);
-                        synapseConfiguration = pairofProxyDeployment.getKey();
-                        key = pairofProxyDeployment.getValue();
-
-                        if (key.equals(artifactNameOrKey)) {
-                            logger.info("Proxy artifact deployed successfully");
-                        } else {
-                            isArtifactDeployed = false;
-                            throw new IOException("Proxy deployment failed");
-                        }
-                        break;
-
-                    case TYPE_API :
-                        Pair<SynapseConfiguration, String> pairofApiDeployment =
-                                config.deployApiArtifact(artifact, artifactNameOrKey);
-                        synapseConfiguration = pairofApiDeployment.getKey();
-                        key = pairofApiDeployment.getValue();
-                        context = artifact.getAttributeValue(new QName(API_CONTEXT));
-                        resourceMethod = artifact.getFirstElement().getAttributeValue(new QName(RESOURCE_METHODS));
-
-                        if (key.equals(artifactNameOrKey)) {
-                            logger.info("API artifact deployed successfully");
-                        } else {
-                            isArtifactDeployed = false;
-                            throw new IOException("API deployment failed");
-                        }
-                        break;
-
-                    case TYPE_ENDPOINT :
-                        Pair<SynapseConfiguration, String> pairOfEndpointDeployment =
-                                config.deployEndpointArtifact(artifact, artifactNameOrKey);
-                        synapseConfiguration = pairOfEndpointDeployment.getKey();
-                        key = pairOfEndpointDeployment.getValue();
-                        context = artifact.getAttributeValue(new QName(API_CONTEXT));
-                        resourceMethod = artifact.getFirstElement().getAttributeValue(new QName(RESOURCE_METHODS));
-
-                        if (key.equals(artifactNameOrKey)) {
-                            logger.info("Endpoint artifact deployed successfully");
-                        } else {
-                            isArtifactDeployed = false;
-                            throw new IOException("Endpoint deployment failed");
-                        }
-                        break;
-
-                    case TYPE_LOCAL_ENTRY :
-                        Pair<SynapseConfiguration, String> pairOfLocalEntryDeployment =
-                                config.deployLocalEntryArtifact(artifact, artifactNameOrKey);
-                        synapseConfiguration = pairOfLocalEntryDeployment.getKey();
-                        key = pairOfLocalEntryDeployment.getValue();
-                        context = artifact.getAttributeValue(new QName(API_CONTEXT));
-                        resourceMethod = artifact.getFirstElement().getAttributeValue(new QName(RESOURCE_METHODS));
-
-                        if (key.equals(artifactNameOrKey)) {
-                            logger.info("Local Entry artifact deployed successfully");
-                        } else {
-                            isArtifactDeployed = false;
-                            throw new IOException("Local Entry deployment failed");
-                        }
-                        break;
-
-                    default:
-                        throw new IOException("Undefined operation type for <test-artifact> given in unit testing agent");
-
+                } catch (Exception e) {
+                    logger.error("Artifact deployment failed", e);
+                    exception = e.toString();
                 }
-            } catch (Exception e) {
-                logger.error("Artifact deployment failed", e);
-                exception = e.toString();
+            } else {
+                logger.error(synapseTestCase.getArtifacts().getSupportiveArtifact(x).getArtifactType()
+                        + " artifact deployment failed");
+                break;
             }
         }
 
-
         return new Pair<>(isArtifactDeployed, exception);
+    }
+
+    /**
+     * Check artifact type and pass the supportive-artifact data to the relevant deployment mechanism.
+     *
+     * @param synapseTestCase test cases data received from client
+     * @param index index of supportive artifact
+     * @return true if supportive artifact deployed else return false
+     */
+    private boolean processForArtifactTypes(SynapseTestCase synapseTestCase, int index) throws IOException{
+
+        String supportiveArtifactType = synapseTestCase.getArtifacts().getSupportiveArtifact(index).getArtifactType();
+        String artifactNameOrKey = synapseTestCase.getArtifacts().getSupportiveArtifact(index).getArtifactNameOrKey();
+        OMElement artifact = synapseTestCase.getArtifacts().getSupportiveArtifact(index).getArtifact();
+        ConfigurationDeployer config = new ConfigurationDeployer();
+
+        switch (supportiveArtifactType) {
+            case TYPE_SEQUENCE :
+                Pair<SynapseConfiguration, String> pairOfSequenceDeployment =
+                        config.deploySequenceArtifact(artifact, artifactNameOrKey);
+                synapseConfiguration = pairOfSequenceDeployment.getKey();
+                key = pairOfSequenceDeployment.getValue();
+                break;
+
+            case TYPE_PROXY :
+                Pair<SynapseConfiguration, String> pairofProxyDeployment =
+                        config.deployProxyArtifact(artifact, artifactNameOrKey);
+                synapseConfiguration = pairofProxyDeployment.getKey();
+                key = pairofProxyDeployment.getValue();
+                break;
+
+            case TYPE_API :
+                Pair<SynapseConfiguration, String> pairofApiDeployment =
+                        config.deployApiArtifact(artifact, artifactNameOrKey);
+                synapseConfiguration = pairofApiDeployment.getKey();
+                key = pairofApiDeployment.getValue();
+                context = artifact.getAttributeValue(new QName(API_CONTEXT));
+                resourceMethod = artifact.getFirstElement().getAttributeValue(new QName(RESOURCE_METHODS));
+                break;
+
+            case TYPE_ENDPOINT :
+                Pair<SynapseConfiguration, String> pairOfEndpointDeployment =
+                        config.deployEndpointArtifact(artifact, artifactNameOrKey);
+                synapseConfiguration = pairOfEndpointDeployment.getKey();
+                key = pairOfEndpointDeployment.getValue();
+                context = artifact.getAttributeValue(new QName(API_CONTEXT));
+                resourceMethod = artifact.getFirstElement().getAttributeValue(new QName(RESOURCE_METHODS));
+                break;
+
+            case TYPE_LOCAL_ENTRY :
+                Pair<SynapseConfiguration, String> pairOfLocalEntryDeployment =
+                        config.deployLocalEntryArtifact(artifact, artifactNameOrKey);
+                synapseConfiguration = pairOfLocalEntryDeployment.getKey();
+                key = pairOfLocalEntryDeployment.getValue();
+                context = artifact.getAttributeValue(new QName(API_CONTEXT));
+                resourceMethod = artifact.getFirstElement().getAttributeValue(new QName(RESOURCE_METHODS));
+                break;
+
+            default:
+                throw new IOException("Undefined operation type for <test-artifact> given in unit testing agent");
+        }
+
+        if (key.equals(artifactNameOrKey)) {
+            logger.info(supportiveArtifactType + " artifact deployed successfully");
+            return true;
+
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -305,8 +295,8 @@ class TestingAgent {
      * @param currentTestCase current running test case data
      * @return result of assertion or mediation result
      */
-    private Pair<Boolean,String> checkAssertionWithSequenceMediation(boolean mediationResult, MessageContext resultedMessageContext,
-                                                        TestCase currentTestCase, int index) {
+    private Pair<Boolean,String> checkAssertionWithSequenceMediation(
+            boolean mediationResult, MessageContext resultedMessageContext, TestCase currentTestCase, int index) {
         boolean isAssert = false;
         String assertMessage;
         if (mediationResult) {
@@ -395,7 +385,6 @@ class TestingAgent {
             resultOfTestCases = currentAllTestCaseResult;
         }
 
-        System.out.println(resultOfTestCases);
         return resultOfTestCases;
     }
 }

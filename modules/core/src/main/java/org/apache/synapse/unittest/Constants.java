@@ -23,7 +23,8 @@ package org.apache.synapse.unittest;
  */
 public class Constants {
 
-    private Constants() {}
+    private Constants() {
+    }
 
     static final String TYPE_SEQUENCE = "sequence";
     static final String TYPE_PROXY = "proxy";
@@ -33,17 +34,14 @@ public class Constants {
 
     static final String API_CONTEXT = "context";
     static final String RESOURCE_METHODS = "methods";
-    static final String ARTIFACT_TYPE = "artifact-type";
     static final String ARTIFACT_NAME_ATTRIBUTE = "name";
     static final String ARTIFACT_KEY_ATTRIBUTE = "key";
-    static final String ARTIFACT_NAME = "artifact-name";
     static final String ARTIFACT = "artifact";
     static final String TEST_ARTIFACT = "test-artifact";
     static final String SUPPORTIVE_ARTIFACTS = "supportive-artifacts";
     static final String ARTIFACTS = "artifacts";
 
     static final String TEST_CASES = "test-cases";
-    static final String TEST_CASES_COUNT = "test-cases-count";
     static final String TEST_CASE_INPUT = "input";
     static final String TEST_CASE_INPUT_PAYLOAD = "payload";
     static final String TEST_CASE_INPUT_PROPERTIES = "properties";
@@ -59,7 +57,12 @@ public class Constants {
     static final String INPUT_PROPERTY_SCOPE_DEFAULT = "default";
     static final String INPUT_PROPERTY_SCOPE_AXIS2 = "axis2";
     static final String INPUT_PROPERTY_SCOPE_TRANSPORT = "transport";
+    static final String INPUT_PROPERTY_BODY = "$body";
+    static final String INPUT_PROPERTY_CONTEXT = "$ctx";
+    static final String INPUT_PROPERTY_AXIS2 = "$axis2";
+    static final String INPUT_PROPERTY_TRANSPORT = "$trp";
 
+    static final String MOCK_SERVICES = "mock-services";
     static final String SERVICE_NAME = "service-name";
     static final String SERVICE_HOST = "localhost";
     static final String SERVICE_PORT = "port";
@@ -73,15 +76,9 @@ public class Constants {
     static final String SERVICE_RESOURCE_HEADERS = "headers";
     static final String SERVICE_RESOURCE_HEADER_NAME = "name";
     static final String SERVICE_RESOURCE_HEADER_VALUE = "value";
-
-    static final String SERVICE_TYPE = "mock-service-type";
-    static final String SERVICE_RESPONSE = "mock-service-expected-response";
-    static final String MOCK_SERVICES = "mock-services";
     static final String END_POINT = "endpoint";
     public static final String URI = "uri";
     static final String URI_TEMPLATE = "uri-template";
-    public static final String METHOD = "method";
-
     public static final String HTTP = "http://";
     public static final String GET_METHOD = "GET";
     public static final String POST_METHOD = "POST";

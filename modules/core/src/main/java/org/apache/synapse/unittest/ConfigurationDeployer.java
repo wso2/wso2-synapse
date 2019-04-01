@@ -36,8 +36,9 @@ class ConfigurationDeployer {
 
     /**
      * Method of deploying sequence artifact in synapse.
+     *
      * @param inputElement synapse configuration artifact as OMElement type
-     * @param fileName name of the file
+     * @param fileName     name of the file
      * @return response of the artifact deployment and the synapse configuration as a Pair<>
      */
     Pair<SynapseConfiguration, String> deploySequenceArtifact(OMElement inputElement, String fileName)
@@ -67,11 +68,13 @@ class ConfigurationDeployer {
 
     /**
      * Method of deploying proxy artifact in synapse.
+     *
      * @param inputElement synapse configuration artifact as OMElement type
-     * @param fileName name of the file
+     * @param fileName     name of the file
      * @return response of the artifact deployment and the synapse configuration as a Pair<>
      */
-     Pair<SynapseConfiguration, String> deployProxyArtifact(OMElement inputElement, String fileName) throws AxisFault {
+    Pair<SynapseConfiguration, String> deployProxyArtifact(OMElement inputElement, String fileName)
+            throws AxisFault {
 
         //create new proxy service deployer object
         ProxyServiceDeployer proxyServiceDeployer = new ProxyServiceDeployer();
@@ -96,11 +99,13 @@ class ConfigurationDeployer {
 
     /**
      * Method of deploying API artifact in synapse.
+     *
      * @param inputElement synapse configuration artifact as OMElement type
-     * @param fileName name of the file
+     * @param fileName     name of the file
      * @return response of the artifact deployment and the synapse configuration as a Pair<>
      */
-    Pair<SynapseConfiguration, String> deployApiArtifact(OMElement inputElement, String fileName) throws AxisFault {
+    Pair<SynapseConfiguration, String> deployApiArtifact(OMElement inputElement, String fileName)
+            throws AxisFault {
 
         //create new API deployer object
         APIDeployer apiResourceDeployer = new APIDeployer();
@@ -126,8 +131,9 @@ class ConfigurationDeployer {
 
     /**
      * Method of deploying endpoint artifact in synapse.
+     *
      * @param inputElement synapse configuration artifact as OMElement type
-     * @param fileName name of the file
+     * @param fileName     name of the file
      * @return response of the artifact deployment and the synapse configuration as a Pair<>
      */
     Pair<SynapseConfiguration, String> deployEndpointArtifact(OMElement inputElement, String fileName)
@@ -157,8 +163,9 @@ class ConfigurationDeployer {
 
     /**
      * Method of deploying endpoint artifact in synapse.
+     *
      * @param inputElement synapse configuration artifact as OMElement type
-     * @param fileName name of the file
+     * @param fileName     name of the file
      * @return response of the artifact deployment and the synapse configuration as a Pair<>
      */
     Pair<SynapseConfiguration, String> deployLocalEntryArtifact(OMElement inputElement, String fileName)

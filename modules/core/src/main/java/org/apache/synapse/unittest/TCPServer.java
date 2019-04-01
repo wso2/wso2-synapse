@@ -18,6 +18,7 @@
 package org.apache.synapse.unittest;
 
 import org.apache.log4j.Logger;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -31,8 +32,10 @@ public class TCPServer {
 
     private ServerSocket serverSocket;
     private boolean isUnitTestingOver = false;
+
     /**
      * Initializing TCP server for main unit testing server.
+     *
      * @param port port server starts
      */
     public void initialize(int port) {
@@ -67,13 +70,13 @@ public class TCPServer {
      * Shut down unit testing framework
      */
     private void shutDown() {
-        Runtime.getRuntime ().addShutdownHook ( new Thread () {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
-            public void run () {
-                logger.info ( "Shutting down unit testing framework" );
+            public void run() {
+                logger.info("Shutting down unit testing framework");
                 isUnitTestingOver = true;
             }
-        } );
+        });
     }
 }
 
