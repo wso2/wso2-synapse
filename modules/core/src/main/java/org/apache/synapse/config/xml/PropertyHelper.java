@@ -80,7 +80,7 @@ public class PropertyHelper {
                             method.invoke(obj, new Double[]{new Double(value)});
                         } else if (params[0].equals(boolean.class)) {
                             method = obj.getClass().getMethod(mName, boolean.class);
-                            method.invoke(obj, new Object[]{new Boolean[]{Boolean.valueOf(value)}});
+                            method.invoke(obj, new Boolean[]{Boolean.valueOf(value)});
                         } else {
                             handleException("Did not find a setter method named : " + mName +
                                     "() that takes a single String, int, long, float, double " +
