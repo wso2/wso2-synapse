@@ -41,6 +41,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
 
+import javax.xml.namespace.QName;
+import java.util.Iterator;
 import java.util.Map;
 
 public class RelaySecuirtyMessageBuilderDispatchandler  extends AbstractDispatcher{
@@ -139,22 +141,44 @@ public class RelaySecuirtyMessageBuilderDispatchandler  extends AbstractDispatch
 
         if (_contentType != null && _contentType.equals(APPLICATION_XML) && header != null
                 && header.getChildElements() != null
-                || messageContext.isDoingREST()
-                || isSOAPWithBasicAuth) {
+                && messageContext.isDoingREST()
+                && isSOAPWithBasicAuth) {
             try {
-                OMElement element = AXIOMUtil.stringToOM(header.toString());
-                OMNamespace omNamespace =
-                        OMAbstractFactory.getOMFactory().createOMNamespace(WSS_WSSECURITY_SECEXT_1_0_XSD, WSSE);
-                SOAPHeaderBlock soapBloackingHeader = OMAbstractFactory.getSOAP12Factory().createSOAPHeaderBlock("Security", omNamespace);
-                OMElement securityHeader = element.getFirstElement();
-                if (securityHeader != null) {
-                    while (securityHeader.getChildElements().hasNext()) {
-                        soapBloackingHeader.addChild((OMNode) securityHeader.getChildElements().next());
-                    }
+				OMElement poxSecurityHeader = AXIOMUtil.stringToOM(header.toString()).getFirstElement();
 
-                    messageContext.getEnvelope().getHeader().addChild(soapBloackingHeader);
-                }
-            } catch (Exception e) {
+				if (poxSecurityHeader != null) {
+					OMNamespace omNamespace =
+							OMAbstractFactory.getOMFactory().createOMNamespace(WSS_WSSECURITY_SECEXT_1_0_XSD, WSSE);
+
+					Iterator headerIterator = messageContext.getEnvelope().getHeader().examineAllHeaderBlocks();
+
+					// If a ws:Security header already exists, we should add the POX headers to the same element instead
+					// of creating a new Sec Header.
+					boolean existingWSSecurityHeaderFound = false;
+
+					while (headerIterator.hasNext()) {
+						OMElement headerElement = (OMElement) headerIterator.next();
+
+						if (headerElement.getQName().equals(new QName(WSS_WSSECURITY_SECEXT_1_0_XSD, "Security"))) {
+							while (poxSecurityHeader.getChildElements().hasNext()) {
+								headerElement.addChild((OMNode) poxSecurityHeader.getChildElements().next());
+							}
+							existingWSSecurityHeaderFound = true;
+							break;
+						}
+					}
+
+					if (!existingWSSecurityHeaderFound) {
+						SOAPHeaderBlock soapBloackingHeader = OMAbstractFactory.getSOAP12Factory()
+								.createSOAPHeaderBlock("Security", omNamespace);
+
+						while (poxSecurityHeader.getChildElements().hasNext()) {
+							soapBloackingHeader.addChild((OMNode) poxSecurityHeader.getChildElements().next());
+						}
+						messageContext.getEnvelope().getHeader().addChild(soapBloackingHeader);
+					}
+				}
+			} catch (Exception e) {
                 log.error("Error while executing the message at relaySecurity handler", e);
             }
 
