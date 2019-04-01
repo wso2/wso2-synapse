@@ -60,7 +60,7 @@ public class FailoverEndpointFactory extends EndpointFactory {
             FailoverEndpoint failoverEndpoint = new FailoverEndpoint();
             // set endpoint name
             String name = epConfig.getAttributeValue(new QName("name"));
-            if (name != null) {
+            if (name != null && !name.isEmpty()) {
                 failoverEndpoint.setName(name);
             }
 

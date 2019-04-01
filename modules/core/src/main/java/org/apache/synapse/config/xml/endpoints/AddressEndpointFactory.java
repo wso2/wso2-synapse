@@ -77,7 +77,7 @@ public class AddressEndpointFactory extends DefaultEndpointFactory {
         OMAttribute name = epConfig.getAttribute(
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "name"));
 
-        if (name != null) {
+        if (name != null && name.getAttributeValue() != null && !name.getAttributeValue().isEmpty()) {
             addressEndpoint.setName(name.getAttributeValue());
         }
 
