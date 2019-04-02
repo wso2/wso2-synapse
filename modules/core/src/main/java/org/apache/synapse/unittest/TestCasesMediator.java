@@ -92,7 +92,7 @@ public class TestCasesMediator {
      */
     static HttpResponse proxyServiceExecutor(TestCase currentTestCase, String key) throws IOException {
 
-        String url = "http://localhost:8280/services/" + key;
+        String url = PROXY_INVOKE_PREFIX_URL + key;
         logger.info("Invoking URI - " + url);
 
         HttpClient clientConnector = HttpClientBuilder.create().build();
@@ -133,7 +133,19 @@ public class TestCasesMediator {
     static HttpResponse apiResourceExecutor(TestCase currentTestCase, String context, String resourceMethod)
             throws IOException {
 
-        String url = "http://localhost:8280" + context;
+        String url;
+        if (!currentTestCase.getRequestPath().isEmpty()) {
+            if (currentTestCase.getRequestPath().startsWith("/")) {
+                url = API_INVOKE_PREFIX_URL + context + currentTestCase.getRequestPath();
+            } else {
+                url = API_INVOKE_PREFIX_URL + context + "/" + currentTestCase.getRequestPath();
+            }
+
+        } else {
+            url = API_INVOKE_PREFIX_URL + context;
+        }
+
+
         logger.info("Invoking URI - " + url);
 
         HttpClient clientConnector = HttpClientBuilder.create().build();

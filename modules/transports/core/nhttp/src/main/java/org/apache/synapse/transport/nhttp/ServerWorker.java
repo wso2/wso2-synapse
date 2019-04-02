@@ -18,6 +18,7 @@
  */
 package org.apache.synapse.transport.nhttp;
 
+
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAP12Constants;
 import org.apache.axiom.util.UIDGenerator;
@@ -188,7 +189,6 @@ public class ServerWorker implements Runnable {
         msgContext.setServerSide(true);
         msgContext.setProperty(
             Constants.Configuration.TRANSPORT_IN_URL, request.getRequestLine().getUri());
-
         // http transport header names are case insensitive 
         Map<String, String> headers = new TreeMap<String, String>(new Comparator<String>() {
             public int compare(String o1, String o2) {

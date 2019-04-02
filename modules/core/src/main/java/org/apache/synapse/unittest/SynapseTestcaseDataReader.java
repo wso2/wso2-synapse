@@ -214,6 +214,15 @@ class SynapseTestcaseDataReader {
             testCase.setInputPayload(inputPayload);
         }
 
+        QName qualifiedInputRequestPath = new QName("", TEST_CASE_REQUEST_PATH, "");
+        OMElement testCaseRequestPathNode = testCaseInputNode.getFirstChildWithName(qualifiedInputRequestPath);
+
+        if (testCaseRequestPathNode != null) {
+            String requestPath = testCaseRequestPathNode.getText();
+            testCase.setRequestPath(requestPath);
+        }
+
+
         QName qualifiedInputProperties = new QName("", TEST_CASE_INPUT_PROPERTIES, "");
         OMElement testCaseInputPropertyNode = testCaseInputNode.getFirstChildWithName(qualifiedInputProperties);
 

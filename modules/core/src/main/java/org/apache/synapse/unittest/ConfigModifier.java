@@ -18,8 +18,14 @@
 
 package org.apache.synapse.unittest;
 
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.log4j.Logger;
 
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.unittest.testcase.data.classes.Artifact;
 import org.apache.synapse.unittest.testcase.data.holders.ArtifactData;
 import org.apache.synapse.unittest.testcase.data.holders.MockServiceData;
@@ -56,7 +62,7 @@ import static org.apache.synapse.unittest.Constants.*;
  * Class responsible for modify the artifact data.
  * creates mock services as in descriptor data.
  */
-class ConfigModifier {
+public class ConfigModifier {
 
     private ConfigModifier() {
     }
@@ -228,5 +234,6 @@ class ConfigModifier {
 
         return isAvailable;
     }
+
 }
 

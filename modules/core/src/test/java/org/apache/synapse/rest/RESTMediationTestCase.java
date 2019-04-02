@@ -46,6 +46,7 @@ public abstract class RESTMediationTestCase extends TestCase {
         msgCtx.setProperty(Constants.Configuration.HTTP_METHOD, method);
         msgCtx.setProperty(Constants.Configuration.TRANSPORT_IN_URL, url);
         msgCtx.setProperty(NhttpConstants.REST_URL_POSTFIX, url.substring(1));
+
         return synCtx;
     }
 

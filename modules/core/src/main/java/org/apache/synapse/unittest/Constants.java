@@ -42,6 +42,7 @@ public class Constants {
     static final String ARTIFACTS = "artifacts";
 
     static final String TEST_CASES = "test-cases";
+    static final String TEST_CASE_REQUEST_PATH = "request-path";
     static final String TEST_CASE_INPUT = "input";
     static final String TEST_CASE_INPUT_PAYLOAD = "payload";
     static final String TEST_CASE_INPUT_PROPERTIES = "properties";
@@ -86,5 +87,6 @@ public class Constants {
     static final String DELETE_METHOD = "DELETE";
 
     public static final String WHITESPACE_REGEX = "\\s(?=(\"[^\"]*\"|[^\"])*$)";
-
+    public static final String API_INVOKE_PREFIX_URL = "http://localhost:8280";
+    public static final String PROXY_INVOKE_PREFIX_URL = "http://localhost:8280/services/";
 }

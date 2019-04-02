@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Map;
 
 public class TestCase {
+    private String requestPath;
     private String inputPayload;
     private ArrayList<Map<String, String>> propertyMap = new ArrayList<>();
     private ArrayList<AssertEqual> assertEquals = new ArrayList<>();
@@ -64,6 +65,15 @@ public class TestCase {
     }
 
     /**
+     * Get request path of particular test case.
+     *
+     * @return request path of requested test case
+     */
+    public String getRequestPath() {
+        return requestPath;
+    }
+
+    /**
      * Add input payload into a ArrayList.
      *
      * @param inputPayload input payload of a particular test case
@@ -97,5 +107,14 @@ public class TestCase {
      */
     public void setAssertNotNull(ArrayList<AssertNotNull> assertNotNull) {
         this.assertNotNull = assertNotNull;
+    }
+
+    /**
+     * Add requestPath.
+     *
+     * @param requestPath requestPath of a particular test case
+     */
+    public void setRequestPath(String requestPath) {
+        this.requestPath = requestPath;
     }
 }
