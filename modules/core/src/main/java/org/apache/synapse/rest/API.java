@@ -75,6 +75,11 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
 
     private AspectConfiguration aspectConfiguration;
 
+    /**
+     * Comment Texts List associated with the API
+     */
+    private List<String> commentsList = new ArrayList<String>();
+
     public API(String name, String context) {
         super(name);
         setContext(context);
@@ -164,6 +169,14 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    public List<String> getCommentsList() {
+        return commentsList;
+    }
+
+    public void setCommentsList(List<String> commentsList) {
+        this.commentsList = commentsList;
     }
 
     public void addResource(Resource resource) {

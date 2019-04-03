@@ -29,6 +29,7 @@ import org.apache.synapse.config.xml.endpoints.EndpointSerializer;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.util.CommentListUtil;
 import org.apache.synapse.util.PolicyInfo;
 
 import java.net.URI;
@@ -237,6 +238,8 @@ public class ProxyServiceSerializer {
         if (parent != null) {
             parent.addChild(proxy);
         }
+
+        CommentListUtil.serializeComments(proxy, service.getCommentsList());
         return proxy;
     }
 
