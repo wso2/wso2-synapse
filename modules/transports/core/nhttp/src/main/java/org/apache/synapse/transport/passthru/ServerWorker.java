@@ -505,13 +505,8 @@ public class ServerWorker implements Runnable {
 
         msgContext.setProperty(Constants.OUT_TRANSPORT_INFO, this);
         msgContext.setServerSide(true);
-
-        if (Boolean.parseBoolean(System.getenv("UNIT_TEST"))) {
-
-        } else {
-            msgContext.setProperty(Constants.Configuration.TRANSPORT_IN_URL, request.getUri());
-        }
-
+        msgContext.setProperty(
+                Constants.Configuration.TRANSPORT_IN_URL, request.getUri());
 
 
         // http transport header names are case insensitive
