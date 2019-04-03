@@ -82,7 +82,7 @@ public class InvokeMediatorSerializer extends AbstractMediatorSerializer{
         Iterator<String> paramIterator = paramsMap.keySet().iterator();
         while (paramIterator.hasNext()) {
 			String paramName = paramIterator.next();
-			if (!"".equals(paramName)) {
+			if (paramName != null) {
 				if (mediator.isDynamicMediator()) {
 					OMElement paramEl = fac.createOMElement(paramName, synNS);
 					Value value = paramsMap.get(paramName);
