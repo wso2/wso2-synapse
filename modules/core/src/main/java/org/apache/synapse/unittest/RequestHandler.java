@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -127,7 +127,6 @@ public class RequestHandler implements Runnable {
             //wrap the artifact data, testcase data and mock service data as one
             SynapseTestCase synapseTestCases = new SynapseTestCase();
             synapseTestCases.setArtifacts(readArtifactData);
-            synapseTestCases.setMockServices(readMockServiceData);
             synapseTestCases.setTestCases(readTestCaseData);
 
             return synapseTestCases;

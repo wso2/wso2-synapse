@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -18,19 +18,38 @@
 
 package org.apache.synapse.unittest.testcase.data.classes;
 
+/**
+ * Class responsible for manage assertNotNull data.
+ *
+ */
 public class AssertNotNull {
 
     private String actual;
     private String message;
 
+    /**
+     * Get assert actual value.
+     *
+     * @return  actual value of assert
+     */
     public String getActual() {
         return actual;
     }
 
+    /**
+     * Get assert message.
+     *
+     * @return  actual value of assert
+     */
     public String getMessage() {
         return message;
     }
 
+    /**
+     * Set assert actual value.
+     *
+     * @return  actual value of assert
+     */
     public void setActual(String actual) {
         this.actual = actual;
     }

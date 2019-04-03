@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -18,32 +18,65 @@
 
 package org.apache.synapse.unittest.testcase.data.classes;
 
+/**
+ * Class responsible for manage assertEqual data.
+ */
 public class AssertEqual {
 
     private String actual;
     private String expected;
     private String message;
 
+    /**
+     * Get actual value of assertion.
+     *
+     * @return actual value
+     */
     public String getActual() {
         return actual;
     }
 
+    /**
+     * Get expected value of assertion.
+     *
+     * @return expected value
+     */
     public String getExpected() {
         return expected;
     }
 
+    /**
+     * Get message of assertion.
+     *
+     * @return message
+     */
     public String getMessage() {
         return message;
     }
 
+    /**
+     * Set actual value of assertion.
+     *
+     * @param actual value
+     */
     public void setActual(String actual) {
         this.actual = actual;
     }
 
+    /**
+     * Get expected value of assertion.
+     *
+     * @param expected value
+     */
     public void setExpected(String expected) {
         this.expected = expected;
     }
 
+    /**
+     * Get message of assertion.
+     *
+     * @param message message of assert
+     */
     public void setMessage(String message) {
         this.message = message;
     }

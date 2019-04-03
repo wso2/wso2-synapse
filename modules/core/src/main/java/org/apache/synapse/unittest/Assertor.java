@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -78,7 +78,8 @@ class Assertor {
         }
 
 
-        if (isAssertEqualComplete && isAssertNotNullComplete) {
+        if ((isAssertEqualComplete && isAssertNotNullComplete) || (isAssertEqualComplete && assertNotNulls.isEmpty()) ||
+                (isAssertNotNullComplete && assertEquals.isEmpty())) {
             isSequenceAssertComplete = true;
             logger.info("Unit testing passed for test case - " + testCaseNumber);
         } else {
@@ -112,13 +113,15 @@ class Assertor {
             Header[] responseHeaders = response.getAllHeaders();
 
             if (!assertEquals.isEmpty()) {
-                Pair<Boolean, String> assertService = startAssertEqualsForServices(assertEquals, responseAsString, responseHeaders);
+                Pair<Boolean, String> assertService
+                        = startAssertEqualsForServices(assertEquals, responseAsString, responseHeaders);
                 isAssertEqualComplete = assertService.getKey();
                 assertMessage = assertService.getValue();
             }
 
             if (!assertNotNulls.isEmpty() && assertMessage == null) {
-                Pair<Boolean, String> assertService = startAssertNotNullsForServices(assertNotNulls, responseAsString, responseHeaders);
+                Pair<Boolean, String> assertService
+                        = startAssertNotNullsForServices(assertNotNulls, responseAsString, responseHeaders);
                 isAssertNotNullComplete = assertService.getKey();
                 assertMessage = assertService.getValue();
             }
@@ -126,10 +129,11 @@ class Assertor {
             logger.error("Error while reading response from the service HttpResponse", e);
         }
 
-        if (isAssertEqualComplete && isAssertNotNullComplete) {
+        if ((isAssertEqualComplete && isAssertNotNullComplete) || (isAssertEqualComplete && assertNotNulls.isEmpty()) ||
+                (isAssertNotNullComplete && assertEquals.isEmpty())) {
             isServiceAssertComplete = true;
             logger.info("Unit testing passed for test case - " + testCaseNumber);
-        } else {
+        }  else {
             logger.error("Unit testing failed for test case - " + testCaseNumber);
         }
 
