@@ -258,7 +258,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     private AxisService axisService;
 
     /**
-     * Comment Texts List associated with the proxy service
+     * Holds the list of comments associated with the proxy service.
      */
     private List<String> commentsList = new ArrayList<String>();
 

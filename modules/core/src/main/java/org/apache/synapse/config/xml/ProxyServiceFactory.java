@@ -20,10 +20,7 @@
 package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMAttribute;
-import org.apache.axiom.om.OMComment;
 import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMNode;
-import org.apache.axiom.om.util.CommonUtils;
 import org.apache.axis2.description.WSDL2Constants;
 import org.apache.axis2.wsdl.WSDLConstants;
 import org.apache.commons.logging.Log;
@@ -379,7 +376,7 @@ public class ProxyServiceFactory {
             proxy.setWsSecEnabled(true);
         }
 
-        CommentListUtil.addAllCommentChildrenToList(elem, proxy.getCommentsList());
+        CommentListUtil.populateComments(elem, proxy.getCommentsList());
 
         return proxy;
     }

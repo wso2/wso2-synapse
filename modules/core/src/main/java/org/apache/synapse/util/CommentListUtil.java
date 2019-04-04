@@ -39,7 +39,7 @@ public class CommentListUtil {
      * @param el    OMElement containing the comments
      * @param commentList List to be which the comments should be added to
      */
-    public static void addAllCommentChildrenToList(OMElement el, List<String> commentList) {
+    public static void populateComments(OMElement el, List<String> commentList) {
         Iterator it = el.getChildren();
 
         while (it.hasNext()) {
