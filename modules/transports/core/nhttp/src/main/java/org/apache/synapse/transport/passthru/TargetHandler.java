@@ -315,7 +315,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                     (NHttpServerConnection) requestMsgContext.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
 
             //check correlation logs enabled
-            if (targetConfiguration.isCorrelationLoggingEnabled()) {
+            if (targetConfiguration.isCorrelationLoggingEnabled()
+                    && context.getAttribute(PassThroughConstants.CORRELATION_ID) != null) {
                 long startTime = (long) context.getAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME);
                 MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
                         context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
@@ -828,7 +829,8 @@ public class TargetHandler implements NHttpClientEventHandler {
     private void logHttpRequestErrorInCorrelationLog(NHttpClientConnection conn, String state) {
 
         TargetContext targetContext = TargetContext.get(conn);
-        if (targetContext != null) {
+        if (targetContext != null
+                && conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID) != null) {
             String url = "", method = "";
             if (targetContext.getRequest() != null) {
                 url = targetContext.getRequest().getUrl().toString();
