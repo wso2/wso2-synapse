@@ -51,7 +51,13 @@ import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.transport.passthru.util.RelayConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 
-import java.util.*;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.Stack;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * An abstract base class for all Endpoint implementations
