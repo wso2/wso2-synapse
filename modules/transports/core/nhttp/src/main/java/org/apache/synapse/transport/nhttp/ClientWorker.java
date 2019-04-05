@@ -177,7 +177,14 @@ public class ClientWorker implements Runnable {
                             URI endpointURI = new URI(endpointURLPrefix);
                             URI locationURI = new URI(header.getValue());
 
-                            if ((locationURI.getHost().equalsIgnoreCase(endpointURI.getHost())) &&
+                            if (locationURI != null && locationURI.getHost() == null) {
+                                if(log.isDebugEnabled()){
+                                    log.debug("Relative URL received for Location : " + locationURI);
+                                }
+                                if (servicePrefix != null) {
+                                    headerMap.put(header.getName(), servicePrefix + locationURI.getPath());
+                                }
+                            } else if ((locationURI.getHost().equalsIgnoreCase(endpointURI.getHost())) &&
                                     (locationURI.getPort() == endpointURI.getPort())) {
                                 URI newURI = new URI(locationURI.getScheme(), locationURI.getUserInfo(),
                                         serviceURI.getHost(), serviceURI.getPort(), locationURI.getPath(),
