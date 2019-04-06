@@ -42,7 +42,6 @@ import org.apache.synapse.samples.framework.tests.advanced.Sample434;
 import org.apache.synapse.samples.framework.tests.advanced.Sample450;
 import org.apache.synapse.samples.framework.tests.advanced.Sample451;
 import org.apache.synapse.samples.framework.tests.advanced.Sample470;
-import org.apache.synapse.samples.framework.tests.advanced.Sample452;
 import org.apache.synapse.samples.framework.tests.advanced.Sample752;
 import org.apache.synapse.samples.framework.tests.endpoint.Sample50;
 import org.apache.synapse.samples.framework.tests.endpoint.Sample51;
@@ -283,7 +282,6 @@ public class TestSamplesHandlerSuite extends TestSuite {
         sampleClassRepo.put("434", Sample434.class);
         sampleClassRepo.put("450", Sample450.class);
         sampleClassRepo.put("451", Sample451.class);
-        sampleClassRepo.put("452", Sample452.class);
         sampleClassRepo.put("500", Sample500.class);
     }
 
