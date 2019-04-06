@@ -32,7 +32,7 @@ public class ResolverFactory {
 
     private final int RESOLVER_INDEX = 2;
     private static ResolverFactory resolverFactory = new ResolverFactory();
-    private final Pattern startPattern = Pattern.compile("(^[a-zA-Z0-9])|(^$)");
+    private final Pattern startPattern = Pattern.compile("(^[a-zA-Z0-9])|(^$)|(^\\{)");
     private final Pattern rePattern = Pattern.compile("(\\$)([a-zA-Z0-9]+):([_a-zA-Z0-9]+)");
     private static final Log log = LogFactory.getLog(MediatorFactoryFinder.class);
 
