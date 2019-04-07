@@ -316,7 +316,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
 			((Axis2MessageContext) synCtx).getAxis2MessageContext().
 							setProperty(NhttpConstants.REST_URL_POSTFIX,restURLPostfix);
 		}
-        if (synCtx.isResponse()){
+        if (synCtx.isResponse()) {
             org.apache.axis2.context.MessageContext context = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
             if (context.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
                 Map headers = (Map) context.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
