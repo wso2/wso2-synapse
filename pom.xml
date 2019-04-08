@@ -1212,7 +1212,7 @@
       <dataprovider.version>1.5.0</dataprovider.version>
       <activemq.version>5.2.0</activemq.version>
       <rhino.version>1.7R4</rhino.version>
-      <jetty.version>7.2.0.v20101020</jetty.version>
+      <jetty.version>9.4.15.v20190215</jetty.version>
       <!-- The Java version used to execute maven-antrun-plugin in the integration module.
            TODO: Find a way to avoid hardcording this.-->
       <java.version>1.8</java.version>
