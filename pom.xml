@@ -1210,7 +1210,7 @@
       <jacoco.ant.version>0.7.9</jacoco.ant.version>
       <powermock.version>1.7.1</powermock.version>
       <dataprovider.version>1.5.0</dataprovider.version>
-      <activemq.version>5.2.0</activemq.version>
+      <activemq.version>5.7.0</activemq.version>
       <rhino.version>1.7R4</rhino.version>
       <jetty.version>7.2.0.v20101020</jetty.version>
       <!-- The Java version used to execute maven-antrun-plugin in the integration module.
