@@ -1124,7 +1124,7 @@
       <imp.pkg.version.wso2.bouncycastle>[1.52.0,2.0.0)</imp.pkg.version.wso2.bouncycastle>
       <hc.httpcore.version>4.3.3</hc.httpcore.version>
       <httpcore-nio.wso2.version>4.3.3-wso2v4</httpcore-nio.wso2.version>
-      <hc.httpclient.version>4.3.2</hc.httpclient.version>
+      <hc.httpclient.version>4.5.8</hc.httpclient.version>
       <aspectj.version>1.8.5</aspectj.version>
       <spring.version>1.2.8</spring.version>
       <commons-codec.version>1.12</commons-codec.version>
