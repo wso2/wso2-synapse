@@ -83,7 +83,7 @@ public class JmsConsumer implements MessageConsumer {
         }
 
         try {
-            Message message = consumer.receive(1);
+            Message message = consumer.receive(1000);
             if (message == null) {
                 return null;
             }
