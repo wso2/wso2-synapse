@@ -30,6 +30,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import javax.xml.namespace.QName;
 
 
@@ -45,8 +46,7 @@ class TestingAgent {
     private SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
     private String artifactType = null;
     private String key = null;
-    private String context = null;
-    private String resourceMethod = null;
+    private OMElement artifactNode = null;
     private String exception = null;
     private ArrayList<Boolean> testCasesResult = new ArrayList<>();
 
@@ -67,7 +67,7 @@ class TestingAgent {
             //check artifact type and pass the artifact to the relevant deployment
             switch (artifactType) {
 
-                case TYPE_SEQUENCE :
+                case TYPE_SEQUENCE:
                     Pair<SynapseConfiguration, String> pairOfSequenceDeployment =
                             config.deploySequenceArtifact(artifact, artifactNameOrKey);
                     synapseConfiguration = pairOfSequenceDeployment.getKey();
@@ -81,7 +81,7 @@ class TestingAgent {
                     }
                     break;
 
-                case TYPE_PROXY :
+                case TYPE_PROXY:
                     Pair<SynapseConfiguration, String> pairOfProxyDeployment =
                             config.deployProxyArtifact(artifact, artifactNameOrKey);
                     synapseConfiguration = pairOfProxyDeployment.getKey();
@@ -95,13 +95,12 @@ class TestingAgent {
                     }
                     break;
 
-                case TYPE_API :
+                case TYPE_API:
                     Pair<SynapseConfiguration, String> pairofApiDeployment =
                             config.deployApiArtifact(artifact, artifactNameOrKey);
                     synapseConfiguration = pairofApiDeployment.getKey();
                     key = pairofApiDeployment.getValue();
-                    context = artifact.getAttributeValue(new QName(API_CONTEXT));
-                    resourceMethod = artifact.getFirstElement().getAttributeValue(new QName(RESOURCE_METHODS));
+                    artifactNode = artifact;
 
                     if (key.equals(artifactNameOrKey)) {
                         isArtifactDeployed = true;
@@ -132,11 +131,11 @@ class TestingAgent {
     Pair<Boolean, String> processSupportiveArtifacts(SynapseTestCase synapseTestCase) {
         boolean isArtifactDeployed = true;
 
-        for (int x=0; x < synapseTestCase.getArtifacts().getSupportiveArtifactCount(); x++) {
+        for (int x = 0; x < synapseTestCase.getArtifacts().getSupportiveArtifactCount(); x++) {
             if (isArtifactDeployed) {
                 try {
                     //check artifact type and pass the artifact to the relevant deployment
-                    isArtifactDeployed = processForArtifactTypes(synapseTestCase,x);
+                    isArtifactDeployed = processForArtifactTypes(synapseTestCase, x);
 
                 } catch (Exception e) {
                     logger.error("Artifact deployment failed", e);
@@ -156,10 +155,10 @@ class TestingAgent {
      * Check artifact type and pass the supportive-artifact data to the relevant deployment mechanism.
      *
      * @param synapseTestCase test cases data received from client
-     * @param index index of supportive artifact
+     * @param index           index of supportive artifact
      * @return true if supportive artifact deployed else return false
      */
-    private boolean processForArtifactTypes(SynapseTestCase synapseTestCase, int index) throws IOException{
+    private boolean processForArtifactTypes(SynapseTestCase synapseTestCase, int index) throws IOException {
 
         String supportiveArtifactType = synapseTestCase.getArtifacts().getSupportiveArtifact(index).getArtifactType();
         String artifactNameOrKey = synapseTestCase.getArtifacts().getSupportiveArtifact(index).getArtifactNameOrKey();
@@ -167,45 +166,39 @@ class TestingAgent {
         ConfigurationDeployer config = new ConfigurationDeployer();
 
         switch (supportiveArtifactType) {
-            case TYPE_SEQUENCE :
+            case TYPE_SEQUENCE:
                 Pair<SynapseConfiguration, String> pairOfSequenceDeployment =
                         config.deploySequenceArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairOfSequenceDeployment.getKey();
                 key = pairOfSequenceDeployment.getValue();
                 break;
 
-            case TYPE_PROXY :
+            case TYPE_PROXY:
                 Pair<SynapseConfiguration, String> pairofProxyDeployment =
                         config.deployProxyArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairofProxyDeployment.getKey();
                 key = pairofProxyDeployment.getValue();
                 break;
 
-            case TYPE_API :
+            case TYPE_API:
                 Pair<SynapseConfiguration, String> pairofApiDeployment =
                         config.deployApiArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairofApiDeployment.getKey();
                 key = pairofApiDeployment.getValue();
-                context = artifact.getAttributeValue(new QName(API_CONTEXT));
-                resourceMethod = artifact.getFirstElement().getAttributeValue(new QName(RESOURCE_METHODS));
                 break;
 
-            case TYPE_ENDPOINT :
+            case TYPE_ENDPOINT:
                 Pair<SynapseConfiguration, String> pairOfEndpointDeployment =
                         config.deployEndpointArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairOfEndpointDeployment.getKey();
                 key = pairOfEndpointDeployment.getValue();
-                context = artifact.getAttributeValue(new QName(API_CONTEXT));
-                resourceMethod = artifact.getFirstElement().getAttributeValue(new QName(RESOURCE_METHODS));
                 break;
 
-            case TYPE_LOCAL_ENTRY :
+            case TYPE_LOCAL_ENTRY:
                 Pair<SynapseConfiguration, String> pairOfLocalEntryDeployment =
                         config.deployLocalEntryArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairOfLocalEntryDeployment.getKey();
                 key = pairOfLocalEntryDeployment.getValue();
-                context = artifact.getAttributeValue(new QName(API_CONTEXT));
-                resourceMethod = artifact.getFirstElement().getAttributeValue(new QName(RESOURCE_METHODS));
                 break;
 
             default:
@@ -240,7 +233,7 @@ class TestingAgent {
                 TestCase currentTestCase = synapseTestCase.getTestCases().getTestCase(i);
 
                 switch (artifactType) {
-                    case TYPE_SEQUENCE :
+                    case TYPE_SEQUENCE:
                         Pair<Boolean, MessageContext> mediateResult =
                                 TestCasesMediator.sequenceMediate(currentTestCase, synapseConfiguration, key);
 
@@ -249,12 +242,12 @@ class TestingAgent {
 
                         //check whether mediation is success or not
                         Pair<Boolean, String> assertSeqResult = checkAssertionWithSequenceMediation
-                                                            (mediationResult, resultedMessageContext, currentTestCase, i);
+                                (mediationResult, resultedMessageContext, currentTestCase, i);
                         isAssert = assertSeqResult.getKey();
                         exception = assertSeqResult.getValue();
                         break;
 
-                    case TYPE_PROXY :
+                    case TYPE_PROXY:
                         HttpResponse invokedProxyResult = TestCasesMediator
                                 .proxyServiceExecutor(currentTestCase, key);
 
@@ -263,7 +256,10 @@ class TestingAgent {
                         exception = assertProxyResult.getValue();
                         break;
 
-                    case TYPE_API :
+                    case TYPE_API:
+                        String context = artifactNode.getAttributeValue(new QName(API_CONTEXT));
+                        String resourceMethod = findAPIResourceMethod(artifactNode, currentTestCase.getRequestPath());
+                        System.out.println(resourceMethod);
                         HttpResponse invokedApiResult = TestCasesMediator.apiResourceExecutor
                                 (currentTestCase, context, resourceMethod);
 
@@ -272,7 +268,7 @@ class TestingAgent {
                         exception = assertAPIResult.getValue();
                         break;
 
-                    default :
+                    default:
                         break;
                 }
                 resultOfTestCases.put("test-case " + (i + 1), isAssert);
@@ -290,17 +286,17 @@ class TestingAgent {
     /**
      * Check assertion results with results of sequence mediation.
      *
-     * @param mediationResult result of mediation of sequence
+     * @param mediationResult        result of mediation of sequence
      * @param resultedMessageContext message context of mediation of sequence
-     * @param currentTestCase current running test case data
+     * @param currentTestCase        current running test case data
      * @return result of assertion or mediation result
      */
-    private Pair<Boolean,String> checkAssertionWithSequenceMediation(
+    private Pair<Boolean, String> checkAssertionWithSequenceMediation(
             boolean mediationResult, MessageContext resultedMessageContext, TestCase currentTestCase, int index) {
         boolean isAssert = false;
         String assertMessage;
         if (mediationResult) {
-            Pair<Boolean, String> assertOfSequence= Assertor.doAssertionSequence(currentTestCase, resultedMessageContext, index+1);
+            Pair<Boolean, String> assertOfSequence = Assertor.doAssertionSequence(currentTestCase, resultedMessageContext, index + 1);
             isAssert = assertOfSequence.getKey();
             assertMessage = assertOfSequence.getValue();
 
@@ -316,11 +312,11 @@ class TestingAgent {
      * Check assertion results with results of sequence mediation.
      *
      * @param invokedProxyResult result of proxy invoke
-     * @param currentTestCase current running test case data
+     * @param currentTestCase    current running test case data
      * @return result of assertion or invoke result
      */
-    private Pair<Boolean,String> checkAssertionWithProxyMediation(HttpResponse invokedProxyResult,
-                                                     TestCase currentTestCase, int index) {
+    private Pair<Boolean, String> checkAssertionWithProxyMediation(HttpResponse invokedProxyResult,
+                                                                   TestCase currentTestCase, int index) {
         boolean isAssert = false;
         String assertMessage;
         if (invokedProxyResult != null) {
@@ -341,11 +337,11 @@ class TestingAgent {
      * Check assertion results with results of sequence mediation.
      *
      * @param invokedApiResult result of API invoke
-     * @param currentTestCase current running test case data
+     * @param currentTestCase  current running test case data
      * @return result of assertion or invoke result
      */
-    private Pair<Boolean,String> checkAssertionWithAPIMediation(HttpResponse invokedApiResult,
-                                                   TestCase currentTestCase, int index) {
+    private Pair<Boolean, String> checkAssertionWithAPIMediation(HttpResponse invokedApiResult,
+                                                                 TestCase currentTestCase, int index) {
         boolean isAssert = false;
         String assertMessage;
         if (invokedApiResult != null) {
@@ -386,5 +382,46 @@ class TestingAgent {
         }
 
         return resultOfTestCases;
+    }
+
+    private String findAPIResourceMethod(OMElement artifact, String requestPath) {
+
+        String resourceMethod = null;
+
+        if (requestPath != null) {
+            //Iterate through test-cases in descriptor data
+            Iterator<?> elementIterator = artifact.getChildElements();
+            while (elementIterator.hasNext()) {
+                OMElement resourceNode = (OMElement) (elementIterator.next());
+
+                String requestUrl;
+                String preRequestUrl;
+                if (resourceNode.getAttributeValue(new QName(URI_TEMPLATE)) != null) {
+                    requestUrl = resourceNode.getAttributeValue(new QName(URI_TEMPLATE));
+                } else {
+                    requestUrl = resourceNode.getAttributeValue(new QName(URL_MAPPING));
+                }
+
+                String[] sectionsOfUrl = requestUrl.split("\\{");
+                int stringLength = sectionsOfUrl[0].length();
+                preRequestUrl = requestUrl.substring(0,stringLength);
+
+                if (preRequestUrl.equals(sectionsOfUrl[0])) {
+                    resourceMethod = resourceNode.getAttributeValue(new QName(RESOURCE_METHODS));
+                    break;
+                }
+            }
+
+            if (resourceMethod == null) {
+                resourceMethod = artifactNode.getFirstElement().getAttributeValue(new QName(RESOURCE_METHODS));
+                logger.warn("Requested API resource method set to first resource element due to " +
+                        "request path miss matched with either url-mapping or uri-template");
+            }
+
+        } else {
+            resourceMethod = artifactNode.getFirstElement().getAttributeValue(new QName(RESOURCE_METHODS));
+        }
+
+        return resourceMethod;
     }
 }

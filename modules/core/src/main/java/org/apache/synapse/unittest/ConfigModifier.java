@@ -56,7 +56,7 @@ import static org.apache.synapse.unittest.Constants.*;
  * Class responsible for modify the artifact data.
  * creates mock services as in descriptor data.
  */
-public class ConfigModifier {
+class ConfigModifier {
 
     private ConfigModifier() {
     }
@@ -106,7 +106,7 @@ public class ConfigModifier {
                 }
 
             } catch (Exception e) {
-                logger.error(e);
+                logger.error("Error while creating mock service for " + artifact.getArtifactNameOrKey() , e);
             }
         }
 
@@ -131,7 +131,13 @@ public class ConfigModifier {
             if (endPointNode.getNodeName().equals(END_POINT)) {
 
                 NamedNodeMap attributeListOfEndPoint = endPointNode.getAttributes();
-                String valueOfName = attributeListOfEndPoint.getNamedItem(ARTIFACT_NAME_ATTRIBUTE).getNodeValue();
+
+                String valueOfName;
+                if(attributeListOfEndPoint.getNamedItem(ARTIFACT_NAME_ATTRIBUTE) != null) {
+                    valueOfName = attributeListOfEndPoint.getNamedItem(ARTIFACT_NAME_ATTRIBUTE).getNodeValue();
+                } else {
+                    continue;
+                }
 
                 //check service name is exists in mock service data holder map
                 boolean isServiceExists = mockServiceData.isServiceNameExist(valueOfName);

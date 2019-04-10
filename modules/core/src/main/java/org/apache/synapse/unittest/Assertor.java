@@ -29,9 +29,7 @@ import org.apache.synapse.unittest.testcase.data.classes.AssertEqual;
 import org.apache.synapse.unittest.testcase.data.classes.AssertNotNull;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -109,7 +107,7 @@ class Assertor {
         ArrayList<AssertNotNull> assertNotNulls = currentTestCase.getAssertNotNull();
 
         try {
-            String responseAsString = trimStrings(EntityUtils.toString(response.getEntity(), "UTF-8"));
+            String responseAsString = EntityUtils.toString(response.getEntity(), "UTF-8");
             Header[] responseHeaders = response.getAllHeaders();
 
             if (!assertEquals.isEmpty()) {
@@ -140,29 +138,6 @@ class Assertor {
         return new Pair<>(isServiceAssertComplete, assertMessage);
     }
 
-    /**
-     * Remove irrelevant whitespaces from the input string.
-     *
-     * @param inputString string which needs to remove whitespaces
-     * @return trim string not include irrelevant whitespaces
-     */
-    private static String trimStrings(String inputString) {
-        String trimedString;
-        BufferedReader reader = new BufferedReader(new StringReader(inputString));
-        StringBuilder result = new StringBuilder();
-        try {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                result.append(line.trim());
-            }
-            trimedString = result.toString();
-        } catch (IOException e) {
-            logger.error(e);
-            trimedString = inputString;
-        }
-
-        return trimedString.replaceAll(WHITESPACE_REGEX, "");
-    }
 
     /**
      * Method of assertionEquals for Sequence test cases.
@@ -184,7 +159,7 @@ class Assertor {
             if (!isAssertEqualFailed) {
 
                 String actual = assertItem.getActual();
-                String expected = assertItem.getExpected();
+                String expected = Trimmer.trimStrings(assertItem.getExpected());
                 String message = assertItem.getMessage();
                 boolean isAssert;
                 String[] actualType = actual.split(":");
@@ -193,16 +168,14 @@ class Assertor {
                 switch (actualType[0]) {
 
                     case INPUT_PROPERTY_BODY:
-                        mediatedResult = trimStrings(msgCtxt.getEnvelope().getBody().getFirstElement().toString());
-                        isAssert = trimStrings(expected)
-                                .equals(mediatedResult);
+                        mediatedResult = Trimmer.trimStrings(msgCtxt.getEnvelope().getBody().getFirstElement().toString());
+                        isAssert = expected.equals(mediatedResult);
 
                         break;
 
                     case INPUT_PROPERTY_CONTEXT:
-                        mediatedResult = trimStrings(msgCtxt.getProperty(actualType[1]).toString());
-                        isAssert = trimStrings(expected)
-                                .equals(mediatedResult);
+                        mediatedResult = Trimmer.trimStrings(msgCtxt.getProperty(actualType[1]).toString());
+                        isAssert = expected.equals(mediatedResult);
 
                         break;
 
@@ -211,9 +184,8 @@ class Assertor {
                         org.apache.axis2.context.MessageContext axis2MessageCtx =
                                 axis2smc.getAxis2MessageContext();
 
-                        mediatedResult = trimStrings(axis2MessageCtx.getProperty(actualType[1]).toString());
-                        isAssert = trimStrings(expected)
-                                .equals(mediatedResult);
+                        mediatedResult = Trimmer.trimStrings(axis2MessageCtx.getProperty(actualType[1]).toString());
+                        isAssert = expected.equals(mediatedResult);
 
                         break;
 
@@ -227,9 +199,8 @@ class Assertor {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> headersMap = (Map) headers;
 
-                        mediatedResult = trimStrings(headersMap.get(actualType[1]).toString());
-                        isAssert = trimStrings(expected)
-                                .equals(mediatedResult);
+                        mediatedResult = Trimmer.trimStrings(headersMap.get(actualType[1]).toString());
+                        isAssert = expected.equals(mediatedResult);
 
                         break;
 
@@ -239,9 +210,9 @@ class Assertor {
                         message = "Received assert actual value for sequences not defined";
                 }
 
-                logger.info("Sequence Assert Actual - " + trimStrings(actual));
-                logger.info("Sequence Assert Expected - " + trimStrings(expected));
-                logger.info("Sequence mediated result for actual - " + mediatedResult);
+                logger.info("Sequence Assert Actual - " + actual);
+                logger.info("Sequence Assert Expected - " + Trimmer.trimStrings(expected));
+                logger.info("Sequence mediated result for actual - " + Trimmer.trimStrings(mediatedResult));
                 if (isAssert) {
                     logger.info("Sequence assertEqual for " + actualType[0] + " type passed successfully");
                 } else {
@@ -284,13 +255,14 @@ class Assertor {
                 switch (actualType[0]) {
 
                     case INPUT_PROPERTY_BODY:
-                        mediatedResult = trimStrings(msgCtxt.getEnvelope().getBody().getFirstElement().toString());
+                        mediatedResult = Trimmer.trimStrings(
+                                msgCtxt.getEnvelope().getBody().getFirstElement().toString());
                         isAssertNull = mediatedResult.isEmpty();
 
                         break;
 
                     case INPUT_PROPERTY_CONTEXT:
-                        mediatedResult = trimStrings(msgCtxt.getProperty(actualType[1]).toString());
+                        mediatedResult = Trimmer.trimStrings(msgCtxt.getProperty(actualType[1]).toString());
                         isAssertNull = mediatedResult.isEmpty();
 
                         break;
@@ -300,7 +272,7 @@ class Assertor {
                         org.apache.axis2.context.MessageContext axis2MessageCtx =
                                 axis2smc.getAxis2MessageContext();
 
-                        mediatedResult = trimStrings(axis2MessageCtx.getProperty(actualType[1]).toString());
+                        mediatedResult = Trimmer.trimStrings(axis2MessageCtx.getProperty(actualType[1]).toString());
                         isAssertNull = mediatedResult.isEmpty();
 
                         break;
@@ -315,7 +287,7 @@ class Assertor {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> headersMap = (Map) headers;
 
-                        mediatedResult = trimStrings(headersMap.get(actualType[1]).toString());
+                        mediatedResult = Trimmer.trimStrings(headersMap.get(actualType[1]).toString());
                         isAssertNull = mediatedResult.isEmpty();
 
                         break;
@@ -327,7 +299,7 @@ class Assertor {
                 }
 
                 logger.info("Sequence Assert Actual - " + actual);
-                logger.info("Sequence mediated result for actual - " + mediatedResult);
+                logger.info("Sequence mediated result for actual is not null - " + !mediatedResult.isEmpty());
 
                 if (!isAssertNull) {
                     logger.info("Sequence assertNotNull for " + actualType[0] + " type passed successfully");
@@ -367,25 +339,25 @@ class Assertor {
             }
 
             String actual = assertItem.getActual();
-            String expected = assertItem.getExpected();
+            String expected = Trimmer.trimStrings(assertItem.getExpected());
             String message = assertItem.getMessage();
             boolean isAssert = false;
             String[] actualType = actual.split(":");
-            String mediatedResult = null;
+            String mediatedResult = "null";
 
             switch (actualType[0]) {
 
                 case INPUT_PROPERTY_BODY:
-                    mediatedResult = response;
-                    isAssert = trimStrings(expected).equals(mediatedResult);
+                    mediatedResult = Trimmer.trimStrings(response);
+                    isAssert = expected.equals(mediatedResult);
                     break;
 
                 case INPUT_PROPERTY_TRANSPORT:
 
                     for (Header header : headers) {
                         if (header.getName().equals(actualType[1])) {
-                            mediatedResult = trimStrings(header.getValue());
-                            isAssert = trimStrings(expected).equals(mediatedResult);
+                            mediatedResult = Trimmer.trimStrings(header.getValue());
+                            isAssert = expected.equals(mediatedResult);
                             break;
                         }
                     }
@@ -397,8 +369,8 @@ class Assertor {
             }
 
             logger.info("Service Assert Actual - " + actual);
-            logger.info("Service Assert Expected - " + trimStrings(expected));
-            logger.info("Service mediated result for actual - " + mediatedResult);
+            logger.info("Service Assert Expected - " + Trimmer.trimStrings(expected));
+            logger.info("Service mediated result for actual - " + Trimmer.trimStrings(mediatedResult));
 
             if (isAssert) {
                 logger.info("Service assertEqual for " + actualType[0] + " passed successfully");
@@ -439,7 +411,7 @@ class Assertor {
             String message = assertItem.getMessage();
             boolean isAssertNull = false;
             String[] actualType = actual.split(":");
-            String mediatedResult = null;
+            String mediatedResult = "null";
 
             switch (actualType[0]) {
 
@@ -452,7 +424,7 @@ class Assertor {
                 case INPUT_PROPERTY_TRANSPORT:
                     for (Header header : headers) {
                         if (header.getName().equals(actualType[1])) {
-                            mediatedResult = trimStrings(header.getValue());
+                            mediatedResult = Trimmer.trimStrings(header.getValue());
                             isAssertNull = mediatedResult.isEmpty();
                             break;
                         }
@@ -465,7 +437,7 @@ class Assertor {
             }
 
             logger.info("Service Assert Actual - " + actual);
-            logger.info("Service mediated result for actual - " + mediatedResult);
+            logger.info("Service mediated result for actual is not null- " + !mediatedResult.isEmpty());
 
             if (!isAssertNull) {
                 logger.info("Service assertNotNull for " + actualType[0] + " passed successfully");

@@ -101,7 +101,6 @@ public class TestCasesMediator {
         //set headers
         for (Map<String, String> property : currentTestCase.getPropertyMap()) {
             String scope = property.get(TEST_CASE_INPUT_PROPERTY_SCOPE);
-
             //Setting Synapse properties
             if (scope.equals(INPUT_PROPERTY_SCOPE_TRANSPORT)) {
                 httpPost.setHeader(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
@@ -109,17 +108,19 @@ public class TestCasesMediator {
             }
         }
 
-        StringEntity postEntity = new StringEntity(currentTestCase.getInputPayload());
-        httpPost.setEntity(postEntity);
+        if (currentTestCase.getInputPayload() != null) {
+            StringEntity postEntity = new StringEntity(currentTestCase.getInputPayload().trim());
+            httpPost.setEntity(postEntity);
+        }
+
         HttpResponse response = clientConnector.execute(httpPost);
 
         int responseCode = response.getStatusLine().getStatusCode();
-        if (responseCode == 200) {
+        if (responseCode/100 == 2) {
             return response;
         } else {
             return null;
         }
-
     }
 
     /**
@@ -134,7 +135,7 @@ public class TestCasesMediator {
             throws IOException {
 
         String url;
-        if (!currentTestCase.getRequestPath().isEmpty()) {
+        if (currentTestCase.getRequestPath() != null) {
             if (currentTestCase.getRequestPath().startsWith("/")) {
                 url = API_INVOKE_PREFIX_URL + context + currentTestCase.getRequestPath();
             } else {
@@ -185,7 +186,7 @@ public class TestCasesMediator {
         }
 
         int responseCode = response.getStatusLine().getStatusCode();
-        if (responseCode == 200) {
+        if (responseCode/100 == 2) {
             return response;
         } else {
             return null;

@@ -23,6 +23,7 @@ package org.apache.synapse.unittest.mock.services.http.consumer;
 
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
+import org.apache.synapse.unittest.Trimmer;
 import org.apache.synapse.unittest.mock.services.core.RequestContext;
 
 import java.util.ArrayList;
@@ -108,6 +109,7 @@ public class HttpRequestContext extends RequestContext {
         if (requestBody == null) {
             return null;
         }
-        return requestBody.toString();
+
+        return Trimmer.trimStrings(requestBody.toString());
     }
 }

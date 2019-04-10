@@ -22,6 +22,7 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import javafx.util.Pair;
 import org.apache.log4j.Logger;
+import org.apache.synapse.unittest.Trimmer;
 import org.apache.synapse.unittest.mock.services.core.Emulator;
 import org.apache.synapse.unittest.mock.services.core.EmulatorType;
 import org.apache.synapse.unittest.mock.services.http.dsl.HttpConsumerContext;
@@ -29,6 +30,7 @@ import org.apache.synapse.unittest.mock.services.http.dsl.dto.consumer.IncomingM
 import org.apache.synapse.unittest.mock.services.http.dsl.dto.consumer.OutgoingMessage;
 import org.apache.synapse.unittest.testcase.data.classes.ServiceResource;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.apache.synapse.unittest.Constants.*;
@@ -94,12 +96,20 @@ public class MockServiceCreator {
     private static void routeThroughResourceMethod(ServiceResource resource, HttpConsumerContext emulator) {
         String serviceMethod = resource.getMethod();
         String serviceSubContext = resource.getSubContext();
-        String serviceRequestPayload = resource.getRequestPayload()
-                .replaceAll(WHITESPACE_REGEX, "");
-        String serviceResponsePayload = resource.getResponsePayload()
-                .replaceAll(WHITESPACE_REGEX, "");
-        List<Pair<String, String>> requestHeaders = resource.getRequestHeaders();
-        List<Pair<String, String>> responseHeaders = resource.getResponseHeaders();
+        String serviceRequestPayload = Trimmer.trimStrings(resource.getRequestPayload());
+        String serviceResponsePayload = resource.getResponsePayload();
+
+        List<Pair<String, String>> requestHeaders = new ArrayList<>();
+        List<Pair<String, String>> responseHeaders = new ArrayList<>();
+
+        if (resource.getRequestHeaders() != null) {
+            requestHeaders = resource.getRequestHeaders();
+        }
+
+        if(resource.getResponseHeaders() != null) {
+            responseHeaders = resource.getResponseHeaders();
+        }
+
 
         switch (serviceMethod.toUpperCase()) {
             case GET_METHOD:

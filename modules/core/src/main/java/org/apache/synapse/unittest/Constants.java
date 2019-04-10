@@ -80,6 +80,7 @@ public class Constants {
     static final String END_POINT = "endpoint";
     public static final String URI = "uri";
     static final String URI_TEMPLATE = "uri-template";
+    static final String URL_MAPPING = "url-mapping";
     public static final String HTTP = "http://";
     public static final String GET_METHOD = "GET";
     public static final String POST_METHOD = "POST";
@@ -87,6 +88,7 @@ public class Constants {
     static final String DELETE_METHOD = "DELETE";
 
     public static final String WHITESPACE_REGEX = "\\s(?=(\"[^\"]*\"|[^\"])*$)";
-    public static final String API_INVOKE_PREFIX_URL = "http://localhost:8280";
-    public static final String PROXY_INVOKE_PREFIX_URL = "http://localhost:8280/services/";
+    static final String XML_PATTERN_REGEX = "(<[^/][^>]*>) +| +(<\\/[^>]+>)";
+    static final String API_INVOKE_PREFIX_URL = "http://localhost:8280";
+    static final String PROXY_INVOKE_PREFIX_URL = "http://localhost:8280/services/";
 }
