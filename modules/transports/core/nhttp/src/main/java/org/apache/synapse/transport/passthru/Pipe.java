@@ -433,6 +433,14 @@ public class Pipe {
         }
     }
 
+    /**
+     * Checks the state of the producerError property
+     * @return boolean
+     */
+    public boolean isProducerError() {
+        return producerError;
+    }
+
     private class ByteBufferInputStream extends InputStream {
 
         @Override

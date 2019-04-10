@@ -460,6 +460,9 @@ public class RelayUtils {
             try {
                 while (!pipe.isProducerCompleted() || pipe.isConsumeRequired()) {
                     consume(pipe);
+                    if (pipe.isProducerError()) {
+                        break;
+                    }
                 }
             } catch (IOException exception) {
                 handleException("Error when consuming the input stream to discard", exception);

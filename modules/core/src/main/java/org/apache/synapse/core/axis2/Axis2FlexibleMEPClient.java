@@ -145,9 +145,9 @@ public class Axis2FlexibleMEPClient {
         }
 
         if (originalInMsgCtx.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
-           if (originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID) == null){
-               originalInMsgCtx.setProperty(PassThroughConstants.CORRELATION_ID, UUID.randomUUID().toString());
-           }
+            if (originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID) == null) {
+                originalInMsgCtx.setProperty(PassThroughConstants.CORRELATION_ID, UUID.randomUUID().toString());
+            }
             headers.put(PassThroughConfiguration.getInstance().getCorrelationHeaderName(),
                     originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID).toString());
         }

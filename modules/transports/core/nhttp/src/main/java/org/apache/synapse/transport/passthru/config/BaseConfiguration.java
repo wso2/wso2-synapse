@@ -180,6 +180,6 @@ public abstract class BaseConfiguration {
         return metrics;
     }
 
-    public Boolean isCorrelationLoggingEnabled(){return correlationLoggingEnabled;}
+    public Boolean isCorrelationLoggingEnabled() { return correlationLoggingEnabled; }
 
 }
