@@ -157,6 +157,10 @@ public abstract class AbstractListMediator extends AbstractMediator
         return mediators.add(m);
     }
 
+    public void addChild(int index, Mediator m) {
+        mediators.add(index, m);
+    }
+
     public boolean addAll(List<Mediator> c) {
         return mediators.addAll(c);
     }

@@ -32,6 +32,7 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.config.xml.endpoints.EndpointFactory;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.util.CommentListUtil;
 import org.apache.synapse.util.PolicyInfo;
 
 import javax.xml.namespace.QName;
@@ -375,8 +376,11 @@ public class ProxyServiceFactory {
             proxy.setWsSecEnabled(true);
         }
 
+        CommentListUtil.populateComments(elem, proxy.getCommentsList());
+
         return proxy;
     }
+
 
     private static void handleException(String msg) {
         log.error(msg);

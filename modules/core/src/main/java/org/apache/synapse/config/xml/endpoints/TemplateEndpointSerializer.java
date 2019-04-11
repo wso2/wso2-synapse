@@ -27,6 +27,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.TemplateEndpoint;
+import org.apache.synapse.util.CommentListUtil;
 
 import javax.xml.namespace.QName;
 import java.util.Map;
@@ -69,6 +70,8 @@ public class TemplateEndpointSerializer extends EndpointSerializer {
                 paramElement.addAttribute(fac.createOMAttribute("value", nullNS, entry.getValue()));
             }
         }
+
+        CommentListUtil.serializeComments(endpointElement, ((TemplateEndpoint) epr).getCommentsList());
 
         return endpointElement;
     }

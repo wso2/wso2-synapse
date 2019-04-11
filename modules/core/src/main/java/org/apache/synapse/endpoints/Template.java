@@ -51,6 +51,11 @@ public class Template implements SynapseArtifact {
 
     private boolean isEdited;
 
+    /**
+     * Holds the list of comments associated with the proxy service.
+     */
+    private List<String> commentsList = new ArrayList<String>();
+
     public Endpoint create(TemplateEndpoint templateEndpoint, Properties properties) {
         // first go through all the elements and replace with the parameters
         OMElement clonedElement = element.cloneOMElement();
@@ -171,5 +176,13 @@ public class Template implements SynapseArtifact {
 
     public void setIsEdited(boolean isEdited) {
         this.isEdited = isEdited;
+    }
+
+    public List<String> getCommentsList() {
+        return commentsList;
+    }
+
+    public void setCommentsList(List<String> commentsList) {
+        this.commentsList = commentsList;
     }
 }

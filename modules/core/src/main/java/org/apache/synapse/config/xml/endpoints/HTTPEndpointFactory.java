@@ -30,6 +30,7 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.HTTPEndpoint;
 import org.apache.synapse.rest.RESTConstants;
+import org.apache.synapse.util.CommentListUtil;
 
 import javax.xml.namespace.QName;
 import java.util.Properties;
@@ -114,6 +115,8 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
         }
 
         processProperties(httpEndpoint, epConfig);
+
+        CommentListUtil.populateComments(epConfig, httpEndpoint.getCommentsList());
 
         return httpEndpoint;
     }

@@ -27,6 +27,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.endpoints.Template;
+import org.apache.synapse.util.CommentListUtil;
 
 import javax.xml.namespace.QName;
 import java.util.Iterator;
@@ -78,6 +79,8 @@ public class TemplateFactory {
             handleException("endpoint element is required in an endpoint template");
         }
         template.setElement(endpointElement);
+
+        CommentListUtil.populateComments(element, template.getCommentsList());
 
         return template;
     }
