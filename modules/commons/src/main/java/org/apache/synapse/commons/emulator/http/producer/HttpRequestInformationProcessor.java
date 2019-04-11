@@ -24,6 +24,8 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.emulator.http.dsl.HttpProducerContext;
 import org.apache.synapse.commons.emulator.http.dsl.dto.Cookie;
 import org.apache.synapse.commons.emulator.http.dsl.dto.Header;
@@ -32,6 +34,7 @@ import org.apache.synapse.commons.emulator.http.dsl.dto.producer.IncomingMessage
 import java.net.URI;
 
 public class HttpRequestInformationProcessor {
+    private static final Log log = LogFactory.getLog(HttpRequestInformationProcessor.class);
 
     public HttpRequest populateHttpRequest(HttpProducerContext producerContext, IncomingMessage incomingMessage) throws Exception {
 
@@ -41,7 +44,7 @@ public class HttpRequestInformationProcessor {
         String scheme = requestUri.getScheme();
 
         if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
-            System.err.println("Only HTTP(S) is supported.");
+            log.error("Only HTTP(S) is supported.");
             //Need to log
         }
         HttpRequest request = new DefaultFullHttpRequest(

@@ -18,9 +18,14 @@
 
 package org.apache.synapse.commons.emulator.http.producer;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.emulator.http.dsl.dto.producer.OutgoingMessage;
+import org.apache.synapse.commons.util.PropertyHelper;
 
 public class HttpResponseAssertProcessor {
+
+    private static final Log log = LogFactory.getLog(HttpResponseAssertProcessor.class);
 
     public void process(HttpResponseContext responseContext, OutgoingMessage outgoingMessage) {
         assertResponseContent(responseContext, outgoingMessage);
@@ -29,9 +34,9 @@ public class HttpResponseAssertProcessor {
 
     private void assertResponseContent(HttpResponseContext responseContext, OutgoingMessage outgoingMessage) {
         if (outgoingMessage.getBody().equalsIgnoreCase(responseContext.getRequestBody())) {
-            System.out.print("Equal");
+            log.info("Equal");
         } else {
-            System.out.print("Wrong");
+            log.info("Wrong");
         }
     }
 
