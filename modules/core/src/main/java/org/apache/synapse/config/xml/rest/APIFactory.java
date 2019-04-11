@@ -33,6 +33,7 @@ import org.apache.synapse.rest.API;
 import org.apache.synapse.rest.Handler;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.rest.version.VersionStrategy;
+import org.apache.synapse.util.CommentListUtil;
 
 import javax.xml.namespace.QName;
 import java.util.Iterator;
@@ -147,6 +148,8 @@ public class APIFactory {
                 }
             }
         }
+
+        CommentListUtil.populateComments(apiElt, api.getCommentsList());
 
         return api;
     }

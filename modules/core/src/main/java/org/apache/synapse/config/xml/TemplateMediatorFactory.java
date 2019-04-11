@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.template.TemplateMediator;
+import org.apache.synapse.util.CommentListUtil;
 
 import javax.xml.namespace.QName;
 import java.util.ArrayList;
@@ -69,6 +70,8 @@ public class TemplateMediatorFactory extends AbstractListMediatorFactory {
         if (onErrorAttr != null) {
             templateTemplateMediator.setErrorHandler(onErrorAttr.getAttributeValue());
         }
+
+        CommentListUtil.populateComments(elem, templateTemplateMediator.getCommentsList());
         return templateTemplateMediator;
     }
 

@@ -24,9 +24,11 @@ import org.apache.axiom.om.OMElement;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.config.xml.XMLConfigConstants;
+import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.DefaultEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.util.CommentListUtil;
 
 import javax.xml.namespace.QName;
 import java.util.Properties;
@@ -88,6 +90,8 @@ public class DefaultEndpointFactory extends EndpointFactory {
         }
 
         processProperties(defaultEndpoint, epConfig);
+
+        CommentListUtil.populateComments(defaultElement, defaultEndpoint.getCommentsList());
         
         return defaultEndpoint;
     }

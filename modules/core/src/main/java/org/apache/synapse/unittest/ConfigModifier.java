@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 import org.apache.synapse.unittest.testcase.data.classes.Artifact;
 import org.apache.synapse.unittest.testcase.data.holders.ArtifactData;
 import org.apache.synapse.unittest.testcase.data.holders.MockServiceData;
-import org.apache.synapse.unittest.mock.services.MockServiceCreator;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -48,7 +47,12 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import static org.apache.synapse.unittest.Constants.*;
+import static org.apache.synapse.unittest.Constants.ARTIFACT_NAME_ATTRIBUTE;
+import static org.apache.synapse.unittest.Constants.END_POINT;
+import static org.apache.synapse.unittest.Constants.HTTP;
+import static org.apache.synapse.unittest.Constants.SERVICE_HOST;
+import static org.apache.synapse.unittest.Constants.URI;
+import static org.apache.synapse.unittest.Constants.URI_TEMPLATE;
 
 
 /**

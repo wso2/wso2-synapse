@@ -26,7 +26,7 @@
    </parent>
    <groupId>org.apache.synapse</groupId>
    <artifactId>Apache-Synapse</artifactId>
-   <version>2.1.7-wso2v97-SNAPSHOT</version>
+   <version>2.1.7-wso2v98-SNAPSHOT</version>
    <name>Apache Synapse</name>
    <description>Apache Synapse</description>
    <packaging>pom</packaging>
@@ -1027,6 +1027,36 @@
               <version>${powermock.version}</version>
               <scope>test</scope>
           </dependency>
+          <dependency>
+              <groupId>io.netty</groupId>
+              <artifactId>netty-common</artifactId>
+              <version>${io.netty.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>io.netty</groupId>
+              <artifactId>netty-buffer</artifactId>
+              <version>${io.netty.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>io.netty</groupId>
+              <artifactId>netty-transport</artifactId>
+              <version>${io.netty.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>io.netty</groupId>
+              <artifactId>netty-handler</artifactId>
+              <version>${io.netty.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>io.netty</groupId>
+              <artifactId>netty-codec</artifactId>
+              <version>${io.netty.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>io.netty</groupId>
+              <artifactId>netty-codec-http</artifactId>
+              <version>${io.netty.version}</version>
+          </dependency>
       </dependencies>
    </dependencyManagement>
     <reporting>
@@ -1219,6 +1249,7 @@
        <activemq.broker.version>5.9.1</activemq.broker.version>
        <slf4j.log4j.version>1.5.2</slf4j.log4j.version>
        <system.rules.version>1.17.0</system.rules.version>
+       <io.netty.version>4.0.30.Final</io.netty.version>
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->

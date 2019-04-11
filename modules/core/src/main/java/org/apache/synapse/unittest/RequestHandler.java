@@ -24,7 +24,6 @@ import org.apache.synapse.unittest.testcase.data.classes.SynapseTestCase;
 import org.apache.synapse.unittest.testcase.data.holders.ArtifactData;
 import org.apache.synapse.unittest.testcase.data.holders.MockServiceData;
 import org.apache.synapse.unittest.testcase.data.holders.TestCaseData;
-import org.apache.synapse.unittest.mock.services.MockServiceCreator;
 import org.json.JSONObject;
 
 import java.io.IOException;

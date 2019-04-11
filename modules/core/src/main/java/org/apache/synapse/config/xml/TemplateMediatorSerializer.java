@@ -21,6 +21,7 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
+import org.apache.synapse.util.CommentListUtil;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -55,6 +56,8 @@ public class TemplateMediatorSerializer extends AbstractListMediatorSerializer {
         if (mediator.getErrorHandler() != null) {
             templateElem.addAttribute(fac.createOMAttribute("onError", nullNS, mediator.getErrorHandler()));
         }
+
+        CommentListUtil.serializeComments(templateElem, mediator.getCommentsList());
 
         return templateElem;
     }

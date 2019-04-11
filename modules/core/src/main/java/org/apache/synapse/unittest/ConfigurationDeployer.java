@@ -27,7 +27,11 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
-import org.apache.synapse.deployers.*;
+import org.apache.synapse.deployers.SequenceDeployer;
+import org.apache.synapse.deployers.ProxyServiceDeployer;
+import org.apache.synapse.deployers.APIDeployer;
+import org.apache.synapse.deployers.EndpointDeployer;
+import org.apache.synapse.deployers.LocalEntryDeployer;
 
 /**
  * Util class for deploying synapse artifacts to the synapse engine.

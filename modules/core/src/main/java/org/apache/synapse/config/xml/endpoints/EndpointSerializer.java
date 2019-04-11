@@ -33,6 +33,7 @@ import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.config.xml.MediatorPropertySerializer;
 import org.apache.synapse.endpoints.*;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.util.CommentListUtil;
 
 import javax.xml.namespace.QName;
 import java.util.Collection;
@@ -162,6 +163,8 @@ public abstract class EndpointSerializer {
             element.addAttribute(EndpointFactory.ON_FAULT_Q.getLocalPart(),
                     messageStore, null);
         }
+
+        CommentListUtil.serializeComments(element, ((AbstractEndpoint) endpoint).getCommentsList());
     }
 
 

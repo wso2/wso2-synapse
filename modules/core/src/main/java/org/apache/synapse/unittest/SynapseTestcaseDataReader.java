@@ -31,7 +31,42 @@ import java.util.*;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 
-import static org.apache.synapse.unittest.Constants.*;
+import static org.apache.synapse.unittest.Constants.ARTIFACT;
+import static org.apache.synapse.unittest.Constants.ARTIFACT_KEY_ATTRIBUTE;
+import static org.apache.synapse.unittest.Constants.ARTIFACT_NAME_ATTRIBUTE;
+import static org.apache.synapse.unittest.Constants.ARTIFACTS;
+import static org.apache.synapse.unittest.Constants.ASSERTION_ACTUAL;
+import static org.apache.synapse.unittest.Constants.ASSERTION_EXPECTED;
+import static org.apache.synapse.unittest.Constants.ASSERTION_MESSAGE;
+import static org.apache.synapse.unittest.Constants.MOCK_SERVICES;
+import static org.apache.synapse.unittest.Constants.SERVICE_CONTEXT;
+import static org.apache.synapse.unittest.Constants.SERVICE_NAME;
+import static org.apache.synapse.unittest.Constants.SERVICE_PORT;
+import static org.apache.synapse.unittest.Constants.SERVICE_RESOURCES;
+import static org.apache.synapse.unittest.Constants.SERVICE_RESOURCE_HEADERS;
+import static org.apache.synapse.unittest.Constants.SERVICE_RESOURCE_HEADER_NAME;
+import static org.apache.synapse.unittest.Constants.SERVICE_RESOURCE_HEADER_VALUE;
+import static org.apache.synapse.unittest.Constants.SERVICE_RESOURCE_METHOD;
+import static org.apache.synapse.unittest.Constants.SERVICE_RESOURCE_PAYLOAD;
+import static org.apache.synapse.unittest.Constants.SERVICE_RESOURCE_REQUEST;
+import static org.apache.synapse.unittest.Constants.SERVICE_RESOURCE_RESPONSE;
+import static org.apache.synapse.unittest.Constants.SERVICE_RESOURCE_SUBCONTEXT;
+import static org.apache.synapse.unittest.Constants.SUPPORTIVE_ARTIFACTS;
+import static org.apache.synapse.unittest.Constants.TEST_ARTIFACT;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_ASSERTIONS;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_ASSERTION_EQUALS;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_ASSERTION_NOTNULL;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PAYLOAD;
+import static org.apache.synapse.unittest.Constants.TEST_CASES;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTIES;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_NAME;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_SCOPE;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_VALUE;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_REQUEST_METHOD;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_REQUEST_PATH;
+import static org.apache.synapse.unittest.Constants.TYPE_LOCAL_ENTRY;
+
 
 /**
  * descriptor data read class in unit test framework.

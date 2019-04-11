@@ -258,6 +258,11 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     private AxisService axisService;
 
     /**
+     * Holds the list of comments associated with the proxy service.
+     */
+    private List<String> commentsList = new ArrayList<String>();
+
+    /**
      * Constructor
      *
      * @param name the name of the Proxy service
@@ -1425,4 +1430,12 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 		}
 		StatisticIdentityGenerator.reportingEndEvent(proxyId, ComponentType.PROXYSERVICE, holder);
 	}
+
+    public List<String> getCommentsList() {
+        return commentsList;
+    }
+
+    public void setCommentsList(List<String> commentsList) {
+        this.commentsList = commentsList;
+    }
 }

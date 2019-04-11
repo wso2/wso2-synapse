@@ -32,6 +32,7 @@ import org.apache.synapse.config.xml.endpoints.utils.WSDL11EndpointBuilder;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.WSDLEndpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.util.CommentListUtil;
 
 import javax.xml.namespace.QName;
 import java.io.File;
@@ -194,6 +195,8 @@ public class WSDLEndpointFactory extends DefaultEndpointFactory {
 
         // process the parameters
         processProperties(wsdlEndpoint, epConfig);
+
+        CommentListUtil.populateComments(epConfig, wsdlEndpoint.getCommentsList());
 
         return wsdlEndpoint;
     }
