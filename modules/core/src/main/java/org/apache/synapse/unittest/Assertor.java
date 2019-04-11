@@ -30,7 +30,7 @@ import org.apache.synapse.unittest.testcase.data.classes.AssertNotNull;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static org.apache.synapse.unittest.Constants.*;
@@ -60,8 +60,8 @@ class Assertor {
         boolean isAssertNotNullComplete = false;
         String assertMessage = null;
 
-        ArrayList<AssertEqual> assertEquals = currentTestCase.getAssertEquals();
-        ArrayList<AssertNotNull> assertNotNulls = currentTestCase.getAssertNotNull();
+        List<AssertEqual> assertEquals = currentTestCase.getAssertEquals();
+        List<AssertNotNull> assertNotNulls = currentTestCase.getAssertNotNull();
 
         if (!assertEquals.isEmpty()) {
             Pair<Boolean, String> assertSequence = startAssertEqualsForSequence(assertEquals, mediateMsgCtxt);
@@ -103,8 +103,8 @@ class Assertor {
         boolean isAssertNotNullComplete = false;
         String assertMessage = null;
 
-        ArrayList<AssertEqual> assertEquals = currentTestCase.getAssertEquals();
-        ArrayList<AssertNotNull> assertNotNulls = currentTestCase.getAssertNotNull();
+        List<AssertEqual> assertEquals = currentTestCase.getAssertEquals();
+        List<AssertNotNull> assertNotNulls = currentTestCase.getAssertNotNull();
 
         try {
             String responseAsString = EntityUtils.toString(response.getEntity(), "UTF-8");
@@ -146,7 +146,7 @@ class Assertor {
      * @param msgCtxt      message context
      * @return Pair<Boolean, String> which has status of assertEquals and message if any error occurred
      */
-    private static Pair<Boolean, String> startAssertEqualsForSequence(ArrayList<AssertEqual> assertEquals,
+    private static Pair<Boolean, String> startAssertEqualsForSequence(List<AssertEqual> assertEquals,
                                                                       MessageContext msgCtxt) {
 
         logger.info("\n");
@@ -235,7 +235,7 @@ class Assertor {
      * @param msgCtxt       message context
      * @return Pair<Boolean, String> which has status of assertNotNull and message if any error occurred
      */
-    private static Pair<Boolean, String> startAssertNotNullsForSequence(ArrayList<AssertNotNull> assertNotNull,
+    private static Pair<Boolean, String> startAssertNotNullsForSequence(List<AssertNotNull> assertNotNull,
                                                                         MessageContext msgCtxt) {
         logger.info("\n");
         logger.info("---------------------Assert Not Null---------------------\n");
@@ -325,7 +325,7 @@ class Assertor {
      * @return Pair<Boolean, String> which has status of assertEquals and message if any error occurred
      */
     private static Pair<Boolean, String> startAssertEqualsForServices(
-            ArrayList<AssertEqual> assertEquals, String response, Header[] headers) {
+            List<AssertEqual> assertEquals, String response, Header[] headers) {
 
         logger.info("\n");
         logger.info("---------------------Assert Equals---------------------\n");
@@ -394,7 +394,7 @@ class Assertor {
      * @return Pair<Boolean, String> which has status of assertNotNull and message if any error occurred
      */
     private static Pair<Boolean, String> startAssertNotNullsForServices(
-            ArrayList<AssertNotNull> assertNotNull, String response, Header[] headers) {
+            List<AssertNotNull> assertNotNull, String response, Header[] headers) {
 
         logger.info("\n");
         logger.info("---------------------Assert Not Null---------------------\n");

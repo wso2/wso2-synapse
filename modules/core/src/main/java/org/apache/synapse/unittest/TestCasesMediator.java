@@ -319,7 +319,7 @@ public class TestCasesMediator {
      * @return message context with input properties
      */
     private static MessageContext setInputMessageProperties(MessageContext msgCtxt,
-                                                            ArrayList<Map<String, String>> properties) {
+                                                            List<Map<String, String>> properties) {
 
         try {
             for (Map<String, String> property : properties) {

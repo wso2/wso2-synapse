@@ -258,8 +258,7 @@ class TestingAgent {
 
                     case TYPE_API:
                         String context = artifactNode.getAttributeValue(new QName(API_CONTEXT));
-                        String resourceMethod = findAPIResourceMethod(artifactNode, currentTestCase.getRequestPath());
-                        System.out.println(resourceMethod);
+                        String resourceMethod = currentTestCase.getRequestMethod();
                         HttpResponse invokedApiResult = TestCasesMediator.apiResourceExecutor
                                 (currentTestCase, context, resourceMethod);
 
@@ -384,44 +383,4 @@ class TestingAgent {
         return resultOfTestCases;
     }
 
-    private String findAPIResourceMethod(OMElement artifact, String requestPath) {
-
-        String resourceMethod = null;
-
-        if (requestPath != null) {
-            //Iterate through test-cases in descriptor data
-            Iterator<?> elementIterator = artifact.getChildElements();
-            while (elementIterator.hasNext()) {
-                OMElement resourceNode = (OMElement) (elementIterator.next());
-
-                String requestUrl;
-                String preRequestUrl;
-                if (resourceNode.getAttributeValue(new QName(URI_TEMPLATE)) != null) {
-                    requestUrl = resourceNode.getAttributeValue(new QName(URI_TEMPLATE));
-                } else {
-                    requestUrl = resourceNode.getAttributeValue(new QName(URL_MAPPING));
-                }
-
-                String[] sectionsOfUrl = requestUrl.split("\\{");
-                int stringLength = sectionsOfUrl[0].length();
-                preRequestUrl = requestUrl.substring(0,stringLength);
-
-                if (preRequestUrl.equals(sectionsOfUrl[0])) {
-                    resourceMethod = resourceNode.getAttributeValue(new QName(RESOURCE_METHODS));
-                    break;
-                }
-            }
-
-            if (resourceMethod == null) {
-                resourceMethod = artifactNode.getFirstElement().getAttributeValue(new QName(RESOURCE_METHODS));
-                logger.warn("Requested API resource method set to first resource element due to " +
-                        "request path miss matched with either url-mapping or uri-template");
-            }
-
-        } else {
-            resourceMethod = artifactNode.getFirstElement().getAttributeValue(new QName(RESOURCE_METHODS));
-        }
-
-        return resourceMethod;
-    }
 }

@@ -19,14 +19,16 @@
 package org.apache.synapse.unittest.testcase.data.classes;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class TestCase {
     private String requestPath;
+    private String requestMethod;
     private String inputPayload;
-    private ArrayList<Map<String, String>> propertyMap = new ArrayList<>();
-    private ArrayList<AssertEqual> assertEquals = new ArrayList<>();
-    private ArrayList<AssertNotNull> assertNotNull = new ArrayList<>();
+    private List<Map<String, String>> propertyMap = new ArrayList<>();
+    private List<AssertEqual> assertEquals = new ArrayList<>();
+    private List<AssertNotNull> assertNotNull = new ArrayList<>();
 
     /**
      * Get input payload of particular test case.
@@ -42,7 +44,7 @@ public class TestCase {
      *
      * @return expected property values of requested test case
      */
-    public ArrayList<Map<String, String>> getPropertyMap() {
+    public List<Map<String, String>> getPropertyMap() {
         return propertyMap;
     }
 
@@ -51,7 +53,7 @@ public class TestCase {
      *
      * @return assert equals set of requested test case
      */
-    public ArrayList<AssertEqual> getAssertEquals() {
+    public List<AssertEqual> getAssertEquals() {
         return assertEquals;
     }
 
@@ -60,7 +62,7 @@ public class TestCase {
      *
      * @return assert not null set of requested test case
      */
-    public ArrayList<AssertNotNull> getAssertNotNull() {
+    public List<AssertNotNull> getAssertNotNull() {
         return assertNotNull;
     }
 
@@ -71,6 +73,15 @@ public class TestCase {
      */
     public String getRequestPath() {
         return requestPath;
+    }
+
+    /**
+     * Get request method of particular test case.
+     *
+     * @return request method of requested test case
+     */
+    public String getRequestMethod() {
+        return requestMethod;
     }
 
     /**
@@ -87,7 +98,7 @@ public class TestCase {
      *
      * @param propertyMap input property values of a particular test case
      */
-    public void setPropertyMap(ArrayList<Map<String, String>> propertyMap) {
+    public void setPropertyMap(List<Map<String, String>> propertyMap) {
         this.propertyMap = propertyMap;
     }
 
@@ -96,7 +107,7 @@ public class TestCase {
      *
      * @param assertEquals assertEquals set of a particular test case
      */
-    public void setAssertEquals(ArrayList<AssertEqual> assertEquals) {
+    public void setAssertEquals(List<AssertEqual> assertEquals) {
         this.assertEquals = assertEquals;
     }
 
@@ -105,7 +116,7 @@ public class TestCase {
      *
      * @param assertNotNull assertNotNull set of a particular test case
      */
-    public void setAssertNotNull(ArrayList<AssertNotNull> assertNotNull) {
+    public void setAssertNotNull(List<AssertNotNull> assertNotNull) {
         this.assertNotNull = assertNotNull;
     }
 
@@ -116,5 +127,14 @@ public class TestCase {
      */
     public void setRequestPath(String requestPath) {
         this.requestPath = requestPath;
+    }
+
+    /**
+     * Add requestMethod.
+     *
+     * @param requestMethod requestMethod of a particular test case
+     */
+    public void setRequestMethod(String requestMethod) {
+        this.requestMethod = requestMethod;
     }
 }

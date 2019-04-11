@@ -43,6 +43,7 @@ public class Constants {
 
     static final String TEST_CASES = "test-cases";
     static final String TEST_CASE_REQUEST_PATH = "request-path";
+    static final String TEST_CASE_REQUEST_METHOD = "request-method";
     static final String TEST_CASE_INPUT = "input";
     static final String TEST_CASE_INPUT_PAYLOAD = "payload";
     static final String TEST_CASE_INPUT_PROPERTIES = "properties";
