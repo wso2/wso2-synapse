@@ -52,7 +52,6 @@ public class HttpRequestInformationProcessor {
                 HttpVersion.HTTP_1_1, incomingMessage.getMethod(), requestUri.getRawPath());
         populateHeader(request, requestUri.getHost(), incomingMessage);
         populateCookies(request, incomingMessage);
-        populateQueryParameters(request, incomingMessage);
         return request;
     }
 
@@ -84,9 +83,6 @@ public class HttpRequestInformationProcessor {
         }
     }
 
-    private void populateQueryParameters(HttpRequest request, IncomingMessage incomingMessage) {
-
-    }
 
     private String getURI(String host, int port, IncomingMessage incomingMessage) {
         String path = incomingMessage.getPath();

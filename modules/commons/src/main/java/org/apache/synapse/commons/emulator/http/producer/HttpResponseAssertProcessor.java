@@ -21,7 +21,6 @@ package org.apache.synapse.commons.emulator.http.producer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.emulator.http.dsl.dto.producer.OutgoingMessage;
-import org.apache.synapse.commons.util.PropertyHelper;
 
 public class HttpResponseAssertProcessor {
 
@@ -29,7 +28,6 @@ public class HttpResponseAssertProcessor {
 
     public void process(HttpResponseContext responseContext, OutgoingMessage outgoingMessage) {
         assertResponseContent(responseContext, outgoingMessage);
-        assertHeaderParameters(responseContext, outgoingMessage);
     }
 
     private void assertResponseContent(HttpResponseContext responseContext, OutgoingMessage outgoingMessage) {
@@ -40,7 +38,4 @@ public class HttpResponseAssertProcessor {
         }
     }
 
-    private void assertHeaderParameters(HttpResponseContext responseContext, OutgoingMessage outgoingMessage) {
-
-    }
 }

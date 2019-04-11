@@ -21,14 +21,13 @@ package org.apache.synapse.commons.emulator.http.consumer;
 
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
-import org.apache.synapse.commons.emulator.core.RequestContext;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class HttpRequestContext extends RequestContext {
+public class HttpRequestContext {
 
     private Map<String, List<String>> headerParameters;
     private Map<String, List<String>> queryParameters;
