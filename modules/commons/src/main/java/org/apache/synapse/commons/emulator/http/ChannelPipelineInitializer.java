@@ -62,7 +62,8 @@ public class ChannelPipelineInitializer extends ChannelInitializer<SocketChannel
         if (consumerContext.getLogicHandler() != null) {
             pipeline.addLast("logicHandler", consumerContext.getLogicHandler());
         }
-        pipeline.addLast("httpResponseHandler", new org.apache.synapse.commons.emulator.http.consumer.HttpResponseProcessHandler(consumerContext));
+        pipeline.addLast("httpResponseHandler",
+                new org.apache.synapse.commons.emulator.http.consumer.HttpResponseProcessHandler(consumerContext));
     }
 
     private void initializeHttpProducerChannel(SocketChannel ch) {

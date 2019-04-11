@@ -76,8 +76,9 @@ public class IncomingMessage {
     }
 
     public boolean isMatch(HttpRequestContext requestContext) {
-        if (isContextMatch(requestContext) && isHttpMethodMatch(requestContext) && isRequestContentMatch(requestContext) &&
-            isHeadersMatch(requestContext) && isQueryParameterMatch(requestContext)) {
+        if (isContextMatch(requestContext) && isHttpMethodMatch(requestContext) &&
+                isRequestContentMatch(requestContext) &&
+                isHeadersMatch(requestContext) && isQueryParameterMatch(requestContext)) {
             return true;
         }
         return false;

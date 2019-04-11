@@ -92,7 +92,8 @@ public class HttpResponseProcessor {
     private void populateCookies(FullHttpResponse response, OutgoingMessage outgoing) {
         if (outgoing.getCookies() != null) {
             for (Cookie cookie : outgoing.getCookies()) {
-                response.headers().add(HttpHeaders.Names.SET_COOKIE, ServerCookieEncoder.encode(cookie.getName(), cookie.getValue()));
+                response.headers().add(HttpHeaders.Names.SET_COOKIE, ServerCookieEncoder.encode(cookie.getName(),
+                        cookie.getValue()));
             }
         }
     }
