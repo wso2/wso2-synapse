@@ -36,7 +36,8 @@ import java.net.URI;
 public class HttpRequestInformationProcessor {
     private static final Log log = LogFactory.getLog(HttpRequestInformationProcessor.class);
 
-    public HttpRequest populateHttpRequest(HttpProducerContext producerContext, IncomingMessage incomingMessage) throws Exception {
+    public HttpRequest populateHttpRequest(HttpProducerContext producerContext, IncomingMessage incomingMessage)
+            throws Exception {
 
         String uri = getURI(producerContext.getHost(), producerContext.getPort(), incomingMessage);
         URI requestUri = new URI(uri);

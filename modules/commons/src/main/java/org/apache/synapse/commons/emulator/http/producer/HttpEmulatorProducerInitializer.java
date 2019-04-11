@@ -63,12 +63,12 @@ public class HttpEmulatorProducerInitializer {
             sslCtx = null;
         }
         HttpRequest httpRequest = new HttpRequestInformationProcessor().populateHttpRequest(producerContext,
-                                                                                            incomingMessage);
+                incomingMessage);
         group = new NioEventLoopGroup();
         try {
             Bootstrap b = new Bootstrap();
             ChannelPipelineInitializer channelPipelineInitializer = new ChannelPipelineInitializer(sslCtx,
-                                                                                                   EmulatorType.HTTP_PRODUCER);
+                    EmulatorType.HTTP_PRODUCER);
             channelPipelineInitializer.setProducerOutgoingMessage(outgoingMessage);
             b.group(group)
                     .channel(NioSocketChannel.class)
