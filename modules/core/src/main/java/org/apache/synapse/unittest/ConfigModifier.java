@@ -93,7 +93,8 @@ class ConfigModifier {
                         .parse(new InputSource(new StringReader(artifact.getArtifact().toString())));
 
                 //Find relevant endpoint and update actual one. Start the mock service
-                Document parsedDocument = configureEndpointsAndStartService(document, mockServiceData, mockServicePorts);
+                Document parsedDocument =
+                        configureEndpointsAndStartService(document, mockServiceData, mockServicePorts);
 
                 //Transform the document to the string and store it in artifact data holder
                 TransformerFactory tf = TransformerFactory.newInstance();

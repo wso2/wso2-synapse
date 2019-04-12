@@ -41,10 +41,8 @@ public class TCPServer {
     public void initialize(int port) {
         try {
             serverSocket = new ServerSocket(port);
-            logger.info("####################################################");
             logger.info("Synapse unit testing agent has been established on port " + port);
             logger.info("Waiting for client request");
-            logger.info("####################################################");
             acceptConnection();
         } catch (IOException e) {
             logger.error(e);

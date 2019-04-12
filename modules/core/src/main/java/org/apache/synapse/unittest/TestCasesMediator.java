@@ -42,6 +42,7 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
+import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 
 import java.io.IOException;
@@ -58,6 +59,7 @@ public class TestCasesMediator {
     }
 
     private static Logger logger = Logger.getLogger(UnitTestingExecutor.class.getName());
+    private static int portOffset = Integer.parseInt(System.getProperty(NhttpConstants.PORT_OFFSET, "0"));
 
     /**
      * Sequence mediation of receiving test cases using deployed sequence deployer.
@@ -92,7 +94,7 @@ public class TestCasesMediator {
      */
     static HttpResponse proxyServiceExecutor(TestCase currentTestCase, String key) throws IOException {
 
-        String url = PROXY_INVOKE_PREFIX_URL + key;
+        String url = LOCALHOST_URL + (DEFAULT_INVOKE_PORT + portOffset) + PROXY_INVOKE_PREFIX_URL + key;
         logger.info("Invoking URI - " + url);
 
         HttpClient clientConnector = HttpClientBuilder.create().build();
@@ -137,13 +139,15 @@ public class TestCasesMediator {
         String url;
         if (currentTestCase.getRequestPath() != null) {
             if (currentTestCase.getRequestPath().startsWith("/")) {
-                url = API_INVOKE_PREFIX_URL + context + currentTestCase.getRequestPath();
+                url = LOCALHOST_URL + (DEFAULT_INVOKE_PORT + portOffset)
+                        + context + currentTestCase.getRequestPath();
             } else {
-                url = API_INVOKE_PREFIX_URL + context + "/" + currentTestCase.getRequestPath();
+                url = LOCALHOST_URL + (DEFAULT_INVOKE_PORT + portOffset)
+                        + context + "/" + currentTestCase.getRequestPath();
             }
 
         } else {
-            url = API_INVOKE_PREFIX_URL + context;
+            url = LOCALHOST_URL + (DEFAULT_INVOKE_PORT + portOffset) + context;
         }
 
 

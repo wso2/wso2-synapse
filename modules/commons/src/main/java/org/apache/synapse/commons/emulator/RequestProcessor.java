@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.apache.synapse.unittest;
+package org.apache.synapse.commons.emulator;
 
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
@@ -37,12 +37,12 @@ import java.io.StringWriter;
 /**
  * Class responsible for remove the unwanted whitespaces in any type of inputs.
  */
-class Trimmer {
+public class RequestProcessor {
 
-    Trimmer() {
+    RequestProcessor() {
     }
 
-    private static Logger logger = Logger.getLogger(Trimmer.class.getName());
+    private static Logger logger = Logger.getLogger(RequestProcessor.class.getName());
 
     /**
      * Remove irrelevant whitespaces from the input string.
@@ -50,7 +50,7 @@ class Trimmer {
      * @param inputString string which needs to remove whitespaces
      * @return trim string not include irrelevant whitespaces
      */
-    static String trimStrings(String inputString) {
+    public static String trimStrings(String inputString) {
 
         //trim the string
         String trimedString = inputString.trim();

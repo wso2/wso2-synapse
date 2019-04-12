@@ -334,7 +334,8 @@ class SynapseTestcaseDataReader {
         }
 
         //Read assertions - AssertNotNull of test-case node
-        Iterator<?> assertNotNullIterator = testCaseAssertionNode.getChildrenWithName(new QName(TEST_CASE_ASSERTION_NOTNULL));
+        Iterator<?> assertNotNullIterator = testCaseAssertionNode.getChildrenWithName(
+                new QName(TEST_CASE_ASSERTION_NOTNULL));
         while (assertNotNullIterator.hasNext()) {
             AssertNotNull assertion = new AssertNotNull();
 
@@ -416,8 +417,10 @@ class SynapseTestcaseDataReader {
                     resource.setMethod(serviceMethod);
 
                     //Read service sub-context child attribute from mock service node
-                    QName qualifiedServiceSubContext = new QName("", SERVICE_RESOURCE_SUBCONTEXT, "");
-                    OMElement serviceMethodSubContextNode = mockServiceResourceNode.getFirstChildWithName(qualifiedServiceSubContext);
+                    QName qualifiedServiceSubContext =
+                            new QName("", SERVICE_RESOURCE_SUBCONTEXT, "");
+                    OMElement serviceMethodSubContextNode =
+                            mockServiceResourceNode.getFirstChildWithName(qualifiedServiceSubContext);
                     String serviceSubContext = serviceMethodSubContextNode.getText();
                     resource.setSubContext(serviceSubContext);
 

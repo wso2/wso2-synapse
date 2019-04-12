@@ -26,14 +26,15 @@ public class Constants {
     private Constants() {
     }
 
+    //deployer constants
     static final String TYPE_SEQUENCE = "sequence";
     static final String TYPE_PROXY = "proxy";
     static final String TYPE_API = "api";
     static final String TYPE_ENDPOINT = "endpoint";
     static final String TYPE_LOCAL_ENTRY = "localEntry";
 
+    //artifact key word constants
     static final String API_CONTEXT = "context";
-    static final String RESOURCE_METHODS = "methods";
     static final String ARTIFACT_NAME_ATTRIBUTE = "name";
     static final String ARTIFACT_KEY_ATTRIBUTE = "key";
     static final String ARTIFACT = "artifact";
@@ -41,6 +42,7 @@ public class Constants {
     static final String SUPPORTIVE_ARTIFACTS = "supportive-artifacts";
     static final String ARTIFACTS = "artifacts";
 
+    //test case key word constants
     static final String TEST_CASES = "test-cases";
     static final String TEST_CASE_REQUEST_PATH = "request-path";
     static final String TEST_CASE_REQUEST_METHOD = "request-method";
@@ -64,6 +66,7 @@ public class Constants {
     static final String INPUT_PROPERTY_AXIS2 = "$axis2";
     static final String INPUT_PROPERTY_TRANSPORT = "$trp";
 
+    //mock service key word constants
     static final String MOCK_SERVICES = "mock-services";
     static final String SERVICE_NAME = "service-name";
     static final String SERVICE_HOST = "localhost";
@@ -81,15 +84,14 @@ public class Constants {
     static final String END_POINT = "endpoint";
     public static final String URI = "uri";
     static final String URI_TEMPLATE = "uri-template";
-    static final String URL_MAPPING = "url-mapping";
     public static final String HTTP = "http://";
-    public static final String GET_METHOD = "GET";
-    public static final String POST_METHOD = "POST";
+    static final String GET_METHOD = "GET";
+    static final String POST_METHOD = "POST";
     static final String PUT_METHOD = "PUT";
     static final String DELETE_METHOD = "DELETE";
 
-    public static final String WHITESPACE_REGEX = "\\s(?=(\"[^\"]*\"|[^\"])*$)";
-    static final String XML_PATTERN_REGEX = "(<[^/][^>]*>) +| +(<\\/[^>]+>)";
-    static final String API_INVOKE_PREFIX_URL = "http://localhost:8280";
-    static final String PROXY_INVOKE_PREFIX_URL = "http://localhost:8280/services/";
+    //api/proxy invoke constants
+    static final String LOCALHOST_URL = "http://localhost:";
+    static final int DEFAULT_INVOKE_PORT = 8280;
+    static final String PROXY_INVOKE_PREFIX_URL = "/services/";
 }

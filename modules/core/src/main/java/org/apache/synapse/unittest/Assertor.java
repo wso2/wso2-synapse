@@ -168,7 +168,8 @@ class Assertor {
                 switch (actualType[0]) {
 
                     case INPUT_PROPERTY_BODY:
-                        mediatedResult = Trimmer.trimStrings(msgCtxt.getEnvelope().getBody().getFirstElement().toString());
+                        mediatedResult =
+                                Trimmer.trimStrings(msgCtxt.getEnvelope().getBody().getFirstElement().toString());
                         isAssert = expected.equals(mediatedResult);
 
                         break;
@@ -211,8 +212,8 @@ class Assertor {
                 }
 
                 logger.info("Sequence Assert Actual - " + actual);
-                logger.info("Sequence Assert Expected - " + Trimmer.trimStrings(expected));
-                logger.info("Sequence mediated result for actual - " + Trimmer.trimStrings(mediatedResult));
+                logger.info("Sequence Assert Expected - " + expected);
+                logger.info("Sequence mediated result for actual - " + mediatedResult);
                 if (isAssert) {
                     logger.info("Sequence assertEqual for " + actualType[0] + " type passed successfully");
                 } else {
@@ -369,8 +370,8 @@ class Assertor {
             }
 
             logger.info("Service Assert Actual - " + actual);
-            logger.info("Service Assert Expected - " + Trimmer.trimStrings(expected));
-            logger.info("Service mediated result for actual - " + Trimmer.trimStrings(mediatedResult));
+            logger.info("Service Assert Expected - " + expected);
+            logger.info("Service mediated result for actual - " + mediatedResult);
 
             if (isAssert) {
                 logger.info("Service assertEqual for " + actualType[0] + " passed successfully");

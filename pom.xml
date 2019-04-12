@@ -1057,6 +1057,11 @@
               <artifactId>netty-codec-http</artifactId>
               <version>${io.netty.version}</version>
           </dependency>
+          <dependency>
+              <groupId>org.json</groupId>
+              <artifactId>json</artifactId>
+              <version>${org.json.version}</version>
+          </dependency>
       </dependencies>
    </dependencyManagement>
     <reporting>
@@ -1250,6 +1255,7 @@
        <slf4j.log4j.version>1.5.2</slf4j.log4j.version>
        <system.rules.version>1.17.0</system.rules.version>
        <io.netty.version>4.0.30.Final</io.netty.version>
+       <org.json.version>20180130</org.json.version>
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->

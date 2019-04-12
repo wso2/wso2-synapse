@@ -94,7 +94,11 @@ class MockServiceCreator {
     private static void routeThroughResourceMethod(ServiceResource resource, HttpConsumerContext emulator) {
         String serviceMethod = resource.getMethod();
         String serviceSubContext = resource.getSubContext();
-        String serviceRequestPayload = Trimmer.trimStrings(resource.getRequestPayload());
+        String serviceRequestPayload = "";
+        if (resource.getRequestPayload() != null) {
+            serviceRequestPayload = Trimmer.trimStrings(resource.getRequestPayload());
+        }
+
         String serviceResponsePayload = resource.getResponsePayload();
 
         List<Pair<String, String>> requestHeaders = new ArrayList<>();

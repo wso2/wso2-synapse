@@ -48,12 +48,17 @@ public class AssertNotNull {
     /**
      * Set assert actual value.
      *
-     * @return  actual value of assert
+     * @param  actual value of assert
      */
     public void setActual(String actual) {
         this.actual = actual;
     }
 
+    /**
+     * Set message value.
+     *
+     * @param  message value of message
+     */
     public void setMessage(String message) {
         this.message = message;
     }
