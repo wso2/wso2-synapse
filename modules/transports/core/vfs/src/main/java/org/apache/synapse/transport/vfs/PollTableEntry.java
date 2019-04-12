@@ -479,265 +479,280 @@ public class PollTableEntry extends AbstractPollTableEntry {
         resolveHostsDynamically = ParamUtils.getOptionalParamBoolean(params,
                 VFSConstants.TRANSPORT_FILE_RESOLVEHOST_DYNAMICALLY, false);
 
-        fileURI = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_FILE_FILE_URI);
-        if (fileURI == null) {
-        	log.warn("transport.vfs.FileURI parameter is missing in the proxy service configuration");
-            return false;
-        } else {
-            
-            if (fileURI.startsWith(VFSConstants.VFS_PREFIX)) {
-                fileURI = fileURI.substring(VFSConstants.VFS_PREFIX.length());
-            }
-            fileURI = resolveHostAtDeployment(fileURI);
+        if (params instanceof AxisService) {
+            fileURI = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_FILE_FILE_URI);
+            if (fileURI == null) {
+                log.warn("transport.vfs.FileURI parameter is missing in the proxy service configuration");
+                return false;
+            } else {
 
-            replyFileURI = ParamUtils.getOptionalParam(params, VFSConstants.REPLY_FILE_URI);
-            replyFileURI = resolveHostAtDeployment(replyFileURI);
-
-            fileNamePattern = ParamUtils.getOptionalParam(params,
-                    VFSConstants.TRANSPORT_FILE_FILE_NAME_PATTERN);
-
-            contentType = ParamUtils.getRequiredParam(params,
-                    VFSConstants.TRANSPORT_FILE_CONTENT_TYPE);
-            String option = ParamUtils.getOptionalParam(
-                    params, VFSConstants.TRANSPORT_FILE_ACTION_AFTER_PROCESS);
-            if (option == null) {
-                option = VFSTransportListener.DELETE;
-            }
-            switch (option) {
-                case VFSTransportListener.MOVE :
-                    actionAfterProcess = PollTableEntry.MOVE;
-                    break;
-                case VFSTransportListener.DELETE :
-                    actionAfterProcess = PollTableEntry.DELETE;
-                    break;
-                case VFSTransportListener.NONE :
-                    actionAfterProcess = PollTableEntry.NONE;
-                    break;
-                default:
-                    actionAfterProcess = PollTableEntry.DELETE;
-            }
-
-            option = ParamUtils.getOptionalParam(
-                    params, VFSConstants.TRANSPORT_FILE_ACTION_AFTER_ERRORS);
-            actionAfterErrors = VFSTransportListener.MOVE.equals(option) ?
-                    PollTableEntry.MOVE : PollTableEntry.DELETE;
-
-            option = ParamUtils.getOptionalParam(
-                    params, VFSConstants.TRANSPORT_FILE_ACTION_AFTER_FAILURE);
-            if (option == null) {
-                option = VFSTransportListener.DELETE;
-            }
-            switch (option) {
-                case VFSTransportListener.MOVE :
-                    actionAfterFailure = PollTableEntry.MOVE;
-                    break;
-                case VFSTransportListener.DELETE :
-                    actionAfterFailure = PollTableEntry.DELETE;
-                    break;
-                case VFSTransportListener.NONE :
-                    actionAfterFailure = PollTableEntry.NONE;
-                    break;
-                default:
-                    actionAfterFailure = PollTableEntry.DELETE;
-            }
-
-            String moveDirectoryAfterProcess = ParamUtils.getOptionalParam(
-                    params, VFSConstants.TRANSPORT_FILE_MOVE_AFTER_PROCESS);
-            setMoveAfterProcess(moveDirectoryAfterProcess);
-
-            String moveDirectoryAfterErrors = ParamUtils.getOptionalParam(
-                    params, VFSConstants.TRANSPORT_FILE_MOVE_AFTER_ERRORS);
-            setMoveAfterErrors(moveDirectoryAfterErrors);
-
-            String moveDirectoryAfterFailure = ParamUtils.getOptionalParam(
-                    params, VFSConstants.TRANSPORT_FILE_MOVE_AFTER_FAILURE);
-            setMoveAfterFailure(moveDirectoryAfterFailure);
-
-            String moveFileTimestampFormat = ParamUtils.getOptionalParam(
-                    params, VFSConstants.TRANSPORT_FILE_MOVE_TIMESTAMP_FORMAT);
-            if(moveFileTimestampFormat != null) {
-                moveTimestampFormat = new SimpleDateFormat(moveFileTimestampFormat);
-            }
-
-            Map<String, String> schemeFileOptions = VFSUtils.parseSchemeFileOptions(fileURI, params);
-            setVfsSchemeProperties(schemeFileOptions);
-
-            String strStreaming = ParamUtils.getOptionalParam(params, VFSConstants.STREAMING);
-            if (strStreaming != null) {
-                streaming = Boolean.parseBoolean(strStreaming);
-            }
-            
-            String strMaxRetryCount = ParamUtils.getOptionalParam(
-                    params, VFSConstants.MAX_RETRY_COUNT);
-            maxRetryCount = strMaxRetryCount != null ? Integer.parseInt(strMaxRetryCount) :
-                    VFSConstants.DEFAULT_MAX_RETRY_COUNT;
-
-            String strReconnectTimeout = ParamUtils.getOptionalParam(
-                    params, VFSConstants.RECONNECT_TIMEOUT);
-            reconnectTimeout = strReconnectTimeout != null ?
-                    Integer.parseInt(strReconnectTimeout) * 1000 :
-                    VFSConstants.DEFAULT_RECONNECT_TIMEOUT;
-
-            String strFileLocking = ParamUtils.getOptionalParam(
-                    params, VFSConstants.TRANSPORT_FILE_LOCKING);
-            if (VFSConstants.TRANSPORT_FILE_LOCKING_ENABLED.equals(strFileLocking)) {
-                fileLocking = true;
-            } else if (VFSConstants.TRANSPORT_FILE_LOCKING_DISABLED.equals(strFileLocking)) {
-                fileLocking = false;
-            }
-
-            String strFileSizeLimit = ParamUtils.getOptionalParam(
-                    params, VFSConstants.TRANSPORT_FILE_SIZE_LIMIT);
-
-            try {
-                fileSizeLimit = strFileSizeLimit != null ? Double.parseDouble(strFileSizeLimit) :
-                                VFSConstants.DEFAULT_TRANSPORT_FILE_SIZE_LIMIT;
-            } catch (Exception e) {
-                log.warn("Error parsing specified file size limit - " + strFileSizeLimit +
-                         ", using default - unlimited");
-            }
-
-            moveAfterMoveFailure = ParamUtils.getOptionalParam(params,
-                    VFSConstants.TRANSPORT_FILE_MOVE_AFTER_FAILED_MOVE);
-            moveAfterMoveFailure = resolveHostAtDeployment(moveAfterMoveFailure);
-
-            String nextRetryDuration = ParamUtils.getOptionalParam(
-                    params, VFSConstants.TRANSPORT_FAILED_RECORD_NEXT_RETRY_DURATION);
-            nextRetryDurationForFailedMove = nextRetryDuration != null ? Integer.parseInt(nextRetryDuration) :
-                    VFSConstants.DEFAULT_NEXT_RETRY_DURATION;
-
-            failedRecordFileName = ParamUtils.getOptionalParam(params,
-                    VFSConstants.TRANSPORT_FAILED_RECORDS_FILE_NAME);
-            if (failedRecordFileName == null) {
-                failedRecordFileName = VFSConstants.DEFAULT_FAILED_RECORDS_FILE_NAME;
-            }
-
-            failedRecordFileDestination = ParamUtils.getOptionalParam(params,
-                    VFSConstants.TRANSPORT_FAILED_RECORDS_FILE_DESTINATION);
-
-            if (failedRecordFileDestination == null) {
-                failedRecordFileDestination = VFSConstants.DEFAULT_FAILED_RECORDS_FILE_DESTINATION;
-            }
-
-            failedRecordTimestampFormat = ParamUtils.getOptionalParam(params,
-                    VFSConstants.TRANSPORT_FAILED_RECORD_TIMESTAMP_FORMAT);
-            if (failedRecordTimestampFormat == null) {
-                failedRecordTimestampFormat =
-                        VFSConstants.DEFAULT_TRANSPORT_FAILED_RECORD_TIMESTAMP_FORMAT;
-            }
-
-            String strFileProcessingInterval = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_FILE_INTERVAL);
-            fileProcessingInterval = null;
-            if (strFileProcessingInterval != null) {
-            	try{
-            		fileProcessingInterval = Integer.parseInt(strFileProcessingInterval);
-            	}catch(NumberFormatException nfe){
-            		log.warn("VFS File Processing Interval not set correctly. Current value is : " + strFileProcessingInterval , nfe);
-            	}
-            }  
-            
-            String strFileProcessingCount = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_FILE_COUNT);
-            fileProcessingCount = null;
-            if (strFileProcessingCount != null) {
-            	try{
-            		fileProcessingCount = Integer.parseInt(strFileProcessingCount);
-            	}catch(NumberFormatException nfe){
-            		log.warn("VFS File Processing Count not set correctly. Current value is : " + strFileProcessingCount , nfe);
-            	}
-            }                        
-            
-            String strAutoLock = ParamUtils.getOptionalParam(params,
-                    VFSConstants.TRANSPORT_AUTO_LOCK_RELEASE);
-            autoLockRelease = false;
-            autoLockReleaseSameNode = true;
-            autoLockReleaseInterval = null;
-            if (strAutoLock != null) {
-                try {
-                    autoLockRelease = Boolean.parseBoolean(strAutoLock);
-                } catch (Exception e) {
-                    autoLockRelease = false;
-                    log.warn("VFS Auto lock removal not set properly. Current value is : "
-                            + strAutoLock, e);
+                if (fileURI.startsWith(VFSConstants.VFS_PREFIX)) {
+                    fileURI = fileURI.substring(VFSConstants.VFS_PREFIX.length());
                 }
-                if (autoLockRelease) {
-                    String strAutoLockInterval = ParamUtils.getOptionalParam(params,
-                            VFSConstants.TRANSPORT_AUTO_LOCK_RELEASE_INTERVAL);
-                    if (strAutoLockInterval != null) {
-                        try {
-                            autoLockReleaseInterval = Long.parseLong(strAutoLockInterval);
-                        } catch (Exception e) {
-                            autoLockReleaseInterval = null;
-                            log.warn(
-                                    "VFS Auto lock removal property not set properly. Current value is : "
-                                            + strAutoLockInterval, e);
-                        }
-                    }
-                    String strAutoLockReleaseSameNode = ParamUtils.getOptionalParam(params,
-                            VFSConstants.TRANSPORT_AUTO_LOCK_RELEASE_SAME_NODE);
-                    if (strAutoLockReleaseSameNode != null) {
-                        try {
-                            autoLockReleaseSameNode = Boolean
-                                    .parseBoolean(strAutoLockReleaseSameNode);
-                        } catch (Exception e) {
-                            autoLockReleaseSameNode = true;
-                            log.warn(
-                                    "VFS Auto lock removal property not set properly. Current value is : "
-                                            + autoLockReleaseSameNode, e);
-                        }
+                fileURI = resolveHostAtDeployment(fileURI);
+
+                replyFileURI = ParamUtils.getOptionalParam(params, VFSConstants.REPLY_FILE_URI);
+                replyFileURI = resolveHostAtDeployment(replyFileURI);
+
+                fileNamePattern = ParamUtils.getOptionalParam(params,
+                                                              VFSConstants.TRANSPORT_FILE_FILE_NAME_PATTERN);
+
+                contentType = ParamUtils.getRequiredParam(params,
+                                                          VFSConstants.TRANSPORT_FILE_CONTENT_TYPE);
+                String option = ParamUtils.getOptionalParam(
+                        params, VFSConstants.TRANSPORT_FILE_ACTION_AFTER_PROCESS);
+                if (option == null) {
+                    option = VFSTransportListener.DELETE;
+                }
+                switch (option) {
+                    case VFSTransportListener.MOVE:
+                        actionAfterProcess = PollTableEntry.MOVE;
+                        break;
+                    case VFSTransportListener.DELETE:
+                        actionAfterProcess = PollTableEntry.DELETE;
+                        break;
+                    case VFSTransportListener.NONE:
+                        actionAfterProcess = PollTableEntry.NONE;
+                        break;
+                    default:
+                        actionAfterProcess = PollTableEntry.DELETE;
+                }
+
+                option = ParamUtils.getOptionalParam(
+                        params, VFSConstants.TRANSPORT_FILE_ACTION_AFTER_ERRORS);
+                actionAfterErrors = VFSTransportListener.MOVE.equals(option) ?
+                        PollTableEntry.MOVE : PollTableEntry.DELETE;
+
+                option = ParamUtils.getOptionalParam(
+                        params, VFSConstants.TRANSPORT_FILE_ACTION_AFTER_FAILURE);
+                if (option == null) {
+                    option = VFSTransportListener.DELETE;
+                }
+                switch (option) {
+                    case VFSTransportListener.MOVE:
+                        actionAfterFailure = PollTableEntry.MOVE;
+                        break;
+                    case VFSTransportListener.DELETE:
+                        actionAfterFailure = PollTableEntry.DELETE;
+                        break;
+                    case VFSTransportListener.NONE:
+                        actionAfterFailure = PollTableEntry.NONE;
+                        break;
+                    default:
+                        actionAfterFailure = PollTableEntry.DELETE;
+                }
+
+                String moveDirectoryAfterProcess = ParamUtils.getOptionalParam(
+                        params, VFSConstants.TRANSPORT_FILE_MOVE_AFTER_PROCESS);
+                setMoveAfterProcess(moveDirectoryAfterProcess);
+
+                String moveDirectoryAfterErrors = ParamUtils.getOptionalParam(
+                        params, VFSConstants.TRANSPORT_FILE_MOVE_AFTER_ERRORS);
+                setMoveAfterErrors(moveDirectoryAfterErrors);
+
+                String moveDirectoryAfterFailure = ParamUtils.getOptionalParam(
+                        params, VFSConstants.TRANSPORT_FILE_MOVE_AFTER_FAILURE);
+                setMoveAfterFailure(moveDirectoryAfterFailure);
+
+                String moveFileTimestampFormat = ParamUtils.getOptionalParam(
+                        params, VFSConstants.TRANSPORT_FILE_MOVE_TIMESTAMP_FORMAT);
+                if (moveFileTimestampFormat != null) {
+                    moveTimestampFormat = new SimpleDateFormat(moveFileTimestampFormat);
+                }
+
+                Map<String, String> schemeFileOptions = VFSUtils.parseSchemeFileOptions(fileURI, params);
+                setVfsSchemeProperties(schemeFileOptions);
+
+                String strStreaming = ParamUtils.getOptionalParam(params, VFSConstants.STREAMING);
+                if (strStreaming != null) {
+                    streaming = Boolean.parseBoolean(strStreaming);
+                }
+
+                String strMaxRetryCount = ParamUtils.getOptionalParam(
+                        params, VFSConstants.MAX_RETRY_COUNT);
+                maxRetryCount = strMaxRetryCount != null ? Integer.parseInt(strMaxRetryCount) :
+                        VFSConstants.DEFAULT_MAX_RETRY_COUNT;
+
+                String strReconnectTimeout = ParamUtils.getOptionalParam(
+                        params, VFSConstants.RECONNECT_TIMEOUT);
+                reconnectTimeout = strReconnectTimeout != null ?
+                        Integer.parseInt(strReconnectTimeout) * 1000 :
+                        VFSConstants.DEFAULT_RECONNECT_TIMEOUT;
+
+                String strFileLocking = ParamUtils.getOptionalParam(
+                        params, VFSConstants.TRANSPORT_FILE_LOCKING);
+                if (VFSConstants.TRANSPORT_FILE_LOCKING_ENABLED.equals(strFileLocking)) {
+                    fileLocking = true;
+                } else if (VFSConstants.TRANSPORT_FILE_LOCKING_DISABLED.equals(strFileLocking)) {
+                    fileLocking = false;
+                }
+
+                String strFileSizeLimit = ParamUtils.getOptionalParam(
+                        params, VFSConstants.TRANSPORT_FILE_SIZE_LIMIT);
+
+                try {
+                    fileSizeLimit = strFileSizeLimit != null ? Double.parseDouble(strFileSizeLimit) :
+                            VFSConstants.DEFAULT_TRANSPORT_FILE_SIZE_LIMIT;
+                } catch (Exception e) {
+                    log.warn("Error parsing specified file size limit - " + strFileSizeLimit +
+                             ", using default - unlimited");
+                }
+
+                moveAfterMoveFailure = ParamUtils.getOptionalParam(params,
+                                                                   VFSConstants.TRANSPORT_FILE_MOVE_AFTER_FAILED_MOVE);
+                moveAfterMoveFailure = resolveHostAtDeployment(moveAfterMoveFailure);
+
+                String nextRetryDuration = ParamUtils.getOptionalParam(
+                        params, VFSConstants.TRANSPORT_FAILED_RECORD_NEXT_RETRY_DURATION);
+                nextRetryDurationForFailedMove = nextRetryDuration != null ? Integer.parseInt(nextRetryDuration) :
+                        VFSConstants.DEFAULT_NEXT_RETRY_DURATION;
+
+                failedRecordFileName = ParamUtils.getOptionalParam(params,
+                                                                   VFSConstants.TRANSPORT_FAILED_RECORDS_FILE_NAME);
+                if (failedRecordFileName == null) {
+                    failedRecordFileName = VFSConstants.DEFAULT_FAILED_RECORDS_FILE_NAME;
+                }
+
+                failedRecordFileDestination = ParamUtils.getOptionalParam(params,
+                                                                          VFSConstants
+                                                                                  .TRANSPORT_FAILED_RECORDS_FILE_DESTINATION);
+
+                if (failedRecordFileDestination == null) {
+                    failedRecordFileDestination = VFSConstants.DEFAULT_FAILED_RECORDS_FILE_DESTINATION;
+                }
+
+                failedRecordTimestampFormat = ParamUtils.getOptionalParam(params,
+                                                                          VFSConstants
+                                                                                  .TRANSPORT_FAILED_RECORD_TIMESTAMP_FORMAT);
+                if (failedRecordTimestampFormat == null) {
+                    failedRecordTimestampFormat =
+                            VFSConstants.DEFAULT_TRANSPORT_FAILED_RECORD_TIMESTAMP_FORMAT;
+                }
+
+                String strFileProcessingInterval = ParamUtils.getOptionalParam(params,
+                                                                               VFSConstants.TRANSPORT_FILE_INTERVAL);
+                fileProcessingInterval = null;
+                if (strFileProcessingInterval != null) {
+                    try {
+                        fileProcessingInterval = Integer.parseInt(strFileProcessingInterval);
+                    } catch (NumberFormatException nfe) {
+                        log.warn("VFS File Processing Interval not set correctly. Current value is : "
+                                 + strFileProcessingInterval, nfe);
                     }
                 }
 
-            }            
-            
-            distributedLock = false;
-            distributedLockTimeout = null;
-            String strDistributedLock = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_DISTRIBUTED_LOCK);
-            if(strDistributedLock != null){
-                try {
-                    distributedLock = Boolean.parseBoolean(strDistributedLock);
-                } catch (Exception e) {
-                    autoLockRelease = false;
-                    log.warn("VFS Distributed lock not set properly. Current value is : " + strDistributedLock, e);
-                }            
-                
-                if(distributedLock){                
-                    String strDistributedLockTimeout = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_DISTRIBUTED_LOCK_TIMEOUT);
-                    if (strDistributedLockTimeout != null) {
-                        try {
-                            distributedLockTimeout = Long.parseLong(strDistributedLockTimeout);
-                        } catch (Exception e) {
-                            distributedLockTimeout = null;
-                            log.warn(
-                                    "VFS Distributed lock timeout property not set properly. Current value is : "
-                                            + strDistributedLockTimeout, e);
-                        }
-                    }                
+                String strFileProcessingCount = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_FILE_COUNT);
+                fileProcessingCount = null;
+                if (strFileProcessingCount != null) {
+                    try {
+                        fileProcessingCount = Integer.parseInt(strFileProcessingCount);
+                    } catch (NumberFormatException nfe) {
+                        log.warn("VFS File Processing Count not set correctly. Current value is : "
+                                 + strFileProcessingCount, nfe);
+                    }
                 }
-                
-            }  
 
-            fileSortParam = ParamUtils.getOptionalParam(params, VFSConstants.FILE_SORT_PARAM);
-            fileSortAscending = true;         
-            if (fileSortParam != null
+                String strAutoLock = ParamUtils.getOptionalParam(params,
+                                                                 VFSConstants.TRANSPORT_AUTO_LOCK_RELEASE);
+                autoLockRelease = false;
+                autoLockReleaseSameNode = true;
+                autoLockReleaseInterval = null;
+                if (strAutoLock != null) {
+                    try {
+                        autoLockRelease = Boolean.parseBoolean(strAutoLock);
+                    } catch (Exception e) {
+                        autoLockRelease = false;
+                        log.warn("VFS Auto lock removal not set properly. Current value is : "
+                                 + strAutoLock, e);
+                    }
+                    if (autoLockRelease) {
+                        String strAutoLockInterval = ParamUtils.getOptionalParam(params,
+                                                                                 VFSConstants
+                                                                                         .TRANSPORT_AUTO_LOCK_RELEASE_INTERVAL);
+                        if (strAutoLockInterval != null) {
+                            try {
+                                autoLockReleaseInterval = Long.parseLong(strAutoLockInterval);
+                            } catch (Exception e) {
+                                autoLockReleaseInterval = null;
+                                log.warn(
+                                        "VFS Auto lock removal property not set properly. Current value is : "
+                                        + strAutoLockInterval, e);
+                            }
+                        }
+                        String strAutoLockReleaseSameNode = ParamUtils.getOptionalParam(params,
+                                                                                        VFSConstants
+                                                                                                .TRANSPORT_AUTO_LOCK_RELEASE_SAME_NODE);
+                        if (strAutoLockReleaseSameNode != null) {
+                            try {
+                                autoLockReleaseSameNode = Boolean
+                                        .parseBoolean(strAutoLockReleaseSameNode);
+                            } catch (Exception e) {
+                                autoLockReleaseSameNode = true;
+                                log.warn(
+                                        "VFS Auto lock removal property not set properly. Current value is : "
+                                        + autoLockReleaseSameNode, e);
+                            }
+                        }
+                    }
+
+                }
+
+                distributedLock = false;
+                distributedLockTimeout = null;
+                String strDistributedLock = ParamUtils.getOptionalParam(params,
+                                                                        VFSConstants.TRANSPORT_DISTRIBUTED_LOCK);
+                if (strDistributedLock != null) {
+                    try {
+                        distributedLock = Boolean.parseBoolean(strDistributedLock);
+                    } catch (Exception e) {
+                        autoLockRelease = false;
+                        log.warn("VFS Distributed lock not set properly. Current value is : " + strDistributedLock, e);
+                    }
+
+                    if (distributedLock) {
+                        String strDistributedLockTimeout = ParamUtils.getOptionalParam(params,
+                                                                                       VFSConstants
+                                                                                               .TRANSPORT_DISTRIBUTED_LOCK_TIMEOUT);
+                        if (strDistributedLockTimeout != null) {
+                            try {
+                                distributedLockTimeout = Long.parseLong(strDistributedLockTimeout);
+                            } catch (Exception e) {
+                                distributedLockTimeout = null;
+                                log.warn(
+                                        "VFS Distributed lock timeout property not set properly. Current value is : "
+                                        + strDistributedLockTimeout, e);
+                            }
+                        }
+                    }
+
+                }
+
+                fileSortParam = ParamUtils.getOptionalParam(params, VFSConstants.FILE_SORT_PARAM);
+                fileSortAscending = true;
+                if (fileSortParam != null
                     && ParamUtils.getOptionalParam(params, VFSConstants.FILE_SORT_ORDER) != null) {
-                try {
-                    fileSortAscending = Boolean.parseBoolean(ParamUtils.getOptionalParam(params,
-                            VFSConstants.FILE_SORT_ORDER));
-                } catch (Exception e) {
-                    fileSortAscending = true;
+                    try {
+                        fileSortAscending = Boolean.parseBoolean(ParamUtils.getOptionalParam(params,
+                                                                                             VFSConstants
+                                                                                                     .FILE_SORT_ORDER));
+                    } catch (Exception e) {
+                        fileSortAscending = true;
+                    }
+
                 }
 
+                String strForceCreateFolder = ParamUtils.getOptionalParam(params, VFSConstants.FORCE_CREATE_FOLDER);
+                forceCreateFolder = false;
+                if (strForceCreateFolder != null && "true".equals(strForceCreateFolder.toLowerCase())) {
+                    forceCreateFolder = true;
+                }
+
+                subfolderTimestamp = ParamUtils.getOptionalParam(params, VFSConstants.SUBFOLDER_TIMESTAMP);
+                this.clusterAware = ParamUtils.getOptionalParamBoolean(params, VFSConstants.CLUSTER_AWARE, false);
+                return super.loadConfiguration(params);
             }
-            
-            String strForceCreateFolder = ParamUtils.getOptionalParam(params, VFSConstants.FORCE_CREATE_FOLDER);
-            forceCreateFolder = false;    
-            if (strForceCreateFolder != null && "true".equals(strForceCreateFolder.toLowerCase())) {
-                forceCreateFolder = true;
-            }            
-            
-            subfolderTimestamp = ParamUtils.getOptionalParam(params, VFSConstants.SUBFOLDER_TIMESTAMP);
-            this.clusterAware = ParamUtils.getOptionalParamBoolean(params, VFSConstants.CLUSTER_AWARE, false);
-            return super.loadConfiguration(params);
+        } else {
+            return false;
         }
     }
 
