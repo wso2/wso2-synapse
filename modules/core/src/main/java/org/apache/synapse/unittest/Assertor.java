@@ -44,7 +44,7 @@ import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_TRANSPORT;
  */
 class Assertor {
 
-    private static Logger logger = Logger.getLogger(TestingAgent.class.getName());
+    private static Logger logger = Logger.getLogger(Assertor.class.getName());
 
     private Assertor() {
     }
