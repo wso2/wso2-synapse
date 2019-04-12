@@ -18,13 +18,14 @@
 
 package org.apache.synapse.unittest;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import javafx.util.Pair;
 import org.apache.log4j.Logger;
 import org.apache.synapse.unittest.testcase.data.classes.SynapseTestCase;
 import org.apache.synapse.unittest.testcase.data.holders.ArtifactData;
 import org.apache.synapse.unittest.testcase.data.holders.MockServiceData;
 import org.apache.synapse.unittest.testcase.data.holders.TestCaseData;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,7 +44,7 @@ public class RequestHandler implements Runnable {
     private static Logger logger = Logger.getLogger(UnitTestingExecutor.class.getName());
 
     private Socket socket;
-    private JSONObject responseToClient;
+    private JsonObject responseToClient;
 
     /**
      * Initializing RequestHandler withe the client socket connection.
@@ -65,7 +66,8 @@ public class RequestHandler implements Runnable {
                 runTestingAgent(synapseTestCases);
             } else {
                 logger.error("Reading Synapse testcase data failed");
-                responseToClient = new JSONObject("{'test-cases':'Failed while reading synapseTestCase data'}");
+                responseToClient = new JsonParser()
+                        .parse("{'test-cases':'Failed while reading synapseTestCase data'}").getAsJsonObject();
             }
 
             writeData(responseToClient);
@@ -160,10 +162,12 @@ public class RequestHandler implements Runnable {
             testArtifactDeployment = agent.processTestArtifact(synapseTestCase);
 
         } else if (!supportiveArtifactDeployment.getKey() && supportiveArtifactDeployment.getValue() != null) {
-            responseToClient = new JSONObject("{'deployment':'failed', 'exception':'"
-                    + supportiveArtifactDeployment.getValue() + "'}");
+            responseToClient = new JsonParser()
+                    .parse("{'deployment':'failed', 'exception':'"
+                            + supportiveArtifactDeployment.getValue() + "'}").getAsJsonObject();
         } else {
-            responseToClient = new JSONObject("{'supportive-deployment':'failed'}");
+            responseToClient = new JsonParser()
+                    .parse("{'supportive-deployment':'failed'}").getAsJsonObject();
         }
 
         //check test-artifact deployment is success or not
@@ -171,28 +175,31 @@ public class RequestHandler implements Runnable {
 
             logger.info("Synapse testing agent ready to mediate test cases through deployments");
             //performs test cases through the deployed synapse configuration
-            Pair<JSONObject, String> testCasesMediated = agent.processTestCases(synapseTestCase);
+            Pair<JsonObject, String> testCasesMediated = agent.processTestCases(synapseTestCase);
 
             //check mediation or invoke is success or failed
             if (testCasesMediated.getValue() == null) {
                 responseToClient = testCasesMediated.getKey();
             } else {
-                responseToClient = new JSONObject("{'mediation':'failed', 'exception':'"
-                        + testCasesMediated.getValue() + "'}");
+                responseToClient = new JsonParser()
+                        .parse("{'mediation':'failed', 'exception':'"
+                                + testCasesMediated.getValue() + "'}").getAsJsonObject();
             }
 
         } else if (!testArtifactDeployment.getKey() && testArtifactDeployment.getValue() != null) {
-            responseToClient = new JSONObject("{'deployment':'failed', 'exception':'"
-                    + testArtifactDeployment.getValue() + "'}");
+            responseToClient = new JsonParser()
+                    .parse("{'deployment':'failed', 'exception':'"
+                            + testArtifactDeployment.getValue() + "'}").getAsJsonObject();
         } else {
-            responseToClient = new JSONObject("{'test-deployment':'failed'}");
+            responseToClient = new JsonParser()
+                    .parse("{'test-deployment':'failed'}").getAsJsonObject();
         }
     }
 
     /**
      * Write output data to the unit testing client.
      */
-    private void writeData(JSONObject jsonObject) throws IOException {
+    private void writeData(JsonObject jsonObject) throws IOException {
 
         OutputStream out = socket.getOutputStream();
         ObjectOutputStream o = new ObjectOutputStream(out);

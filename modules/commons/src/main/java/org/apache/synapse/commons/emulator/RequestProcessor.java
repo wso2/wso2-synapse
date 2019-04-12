@@ -18,8 +18,9 @@
 
 package org.apache.synapse.commons.emulator;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.log4j.Logger;
-import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
@@ -73,7 +74,8 @@ public class RequestProcessor {
             trimedString = trimedString.replaceAll("xmlns=\"\"", "");
 
         } else if (trimedString.startsWith("{")) {
-            JSONObject inputJSON = new JSONObject(trimedString);
+            JsonObject inputJSON = new JsonParser()
+                    .parse(trimedString).getAsJsonObject();
             trimedString = inputJSON.toString();
 
         }

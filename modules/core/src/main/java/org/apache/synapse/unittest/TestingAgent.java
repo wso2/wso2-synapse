@@ -18,6 +18,8 @@
 
 package org.apache.synapse.unittest;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import javafx.util.Pair;
 import org.apache.axiom.om.OMElement;
 import org.apache.http.HttpResponse;
@@ -26,7 +28,6 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.unittest.testcase.data.classes.SynapseTestCase;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -219,9 +220,9 @@ class TestingAgent {
      * @param synapseTestCase test cases data received from client
      * @return Result of the mediation and exception status
      */
-    Pair<JSONObject, String> processTestCases(SynapseTestCase synapseTestCase) {
+    Pair<JsonObject, String> processTestCases(SynapseTestCase synapseTestCase) {
         boolean isAssert = false;
-        JSONObject resultOfTestCases = new JSONObject();
+        JsonObject resultOfTestCases = new JsonObject();
         int testCaseCount = synapseTestCase.getTestCases().getTestCaseCount();
 
         logger.info(testCaseCount + " Test case(s) ready to execute");
@@ -269,7 +270,7 @@ class TestingAgent {
                     default:
                         break;
                 }
-                resultOfTestCases.put("test-case " + (i + 1), isAssert);
+                resultOfTestCases.addProperty("test-case " + (i + 1), isAssert);
                 testCasesResult.add(isAssert);
             }
         } catch (Exception e) {
@@ -362,9 +363,9 @@ class TestingAgent {
      * @param currentAllTestCaseResult test cases results
      * @return sucess message as a JSON
      */
-    private JSONObject checkAllTestCasesCorrect(JSONObject currentAllTestCaseResult) {
+    private JsonObject checkAllTestCasesCorrect(JsonObject currentAllTestCaseResult) {
         boolean isAllSuccess = true;
-        JSONObject resultOfTestCases;
+        JsonObject resultOfTestCases;
 
         for (boolean testCase : testCasesResult) {
             if (!testCase) {
@@ -374,7 +375,8 @@ class TestingAgent {
         }
 
         if (isAllSuccess) {
-            resultOfTestCases = new JSONObject("{'test-cases':'SUCCESS'}");
+            resultOfTestCases = new JsonParser()
+                    .parse("{'test-cases':'SUCCESS'}").getAsJsonObject();
         } else {
             resultOfTestCases = currentAllTestCaseResult;
         }
