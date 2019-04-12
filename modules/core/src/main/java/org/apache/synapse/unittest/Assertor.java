@@ -33,7 +33,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.synapse.unittest.Constants.*;
+import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_AXIS2;
+import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_BODY;
+import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_CONTEXT;
+import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_TRANSPORT;
+
 
 /**
  * Class responsible for the validation of testing with expected results.
