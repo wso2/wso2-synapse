@@ -110,6 +110,8 @@ public class SendMediatorFactory extends AbstractMediatorFactory  {
             sm.setBuildMessage(true);
         }
 
+        addAllCommentChildrenToList(elem, sm.getCommentsList());
+
         return sm;
     }
 

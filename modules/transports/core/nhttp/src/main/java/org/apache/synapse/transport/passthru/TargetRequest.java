@@ -212,16 +212,16 @@ public class TargetRequest {
 
             if (forceContentLength) {
                 entity.setChunked(false);
-                if (forceContentLengthCopy && contentLength > 0) {
+                if (forceContentLengthCopy && contentLength != -1) {
                     entity.setContentLength(contentLength);
                 }
-            }else{
-             if (contentLength != -1) {
-                entity.setChunked(false);
-                entity.setContentLength(contentLength);
             } else {
-                entity.setChunked(chunk);
-            }
+                if (contentLength != -1) {
+                    entity.setChunked(false);
+                    entity.setContentLength(contentLength);
+                } else {
+                    entity.setChunked(chunk);
+                }
             }
 
 
@@ -394,8 +394,7 @@ public class TargetRequest {
         return hasEntityBody;
     }
 
-    public URL getUrl(){return url; }
-    
+    public URL getUrl() { return url; }
 
     public void setHasEntityBody(boolean hasEntityBody) {
 		this.hasEntityBody = hasEntityBody;

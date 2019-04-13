@@ -46,6 +46,8 @@ public class EventPublisherMediatorSerializer extends AbstractMediatorSerializer
         }
         saveTracingState(elmEventPublisher, mediator);
 
+        serializeComments(elmEventPublisher, mediator.getCommentsList());
+
         return elmEventPublisher;
     }
 

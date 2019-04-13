@@ -96,6 +96,8 @@ public class ThrottleMediatorSerializer extends AbstractMediatorSerializer {
             }
         }
 
+        serializeComments(throttle, throttleMediator.getCommentsList());
+
         return throttle;
 
     }

@@ -145,9 +145,9 @@ public class Axis2FlexibleMEPClient {
         }
 
         if (originalInMsgCtx.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
-           if (originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID) == null){
-               originalInMsgCtx.setProperty(PassThroughConstants.CORRELATION_ID, UUID.randomUUID().toString());
-           }
+            if (originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID) == null) {
+                originalInMsgCtx.setProperty(PassThroughConstants.CORRELATION_ID, UUID.randomUUID().toString());
+            }
             headers.put(PassThroughConfiguration.getInstance().getCorrelationHeaderName(),
                     originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID).toString());
         }
@@ -701,6 +701,7 @@ public class Axis2FlexibleMEPClient {
             isRestRequest = Constants.Configuration.HTTP_METHOD_GET.equals(httpMethod)
                     || Constants.Configuration.HTTP_METHOD_DELETE.equals(httpMethod)
                     || Constants.Configuration.HTTP_METHOD_PUT.equals(httpMethod)
+                    || Constants.Configuration.HTTP_METHOD_PATCH.equals(httpMethod)
                     || RESTConstants.METHOD_OPTIONS.equals(httpMethod)
                     || Constants.Configuration.HTTP_METHOD_HEAD.equals(httpMethod);
 

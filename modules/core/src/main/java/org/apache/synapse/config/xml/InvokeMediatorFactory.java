@@ -73,6 +73,9 @@ public class InvokeMediatorFactory extends AbstractMediatorFactory {
             log.error(msg);
             throw new SynapseException(msg);
         }
+
+        addAllCommentChildrenToList(elem, invoker.getCommentsList());
+
         return invoker;
     }
 

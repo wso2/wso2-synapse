@@ -182,6 +182,8 @@ public class ClientWorker implements Runnable {
                 .getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY));
         responseMsgCtx.setProperty(PassThroughConstants.PASS_THROUGH_TARGET_CONNECTION,
                 response.getConnection());
+        responseMsgCtx.setProperty(PassThroughConstants.CORRELATION_ID,
+                outMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID));
     }
 
     public void run() {

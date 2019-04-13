@@ -44,6 +44,7 @@ import javax.xml.namespace.QName;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axis2.AxisFault;
+import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.commons.logging.Log;
@@ -56,6 +57,9 @@ import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.http.conn.ServerConnFactory;
 import org.apache.synapse.transport.http.conn.ServerSSLSetupHandler;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.transport.nhttp.util.SecureVaultValueReader;
+import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.SecretResolverFactory;
 
 public class ServerConnFactoryBuilder {
 
@@ -67,6 +71,15 @@ public class ServerConnFactoryBuilder {
 
     protected SSLContextDetails ssl;
     private Map<InetSocketAddress, SSLContextDetails> sslByIPMap = null;
+    private ConfigurationContext configurationContext;
+
+    public ServerConnFactoryBuilder(final TransportInDescription transportIn, final HttpHost host,
+                                    ConfigurationContext configurationContext) {
+        this.transportIn = transportIn;
+        this.host = host;
+        this.name = transportIn.getName().toUpperCase(Locale.US);
+        this.configurationContext = configurationContext;
+    }
 
     public ServerConnFactoryBuilder(final TransportInDescription transportIn, final HttpHost host) {
         this.transportIn = transportIn;
@@ -85,12 +98,26 @@ public class ServerConnFactoryBuilder {
 
         KeyManager[] keymanagers  = null;
         TrustManager[] trustManagers = null;
+        SecretResolver resolver;
+        if (configurationContext != null && configurationContext.getAxisConfiguration() != null) {
+            resolver = configurationContext.getAxisConfiguration().getSecretResolver();
+        } else {
+            resolver = SecretResolverFactory.create(keyStoreEl, false);
+        }
 
         if (keyStoreEl != null) {
             String location      = getValueOfElementWithLocalName(keyStoreEl,"Location");
             String type          = getValueOfElementWithLocalName(keyStoreEl,"Type");
-            String storePassword = getValueOfElementWithLocalName(keyStoreEl,"Password");
-            String keyPassword   = getValueOfElementWithLocalName(keyStoreEl, "KeyPassword");
+            OMElement storePasswordEl = keyStoreEl.getFirstChildWithName(new QName("Password"));
+            OMElement keyPasswordEl = keyStoreEl.getFirstChildWithName(new QName("KeyPassword"));
+            if (storePasswordEl == null) {
+                throw new AxisFault("Cannot proceed because Password element is missing in KeyStore");
+            }
+            if (keyPasswordEl == null) {
+                throw new AxisFault("Cannot proceed because KeyPassword element is missing in KeyStore");
+            }
+            String storePassword = SecureVaultValueReader.getSecureVaultValue(resolver, storePasswordEl);
+            String keyPassword   = SecureVaultValueReader.getSecureVaultValue(resolver, keyPasswordEl);
 
             FileInputStream fis = null;
             try {
@@ -142,7 +169,11 @@ public class ServerConnFactoryBuilder {
         if (trustStoreEl != null) {
             String location      = getValueOfElementWithLocalName(trustStoreEl, "Location");
             String type          = getValueOfElementWithLocalName(trustStoreEl, "Type");
-            String storePassword = getValueOfElementWithLocalName(trustStoreEl, "Password");
+            OMElement storePasswordEl = trustStoreEl.getFirstChildWithName(new QName("Password"));
+            if (storePasswordEl == null) {
+                throw new AxisFault("Cannot proceed because Password element is missing in TrustStore");
+            }
+            String storePassword = SecureVaultValueReader.getSecureVaultValue(resolver, storePasswordEl);
 
             FileInputStream fis = null;
             try {

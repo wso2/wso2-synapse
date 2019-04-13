@@ -30,6 +30,7 @@ import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -163,6 +164,8 @@ public class LogMediator extends AbstractMediator {
             sb.append(separator).append("ReplyTo: ").append(synCtx.getReplyTo().getAddress());
         if (synCtx.getMessageID() != null)
             sb.append(separator).append("MessageID: ").append(synCtx.getMessageID());
+        if (getCorrelationId(synCtx) != null)
+            sb.append(" correlation_id : " + getCorrelationId(synCtx));
         sb.append(separator).append("Direction: ").append(
                 synCtx.isResponse() ? "response" : "request");
         setCustomProperties(sb, synCtx);
@@ -173,6 +176,8 @@ public class LogMediator extends AbstractMediator {
         StringBuffer sb = new StringBuffer();
         if (synCtx.getEnvelope() != null) {
             SOAPHeader header = synCtx.getEnvelope().getHeader();
+            if (getCorrelationId(synCtx) != null)
+                sb.append(" correlation_id : " + getCorrelationId(synCtx));
             if (header != null) {
                 for (Iterator iter = header.examineAllHeaderBlocks(); iter.hasNext();) {
                     Object o = iter.next();
@@ -229,6 +234,15 @@ public class LogMediator extends AbstractMediator {
                 }
             }
         }
+    }
+
+    private Object getCorrelationId(MessageContext synCtx) {
+        Object correlationId = null;
+        if (synCtx instanceof Axis2MessageContext) {
+            Axis2MessageContext axis2Ctx = ((Axis2MessageContext) synCtx);
+            correlationId = axis2Ctx.getAxis2MessageContext().getProperty(PassThroughConstants.CORRELATION_ID);
+        }
+        return correlationId;
     }
 
     public int getLogLevel() {

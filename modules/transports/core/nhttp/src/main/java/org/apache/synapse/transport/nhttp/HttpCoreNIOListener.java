@@ -128,7 +128,12 @@ public class HttpCoreNIOListener implements TransportListener, ManagementSupport
     protected Scheme initScheme() {
         return new Scheme("http", 80, false);
     }
-    
+
+    protected ServerConnFactoryBuilder initConnFactoryBuilder(final TransportInDescription transportIn,
+            final HttpHost host, ConfigurationContext configurationContext) throws AxisFault {
+        return new ServerConnFactoryBuilder(transportIn, host, configurationContext);
+    }
+
     protected ServerConnFactoryBuilder initConnFactoryBuilder(
             final TransportInDescription transportIn, final HttpHost host) throws AxisFault {
         return new ServerConnFactoryBuilder(transportIn, host);
@@ -178,7 +183,7 @@ public class HttpCoreNIOListener implements TransportListener, ManagementSupport
             listenerContext.getHostname(), 
             listenerContext.getPort(), 
             scheme.getName());
-        connFactory = initConnFactoryBuilder(transportIn, host).build(params);
+        connFactory = initConnFactoryBuilder(transportIn, host, ctx).build(params);
 
         // configure the IO reactor on the specified port
         try {
@@ -501,7 +506,7 @@ public class HttpCoreNIOListener implements TransportListener, ManagementSupport
             listenerContext.getHostname(), 
             listenerContext.getPort(), 
             scheme.getName());
-        ServerConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportIn, host);
+        ServerConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportIn, host, cfgCtx);
         connFactory = connFactoryBuilder.build(params);
         iodispatch.update(connFactory);
         
@@ -527,7 +532,7 @@ public class HttpCoreNIOListener implements TransportListener, ManagementSupport
                 scheme.getName());
 
         // Rebuild connection factory
-        ServerConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportIn, host);
+        ServerConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportIn, host, cfgCtx);
         connFactory = connFactoryBuilder.build(params);
         iodispatch.update(connFactory);
 

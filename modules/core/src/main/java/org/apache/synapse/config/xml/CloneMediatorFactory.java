@@ -103,7 +103,9 @@ public class CloneMediatorFactory extends AbstractMediatorFactory {
         	target.setAsynchronous(asynchronousExe);
             mediator.addTarget(target);
         }
-    
+
+        addAllCommentChildrenToList(elem, mediator.getCommentsList());
+
         return mediator;
     }
 

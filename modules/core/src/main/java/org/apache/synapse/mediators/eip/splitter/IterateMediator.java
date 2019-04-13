@@ -19,6 +19,10 @@
 
 package org.apache.synapse.mediators.eip.splitter;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.jayway.jsonpath.JsonPath;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.soap.SOAPEnvelope;
@@ -38,6 +42,8 @@ import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -50,6 +56,7 @@ import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.mediators.eip.Target;
 import org.apache.synapse.util.MessageHelper;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
@@ -76,14 +83,14 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
      */
     private boolean preservePayload = false;
 
-    /** The XPath that will list the elements to be splitted */
-    private SynapseXPath expression = null;
+    /** The Path that will list the elements to be splitted */
+    private SynapsePath expression = null;
 
     /**
-     * An XPath expression that specifies where the splitted elements should be attached when
+     * A Path expression that specifies where the splitted elements should be attached when
      * the payload is being preserved
      */
-    private SynapseXPath attachPath = null;
+    private SynapsePath attachPath = null;
 
     /** The target for the newly splitted messages */
     private Target target = null;
@@ -93,7 +100,12 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
     private SynapseEnvironment synapseEnv;
 
     /**
-     * Splits the message by iterating over the results of the given XPath expression
+     * A flag used to check whether attachPath was present in the original synapse configuration
+     */
+    private boolean isAttachPathPresent;
+
+    /**
+     * Splits the message by iterating over the results of the given Path expression
      *
      * @param synCtx - MessageContext to be mediated
      * @return boolean false if need to stop processing of the parent message
@@ -116,71 +128,144 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
             }
         }
 
+        synCtx.setProperty(id != null ? EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id :
+                EIPConstants.EIP_SHARED_DATA_HOLDER, new SharedDataHolder());
+
         try {
-            // get a copy of the message for the processing, if the continueParent is set to true
-            // this original message can go in further mediations and hence we should not change
-            // the original message context
-            SOAPEnvelope envelope = MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
 
-            synCtx.setProperty(id != null ? EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id :
-                               EIPConstants.EIP_SHARED_DATA_HOLDER, new SharedDataHolder());
+            // check whether expression contains jsonpath or xpath and process according to it
+            if (expression != null && expression instanceof SynapseJsonPath) {
 
-            // get the iteration elements and iterate through the list,
-            // this call will also detach all the iteration elements
-            List splitElements = EIPUtils.getDetachedMatchingElements(envelope, synCtx, expression);
+                // SynapseJSONPath implementation reads the JSON stream and execute the JSON path.
+                Object resultValue = expression.evaluate(synCtx);
 
-            if (synLog.isTraceOrDebugEnabled()) {
-                synLog.traceOrDebug("Splitting with XPath : " + expression + " resulted in " +
-                    splitElements.size() + " elements");
-            }
+                //Gson parser to parse the string json objects
+                JsonParser parser = new JsonParser();
 
-            // if not preservePayload remove all the child elements
-            if (!preservePayload && envelope.getBody() != null) {
-                for (Iterator itr = envelope.getBody().getChildren(); itr.hasNext();) {
-                    ((OMNode) itr.next()).detach();
+                //Complete json payload read from the synCtx
+                Object rootJSON = parser.parse(
+                        JsonUtil.jsonPayloadToString(((Axis2MessageContext) synCtx).getAxis2MessageContext())).
+                        toString();
+
+                //delete the iterated json object if the attachPath is different from expression.
+                // If both are same, the json object will be replaced eventually, so no need to do it here
+                if (!((SynapseJsonPath) expression).getJsonPath().getPath()
+                        .equals(((SynapseJsonPath) attachPath).getJsonPath().getPath())) {
+
+                    //parse the json into gson to delete the iterated json array
+                    JsonElement rootJsonElement = parser.parse(rootJSON.toString());
+
+                    //Check whether the JSON element expressed by the jsonpath is a valid JsonArray
+                    //else throw an exception
+                    if (!(EIPUtils.formatJsonPathResponse(JsonPath.parse(rootJsonElement.toString())
+                            .read(((SynapseJsonPath) expression).getJsonPath())) instanceof JsonArray)) {
+                        handleException("JSON element expressed by the path "
+                                + ((SynapseJsonPath) expression).getJsonPathExpression()
+                                + " is not a valid JSON array that can be iterated", synCtx);
+                    };
+
+                    //replace the expressed jsonElement with an empty array
+                    rootJSON = JsonPath.parse(rootJsonElement.toString())
+                            .set(((SynapseJsonPath) expression).getJsonPath(), new JsonArray()).jsonString();
+
                 }
-            }
 
-            int msgCount = splitElements.size();
-            int msgNumber = 0;
+                if (resultValue instanceof List) {
+                    List list = (List) resultValue;
 
-            // iterate through the list
-            for (Object o : splitElements) {
+                    int msgNumber = 0;
+                    int msgCount = list.size();
 
-                // for the moment iterator will look for an OMNode as the iteration element
-                if (!(o instanceof OMNode)) {
-                    handleException("Error splitting message with XPath : "
-                        + expression + " - result not an OMNode", synCtx);
+                    for (Object o : list) {
+                        MessageContext iteratedMsgCtx
+                                = getIteratedMessage(synCtx, msgNumber++, msgCount, rootJSON, o);
+                        ContinuationStackManager.
+                                addReliantContinuationState(iteratedMsgCtx, 0, getMediatorPosition());
+                        if (target.isAsynchronous()) {
+                            target.mediate(iteratedMsgCtx);
+                        } else {
+                            try {
+                                /*
+                                 * if Iteration is sequential we won't be able to execute correct fault
+                                 * handler as data are lost with clone message ending execution. So here we
+                                 * copy fault stack of clone message context to original message context
+                                 */
+                                target.mediate(iteratedMsgCtx);
+                            } catch (SynapseException synEx) {
+                                copyFaultyIteratedMessage(synCtx, iteratedMsgCtx);
+                                throw synEx;
+                            } catch (Exception e) {
+                                copyFaultyIteratedMessage(synCtx, iteratedMsgCtx);
+                                handleException("Exception occurred while executing sequential iteration " +
+                                        "in the Iterator Mediator", e, synCtx);
+                            }
+                        }
+                    }
                 }
+
+            } else {
+                // get a copy of the message for the processing, if the continueParent is set to true
+                // this original message can go in further mediations and hence we should not change
+                // the original message context
+                SOAPEnvelope envelope = MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
+
+                // get the iteration elements and iterate through the list,
+                // this call will also detach all the iteration elements
+                List splitElements = EIPUtils.getDetachedMatchingElements(envelope, synCtx, (SynapseXPath) expression);
 
                 if (synLog.isTraceOrDebugEnabled()) {
-                    synLog.traceOrDebug(
-                            "Submitting " + (msgNumber+1) + " of " + msgCount +
-                            (target.isAsynchronous() ? " messages for processing in parallel" :
-                             " messages for processing in sequentially"));
+                    synLog.traceOrDebug("Splitting with XPath : " + expression + " resulted in " +
+                            splitElements.size() + " elements");
                 }
 
-                MessageContext iteratedMsgCtx =
-                        getIteratedMessage(synCtx, msgNumber++, msgCount, envelope, (OMNode) o);
-                ContinuationStackManager.
-                        addReliantContinuationState(iteratedMsgCtx, 0, getMediatorPosition());
-                if (target.isAsynchronous()) {
-                    target.mediate(iteratedMsgCtx);
-                } else {
-                    try {
-                        /*
-                         * if Iteration is sequential we won't be able to execute correct fault
-                         * handler as data are lost with clone message ending execution. So here we
-                         * copy fault stack of clone message context to original message context
-                         */
+                // if not preservePayload remove all the child elements
+                if (!preservePayload && envelope.getBody() != null) {
+                    for (Iterator itr = envelope.getBody().getChildren(); itr.hasNext();) {
+                        ((OMNode) itr.next()).detach();
+                    }
+                }
+
+                int msgCount = splitElements.size();
+                int msgNumber = 0;
+
+                // iterate through the list
+                for (Object o : splitElements) {
+
+                    // for the moment iterator will look for an OMNode as the iteration element
+                    if (!(o instanceof OMNode)) {
+                        handleException("Error splitting message with XPath : "
+                                + expression + " - result not an OMNode", synCtx);
+                    }
+
+                    if (synLog.isTraceOrDebugEnabled()) {
+                        synLog.traceOrDebug(
+                                "Submitting " + (msgNumber+1) + " of " + msgCount +
+                                        (target.isAsynchronous() ? " messages for processing in parallel" :
+                                                " messages for processing in sequentially"));
+                    }
+
+                    MessageContext iteratedMsgCtx =
+                            getIteratedMessage(synCtx, msgNumber++, msgCount, envelope, (OMNode) o);
+                    ContinuationStackManager.
+                            addReliantContinuationState(iteratedMsgCtx, 0, getMediatorPosition());
+                    if (target.isAsynchronous()) {
                         target.mediate(iteratedMsgCtx);
-                    } catch (SynapseException synEx) {
-                        copyFaultyIteratedMessage(synCtx, iteratedMsgCtx);
-                        throw synEx;
-                    } catch (Exception e) {
-                        copyFaultyIteratedMessage(synCtx, iteratedMsgCtx);
-                        handleException("Exception occurred while executing sequential iteration " +
-                                        "in the Iterator Mediator", e, synCtx);
+                    } else {
+                        try {
+                            /*
+                             * if Iteration is sequential we won't be able to execute correct fault
+                             * handler as data are lost with clone message ending execution. So here we
+                             * copy fault stack of clone message context to original message context
+                             */
+                            target.mediate(iteratedMsgCtx);
+                        } catch (SynapseException synEx) {
+                            copyFaultyIteratedMessage(synCtx, iteratedMsgCtx);
+                            throw synEx;
+                        } catch (Exception e) {
+                            copyFaultyIteratedMessage(synCtx, iteratedMsgCtx);
+                            handleException("Exception occurred while executing sequential iteration " +
+                                    "in the Iterator Mediator", e, synCtx);
+                        }
                     }
                 }
             }
@@ -271,8 +356,72 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
     }
 
     /**
-     * Create a new message context using the given original message context, the envelope
-     * and the split result element.
+     * Creates a new message context using the given original message context, the envelope
+     *      * and the split result element. This is method is specific for JSON payloads
+     * @param synCtx original message context
+     * @param msgNumber message number in the iteration
+     * @param msgCount total number of messages in the split
+     * @param rootJsonObject total number of messages in the split
+     * @param node Json object to be attached
+     * @return newCtx created by the iteration
+     * @throws AxisFault if there is a message creation failure
+     * @throws JaxenException if the expression evaluation failure
+     */
+    private MessageContext getIteratedMessage(MessageContext synCtx, int msgNumber,
+                                              int msgCount, Object rootJsonObject, Object node)
+            throws AxisFault, JaxenException {
+
+        // clone the message for the mediation in iteration
+        MessageContext newCtx = MessageHelper.cloneMessageContext(synCtx);
+
+        //Remove the original jsonstream from the context
+        JsonUtil.removeJsonPayload(((Axis2MessageContext) newCtx).getAxis2MessageContext());
+
+        if (id != null) {
+            // set the parent correlation details to the cloned MC -
+            //                              for the use of aggregation like tasks
+            newCtx.setProperty(EIPConstants.AGGREGATE_CORRELATION + "." + id,
+                    synCtx.getMessageID());
+            // set the messageSequence property for possibal aggreagtions
+            newCtx.setProperty(
+                    EIPConstants.MESSAGE_SEQUENCE + "." + id,
+                    msgNumber + EIPConstants.MESSAGE_SEQUENCE_DELEMITER + msgCount);
+        } else {
+            newCtx.setProperty(
+                    EIPConstants.MESSAGE_SEQUENCE,
+                    msgNumber + EIPConstants.MESSAGE_SEQUENCE_DELEMITER + msgCount);
+        }
+        // Initially set the extracted object as root and send if payload is not preserved
+        Object rootObject = node;
+
+        // if payload should be preserved then attach the iteration element to the
+        // node specified by the attachPath
+        if (preservePayload) {
+            rootObject = rootJsonObject;
+            if (rootObject != null){
+                rootObject = ((SynapseJsonPath) attachPath).replace(rootObject, node);
+            } else {
+                handleException("Error in attaching the splitted elements :: " +
+                        "Unable to get the attach path specified by the expression " +
+                        attachPath, synCtx);
+            }
+        }
+
+        // write the new JSON message to the stream
+        JsonUtil.getNewJsonPayload(((Axis2MessageContext) newCtx).getAxis2MessageContext(),
+                rootObject.toString(), true, true);
+
+        // Set isServerSide property in the cloned message context
+        ((Axis2MessageContext) newCtx).getAxis2MessageContext().setServerSide(
+                ((Axis2MessageContext) synCtx).getAxis2MessageContext().isServerSide());
+
+
+        return newCtx;
+    }
+
+    /**
+     * Creates a new message context using the given original message context, the envelope
+     * and the split result element. This method is specific for xml payloads
      *
      * @param synCtx    - original message context
      * @param msgNumber - message number in the iteration
@@ -311,7 +460,8 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
         // node specified by the attachPath
         if (preservePayload) {
 
-            Object attachElem = attachPath.evaluate(newEnvelope, synCtx);
+            Object attachElem = ((SynapseXPath) attachPath).evaluate(newEnvelope, synCtx);
+
             if (attachElem != null &&
                 attachElem instanceof List && !((List) attachElem).isEmpty()) {
                 attachElem = ((List) attachElem).get(0);
@@ -364,19 +514,19 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
         this.preservePayload = preservePayload;
     }
 
-    public SynapseXPath getExpression() {
+    public SynapsePath getExpression() {
         return expression;
     }
 
-    public void setExpression(SynapseXPath expression) {
+    public void setExpression(SynapsePath expression) {
         this.expression = expression;
     }
 
-    public SynapseXPath getAttachPath() {
+    public SynapsePath getAttachPath() {
         return attachPath;
     }
 
-    public void setAttachPath(SynapseXPath attachPath) {
+    public void setAttachPath(SynapsePath attachPath) {
         this.attachPath = attachPath;
     }
 
@@ -401,6 +551,13 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
         return true;
     }
 
+    public boolean isAttachPathPresent() {
+        return isAttachPathPresent;
+    }
+
+    public void setAttachPathPresent(boolean attachPathPresent) {
+        isAttachPathPresent = attachPathPresent;
+    }
 
     public void init(SynapseEnvironment se) {
 

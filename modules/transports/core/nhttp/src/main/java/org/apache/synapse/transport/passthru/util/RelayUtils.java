@@ -117,7 +117,7 @@ public class RelayUtils {
                     }
                 }
 
-                builldMessage(messageContext, earlyBuild, in);
+                buildMessage(messageContext, earlyBuild, in);
                 return;
             }
         } else {
@@ -130,7 +130,7 @@ public class RelayUtils {
         }
     }
 
-    public static void builldMessage(MessageContext messageContext, boolean earlyBuild,
+    public static void buildMessage(MessageContext messageContext, boolean earlyBuild,
                                      InputStream in) throws IOException, AxisFault {
         ByteArrayOutputStream byteArrayOutputStream = null;
         if (forceXmlValidation || forceJSONValidation) {
@@ -149,8 +149,8 @@ public class RelayUtils {
             try {
                 bufferedInputStream.reset();
                 bufferedInputStream.mark(0);
-            } catch (IOException e) {
-                handleException("Error while checking bufferedInputStream", e);
+            } catch (Exception e) {
+                // just ignore the error
             }
 
         } else {
@@ -216,6 +216,7 @@ public class RelayUtils {
     }
 
 
+
     /**
      * Function to check whether the processing request (enclosed within MessageContext) is a DELETE request without
      * entity body since we allow to have payload for DELETE requests, we treat same as POST. Hence this function can be
@@ -223,55 +224,20 @@ public class RelayUtils {
      * @param msgContext MessageContext
      * @return whether the request is a DELETE without payload
      */
-    public static boolean isDeleteRequestWithoutPayload (MessageContext msgContext) throws AxisFault {
+    public static boolean isDeleteRequestWithoutPayload (MessageContext msgContext) {
         if (PassThroughConstants.HTTP_DELETE.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD))) {
 
             //If message builder not invoked (Passthrough may contain entity body) OR delete with payload
             if (!Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)) ||
                     !Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.NO_ENTITY_BODY))) {
                 //HTTP DELETE request with payload
-                if (!isEmptyPayloadStream(msgContext)) {
-                    return false;
-                }
+                return false;
             }
             //Empty payload delete request
             return true;
         }
         //Not a HTTP DELETE request
         return false;
-    }
-
-    private static boolean isEmptyPayloadStream(MessageContext messageContext) throws AxisFault {
-
-        boolean isEmpty = false;
-        BufferedInputStream bufferedInputStream = (BufferedInputStream) messageContext
-                .getProperty(PassThroughConstants.BUFFERED_INPUT_STREAM);
-        if (bufferedInputStream != null) {
-            try {
-                bufferedInputStream.reset();
-                bufferedInputStream.mark(0);
-            } catch (Exception e) {
-                // just ignore the error
-            }
-
-        } else {
-            final Pipe pipe = (Pipe) messageContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-            if (pipe != null) {
-                InputStream in = pipe.getInputStream();
-                bufferedInputStream = new BufferedInputStream(in);
-                // TODO: need to handle properly for the moment lets use around 100k
-                // buffer.
-                bufferedInputStream.mark(128 * 1024);
-                messageContext.setProperty(PassThroughConstants.BUFFERED_INPUT_STREAM,
-                        bufferedInputStream);
-            }
-        }
-        try {
-            isEmpty = RelayUtils.isEmptyPayloadStream(bufferedInputStream);
-        } catch (IOException e) {
-            handleException("Error while checking Message Payload Exists ", e);
-        }
-        return isEmpty;
     }
 
     /**
@@ -494,6 +460,9 @@ public class RelayUtils {
             try {
                 while (!pipe.isProducerCompleted() || pipe.isConsumeRequired()) {
                     consume(pipe);
+                    if (pipe.isProducerError()) {
+                        break;
+                    }
                 }
             } catch (IOException exception) {
                 handleException("Error when consuming the input stream to discard", exception);

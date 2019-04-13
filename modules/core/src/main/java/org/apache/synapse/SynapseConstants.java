@@ -572,4 +572,6 @@ public final class SynapseConstants {
     // Password pattern
     public static final Pattern PASSWORD_PATTERN = Pattern.compile(":(?:[^/]+)@");
 
+    public static final String NO_KEEPALIVE = "NO_KEEPALIVE";
+
 }

@@ -210,6 +210,8 @@ public class FaultMediatorFactory extends AbstractMediatorFactory  {
             }
         }
 
+        addAllCommentChildrenToList(elem, faultMediator.getCommentsList());
+
         return faultMediator;
     }
 

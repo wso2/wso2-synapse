@@ -20,6 +20,7 @@
 package org.apache.synapse.transport.nhttp;
 
 import org.apache.axis2.AxisFault;
+import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.http.HttpHost;
 import org.apache.synapse.transport.http.conn.Scheme;
@@ -33,9 +34,9 @@ public class HttpCoreNIOSSLListener extends HttpCoreNIOListener {
     }
 
     @Override
-    protected ServerConnFactoryBuilder initConnFactoryBuilder(
-            final TransportInDescription transportIn, final HttpHost host) throws AxisFault {
-        return new ServerConnFactoryBuilder(transportIn, host)
+    protected ServerConnFactoryBuilder initConnFactoryBuilder(final TransportInDescription transportIn,
+              final HttpHost host, ConfigurationContext configurationContext) throws AxisFault {
+        return new ServerConnFactoryBuilder(transportIn, host, configurationContext)
                 .parseSSL();
     }
 }

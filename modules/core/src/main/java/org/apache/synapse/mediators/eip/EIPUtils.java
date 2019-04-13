@@ -20,6 +20,7 @@
 package org.apache.synapse.mediators.eip;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import org.apache.axiom.om.OMElement;
@@ -45,6 +46,9 @@ public class EIPUtils {
 
     private static final Log log = LogFactory.getLog(EIPUtils.class);
 
+    private static final String JSON_MEMBERS = "members";
+
+    private static final String JSON_ELEMENTS = "elements";
     /**
      * Return the set of elements specified by the XPath over the given envelope
      *
@@ -255,15 +259,66 @@ public class EIPUtils {
      * @return parsed JsonElement.
      */
     public static JsonElement tryParseJsonString(JsonParser parser, String inputJson) {
-        JsonElement result;
         try {
-            result = parser.parse(inputJson);
+            return parser.parse(validateStringForGson(inputJson));
         } catch (JsonSyntaxException e) {
-            // Enclosing using quotes due to the following issue
-            // https://github.com/google/gson/issues/1286
-            inputJson = "\"" + inputJson + "\"";
-            result = parser.parse(inputJson);
+            log.error(inputJson + " cannot be parsed to a valid JSON payload", e);
+            return null;
         }
-        return result;
     }
+
+    /**
+     * Enclose the string with quotes before parsing with Gson library.
+     * Due to : https://github.com/google/gson/issues/1286
+     *
+     * @param input input String.
+     * @return validated String.
+     */
+    private static String validateStringForGson(String input) {
+        String output = input;
+        try {
+            Double.parseDouble(input);
+        } catch (NumberFormatException e) {
+            // not a number
+            if (!(input.equals("true") || input.equals("false"))) {
+                // not a boolean
+                if (!(input.startsWith("[") && input.endsWith("]"))) {
+                    // not a JSON array
+                    if (!(input.startsWith("{") && input.endsWith("}"))) {
+                        // not a JSON object
+                        if(!(input.startsWith("\"") && input.endsWith("\""))) {
+                            // not a string with quotes -> then add quotes
+                            output = "\"" + input + "\"";
+                        }
+                    }
+                }
+            }
+        }
+        return output;
+    }
+
+    /**
+     * Formats the response from jsonpath operations
+     * JayWay json-path response have additional elements like "members"(for objects) and "elements"(for arrays)
+     * This method will correct such strings by removing additional elements.
+     *
+     * @param input input jsonElement.
+     * @return corrected jsonObject.
+     */
+    public static Object formatJsonPathResponse(Object input) {
+        JsonElement jsonElement = (JsonElement) input;
+        if (jsonElement.isJsonPrimitive()) {
+            return jsonElement.getAsString();
+        } else if(jsonElement.isJsonObject()) {
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            if (jsonObject.has(JSON_MEMBERS)) {
+                return jsonObject.get(JSON_MEMBERS);
+            } else if (jsonObject.has(JSON_ELEMENTS)) {
+                return jsonObject.get(JSON_ELEMENTS);
+            }
+            return jsonObject.toString();
+        }
+        return jsonElement.isJsonArray() ? jsonElement : null;
+    }
+
 }

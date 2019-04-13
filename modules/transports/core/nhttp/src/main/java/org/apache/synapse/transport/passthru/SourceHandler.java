@@ -123,9 +123,7 @@ public class SourceHandler implements NHttpServerEventHandler {
     public void requestReceived(NHttpServerConnection conn) {
         try {
             HttpContext httpContext = conn.getContext();
-            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
-                setCorrelationId(conn);
-            }
+            setCorrelationId(conn);
             httpContext.setAttribute(PassThroughConstants.REQ_ARRIVAL_TIME, System.currentTimeMillis());
             httpContext.setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_START_TIME, System.currentTimeMillis());
             if (isMessageSizeValidationEnabled) {
@@ -134,7 +132,6 @@ public class SourceHandler implements NHttpServerEventHandler {
             SourceRequest request = getSourceRequest(conn);
             if (request == null) {
                 return;
-
             }
 
             String method = request.getRequest() != null ? request.getRequest().getRequestLine().getMethod().toUpperCase() : "";
@@ -165,14 +162,14 @@ public class SourceHandler implements NHttpServerEventHandler {
         HttpContext httpContext = conn.getContext();
         String correlationHeaderName = PassThroughConfiguration.getInstance().getCorrelationHeaderName();
         Header[] correlationHeader = conn.getHttpRequest().getHeaders(correlationHeaderName);
-        String corId;
+        String correlationId;
         if (correlationHeader.length != 0) {
-            corId = correlationHeader[0].getValue();
+            correlationId = correlationHeader[0].getValue();
         } else {
-            corId = UUID.randomUUID().toString();
-            conn.getHttpRequest().setHeader(correlationHeaderName, corId);
+            correlationId = UUID.randomUUID().toString();
+            conn.getHttpRequest().setHeader(correlationHeaderName, correlationId);
         }
-        httpContext.setAttribute(PassThroughConstants.CORRELATION_ID, corId);
+        httpContext.setAttribute(PassThroughConstants.CORRELATION_ID, correlationId);
     }
 
     public void inputReady(NHttpServerConnection conn,

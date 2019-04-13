@@ -135,7 +135,8 @@ public class TargetErrorHandler {
                     }
 
                     faultMessageContext.setProperty(PassThroughConstants.NO_ENTITY_BODY, true);
-
+                    faultMessageContext.setProperty(PassThroughConstants.CORRELATION_ID,
+                            mc.getProperty(PassThroughConstants.CORRELATION_ID));
                     mr.receive(faultMessageContext);
 
                 } catch (AxisFault af) {

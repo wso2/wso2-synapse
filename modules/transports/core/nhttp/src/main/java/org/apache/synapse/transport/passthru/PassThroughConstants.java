@@ -235,13 +235,19 @@ public class PassThroughConstants {
     //Check for invalid json message by parsing the input message
     public static final String FORCE_JSON_MESSAGE_VALIDATION = "force.json.message.validation";
 
-    /*
+    /**
      * constants for correlation logging
      */
+    //correlation enable/disable state property in axis2 message context
     public static final String CORRELATION_LOG_STATE_PROPERTY = "correlationLogState";
+    //property to set the correlation id value in message context and http context
     public static final String CORRELATION_ID = "correlation_id";
+    //system property to enable/disable correlation logging
     public static final String CORRELATION_LOGS_SYS_PROPERTY = "EnableCorrelationLogs";
+    //property to set the correlation ID as a MDC property in log4J
     public static final String CORRELATION_MDC_PROPERTY = "Correlation-ID";
+    //correlation logger name in log4J properties
     public static final String CORRELATION_LOGGER = "CORRELATION_LOGGER";
+    //default header that carries the correlation ID. Header name is configurable at passthru-http.properties
     public static final String CORRELATION_DEFAULT_HEADER = "activityid";
 }

@@ -14,6 +14,8 @@ public class RespondMediatorSerializer extends AbstractMediatorSerializer{
         RespondMediator mediator = (RespondMediator) m;
         OMElement respond = fac.createOMElement("respond", synNS);
         saveTracingState(respond, mediator);
+
+        serializeComments(respond, mediator.getCommentsList());
         return respond;
     }
 

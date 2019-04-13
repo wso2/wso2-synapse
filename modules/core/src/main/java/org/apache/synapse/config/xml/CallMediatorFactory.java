@@ -129,6 +129,8 @@ public class CallMediatorFactory extends AbstractMediatorFactory {
                 }
             }
         }
+        addAllCommentChildrenToList(elem, callMediator.getCommentsList());
+
         return callMediator;
 
     }

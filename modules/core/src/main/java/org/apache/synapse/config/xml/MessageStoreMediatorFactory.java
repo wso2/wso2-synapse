@@ -76,6 +76,8 @@ public class MessageStoreMediatorFactory extends AbstractMediatorFactory{
             messageStoreMediator.setOnStoreSequence(sequenceAtt.getAttributeValue());
         }
 
+        addAllCommentChildrenToList(elem, messageStoreMediator.getCommentsList());
+
         return messageStoreMediator;
     }
 

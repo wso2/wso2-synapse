@@ -28,6 +28,7 @@ import org.apache.synapse.aspects.flow.statistics.publishing.PublishingPayload;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingPayloadEvent;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -49,7 +50,11 @@ public class TracingDataCollectionHelper {
 	public static String collectPayload(MessageContext messageContext) {
 		String payload = null;
 		try {
-			org.apache.axis2.context.MessageContext a2mc = ((Axis2MessageContext) messageContext).getAxis2MessageContext();
+			org.apache.axis2.context.MessageContext a2mc =
+					((Axis2MessageContext) messageContext).getAxis2MessageContext();
+			// The message will not be built inside the EI unless the mediation flow includes a content aware mediator
+			// Therefore when tracing enabled following will explicitly build the message..
+			RelayUtils.buildMessage(a2mc, false);
 			if (JsonUtil.hasAJsonPayload(a2mc)) {
 				payload = JsonUtil.jsonPayloadToString(a2mc);
 			} else {

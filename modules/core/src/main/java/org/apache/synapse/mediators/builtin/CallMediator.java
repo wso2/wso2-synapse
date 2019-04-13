@@ -339,9 +339,13 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         }
     }
 
+    /**
+     * Setting return blocking makes CallMediator access the message’s content in blocking mode when mediating messages
+     * Fixes product-ei #1805, #3015
+     */
     @Override
     public boolean isContentAware() {
-        return false;
+        return blocking;
     }
 
     public boolean isBlocking() {

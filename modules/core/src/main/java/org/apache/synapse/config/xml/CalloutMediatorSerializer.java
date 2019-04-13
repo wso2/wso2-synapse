@@ -126,6 +126,8 @@ public class CalloutMediatorSerializer extends AbstractMediatorSerializer {
             }
         }
 
+        serializeComments(callout, mediator.getCommentsList());
+
         return callout;
     }
 

@@ -154,7 +154,8 @@ public class TargetContext {
                 conn.getContext().getAttribute(CONNECTION_INFORMATION);
         if (targetContext != null) {
             targetContext.setState(state);
-            if (targetContext.getTargetConfiguration().isCorrelationLoggingEnabled()) {
+            if (targetContext.getTargetConfiguration().isCorrelationLoggingEnabled()
+                    && conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID) != null) {
                 long lastStateUpdateTime = targetContext.getLastStateUpdatedTime();
                 String url = "", method = "";
                 if (targetContext.getRequest() != null) {

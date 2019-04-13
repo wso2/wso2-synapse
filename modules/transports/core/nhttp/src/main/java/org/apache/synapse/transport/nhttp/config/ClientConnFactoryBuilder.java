@@ -59,6 +59,7 @@ import org.apache.synapse.transport.http.conn.ClientSSLSetupHandler;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.nhttp.NoValidateCertTrustManager;
+import org.apache.synapse.transport.nhttp.util.SecureVaultValueReader;
 import org.wso2.securevault.SecretResolver;
 import org.wso2.securevault.SecretResolverFactory;
 import org.wso2.securevault.SecureVaultException;
@@ -311,8 +312,8 @@ public class ClientConnFactoryBuilder {
             if (keyPasswordElement == null) {
                 throw new AxisFault("Cannot proceed because KeyPassword element is missing in KeyStore");
             }
-            String  storePassword = getSecureVaultValue(resolver, passwordElement);
-            String keyPassword = getSecureVaultValue(resolver, keyPasswordElement);
+            String  storePassword = SecureVaultValueReader.getSecureVaultValue(resolver, passwordElement);
+            String keyPassword = SecureVaultValueReader.getSecureVaultValue(resolver, keyPasswordElement);
 
             FileInputStream fis = null;
             try {
@@ -355,7 +356,7 @@ public class ClientConnFactoryBuilder {
             if (passwordElement == null) {
                 throw new AxisFault("Cannot proceed because Password element is missing in TrustStore");
             }
-            String storePassword = getSecureVaultValue(resolver, passwordElement);
+            String storePassword = SecureVaultValueReader.getSecureVaultValue(resolver, passwordElement);
 
             FileInputStream fis = null;
             try {
@@ -416,10 +417,10 @@ public class ClientConnFactoryBuilder {
         if (keyStoreElt != null) {
             String location = keyStoreElt.getFirstChildWithName(new QName("Location")).getText();
             String type = keyStoreElt.getFirstChildWithName(new QName("Type")).getText();
-            String storePassword = getSecureVaultValue(secretResolver, keyStoreElt.getFirstChildWithName(new QName
-                    ("Password")));
-            String keyPassword = getSecureVaultValue(secretResolver, keyStoreElt.getFirstChildWithName(new QName
-                    ("KeyPassword")));
+            String storePassword = SecureVaultValueReader.getSecureVaultValue(secretResolver,
+                    keyStoreElt.getFirstChildWithName(new QName("Password")));
+            String keyPassword = SecureVaultValueReader.getSecureVaultValue(secretResolver,
+                    keyStoreElt.getFirstChildWithName(new QName("KeyPassword")));
          
             try (FileInputStream fis = new FileInputStream(location)) { 
                 KeyStore keyStore = KeyStore.getInstance(type);             

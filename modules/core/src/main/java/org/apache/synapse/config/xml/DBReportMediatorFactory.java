@@ -77,6 +77,7 @@ public class DBReportMediatorFactory extends AbstractDBMediatorFactory {
         }
         buildDataSource(elem, mediator);
         processStatements(elem, mediator);
+        addAllCommentChildrenToList(elem, mediator.getCommentsList());
         return mediator;
     }
 

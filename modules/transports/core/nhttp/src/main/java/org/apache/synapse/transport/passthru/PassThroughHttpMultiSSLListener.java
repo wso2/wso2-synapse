@@ -25,12 +25,11 @@ public class PassThroughHttpMultiSSLListener extends PassThroughHttpListener imp
     }
 
     @Override
-    protected ServerConnFactoryBuilder initConnFactoryBuilder(
-            final TransportInDescription transportIn,
-            final HttpHost host) throws AxisFault {
-        return new ServerConnFactoryBuilder(transportIn, host)
-            .parseSSL()
-            .parseMultiProfileSSL();
+    protected ServerConnFactoryBuilder initConnFactoryBuilder(final TransportInDescription transportIn,
+            final HttpHost host, ConfigurationContext configurationContext) throws AxisFault {
+        return new ServerConnFactoryBuilder(transportIn, host, configurationContext)
+                .parseSSL()
+                .parseMultiProfileSSL();
     }
 
     /**

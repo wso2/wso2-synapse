@@ -18,11 +18,15 @@
  */
 package org.apache.synapse.util.xpath;
 
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.google.gson.JsonObject;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.PathNotFoundException;
 import com.jayway.jsonpath.spi.json.GsonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.GsonMappingProvider;
@@ -106,7 +110,7 @@ public class SynapseJsonPath extends SynapsePath {
     private void setJsonPathConfiguration() {
         Configuration.setDefaults(new Configuration.Defaults() {
 
-            private final JsonProvider jsonProvider = new GsonJsonProvider();
+            private final JsonProvider jsonProvider = new GsonJsonProvider(new GsonBuilder().serializeNulls().create());
             private final MappingProvider mappingProvider = new GsonMappingProvider();
 
             public JsonProvider jsonProvider() {
@@ -276,6 +280,11 @@ public class SynapseJsonPath extends SynapsePath {
             if (object != null) {
                 if (object instanceof List && !jsonPath.isDefinite()) {
                     result = (List) object;
+                } else if (object instanceof JsonArray) {
+                    for (JsonElement element:
+                            (JsonArray) object) {
+                        result.add(element);
+                    }
                 } else {
                     result.add(object);
                 }
@@ -313,5 +322,43 @@ public class SynapseJsonPath extends SynapsePath {
             return jsonObject.toString();
         }
         return jsonElement.isJsonArray() ? jsonElement : null;
+    }
+
+    /**
+     * Replaces first matching item with a given child object.
+     * Updated root object will be return back to the caller
+     *
+     * @param rootObject
+     *            Root JSON Object or Array
+     * @param newChild
+     *            New jsonObject to replace
+     * @return Updated Root Object
+     */
+    public Object replace(Object rootObject, Object newChild) {
+        if (isWholeBody) {
+            rootObject = newChild;
+
+        } else {
+            JsonParser parser = new JsonParser();
+            JsonElement jsonElement = parser.parse(rootObject.toString());
+
+            Object attachPathObject = null;
+
+            //this try catch block evaluates whether the attachPath is valid and available in the root Object
+            try {
+                attachPathObject = formatJsonPathResponse(JsonPath.parse(jsonElement.toString()).read(getJsonPath()));
+
+            } catch (PathNotFoundException e) {
+                handleException("Unable to get the attach path specified by the expression " + expression, e);
+            }
+
+            if (attachPathObject != null) {
+                rootObject =
+                        JsonPath.parse(jsonElement.toString()).set(expression, newChild).jsonString();
+
+            }
+
+        }
+        return rootObject;
     }
 }
