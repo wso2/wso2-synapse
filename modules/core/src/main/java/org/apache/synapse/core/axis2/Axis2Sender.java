@@ -375,19 +375,19 @@ public class Axis2Sender {
             // Hence, no conversion required is required
             if (!isResponseSOAP12 && !responseCtx.isDoingREST()) {
                 return;
-            } else {
-                try {
-                    // Message need to be serialized prior to the conversion
-                    MediatorPropertyUtils.serializeOMElement(synCtx);
-                } catch (Exception e) {
-                    handleException("Error while serializing the  message", e);
-                }
             }
 
             try {                   // Message need to be built prior to the conversion
                 RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
             } catch (Exception e) {
                 handleException("Error while building message", e);
+            }
+
+            try {
+                // Message need to be serialized prior to the conversion
+                MediatorPropertyUtils.serializeOMElement(synCtx);
+            } catch (Exception e) {
+                handleException("Error while serializing the  message", e);
             }
 
             if (!responseCtx.isSOAP11()) {
