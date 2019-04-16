@@ -18,8 +18,10 @@
 package org.apache.synapse.util;
 
 import org.apache.http.protocol.HTTP;
+import org.apache.synapse.MessageContext;
 
 import java.util.Map;
+import javax.xml.stream.XMLStreamException;
 
 /*
  *  This class contains the util methods with respect to mediator properties
@@ -43,5 +45,16 @@ public class MediatorPropertyUtils {
                 headers.put(HTTP.CONTENT_TYPE, resultValue);
             }
         }
+    }
+
+    /**
+     * This method just serializes the OMElement, when setting a message type, we need to serialize to access the
+     * inner element.
+     *
+     * @param msgCtx Synapse MessageContext
+     */
+    public static void serializeOMElement(MessageContext msgCtx) throws XMLStreamException {
+
+        msgCtx.getEnvelope().toString(); // This is an implemented method in OMElement
     }
 }

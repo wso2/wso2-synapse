@@ -43,6 +43,7 @@ import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.inbound.InboundResponseSender;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
+import org.apache.synapse.util.MediatorPropertyUtils;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.POXUtils;
 
@@ -380,6 +381,13 @@ public class Axis2Sender {
                 RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
             } catch (Exception e) {
                 handleException("Error while building message", e);
+            }
+
+            try {
+                // Message need to be serialized prior to the conversion
+                MediatorPropertyUtils.serializeOMElement(synCtx);
+            } catch (Exception e) {
+                handleException("Error while serializing the  message", e);
             }
 
             if (!responseCtx.isSOAP11()) {
