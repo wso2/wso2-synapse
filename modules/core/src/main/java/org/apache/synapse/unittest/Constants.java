@@ -36,6 +36,7 @@ public class Constants {
     //artifact key word constants
     static final String API_CONTEXT = "context";
     static final String ARTIFACT_NAME_ATTRIBUTE = "name";
+    static final String ARTIFACT_TRANSPORTS_ATTRIBUTE = "transports";
     static final String ARTIFACT_KEY_ATTRIBUTE = "key";
     static final String ARTIFACT = "artifact";
     static final String TEST_ARTIFACT = "test-artifact";
@@ -91,7 +92,9 @@ public class Constants {
     static final String DELETE_METHOD = "DELETE";
 
     //api/proxy invoke constants
-    static final String LOCALHOST_URL = "http://localhost:";
-    static final int DEFAULT_INVOKE_PORT = 8280;
+    static final String HTTP_LOCALHOST_URL = "http://localhost:";
+    static final String HTTP_KEY = "http";
+    static final String HTTPS_KEY = "https";
+    static final String HTTPS_LOCALHOST_URL = "https://localhost:";
     static final String PROXY_INVOKE_PREFIX_URL = "/services/";
 }

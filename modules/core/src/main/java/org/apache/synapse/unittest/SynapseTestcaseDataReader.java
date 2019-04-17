@@ -27,6 +27,7 @@ import org.apache.synapse.unittest.testcase.data.holders.ArtifactData;
 import org.apache.synapse.unittest.testcase.data.holders.MockServiceData;
 import org.apache.synapse.unittest.testcase.data.holders.TestCaseData;
 
+import java.io.IOException;
 import java.util.*;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
@@ -35,9 +36,12 @@ import static org.apache.synapse.unittest.Constants.ARTIFACT;
 import static org.apache.synapse.unittest.Constants.ARTIFACT_KEY_ATTRIBUTE;
 import static org.apache.synapse.unittest.Constants.ARTIFACT_NAME_ATTRIBUTE;
 import static org.apache.synapse.unittest.Constants.ARTIFACTS;
+import static org.apache.synapse.unittest.Constants.ARTIFACT_TRANSPORTS_ATTRIBUTE;
 import static org.apache.synapse.unittest.Constants.ASSERTION_ACTUAL;
 import static org.apache.synapse.unittest.Constants.ASSERTION_EXPECTED;
 import static org.apache.synapse.unittest.Constants.ASSERTION_MESSAGE;
+import static org.apache.synapse.unittest.Constants.HTTPS_KEY;
+import static org.apache.synapse.unittest.Constants.HTTP_KEY;
 import static org.apache.synapse.unittest.Constants.MOCK_SERVICES;
 import static org.apache.synapse.unittest.Constants.SERVICE_CONTEXT;
 import static org.apache.synapse.unittest.Constants.SERVICE_NAME;
@@ -66,6 +70,7 @@ import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_VAL
 import static org.apache.synapse.unittest.Constants.TEST_CASE_REQUEST_METHOD;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_REQUEST_PATH;
 import static org.apache.synapse.unittest.Constants.TYPE_LOCAL_ENTRY;
+import static org.apache.synapse.unittest.Constants.TYPE_PROXY;
 
 
 /**
@@ -97,7 +102,7 @@ class SynapseTestcaseDataReader {
      *
      * @return dataHolder object with artifact data
      */
-    ArtifactData readAndStoreArtifactData() throws XMLStreamException {
+    ArtifactData readAndStoreArtifactData() throws XMLStreamException, IOException {
         ArtifactData artifactDataHolder = new ArtifactData();
         Artifact testArtifact = new Artifact();
 
@@ -127,6 +132,25 @@ class SynapseTestcaseDataReader {
                     = testArtifactDataNode.getFirstElement().getAttributeValue(new QName(ARTIFACT_NAME_ATTRIBUTE));
         }
         testArtifact.setArtifactNameOrKey(testArtifactNameOrKey);
+
+        //Read artifact transport from descriptor data if artifact is a proxy
+        if (testArtifact.getArtifactType().equals(TYPE_PROXY)) {
+            String transport = testArtifactDataNode.getFirstElement()
+                    .getAttributeValue(new QName(ARTIFACT_TRANSPORTS_ATTRIBUTE));
+            if (transport == null) {
+                throw new IOException("Local transport method for proxy currently not supported");
+            }
+
+            String[] transportMethods = transport.split(" ");
+            if (Arrays.asList(transportMethods).contains(HTTP_KEY)) {
+                testArtifact.setTransportMethod(HTTP_KEY);
+            } else if (Arrays.asList(transportMethods).contains(HTTPS_KEY)) {
+                testArtifact.setTransportMethod(HTTPS_KEY);
+            } else {
+                throw new IOException("Defined transport method for proxy currently not supported");
+            }
+        }
+
         artifactDataHolder.setTestArtifact(testArtifact);
 
         //Read supportive test cases data

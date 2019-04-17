@@ -45,6 +45,7 @@ class TestingAgent {
     private Logger logger = Logger.getLogger(TestingAgent.class.getName());
     private SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
     private String artifactType = null;
+    private String proxyTransportMethod = null;
     private String key = null;
     private OMElement artifactNode = null;
     private String exception = null;
@@ -58,6 +59,7 @@ class TestingAgent {
      */
     Pair<Boolean, String> processTestArtifact(SynapseTestCase synapseTestCase) {
         artifactType = synapseTestCase.getArtifacts().getTestArtifact().getArtifactType();
+        proxyTransportMethod = synapseTestCase.getArtifacts().getTestArtifact().getTransportMethod();
         String artifactNameOrKey = synapseTestCase.getArtifacts().getTestArtifact().getArtifactNameOrKey();
         OMElement artifact = synapseTestCase.getArtifacts().getTestArtifact().getArtifact();
         boolean isArtifactDeployed = false;
@@ -249,9 +251,10 @@ class TestingAgent {
 
                     case TYPE_PROXY:
                         HttpResponse invokedProxyResult = TestCasesMediator
-                                .proxyServiceExecutor(currentTestCase, key);
+                                .proxyServiceExecutor(currentTestCase, proxyTransportMethod, key);
 
-                        Pair<Boolean, String> assertProxyResult = checkAssertionWithProxyMediation(invokedProxyResult, currentTestCase, i);
+                        Pair<Boolean, String> assertProxyResult =
+                                checkAssertionWithProxyMediation(invokedProxyResult, currentTestCase, i);
                         isAssert = assertProxyResult.getKey();
                         exception = assertProxyResult.getValue();
                         break;
@@ -262,7 +265,8 @@ class TestingAgent {
                         HttpResponse invokedApiResult = TestCasesMediator.apiResourceExecutor
                                 (currentTestCase, context, resourceMethod);
 
-                        Pair<Boolean, String> assertAPIResult = checkAssertionWithAPIMediation(invokedApiResult, currentTestCase, i);
+                        Pair<Boolean, String> assertAPIResult =
+                                checkAssertionWithAPIMediation(invokedApiResult, currentTestCase, i);
                         isAssert = assertAPIResult.getKey();
                         exception = assertAPIResult.getValue();
                         break;

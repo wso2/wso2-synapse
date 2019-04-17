@@ -42,7 +42,6 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
-import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 
 import java.io.IOException;
@@ -59,7 +58,8 @@ public class TestCasesMediator {
     }
 
     private static Logger logger = Logger.getLogger(UnitTestingExecutor.class.getName());
-    private static int portOffset = Integer.parseInt(System.getProperty(NhttpConstants.PORT_OFFSET, "0"));
+    private static int httpPassThruOperatingPort = Integer.parseInt(System.getProperty("http.nio.port"));
+    private static int httpsPassThruOperatingPort = Integer.parseInt(System.getProperty("https.nio.port"));
 
     /**
      * Sequence mediation of receiving test cases using deployed sequence deployer.
@@ -92,9 +92,20 @@ public class TestCasesMediator {
      * @param key             key of the proxy service
      * @return response received from the proxy service
      */
-    static HttpResponse proxyServiceExecutor(TestCase currentTestCase, String key) throws IOException {
+    static HttpResponse proxyServiceExecutor(TestCase currentTestCase, String proxyTransportMethod, String key)
+            throws IOException {
 
-        String url = LOCALHOST_URL + (DEFAULT_INVOKE_PORT + portOffset) + PROXY_INVOKE_PREFIX_URL + key;
+        String url;
+
+        //check transport port whether http or https
+        if (proxyTransportMethod.equals(HTTP_KEY)) {
+            url = HTTP_LOCALHOST_URL + httpPassThruOperatingPort + PROXY_INVOKE_PREFIX_URL + key;
+        } else if (proxyTransportMethod.equals(HTTPS_KEY)) {
+            url = HTTPS_LOCALHOST_URL + httpsPassThruOperatingPort + PROXY_INVOKE_PREFIX_URL + key;
+        } else {
+            return null;
+        }
+
         logger.info("Invoking URI - " + url);
 
         HttpClient clientConnector = HttpClientBuilder.create().build();
@@ -118,7 +129,7 @@ public class TestCasesMediator {
         HttpResponse response = clientConnector.execute(httpPost);
 
         int responseCode = response.getStatusLine().getStatusCode();
-        if (responseCode/100 == 2) {
+        if (responseCode / 100 == 2) {
             return response;
         } else {
             return null;
@@ -139,15 +150,15 @@ public class TestCasesMediator {
         String url;
         if (currentTestCase.getRequestPath() != null) {
             if (currentTestCase.getRequestPath().startsWith("/")) {
-                url = LOCALHOST_URL + (DEFAULT_INVOKE_PORT + portOffset)
+                url = HTTP_LOCALHOST_URL + httpPassThruOperatingPort
                         + context + currentTestCase.getRequestPath();
             } else {
-                url = LOCALHOST_URL + (DEFAULT_INVOKE_PORT + portOffset)
+                url = HTTP_LOCALHOST_URL + httpPassThruOperatingPort
                         + context + "/" + currentTestCase.getRequestPath();
             }
 
         } else {
-            url = LOCALHOST_URL + (DEFAULT_INVOKE_PORT + portOffset) + context;
+            url = HTTP_LOCALHOST_URL + httpPassThruOperatingPort + context;
         }
 
 
@@ -190,7 +201,7 @@ public class TestCasesMediator {
         }
 
         int responseCode = response.getStatusLine().getStatusCode();
-        if (responseCode/100 == 2) {
+        if (responseCode / 100 == 2) {
             return response;
         } else {
             return null;
@@ -202,7 +213,7 @@ public class TestCasesMediator {
      * Set headers for get client.
      *
      * @param currentTestCase testcase data
-     * @param url         Url of the service
+     * @param url             Url of the service
      * @return get client with headers
      */
     private static HttpGet setGetHeaders(TestCase currentTestCase, String url) {
@@ -225,7 +236,7 @@ public class TestCasesMediator {
      * Set headers for post client.
      *
      * @param currentTestCase testcase data
-     * @param url         Url of the service
+     * @param url             Url of the service
      * @return post client with headers
      */
     private static HttpPost setPostHeaders(TestCase currentTestCase, String url) {
@@ -248,7 +259,7 @@ public class TestCasesMediator {
      * Set headers for put client.
      *
      * @param currentTestCase testcase data
-     * @param url         Url of the service
+     * @param url             Url of the service
      * @return put client with headers
      */
     private static HttpPut setPutHeaders(TestCase currentTestCase, String url) {
@@ -318,7 +329,7 @@ public class TestCasesMediator {
     /**
      * Set input property values in MessageContext
      *
-     * @param msgCtxt message context
+     * @param msgCtxt    message context
      * @param properties input property values
      * @return message context with input properties
      */

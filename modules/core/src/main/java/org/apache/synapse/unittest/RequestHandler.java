@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 
 /**
@@ -45,6 +46,8 @@ public class RequestHandler implements Runnable {
 
     private Socket socket;
     private JsonObject responseToClient;
+    private boolean isTransportPassThroughPortChecked = false;
+    private String exception;
 
     /**
      * Initializing RequestHandler withe the client socket connection.
@@ -59,6 +62,8 @@ public class RequestHandler implements Runnable {
 
             logger.info("\n");
             logger.info("---------------------START TEST-CASE--------------------------\n");
+            checkTransportPassThroughPortAvailability();
+
             String receivedData = readData();
             SynapseTestCase synapseTestCases = preProcessingData(receivedData);
 
@@ -67,7 +72,8 @@ public class RequestHandler implements Runnable {
             } else {
                 logger.error("Reading Synapse testcase data failed");
                 responseToClient = new JsonParser()
-                        .parse("{'test-cases':'Failed while reading synapseTestCase data'}").getAsJsonObject();
+                        .parse("{'test-cases':'Failed while reading synapseTestCase data','Exception':'"
+                                + exception + "'}").getAsJsonObject();
             }
 
             writeData(responseToClient);
@@ -134,6 +140,7 @@ public class RequestHandler implements Runnable {
 
         } catch (Exception e) {
             logger.error("Error while reading data from received message", e);
+            exception = e.toString();
             return null;
         }
 
@@ -205,6 +212,52 @@ public class RequestHandler implements Runnable {
         ObjectOutputStream o = new ObjectOutputStream(out);
         o.writeObject(jsonObject.toString());
         out.flush();
+    }
+
+    /**
+     * Check transport pass through port is started or not.
+     * Waits until port started to receive the request from client
+     */
+    private void checkTransportPassThroughPortAvailability() throws IOException {
+
+        if (!isTransportPassThroughPortChecked) {
+            logger.info("Unit testing agent checks transport Pass-through HTTP Listener port");
+
+            boolean isPassThroughPortNotOccupied = true;
+            int transportPassThroughPort = Integer.parseInt(System.getProperty("http.nio.port"));
+            long timeoutExpiredMs = System.currentTimeMillis() + 10000;
+
+            while (isPassThroughPortNotOccupied) {
+                long waitMillis = timeoutExpiredMs - System.currentTimeMillis();
+                isPassThroughPortNotOccupied = checkPortAvailability(transportPassThroughPort);
+
+                if (waitMillis <= 0) {
+                    // timeout expired
+                    throw new IOException("Connection refused for http Pass-through HTTP Listener port - "
+                            + transportPassThroughPort);
+                }
+            }
+
+            isTransportPassThroughPortChecked = true;
+        }
+    }
+
+    /**
+     * Check port availability.
+     *
+     * @param port port which want to check availability
+     * @return if available true else false
+     */
+    private boolean checkPortAvailability(int port) {
+        boolean isPortAvailable;
+        try (Socket socketTester = new Socket()) {
+            socketTester.connect(new InetSocketAddress("127.0.0.1", port));
+            isPortAvailable = false;
+        } catch (IOException e) {
+            isPortAvailable = true;
+        }
+
+        return isPortAvailable;
     }
 
     /**

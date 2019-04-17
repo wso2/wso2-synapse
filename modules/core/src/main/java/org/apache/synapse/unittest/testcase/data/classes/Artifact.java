@@ -28,6 +28,7 @@ public class Artifact {
     private String artifactType;
     private OMElement artifactData;
     private String artifactNameOrKey;
+    private String transportMethod;
 
     /**
      * Get artifact type.
@@ -57,6 +58,15 @@ public class Artifact {
     }
 
     /**
+     * Get artifact transport method.
+     *
+     * @return artifact transport method in descriptor data
+     */
+    public String getTransportMethod() {
+        return transportMethod;
+    }
+
+    /**
      * Set test-artifact type.
      *
      * @param artifactType type of the artifact in descriptor data
@@ -81,5 +91,14 @@ public class Artifact {
      */
     public void setArtifactNameOrKey(String artifactNameOrKey) {
         this.artifactNameOrKey = artifactNameOrKey;
+    }
+
+    /**
+     * Set test-artifact transport method.
+     *
+     * @param transportMethod transport method of the artifact in descriptor data
+     */
+    public void setTransportMethod(String transportMethod) {
+        this.transportMethod = transportMethod;
     }
 }
