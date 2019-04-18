@@ -237,7 +237,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
             //set default port for TCP server connection
             int unitTestingAgentPort = 9007;
-            if (!requestPort.isEmpty()) {
+            if (requestPort != null && !requestPort.isEmpty()) {
                 try {
                     unitTestingAgentPort = Integer.parseInt(requestPort);
                 } catch (NumberFormatException e) {
