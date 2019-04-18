@@ -22,7 +22,13 @@ import javafx.util.Pair;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.log4j.Logger;
-import org.apache.synapse.unittest.testcase.data.classes.*;
+
+import org.apache.synapse.unittest.testcase.data.classes.Artifact;
+import org.apache.synapse.unittest.testcase.data.classes.AssertEqual;
+import org.apache.synapse.unittest.testcase.data.classes.AssertNotNull;
+import org.apache.synapse.unittest.testcase.data.classes.MockService;
+import org.apache.synapse.unittest.testcase.data.classes.ServiceResource;
+import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 import org.apache.synapse.unittest.testcase.data.holders.ArtifactData;
 import org.apache.synapse.unittest.testcase.data.holders.MockServiceData;
 import org.apache.synapse.unittest.testcase.data.holders.TestCaseData;

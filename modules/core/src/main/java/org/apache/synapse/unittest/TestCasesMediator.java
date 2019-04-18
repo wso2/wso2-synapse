@@ -51,7 +51,22 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.apache.synapse.unittest.Constants.*;
+import static org.apache.synapse.unittest.Constants.DELETE_METHOD;
+import static org.apache.synapse.unittest.Constants.GET_METHOD;
+import static org.apache.synapse.unittest.Constants.HTTPS_KEY;
+import static org.apache.synapse.unittest.Constants.HTTPS_LOCALHOST_URL;
+import static org.apache.synapse.unittest.Constants.HTTP_KEY;
+import static org.apache.synapse.unittest.Constants.HTTP_LOCALHOST_URL;
+import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_SCOPE_AXIS2;
+import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_SCOPE_DEFAULT;
+import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_SCOPE_TRANSPORT;
+import static org.apache.synapse.unittest.Constants.POST_METHOD;
+import static org.apache.synapse.unittest.Constants.PROXY_INVOKE_PREFIX_URL;
+import static org.apache.synapse.unittest.Constants.PUT_METHOD;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_NAME;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_SCOPE;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_VALUE;
+
 
 /**
  * Class is responsible for mediating incoming payload with relevant configuration.
