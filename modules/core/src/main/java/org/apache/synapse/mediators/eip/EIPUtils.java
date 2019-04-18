@@ -19,10 +19,17 @@
 
 package org.apache.synapse.mediators.eip;
 
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.spi.json.GsonJsonProvider;
+import com.jayway.jsonpath.spi.json.JsonProvider;
+import com.jayway.jsonpath.spi.mapper.GsonMappingProvider;
+import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.soap.SOAPEnvelope;
@@ -36,8 +43,10 @@ import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Utility methods for the EIP mediators
@@ -319,6 +328,41 @@ public class EIPUtils {
             return jsonObject.toString();
         }
         return jsonElement.isJsonArray() ? jsonElement : null;
+    }
+
+    /**
+     * This merges two json objects into one. The PrimaryPayload will have the merged object
+     * @param primaryPayload The json object where the key value pairs will be added
+     * @param secondaryPayload The json object whose key value pair will be added to primaryPayload
+     */
+    public static void mergeJsonObjects(JsonObject primaryPayload, JsonObject secondaryPayload) {
+        for (String key : secondaryPayload.keySet()) {
+            primaryPayload.add(key, secondaryPayload.get(key));
+        }
+    }
+
+
+    /**
+     * Set default configuration for Jayway JsonPath by providing the JsonProviders and Mapping providers
+     */
+    public static void setJsonPathConfiguration() {
+        Configuration.setDefaults(new Configuration.Defaults() {
+
+            private final JsonProvider jsonProvider = new GsonJsonProvider(new GsonBuilder().serializeNulls().create());
+            private final MappingProvider mappingProvider = new GsonMappingProvider();
+
+            public JsonProvider jsonProvider() {
+                return jsonProvider;
+            }
+
+            public MappingProvider mappingProvider() {
+                return mappingProvider;
+            }
+
+            public Set<Option> options() {
+                return EnumSet.noneOf(Option.class);
+            }
+        });
     }
 
 }
