@@ -26,7 +26,7 @@
    </parent>
    <groupId>org.apache.synapse</groupId>
    <artifactId>Apache-Synapse</artifactId>
-   <version>2.1.7-wso2v98-SNAPSHOT</version>
+   <version>2.1.7-wso2v100-SNAPSHOT</version>
    <name>Apache Synapse</name>
    <description>Apache Synapse</description>
    <packaging>pom</packaging>
@@ -1174,10 +1174,10 @@
       <mina.version>1.1.0</mina.version>
       <jms-1.1-spec.version>1.1</jms-1.1-spec.version>
       <!-- Axis2 and its dependencies -->
-      <axis2.version>1.6.1-wso2v34</axis2.version>
-      <axis2.transport.version>2.0.0-wso2v33</axis2.transport.version>
+      <axis2.version>1.6.1-wso2v35</axis2.version>
+      <axis2.transport.version>2.0.0-wso2v34</axis2.transport.version>
       <axiom.version>1.2.11.wso2v13</axiom.version>
-      <xml_schema.version>1.4.3</xml_schema.version>
+      <xml_schema.version>1.4.7</xml_schema.version>
       <xml_apis.version>1.3.04</xml_apis.version>
       <wsdl4j.version>1.6.2</wsdl4j.version>
       <commons.logging.version>1.1.1</commons.logging.version>
@@ -1232,7 +1232,7 @@
       <powermock.version>1.7.1</powermock.version>
       <fge.json.schema.validator.version>2.2.6.wso2v3</fge.json.schema.validator.version>
       <fasterxml.jackson.version>2.9.8.wso2v1</fasterxml.jackson.version>
-      <google.guava.version>19.0</google.guava.version>
+      <google.guava.version>27.0-jre</google.guava.version>
       <joda-time.version>2.9.4.wso2v1</joda-time.version>
       <com.googlecode.libphonenumber.version>7.4.2.wso2v1</com.googlecode.libphonenumber.version>
       <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>

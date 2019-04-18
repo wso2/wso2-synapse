@@ -33,8 +33,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import javax.xml.namespace.QName;
 
+import static org.apache.synapse.unittest.Constants.API_CONTEXT;
+import static org.apache.synapse.unittest.Constants.TYPE_API;
+import static org.apache.synapse.unittest.Constants.TYPE_ENDPOINT;
+import static org.apache.synapse.unittest.Constants.TYPE_LOCAL_ENTRY;
+import static org.apache.synapse.unittest.Constants.TYPE_PROXY;
+import static org.apache.synapse.unittest.Constants.TYPE_SEQUENCE;
 
-import static org.apache.synapse.unittest.Constants.*;
 
 /**
  * Testing agent deploy receiving artifact data in relevant deployer and mediate test cases on it.
@@ -42,7 +47,7 @@ import static org.apache.synapse.unittest.Constants.*;
  */
 class TestingAgent {
 
-    private Logger logger = Logger.getLogger(TestingAgent.class.getName());
+    private Logger log = Logger.getLogger(TestingAgent.class.getName());
     private SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
     private String artifactType = null;
     private String proxyTransportMethod = null;
@@ -77,9 +82,9 @@ class TestingAgent {
 
                     if (key.equals(artifactNameOrKey)) {
                         isArtifactDeployed = true;
-                        logger.info("Sequence artifact deployed successfully");
+                        log.info("Sequence artifact deployed successfully");
                     } else {
-                        logger.error("Sequence deployment failed");
+                        log.error("Sequence deployment failed");
                     }
                     break;
 
@@ -91,9 +96,9 @@ class TestingAgent {
 
                     if (key.equals(artifactNameOrKey)) {
                         isArtifactDeployed = true;
-                        logger.info("Proxy artifact deployed successfully");
+                        log.info("Proxy artifact deployed successfully");
                     } else {
-                        logger.error("Proxy deployment failed");
+                        log.error("Proxy deployment failed");
                     }
                     break;
 
@@ -106,9 +111,9 @@ class TestingAgent {
 
                     if (key.equals(artifactNameOrKey)) {
                         isArtifactDeployed = true;
-                        logger.info("API artifact deployed successfully");
+                        log.info("API artifact deployed successfully");
                     } else {
-                        logger.error("API deployment failed");
+                        log.error("API deployment failed");
                     }
                     break;
 
@@ -117,7 +122,7 @@ class TestingAgent {
 
             }
         } catch (Exception e) {
-            logger.error("Artifact deployment failed", e);
+            log.error("Artifact deployment failed", e);
             exception = e.toString();
         }
 
@@ -140,11 +145,11 @@ class TestingAgent {
                     isArtifactDeployed = processForArtifactTypes(synapseTestCase, x);
 
                 } catch (Exception e) {
-                    logger.error("Artifact deployment failed", e);
+                    log.error("Artifact deployment failed", e);
                     exception = e.toString();
                 }
             } else {
-                logger.error(synapseTestCase.getArtifacts().getSupportiveArtifact(x).getArtifactType()
+                log.error(synapseTestCase.getArtifacts().getSupportiveArtifact(x).getArtifactType()
                         + " artifact deployment failed");
                 break;
             }
@@ -208,7 +213,7 @@ class TestingAgent {
         }
 
         if (key.equals(artifactNameOrKey)) {
-            logger.info(supportiveArtifactType + " artifact deployed successfully");
+            log.info(supportiveArtifactType + " artifact deployed successfully");
             return true;
 
         } else {
@@ -227,7 +232,7 @@ class TestingAgent {
         JsonObject resultOfTestCases = new JsonObject();
         int testCaseCount = synapseTestCase.getTestCases().getTestCaseCount();
 
-        logger.info(testCaseCount + " Test case(s) ready to execute");
+        log.info(testCaseCount + " Test case(s) ready to execute");
 
         try {
             //execute test cases with synapse configurations and test data
@@ -278,7 +283,7 @@ class TestingAgent {
                 testCasesResult.add(isAssert);
             }
         } catch (Exception e) {
-            logger.error("Error occurred while running test cases", e);
+            log.error("Error occurred while running test cases", e);
             exception = e.toString();
         }
 
@@ -305,7 +310,7 @@ class TestingAgent {
 
         } else {
             assertMessage = "Sequence mediation failed";
-            logger.error("Sequence mediation failed");
+            log.error("Sequence mediation failed");
         }
 
         return new Pair<>(isAssert, assertMessage);
@@ -330,7 +335,7 @@ class TestingAgent {
             assertMessage = assertOfProxy.getValue();
         } else {
             assertMessage = "Proxy service invoke failed";
-            logger.error("Proxy service invoke failed");
+            log.error("Proxy service invoke failed");
         }
 
         return new Pair<>(isAssert, assertMessage);
@@ -355,7 +360,7 @@ class TestingAgent {
             assertMessage = assertOfApi.getValue();
         } else {
             assertMessage = "API resource invoke failed";
-            logger.error("API resource invoke failed");
+            log.error("API resource invoke failed");
         }
 
         return new Pair<>(isAssert, assertMessage);

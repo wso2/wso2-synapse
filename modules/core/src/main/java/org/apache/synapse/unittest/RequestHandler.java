@@ -42,7 +42,7 @@ import java.net.Socket;
  */
 public class RequestHandler implements Runnable {
 
-    private static Logger logger = Logger.getLogger(UnitTestingExecutor.class.getName());
+    private static Logger log = Logger.getLogger(UnitTestingExecutor.class.getName());
 
     private Socket socket;
     private JsonObject responseToClient;
@@ -60,8 +60,8 @@ public class RequestHandler implements Runnable {
     public void run() {
         try {
 
-            logger.info("\n");
-            logger.info("---------------------START TEST-CASE--------------------------\n");
+            log.info("\n");
+            log.info("---------------------START TEST-CASE--------------------------\n");
             checkTransportPassThroughPortAvailability();
 
             String receivedData = readData();
@@ -70,7 +70,7 @@ public class RequestHandler implements Runnable {
             if (synapseTestCases != null) {
                 runTestingAgent(synapseTestCases);
             } else {
-                logger.error("Reading Synapse testcase data failed");
+                log.error("Reading Synapse testcase data failed");
                 responseToClient = new JsonParser()
                         .parse("{'test-cases':'Failed while reading synapseTestCase data','Exception':'"
                                 + exception + "'}").getAsJsonObject();
@@ -79,9 +79,9 @@ public class RequestHandler implements Runnable {
             writeData(responseToClient);
             MockServiceCreator.stopServices();
 
-            logger.info("---------------------END TEST-CASE--------------------------\n");
+            log.info("---------------------END TEST-CASE--------------------------\n");
         } catch (Exception e) {
-            logger.error(e);
+            log.error("Error while running client request in test agent", e);
         } finally {
             closeSocket();
         }
@@ -101,7 +101,7 @@ public class RequestHandler implements Runnable {
             inputFromClient = (String) objectInputStream.readObject();
 
         } catch (Exception e) {
-            logger.error("Failed to get input stream from TCP connection", e);
+            log.error("Failed to get input stream from TCP connection", e);
         }
 
         //receiving message from the client
@@ -139,7 +139,7 @@ public class RequestHandler implements Runnable {
             return synapseTestCases;
 
         } catch (Exception e) {
-            logger.error("Error while reading data from received message", e);
+            log.error("Error while reading data from received message", e);
             exception = e.toString();
             return null;
         }
@@ -159,13 +159,13 @@ public class RequestHandler implements Runnable {
 
         //get results of supportive-artifact deployment if exists
         if (synapseTestCase.getArtifacts().getSupportiveArtifactCount() > 0) {
-            logger.info("Supportive artifacts deployment started");
+            log.info("Supportive artifacts deployment started");
             supportiveArtifactDeployment = agent.processSupportiveArtifacts(synapseTestCase);
         }
 
         //check supportive-artifact deployment is success or not
         if (supportiveArtifactDeployment.getKey() || synapseTestCase.getArtifacts().getSupportiveArtifactCount() == 0) {
-            logger.info("Test artifact deployment started");
+            log.info("Test artifact deployment started");
             testArtifactDeployment = agent.processTestArtifact(synapseTestCase);
 
         } else if (!supportiveArtifactDeployment.getKey() && supportiveArtifactDeployment.getValue() != null) {
@@ -180,7 +180,7 @@ public class RequestHandler implements Runnable {
         //check test-artifact deployment is success or not
         if (testArtifactDeployment.getKey()) {
 
-            logger.info("Synapse testing agent ready to mediate test cases through deployments");
+            log.info("Synapse testing agent ready to mediate test cases through deployments");
             //performs test cases through the deployed synapse configuration
             Pair<JsonObject, String> testCasesMediated = agent.processTestCases(synapseTestCase);
 
@@ -221,7 +221,7 @@ public class RequestHandler implements Runnable {
     private void checkTransportPassThroughPortAvailability() throws IOException {
 
         if (!isTransportPassThroughPortChecked) {
-            logger.info("Unit testing agent checks transport Pass-through HTTP Listener port");
+            log.info("Unit testing agent checks transport Pass-through HTTP Listener port");
 
             boolean isPassThroughPortNotOccupied = true;
             int transportPassThroughPort = Integer.parseInt(System.getProperty("http.nio.port"));
@@ -267,7 +267,7 @@ public class RequestHandler implements Runnable {
         try {
             socket.close();
         } catch (IOException e) {
-            logger.error(e);
+            log.error("Error when closing socket connection", e);
         }
     }
 

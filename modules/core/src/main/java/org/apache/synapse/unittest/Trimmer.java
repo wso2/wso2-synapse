@@ -43,7 +43,7 @@ class Trimmer {
     Trimmer() {
     }
 
-    private static Logger logger = Logger.getLogger(Trimmer.class.getName());
+    private static Logger log = Logger.getLogger(Trimmer.class.getName());
 
     /**
      * Remove irrelevant whitespaces from the input string.
@@ -95,7 +95,7 @@ class Trimmer {
             //Parse the content to Document object
             return builder.parse(new InputSource(new StringReader(xmlString)));
         } catch (Exception e) {
-            logger.error("Error while parsing xmlString to DOM", e);
+            log.error("Error while parsing xmlString to DOM", e);
         }
         return null;
     }
@@ -108,7 +108,7 @@ class Trimmer {
             t.setOutputProperty(OutputKeys.INDENT, "yes");
             t.transform(new DOMSource(node), new StreamResult(sw));
         } catch (Exception e) {
-            logger.error("nodeToString Transformer Exception", e);
+            log.error("nodeToString Transformer Exception", e);
         }
         return sw.toString();
     }

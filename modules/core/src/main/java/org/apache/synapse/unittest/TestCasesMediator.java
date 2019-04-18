@@ -45,7 +45,11 @@ import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
 
 import static org.apache.synapse.unittest.Constants.*;
 
@@ -57,7 +61,7 @@ public class TestCasesMediator {
     private TestCasesMediator() {
     }
 
-    private static Logger logger = Logger.getLogger(UnitTestingExecutor.class.getName());
+    private static Logger log = Logger.getLogger(UnitTestingExecutor.class.getName());
     private static int httpPassThruOperatingPort = Integer.parseInt(System.getProperty("http.nio.port"));
     private static int httpsPassThruOperatingPort = Integer.parseInt(System.getProperty("https.nio.port"));
 
@@ -106,7 +110,7 @@ public class TestCasesMediator {
             return null;
         }
 
-        logger.info("Invoking URI - " + url);
+        log.info("Invoking URI - " + url);
 
         HttpClient clientConnector = HttpClientBuilder.create().build();
         HttpPost httpPost = new HttpPost(url);
@@ -162,7 +166,7 @@ public class TestCasesMediator {
         }
 
 
-        logger.info("Invoking URI - " + url);
+        log.info("Invoking URI - " + url);
 
         HttpClient clientConnector = HttpClientBuilder.create().build();
         HttpResponse response;
@@ -281,39 +285,39 @@ public class TestCasesMediator {
     /**
      * Creating message context using input payload and the synapse configuration.
      *
-     * @param payload received input payload for particular test case
-     * @param config  synapse configuration used for deploy the sequence deployer
+     * @param payload       received input payload for particular test case
+     * @param synapseConfig synapse configuration used for deploy the sequence deployer
      * @return message context
      */
-    private static MessageContext createSynapseMessageContext(String payload, SynapseConfiguration config) {
+    private static MessageContext createSynapseMessageContext(String payload, SynapseConfiguration synapseConfig) {
 
-        MessageContext synMc = null;
+        MessageContext synapseMessageContext = null;
         try {
-            org.apache.axis2.context.MessageContext mc =
+            org.apache.axis2.context.MessageContext messageContext =
                     new org.apache.axis2.context.MessageContext();
-            AxisConfiguration axisConfig = config.getAxisConfiguration();
+            AxisConfiguration axisConfig = synapseConfig.getAxisConfiguration();
             if (axisConfig == null) {
                 axisConfig = new AxisConfiguration();
-                config.setAxisConfiguration(axisConfig);
+                synapseConfig.setAxisConfiguration(axisConfig);
             }
-            ConfigurationContext cfgCtx = new ConfigurationContext(axisConfig);
-            SynapseEnvironment env = new Axis2SynapseEnvironment(cfgCtx, config);
+            ConfigurationContext configurationContext = new ConfigurationContext(axisConfig);
+            SynapseEnvironment env = new Axis2SynapseEnvironment(configurationContext, synapseConfig);
 
-            synMc = new Axis2MessageContext(mc, config, env);
+            synapseMessageContext = new Axis2MessageContext(messageContext, synapseConfig, env);
             SOAPEnvelope envelope =
                     OMAbstractFactory.getSOAP11Factory().getDefaultEnvelope();
-            OMDocument omDoc =
+            OMDocument omDocument =
                     OMAbstractFactory.getSOAP11Factory().createOMDocument();
-            omDoc.addChild(envelope);
+            omDocument.addChild(envelope);
 
             envelope.getBody().addChild(createOMElement(payload));
 
-            synMc.setEnvelope(envelope);
+            synapseMessageContext.setEnvelope(envelope);
         } catch (Exception e) {
-            logger.error(e);
+            log.error("Exception while creating synapse message context", e);
         }
 
-        return synMc;
+        return synapseMessageContext;
     }
 
     /**
@@ -329,40 +333,38 @@ public class TestCasesMediator {
     /**
      * Set input property values in MessageContext
      *
-     * @param msgCtxt    message context
-     * @param properties input property values
+     * @param messageContext message context
+     * @param properties     input property values
      * @return message context with input properties
      */
-    private static MessageContext setInputMessageProperties(MessageContext msgCtxt,
+    private static MessageContext setInputMessageProperties(MessageContext messageContext,
                                                             List<Map<String, String>> properties) {
 
         try {
             for (Map<String, String> property : properties) {
                 String scope = property.get(TEST_CASE_INPUT_PROPERTY_SCOPE);
 
+                Axis2MessageContext axis2MessageContext = (Axis2MessageContext) messageContext;
+                org.apache.axis2.context.MessageContext axis2MessageCtx =
+                        axis2MessageContext.getAxis2MessageContext();
+
                 //Setting Synapse properties
                 switch (scope) {
 
                     case INPUT_PROPERTY_SCOPE_DEFAULT:
-                        msgCtxt.setProperty(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
+                        messageContext.setProperty(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
                                 property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
                         break;
 
                     case INPUT_PROPERTY_SCOPE_AXIS2:
                         //Setting Axis2 properties
-                        Axis2MessageContext axis2smc = (Axis2MessageContext) msgCtxt;
-                        org.apache.axis2.context.MessageContext axis2MessageCtx =
-                                axis2smc.getAxis2MessageContext();
                         axis2MessageCtx.setProperty(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
                                 property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
                         break;
 
                     case INPUT_PROPERTY_SCOPE_TRANSPORT:
                         //Setting Transport Headers
-                        Axis2MessageContext axis2mc = (Axis2MessageContext) msgCtxt;
-                        org.apache.axis2.context.MessageContext axis2MessageCtxt =
-                                axis2mc.getAxis2MessageContext();
-                        Object headers = axis2MessageCtxt.getProperty(
+                        Object headers = axis2MessageContext.getProperty(
                                 org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
 
 
@@ -380,7 +382,7 @@ public class TestCasesMediator {
                             });
                             headersMap.put(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
                                     property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
-                            axis2MessageCtxt.setProperty(
+                            axis2MessageContext.setProperty(
                                     org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
                                     headersMap);
                         }
@@ -392,9 +394,9 @@ public class TestCasesMediator {
                 }
             }
         } catch (Exception e) {
-            logger.error("Error while setting properties to the Message Context", e);
+            log.error("Error while setting properties to the Message Context", e);
         }
 
-        return msgCtxt;
+        return messageContext;
     }
 }

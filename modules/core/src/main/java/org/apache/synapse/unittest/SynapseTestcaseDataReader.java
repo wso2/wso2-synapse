@@ -28,7 +28,13 @@ import org.apache.synapse.unittest.testcase.data.holders.MockServiceData;
 import org.apache.synapse.unittest.testcase.data.holders.TestCaseData;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 
@@ -78,7 +84,7 @@ import static org.apache.synapse.unittest.Constants.TYPE_PROXY;
  */
 class SynapseTestcaseDataReader {
 
-    private static Logger logger = Logger.getLogger(SynapseTestcaseDataReader.class.getName());
+    private static Logger log = Logger.getLogger(SynapseTestcaseDataReader.class.getName());
     private OMElement importXMLFile = null;
 
     /**
@@ -91,7 +97,7 @@ class SynapseTestcaseDataReader {
             this.importXMLFile = AXIOMUtil.stringToOM(descriptorData);
 
         } catch (Exception e) {
-            logger.error(e);
+            log.error(e);
         }
 
     }
@@ -194,7 +200,7 @@ class SynapseTestcaseDataReader {
         //set supportive artifact count
         artifactDataHolder.setSupportiveArtifactCount(supportiveArtifactCount);
 
-        logger.info("Artifact data from descriptor data read successfully");
+        log.info("Artifact data from descriptor data read successfully");
         return artifactDataHolder;
     }
 
@@ -253,7 +259,7 @@ class SynapseTestcaseDataReader {
         //Set test case count in test data holder
         testCaseDataHolder.setTestCaseCount(testCasesCount);
 
-        logger.info("Test case data from descriptor data read successfully");
+        log.info("Test case data from descriptor data read successfully");
         return testCaseDataHolder;
     }
 
@@ -470,7 +476,7 @@ class SynapseTestcaseDataReader {
         //Set mock service count in mock service data holder
         mockServiceDataHolder.setMockServicesCount(mockServiceCount);
 
-        logger.info("Mock service data from descriptor data read successfully");
+        log.info("Mock service data from descriptor data read successfully");
         return mockServiceDataHolder;
     }
 

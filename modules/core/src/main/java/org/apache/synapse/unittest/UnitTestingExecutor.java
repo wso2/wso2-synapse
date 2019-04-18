@@ -27,7 +27,7 @@ import org.apache.synapse.config.SynapseConfiguration;
  */
 public class UnitTestingExecutor extends Thread {
 
-    private static Logger logger = Logger.getLogger(UnitTestingExecutor.class.getName());
+    private static Logger log = Logger.getLogger(UnitTestingExecutor.class.getName());
     private SynapseConfiguration synapseConfiguration;
     private static UnitTestingExecutor initializeThread = new UnitTestingExecutor();
     private int executingPort;
@@ -54,7 +54,7 @@ public class UnitTestingExecutor extends Thread {
      */
     @Override
     public void run() {
-        logger.info("Unit testing agent started");
+        log.info("Unit testing agent started");
         TCPServer tcpConnection = new TCPServer();
         tcpConnection.initialize(executingPort);
     }

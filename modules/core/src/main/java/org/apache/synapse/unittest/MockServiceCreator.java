@@ -32,9 +32,10 @@ import org.apache.synapse.unittest.testcase.data.classes.ServiceResource;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.apache.synapse.unittest.Constants.*;
 import static org.apache.synapse.commons.emulator.http.dsl.dto.consumer.IncomingMessage.request;
 import static org.apache.synapse.commons.emulator.http.dsl.dto.consumer.OutgoingMessage.response;
+import static org.apache.synapse.unittest.Constants.GET_METHOD;
+import static org.apache.synapse.unittest.Constants.POST_METHOD;
 
 
 /**
@@ -42,7 +43,7 @@ import static org.apache.synapse.commons.emulator.http.dsl.dto.consumer.Outgoing
  */
 class MockServiceCreator {
 
-    private static Logger logger = Logger.getLogger(MockServiceCreator.class.getName());
+    private static Logger log = Logger.getLogger(MockServiceCreator.class.getName());
     private static boolean isMockServiceCreated = false;
 
     private MockServiceCreator() {
@@ -77,10 +78,10 @@ class MockServiceCreator {
 
             emulator.operations().start();
 
-            logger.info("Mock service started for " + mockServiceName + " in - http://" + host + ":" + port + context);
+            log.info("Mock service started for " + mockServiceName + " in - http://" + host + ":" + port + context);
 
         } catch (Exception e) {
-            logger.error("Error in initiating mock service named " + mockServiceName, e);
+            log.error("Error in initiating mock service named " + mockServiceName, e);
         }
 
     }

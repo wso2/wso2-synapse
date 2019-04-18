@@ -28,7 +28,7 @@ import java.net.Socket;
  */
 public class TCPServer {
 
-    private static Logger logger = Logger.getLogger(UnitTestingExecutor.class.getName());
+    private static Logger log = Logger.getLogger(UnitTestingExecutor.class.getName());
 
     private ServerSocket serverSocket;
     private boolean isUnitTestingOver = false;
@@ -41,11 +41,11 @@ public class TCPServer {
     public void initialize(int port) {
         try {
             serverSocket = new ServerSocket(port);
-            logger.info("Synapse unit testing agent has been established on port " + port);
-            logger.info("Waiting for client request");
+            log.info("Synapse unit testing agent has been established on port " + port);
+            log.info("Waiting for client request");
             acceptConnection();
         } catch (IOException e) {
-            logger.error(e);
+            log.error(e);
         }
     }
 
@@ -71,7 +71,7 @@ public class TCPServer {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                logger.info("Shutting down unit testing framework");
+                log.info("Shutting down unit testing framework");
                 isUnitTestingOver = true;
             }
         });

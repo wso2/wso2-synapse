@@ -65,7 +65,7 @@ class ConfigModifier {
     private ConfigModifier() {
     }
 
-    private static Logger logger = Logger.getLogger(ConfigModifier.class.getName());
+    private static Logger log = Logger.getLogger(ConfigModifier.class.getName());
 
     /**
      * Method parse the artifact data received and replaces actual endpoint urls with mock urls.
@@ -111,7 +111,7 @@ class ConfigModifier {
                 }
 
             } catch (Exception e) {
-                logger.error("Error while creating mock service for " + artifact.getArtifactNameOrKey() , e);
+                log.error("Error while creating mock service for " + artifact.getArtifactNameOrKey() , e);
             }
         }
 
@@ -156,7 +156,7 @@ class ConfigModifier {
                     mockServicePorts.add(port);
                     updateEndPoint(endPointNode, serviceURL);
 
-                    logger.info("Mock service creator ready to start service for " + valueOfName);
+                    log.info("Mock service creator ready to start service for " + valueOfName);
                     MockServiceCreator.startMockServiceServer(valueOfName, SERVICE_HOST, port, context,
                             mockServiceData.getMockServices(serviceElementIndex).getResources());
                 }
@@ -204,7 +204,7 @@ class ConfigModifier {
      * @param mockServicePorts mock service port array
      */
     private static void checkServiceStatus(ArrayList<Integer> mockServicePorts) throws IOException {
-        logger.info("Thread waiting for mock service(s) starting");
+        log.info("Thread waiting for mock service(s) starting");
 
         for (int port : mockServicePorts) {
             boolean isAvailable = true;
@@ -220,7 +220,7 @@ class ConfigModifier {
             }
         }
 
-        logger.info("Mock service(s) are started with given ports");
+        log.info("Mock service(s) are started with given ports");
     }
 
     /**
