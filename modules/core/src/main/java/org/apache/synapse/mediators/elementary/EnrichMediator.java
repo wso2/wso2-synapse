@@ -18,10 +18,15 @@
  */
 package org.apache.synapse.mediators.elementary;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
-import org.apache.axis2.AxisFault;
+import org.apache.axiom.om.OMText;
+import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.commons.json.JsonUtil;
@@ -91,11 +96,48 @@ public class EnrichMediator extends AbstractMediator {
             }
         }
 
+        JsonParser jsonParser = new JsonParser();
+
+        //A JsonElement to store the parsed json object, so that it can be used without parsing the string continuously
+        JsonElement sourcePropertyJson = null;
+
+        /*
+        * Here we are checking whether the source Property is of XML type,
+        * so that we can decide on the flow (Jsonpath or xpath)
+        * A value stored in a property can be of type ArrayList, OMElement or String
+        */
+        boolean isSourcePropertyXML = false;
+        Object sourceProperty = synCtx.getProperty(source.getProperty());
+        if (sourceProperty instanceof OMElement) {
+            isSourcePropertyXML = true;
+        } else if (sourceProperty instanceof ArrayList) {
+            for (Object node : (ArrayList) sourceProperty) {
+                if (node instanceof OMText) {
+                    String propertyString = ((OMTextImpl) node).getText();
+                    sourcePropertyJson = jsonParser.parse(propertyString);
+                    if (!(sourcePropertyJson instanceof JsonObject || sourcePropertyJson instanceof JsonArray)) {
+                        isSourcePropertyXML = true;
+                        break;
+                    }
+                } else if (node instanceof OMElement) {
+                    isSourcePropertyXML = true;
+                    break;
+                }
+            }
+        } else if (sourceProperty instanceof String) {
+            sourcePropertyJson = jsonParser.parse((String) sourceProperty);
+            if (!(sourcePropertyJson instanceof JsonObject || sourcePropertyJson instanceof JsonArray
+                    || sourcePropertyJson instanceof JsonPrimitive)) {
+                isSourcePropertyXML = true;
+            }
+        }
+
+
         boolean hasJSONPayload = JsonUtil.hasAJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext());
-        if (isNativeJsonSupportEnabled && hasJSONPayload) {
+        if (isNativeJsonSupportEnabled && hasJSONPayload && !isSourcePropertyXML) {
             Object sourceNode;
             try {
-                sourceNode = source.evaluateJson(synCtx, synLog);
+                sourceNode = source.evaluateJson(synCtx, synLog, sourcePropertyJson);
                 if (sourceNode == null) {
                     handleException("Failed to get the source for Enriching : ", synCtx);
                 } else {

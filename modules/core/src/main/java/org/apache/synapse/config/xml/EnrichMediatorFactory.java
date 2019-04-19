@@ -24,6 +24,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
@@ -32,6 +33,7 @@ import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
@@ -99,7 +101,8 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
                 String inlineString = ((OMTextImpl) source.getInlineOMNode()).getText();
                 JsonParser parser = new JsonParser();
                 JsonElement element = parser.parse(inlineString);
-                if (!(element instanceof JsonObject || element instanceof JsonArray)) {
+                if (!(element instanceof JsonObject || element instanceof JsonArray ||
+                        element instanceof JsonPrimitive)) {
                     isInlineSourceXML = true;
                 }
             } else if (source.getInlineOMNode() instanceof OMElement){
@@ -114,9 +117,6 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         boolean sourceHasEnvelope = (source.getSourceType() == EnrichMediator.ENVELOPE);
         boolean targetHasEnvelope = (target.getTargetType() == EnrichMediator.ENVELOPE);
         boolean enrichHasEnvelope = (sourceHasEnvelope || targetHasEnvelope);
-        boolean sourceHasProperty = (source.getSourceType() == EnrichMediator.PROPERTY);
-        boolean targetHasProperty = (target.getTargetType() == EnrichMediator.PROPERTY);
-        boolean enrichHasProperty = (sourceHasProperty || targetHasProperty);
 
         boolean sourceHasACustomJsonPath = false;
         boolean targetHasACustomJsonPath = false;
@@ -135,10 +135,9 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         boolean condition3 = (!sourceHasCustom && targetHasACustomJsonPath);
         boolean condition4 = (sourceHasACustomJsonPath && targetHasACustomJsonPath);
         boolean condition5 = !enrichHasEnvelope;
-        boolean condition6 = !enrichHasProperty;
 
         enrich.setNativeJsonSupportEnabled(
-                !isInlineSourceXML && condition5 && condition6 && (condition1 || condition2 || condition3 ||
+                !isInlineSourceXML && condition5 && (condition1 || condition2 || condition3 ||
                                                                    condition4));
         addAllCommentChildrenToList(elem, enrich.getCommentsList());
 
@@ -227,6 +226,13 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
                 } catch (JaxenException e) {
                     handleException("Invalid XPath expression: " + xpathAttr);
                 }
+                if (target.getAction().equals(Target.ACTION_REPLACE) && (target.getXpath() instanceof SynapseJsonPath)
+                        && ("$".equals(((SynapseJsonPath) target.getXpath()).expression) ||
+                        "$.".equals(((SynapseJsonPath) target.getXpath()).expression))) {
+                    handleException("Acting replace is not supported for root path in type custom. " +
+                            "Please use type body action replace instead");
+                }
+
             } else {
                 handleException("xpath attribute is required for CUSTOM type");
             }
