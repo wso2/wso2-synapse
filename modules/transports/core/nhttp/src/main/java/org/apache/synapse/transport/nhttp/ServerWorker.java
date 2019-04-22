@@ -18,7 +18,6 @@
  */
 package org.apache.synapse.transport.nhttp;
 
-
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAP12Constants;
 import org.apache.axiom.util.UIDGenerator;

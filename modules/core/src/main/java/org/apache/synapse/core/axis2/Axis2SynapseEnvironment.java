@@ -223,7 +223,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     }
 
     /**
-     * this method is to set the unit test mode is enabled
+     * This method is to set the unit test mode is enabled.
      * unit test message context and environment initializes
      */
     private void setSeverUnitTestMode(ServerContextInformation contextInformation) {

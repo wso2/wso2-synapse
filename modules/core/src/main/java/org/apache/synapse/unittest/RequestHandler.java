@@ -59,9 +59,7 @@ public class RequestHandler implements Runnable {
     @Override
     public void run() {
         try {
-
-            log.info("\n");
-            log.info("---------------------START TEST-CASE--------------------------\n");
+            log.info("Start processing test-case handler\n");
             checkTransportPassThroughPortAvailability();
 
             String receivedData = readData();
@@ -79,7 +77,7 @@ public class RequestHandler implements Runnable {
             writeData(responseToClient);
             MockServiceCreator.stopServices();
 
-            log.info("---------------------END TEST-CASE--------------------------\n");
+            log.info("End processing test-case handler\n");
         } catch (Exception e) {
             log.error("Error while running client request in test agent", e);
         } finally {

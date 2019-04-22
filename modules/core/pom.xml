@@ -230,7 +230,7 @@
             <groupId>javax.jms</groupId>
             <artifactId>jms</artifactId>
         </dependency>
-	<dependency>
+		<dependency>
 			<groupId>org.wso2.orbit.com.rabbitmq</groupId>
 			<artifactId>amqp-client</artifactId>
 			<version>${version.orbit.rabbitmq}</version>
@@ -411,7 +411,7 @@
 			<artifactId>gson</artifactId>
 		</dependency>
 	</dependencies>
-<properties>
+	<properties>
 		<version.orbit.rabbitmq>3.6.6.wso2v1</version.orbit.rabbitmq>
 	</properties>
 </project>

@@ -36,7 +36,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 
 /**
- * Class responsible for remove the unwanted whitespaces in any type of inputs.
+ * Class responsible for removing the unwanted whitespaces in any type of inputs.
  */
 public class RequestProcessor {
 
@@ -77,7 +77,6 @@ public class RequestProcessor {
             JsonObject inputJSON = new JsonParser()
                     .parse(trimedString).getAsJsonObject();
             trimedString = inputJSON.toString();
-
         }
 
         return trimedString.replaceAll("\\s", "");

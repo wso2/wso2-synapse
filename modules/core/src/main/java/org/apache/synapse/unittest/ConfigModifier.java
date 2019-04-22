@@ -56,9 +56,8 @@ import static org.apache.synapse.unittest.Constants.URI_TEMPLATE;
 
 
 /**
- * h
- * Class responsible for modify the artifact data.
- * creates mock services as in descriptor data.
+ * Class responsible for modify the endpoint configuration data if mock-service data exists.
+ * creates mock services and start those as in descriptor data.
  */
 class ConfigModifier {
 

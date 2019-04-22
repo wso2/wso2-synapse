@@ -31,7 +31,7 @@ import java.util.Map;
  * Encapsulates server context information
  */
 public class ServerContextInformation {
-    
+
     /* Underlying server's context - EX : Axis2 ConfigurationContext */
     private Object serverContext;
     /* A map to hold any context information*/
@@ -40,7 +40,7 @@ public class ServerContextInformation {
     private SynapseConfiguration synapseConfiguration;
     /* Keeps the SynapseEnvironment */
     private SynapseEnvironment synapseEnvironment;
-    /** Callback receiver */    
+    /** Callback receiver */
     private SynapseCallbackReceiver synapseCallbackReceiver;
     /** State of the server */
     private ServerState serverState = ServerState.UNDETERMINED;
@@ -52,7 +52,7 @@ public class ServerContextInformation {
     private SynapseDebugInterface debugInterface;
     /** whether debug mode is enabled or not */
     private boolean isDebugModeEnabled=false;
-    /** whether debug mode is enabled or not */
+    /** whether unit test mode is enabled or not */
     private boolean isUnitTestModeEnabled=false;
 
     public ServerContextInformation(ServerConfigurationInformation serverConfigurationInformation) {

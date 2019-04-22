@@ -73,7 +73,6 @@ import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
 
-
 /**
  * This is a worker thread for executing an incoming request in to the transport.
  */
@@ -507,7 +506,6 @@ public class ServerWorker implements Runnable {
         msgContext.setServerSide(true);
         msgContext.setProperty(
                 Constants.Configuration.TRANSPORT_IN_URL, request.getUri());
-
 
         // http transport header names are case insensitive
         Map<String, String> headers = new TreeMap<String, String>(new Comparator<String>() {

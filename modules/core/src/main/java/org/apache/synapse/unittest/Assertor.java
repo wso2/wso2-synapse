@@ -79,7 +79,6 @@ class Assertor {
             assertMessage = assertSequence.getValue();
         }
 
-
         if ((isAssertEqualComplete && isAssertNotNullComplete) || (isAssertEqualComplete && assertNotNulls.isEmpty()) ||
                 (isAssertNotNullComplete && assertEquals.isEmpty())) {
             isSequenceAssertComplete = true;
@@ -153,8 +152,7 @@ class Assertor {
     private static Pair<Boolean, String> startAssertEqualsForSequence(List<AssertEqual> assertEquals,
                                                                       MessageContext messageContext) {
 
-        log.info("\n");
-        log.info("---------------------Assert Equals---------------------\n");
+        log.info("AssertEquals - assert property for sequences started");
         boolean isAssertEqualFailed = false;
         String messageOfAssertEqual = null;
 
@@ -181,19 +179,16 @@ class Assertor {
                                 Trimmer.trimStrings(messageContext.getEnvelope().getBody().getFirstElement()
                                         .toString());
                         isAssert = expected.equals(mediatedResult);
-
                         break;
 
                     case INPUT_PROPERTY_CONTEXT:
                         mediatedResult = Trimmer.trimStrings(messageContext.getProperty(actualType[1]).toString());
                         isAssert = expected.equals(mediatedResult);
-
                         break;
 
                     case INPUT_PROPERTY_AXIS2:
                         mediatedResult = Trimmer.trimStrings(axis2MessageCtx.getProperty(actualType[1]).toString());
                         isAssert = expected.equals(mediatedResult);
-
                         break;
 
                     case INPUT_PROPERTY_TRANSPORT:
@@ -202,10 +197,8 @@ class Assertor {
 
                         @SuppressWarnings("unchecked")
                         Map<String, Object> headersMap = (Map) headers;
-
                         mediatedResult = Trimmer.trimStrings(headersMap.get(actualType[1]).toString());
                         isAssert = expected.equals(mediatedResult);
-
                         break;
 
                     default:
@@ -225,7 +218,6 @@ class Assertor {
                     log.error("Sequence assertEqual for " + actualProperty + " type failed - " + message + "\n");
                 }
             }
-
         }
 
         log.info("AssertEquals assertion success - " + !isAssertEqualFailed);
@@ -241,8 +233,8 @@ class Assertor {
      */
     private static Pair<Boolean, String> startAssertNotNullsForSequence(List<AssertNotNull> assertNotNull,
                                                                         MessageContext messageContext) {
-        log.info("\n");
-        log.info("---------------------Assert Not Null---------------------\n");
+
+        log.info("Assert Not Null - assert property for sequences started");
         boolean isAssertNotNullFailed = false;
         String messageOfAssertNotNull = null;
 
@@ -267,19 +259,16 @@ class Assertor {
                         mediatedResult = Trimmer.trimStrings(
                                 messageContext.getEnvelope().getBody().getFirstElement().toString());
                         isAssertNull = mediatedResult.isEmpty();
-
                         break;
 
                     case INPUT_PROPERTY_CONTEXT:
                         mediatedResult = Trimmer.trimStrings(messageContext.getProperty(actualType[1]).toString());
                         isAssertNull = mediatedResult.isEmpty();
-
                         break;
 
                     case INPUT_PROPERTY_AXIS2:
                         mediatedResult = Trimmer.trimStrings(axis2MessageCtx.getProperty(actualType[1]).toString());
                         isAssertNull = mediatedResult.isEmpty();
-
                         break;
 
                     case INPUT_PROPERTY_TRANSPORT:
@@ -288,10 +277,8 @@ class Assertor {
 
                         @SuppressWarnings("unchecked")
                         Map<String, Object> headersMap = (Map) headers;
-
                         mediatedResult = Trimmer.trimStrings(headersMap.get(actualType[1]).toString());
                         isAssertNull = mediatedResult.isEmpty();
-
                         break;
 
                     default:
@@ -329,8 +316,7 @@ class Assertor {
     private static Pair<Boolean, String> startAssertEqualsForServices(
             List<AssertEqual> assertEquals, String response, Header[] headers) {
 
-        log.info("\n");
-        log.info("---------------------Assert Equals---------------------\n");
+        log.info("Assert Equals - assert property for services started");
         boolean isAssertEqualFailed = false;
         String messageOfAssertEqual = null;
 
@@ -399,8 +385,7 @@ class Assertor {
     private static Pair<Boolean, String> startAssertNotNullsForServices(
             List<AssertNotNull> assertNotNull, String response, Header[] headers) {
 
-        log.info("\n");
-        log.info("---------------------Assert Not Null---------------------\n");
+        log.info("Assert Not Null - assert property for services started");
         boolean isAssertNotNullFailed = false;
         String messageOfAssertNotNull = null;
 
@@ -422,7 +407,6 @@ class Assertor {
                 case INPUT_PROPERTY_BODY:
                     mediatedResult = response;
                     isAssertNull = mediatedResult.isEmpty();
-
                     break;
 
                 case INPUT_PROPERTY_TRANSPORT:
