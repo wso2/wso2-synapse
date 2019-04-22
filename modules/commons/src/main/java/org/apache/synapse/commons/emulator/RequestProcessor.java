@@ -78,7 +78,6 @@ public class RequestProcessor {
                     .parse(trimedString).getAsJsonObject();
             trimedString = inputJSON.toString();
         }
-
         return trimedString.replaceAll("\\s", "");
     }
 
