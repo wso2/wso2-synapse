@@ -78,6 +78,9 @@ public class EnrichMediator extends AbstractMediator {
 
     private boolean isNativeJsonSupportEnabled = false;
 
+    private static final String ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM =
+            "org.apache.synapse.commons.json.JsonInputStream";
+
     public boolean mediate(MessageContext synCtx) {
 
         if (synCtx.getEnvironment().isDebuggerEnabled()) {
@@ -158,12 +161,14 @@ public class EnrichMediator extends AbstractMediator {
             } catch (JaxenException e) {
                 handleException("Failed to get the source for Enriching", e, synCtx);
             }
-            //Adding this part for backward-compatibility where xpath is used with json payload
+
+            // Removing the JSON stream since the payload is now updated.
+            // Json-eval and other JsonUtil functions now needs to convert XML -> JSON
+            // related to wso2/product-ei/issues/1771
             org.apache.axis2.context.MessageContext axis2MsgCtx = ((Axis2MessageContext) synCtx)
                     .getAxis2MessageContext();
-            if (hasJSONPayload) {
-                JsonUtil.setJsonStream(axis2MsgCtx,
-                        JsonUtil.toJsonStream(axis2MsgCtx.getEnvelope().getBody().getFirstElement()));
+            if (target.getTargetType() == EnrichMediator.BODY || target.getTargetType() == EnrichMediator.CUSTOM) {
+                axis2MsgCtx.removeProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
             }
         }
 
