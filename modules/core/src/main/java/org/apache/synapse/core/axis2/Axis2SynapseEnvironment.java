@@ -64,6 +64,7 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.RESTRequestHandler;
 import org.apache.synapse.task.SynapseTaskManager;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
+import org.apache.synapse.unittest.UnitTestingExecutor;
 import org.apache.synapse.util.concurrent.InboundThreadPool;
 import org.apache.synapse.util.concurrent.SynapseThreadPool;
 import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
@@ -128,6 +129,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     /** Debug mode is enabled/disabled*/
     private boolean isDebugEnabled = false;
+
+    /** Unit test mode is enabled/disabled*/
+    private boolean isUnitTestEnabled = false;
 
     public Axis2SynapseEnvironment(SynapseConfiguration synCfg) {
 
@@ -201,6 +205,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         this(cfgCtx, synapseConfig);
         this.contextInformation = contextInformation;
         setSeverDebugMode(contextInformation);
+        setSeverUnitTestMode(contextInformation);
     }
 
     /**
@@ -214,6 +219,37 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             synapseDebugManager = contextInformation.getSynapseDebugManager();
             contextInformation.getSynapseDebugManager()
                     .init(synapseConfig, contextInformation.getSynapseDebugInterface(), this, true);
+        }
+    }
+
+    /**
+     * This method is to set the unit test mode is enabled.
+     * unit test message context and environment initializes
+     */
+    private void setSeverUnitTestMode(ServerContextInformation contextInformation) {
+        if (Boolean.parseBoolean(System.getenv("UNIT_TEST"))) {
+            setUnitTestEnabled(true);
+            contextInformation.setServerUnitTestModeEnabled(true);
+            log.info("Synapse unit testing enabled");
+
+            //get unit test received port
+            String requestPort = System.getenv("UNIT_TEST_PORT");
+
+            //set default port for TCP server connection
+            int unitTestingAgentPort = 9007;
+            if (requestPort != null && !requestPort.isEmpty()) {
+                try {
+                    unitTestingAgentPort = Integer.parseInt(requestPort);
+                } catch (NumberFormatException e) {
+                    log.error("Given port is not in valid format", e);
+                }
+            }
+
+            //execute synapse unit testing executor
+            UnitTestingExecutor testExecutor = UnitTestingExecutor.getExecuteInstance();
+            testExecutor.setServerPort(unitTestingAgentPort);
+            testExecutor.setSynapseConfiguration(this.synapseConfig);
+            testExecutor.start();
         }
     }
 
@@ -1130,11 +1166,29 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     }
 
     /**
+     * Whether unit test is enabled in the environment.
+     *
+     * @return whether debugging is enabled in the environment
+     */
+    public boolean isUnitTestEnabled() {
+        return isUnitTestEnabled;
+    }
+
+    /**
      * set debugging enabled in the environment.     *
      * when this is enabled mediation flow can be debugged through a external client
      * when this is disabled mediation flow happens normally
      */
     public void setDebugEnabled(boolean isDebugEnabled) {
         this.isDebugEnabled = isDebugEnabled;
+    }
+
+    /**
+     * set unit test mode enabled in the environment.
+     *
+     * @param isUnitTestEnabled boolean value of unit test mode
+     */
+    public void setUnitTestEnabled(boolean isUnitTestEnabled) {
+        this.isUnitTestEnabled = isUnitTestEnabled;
     }
 }

@@ -52,6 +52,8 @@ public class ServerContextInformation {
     private SynapseDebugInterface debugInterface;
     /** whether debug mode is enabled or not */
     private boolean isDebugModeEnabled=false;
+    /** whether unit test mode is enabled or not */
+    private boolean isUnitTestModeEnabled=false;
 
     public ServerContextInformation(ServerConfigurationInformation serverConfigurationInformation) {
         this.serverConfigurationInformation = serverConfigurationInformation;
@@ -145,8 +147,16 @@ public class ServerContextInformation {
         return isDebugModeEnabled;
     }
 
+    public boolean isServerUnitTestModeEnabled(){
+        return isUnitTestModeEnabled;
+    }
+
     public void setServerDebugModeEnabled(boolean isDebugModeEnabled){
         this.isDebugModeEnabled=isDebugModeEnabled;
+    }
+
+    public void setServerUnitTestModeEnabled(boolean isUnitTestModeEnabled){
+        this.isUnitTestModeEnabled=isUnitTestModeEnabled;
     }
 
 }

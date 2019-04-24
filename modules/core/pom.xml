@@ -184,6 +184,7 @@
 							org.apache.synapse.inbound.*,
 							org.apache.synapse.startup.*,
 							org.apache.synapse.util.*,
+							org.apache.synapse.unittest.*,
 							org.apache.synapse.libraries.*,
 							org.apache.synapse.carbonext.*,
                             org.apache.synapse.continuation.*,
@@ -348,6 +349,10 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+		</dependency>
         <dependency>
             <groupId>org.wso2.orbit.com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
