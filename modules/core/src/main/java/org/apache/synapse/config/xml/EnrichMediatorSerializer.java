@@ -31,6 +31,7 @@ import org.apache.axiom.om.OMText;
 import org.apache.synapse.Mediator;
 
 
+import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.mediators.elementary.EnrichMediator;
 import org.apache.synapse.mediators.elementary.Source;
 import org.apache.synapse.mediators.elementary.Target;
@@ -53,32 +54,11 @@ public class EnrichMediatorSerializer extends AbstractMediatorSerializer {
         enrichEle.addChild(sourceEle);
         enrichEle.addChild(targetEle);
 
-        setJsonPathConfiguration();
+        EIPUtils.setJsonPathConfiguration();
 
         serializeComments(enrichEle, mediator.getCommentsList());
 
         return enrichEle;
-    }
-
-    // Set default configuration for Jayway JsonPath
-    private void setJsonPathConfiguration() {
-        Configuration.setDefaults(new Configuration.Defaults() {
-
-            private final JsonProvider jsonProvider = new GsonJsonProvider();
-            private final MappingProvider mappingProvider = new GsonMappingProvider();
-
-            public JsonProvider jsonProvider() {
-                return jsonProvider;
-            }
-
-            public MappingProvider mappingProvider() {
-                return mappingProvider;
-            }
-
-            public Set<Option> options() {
-                return EnumSet.noneOf(Option.class);
-            }
-        });
     }
 
     private OMElement serializeSource(Source source) {

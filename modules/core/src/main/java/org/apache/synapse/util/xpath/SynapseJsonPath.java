@@ -46,6 +46,7 @@ import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.mediators.eip.EIPUtils;
 import org.jaxen.JaxenException;
 
 import java.io.IOException;
@@ -90,7 +91,7 @@ public class SynapseJsonPath extends SynapsePath {
         super(jsonPathExpression, SynapsePath.JSON_PATH, log);
 
         // Set default configuration for Jayway JsonPath
-        setJsonPathConfiguration();
+        EIPUtils.setJsonPathConfiguration();
 
         this.contentAware = true;
         this.expression = jsonPathExpression;
@@ -104,27 +105,6 @@ public class SynapseJsonPath extends SynapsePath {
             isWholeBody = true;
         }
         this.setPathType(SynapsePath.JSON_PATH);
-    }
-
-    // Set default configuration for Jayway JsonPath
-    private void setJsonPathConfiguration() {
-        Configuration.setDefaults(new Configuration.Defaults() {
-
-            private final JsonProvider jsonProvider = new GsonJsonProvider(new GsonBuilder().serializeNulls().create());
-            private final MappingProvider mappingProvider = new GsonMappingProvider();
-
-            public JsonProvider jsonProvider() {
-                return jsonProvider;
-            }
-
-            public MappingProvider mappingProvider() {
-                return mappingProvider;
-            }
-
-            public Set<Option> options() {
-                return EnumSet.noneOf(Option.class);
-            }
-        });
     }
 
     public String stringValueOf(final String jsonString) {

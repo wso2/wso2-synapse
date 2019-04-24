@@ -19,6 +19,8 @@
 
 package org.apache.synapse.mediators.elementary;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.jayway.jsonpath.JsonPath;
 import org.apache.axiom.om.*;
 import org.apache.axiom.om.impl.llom.OMTextImpl;
@@ -242,14 +244,16 @@ public class Source {
      *
      * @param synCtx - Current Message Context
      * @param synLog - Default Logger for the package
+     * @param sourcePropertyJson Parsed Json element
      * @return A HashMap with the following keys: <br/>
      * [1] "errorsExistInSrcTag" - holds either true or false <br/>
      * [2] "evaluatedSrcJsonElement" - holds the evaluated Json Element as an Object
      */
-    public Object evaluateJson(MessageContext synCtx, SynapseLog synLog) throws JaxenException {
-
-        Object object = "";
+    public JsonElement evaluateJson(MessageContext synCtx, SynapseLog synLog,
+                                    JsonElement sourcePropertyJson) throws JaxenException {
+        JsonElement object = null;
         String jsonPath = null;
+        JsonParser parser = new JsonParser();
         if (xpath != null) {
             SynapseJsonPath sourceJsonPath = (SynapseJsonPath) this.xpath;
             jsonPath = sourceJsonPath.getJsonPath().getPath();
@@ -278,7 +282,8 @@ public class Source {
                 break;
             }
             case EnrichMediator.BODY: {
-                object = JsonUtil.jsonPayloadToString(context);
+                String jsonPayload = JsonUtil.jsonPayloadToString(context);
+                object = parser.parse(jsonPayload);
                 break;
             }
             case EnrichMediator.INLINE: {
@@ -296,6 +301,15 @@ public class Source {
                 } else {
                     synLog.error("Source failed to get inline JSON" + "inlineJSONNode=" + inlineOMNode + ", inlineKey="
                             + inlineKey);
+                }
+                break;
+            }
+            case EnrichMediator.PROPERTY: {
+                assert property != null : "property shouldn't be null when type is PROPERTY";
+                if (sourcePropertyJson != null) {
+                    object = sourcePropertyJson;
+                } else {
+                    synLog.error("Source json object cannot be null");
                 }
                 break;
             }
