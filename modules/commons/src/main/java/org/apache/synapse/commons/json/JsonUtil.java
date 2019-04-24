@@ -62,7 +62,7 @@ import java.util.Properties;
 public final class JsonUtil {
     private static Log logger = LogFactory.getLog(JsonUtil.class.getName());
 
-    private static final String ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM = "org.apache.synapse.commons.json.JsonInputStream";
+    public static final String ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM = "org.apache.synapse.commons.json.JsonInputStream";
     private static final String ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT = "org.apache.synapse.commons.json.JsonInputStream.IsJsonObject";
 
     private static final QName JSON_OBJECT = new QName("jsonObject");
