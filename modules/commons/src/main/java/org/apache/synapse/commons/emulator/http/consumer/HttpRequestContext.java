@@ -21,6 +21,7 @@ package org.apache.synapse.commons.emulator.http.consumer;
 
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
+import org.apache.synapse.commons.emulator.RequestProcessor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -106,6 +107,6 @@ public class HttpRequestContext {
             return null;
         }
 
-        return requestBody.toString();
+        return RequestProcessor.trimStrings(requestBody.toString());
     }
 }
