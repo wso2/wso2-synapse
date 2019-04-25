@@ -62,7 +62,6 @@ import java.util.Properties;
 public final class JsonUtil {
     private static Log logger = LogFactory.getLog(JsonUtil.class.getName());
 
-    public static final String ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM = "org.apache.synapse.commons.json.JsonInputStream";
     private static final String ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT = "org.apache.synapse.commons.json.JsonInputStream.IsJsonObject";
 
     private static final QName JSON_OBJECT = new QName("jsonObject");
@@ -664,7 +663,7 @@ public final class JsonUtil {
                 messageContext.setProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT, false);
             }
             OMElement elem = new OMSourcedElementImpl(jsonElement, OMAbstractFactory.getOMFactory(), new JsonDataSource(
-                    (InputStream) messageContext.getProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM)));
+                    (InputStream) messageContext.getProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM)));
             if (!removeChildren) {
                 if (logger.isTraceEnabled()) {
                     logger.trace(
@@ -742,7 +741,7 @@ public final class JsonUtil {
      */
     public static InputStream setJsonStream(MessageContext messageContext, InputStream inputStream) {
         InputStream json = toReadOnlyStream(inputStream);
-        messageContext.setProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM, json);
+        messageContext.setProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM, json);
         return json;
     }
 
@@ -849,7 +848,7 @@ public final class JsonUtil {
      * @return <tt>true</tt> if the operation is successful.
      */
     public static boolean removeJsonPayload(MessageContext messageContext) {
-        messageContext.removeProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
+        messageContext.removeProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
         messageContext.removeProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT);
         boolean removeChildren = true;
         if (!removeChildren) { // don't change this.
@@ -890,7 +889,7 @@ public final class JsonUtil {
         if (messageContext == null) {
             return null;
         }
-        Object o = messageContext.getProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
+        Object o = messageContext.getProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
         if (o instanceof InputStream) {
             InputStream is = (InputStream) o;
             if (reset) {

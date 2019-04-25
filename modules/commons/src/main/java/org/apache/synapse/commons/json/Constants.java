@@ -18,7 +18,7 @@
 
 package org.apache.synapse.commons.json;
 
-final class Constants {
+public final class Constants {
     private Constants() {
     }
 
@@ -113,5 +113,7 @@ final class Constants {
      */
     public static final String SYNAPSE_JSON_TO_XML_PROCESS_INSTRUCTION_ENABLE = "synapse.json.to.xml.processing.instruction.enabled";
 
+    /*Property which holds the synapse commons json stream of payload*/
+    public static final String ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM = "org.apache.synapse.commons.json.JsonInputStream";
 
 }

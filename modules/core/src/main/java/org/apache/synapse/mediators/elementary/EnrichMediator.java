@@ -29,6 +29,7 @@ import org.apache.axiom.om.OMText;
 import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.commons.json.Constants;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
@@ -77,9 +78,6 @@ public class EnrichMediator extends AbstractMediator {
     private Target target = null;
 
     private boolean isNativeJsonSupportEnabled = false;
-
-    private static final String ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM =
-            "org.apache.synapse.commons.json.JsonInputStream";
 
     public boolean mediate(MessageContext synCtx) {
 
@@ -168,7 +166,7 @@ public class EnrichMediator extends AbstractMediator {
             org.apache.axis2.context.MessageContext axis2MsgCtx = ((Axis2MessageContext) synCtx)
                     .getAxis2MessageContext();
             if (target.getTargetType() == EnrichMediator.BODY || target.getTargetType() == EnrichMediator.CUSTOM) {
-                axis2MsgCtx.removeProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
+                axis2MsgCtx.removeProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
             }
         }
 
