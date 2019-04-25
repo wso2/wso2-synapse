@@ -202,13 +202,10 @@ public class LogMediator extends AbstractMediator {
         sb.append(getSimpleLogMessage(synCtx));
         try {
             org.apache.axis2.context.MessageContext a2mc = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-            // If there is a XML element which store sourced JSON payload, synCtx.getEnvelope() will not be null.
-            // So need to check it also to avoid log in JSON format i.e. {"value" : "test"}
-            if (synCtx.getEnvelope() != null) {
-                sb.append(separator).append("Envelope: ").append(synCtx.getEnvelope());
-            }
-            else if (JsonUtil.hasAJsonPayload(a2mc)) {
+            if (JsonUtil.hasAJsonPayload(a2mc)) {
                 sb.append(separator).append("Payload: ").append(JsonUtil.jsonPayloadToString(a2mc));
+            } else if (synCtx.getEnvelope() != null) {
+                sb.append(separator).append("Envelope: ").append(synCtx.getEnvelope());
             }
         } catch (Exception e) {
             SOAPEnvelope envelope = synCtx.isSOAP11() ? OMAbstractFactory.getSOAP11Factory().getDefaultEnvelope()
