@@ -56,8 +56,10 @@ public class FailoverEndpointSerializer extends EndpointSerializer {
                     Boolean.toString(failoverEndpoint.isBuildMessageAtt()), null);
         }
 
-        for (Endpoint childEndpoint : failoverEndpoint.getChildren()) {
-            failoverElement.addChild(EndpointSerializer.getElementFromEndpoint(childEndpoint));
+        if (failoverEndpoint.getChildren() != null) {
+            for (Endpoint childEndpoint : failoverEndpoint.getChildren()) {
+                failoverElement.addChild(EndpointSerializer.getElementFromEndpoint(childEndpoint));
+            }
         }
 
         if (!failoverEndpoint.isDynamic()) {
