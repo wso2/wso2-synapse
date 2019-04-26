@@ -30,7 +30,6 @@ public class UnitTestingExecutor extends Thread {
     private static Logger log = Logger.getLogger(UnitTestingExecutor.class.getName());
     private SynapseConfiguration synapseConfiguration;
     private static UnitTestingExecutor initializeThread = new UnitTestingExecutor();
-    private int executingPort;
 
     /**
      * Return initialized UnitTestingExecutor initializeThread object.
@@ -41,22 +40,13 @@ public class UnitTestingExecutor extends Thread {
     }
 
     /**
-     * Get receiving server TCP port and assign it to executingPort.
-     *
-     * @param port receiving port
-     */
-    public void setServerPort(int port) {
-        executingPort = port;
-    }
-
-    /**
      * Method of executing thread of agent.
      */
     @Override
     public void run() {
         log.info("Unit testing agent started");
         TCPServer tcpConnection = new TCPServer();
-        tcpConnection.initialize(executingPort);
+        tcpConnection.initialize();
     }
 
     /**

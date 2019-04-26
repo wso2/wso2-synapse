@@ -1,5 +1,5 @@
 ## Sample Test Cases
-Each request needs to be send to the unit testing server via a TCP transport (user defined port or default 9007 port). 
+Each request needs to be send to the unit testing server via a TCP transport (user defined port or default 9008 port). 
 
 ### Sample test case for sequence artifact
 
