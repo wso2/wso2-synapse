@@ -240,8 +240,10 @@ public class BlockingMsgSenderUtils {
         if (endpoint.getEffectiveTimeout() > 0) {
             if (!endpoint.isDynamicTimeoutEndpoint()) {
                 axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.getEffectiveTimeout());
+                axisOutMsgCtx.setProperty(HTTPConstants.SO_TIMEOUT, (int) endpoint.getEffectiveTimeout());
             } else {
                 axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.evaluateDynamicEndpointTimeout(synapseInMsgCtx));
+                axisOutMsgCtx.setProperty(HTTPConstants.SO_TIMEOUT, (int) endpoint.evaluateDynamicEndpointTimeout(synapseInMsgCtx));
             }
         }
 
