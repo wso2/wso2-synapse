@@ -239,11 +239,13 @@ public class BlockingMsgSenderUtils {
         // set the SEND_TIMEOUT for transport sender
         if (endpoint.getEffectiveTimeout() > 0) {
             if (!endpoint.isDynamicTimeoutEndpoint()) {
-                axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.getEffectiveTimeout());
-                axisOutMsgCtx.setProperty(HTTPConstants.SO_TIMEOUT, (int) endpoint.getEffectiveTimeout());
+                long effectiveTimeout = endpoint.getEffectiveTimeout();
+                axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, effectiveTimeout);
+                axisOutMsgCtx.setProperty(HTTPConstants.SO_TIMEOUT, (int) effectiveTimeout);
             } else {
-                axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.evaluateDynamicEndpointTimeout(synapseInMsgCtx));
-                axisOutMsgCtx.setProperty(HTTPConstants.SO_TIMEOUT, (int) endpoint.evaluateDynamicEndpointTimeout(synapseInMsgCtx));
+                long dynamicTimeout = endpoint.evaluateDynamicEndpointTimeout(synapseInMsgCtx);
+                axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, dynamicTimeout);
+                axisOutMsgCtx.setProperty(HTTPConstants.SO_TIMEOUT, (int) dynamicTimeout);
             }
         }
 
