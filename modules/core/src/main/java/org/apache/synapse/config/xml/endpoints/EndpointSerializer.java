@@ -37,6 +37,7 @@ import org.apache.synapse.util.CommentListUtil;
 
 import javax.xml.namespace.QName;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * All endpoint serializers should implement this interface. Use EndpointSerializer to
@@ -164,7 +165,10 @@ public abstract class EndpointSerializer {
                     messageStore, null);
         }
 
-        CommentListUtil.serializeComments(element, ((AbstractEndpoint) endpoint).getCommentsList());
+        List<String> commentsList = ((AbstractEndpoint) endpoint).getCommentsList();
+        if (commentsList != null) {
+            CommentListUtil.serializeComments(element, commentsList);
+        }
     }
 
 

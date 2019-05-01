@@ -239,7 +239,10 @@ public class ProxyServiceSerializer {
             parent.addChild(proxy);
         }
 
-        CommentListUtil.serializeComments(proxy, service.getCommentsList());
+        List<String> commentsList = service.getCommentsList();
+        if (commentsList != null) {
+            CommentListUtil.serializeComments(proxy, commentsList);
+        }
         return proxy;
     }
 

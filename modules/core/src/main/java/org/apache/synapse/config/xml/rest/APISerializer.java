@@ -30,6 +30,7 @@ import org.apache.synapse.rest.Resource;
 import org.apache.synapse.util.CommentListUtil;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 public class APISerializer {
@@ -105,7 +106,10 @@ public class APISerializer {
             apiElt.addAttribute("transports", Constants.TRANSPORT_HTTPS, null);
         }
 
-        CommentListUtil.serializeComments(apiElt, api.getCommentsList());
+        List<String> commentsList = api.getCommentsList();
+        if (commentsList != null) {
+            CommentListUtil.serializeComments(apiElt, commentsList);
+        }
 
         return apiElt;
     }

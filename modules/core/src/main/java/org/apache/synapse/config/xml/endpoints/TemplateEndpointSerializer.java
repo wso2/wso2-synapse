@@ -30,6 +30,7 @@ import org.apache.synapse.endpoints.TemplateEndpoint;
 import org.apache.synapse.util.CommentListUtil;
 
 import javax.xml.namespace.QName;
+import java.util.List;
 import java.util.Map;
 
 public class TemplateEndpointSerializer extends EndpointSerializer {
@@ -71,7 +72,10 @@ public class TemplateEndpointSerializer extends EndpointSerializer {
             }
         }
 
-        CommentListUtil.serializeComments(endpointElement, ((TemplateEndpoint) epr).getCommentsList());
+        List<String> commentsList = ((TemplateEndpoint) epr).getCommentsList();
+        if (commentsList != null) {
+            CommentListUtil.serializeComments(endpointElement, commentsList);
+        }
 
         return endpointElement;
     }
