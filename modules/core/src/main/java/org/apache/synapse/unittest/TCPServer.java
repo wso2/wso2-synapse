@@ -35,17 +35,30 @@ public class TCPServer {
 
     /**
      * Initializing TCP server for main unit testing server.
-     *
-     * @param port port server starts
      */
-    public void initialize(int port) {
+    public void initialize() {
+        //check unit test received port, if its null then set default port as 9008
+        String requestPort = System.getProperty("synapseTestPort");
+        if (requestPort == null || requestPort.isEmpty()) {
+            requestPort = "9008";
+        }
+
+        //check port for TCP server connection and initialized socket
         try {
-            serverSocket = new ServerSocket(port);
-            log.info("Synapse unit testing agent has been established on port " + port);
-            log.info("Waiting for client request");
+            int unitTestingAgentPort = Integer.parseInt(requestPort);
+            serverSocket = new ServerSocket(unitTestingAgentPort);
+            log.info("Synapse unit testing agent has been established on port " + unitTestingAgentPort);
+            if (log.isDebugEnabled()) {
+                log.debug("Waiting for client request");
+            }
+
+            //allow for the client requests
             acceptConnection();
+        } catch (NumberFormatException e) {
+            log.error("Given TCP port \"" + requestPort + "\" is not in valid format, " +
+                    "failed to start unit testing framework", e);
         } catch (IOException e) {
-            log.error(e);
+            log.error("Error in initializing TCP connection in given port " + requestPort, e);
         }
     }
 
