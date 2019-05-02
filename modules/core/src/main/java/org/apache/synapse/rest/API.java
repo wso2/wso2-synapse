@@ -26,6 +26,7 @@ import org.apache.http.protocol.HTTP;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseArtifact;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
@@ -50,13 +51,18 @@ import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 
 import java.util.*;
 
-public class API extends AbstractRESTProcessor implements ManagedLifecycle, AspectConfigurable {
+public class API extends AbstractRESTProcessor implements ManagedLifecycle, AspectConfigurable, SynapseArtifact {
 
     private String host;
     private int port = -1;
     private String context;
     private Map<String,Resource> resources = new LinkedHashMap<String,Resource>();
     private List<Handler> handlers = new ArrayList<Handler>();
+
+    /**
+     * The Api description. This could be optional informative text about the Api.
+     */
+    private String description;
 
     private int protocol = RESTConstants.PROTOCOL_HTTP_AND_HTTPS;
 
@@ -609,5 +615,15 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
             resource.setComponentStatisticsId(holder);
         }
         StatisticIdentityGenerator.reportingEndEvent(apiId, ComponentType.API, holder);
+    }
+
+    @Override
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
     }
 }
