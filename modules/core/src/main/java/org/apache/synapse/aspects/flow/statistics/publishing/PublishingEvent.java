@@ -102,6 +102,10 @@ public class PublishingEvent {
 	public void setComponentName(String componentName) {
 		this.componentName = componentName;
 	}
+	
+	public Integer getComponentIndex() {
+		return componentIndex;
+	}
 
 	public long getStartTime() {
 		return startTime;
