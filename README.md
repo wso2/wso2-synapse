@@ -16,7 +16,7 @@ Welcome to the WSO2-Synapse source repository. This repository contains the WSO2
 
 # How to Contribute
 
-* Please report issues at [WSO2 JIRA](https://wso2.org/jira/browse/ESBJAVA)
+* Please report issues at [Github](https://github.com/wso2/product-ei/issues)
 * Send your pull requests to [wso2-synapse](https://github.com/wso2/wso2-synapse) repository
 
 # Contact us
