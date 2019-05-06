@@ -33,6 +33,7 @@ import org.apache.synapse.commons.json.Constants;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.jaxen.JaxenException;
 
 import java.util.ArrayList;
@@ -96,6 +97,8 @@ public class EnrichMediator extends AbstractMediator {
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
             }
         }
+
+        org.apache.axis2.context.MessageContext axis2MsgCtx = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
 
         JsonParser jsonParser = new JsonParser();
 
@@ -163,11 +166,15 @@ public class EnrichMediator extends AbstractMediator {
             // Removing the JSON stream since the payload is now updated.
             // Json-eval and other JsonUtil functions now needs to convert XML -> JSON
             // related to wso2/product-ei/issues/1771
-            org.apache.axis2.context.MessageContext axis2MsgCtx = ((Axis2MessageContext) synCtx)
-                    .getAxis2MessageContext();
             if (target.getTargetType() == EnrichMediator.BODY || target.getTargetType() == EnrichMediator.CUSTOM) {
                 axis2MsgCtx.removeProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
             }
+        }
+
+        //  If we enrich the body or envelope we need to remove the NO_ENTITY_BODY property
+        //  Related issue https://github.com/wso2/product-ei/issues/3586
+        if (target.getTargetType() == EnrichMediator.BODY || target.getTargetType() == EnrichMediator.ENVELOPE) {
+            axis2MsgCtx.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
         }
 
         synLog.traceOrDebug("End : Enrich mediator");
