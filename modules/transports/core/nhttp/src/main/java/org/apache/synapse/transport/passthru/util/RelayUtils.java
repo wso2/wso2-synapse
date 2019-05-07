@@ -24,6 +24,7 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.addressing.AddressingConstants;
 import org.apache.axis2.addressing.AddressingHelper;
+import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.WSDL2Constants;
 import org.apache.axis2.engine.AxisConfiguration;
@@ -247,24 +248,26 @@ public class RelayUtils {
      *
      */
     public static boolean shouldOverwriteContentType(MessageContext msgContext, TargetRequest request) {
-
         boolean builderInvoked = Boolean.TRUE.equals(msgContext
                 .getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED));
-
         boolean noEntityBodySet =
                 Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.NO_ENTITY_BODY));
-
         Map<String, LinkedHashSet<String>> headers = request.getHeaders();
         boolean contentTypeInRequest = false;
         if (headers.size() != 0 && (headers.get("Content-Type") != null || headers.get("content-type") != null)) {
             contentTypeInRequest = true;
         }
-        
-        // If builder is not invoked, which means the passthrough scenario, we should overwrite the content-type 
+        boolean isDefaultContentTypeEnabled = false;
+        ConfigurationContext configurationContex = msgContext.getConfigurationContext();
+        if (configurationContex != null && configurationContex.getAxisConfiguration()
+                .getParameter(NhttpConstants.REQUEST_CONTENT_TYPE) != null) {
+            isDefaultContentTypeEnabled = true;
+        }
+        // If builder is not invoked, which means the passthrough scenario, we should overwrite the content-type
         // depending on the presence of the incoming content-type.
         // If builder is invoked and no entity body property is not set (which means there is a payload in the request)
         // we should consider overwriting the content-type.
-        return (builderInvoked && !noEntityBodySet) || contentTypeInRequest;
+        return (builderInvoked && !noEntityBodySet) || contentTypeInRequest || isDefaultContentTypeEnabled;
     }
 
     /**
