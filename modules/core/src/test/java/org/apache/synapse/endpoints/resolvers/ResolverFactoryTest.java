@@ -49,6 +49,22 @@ public class ResolverFactoryTest extends TestCase {
         assertEquals(synapseVariable, resolver.resolve());
     }
 
+    public void testGetDefaultResolverUrl() {
+        String synapseVariable = "$url";
+        Resolver resolver = ResolverFactory.getInstance().getResolver(synapseVariable);
+        assertNotNull(resolver);
+        assertTrue(resolver instanceof DefaultResolver);
+        assertEquals(synapseVariable, resolver.resolve());
+    }
+
+    public void testGetDefaultResolverUri() {
+        String synapseVariable = "{uri.var.temp}";
+        Resolver resolver = ResolverFactory.getInstance().getResolver(synapseVariable);
+        assertNotNull(resolver);
+        assertTrue(resolver instanceof DefaultResolver);
+        assertEquals(synapseVariable, resolver.resolve());
+    }
+
     @Test(expected = ResolverException.class)
     public void testGetUnknownResolver() {
         String synapseVariable = "$SYSTEM1:VAR";
