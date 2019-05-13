@@ -280,7 +280,7 @@ public class Target {
      */
     private void insertElementToBody(ArrayList<OMNode> sourceNodeList, OMElement e, SynapseLog synLog,
                                      MessageContext synCtx) {
-        if (action.equals(ACTION_REPLACE) && sourceNodeList.get(0) instanceof OMText) {
+        if (action.equals(ACTION_REPLACE) && !sourceNodeList.isEmpty() && sourceNodeList.get(0) instanceof OMText) {
             String sourceString = ((OMText)sourceNodeList.get(0)).getText();
             JsonElement jsonElement = jsonParser.parse(sourceString);
             if (jsonElement instanceof JsonObject || jsonElement instanceof JsonArray) {
