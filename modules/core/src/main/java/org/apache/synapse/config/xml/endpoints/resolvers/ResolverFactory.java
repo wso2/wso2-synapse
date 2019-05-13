@@ -30,11 +30,11 @@ import java.util.regex.Pattern;
  */
 public class ResolverFactory {
 
-    private final int RESOLVER_INDEX = 2;
+    private static final int RESOLVER_INDEX = 2;
     private static ResolverFactory resolverFactory = new ResolverFactory();
-    private final Pattern startPattern = Pattern.compile("(^[a-zA-Z0-9])|(^$)|(^\\{)");
     private final Pattern rePattern = Pattern.compile("(\\$)([a-zA-Z0-9]+):([_a-zA-Z0-9]+)");
     private static final Log log = LogFactory.getLog(MediatorFactoryFinder.class);
+    private static final String SYSTEM_VARIABLE_PREFIX = "$SYSTEM";
 
     private Map<String, Class<? extends Resolver>> resolverMap = new HashMap<>();
 
@@ -57,31 +57,34 @@ public class ResolverFactory {
      * @return resolver object
      */
     public Resolver getResolver(String input) {
-        Matcher matcher = startPattern.matcher(input);
-        if (matcher.find()) {
-            Resolver resolver = new DefaultResolver();
-            resolver.setVariable(input);
-            return resolver;
+
+        if (input == null) {
+            return null;
         }
-        matcher = rePattern.matcher(input);
-        Resolver resolverObject = null;
-        if (matcher.find()) {
-            Class<? extends Resolver> resolverClass = resolverMap.get(matcher.group(RESOLVER_INDEX).toLowerCase());
-            if (resolverClass != null) {
-                try {
-                    resolverObject = resolverClass.newInstance();
-                    resolverObject.setVariable(matcher.group(3));
-                } catch (IllegalAccessException | InstantiationException e) {
+
+        if (input.startsWith(SYSTEM_VARIABLE_PREFIX)) {
+            Matcher matcher = rePattern.matcher(input);
+            Resolver resolverObject = null;
+            if (matcher.find()) {
+                Class<? extends Resolver> resolverClass = resolverMap.get(matcher.group(RESOLVER_INDEX).toLowerCase());
+                if (resolverClass != null) {
+                    try {
+                        resolverObject = resolverClass.newInstance();
+                        resolverObject.setVariable(matcher.group(3));
+                        return resolverObject;
+                    } catch (IllegalAccessException | InstantiationException e) {
+                        throw new ResolverException("Resolver could not be found");
+                    }
+                } else {
                     throw new ResolverException("Resolver could not be found");
                 }
             }
         }
-        if (resolverObject != null) {
-            return resolverObject;
-        }
-        else {
-            throw new ResolverException("Resolver could not be found");
-        }
+
+        Resolver resolver = new DefaultResolver();
+        resolver.setVariable(input);
+        return resolver;
+
     }
 
     private void registerResolvers() {
