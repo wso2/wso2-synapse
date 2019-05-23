@@ -18,6 +18,8 @@
 
 package org.apache.synapse.commons.json;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.axiom.om.impl.llom.OMElementImpl;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.synapse.commons.SynapseCommonsException;
@@ -285,7 +287,7 @@ public final class JsonUtil {
                 throw new AxisFault("Could not write JSON stream.", e);
             }
         } else if (element != null) { // No JSON stream found. Convert the existing element to JSON.
-            writeAsJson(element, out);
+            writeAsJson(element, out, populateRequiredProperties(messageContext));
         } else if (jsonStr != null) { // No JSON stream or element found. See if there's a JSON_STRING set.
             try {
                 out.write(jsonStr.getBytes());
@@ -298,6 +300,18 @@ public final class JsonUtil {
             logger.error("#writeAsJson. Payload could not be written as JSON. MessageID: " + messageContext.getMessageID());
             throw new AxisFault("Payload could not be written as JSON.");
         }
+    }
+
+    /**
+     * Returning a HashMap with required properties which used for JSON conversion.
+     *
+     * @param msgCtx Message context
+     * @return Required properties
+     */
+    private static Map populateRequiredProperties(MessageContext msgCtx) {
+        Map<String, String> requiredProperties = new HashMap<>();
+        requiredProperties.put(Constants.PRESERVE_SPACES, (String) msgCtx.getProperty(Constants.PRESERVE_SPACES));
+        return requiredProperties;
     }
 
     /**
@@ -367,16 +381,49 @@ public final class JsonUtil {
      * @throws AxisFault
      */
     public static void writeAsJson(OMElement element, OutputStream outputStream) throws AxisFault {
-        XMLEventReader xmlEventReader = null;
-        XMLEventWriter jsonWriter = null;
         if (element == null) {
-            logger.error("#writeAsJson. OMElement is null. Cannot convert to JSON.");
             throw new AxisFault("OMElement is null. Cannot convert to JSON.");
         }
         if (outputStream == null) {
             return;
         }
         transformElement(element, true);
+        convertOMElementToJson(element, outputStream);
+    }
+
+    /**
+     * Converts an XML element to its JSON representation and writes it to an output stream.<br/>
+     * Note that this method removes all existing namespace declarations and namespace prefixes of the provided XML
+     * element<br/>
+     *
+     * @param element      XML element of which JSON representation is expected.
+     * @param outputStream Output Stream to write the JSON representation.<br/>
+     *                     At the end of a successful conversion, its flush method will be called.
+     * @param properties   Message context properties
+     * @throws AxisFault
+     */
+    public static void writeAsJson(OMElement element, OutputStream outputStream, Map properties) throws
+            AxisFault {
+        if (element == null) {
+            throw new AxisFault("OMElement is null. Cannot convert to JSON.");
+        }
+        if (outputStream == null) {
+            return;
+        }
+        transformElement(element, properties, true);
+        convertOMElementToJson(element, outputStream);
+    }
+
+    /**
+     * Convert OMElement to JSON.
+     *
+     * @param element      OMElement
+     * @param outputStream Output stream
+     * @throws AxisFault
+     */
+    private static void convertOMElementToJson(OMElement element, OutputStream outputStream) throws AxisFault {
+        XMLEventReader xmlEventReader = null;
+        XMLEventWriter jsonWriter = null;
         try {
             if (JSON_VALUE.getLocalPart().equals(element.getLocalName())) {
                 outputStream.write(element.getText().getBytes());
@@ -396,7 +443,6 @@ public final class JsonUtil {
             jsonWriter.add(xmlEventReader);
             outputStream.flush();
         } catch (XMLStreamException e) {
-            logger.error("#writeAsJson. Could not convert OMElement to JSON. Invalid XML payload. Error>>> " + e.getLocalizedMessage());
             throw new AxisFault("Could not convert OMElement to JSON. Invalid XML payload.", e);
         } catch (IOException e) {
             logger.error("#writeAsJson. Could not convert OMElement to JSON. Error>>> " + e.getLocalizedMessage());
@@ -454,16 +500,64 @@ public final class JsonUtil {
         }
     }
 
+    /**
+     * Removes XML namespace declarations, and namespace prefixes from an XML element.
+     *
+     * @param element       Source XML element
+     * @param processAttrbs Whether to remove the namespaces from attributes as well
+     * @param properties    Message context properties
+     */
+    public static void transformElement(OMElement element, Map properties, boolean processAttrbs) {
+        if (element == null) {
+            return;
+        }
+        removeIndentations(element, properties);
+        if (!preserverNamespacesForJson) {
+            removeNamespaces(element, processAttrbs);
+        }
+        if (logger.isDebugEnabled()) {
+            logger.debug("#transformElement. Transformed OMElement. Result: " + element.toString());
+        }
+    }
+
     private static void removeIndentations(OMElement elem) {
         Iterator children = elem.getChildren();
         while (children.hasNext()) {
             OMNode child = (OMNode) children.next();
             if (child instanceof OMText) {
-                if ("".equals(((OMText) child).getText().trim())) {
+                if ((((OMText) child).getText().trim()).isEmpty()) {
                     children.remove();
                 }
             } else if (child instanceof OMElement) {
                 removeIndentations((OMElement) child);
+            }
+        }
+    }
+
+    /**
+     * Remove indentations of a OMElement.
+     * If PRESERVE_SPACES property in the requiredProperties is true, spaces inside XML elements will be preserved.
+     *
+     * @param elem       OMElement needed to remove indentations
+     * @param properties Required properties
+     */
+    private static void removeIndentations(OMElement elem, Map properties) {
+        Iterator children = elem.getChildren();
+        boolean preserveSpaces = properties.get(Constants.PRESERVE_SPACES) != null
+                && Boolean.parseBoolean((String) properties.get(Constants.PRESERVE_SPACES));
+
+        while (children.hasNext()) {
+            OMNode child = (OMNode) children.next();
+            if (child instanceof OMText) {
+                // preserve spaces of OMText if preserve spaces property is true
+                if (preserveSpaces && child.getPreviousOMSibling() == null && child.getNextOMSibling() == null) {
+                    continue;
+                }
+                if ((((OMText) child).getText().trim()).isEmpty()) {
+                    children.remove();
+                }
+            } else if (child instanceof OMElement) {
+                removeIndentations((OMElement) child, properties);
             }
         }
     }
