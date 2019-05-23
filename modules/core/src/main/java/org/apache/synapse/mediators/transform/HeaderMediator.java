@@ -55,6 +55,7 @@ public class HeaderMediator extends AbstractMediator {
 
     public static final int ACTION_SET = 0;
     public static final int ACTION_REMOVE = 1;
+    private static final String EMPTY_STRING = "";
 
     /** The qName of the header @see HeaderType */
     private QName qName = null;
@@ -98,7 +99,12 @@ public class HeaderMediator extends AbstractMediator {
             expression.stringValueOf(synCtx));        
         
         if (scope == null || XMLConfigConstants.SCOPE_DEFAULT.equals(scope)) {
-            if (action == ACTION_SET) {            	
+            if (action == ACTION_SET) {
+
+                if (value == null) {
+                    value = EMPTY_STRING;
+                    log.warn("Setting SOAP header : " + qName + " to empty as evaluated value is null");
+                }
 
 	    	    if (synLog.isTraceOrDebugEnabled()) {
 	    	        synLog.traceOrDebug("Set SOAP header : " + qName + " to : " + value);
@@ -171,7 +177,11 @@ public class HeaderMediator extends AbstractMediator {
         } else if (XMLConfigConstants.SCOPE_TRANSPORT.equals(scope)) {        	
         	String headerName = qName.getLocalPart();
             if (action == ACTION_SET) {
-            	
+                if (value == null) {
+                    value = EMPTY_STRING;
+                    log.warn("Setting HTTP header : " + headerName + " to empty as evaluated value is null");
+                }
+
 			    if (synLog.isTraceOrDebugEnabled()) {
 			        synLog.traceOrDebug("Set HTTP header : " + headerName + " to : " + value);
 			    }
