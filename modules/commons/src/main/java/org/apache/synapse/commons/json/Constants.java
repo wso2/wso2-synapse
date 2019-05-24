@@ -116,4 +116,7 @@ public final class Constants {
     /*Property which holds the synapse commons json stream of payload*/
     public static final String ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM = "org.apache.synapse.commons.json.JsonInputStream";
 
+    // Property to preserve spaces in XML -> JSON transformation
+    public static final String PRESERVE_SPACES = "PRESERVE_SPACES";
+
 }
