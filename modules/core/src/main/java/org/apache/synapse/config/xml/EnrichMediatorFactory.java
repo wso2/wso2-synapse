@@ -25,6 +25,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSyntaxException;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
@@ -100,12 +101,17 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
             if (source.getInlineOMNode() instanceof OMText) {
                 String inlineString = ((OMTextImpl) source.getInlineOMNode()).getText();
                 JsonParser parser = new JsonParser();
-                JsonElement element = parser.parse(inlineString);
-                if (!(element instanceof JsonObject || element instanceof JsonArray ||
-                        element instanceof JsonPrimitive)) {
+                try {
+                    JsonElement element = parser.parse(inlineString);
+                    if (!(element instanceof JsonObject || element instanceof JsonArray ||
+                            element instanceof JsonPrimitive)) {
+                        isInlineSourceXML = true;
+                    }
+                } catch (JsonSyntaxException ex) {
+                    // cannot parse with JSON. Going ahead with XML
                     isInlineSourceXML = true;
                 }
-            } else if (source.getInlineOMNode() instanceof OMElement){
+            } else if (source.getInlineOMNode() instanceof OMElement) {
                 isInlineSourceXML = true;
             }
         }
