@@ -92,7 +92,12 @@ public class RESTUtils {
         return url;
     }
 
-    public static void mapQueryParamsToMessageProperties(MessageContext synCtx) {
+    /**
+     * Populate Message context properties for the query parameters extracted from the url
+     *
+     * @param synCtx MessageContext of the request
+     */
+    public static void populateQueryParamsToMessageContext(MessageContext synCtx) {
 
         String path = RESTUtils.getFullRequestPath(synCtx);
         String method = (String) synCtx.getProperty(RESTConstants.REST_METHOD);
@@ -101,7 +106,8 @@ public class RESTUtils {
         if (queryIndex != -1) {
             String query = path.substring(queryIndex + 1);
             String[] entries = query.split(RESTConstants.QUERY_PARAM_DELIMITER);
-            String name = null, value ;
+            String name = null;
+            String value;
             for (String entry : entries) {
                 int index = entry.indexOf('=');
                 if (index != -1) {

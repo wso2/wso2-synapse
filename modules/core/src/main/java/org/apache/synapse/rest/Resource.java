@@ -313,7 +313,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
             }
 
             synCtx.setProperty(RESTConstants.SYNAPSE_RESOURCE, name);
-            RESTUtils.mapQueryParamsToMessageProperties(synCtx);
+            RESTUtils.populateQueryParamsToMessageContext(synCtx);
         }
 
         SequenceMediator sequence = synCtx.isResponse() ? outSequence : inSequence;
