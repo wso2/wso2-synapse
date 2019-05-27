@@ -99,7 +99,7 @@ public class RESTUtils {
      */
     public static void populateQueryParamsToMessageContext(MessageContext synCtx) {
 
-        String path = RESTUtils.getFullRequestPath(synCtx);
+        String path = getFullRequestPath(synCtx);
         String method = (String) synCtx.getProperty(RESTConstants.REST_METHOD);
 
         int queryIndex = path.indexOf('?');
