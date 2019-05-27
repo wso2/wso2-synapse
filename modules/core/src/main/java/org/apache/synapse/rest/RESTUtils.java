@@ -21,7 +21,9 @@ package org.apache.synapse.rest;
 import org.apache.axis2.Constants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpStatus;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.dispatch.RESTDispatcher;
@@ -30,8 +32,10 @@ import org.apache.synapse.rest.dispatch.URLMappingBasedDispatcher;
 import org.apache.synapse.rest.dispatch.URITemplateBasedDispatcher;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,6 +90,54 @@ public class RESTUtils {
         }
         synCtx.setProperty(RESTConstants.REST_FULL_REQUEST_PATH, url);
         return url;
+    }
+
+    /**
+     * Populate Message context properties for the query parameters extracted from the url
+     *
+     * @param synCtx MessageContext of the request
+     */
+    public static void populateQueryParamsToMessageContext(MessageContext synCtx) {
+
+        String path = getFullRequestPath(synCtx);
+        String method = (String) synCtx.getProperty(RESTConstants.REST_METHOD);
+
+        int queryIndex = path.indexOf('?');
+        if (queryIndex != -1) {
+            String query = path.substring(queryIndex + 1);
+            String[] entries = query.split(RESTConstants.QUERY_PARAM_DELIMITER);
+            String name = null;
+            String value;
+            for (String entry : entries) {
+                int index = entry.indexOf('=');
+                if (index != -1) {
+                    try {
+                        name = entry.substring(0, index);
+                        value = URLDecoder.decode(entry.substring(index + 1),
+                                RESTConstants.DEFAULT_ENCODING);
+                        synCtx.setProperty(RESTConstants.REST_QUERY_PARAM_PREFIX + name, value);
+                    } catch (UnsupportedEncodingException uee) {
+                        handleException("Error processing " + method + " request for : " + path, uee);
+                    } catch (IllegalArgumentException e) {
+                        String errorMessage = "Error processing " + method + " request for : " + path
+                                + " due to an error in the request sent by the client";
+                        synCtx.setProperty(SynapseConstants.ERROR_CODE, HttpStatus.SC_BAD_REQUEST);
+                        synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, errorMessage);
+                        org.apache.axis2.context.MessageContext inAxisMsgCtx =
+                                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+                        inAxisMsgCtx.setProperty(SynapseConstants.HTTP_SC, HttpStatus.SC_BAD_REQUEST);
+                        handleException(errorMessage, e);
+                    }
+                } else {
+                    // If '=' sign isn't present in the entry means that the '&' character is part of
+                    // the query parameter value. If so query parameter value should be updated appending
+                    // the remaining characters.
+                    String existingValue = (String) synCtx.getProperty(RESTConstants.REST_QUERY_PARAM_PREFIX + name);
+                    value = RESTConstants.QUERY_PARAM_DELIMITER + entry;
+                    synCtx.setProperty(RESTConstants.REST_QUERY_PARAM_PREFIX + name, existingValue + value);
+                }
+            }
+        }
     }
 
     public static String getSubRequestPath(MessageContext synCtx) {
