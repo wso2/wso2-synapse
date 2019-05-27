@@ -58,6 +58,8 @@ public class ClientWorker implements Runnable {
     private TargetResponse response = null;
     /** weather a body is expected or not */
     private boolean expectEntityBody = true;
+    /** the axis2 message context of the request */
+    private MessageContext requestMessageContext;
 
     public ClientWorker(TargetConfiguration targetConfiguration,
                         MessageContext outMsgCtx,
@@ -65,7 +67,7 @@ public class ClientWorker implements Runnable {
         this.targetConfiguration = targetConfiguration;
         this.response = response;
         this.expectEntityBody = response.isExpectResponseBody();
-
+        this.requestMessageContext = outMsgCtx;
         Map<String,String> headers = response.getHeaders();
         Map excessHeaders = response.getExcessHeaders();
 
@@ -186,13 +188,27 @@ public class ClientWorker implements Runnable {
                 outMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID));
     }
 
-    public void run() {
+    private void initTenantInfo() {
 
         CustomLogSetter.getInstance().clearThreadLocalContent();
         TenantInfoInitiator tenantInfoInitiator = TenantInfoInitiatorProvider.getTenantInfoInitiator();
         if (tenantInfoInitiator != null) {
+            ServerWorker serverWorker = (ServerWorker) requestMessageContext.getProperty(Constants.OUT_TRANSPORT_INFO);
+            if (serverWorker != null) {
+                // Request received to Synapse is originated from through the HTTP transport
+                SourceRequest sourceRequest = serverWorker.getSourceRequest();
+                if (sourceRequest != null) {
+                    tenantInfoInitiator.initTenantInfo(sourceRequest.getUri());
+                    return;
+                }
+            }
             tenantInfoInitiator.initTenantInfo();
         }
+    }
+
+    public void run() {
+
+        initTenantInfo();
         if (responseMsgCtx == null) {
             cleanup();
             return;
@@ -345,10 +361,12 @@ public class ClientWorker implements Runnable {
     /**
      * Perform cleanup of ClientWorker
      */
-    private void cleanup () {
+    private void cleanup() {
         //clean threadLocal variables
         MessageContext.destroyCurrentMessageContext();
+        TenantInfoInitiator tenantInfoInitiator = TenantInfoInitiatorProvider.getTenantInfoInitiator();
+        if (tenantInfoInitiator != null) {
+            tenantInfoInitiator.cleanTenantInfo();
+        }
     }
-
-
 }
