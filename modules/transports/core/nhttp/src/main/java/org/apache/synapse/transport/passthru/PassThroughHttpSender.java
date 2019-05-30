@@ -600,15 +600,15 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                             contentTypeValueInMsgCtx.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_FORM_DATA))) {
 
                        // adding charset only if charset is not available,
-                       if (contentTypeValueInMsgCtx.indexOf(HTTPConstants.CHAR_SET_ENCODING) == -1
-                           && format != null) {
+                       if (format != null && contentTypeValueInMsgCtx.indexOf(HTTPConstants.CHAR_SET_ENCODING) == -1 &&
+                           !"false".equals(msgContext.getProperty(PassThroughConstants.SET_CHARACTER_ENCODING))) {
 							String encoding = format.getCharSetEncoding();
 							if (encoding != null) {
 								sourceResponse.removeHeader(HTTP.CONTENT_TYPE);
 								contentTypeValueInMsgCtx += "; charset=" + encoding;
 							}
 						}
-                	   
+
                        sourceResponse.addHeader(HTTP.CONTENT_TYPE, contentTypeValueInMsgCtx);
                        isContentTypeSetFromMsgCtx = true;
                    }
