@@ -1237,7 +1237,7 @@
       <com.googlecode.libphonenumber.version>7.4.2.wso2v1</com.googlecode.libphonenumber.version>
       <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
       <jacoco.agent.version>0.7.9</jacoco.agent.version>
-      <jacoco.ant.version>0.7.9</jacoco.ant.version>
+      <jacoco.ant.version>0.8.4</jacoco.ant.version>
       <powermock.version>1.7.1</powermock.version>
       <dataprovider.version>1.13.1</dataprovider.version>
       <activemq.version>5.2.0</activemq.version>
