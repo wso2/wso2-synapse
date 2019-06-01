@@ -1156,7 +1156,7 @@
       <httpcore-nio.wso2.version>4.3.3-wso2v4</httpcore-nio.wso2.version>
       <hc.httpclient.version>4.3.2</hc.httpclient.version>
       <aspectj.version>1.8.5</aspectj.version>
-      <spring.version>1.2.8</spring.version>
+      <spring.version>5.1.7.RELEASE</spring.version>
       <commons-codec.version>1.12</commons-codec.version>
       <javax.activation.version>1.1</javax.activation.version>
       <!-- Sets the source encoding to UTF-8 -->
