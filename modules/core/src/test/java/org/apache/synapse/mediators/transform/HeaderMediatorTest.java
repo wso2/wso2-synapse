@@ -58,11 +58,11 @@ public class HeaderMediatorTest extends TestCase {
         assertTrue(synCtx.getTo() == null);
     }
 
-    public void testSimpleHTTPHeaderSetAndRemove() throws Exception {    
-    	Map transportHeaders;     	
+    public void testSimpleHTTPHeaderSetAndRemove() throws Exception {
+    	Map transportHeaders;
     	String httpHeaderName = "content-type";
     	String httpHeaderValue = "application/json";
-    	
+
         HeaderMediator headerMediator = new HeaderMediator();
         headerMediator.setQName(new QName(httpHeaderName));
         headerMediator.setValue(httpHeaderValue);
@@ -71,7 +71,7 @@ public class HeaderMediatorTest extends TestCase {
         // invoke transformation, with static enveope
         MessageContext synCtx = TestUtils.createLightweightSynapseMessageContext("<empty/>");
         headerMediator.mediate(synCtx);
-        
+
         org.apache.axis2.context.MessageContext axisCtx = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         transportHeaders = (Map) axisCtx.getProperty(
                 org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
@@ -81,13 +81,13 @@ public class HeaderMediatorTest extends TestCase {
         // set the header mediator as a remove-header
         headerMediator.setAction(HeaderMediator.ACTION_REMOVE);
         headerMediator.mediate(synCtx);
-                
+
         transportHeaders = (Map) axisCtx.getProperty(
                 org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-        
+
         assertNull(transportHeaders.get(httpHeaderName));
-    }    
-    
+    }
+
     public void testSimpleHeaderXPathSetAndRemove() throws Exception {
 
         HeaderMediator headerMediator = new HeaderMediator();
@@ -126,18 +126,29 @@ public class HeaderMediatorTest extends TestCase {
     }
 
     public void testEmbeddedXml() throws Exception {
-        String simpleHeader =  "<header name=\"m:simpleHeader\" value=\"Simple Header\" xmlns:m=\"http://org.synapse.example\"/>";
-        String complexHeader = "<header><m:complexHeader xmlns:m=\"http://org.synapse.example\"><property key=\"k1\" value=\"v1\"/><property key=\"k2\" value=\"v2\"/></m:complexHeader></header>";
-        String removeHeader = "<header name=\"m:complexHeader\" action=\"remove\" xmlns:m=\"http://org.synapse.example\"/>";
+        String simpleHeader =  "<header name=\"m:simpleHeader\" " +
+                "value=\"Simple Header\" xmlns:m=\"http://org.synapse.example\"/>";
+        String complexHeader = "<header><m:complexHeader xmlns:m=\"http://org.synapse.example\"><property key=\"k1\" " +
+                "value=\"v1\"/><property key=\"k2\" value=\"v2\"/></m:complexHeader></header>";
+        String removeHeader = "<header name=\"m:complexHeader\" " +
+                "action=\"remove\" xmlns:m=\"http://org.synapse.example\"/>";
+
+        String simpleJSONPathHeader = "<header name=\"m:simpleHeader\" value=\"json-eval($.simpleHeader)\" " +
+                "xmlns:m=\"http://org.synapse.example\"/>";
 
         HeaderMediatorFactory fac = new HeaderMediatorFactory();
         try {
             // Adding headers.
             MessageContext synCtx = TestUtils.getTestContext("<empty/>");
-            HeaderMediator headerMediator = (HeaderMediator) fac.createMediator(AXIOMUtil.stringToOM(simpleHeader), new Properties());
+            HeaderMediator headerMediator = (HeaderMediator) fac.createMediator(AXIOMUtil.stringToOM(simpleHeader),
+                    new Properties());
             headerMediator.mediate(synCtx);
             headerMediator = (HeaderMediator) fac.createMediator(AXIOMUtil.stringToOM(complexHeader), new Properties());
             headerMediator.mediate(synCtx);
+            headerMediator = (HeaderMediator) fac.createMediator(AXIOMUtil.stringToOM(simpleJSONPathHeader),
+                    new Properties());
+            headerMediator.mediate(synCtx);
+
             // Removing headers.
             headerMediator = (HeaderMediator) fac.createMediator(AXIOMUtil.stringToOM(removeHeader), new Properties());
             headerMediator.mediate(synCtx);
