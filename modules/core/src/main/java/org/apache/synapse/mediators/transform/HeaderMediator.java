@@ -32,10 +32,10 @@ import org.apache.axis2.addressing.RelatesTo;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
-import org.apache.synapse.util.xpath.SynapseXPath;
 
 import javax.xml.namespace.QName;
 import java.util.ArrayList;
@@ -66,7 +66,7 @@ public class HeaderMediator extends AbstractMediator {
     /** Optional embedded XML content of the header element */
     private List<OMElement> embeddedXmlContent = new ArrayList<OMElement>();
     /** An expression which should be evaluated, and the result set as the header value */
-    private SynapseXPath expression = null;
+    private SynapsePath expression = null;
     
     /** The scope which decides which header to update: SOAP or HTTP */
     private String scope = null; // null defaults to the SOAP header. 
@@ -325,7 +325,7 @@ public class HeaderMediator extends AbstractMediator {
         this.value = value;
     }
 
-    public SynapseXPath getExpression() {
+    public SynapsePath getExpression() {
         return expression;
     }
 
@@ -347,7 +347,7 @@ public class HeaderMediator extends AbstractMediator {
         return getQName() == null;
     }
 
-    public void setExpression(SynapseXPath expression) {
+    public void setExpression(SynapsePath expression) {
         this.expression = expression;
     }
 
