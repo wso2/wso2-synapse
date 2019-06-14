@@ -27,7 +27,7 @@ import org.apache.synapse.mediators.builtin.ForEachMediator;
  * <p>Serialize for each mediator as below : </p>
  * <p/>
  * <pre>
- * &lt;foreach expression="xpath" [sequence="sequence_ref"] [id="foreach_id"] &gt;
+ * &lt;foreach expression="xpath|jsonpath" [sequence="sequence_ref"] [id="foreach_id"] &gt;
  *     &lt;sequence&gt;
  *       (mediator)+
  *     &lt;/sequence&gt;?
@@ -57,7 +57,7 @@ public class ForEachMediatorSerializer extends AbstractMediatorSerializer {
         }
 
         if (forEachMed.getExpression() != null) {
-            SynapseXPathSerializer.serializeXPath(forEachMed.getExpression(),
+            SynapsePathSerializer.serializePath(forEachMed.getExpression(),
                     forEachElem, "expression");
         } else {
             handleException("Missing expression of the ForEach which is required.");

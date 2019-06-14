@@ -19,6 +19,11 @@
 
 package org.apache.synapse.mediators.builtin;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMContainer;
 import org.apache.axiom.om.OMNode;
@@ -31,12 +36,16 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.commons.json.Constants;
+import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.util.MessageHelper;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 
 import java.util.ArrayList;
@@ -44,8 +53,8 @@ import java.util.List;
 
 public class ForEachMediator extends AbstractMediator implements ManagedLifecycle {
 
-    /* The xpath that will list the elements to be split */
-    private SynapseXPath expression = null;
+    /* The path that will list the elements to be split */
+    private SynapsePath expression = null;
 
     /* Reference to the synapse environment */
     private SynapseEnvironment synapseEnv;
@@ -96,85 +105,147 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
 
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Saved original message property : " + originalMsgPropName +
-                                " = " + originalEnvelope +
-                                "Initialized foreach counter property, " + counterPropName +
-                                " = " + msgCounter);
+                    " = " + originalEnvelope +
+                    "Initialized foreach counter property, " + counterPropName +
+                    " = " + msgCounter);
         }
 
-        SOAPEnvelope processingEnvelope = synCtx.getEnvelope();
+        if (expression != null && expression instanceof SynapseJsonPath) {
+            // SynapseJSONPath implementation reads the JSON stream and execute the JSON path.
+            Object resultValue = ((SynapseJsonPath) expression).evaluate(synCtx);
 
-        // get the iteration elements and iterate through the list, this call
-        // will also detach all the iteration elements from the message and deduce the
-        // parent node to merge back the mediated content
-        DetachedElementContainer detachedElementContainer =
-                getDetachedMatchingElements(processingEnvelope, synCtx, expression);
+            //Gson parser to parse the string json objects
+            JsonParser parser = new JsonParser();
 
-        List<?> splitElements = detachedElementContainer.getDetachedElements();
+            //Complete json payload read from the synCtx
+            String jsonPayload = JsonUtil.jsonPayloadToString(((Axis2MessageContext) synCtx).getAxis2MessageContext());
 
-        int splitElementCount = splitElements.size();
-        if (splitElementCount == 0) {  // Continue the message flow if no matching elements found
-            return true;
-        }
+            DocumentContext parsedJsonPayload = JsonPath.parse(jsonPayload);
 
-        OMContainer parent = detachedElementContainer.getParent();
-        if (parent == null) {
-            handleException("Error detecting parent element to merge", synCtx);
-        }
-        if (synLog.isTraceOrDebugEnabled()) {
-            synLog.traceOrDebug("Splitting with XPath : " + expression + " resulted in " + splitElementCount +
-                                " elements. Parent node for merging is : " + parent.toString());
-        }
+            //Check whether the JSON element expressed by the jsonpath is a valid JsonArray
+            //else throw an exception
+            if (!((parsedJsonPayload.read(((SynapseJsonPath) expression).getJsonPath())) instanceof JsonArray)) {
+                handleException("JSON element expressed by the path "
+                        + ((SynapseJsonPath) expression).getJsonPathExpression()
+                        + " is not a valid JSON array", synCtx);
+            }
 
-        // iterate through the split elements
-        for (Object element : splitElements) {
+            if (resultValue instanceof List) {
+                List list = (List) resultValue;
+                JsonArray modifiedPayloadArray = new JsonArray();
 
-            if (!(element instanceof OMNode)) {
-                handleException("Error splitting message with XPath : " + expression +
-                                " - result not an OMNode", synCtx);
+                if (synLog.isTraceOrDebugEnabled()) {
+                    synLog.traceOrDebug("Splitting with JSONPath : " + expression + " resulted in " + list.size() +
+                            " elements.");
+                }
+
+                for (Object object : list) {
+                    MessageContext iteratedMsgCtx = null;
+                    try {
+                        iteratedMsgCtx = getIteratedMessage(synCtx, object);
+                    } catch (AxisFault axisFault) {
+                        handleException("Error creating an iterated copy of the message", axisFault, synCtx);
+                    }
+                    boolean mediateResult = mediateSequence(iteratedMsgCtx);
+                    modifiedPayloadArray.add(EIPUtils.tryParseJsonString(parser,
+                            JsonUtil.jsonPayloadToString(((Axis2MessageContext) synCtx).getAxis2MessageContext())));
+                    msgCounter++;
+
+                    if (synLog.isTraceOrDebugEnabled()) {
+                        synLog.traceOrDebug("Incrementing foreach counter , " + counterPropName + " = "
+                                + msgCounter);
+                    }
+                    synCtx.setProperty(counterPropName, msgCounter);
+
+                    if (!mediateResult) { // break the loop if mediate result is false
+                        break;
+                    }
+                }
+                JsonElement jsonPayloadElement = parsedJsonPayload
+                        .set(((SynapseJsonPath) expression).getJsonPath(), modifiedPayloadArray).json();
+                try {
+                    JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
+                            jsonPayloadElement.toString(), true, true);
+                } catch (AxisFault af) {
+                    handleException("Error creating an iterated copy of the message", af, synCtx);
+                }
+            }
+        } else {
+            SOAPEnvelope processingEnvelope = synCtx.getEnvelope();
+
+            // get the iteration elements and iterate through the list, this call
+            // will also detach all the iteration elements from the message and deduce the
+            // parent node to merge back the mediated content
+            DetachedElementContainer detachedElementContainer =
+                    getDetachedMatchingElements(processingEnvelope, synCtx, (SynapseXPath) expression);
+
+            List<?> splitElements = detachedElementContainer.getDetachedElements();
+
+            int splitElementCount = splitElements.size();
+            if (splitElementCount == 0) {  // Continue the message flow if no matching elements found
+                return true;
+            }
+
+            OMContainer parent = detachedElementContainer.getParent();
+            if (parent == null) {
+                handleException("Error detecting parent element to merge", synCtx);
             }
             if (synLog.isTraceOrDebugEnabled()) {
-                synLog.traceOrDebug("Submitting " + msgCounter + " of " + splitElementCount +
-                                    " messages for processing in sequentially, in a general loop");
+                synLog.traceOrDebug("Splitting with XPath : " + expression + " resulted in " + splitElementCount +
+                        " elements. Parent node for merging is : " + parent.toString());
             }
 
-            MessageContext iteratedMsgCtx = null;
+            // iterate through the split elements
+            for (Object element : splitElements) {
+
+                if (!(element instanceof OMNode)) {
+                    handleException("Error splitting message with XPath : " + expression +
+                            " - result not an OMNode", synCtx);
+                }
+                if (synLog.isTraceOrDebugEnabled()) {
+                    synLog.traceOrDebug("Submitting " + msgCounter + " of " + splitElementCount +
+                            " messages for processing in sequentially, in a general loop");
+                }
+
+                MessageContext iteratedMsgCtx = null;
+                try {
+                    iteratedMsgCtx = getIteratedMessage(synCtx, processingEnvelope,
+                            (OMNode) element);
+
+                    //Removes the json stream property from the iterated context.
+                    ((Axis2MessageContext) iteratedMsgCtx).getAxis2MessageContext().
+                            removeProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
+
+                } catch (AxisFault axisFault) {
+                    handleException("Error creating an iterated copy of the message", axisFault, synCtx);
+                }
+                boolean mediateResult = mediateSequence(iteratedMsgCtx);
+                //add the mediated element to the parent from original message context
+                parent.addChild(iteratedMsgCtx.getEnvelope().getBody().getFirstElement());
+
+                msgCounter++;
+                if (synLog.isTraceOrDebugEnabled()) {
+                    synLog.traceOrDebug("Incrementing foreach counter , " + counterPropName + " = "
+                            + msgCounter);
+                }
+                synCtx.setProperty(counterPropName, msgCounter);
+
+                if (!mediateResult) { // break the loop if mediate result is false
+                    break;
+                }
+            }
+
+            //set the modified envelop to message context
             try {
-                iteratedMsgCtx = getIteratedMessage(synCtx, processingEnvelope,
-                                                    (OMNode) element);
-
-                //Removes the json stream property from the iterated context.
-                ((Axis2MessageContext) iteratedMsgCtx).getAxis2MessageContext().
-                        removeProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
-
+                synCtx.setEnvelope(processingEnvelope);
             } catch (AxisFault axisFault) {
-                handleException("Error creating an iterated copy of the message", axisFault, synCtx);
+                handleException("Error while setting the envelope to the message context", axisFault, synCtx);
             }
-            boolean mediateResult = mediateSequence(iteratedMsgCtx);
-            //add the mediated element to the parent from original message context
-            parent.addChild(iteratedMsgCtx.getEnvelope().getBody().getFirstElement());
-
-            msgCounter++;
-            if (synLog.isTraceOrDebugEnabled()) {
-                synLog.traceOrDebug("Incrementing foreach counter , " + counterPropName + " = "
-                                    + msgCounter);
-            }
-            synCtx.setProperty(counterPropName, msgCounter);
-
-            if (!mediateResult) { // break the loop if mediate result is false
-                break;
-            }
-        }
-
-        //set the modified envelop to message context
-        try {
-            synCtx.setEnvelope(processingEnvelope);
-        } catch (AxisFault axisFault) {
-            handleException("Error while setting the envelope to the message context", axisFault, synCtx);
         }
 
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("After mediation foreach counter, " + counterPropName + " = "
-                                + msgCounter);
+                    + msgCounter);
             synLog.traceOrDebug("End : For Each mediator");
         }
 
@@ -249,6 +320,23 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
         //set the new envelop to original message context
         synCtx.setEnvelope(newEnvelope);
 
+        return synCtx;
+    }
+
+    /**
+     * Create a new message context using the given original message context and
+     * jsonElement
+     *
+     * @param synCtx           original message context
+     * @param splitElement     JsonElement which participates in the foreach operation
+     * @return modified message context with new envelope created with new jsonstream
+     * @throws AxisFault if there is a message creation failure
+     */
+    private MessageContext getIteratedMessage(MessageContext synCtx, Object splitElement)
+            throws AxisFault {
+        // write the new JSON message to the stream
+        JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
+                splitElement.toString(), true, true);
         return synCtx;
     }
 
@@ -354,11 +442,11 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
         }
     }
 
-    public SynapseXPath getExpression() {
+    public SynapsePath getExpression() {
         return expression;
     }
 
-    public void setExpression(SynapseXPath expression) {
+    public void setExpression(SynapsePath expression) {
         this.expression = expression;
     }
 
