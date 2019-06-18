@@ -18,7 +18,6 @@
 
 package org.apache.synapse.unittest;
 
-import javafx.util.Pair;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.util.EntityUtils;
@@ -30,6 +29,7 @@ import org.apache.synapse.unittest.testcase.data.classes.AssertNotNull;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
 
@@ -56,7 +56,7 @@ class Assertor {
      * @param mediateMsgCtxt  message context used for the mediation
      * @return true if assertion is success otherwise false
      */
-    static Pair<Boolean, String> doAssertionSequence(TestCase currentTestCase,
+    static Map.Entry<Boolean, String> doAssertionSequence(TestCase currentTestCase,
                                                      MessageContext mediateMsgCtxt, int testCaseNumber) {
 
         boolean isSequenceAssertComplete = false;
@@ -68,13 +68,13 @@ class Assertor {
         List<AssertNotNull> assertNotNulls = currentTestCase.getAssertNotNull();
 
         if (!assertEquals.isEmpty()) {
-            Pair<Boolean, String> assertSequence = startAssertEqualsForSequence(assertEquals, mediateMsgCtxt);
+            Map.Entry<Boolean, String> assertSequence = startAssertEqualsForSequence(assertEquals, mediateMsgCtxt);
             isAssertEqualComplete = assertSequence.getKey();
             assertMessage = assertSequence.getValue();
         }
 
         if (!assertNotNulls.isEmpty() && assertMessage == null) {
-            Pair<Boolean, String> assertSequence = startAssertNotNullsForSequence(assertNotNulls, mediateMsgCtxt);
+            Map.Entry<Boolean, String> assertSequence = startAssertNotNullsForSequence(assertNotNulls, mediateMsgCtxt);
             isAssertNotNullComplete = assertSequence.getKey();
             assertMessage = assertSequence.getValue();
         }
@@ -87,7 +87,7 @@ class Assertor {
             log.error("Unit testing failed for test case - " + testCaseNumber);
         }
 
-        return new Pair<>(isSequenceAssertComplete, assertMessage);
+        return new AbstractMap.SimpleEntry<>(isSequenceAssertComplete, assertMessage);
     }
 
     /**
@@ -98,7 +98,7 @@ class Assertor {
      * @param testCaseNumber  asserting test case number
      * @return true if assertion is success otherwise false
      */
-    static Pair<Boolean, String> doAssertionService(TestCase currentTestCase,
+    static Map.Entry<Boolean, String> doAssertionService(TestCase currentTestCase,
                                                     HttpResponse response, int testCaseNumber) {
 
         boolean isServiceAssertComplete = false;
@@ -114,14 +114,14 @@ class Assertor {
             Header[] responseHeaders = response.getAllHeaders();
 
             if (!assertEquals.isEmpty()) {
-                Pair<Boolean, String> assertService
+                Map.Entry<Boolean, String> assertService
                         = startAssertEqualsForServices(assertEquals, responseAsString, responseHeaders);
                 isAssertEqualComplete = assertService.getKey();
                 assertMessage = assertService.getValue();
             }
 
             if (!assertNotNulls.isEmpty() && assertMessage == null) {
-                Pair<Boolean, String> assertService
+                Map.Entry<Boolean, String> assertService
                         = startAssertNotNullsForServices(assertNotNulls, responseAsString, responseHeaders);
                 isAssertNotNullComplete = assertService.getKey();
                 assertMessage = assertService.getValue();
@@ -138,7 +138,7 @@ class Assertor {
             log.error("Unit testing failed for test case - " + testCaseNumber);
         }
 
-        return new Pair<>(isServiceAssertComplete, assertMessage);
+        return new AbstractMap.SimpleEntry<>(isServiceAssertComplete, assertMessage);
     }
 
 
@@ -147,9 +147,9 @@ class Assertor {
      *
      * @param assertEquals   array of assertEquals
      * @param messageContext message context
-     * @return Pair<Boolean, String> which has status of assertEquals and message if any error occurred
+     * @return Map.Entry<Boolean, String> which has status of assertEquals and message if any error occurred
      */
-    private static Pair<Boolean, String> startAssertEqualsForSequence(List<AssertEqual> assertEquals,
+    private static Map.Entry<Boolean, String> startAssertEqualsForSequence(List<AssertEqual> assertEquals,
                                                                       MessageContext messageContext) {
 
         log.info("AssertEquals - assert property for sequences started");
@@ -221,7 +221,7 @@ class Assertor {
         }
 
         log.info("AssertEquals assertion success - " + !isAssertEqualFailed);
-        return new Pair<>(!isAssertEqualFailed, messageOfAssertEqual);
+        return new AbstractMap.SimpleEntry<>(!isAssertEqualFailed, messageOfAssertEqual);
     }
 
     /**
@@ -229,9 +229,9 @@ class Assertor {
      *
      * @param assertNotNull  array of assertNotNull
      * @param messageContext message context
-     * @return Pair<Boolean, String> which has status of assertNotNull and message if any error occurred
+     * @return Map.Entry<Boolean, String> which has status of assertNotNull and message if any error occurred
      */
-    private static Pair<Boolean, String> startAssertNotNullsForSequence(List<AssertNotNull> assertNotNull,
+    private static Map.Entry<Boolean, String> startAssertNotNullsForSequence(List<AssertNotNull> assertNotNull,
                                                                         MessageContext messageContext) {
 
         log.info("Assert Not Null - assert property for sequences started");
@@ -302,7 +302,7 @@ class Assertor {
         }
 
         log.info("AssertNotNull assertion success - " + !isAssertNotNullFailed);
-        return new Pair<>(!isAssertNotNullFailed, messageOfAssertNotNull);
+        return new AbstractMap.SimpleEntry<>(!isAssertNotNullFailed, messageOfAssertNotNull);
     }
 
     /**
@@ -311,9 +311,9 @@ class Assertor {
      * @param assertEquals array of assertEquals
      * @param response     service response body
      * @param headers      service response headers
-     * @return Pair<Boolean, String> which has status of assertEquals and message if any error occurred
+     * @return Map.Entry<Boolean, String> which has status of assertEquals and message if any error occurred
      */
-    private static Pair<Boolean, String> startAssertEqualsForServices(
+    private static Map.Entry<Boolean, String> startAssertEqualsForServices(
             List<AssertEqual> assertEquals, String response, Header[] headers) {
 
         log.info("Assert Equals - assert property for services started");
@@ -371,7 +371,7 @@ class Assertor {
         }
 
         log.info("AssertEquals assertion success - " + !isAssertEqualFailed);
-        return new Pair<>(!isAssertEqualFailed, messageOfAssertEqual);
+        return new AbstractMap.SimpleEntry<>(!isAssertEqualFailed, messageOfAssertEqual);
     }
 
     /**
@@ -380,9 +380,9 @@ class Assertor {
      * @param assertNotNull array of assertNotNull
      * @param response      service response body
      * @param headers       service response headers
-     * @return Pair<Boolean, String> which has status of assertNotNull and message if any error occurred
+     * @return Map.Entry<Boolean, String> which has status of assertNotNull and message if any error occurred
      */
-    private static Pair<Boolean, String> startAssertNotNullsForServices(
+    private static Map.Entry<Boolean, String> startAssertNotNullsForServices(
             List<AssertNotNull> assertNotNull, String response, Header[] headers) {
 
         log.info("Assert Not Null - assert property for services started");
@@ -437,6 +437,6 @@ class Assertor {
         }
 
         log.info("AssertNotNull assertion success - " + !isAssertNotNullFailed);
-        return new Pair<>(!isAssertNotNullFailed, messageOfAssertNotNull);
+        return new AbstractMap.SimpleEntry<>(!isAssertNotNullFailed, messageOfAssertNotNull);
     }
 }

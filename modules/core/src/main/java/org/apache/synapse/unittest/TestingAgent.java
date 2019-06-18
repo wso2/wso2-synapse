@@ -20,7 +20,6 @@ package org.apache.synapse.unittest;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import javafx.util.Pair;
 import org.apache.axiom.om.OMElement;
 import org.apache.http.HttpResponse;
 import org.apache.log4j.Logger;
@@ -30,7 +29,9 @@ import org.apache.synapse.unittest.testcase.data.classes.SynapseTestCase;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Map;
 import javax.xml.namespace.QName;
 
 import static org.apache.synapse.unittest.Constants.API_CONTEXT;
@@ -62,7 +63,7 @@ class TestingAgent {
      * @param synapseTestCase test cases data received from client
      * @return Result of the deployment and exception status
      */
-    Pair<Boolean, String> processTestArtifact(SynapseTestCase synapseTestCase) {
+    Map.Entry<Boolean, String> processTestArtifact(SynapseTestCase synapseTestCase) {
         artifactType = synapseTestCase.getArtifacts().getTestArtifact().getArtifactType();
         proxyTransportMethod = synapseTestCase.getArtifacts().getTestArtifact().getTransportMethod();
         String artifactNameOrKey = synapseTestCase.getArtifacts().getTestArtifact().getArtifactNameOrKey();
@@ -75,7 +76,7 @@ class TestingAgent {
             switch (artifactType) {
 
                 case TYPE_SEQUENCE:
-                    Pair<SynapseConfiguration, String> pairOfSequenceDeployment =
+                    Map.Entry<SynapseConfiguration, String> pairOfSequenceDeployment =
                             config.deploySequenceArtifact(artifact, artifactNameOrKey);
                     synapseConfiguration = pairOfSequenceDeployment.getKey();
                     key = pairOfSequenceDeployment.getValue();
@@ -89,7 +90,7 @@ class TestingAgent {
                     break;
 
                 case TYPE_PROXY:
-                    Pair<SynapseConfiguration, String> pairOfProxyDeployment =
+                    Map.Entry<SynapseConfiguration, String> pairOfProxyDeployment =
                             config.deployProxyArtifact(artifact, artifactNameOrKey);
                     synapseConfiguration = pairOfProxyDeployment.getKey();
                     key = pairOfProxyDeployment.getValue();
@@ -103,7 +104,7 @@ class TestingAgent {
                     break;
 
                 case TYPE_API:
-                    Pair<SynapseConfiguration, String> pairofApiDeployment =
+                    Map.Entry<SynapseConfiguration, String> pairofApiDeployment =
                             config.deployApiArtifact(artifact, artifactNameOrKey);
                     synapseConfiguration = pairofApiDeployment.getKey();
                     key = pairofApiDeployment.getValue();
@@ -126,7 +127,7 @@ class TestingAgent {
             exception = e.toString();
         }
 
-        return new Pair<>(isArtifactDeployed, exception);
+        return new AbstractMap.SimpleEntry<>(isArtifactDeployed, exception);
     }
 
     /**
@@ -135,7 +136,7 @@ class TestingAgent {
      * @param synapseTestCase test cases data received from client
      * @return Result of the deployment and exception status
      */
-    Pair<Boolean, String> processSupportiveArtifacts(SynapseTestCase synapseTestCase) {
+    Map.Entry<Boolean, String> processSupportiveArtifacts(SynapseTestCase synapseTestCase) {
         boolean isArtifactDeployed = true;
 
         for (int x = 0; x < synapseTestCase.getArtifacts().getSupportiveArtifactCount(); x++) {
@@ -155,7 +156,7 @@ class TestingAgent {
             }
         }
 
-        return new Pair<>(isArtifactDeployed, exception);
+        return new AbstractMap.SimpleEntry<>(isArtifactDeployed, exception);
     }
 
     /**
@@ -174,35 +175,35 @@ class TestingAgent {
 
         switch (supportiveArtifactType) {
             case TYPE_SEQUENCE:
-                Pair<SynapseConfiguration, String> pairOfSequenceDeployment =
+                Map.Entry<SynapseConfiguration, String> pairOfSequenceDeployment =
                         config.deploySequenceArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairOfSequenceDeployment.getKey();
                 key = pairOfSequenceDeployment.getValue();
                 break;
 
             case TYPE_PROXY:
-                Pair<SynapseConfiguration, String> pairofProxyDeployment =
+                Map.Entry<SynapseConfiguration, String> pairofProxyDeployment =
                         config.deployProxyArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairofProxyDeployment.getKey();
                 key = pairofProxyDeployment.getValue();
                 break;
 
             case TYPE_API:
-                Pair<SynapseConfiguration, String> pairofApiDeployment =
+                Map.Entry<SynapseConfiguration, String> pairofApiDeployment =
                         config.deployApiArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairofApiDeployment.getKey();
                 key = pairofApiDeployment.getValue();
                 break;
 
             case TYPE_ENDPOINT:
-                Pair<SynapseConfiguration, String> pairOfEndpointDeployment =
+                Map.Entry<SynapseConfiguration, String> pairOfEndpointDeployment =
                         config.deployEndpointArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairOfEndpointDeployment.getKey();
                 key = pairOfEndpointDeployment.getValue();
                 break;
 
             case TYPE_LOCAL_ENTRY:
-                Pair<SynapseConfiguration, String> pairOfLocalEntryDeployment =
+                Map.Entry<SynapseConfiguration, String> pairOfLocalEntryDeployment =
                         config.deployLocalEntryArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairOfLocalEntryDeployment.getKey();
                 key = pairOfLocalEntryDeployment.getValue();
@@ -227,7 +228,7 @@ class TestingAgent {
      * @param synapseTestCase test cases data received from client
      * @return Result of the mediation and exception status
      */
-    Pair<JsonObject, String> processTestCases(SynapseTestCase synapseTestCase) {
+    Map.Entry<JsonObject, String> processTestCases(SynapseTestCase synapseTestCase) {
         boolean isAssert = false;
         JsonObject resultOfTestCases = new JsonObject();
         int testCaseCount = synapseTestCase.getTestCases().getTestCaseCount();
@@ -241,14 +242,14 @@ class TestingAgent {
 
                 switch (artifactType) {
                     case TYPE_SEQUENCE:
-                        Pair<Boolean, MessageContext> mediateResult =
+                        Map.Entry<Boolean, MessageContext> mediateResult =
                                 TestCasesMediator.sequenceMediate(currentTestCase, synapseConfiguration, key);
 
                         Boolean mediationResult = mediateResult.getKey();
                         MessageContext resultedMessageContext = mediateResult.getValue();
 
                         //check whether mediation is success or not
-                        Pair<Boolean, String> assertSeqResult = checkAssertionWithSequenceMediation
+                        Map.Entry<Boolean, String> assertSeqResult = checkAssertionWithSequenceMediation
                                 (mediationResult, resultedMessageContext, currentTestCase, i);
                         isAssert = assertSeqResult.getKey();
                         exception = assertSeqResult.getValue();
@@ -258,7 +259,7 @@ class TestingAgent {
                         HttpResponse invokedProxyResult = TestCasesMediator
                                 .proxyServiceExecutor(currentTestCase, proxyTransportMethod, key);
 
-                        Pair<Boolean, String> assertProxyResult =
+                        Map.Entry<Boolean, String> assertProxyResult =
                                 checkAssertionWithProxyMediation(invokedProxyResult, currentTestCase, i);
                         isAssert = assertProxyResult.getKey();
                         exception = assertProxyResult.getValue();
@@ -270,7 +271,7 @@ class TestingAgent {
                         HttpResponse invokedApiResult = TestCasesMediator.apiResourceExecutor
                                 (currentTestCase, context, resourceMethod);
 
-                        Pair<Boolean, String> assertAPIResult =
+                        Map.Entry<Boolean, String> assertAPIResult =
                                 checkAssertionWithAPIMediation(invokedApiResult, currentTestCase, i);
                         isAssert = assertAPIResult.getKey();
                         exception = assertAPIResult.getValue();
@@ -288,7 +289,7 @@ class TestingAgent {
         }
 
         //check all test cases are success
-        return new Pair<>(checkAllTestCasesCorrect(resultOfTestCases), exception);
+        return new AbstractMap.SimpleEntry<>(checkAllTestCasesCorrect(resultOfTestCases), exception);
     }
 
     /**
@@ -299,12 +300,12 @@ class TestingAgent {
      * @param currentTestCase        current running test case data
      * @return result of assertion or mediation result
      */
-    private Pair<Boolean, String> checkAssertionWithSequenceMediation(
+    private Map.Entry<Boolean, String> checkAssertionWithSequenceMediation(
             boolean mediationResult, MessageContext resultedMessageContext, TestCase currentTestCase, int index) {
         boolean isAssert = false;
         String assertMessage;
         if (mediationResult) {
-            Pair<Boolean, String> assertOfSequence = Assertor.doAssertionSequence(currentTestCase, resultedMessageContext, index + 1);
+            Map.Entry<Boolean, String> assertOfSequence = Assertor.doAssertionSequence(currentTestCase, resultedMessageContext, index + 1);
             isAssert = assertOfSequence.getKey();
             assertMessage = assertOfSequence.getValue();
 
@@ -313,7 +314,7 @@ class TestingAgent {
             log.error("Sequence mediation failed");
         }
 
-        return new Pair<>(isAssert, assertMessage);
+        return new AbstractMap.SimpleEntry<>(isAssert, assertMessage);
     }
 
     /**
@@ -323,12 +324,12 @@ class TestingAgent {
      * @param currentTestCase    current running test case data
      * @return result of assertion or invoke result
      */
-    private Pair<Boolean, String> checkAssertionWithProxyMediation(HttpResponse invokedProxyResult,
+    private Map.Entry<Boolean, String> checkAssertionWithProxyMediation(HttpResponse invokedProxyResult,
                                                                    TestCase currentTestCase, int index) {
         boolean isAssert = false;
         String assertMessage;
         if (invokedProxyResult != null) {
-            Pair<Boolean, String> assertOfProxy = Assertor.doAssertionService
+            Map.Entry<Boolean, String> assertOfProxy = Assertor.doAssertionService
                     (currentTestCase, invokedProxyResult, index + 1);
 
             isAssert = assertOfProxy.getKey();
@@ -338,7 +339,7 @@ class TestingAgent {
             log.error("Proxy service invoke failed");
         }
 
-        return new Pair<>(isAssert, assertMessage);
+        return new AbstractMap.SimpleEntry<>(isAssert, assertMessage);
     }
 
     /**
@@ -348,12 +349,12 @@ class TestingAgent {
      * @param currentTestCase  current running test case data
      * @return result of assertion or invoke result
      */
-    private Pair<Boolean, String> checkAssertionWithAPIMediation(HttpResponse invokedApiResult,
+    private Map.Entry<Boolean, String> checkAssertionWithAPIMediation(HttpResponse invokedApiResult,
                                                                  TestCase currentTestCase, int index) {
         boolean isAssert = false;
         String assertMessage;
         if (invokedApiResult != null) {
-            Pair<Boolean, String> assertOfApi = Assertor.doAssertionService
+            Map.Entry<Boolean, String> assertOfApi = Assertor.doAssertionService
                     (currentTestCase, invokedApiResult, index + 1);
 
             isAssert = assertOfApi.getKey();
@@ -363,7 +364,7 @@ class TestingAgent {
             log.error("API resource invoke failed");
         }
 
-        return new Pair<>(isAssert, assertMessage);
+        return new AbstractMap.SimpleEntry<>(isAssert, assertMessage);
     }
 
     /**
