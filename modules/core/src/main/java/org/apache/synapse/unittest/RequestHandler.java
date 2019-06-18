@@ -20,7 +20,6 @@ package org.apache.synapse.unittest;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import javafx.util.Pair;
 import org.apache.log4j.Logger;
 import org.apache.synapse.unittest.testcase.data.classes.SynapseTestCase;
 import org.apache.synapse.unittest.testcase.data.holders.ArtifactData;
@@ -34,6 +33,8 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.AbstractMap;
+import java.util.Map;
 
 /**
  * Class is implements with Runnable.
@@ -152,8 +153,8 @@ public class RequestHandler implements Runnable {
     private void runTestingAgent(SynapseTestCase synapseTestCase) {
 
         TestingAgent agent = new TestingAgent();
-        Pair<Boolean, String> supportiveArtifactDeployment = new Pair<>(false, null);
-        Pair<Boolean, String> testArtifactDeployment = new Pair<>(false, null);
+        Map.Entry<Boolean, String> supportiveArtifactDeployment = new AbstractMap.SimpleEntry<>(false, null);
+        Map.Entry<Boolean, String> testArtifactDeployment = new AbstractMap.SimpleEntry<>(false, null);
 
         //get results of supportive-artifact deployment if exists
         if (synapseTestCase.getArtifacts().getSupportiveArtifactCount() > 0) {
@@ -180,7 +181,7 @@ public class RequestHandler implements Runnable {
 
             log.info("Synapse testing agent ready to mediate test cases through deployments");
             //performs test cases through the deployed synapse configuration
-            Pair<JsonObject, String> testCasesMediated = agent.processTestCases(synapseTestCase);
+            Map.Entry<JsonObject, String> testCasesMediated = agent.processTestCases(synapseTestCase);
 
             //check mediation or invoke is success or failed
             if (testCasesMediated.getValue() == null) {
