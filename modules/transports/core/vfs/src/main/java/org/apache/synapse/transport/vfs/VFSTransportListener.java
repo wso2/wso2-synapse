@@ -918,10 +918,10 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             String propertyValue = parameter.getValue().toString();
             OMElement paramElement = parameter.getParameterElement();
             if (paramElement != null) {
-                    if (secretResolver == null) {
-                        throw new SecureVaultException("Cannot resolve secret password because axis2 secret resolver " +
-                                                       "is null");
-                    }
+                if (secretResolver == null) {
+                    throw new SecureVaultException("Cannot resolve secret password because axis2 secret resolver " +
+                                                   "is null");
+                }
                 propertyValue = MiscellaneousUtil.resolve(paramElement, secretResolver);
             }
 
