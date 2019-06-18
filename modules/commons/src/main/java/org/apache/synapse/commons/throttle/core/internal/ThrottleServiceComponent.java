@@ -20,24 +20,21 @@ package org.apache.synapse.commons.throttle.core.internal;
 import com.hazelcast.core.HazelcastInstance;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.osgi.service.component.ComponentContext;
 import org.apache.synapse.commons.throttle.core.ThrottleUtil;
+import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 
-/**
- * This class represents the throttle core declarative service component.
- *
- * @scr.component name="throttle.core.services" immediate="true"
- * @scr.reference name="hazelcast.instance.service"
- * interface="com.hazelcast.core.HazelcastInstance"
- * cardinality="0..1"
- * policy="dynamic"
- * bind="setHazelcastInstance"
- * unbind="unsetHazelcastInstance"
- */
+@Component(
+		name = "throttle.core.services",
+		immediate = true
+)
 public class ThrottleServiceComponent {
 
 	private static final Log log  = LogFactory.getLog(ThrottleServiceComponent.class.getName());
 
+	@Activate
 	protected void activate(ComponentContext context) {
 		log.debug("Activating throttle core service component");
 		if (ThrottleServiceDataHolder.getInstance().getThrottleProperties() == null){
@@ -46,6 +43,7 @@ public class ThrottleServiceComponent {
 		}
 	}
 
+	@Deactivate
 	protected void deactivate(ComponentContext ctx) {
 		log.debug("Deactivating throttle core service component");
 	}

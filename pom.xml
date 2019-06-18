@@ -1188,7 +1188,7 @@
       <!-- Axis2 and its dependencies -->
       <axis2.version>1.6.1-wso2v37</axis2.version>
       <axis2.transport.version>2.0.0-wso2v35</axis2.transport.version>
-      <axiom.version>1.2.11.wso2v13</axiom.version>
+      <axiom.version>1.2.11-wso2v16</axiom.version>
       <xml_schema.version>1.4.7</xml_schema.version>
       <xml_apis.version>1.3.04</xml_apis.version>
       <wsdl4j.version>1.6.2</wsdl4j.version>
@@ -1196,7 +1196,7 @@
       <!-- addressing, rampart, neethi -->
       <addressing.version>${axis2.version}</addressing.version>
       <woden.version>1.0M10</woden.version>
-      <rampart.version>1.6.1-wso2v34</rampart.version>
+      <rampart.version>1.6.1-wso2v36</rampart.version>
       <sandesha2.version>1.6.1-wso2v1</sandesha2.version>
       <neethi.version>2.0.4-wso2v2</neethi.version>
       <jruby.version>1.3.0</jruby.version>
