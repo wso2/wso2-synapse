@@ -353,11 +353,9 @@ public class HeaderMediator extends AbstractMediator {
 
     @Override
     public boolean isContentAware() {
-
-        if(scope!= null && XMLConfigConstants.SCOPE_TRANSPORT.equals(scope)) {
-            return false;
-        }
-        else {
+        if (XMLConfigConstants.SCOPE_TRANSPORT.equals(scope)) {
+            return expression != null && expression.isContentAware();
+        } else {
             return true;
         }
     }
