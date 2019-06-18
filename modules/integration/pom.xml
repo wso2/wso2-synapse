@@ -344,6 +344,12 @@
             <groupId>org.apache.rampart</groupId>
             <artifactId>rampart-core</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>log4j-over-slf4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.axis2</groupId>

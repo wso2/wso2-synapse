@@ -26,7 +26,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.XMLToObjectMapper;
-import sun.misc.Service;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
@@ -114,7 +113,7 @@ public class ConfigurationFactoryAndSerializerFinder implements XMLToObjectMappe
     private static void registerExtensions() {
 
         // register MediatorFactory extensions
-        Iterator it = Service.providers(ConfigurationFactory.class);
+        Iterator it = java.util.ServiceLoader.load(ConfigurationFactory.class).iterator();
         while (it.hasNext()) {
             ConfigurationFactory cf = (ConfigurationFactory) it.next();
             QName tag = cf.getTagQName();
