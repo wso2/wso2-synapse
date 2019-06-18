@@ -654,7 +654,7 @@
          <dependency>
             <groupId>org.wso2.securevault</groupId>
             <artifactId>org.wso2.securevault</artifactId>
-            <version>1.0.0</version>
+            <version>1.1.2</version>
          </dependency>
          <dependency>
             <groupId>org.apache.synapse</groupId>
