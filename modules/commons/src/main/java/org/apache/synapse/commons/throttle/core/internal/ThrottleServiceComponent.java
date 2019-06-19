@@ -25,6 +25,9 @@ import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 
 @Component(
 		name = "throttle.core.services",
@@ -53,6 +56,14 @@ public class ThrottleServiceComponent {
 	 *
 	 * @param hazelcastInstance hazelcastInstance found from the OSGI service
 	 */
+	@Reference(
+			name = "throttle.core.services",
+			service = com.hazelcast.core.HazelcastInstance.class,
+			cardinality = ReferenceCardinality.OPTIONAL,
+			policy = ReferencePolicy.DYNAMIC,
+			unbind = "unsetHazelcastInstance"
+
+	)
 	protected void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
 		ThrottleServiceDataHolder.getInstance().setHazelCastInstance(hazelcastInstance);
 	}
