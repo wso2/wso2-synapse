@@ -18,9 +18,8 @@
 
 package org.apache.synapse.unittest.testcase.data.classes;
 
-import javafx.util.Pair;
-
 import java.util.List;
+import java.util.Map;
 
 public class ServiceResource {
 
@@ -28,8 +27,8 @@ public class ServiceResource {
     private String method;
     private String requestPayload;
     private String responsePayload;
-    private List<Pair<String,String>> requestHeaders;
-    private List<Pair<String,String>> responseHeaders;
+    private List<Map.Entry<String,String>> requestHeaders;
+    private List<Map.Entry<String,String>> responseHeaders;
 
     /**
      * Get mock service sub-context.
@@ -72,7 +71,7 @@ public class ServiceResource {
      *
      * @return mock service request headers as in descriptor data
      */
-    public List<Pair<String, String>> getRequestHeaders() {
+    public List<Map.Entry<String, String>> getRequestHeaders() {
         return requestHeaders;
     }
 
@@ -81,7 +80,7 @@ public class ServiceResource {
      *
      * @return mock service response headers as in descriptor data
      */
-    public List<Pair<String, String>> getResponseHeaders() {
+    public List<Map.Entry<String, String>> getResponseHeaders() {
         return responseHeaders;
     }
 
@@ -117,7 +116,7 @@ public class ServiceResource {
      *
      * @param requestHeaders service request headers
      */
-    public void setRequestHeaders(List<Pair<String, String>> requestHeaders) {
+    public void setRequestHeaders(List<Map.Entry<String, String>> requestHeaders) {
         this.requestHeaders = requestHeaders;
     }
 
@@ -126,7 +125,7 @@ public class ServiceResource {
      *
      * @param responseHeaders service request headers
      */
-    public void setResponseHeaders(List<Pair<String, String>> responseHeaders) {
+    public void setResponseHeaders(List<Map.Entry<String, String>> responseHeaders) {
         this.responseHeaders = responseHeaders;
     }
 

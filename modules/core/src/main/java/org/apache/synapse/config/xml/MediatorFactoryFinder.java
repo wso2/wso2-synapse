@@ -34,7 +34,6 @@ import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.template.InvokeMediator;
-import sun.misc.Service;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
@@ -152,7 +151,7 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
     private static void registerExtensions() {
 
         // register MediatorFactory extensions
-        Iterator it = Service.providers(MediatorFactory.class);
+        Iterator it = java.util.ServiceLoader.load(MediatorFactory.class).iterator();
         while (it.hasNext()) {
             MediatorFactory mf = (MediatorFactory) it.next();
             QName tag = mf.getTagQName();

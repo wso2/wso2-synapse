@@ -42,7 +42,6 @@ import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskManager;
 import org.apache.synapse.task.TaskManagerObserver;
 
-import sun.misc.Service;
 
 /**
  * Implements the common message processor infrastructure which is used by the
@@ -527,8 +526,9 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
         if (logger.isDebugEnabled()) {
             logger.debug("Trying to fetch InboundRequestProcessor from classpath.. ");
         }
-        Iterator<MessageProcessorCleanupService> it =
-                                                      Service.providers(MessageProcessorCleanupService.class);
+        Iterator<MessageProcessorCleanupService> it = java.util.ServiceLoader.load(MessageProcessorCleanupService.class)
+                .iterator();
+                                                      
         while (it.hasNext()) {
             cleanupTask = it.next();
             cleanupTask.setName(name);
