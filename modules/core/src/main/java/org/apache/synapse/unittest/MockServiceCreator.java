@@ -93,6 +93,9 @@ class MockServiceCreator {
      * @param emulator HttpConsumerContext emulator object
      */
     private static void routeThroughResourceMethod(ServiceResource resource, HttpConsumerContext emulator) {
+        int serviceResponseStatusCode = resource.getStatusCode();
+        HttpResponseStatus responseStatus = HttpResponseStatus.valueOf(serviceResponseStatusCode);
+
         String serviceMethod = resource.getMethod();
         String serviceSubContext = resource.getSubContext();
         String serviceRequestPayload = "";
@@ -126,7 +129,7 @@ class MockServiceCreator {
 
                 //adding headers of response
                 OutgoingMessage outGoingMessage =
-                        response().withBody(serviceResponsePayload).withStatusCode(HttpResponseStatus.OK);
+                        response().withBody(serviceResponsePayload).withStatusCode(responseStatus);
                 for (Map.Entry<String, String> header : responseHeaders) {
                     outGoingMessage.withHeader(header.getKey(), header.getValue());
                 }
@@ -145,7 +148,7 @@ class MockServiceCreator {
 
                 //adding headers of response
                 outGoingMessage =
-                        response().withBody(serviceResponsePayload).withStatusCode(HttpResponseStatus.OK);
+                        response().withBody(serviceResponsePayload).withStatusCode(responseStatus);
                 for (Map.Entry<String, String> header : responseHeaders) {
                     outGoingMessage.withHeader(header.getKey(), header.getValue());
                 }
@@ -163,7 +166,7 @@ class MockServiceCreator {
 
                 //adding headers of response
                 outGoingMessage =
-                        response().withBody(serviceResponsePayload).withStatusCode(HttpResponseStatus.OK);
+                        response().withBody(serviceResponsePayload).withStatusCode(responseStatus);
                 for (Map.Entry<String, String> header : responseHeaders) {
                     outGoingMessage.withHeader(header.getKey(), header.getValue());
                 }
