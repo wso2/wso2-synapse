@@ -18,7 +18,6 @@
 
 package org.apache.synapse.unittest;
 
-import javafx.util.Pair;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.log4j.Logger;
@@ -34,6 +33,7 @@ import org.apache.synapse.unittest.testcase.data.holders.MockServiceData;
 import org.apache.synapse.unittest.testcase.data.holders.TestCaseData;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -514,7 +514,7 @@ class SynapseTestcaseDataReader {
 
             if (serviceRequestHeaders != null) {
                 Iterator<?> iterateHeaders = serviceRequestHeaders.getChildElements();
-                ArrayList<Pair<String, String>> headers = new ArrayList<>();
+                ArrayList<Map.Entry<String, String>> headers = new ArrayList<>();
 
                 while (iterateHeaders.hasNext()) {
                     OMElement mockServiceRequestHeader = (OMElement) (iterateHeaders.next());
@@ -523,7 +523,7 @@ class SynapseTestcaseDataReader {
                     String headerValue =
                             mockServiceRequestHeader.getAttributeValue(new QName(SERVICE_RESOURCE_HEADER_VALUE));
 
-                    headers.add(new Pair<>(headerName, headerValue));
+                    headers.add(new AbstractMap.SimpleEntry<>(headerName, headerValue));
                 }
 
                 mockService.setRequestHeaders(headers);
@@ -559,7 +559,7 @@ class SynapseTestcaseDataReader {
 
             if (serviceResponseHeaders != null) {
                 Iterator<?> iterateHeaders = serviceResponseHeaders.getChildElements();
-                ArrayList<Pair<String, String>> headers = new ArrayList<>();
+                ArrayList<Map.Entry<String, String>> headers = new ArrayList<>();
 
                 while (iterateHeaders.hasNext()) {
                     OMElement mockServiceResponseHeader = (OMElement) (iterateHeaders.next());
@@ -568,7 +568,7 @@ class SynapseTestcaseDataReader {
                     String headerValue =
                             mockServiceResponseHeader.getAttributeValue(new QName(SERVICE_RESOURCE_HEADER_VALUE));
 
-                    headers.add(new Pair<>(headerName, headerValue));
+                    headers.add(new AbstractMap.SimpleEntry<>(headerName, headerValue));
                 }
 
                 mockService.setResponseHeaders(headers);

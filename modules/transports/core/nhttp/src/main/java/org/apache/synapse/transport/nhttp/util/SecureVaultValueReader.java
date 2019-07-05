@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.synapse.commons.crypto.CryptoConstants;
 import org.wso2.securevault.SecretResolver;
 import org.wso2.securevault.SecureVaultException;
+import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import javax.xml.namespace.QName;
 
@@ -34,20 +35,11 @@ public class SecureVaultValueReader {
     public static String getSecureVaultValue(SecretResolver secretResolver, OMElement paramElement) {
         String value = null;
         if (paramElement != null) {
-            OMAttribute attribute = paramElement.getAttribute(new QName(CryptoConstants.SECUREVAULT_NAMESPACE,
-                    CryptoConstants.SECUREVAULT_ALIAS_ATTRIBUTE));
-            if (attribute != null && attribute.getAttributeValue() != null
-                    && !attribute.getAttributeValue().isEmpty ()) {
-                if (secretResolver == null) {
-                    throw new SecureVaultException("Cannot resolve secret password because axis2 secret resolver " +
-                            "is null");
-                }
-                if (secretResolver.isTokenProtected(attribute.getAttributeValue())) {
-                    value = secretResolver.resolve(attribute.getAttributeValue());
-                }
-            } else {
-                value = paramElement.getText();
+            if (secretResolver == null) {
+                throw new SecureVaultException("Cannot resolve secret password because axis2 secret resolver " +
+                                               "is null");
             }
+            value = MiscellaneousUtil.resolve(paramElement, secretResolver);
         }
         return value;
     }

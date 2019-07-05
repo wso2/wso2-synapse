@@ -36,7 +36,7 @@ import java.util.Properties;
  * <p>
  * Configuration syntax to set a header:
  *   <pre>
- *      &lt;header name="qname" (value="literal" | expression="xpath") [scope=("default" | "transport")]/&gt;
+ *      &lt;header name="qname" (value="literal" | expression="xpath|jsonpath") [scope=("default" | "transport")]/&gt;
  *   </pre>
  *
  * Configuration syntax to remove a header:
@@ -132,9 +132,9 @@ public class HeaderMediatorFactory extends AbstractMediatorFactory  {
 
         } else if (exprn != null && exprn.getAttributeValue() != null) {
             try {
-                headerMediator.setExpression(SynapseXPathFactory.getSynapseXPath(elem, ATT_EXPRN));
+                headerMediator.setExpression(SynapsePathFactory.getSynapsePath(elem, ATT_EXPRN));
             } catch (JaxenException je) {
-                handleException("Invalid XPath expression : " + exprn.getAttributeValue());
+                handleException("Invalid XPath/JSONPath expression : " + exprn.getAttributeValue());
             }
         } else if (headerMediator.isImplicit()) { // we have an implicit, non standard header
             Iterator i = elem.getChildElements();

@@ -301,9 +301,12 @@ public class FIXTransportSender extends AbstractTransportSender {
             }
         }
 
-        if (!Session.doesSessionExist(sessionID)) {
-            //try to create initiator to send the message
-            sessionFactory.createFIXInitiator(targetEPR, service, sessionID);
+        //synchronize this block to prevent multiple threads trying to creating individual sessions
+        synchronized (this) {
+            if (!Session.doesSessionExist(sessionID)) {
+                //try to create initiator to send the message
+                sessionFactory.createFIXInitiator(targetEPR, service, sessionID);
+            }
         }
 
         try {
