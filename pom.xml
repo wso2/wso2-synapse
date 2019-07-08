@@ -1243,7 +1243,7 @@
       <javax.cache.version>0.5</javax.cache.version>
       <javax.servlet.version>3.0.1</javax.servlet.version>
       <powermock.version>1.7.1</powermock.version>
-      <fge.json.schema.validator.version>2.2.6.wso2v6</fge.json.schema.validator.version>
+      <fge.json.schema.validator.version>2.2.6.wso2v7</fge.json.schema.validator.version>
       <fasterxml.jackson.version>2.9.8.wso2v1</fasterxml.jackson.version>
       <google.guava.version>27.0-jre</google.guava.version>
       <joda-time.version>2.9.4.wso2v1</joda-time.version>
@@ -1263,7 +1263,7 @@
        <slf4j.log4j.version>1.5.2</slf4j.log4j.version>
        <system.rules.version>1.17.0</system.rules.version>
        <io.netty.version>4.0.30.Final</io.netty.version>
-       <version.org.wso2.orbit.javax.activation>1.1.1.wso2v2</version.org.wso2.orbit.javax.activation>
+       <version.org.wso2.orbit.javax.activation>1.1.1.wso2v3</version.org.wso2.orbit.javax.activation>
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->
