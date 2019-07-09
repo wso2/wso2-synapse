@@ -99,7 +99,8 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
             LoopBackMediatorFactory.class,
             RespondMediatorFactory.class,
             CommentMediatorFactory.class,
-            ForEachMediatorFactory.class
+            ForEachMediatorFactory.class,
+            TransformMediatorFactory.class
     };
 
     private final static MediatorFactoryFinder instance  = new MediatorFactoryFinder();
