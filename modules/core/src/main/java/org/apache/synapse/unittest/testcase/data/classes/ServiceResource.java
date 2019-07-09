@@ -23,6 +23,7 @@ import java.util.Map;
 
 public class ServiceResource {
 
+    private int statusCode;
     private String subContext;
     private String method;
     private String requestPayload;
@@ -85,6 +86,15 @@ public class ServiceResource {
     }
 
     /**
+     * Get mock service response status code.
+     *
+     * @return mock service response status code as in descriptor data
+     */
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    /**
      * Add mock service type inside the ArrayList.
      *
      * @param method service type as in descriptor data
@@ -132,9 +142,18 @@ public class ServiceResource {
     /**
      * Set mock service sub-context.
      *
-     * @return mock service sub-context as in descriptor data
+     * @param subContext service sub-context as in descriptor data
      */
     public void setSubContext(String subContext) {
         this.subContext = subContext;
+    }
+
+    /**
+     * Set mock service response status code.
+     *
+     * @param statusCode service response status code as in descriptor data
+     */
+    public void setStatusCode(int statusCode) {
+        this.statusCode = statusCode;
     }
 }

@@ -79,6 +79,7 @@ public class Constants {
     static final String SERVICE_RESOURCE_REQUEST = "request";
     static final String SERVICE_RESOURCE_RESPONSE = "response";
     static final String SERVICE_RESOURCE_PAYLOAD = "payload";
+    static final String SERVICE_RESOURCE_RESPONSE_CODE = "status-code";
     static final String SERVICE_RESOURCE_HEADERS = "headers";
     static final String SERVICE_RESOURCE_HEADER_NAME = "name";
     static final String SERVICE_RESOURCE_HEADER_VALUE = "value";

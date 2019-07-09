@@ -66,6 +66,7 @@ import static org.apache.synapse.unittest.Constants.SERVICE_RESOURCE_METHOD;
 import static org.apache.synapse.unittest.Constants.SERVICE_RESOURCE_PAYLOAD;
 import static org.apache.synapse.unittest.Constants.SERVICE_RESOURCE_REQUEST;
 import static org.apache.synapse.unittest.Constants.SERVICE_RESOURCE_RESPONSE;
+import static org.apache.synapse.unittest.Constants.SERVICE_RESOURCE_RESPONSE_CODE;
 import static org.apache.synapse.unittest.Constants.SERVICE_RESOURCE_SUBCONTEXT;
 import static org.apache.synapse.unittest.Constants.SUPPORTIVE_ARTIFACTS;
 import static org.apache.synapse.unittest.Constants.TEST_ARTIFACT;
@@ -542,6 +543,15 @@ class SynapseTestcaseDataReader {
         OMElement serviceResponseNode = serviceResourceNode.getFirstChildWithName(qualifiedServiceResponse);
 
         if (serviceResponseNode != null) {
+            QName qualifiedServiceResponseStatusCode =
+                    new QName("", SERVICE_RESOURCE_RESPONSE_CODE, "");
+            OMElement serviceResponseStatusCodeNode =
+                    serviceResponseNode.getFirstChildWithName(qualifiedServiceResponseStatusCode);
+            if (serviceResponseStatusCodeNode != null) {
+                String serviceResponseStatusCode = serviceResponseStatusCodeNode.getText();
+                mockService.setStatusCode(Integer.parseInt(serviceResponseStatusCode));
+            }
+
             QName qualifiedServiceResponsePayload =
                     new QName("", SERVICE_RESOURCE_PAYLOAD, "");
             OMElement serviceResponsePayloadNode =
