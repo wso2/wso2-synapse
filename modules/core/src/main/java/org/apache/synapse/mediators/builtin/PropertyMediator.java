@@ -426,6 +426,8 @@ public class PropertyMediator extends AbstractMediator {
                             value + " for group :" + group;
                     synLog.traceOrDebug(msg);
                 }
+                //Returns an empty string as the number of capturing groups in this matcher's pattern is not satisfied.
+                return "";
             }
             
         } else {
