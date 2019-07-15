@@ -58,6 +58,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
     private String context;
     private Map<String,Resource> resources = new LinkedHashMap<String,Resource>();
     private List<Handler> handlers = new ArrayList<Handler>();
+    private String swaggerResourcePath;
 
     /**
      * The Api description. This could be optional informative text about the Api.
@@ -183,6 +184,14 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
 
     public void setCommentsList(List<String> commentsList) {
         this.commentsList = commentsList;
+    }
+
+    public String getSwaggerResourcePath() {
+        return swaggerResourcePath;
+    }
+
+    public void setSwaggerResourcePath(String swaggerResourcePath) {
+        this.swaggerResourcePath = swaggerResourcePath;
     }
 
     public void addResource(Resource resource) {
