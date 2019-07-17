@@ -45,7 +45,7 @@ public class TransformMediatorFactory extends AbstractMediatorFactory {
             // ValueFactory for creating dynamic or static Value
             ValueFactory keyFac = new ValueFactory();
             // create dynamic or static key based on OMElement
-            Value generatedKey = keyFac.createValue(XMLConfigConstants.KEY, elem);
+            Value generatedKey = keyFac.createValue("schema", elem);
             transformMediator.setSchemaKey(generatedKey);
         } else {
             handleException("The field schema should be present");
