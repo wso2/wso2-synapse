@@ -746,6 +746,15 @@ public final class JsonUtil {
     }
 
     /**
+     * Removes the JSON stream from the the MessageContext
+     * This method is used to remove the outdated JSON stream
+     * @param messageContext the axis2MessageContext
+     */
+    public static void removeJsonStream(MessageContext messageContext) {
+        messageContext.removeProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
+    }
+
+    /**
      * Builds and returns a new JSON payload for a message context with a JSON string. This is deprecated and use
      * getNewJsonPayload for new implementations.
      *
