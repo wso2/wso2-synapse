@@ -70,8 +70,9 @@ public class FaultMediatorSerializationTest extends AbstractTestCase {
 
     private String getXmlOfMediatorForSOAP11(String version, String attrOfCode, String attrOfReasion
             , String role, String details) throws Exception {
-        return "<makefault  version=\"" + version + "\" xmlns=\"http://ws.apache.org/ns/synapse\"><code value=\"" + attrOfCode + "\" xmlns:ns2=\"http://ws.apache.org/ns/synapse\"/><reason value=\"" + attrOfReasion + "\"/>" +
-                "<role>" + role + "</role><detail>" + details + "</detail></makefault>";
+        return "<makefault  version=\"" + version + "\" xmlns=\"http://ws.apache.org/ns/synapse\"><code value=\""
+                + attrOfCode + "\" xmlns:ns2=\"http://schemas.xmlsoap.org/soap/envelope/\"/><reason value=\""
+                + attrOfReasion + "\"/>" + "<role>" + role + "</role><detail>" + details + "</detail></makefault>";
 
     }
 

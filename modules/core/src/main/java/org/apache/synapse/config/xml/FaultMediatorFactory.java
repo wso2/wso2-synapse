@@ -21,6 +21,8 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.soap.SOAP11Constants;
+import org.apache.axiom.soap.SOAP12Constants;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.transform.FaultMediator;
 import org.jaxen.JaxenException;
@@ -84,7 +86,7 @@ public class FaultMediatorFactory extends AbstractMediatorFactory  {
             } else {
                 handleException("Invalid SOAP version");
             }
-        }else{
+        } else {
             //Setting the default SOAP version
             faultMediator.setSoapVersion(FaultMediator.SOAP11);
         }
@@ -110,10 +112,10 @@ public class FaultMediatorFactory extends AbstractMediatorFactory  {
             if (value != null) {
                 String strValue = value.getAttributeValue();
                 String prefix = null;
-                String name = null;
+                String name = "";
                 if (strValue.indexOf(":") != -1) {
                     prefix = strValue.substring(0, strValue.indexOf(":"));
-                    name = strValue.substring(strValue.indexOf(":")+1);
+                    name = strValue.substring(strValue.indexOf(":") + 1);
                 } else {
                     handleException("A QName is expected for fault code as prefix:name");
                 }
@@ -121,6 +123,47 @@ public class FaultMediatorFactory extends AbstractMediatorFactory  {
                 if (namespaceURI == null) {
                     handleException("Invalid namespace prefix '" + prefix + "' in code attribute");
                 }
+
+                //Validate fault code for soap11 and soap12 versions
+                if (FaultMediator.SOAP11 == faultMediator.getSoapVersion()) {
+                    if (SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI.equals(namespaceURI)) {
+                        if (!(SOAP11Constants.FAULT_CODE_VERSION_MISMATCH.equals(name)
+                                || SOAP11Constants.FAULT_CODE_MUST_UNDERSTAND.equals(name)
+                                || SOAP11Constants.FAULT_CODE_SENDER.equals(name)
+                                || SOAP11Constants.FAULT_CODE_RECEIVER.equals(name))) {
+                            handleException("Invalid code value for " + SOAP11
+                                    + " version. Code value has to be one of the following : "
+                                    + SOAP11Constants.FAULT_CODE_VERSION_MISMATCH + ", "
+                                    + SOAP11Constants.FAULT_CODE_MUST_UNDERSTAND + ", "
+                                    + SOAP11Constants.FAULT_CODE_SENDER + ", " + SOAP11Constants.FAULT_CODE_RECEIVER);
+                        }
+                    } else {
+                        handleException("Invalid namespace in fault code for " + SOAP11
+                                + " version. Namespace should be corrected as "
+                                + SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI + ".");
+                    }
+
+                } else if (FaultMediator.SOAP12 == faultMediator.getSoapVersion()) {
+                    if (SOAP12Constants.SOAP_ENVELOPE_NAMESPACE_URI.equals(namespaceURI)) {
+                        if (!(SOAP12Constants.FAULT_CODE_VERSION_MISMATCH.equals(name)
+                                || SOAP12Constants.FAULT_CODE_MUST_UNDERSTAND.equals(name)
+                                || SOAP12Constants.FAULT_CODE_DATA_ENCODING_UNKNOWN.equals(name)
+                                || SOAP12Constants.FAULT_CODE_SENDER.equals(name)
+                                || SOAP12Constants.FAULT_CODE_RECEIVER.equals(name))) {
+                            handleException("Invalid code value for " + SOAP12
+                                    + " version. Code value has to be one of the following : "
+                                    + SOAP12Constants.FAULT_CODE_VERSION_MISMATCH + ", "
+                                    + SOAP12Constants.FAULT_CODE_MUST_UNDERSTAND + ", "
+                                    + SOAP12Constants.FAULT_CODE_DATA_ENCODING_UNKNOWN + ", "
+                                    + SOAP12Constants.FAULT_CODE_SENDER + ", " + SOAP12Constants.FAULT_CODE_RECEIVER);
+                        }
+                    } else {
+                        handleException("Invalid namespace in fault code for " + SOAP12
+                                + " version. Namespace should be corrected as "
+                                + SOAP12Constants.SOAP_ENVELOPE_NAMESPACE_URI + ".");
+                    }
+                }
+
                 faultMediator.setFaultCodeValue(new QName(namespaceURI, name, prefix));
             } else if (expression != null) {
                 try {

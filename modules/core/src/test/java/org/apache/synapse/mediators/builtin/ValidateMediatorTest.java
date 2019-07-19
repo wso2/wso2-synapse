@@ -92,7 +92,7 @@ public class ValidateMediatorTest extends TestCase {
             "<validate xmlns=\"http://ws.apache.org/ns/synapse\">" +
             "   <schema key=\"file:synapse_repository/conf/sample/validate.xsd\"/>" +
             "   <on-fail>" +
-            "       <makefault>" +
+            "       <makefault version=\"soap12\">" +
             "           <code value=\"tns:Receiver\" xmlns:tns=\"http://www.w3.org/2003/05/soap-envelope\"/>" +
             "           <reason value=\"Invalid request\"/>" +
             "       </makefault>" +
@@ -105,7 +105,7 @@ public class ValidateMediatorTest extends TestCase {
             "   <feature name=\"" + SCHEMA_FULL_CHECKING_FEATURE_ID + "\" value=\"false\"/>" +
             "   <feature name=\"" + HONOUR_ALL_SCHEMA_LOCATIONS_FEATURE_ID + "\" value=\"true\"/>" +
             "   <on-fail>" +
-            "       <makefault>" +
+            "       <makefault version=\"soap12\">" +
             "           <code value=\"tns:Receiver\" xmlns:tns=\"http://www.w3.org/2003/05/soap-envelope\"/>" +
             "           <reason value=\"Invalid request\"/>" +
             "       </makefault>" +
