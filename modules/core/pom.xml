@@ -11,288 +11,289 @@
 	License for the ~ specific language governing permissions and limitations 
 	~ under the License. -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>org.apache.synapse</groupId>
-		<artifactId>Apache-Synapse</artifactId>
-		<version>2.1.7-wso2v111</version>
-		<relativePath>../../pom.xml</relativePath>
-	</parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.apache.synapse</groupId>
+        <artifactId>Apache-Synapse</artifactId>
+        <version>2.1.7-wso2v111</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
 
-	<groupId>org.apache.synapse</groupId>
-	<artifactId>synapse-core</artifactId>
+    <groupId>org.apache.synapse</groupId>
+    <artifactId>synapse-core</artifactId>
 
-	<name>Apache Synapse - Core</name>
-	<description>Apache Synapse - Core</description>
-	<packaging>bundle</packaging>
-	<url>http://synapse.apache.org</url>
+    <name>Apache Synapse - Core</name>
+    <description>Apache Synapse - Core</description>
+    <packaging>bundle</packaging>
+    <url>http://synapse.apache.org</url>
 
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>copy</id>
-						<phase>generate-test-resources</phase>
-						<goals>
-							<goal>copy</goal>
-						</goals>
-						<configuration>
-							<artifactItems>
-								<artifactItem>
-									<groupId>org.apache.axis2</groupId>
-									<artifactId>addressing</artifactId>
-									<type>mar</type>
-									<overWrite>true</overWrite>
-									<outputDirectory>target/test_repos/synapse/modules</outputDirectory>
-								</artifactItem>
-							</artifactItems>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.apache.axis2</groupId>
+                                    <artifactId>addressing</artifactId>
+                                    <type>mar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>target/test_repos/synapse/modules</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-antrun-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>create_repo</id>
-						<phase>generate-test-resources</phase>
-						<configuration>
-							<tasks>
-								<echo message="*** Creating a testing repository ***" />
-								<mkdir dir="target/test_repos" />
-								<mkdir dir="target/test_repos/synapse/modules" />
-								<mkdir dir="target/test_repos/synapse/services" />
-								<mkdir dir="target/test_repos/client/modules" />
-							</tasks>
-						</configuration>
-						<goals>
-							<goal>run</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>create_repo</id>
+                        <phase>generate-test-resources</phase>
+                        <configuration>
+                            <tasks>
+                                <echo message="*** Creating a testing repository ***"/>
+                                <mkdir dir="target/test_repos"/>
+                                <mkdir dir="target/test_repos/synapse/modules"/>
+                                <mkdir dir="target/test_repos/synapse/services"/>
+                                <mkdir dir="target/test_repos/client/modules"/>
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<configuration>
-					<systemProperties>
-						<property>
-							<name>org.xml.sax.driver</name>
-							<value>org.apache.xerces.parsers.SAXParser</value>
-						</property>
-						<property>
-							<name>javax.xml.validation.SchemaFactory:http://www.w3.org/2001/XMLSchema</name>
-							<value>org.apache.xerces.jaxp.validation.XMLSchemaFactory</value>
-						</property>
-						<property>
-							<name>jacoco-agent.destfile</name>
-							<value>
-								target/coverage-reports/jacoco-unit-core.exec
-							</value>
-						</property>
-					</systemProperties>
-					<forkMode>pertest</forkMode>
-					<!--<redirectTestOutputToFile>true</redirectTestOutputToFile> -->
-					<!--<workingDirectory>../..</workingDirectory> -->
-					<childDelegation>false</childDelegation>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.jacoco</groupId>
-				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>${maven.jacoco.plugin.version}</version>
-				<executions>
-					<execution>
-						<id>default-instrument</id>
-						<goals>
-							<goal>instrument</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>default-restore-instrumented-classes</id>
-						<goals>
-							<goal>restore-instrumented-classes</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>default-report</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>report</goal>
-						</goals>
-						<configuration>
-							<dataFile>target/coverage-reports/jacoco-unit-core.exec</dataFile>
-							<outputDirectory>target/coverage-reports/site</outputDirectory>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.antlr</groupId>
-				<artifactId>antlr3-maven-plugin</artifactId>
-				<executions>
-					<execution>
-						<goals>
-							<goal>antlr</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemProperties>
+                        <property>
+                            <name>org.xml.sax.driver</name>
+                            <value>org.apache.xerces.parsers.SAXParser</value>
+                        </property>
+                        <property>
+                            <name>javax.xml.validation.SchemaFactory:http://www.w3.org/2001/XMLSchema</name>
+                            <value>org.apache.xerces.jaxp.validation.XMLSchemaFactory</value>
+                        </property>
+                        <property>
+                            <name>jacoco-agent.destfile</name>
+                            <value>
+                                target/coverage-reports/jacoco-unit-core.exec
+                            </value>
+                        </property>
+                    </systemProperties>
+                    <forkMode>pertest</forkMode>
+                    <!--<redirectTestOutputToFile>true</redirectTestOutputToFile> -->
+                    <!--<workingDirectory>../..</workingDirectory> -->
+                    <childDelegation>false</childDelegation>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${maven.jacoco.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>default-instrument</id>
+                        <goals>
+                            <goal>instrument</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>default-restore-instrumented-classes</id>
+                        <goals>
+                            <goal>restore-instrumented-classes</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>default-report</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <configuration>
+                            <dataFile>target/coverage-reports/jacoco-unit-core.exec</dataFile>
+                            <outputDirectory>target/coverage-reports/site</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr3-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>antlr</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
-			<!-- Attach a JAR with the test classes so that we can reuse them in other 
-				modules (see http://maven.apache.org/guides/mini/guide-attached-tests.html). -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<executions>
-					<execution>
-						<goals>
-							<goal>test-jar</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
+            <!-- Attach a JAR with the test classes so that we can reuse them in other
+                modules (see http://maven.apache.org/guides/mini/guide-attached-tests.html). -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
-			<plugin>
-				<groupId>org.apache.felix</groupId>
-				<artifactId>maven-bundle-plugin</artifactId>
-				<extensions>true</extensions>
-				<configuration>
-					<instructions>
-						<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-						<Export-Package>
-							org.apache.synapse,
-							org.apache.synapse.aspects.*,
-							org.apache.synapse.deployers.*,
-							org.apache.synapse.executors.*,
-							org.apache.synapse.config.*,
-							org.apache.synapse.core.*,
-							org.apache.synapse.endpoints.*,
-							org.apache.synapse.eventing.*,
-							org.apache.synapse.mediators.*,
-							org.apache.synapse.message.*,
-							org.apache.synapse.metrics.*,
-							org.apache.synapse.registry.*,
-							org.apache.synapse.rest.*,
-							org.apache.synapse.inbound.*,
-							org.apache.synapse.startup.*,
-							org.apache.synapse.util.*,
-							org.apache.synapse.unittest.*,
-							org.apache.synapse.libraries.*,
-							org.apache.synapse.carbonext.*,
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <instructions>
+                        <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+                        <Export-Package>
+                            org.apache.synapse,
+                            org.apache.synapse.aspects.*,
+                            org.apache.synapse.deployers.*,
+                            org.apache.synapse.executors.*,
+                            org.apache.synapse.config.*,
+                            org.apache.synapse.core.*,
+                            org.apache.synapse.endpoints.*,
+                            org.apache.synapse.eventing.*,
+                            org.apache.synapse.mediators.*,
+                            org.apache.synapse.message.*,
+                            org.apache.synapse.metrics.*,
+                            org.apache.synapse.registry.*,
+                            org.apache.synapse.rest.*,
+                            org.apache.synapse.inbound.*,
+                            org.apache.synapse.startup.*,
+                            org.apache.synapse.util.*,
+                            org.apache.synapse.unittest.*,
+                            org.apache.synapse.libraries.*,
+                            org.apache.synapse.carbonext.*,
                             org.apache.synapse.continuation.*,
                             org.apache.synapse.debug.*,
                             org.apache.synapse.messageflowtracer.*
                         </Export-Package>
-						<Import-Package>
-							!javax.xml.namespace,
-							javax.xml.namespace;
-							version=0.0.0,
-							!javax.xml.soap,
-							javax.xml.soap; version=${javax.xml.soap.version},
-							!org.apache.commons.io,
-							org.apache.commons.io; version=0.0.0,
-							org.quartz.*;version="${quartz.version}",
-							*;resolution:=optional,
+                        <Import-Package>
+                            !javax.xml.namespace,
+                            javax.xml.namespace;
+                            version=0.0.0,
+                            !javax.xml.soap,
+                            javax.xml.soap; version=${javax.xml.soap.version},
+                            !org.apache.commons.io,
+                            org.apache.commons.io; version=0.0.0,
+                            org.quartz.*;version="${quartz.version}",
+                            *;resolution:=optional,
                         </Import-Package>
-						<DynamicImport-Package>*</DynamicImport-Package>
-					</instructions>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
+                        <DynamicImport-Package>*</DynamicImport-Package>
+                    </instructions>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
-	<dependencies>
-		<dependency>
-			<groupId>org.wso2.securevault</groupId>
-			<artifactId>org.wso2.securevault</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.synapse</groupId>
-			<artifactId>synapse-commons</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.synapse</groupId>
-			<artifactId>synapse-tasks</artifactId>       
-		</dependency>
-		<dependency>
-			<groupId>org.apache.synapse</groupId>
-			<artifactId>synapse-nhttp-transport</artifactId>
-		</dependency>
+    <dependencies>
+        <dependency>
+            <groupId>org.wso2.securevault</groupId>
+            <artifactId>org.wso2.securevault</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.synapse</groupId>
+            <artifactId>synapse-commons</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.synapse</groupId>
+            <artifactId>synapse-tasks</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.synapse</groupId>
+            <artifactId>synapse-nhttp-transport</artifactId>
+        </dependency>
         <dependency>
             <groupId>javax.jms</groupId>
             <artifactId>jms</artifactId>
         </dependency>
-	<dependency>
-			<groupId>org.wso2.orbit.com.rabbitmq</groupId>
-			<artifactId>amqp-client</artifactId>
-			<version>${version.orbit.rabbitmq}</version>
-		</dependency>
+        <dependency>
+            <groupId>org.wso2.orbit.com.rabbitmq</groupId>
+            <artifactId>amqp-client</artifactId>
+            <version>${version.orbit.rabbitmq}</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.axis2.transport</groupId>
             <artifactId>axis2-transport-jms</artifactId>
             <!--<exclusions>-->
-                <!--<exclusion>-->
-                    <!--<groupId>javax.jms</groupId>-->
-                    <!--<artifactId>jms</artifactId>-->
-                <!--</exclusion>-->
+            <!--<exclusion>-->
+            <!--<groupId>javax.jms</groupId>-->
+            <!--<artifactId>jms</artifactId>-->
+            <!--</exclusion>-->
             <!--</exclusions>-->
             <scope>test</scope>
         </dependency>
-		<dependency>
-			<groupId>org.apache.axis2.transport</groupId>
-			<artifactId>axis2-transport-mail</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.synapse</groupId>
-			<artifactId>synapse-vfs-transport</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.antlr</groupId>
-			<artifactId>antlr-runtime</artifactId>
-		</dependency>
+        <dependency>
+            <groupId>org.apache.axis2.transport</groupId>
+            <artifactId>axis2-transport-mail</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.synapse</groupId>
+            <artifactId>synapse-vfs-transport</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr-runtime</artifactId>
+        </dependency>
 
-		<!-- This is used by the CacheMediator. TODO: since axis2-saaj is based 
-			on Axiom, it should not be necessary to rely on SAAJ and we should try to 
-			eliminate this dependency. -->
-		<dependency>
-			<groupId>org.apache.axis2</groupId>
-			<artifactId>axis2-saaj</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.damnhandy</groupId>
-			<artifactId>handy-uri-templates</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>commons-lang</groupId>
-			<artifactId>commons-lang</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-text</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.codehaus.jettison.wso2</groupId>
-			<artifactId>jettison</artifactId>
-		</dependency>
-		<!--dependency>
-			<groupId>org.apache.axis2</groupId>
-			<artifactId>axis2-json</artifactId>
-			<version>1.6.1-wso2v10</version>
-		</dependency-->
-		<dependency>
-			<groupId>org.wso2.orbit.com.jayway.jsonpath</groupId>
-			<artifactId>json-path</artifactId>
-		</dependency>
+        <!-- This is used by the CacheMediator. TODO: since axis2-saaj is based
+            on Axiom, it should not be necessary to rely on SAAJ and we should try to
+            eliminate this dependency. -->
+        <dependency>
+            <groupId>org.apache.axis2</groupId>
+            <artifactId>axis2-saaj</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.damnhandy</groupId>
+            <artifactId>handy-uri-templates</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.jettison.wso2</groupId>
+            <artifactId>jettison</artifactId>
+        </dependency>
+        <!--dependency>
+            <groupId>org.apache.axis2</groupId>
+            <artifactId>axis2-json</artifactId>
+            <version>1.6.1-wso2v10</version>
+        </dependency-->
+        <dependency>
+            <groupId>org.wso2.orbit.com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.wso2.eventing</groupId>
             <artifactId>wso2eventing-api</artifactId>
@@ -349,10 +350,10 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
-		<dependency>
-			<groupId>com.google.code.gson</groupId>
-			<artifactId>gson</artifactId>
-		</dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.wso2.orbit.com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
@@ -369,37 +370,73 @@
             <groupId>org.wso2.orbit.com.googlecode.libphonenumber</groupId>
             <artifactId>libphonenumber</artifactId>
         </dependency>
-		<dependency>
-			<groupId>org.jacoco</groupId>
-			<artifactId>org.jacoco.agent</artifactId>
-			<classifier>runtime</classifier>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.powermock</groupId>
-			<artifactId>powermock-api-mockito2</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.powermock</groupId>
-			<artifactId>powermock-module-junit4</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.activemq</groupId>
-			<artifactId>activemq-broker</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.github.stefanbirkner</groupId>
-			<artifactId>system-rules</artifactId>
-			<scope>test</scope>
-		</dependency>
+        <dependency>
+            <groupId>org.jacoco</groupId>
+            <artifactId>org.jacoco.agent</artifactId>
+            <classifier>runtime</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-module-junit4</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-broker</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Jaeger Tracing Client -->
+        <dependency>
+            <groupId>io.jaegertracing</groupId>
+            <artifactId>jaeger-client</artifactId>
+            <version>${jaeger.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jaegertracing</groupId>
+            <artifactId>jaeger-core</artifactId>
+            <version>0.32.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jaegertracing</groupId>
+            <artifactId>jaeger-thrift</artifactId>
+            <version>0.32.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jaegertracing</groupId>
+            <artifactId>jaeger-tracerresolver</artifactId>
+            <version>0.32.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libthrift</artifactId>
+            <version>0.11.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>3.9.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okio</groupId>
+            <artifactId>okio</artifactId>
+            <version>1.13.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.stefanbirkner</groupId>
+            <artifactId>system-rules</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-mockito2</artifactId>
@@ -411,7 +448,8 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-<properties>
-		<version.orbit.rabbitmq>3.6.6.wso2v1</version.orbit.rabbitmq>
-	</properties>
+    <properties>
+        <version.orbit.rabbitmq>3.6.6.wso2v1</version.orbit.rabbitmq>
+        <jaeger.version>0.32.0</jaeger.version>
+    </properties>
 </project>

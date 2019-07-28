@@ -25,10 +25,11 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 import org.apache.synapse.aspects.flow.statistics.log.templates.AsynchronousExecutionEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.ParentReopenEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsOpenEvent;
+import org.apache.synapse.aspects.flow.statistics.tracing.dummy.DummyTracingHandler;
+import org.apache.synapse.aspects.flow.statistics.tracing.holder.TracingManagerHolder;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
@@ -106,6 +107,12 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 
 			StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
             addEventAndIncrementCount(messageContext, openEvent);
+
+//            TracingHandler.startSpan(statisticDataUnit, null); // TODO Senthuran added this
+			TracingManagerHolder.getOpenTracingManager().startSpan(statisticDataUnit, null);
+
+//			DummyTracingHandler.runDummySimulation(); // TODO Senthuran added this
+
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -255,6 +262,10 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 
 		StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
         addEventAndIncrementCount(messageContext, openEvent);
+
+//		TracingHandler.startSpan(statisticDataUnit, null); // TODO Senthuran added this
+		TracingManagerHolder.getOpenTracingManager().startSpan(statisticDataUnit, null);
+
 	}
 
     /**

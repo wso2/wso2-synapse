@@ -21,14 +21,12 @@ package org.apache.synapse.aspects.flow.statistics.collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 import org.apache.synapse.aspects.flow.statistics.log.templates.EndFlowEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsCloseEvent;
-import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
+import org.apache.synapse.aspects.flow.statistics.tracing.holder.TracingManagerHolder;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
@@ -75,6 +73,10 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 			}else {
 				addEventAndDecrementCount(messageContext, closeEvent);
 			}
+
+//			TracingHandler.finishSpan(statisticDataUnit); // TODO Senthuran added this
+			TracingManagerHolder.getOpenTracingManager().finishSpan(statisticDataUnit);
+
 		}
 	}
 
@@ -98,6 +100,10 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
             } else {
                 addEventAndCloseFlow(messageContext, endFlowEvent);
             }
+
+//			TracingHandler.finishSpan(dataUnit); // TODO Senthuran added this
+			TracingManagerHolder.getOpenTracingManager().finishSpan(dataUnit);
+
         }
 	}
 
