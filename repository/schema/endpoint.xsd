@@ -27,17 +27,12 @@
     <xs:element name="endpoint" type="NamedEndpoint">
         <xs:annotation>
             <xs:documentation source="description">
-                &lt;endpoint&gt; declarations for the synapse configuration
+                This is a named endpoint which will come on the top level synapse configuration
             </xs:documentation>
         </xs:annotation>
     </xs:element>
 
     <xs:complexType name="NamedEndpoint">
-        <xs:annotation>
-            <xs:documentation source="description">
-                This is a named endpoint which will come on the top level synapse configuration
-            </xs:documentation>
-        </xs:annotation>
         <xs:complexContent>
             <xs:extension base="Endpoint">
                 <xs:attribute name="name" type="xs:string" use="required"/>
@@ -51,13 +46,11 @@
                 This is a representation of an endpoint
             </xs:documentation>
         </xs:annotation>
-        <xs:choice minOccurs="0">
+        <xs:choice>
             <xs:group ref="leafEndpoints" minOccurs="0" maxOccurs="1"/>
             <xs:group ref="aggregatedEndpoints" minOccurs="0" maxOccurs="1"/>
-            <xs:group ref="lbEndpoints" minOccurs="0" maxOccurs="1"/>
             <xs:group ref="otherEndpoints" minOccurs="0" maxOccurs="1"/>
         </xs:choice>
-        <xs:attribute name="name" type="xs:string" use="optional"/>
         <xs:attribute name="key" type="xs:string" use="optional"/>
         <xs:attribute name="template" type="xs:string" use="optional"/>
         <xs:attribute name="uri" type="xs:string" use="optional"/>
@@ -79,7 +72,7 @@
                 </xs:annotation>
                 <xs:complexType>
                     <xs:attribute name="uri-template" type="xs:string" use="required"/>
-                    <xs:attribute name="method" use="required">
+                    <xs:attribute name="method">
                         <xs:simpleType>
                             <xs:restriction base="xs:string">
                                 <xs:enumeration value="GET"/>
@@ -114,8 +107,8 @@
             </xs:documentation>
         </xs:annotation>
         <xs:choice>
-            <xs:group ref="lbEndpoints"/>
-            <xs:group ref="failoverEndpoints"/>
+            <xs:group ref="lbEndpoints" minOccurs="1" maxOccurs="1"/>
+            <xs:group ref="failoverEndpoints" minOccurs="1" maxOccurs="1"/>
         </xs:choice>
     </xs:group>
 
@@ -124,8 +117,17 @@
             <xs:documentation source="description">
                 This group represents the secondary load balance endpoints
             </xs:documentation>
+            <xs:appinfo>
+                <sch:pattern name="Extended_all" xmlns:sch="http://purl.oclc.org/dsdl/schematron">
+                    <sch:rule context="endpoint">
+                        <sch:assert test="count(session) = 1">You must have exactly 1 session elements.</sch:assert>
+                        <sch:assert test="count(loadbalance) = 1">You must have exactly 1 loadbalance elements.</sch:assert>
+                    </sch:rule>
+                </sch:pattern>
+            </xs:appinfo>
         </xs:annotation>
-        <xs:all>
+
+        <xs:sequence>
             <xs:element name="session" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:attribute name="type" use="optional" default="http">
@@ -141,11 +143,11 @@
             <xs:element name="loadbalance" minOccurs="1" maxOccurs="1">
                 <xs:complexType>
                     <xs:choice maxOccurs="unbounded">
-                        <xs:element name="endpoint" minOccurs="2" maxOccurs="unbounded">
+                        <xs:element name="endpoint" minOccurs="1" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:choice>
                                     <xs:group ref="leafEndpoints" minOccurs="0" maxOccurs="1"/>
-                                    <xs:group ref="failoverEndpoints" minOccurs="0" maxOccurs="1"/>
+                                    <xs:group ref="aggregatedEndpoints" minOccurs="0" maxOccurs="1"/>
                                 </xs:choice>
                                 <xs:attribute name="name" type="xs:string" use="optional"/>
                                 <xs:attribute name="key" type="xs:string" use="optional"/>
@@ -166,7 +168,7 @@
                     <xs:attribute name="policy" type="xs:string" use="optional"/>
                 </xs:complexType>
             </xs:element>
-        </xs:all>
+        </xs:sequence>
     </xs:group>
 
     <xs:group name="failoverEndpoints">
@@ -175,11 +177,11 @@
                 This group represents the secondary fail over endpoints
             </xs:documentation>
         </xs:annotation>
-        <xs:all>
+        <xs:sequence>
             <xs:element name="failover" minOccurs="1" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element name="endpoint" minOccurs="2" maxOccurs="unbounded">
+                        <xs:element name="endpoint" minOccurs="1" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:choice>
                                     <xs:group ref="leafEndpoints" minOccurs="0" maxOccurs="1"/>
@@ -192,7 +194,7 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
-        </xs:all>
+        </xs:sequence>
     </xs:group>
 
     <xs:group name="dynamicLB">
@@ -229,7 +231,7 @@
     </xs:group>
 
     <xs:group name="otherEndpoints">
-        <xs:all>
+        <xs:sequence>
             <xs:element name="recipientlist">
                 <xs:complexType>
                     <xs:annotation>
@@ -240,11 +242,10 @@
                     <xs:choice minOccurs="1">
                         <xs:group ref="leafEndpoints" minOccurs="0" maxOccurs="1"/>
                         <xs:group ref="aggregatedEndpoints" minOccurs="0" maxOccurs="1"/>
-                        <xs:group ref="lbEndpoints" minOccurs="0" maxOccurs="1"/>
                     </xs:choice>
                 </xs:complexType>
             </xs:element>
-        </xs:all>
+        </xs:sequence>
     </xs:group>
 
     <xs:complexType name="DefaultEndpoint">

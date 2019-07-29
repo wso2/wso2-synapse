@@ -30,7 +30,6 @@
     <xs:include schemaLocation="core/property.xsd"/>
     <xs:include schemaLocation="core/respond.xsd"/>
     <xs:include schemaLocation="core/send.xsd"/>
-    <xs:include schemaLocation="core/sequence.xsd"/>
     <xs:include schemaLocation="core/store.xsd"/>
     <xs:include schemaLocation="filter/cond_router.xsd"/>
     <xs:include schemaLocation="filter/filter.xsd"/>
@@ -77,16 +76,6 @@
             </xs:documentation>
         </xs:annotation>
         <xs:choice>
-            <xs:element name="sequence">
-                <xs:annotation>
-                    <xs:documentation>
-                        This represents the sequence references
-                    </xs:documentation>
-                </xs:annotation>
-                <xs:complexType>
-                    <xs:attribute name="key" type="xs:string" use="required"/>
-                </xs:complexType>
-            </xs:element>
             <xs:element ref="call"/>
             <xs:element ref="call-template"/>
             <xs:element ref="drop"/>
@@ -95,7 +84,16 @@
             <xs:element ref="property"/>
             <xs:element ref="respond"/>
             <xs:element ref="send"/>
-            <xs:element ref="sequence"/>
+            <xs:element name="sequence">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Sequence mediator of the synapse configuration
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:attribute name="key" type="xs:string" use="required"/>
+                </xs:complexType>
+            </xs:element>
             <xs:element ref="store"/>
             <xs:element ref="conditionalRouter"/>
             <xs:element ref="filter"/>
@@ -135,7 +133,6 @@
             <xs:element ref="rule"/>
             <xs:element ref="bam"/>
             <xs:element ref="publishEvent"/>
-
         </xs:choice>
     </xs:group>
 

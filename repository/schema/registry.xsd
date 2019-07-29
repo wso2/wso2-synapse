@@ -42,8 +42,7 @@
         <xs:sequence>
             <xs:element ref="parameter" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
-        <xs:attribute name="provider" type="xs:string" use="required"
-                      default="org.apache.synapse.registry.url.SimpleURLRegistry"/>
+        <xs:attribute name="provider" type="xs:string" use="required"/>
     </xs:complexType>
 
 </xs:schema>

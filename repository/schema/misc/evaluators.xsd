@@ -38,7 +38,7 @@
 
     <xs:element name="and">
         <xs:complexType>
-            <xs:group ref="evaluatorList" maxOccurs="unbounded" minOccurs="2"/>
+            <xs:group ref="evaluatorList" maxOccurs="1" minOccurs="1"/>
         </xs:complexType>
     </xs:element>
 

@@ -65,21 +65,21 @@
             <xs:element name="inSequence" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:group ref="mediatorList" minOccurs="1" maxOccurs="unbounded"/>
+                        <xs:group ref="mediatorList" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
             <xs:element name="outSequence" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:group ref="mediatorList" minOccurs="1" maxOccurs="unbounded"/>
+                        <xs:group ref="mediatorList" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
             <xs:element name="faultSequence" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:group ref="mediatorList" minOccurs="1" maxOccurs="unbounded"/>
+                        <xs:group ref="mediatorList" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>

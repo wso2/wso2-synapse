@@ -20,7 +20,7 @@
            xmlns="http://ws.apache.org/ns/synapse">
 
     <xs:include schemaLocation="endpoint.xsd"/>
-    <xs:include schemaLocation="sequence.xsd"/>
+    <xs:include schemaLocation="mediators/mediators.xsd"/>
 
     <xs:element name="template" type="Template">
         <xs:annotation>
@@ -36,10 +36,33 @@
                 Sequence template and endpoint template definitions
             </xs:documentation>
         </xs:annotation>
-        <xs:choice minOccurs="1">
-            <xs:element ref="endpoint" minOccurs="0" maxOccurs="1"/>
-            <xs:element ref="sequence" minOccurs="0" maxOccurs="1"/>
-        </xs:choice>
+        <xs:sequence>
+            <xs:element name="parameter" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        These are the parameters for various elements in the Synapse Configuration,
+                        for example, for proxy services, for registry and so forth
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:complexContent mixed="true">
+                        <xs:extension base="xs:anyType">
+                            <xs:attribute name="name" type="xs:string" use="required"/>
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:choice minOccurs="1">
+                <xs:element ref="endpoint" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="sequence" minOccurs="0" maxOccurs="1">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:group ref="mediatorList" minOccurs="0" maxOccurs="unbounded"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:choice>
+        </xs:sequence>
         <xs:attribute name="name" type="xs:string" use="required"/>
     </xs:complexType>
 
