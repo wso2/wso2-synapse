@@ -21,6 +21,7 @@ package org.apache.synapse.unittest;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.apache.log4j.Logger;
+import org.apache.synapse.commons.emulator.RequestProcessor;
 import org.apache.synapse.commons.emulator.core.Emulator;
 import org.apache.synapse.commons.emulator.core.EmulatorType;
 import org.apache.synapse.commons.emulator.http.dsl.HttpConsumerContext;
@@ -100,7 +101,7 @@ class MockServiceCreator {
         String serviceSubContext = resource.getSubContext();
         String serviceRequestPayload = "";
         if (resource.getRequestPayload() != null) {
-            serviceRequestPayload = Trimmer.trimStrings(resource.getRequestPayload());
+            serviceRequestPayload = RequestProcessor.trimStrings(resource.getRequestPayload());
         }
 
         String serviceResponsePayload = resource.getResponsePayload();

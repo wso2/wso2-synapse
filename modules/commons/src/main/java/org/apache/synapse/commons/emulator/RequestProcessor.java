@@ -43,10 +43,11 @@ public class RequestProcessor {
     RequestProcessor() {
     }
 
-    private static Logger logger = Logger.getLogger(RequestProcessor.class.getName());
+    private static Logger log = Logger.getLogger(RequestProcessor.class.getName());
 
     /**
      * Remove irrelevant whitespaces from the input string.
+     * If string is a XML or JSON reordered the structure of the string to normalize
      *
      * @param inputString string which needs to remove whitespaces
      * @return trim string not include irrelevant whitespaces
@@ -56,49 +57,55 @@ public class RequestProcessor {
         //trim the string
         String trimedString = inputString.trim();
 
-        //check whether string is an XML
-        if (trimedString.startsWith("<")) {
-
-            //remove CDATA tag from the string
-            if (trimedString.startsWith("<![CDATA[")) {
-                trimedString = trimedString.substring(9);
-                int i = trimedString.indexOf("]]>");
-                if (i == -1)
-                    throw new IllegalStateException("argument starts with <![CDATA[ but cannot find pairing ]]>");
-                trimedString = trimedString.substring(0, i);
-            }
-
-            //convert string to XML DOM
-            Document xmlDOM = convertStringToXMLDocument(trimedString);
-            trimedString = nodeToString(xmlDOM);
-            trimedString = trimedString.replaceAll("xmlns=\"\"", "");
-
-        } else if (trimedString.startsWith("{")) {
-            JsonObject inputJSON = new JsonParser()
-                    .parse(trimedString).getAsJsonObject();
-            trimedString = inputJSON.toString();
+        //remove CDATA tag from the string if exists
+        if (trimedString.startsWith("<![CDATA[")) {
+            trimedString = trimedString.substring(9);
+            int i = trimedString.indexOf("]]>");
+            if (i == -1)
+                throw new IllegalStateException("argument starts with <![CDATA[ but cannot find pairing ]]>");
+            trimedString = trimedString.substring(0, i);
         }
+
+        trimedString = convertStringToRelatedDocumentType(trimedString);
         return trimedString.replaceAll("\\s", "");
     }
 
-    private static Document convertStringToXMLDocument(String xmlString) {
+    /**
+     * Check the input string is a XML type and generate a XML object and convert it to string.
+     * Check the input string is a JSON type and generate a JSON object and convert it to string.
+     *
+     * @param domString inputString which about to convert
+     * @return reordered trim string not include irrelevant whitespaces
+     */
+    private static String convertStringToRelatedDocumentType(String domString) {
         //Parser that produces DOM object trees from XML content
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 
         //API to obtain DOM Document instance
         DocumentBuilder builder;
+
+        String processedString;
         try {
             //Create DocumentBuilder with default configuration
             builder = factory.newDocumentBuilder();
 
             //Parse the content to Document object
-            return builder.parse(new InputSource(new StringReader(xmlString)));
+            Document xmlDOM = builder.parse(new InputSource(new StringReader(domString)));
+            processedString = nodeToString(xmlDOM);
+            processedString = processedString.replaceAll("xmlns=\"\"", "");
         } catch (Exception e) {
-            logger.error("Error while parsing xmlString to DOM", e);
+            processedString = convertAsJSONString(domString);
         }
-        return null;
+
+        return processedString;
     }
 
+    /**
+     * Convert XML document to string.
+     *
+     * @param node document node which represent XML
+     * @return converted document element as a string
+     */
     private static String nodeToString(Node node) {
         StringWriter sw = new StringWriter();
         try {
@@ -107,8 +114,24 @@ public class RequestProcessor {
             t.setOutputProperty(OutputKeys.INDENT, "yes");
             t.transform(new DOMSource(node), new StreamResult(sw));
         } catch (Exception e) {
-            logger.error("nodeToString Transformer Exception", e);
+            log.error("nodeToString Transformer Exception", e);
         }
         return sw.toString();
+    }
+
+    /**
+     * Create JSON object using input string.
+     * If failed return as it is.
+     *
+     * @param inputString input string which is not an XML
+     * @return reordered string
+     */
+    private static String convertAsJSONString(String inputString) {
+        try {
+            JsonObject inputJSON = new JsonParser().parse(inputString).getAsJsonObject();
+            return inputJSON.toString();
+        } catch (Exception e) {
+            return inputString;
+        }
     }
 }
