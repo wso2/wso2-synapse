@@ -27,6 +27,7 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 /**
@@ -84,6 +85,11 @@ public class SynapseMessageReceiver implements MessageReceiver {
 
         synCtx.setProperty(SynapseConstants.IS_CLIENT_DOING_REST, mc.isDoingREST());
         synCtx.setProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11, mc.isSOAP11());
+
+        TenantInfoConfigurator configurator = synCtx.getEnvironment().getTenantInfoConfigurator();
+        if (configurator != null) {
+            configurator.extractTenantInfo(synCtx);
+        }
 
         try {
             // set response state for the request incoming via main sequence or API
