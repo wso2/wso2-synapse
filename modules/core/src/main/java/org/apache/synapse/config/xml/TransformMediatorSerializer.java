@@ -33,10 +33,12 @@ public class TransformMediatorSerializer extends AbstractMediatorSerializer {
         OMElement transformElement = fac.createOMElement("transform", synNS);
         if (transformMediator.getSchemaKey() != null) {
             // Serialize Value using ValueSerializer
-            ValueSerializer keySerializer =  new ValueSerializer();
+            ValueSerializer keySerializer = new ValueSerializer();
             keySerializer.serializeValue(transformMediator.getSchemaKey(), "schema", transformElement);
+        } else if (transformMediator.getProperties() != null && !transformMediator.getProperties().isEmpty()) {
+            super.serializeProperties(transformElement, transformMediator.getProperties());
         } else {
-            handleException("Invalid XSLT mediator. XSLT registry key is required");
+            handleException("Invalid Transform mediator. Should either contain schema or properties");
         }
         saveTracingState(transformElement, mediator);
         return transformElement;

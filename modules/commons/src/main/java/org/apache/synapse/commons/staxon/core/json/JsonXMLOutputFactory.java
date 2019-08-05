@@ -127,6 +127,10 @@ public class JsonXMLOutputFactory extends AbstractXMLOutputFactory {
     private String customReplaceSequence;
     private boolean xmlNilReadWriteEnabled;
     private boolean xmlWriteNullForEmptyElement;
+    private boolean preserverNamespacesForJson;
+    private boolean processNCNames;
+
+    private JsonXMLConfig config;
 
     public JsonXMLOutputFactory() throws FactoryConfigurationError {
         this(JsonXMLConfig.DEFAULT);
@@ -141,6 +145,7 @@ public class JsonXMLOutputFactory extends AbstractXMLOutputFactory {
     }
 
     public JsonXMLOutputFactory(JsonXMLConfig config, JsonStreamFactory streamFactory) {
+        this.config = config;
         this.multiplePI = config.isMultiplePI();
         this.virtualRoot = config.getVirtualRoot();
         this.autoArray = config.isAutoArray();
@@ -154,6 +159,8 @@ public class JsonXMLOutputFactory extends AbstractXMLOutputFactory {
         this.customReplaceSequence = config.getCustomReplaceSequence();
         this.xmlNilReadWriteEnabled = config.isReadWriteXmlNil();
         this.xmlWriteNullForEmptyElement = config.isWriteNullForEmptyElements();
+        this.preserverNamespacesForJson = config.isPreserverNamespacesForJson();
+        this.processNCNames = config.isProcessNCNames();
 
 		/*
          * initialize standard properties
@@ -284,5 +291,9 @@ public class JsonXMLOutputFactory extends AbstractXMLOutputFactory {
                 throw new IllegalArgumentException("Unsupported property: " + name);
             }
         }
+    }
+
+    public JsonXMLConfig getConfig() {
+        return this.config;
     }
 }

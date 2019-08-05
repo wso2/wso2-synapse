@@ -25,10 +25,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.builtin.TransformMediator;
 
 import javax.xml.namespace.QName;
+import java.util.List;
 import java.util.Properties;
 
 public class TransformMediatorFactory extends AbstractMediatorFactory {
@@ -48,7 +50,12 @@ public class TransformMediatorFactory extends AbstractMediatorFactory {
             Value generatedKey = keyFac.createValue("schema", elem);
             transformMediator.setSchemaKey(generatedKey);
         } else {
-            handleException("The field schema should be present");
+            List<MediatorProperty> mediatorPropertyList = MediatorPropertyFactory.getMediatorProperties(elem);
+            if (mediatorPropertyList != null && !mediatorPropertyList.isEmpty()) {
+                transformMediator.addAllProperties(mediatorPropertyList);
+            } else {
+                handleException("Transform mediator should contain either a schema or custom properties");
+            }
         }
         return transformMediator;
     }
