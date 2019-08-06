@@ -73,7 +73,7 @@ public class Axis2MessageContext implements MessageContext {
     private final Map<String, Object> localEntries = new HashMap<String, Object>();
 
     /**
-     * Fault Handler stack which will be popped and called the handleFault in error states
+     * Fault JaegerSpanHandler stack which will be popped and called the handleFault in error states
      */
     private final Stack<FaultHandler> faultStack = new Stack<FaultHandler>();
 

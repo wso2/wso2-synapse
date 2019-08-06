@@ -26,6 +26,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.flow.statistics.tracing.holder.TracingManagerHolder;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.MediatorFaultHandler;
@@ -50,6 +51,26 @@ public class ContinuationStackManager {
 
     public static final String SKIP_CONTINUATION_STATE = "SKIP_CONTINUATION_STATE";
 
+    // TODO senthuran added this
+    private static void printStack(MessageContext synCtx) {
+        Stack<ContinuationState> continuationStatesStack = synCtx.getContinuationStateStack();
+        if (continuationStatesStack != null) {
+            System.out.println("\tStack:");
+            System.out.print("\t\t[");
+            for (ContinuationState continuationState : continuationStatesStack) {
+                if (continuationState instanceof SeqContinuationState) {
+                    SeqContinuationState seqContinuationState = (SeqContinuationState) continuationState;
+                    System.out.print(seqContinuationState.getPosition() + ". Name:" + seqContinuationState.getSeqName() + "(Type: " + seqContinuationState.getSeqType() + "), ");
+                } else if (continuationState instanceof ReliantContinuationState) {
+                    ReliantContinuationState reliantContinuationState = (ReliantContinuationState) continuationState;
+                    System.out.print(reliantContinuationState.getPosition() + ". SubBranch: " + reliantContinuationState.getSubBranch() + ", ");
+                }
+            }
+            System.out.println("]");
+            System.out.println("");
+        }
+    }
+
     /**
      * Add new SeqContinuationState to the stack.
      * This should be done when branching to a new Sequence
@@ -63,7 +84,10 @@ public class ContinuationStackManager {
         if (synCtx.isContinuationEnabled() && !SequenceType.ANON.equals(seqType)) {
             //ignore Anonymous type sequences
             synCtx.pushContinuationState(new SeqContinuationState(seqType, seqName));
+            TracingManagerHolder.getOpenTracingManager().startNextCallMediatorSequenceSpan(synCtx); // TODO senthuran added this
         }
+        System.out.println("\t addSeqContinuationState"); // TODO Senthuran Added this
+        printStack(synCtx);
     }
 
     /**
@@ -73,14 +97,19 @@ public class ContinuationStackManager {
      * @return whether sequence continuation state addition need to be skipped
      */
     public static boolean isSkipSeqContinuationStateAddition(MessageContext synCtx) {
+        System.out.print("\t isSkipSeqContinuationStateAddition: "); // TODO Senthuran Added this
         Boolean isSkipContinuationState = (Boolean) synCtx.getProperty(SKIP_CONTINUATION_STATE);
         if (isSkipContinuationState != null && isSkipContinuationState) {
             Set keySet = synCtx.getPropertyKeySet();
             if (keySet != null) {
                 keySet.remove(SKIP_CONTINUATION_STATE);
             }
+            System.out.println("true"); // TODO senthuran added this
+            printStack(synCtx);
             return true;
         }
+        System.out.println("false"); // TODO senthuran added this
+        printStack(synCtx);
         return false;
     }
 
@@ -98,6 +127,8 @@ public class ContinuationStackManager {
                 removeReliantContinuationState(synCtx);
             }
         }
+        System.out.println("\t removeSeqContinuationState " + seqType.toString()); // TODO senthuran added this
+        printStack(synCtx);
     }
 
     /**
@@ -117,6 +148,8 @@ public class ContinuationStackManager {
 				log.warn("Continuation Stack is empty. Probably due to a configuration issue");
 			}
 		}
+        System.out.println("\t updateSeqContinuationState"); // TODO Senthuran Added this
+        printStack(synCtx);
     }
 
     /**
@@ -139,6 +172,8 @@ public class ContinuationStackManager {
                 log.warn("Continuation Stack is empty. Probably due to a configuration issue");
             }
         }
+        System.out.println("\t addReliantContinuationState"); // TODO Senthuran Added this
+        printStack(synCtx);
     }
 
     /**
@@ -157,6 +192,8 @@ public class ContinuationStackManager {
 				log.warn("Continuation Stack is empty. Probably due to a configuration issue");
 			}
 		}
+        System.out.println("\t Remove from stack reliant continuation state "); // TODO Senthuran added this
+        printStack(synCtx);
     }
 
     /**
@@ -167,7 +204,6 @@ public class ContinuationStackManager {
      */
     public static SeqContinuationState getClonedSeqContinuationState(
             SeqContinuationState oriSeqContinuationState) {
-
         SeqContinuationState clone =
                 new SeqContinuationState(oriSeqContinuationState.getSeqType(),
                                          oriSeqContinuationState.getSeqName());
@@ -176,6 +212,7 @@ public class ContinuationStackManager {
             clone.setChildContState(getClonedReliantContState(
                     oriSeqContinuationState.getChildContState()));
         }
+        System.out.println("\t getClonedSeqContinuationState"); // TODO Senthuran Added this
         return clone;
     }
 
@@ -209,6 +246,8 @@ public class ContinuationStackManager {
                 continuationStack.clear();
             }
         }
+        System.out.println("\t clearStack"); // TODO Senthuran added this
+        printStack(synCtx);
     }
 
     /**
@@ -219,8 +258,12 @@ public class ContinuationStackManager {
         Stack<ContinuationState> continuationStack = synCtx.getContinuationStateStack();
         synchronized (continuationStack) {
             if (!continuationStack.isEmpty()) {
+                System.out.println("\t peak"); // TODO Senthuran Added this
+                printStack(synCtx);
                 return continuationStack.peek();
             } else {
+                System.out.println("\t peak"); // TODO Senthuran Added this
+                System.out.println("\t\treturn null");
                 return null;
             }
         }
@@ -233,9 +276,12 @@ public class ContinuationStackManager {
         Stack<ContinuationState> continuationStack = synCtx.getContinuationStateStack();
         synchronized (continuationStack) {
             if (!continuationStack.isEmpty()) {
+                TracingManagerHolder.getOpenTracingManager().endNextCallMediatorSequenceSpan(synCtx); // TODO Senthuran added this
                 continuationStack.pop();
             }
         }
+        System.out.println("\t Pop from stack "); // TODO senthuran added this
+        printStack(synCtx);
     }
 
     /**

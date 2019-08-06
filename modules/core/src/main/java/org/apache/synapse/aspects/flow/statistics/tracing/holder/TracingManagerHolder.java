@@ -7,7 +7,7 @@ public class TracingManagerHolder {
     private static OpenTracingManager openTracingManager;
 
     static {
-        resolveOpenTracingMananger();
+        resolveOpenTracingMananger(); // TODO senthuran re-add this
     }
 
     private static void resolveOpenTracingMananger() {

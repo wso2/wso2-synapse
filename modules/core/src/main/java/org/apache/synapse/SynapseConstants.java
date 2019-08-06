@@ -230,7 +230,7 @@ public final class SynapseConstants {
     /** An Axis2 message context property that indicates the maximum time to spend on sending the message */
     public static final String SEND_TIMEOUT = "SEND_TIMEOUT";
 
-    /** Fault Handler which hold the last sequence fault handler */
+    /** Fault JaegerSpanHandler which hold the last sequence fault handler */
     public static final String LAST_SEQ_FAULT_HANDLER = "LAST_SEQ_FAULT_HANDLER";
 
     //- Axis2 Message Context Properties used by Synapse -

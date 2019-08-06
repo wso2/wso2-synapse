@@ -101,14 +101,14 @@ public class SynapseHandlersLoader {
         try {
             obj = Class.forName(classFQName).newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            handleException("Error creating Handler for class name : " + classFQName, e);
+            handleException("Error creating JaegerSpanHandler for class name : " + classFQName, e);
         }
 
         if (obj instanceof SynapseHandler) {
             return (SynapseHandler) obj;
         } else {
-            handleException("Error creating Handler. The Handler should be of type " +
-                            "org.apache.synapse.Handler");
+            handleException("Error creating JaegerSpanHandler. The JaegerSpanHandler should be of type " +
+                            "org.apache.synapse.JaegerSpanHandler");
         }
         return null;
     }
@@ -120,7 +120,7 @@ public class SynapseHandlersLoader {
 
             String propName = child.getAttribute(NAME_ATT).getAttributeValue();
             if (propName == null) {
-                handleException("Synapse Handler parameter must contain the name attribute");
+                handleException("Synapse JaegerSpanHandler parameter must contain the name attribute");
             } else {
                 if (child.getAttribute(VALUE_ATT) != null) {
                     String value = child.getAttribute(VALUE_ATT).getAttributeValue();
@@ -132,7 +132,7 @@ public class SynapseHandlersLoader {
                         handler.addProperty(propName, omElt);
                         PropertyHelper.setInstanceProperty(propName, omElt, handler);
                     } else {
-                        handleException("Synapse Handler parameter must contain " +
+                        handleException("Synapse JaegerSpanHandler parameter must contain " +
                                         "name and value attributes, or a name and a child XML fragment");
                     }
                 }
