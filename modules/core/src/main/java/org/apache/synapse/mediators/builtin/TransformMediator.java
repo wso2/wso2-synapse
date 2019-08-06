@@ -23,14 +23,14 @@ import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.axis2.AxisFault;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
+import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
+import org.apache.synapse.commons.json.jsonprocessor.parser.JsonProcessor;
 import org.apache.synapse.commons.staxon.core.json.JsonXMLOutputFactory;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.mediators.Value;
-import org.apache.synapse.mediators.jjparser.exceptions.ParserException;
-import org.apache.synapse.mediators.jjparser.exceptions.ValidatorException;
-import org.apache.synapse.mediators.jjparser.parser.JavaJsonParser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,11 +63,9 @@ public class TransformMediator extends AbstractMediator {
                 }
                 String result;
 
-                result = JavaJsonParser.parseJson(jsonPayload, schema);
-                if (result != null) {
-                    JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
-                            result, true, true);
-                }
+                result = JsonProcessor.parseJson(jsonPayload, schema);
+                JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
+                        result, true, true);
             } catch (ValidatorException e) {
                 handleException("ValidatorException : ", synCtx);
             } catch (ParserException e) {

@@ -1,34 +1,50 @@
-package parser;
+/**
+ *  Copyright (c) 2005-2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.synapse.commons.json.jsonprocessor.parser;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import contants.ValidatorConstants;
-import exceptions.ParserException;
-import exceptions.ValidatorException;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import utils.GSONDataTypeConverter;
-import validators.*;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PipedOutputStream;
+import org.apache.synapse.commons.json.jsonprocessor.constants.ValidatorConstants;
+import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
+import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
+import org.apache.synapse.commons.json.jsonprocessor.utils.GSONDataTypeConverter;
+import org.apache.synapse.commons.json.jsonprocessor.validators.ArrayValidator;
+import org.apache.synapse.commons.json.jsonprocessor.validators.BooleanValidator;
+import org.apache.synapse.commons.json.jsonprocessor.validators.NumericValidator;
+import org.apache.synapse.commons.json.jsonprocessor.validators.ObjectValidator;
+import org.apache.synapse.commons.json.jsonprocessor.validators.StringValidator;
 
 /**
  * This class will parse a given JSON input according to a given schema.
  * Supported inout formats - String and Gson JsonObject
  */
-public class JavaJsonParser {
+public class JsonProcessor {
 
     // Use without instantiating
-    private JavaJsonParser() {
+    private JsonProcessor() {
     }
 
     // Logger instance
-    private static Log logger = LogFactory.getLog(JavaJsonParser.class.getName());
+    private static Log logger = LogFactory.getLog(JsonProcessor.class.getName());
 
     // JSON parser instance
     private static JsonParser parser = new JsonParser();
