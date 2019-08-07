@@ -18,14 +18,20 @@
 
 package org.apache.synapse.unittest;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
+import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.unittest.testcase.data.classes.RegistryResource;
 import org.apache.synapse.unittest.testcase.data.classes.SynapseTestCase;
+import org.apache.synapse.unittest.testcase.data.classes.TestCaseSummary;
+import org.apache.synapse.unittest.testcase.data.classes.TestSuiteSummary;
 import org.apache.synapse.unittest.testcase.data.holders.ArtifactData;
 import org.apache.synapse.unittest.testcase.data.holders.MockServiceData;
 import org.apache.synapse.unittest.testcase.data.holders.TestCaseData;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -46,9 +52,9 @@ public class RequestHandler implements Runnable {
     private static Logger log = Logger.getLogger(UnitTestingExecutor.class.getName());
 
     private Socket socket;
-    private JsonObject responseToClient;
     private boolean isTransportPassThroughPortChecked = false;
     private String exception;
+    private TestSuiteSummary testSuiteSummary = new TestSuiteSummary();
 
     /**
      * Initializing RequestHandler withe the client socket connection.
@@ -68,16 +74,16 @@ public class RequestHandler implements Runnable {
 
             if (synapseTestCases != null) {
                 runTestingAgent(synapseTestCases);
+                clearRegistryAndConnectorResources(synapseTestCases);
             } else {
                 log.error("Reading Synapse testcase data failed");
-                responseToClient = new JsonParser()
-                        .parse("{'test-cases':'Failed while reading synapseTestCase data','Exception':'"
-                                + exception + "'}").getAsJsonObject();
+                testSuiteSummary.setDescription("Failed while reading synapseTestCase data");
+                testSuiteSummary.setDeploymentStatus(Constants.FAILED_KEY);
+                testSuiteSummary.setDeploymentException(exception);
             }
 
-            writeData(responseToClient);
+            writeData(testSuiteSummary);
             MockServiceCreator.stopServices();
-
             log.info("End processing test-case handler\n");
         } catch (Exception e) {
             log.error("Error while running client request in test agent", e);
@@ -125,6 +131,16 @@ public class RequestHandler implements Runnable {
             TestCaseData readTestCaseData = synapseTestcaseDataReader.readAndStoreTestCaseData();
             MockServiceData readMockServiceData = synapseTestcaseDataReader.readAndStoreMockServiceData();
 
+            //configure connector resources if exists
+            if (!readArtifactData.getConnectorResources().isEmpty()) {
+                ConnectorDeployer.deployConnectorResources(readArtifactData.getConnectorResources());
+            }
+
+            //store registry resources into mock registry in synapse configuration
+            if (!readArtifactData.getRegistryResources().isEmpty()) {
+                addRegistryResourcesToMockRegistry(readArtifactData.getRegistryResources());
+            }
+
             //configure the artifact if there are mock-services to append
             if (readMockServiceData.getMockServicesCount() > 0) {
                 ConfigModifier.endPointModifier(readArtifactData, readMockServiceData);
@@ -139,7 +155,7 @@ public class RequestHandler implements Runnable {
 
         } catch (Exception e) {
             log.error("Error while reading data from received message", e);
-            exception = e.toString();
+            exception = CommonUtils.stackTraceToString(e);
             return null;
         }
 
@@ -153,27 +169,28 @@ public class RequestHandler implements Runnable {
     private void runTestingAgent(SynapseTestCase synapseTestCase) {
 
         TestingAgent agent = new TestingAgent();
-        Map.Entry<Boolean, String> supportiveArtifactDeployment = new AbstractMap.SimpleEntry<>(false, null);
-        Map.Entry<Boolean, String> testArtifactDeployment = new AbstractMap.SimpleEntry<>(false, null);
+        Map.Entry<Boolean, TestSuiteSummary> supportiveArtifactDeployment = new AbstractMap.SimpleEntry<>(false, null);
+        Map.Entry<Boolean, TestSuiteSummary> testArtifactDeployment = new AbstractMap.SimpleEntry<>(false, null);
 
         //get results of supportive-artifact deployment if exists
         if (synapseTestCase.getArtifacts().getSupportiveArtifactCount() > 0) {
             log.info("Supportive artifacts deployment started");
-            supportiveArtifactDeployment = agent.processSupportiveArtifacts(synapseTestCase);
+            supportiveArtifactDeployment = agent.processSupportiveArtifacts(synapseTestCase, testSuiteSummary);
         }
 
         //check supportive-artifact deployment is success or not
         if (supportiveArtifactDeployment.getKey() || synapseTestCase.getArtifacts().getSupportiveArtifactCount() == 0) {
             log.info("Test artifact deployment started");
-            testArtifactDeployment = agent.processTestArtifact(synapseTestCase);
+            testSuiteSummary.setDeploymentStatus(Constants.PASSED_KEY);
+            testArtifactDeployment = agent.processTestArtifact(synapseTestCase, testSuiteSummary);
 
-        } else if (!supportiveArtifactDeployment.getKey() && supportiveArtifactDeployment.getValue() != null) {
-            responseToClient = new JsonParser()
-                    .parse("{'deployment':'failed', 'exception':'"
-                            + supportiveArtifactDeployment.getValue() + "'}").getAsJsonObject();
+        } else if (!supportiveArtifactDeployment.getKey() &&
+                supportiveArtifactDeployment.getValue().getDeploymentException() != null) {
+            testSuiteSummary.setDeploymentStatus(Constants.FAILED_KEY);
+
         } else {
-            responseToClient = new JsonParser()
-                    .parse("{'supportive-deployment':'failed'}").getAsJsonObject();
+            testSuiteSummary.setDeploymentStatus(Constants.FAILED_KEY);
+            testSuiteSummary.setDescription("supportive artifact deployment failed");
         }
 
         //check test-artifact deployment is success or not
@@ -181,36 +198,55 @@ public class RequestHandler implements Runnable {
 
             log.info("Synapse testing agent ready to mediate test cases through deployments");
             //performs test cases through the deployed synapse configuration
-            Map.Entry<JsonObject, String> testCasesMediated = agent.processTestCases(synapseTestCase);
-
-            //check mediation or invoke is success or failed
-            if (testCasesMediated.getValue() == null) {
-                responseToClient = testCasesMediated.getKey();
-            } else {
-                responseToClient = new JsonParser()
-                        .parse("{'mediation':'failed', 'exception':'"
-                                + testCasesMediated.getValue() + "'}").getAsJsonObject();
-            }
+            agent.processTestCases(synapseTestCase, testSuiteSummary);
 
         } else if (!testArtifactDeployment.getKey() && testArtifactDeployment.getValue() != null) {
-            responseToClient = new JsonParser()
-                    .parse("{'deployment':'failed', 'exception':'"
-                            + testArtifactDeployment.getValue() + "'}").getAsJsonObject();
+            testSuiteSummary.setDeploymentStatus(Constants.FAILED_KEY);
         } else {
-            responseToClient = new JsonParser()
-                    .parse("{'test-deployment':'failed'}").getAsJsonObject();
+            testSuiteSummary.setDeploymentStatus(Constants.FAILED_KEY);
+            testSuiteSummary.setDescription("test artifact deployment failed");
         }
+
+        //undeploy all the deployed artifacts
+        agent.artifactUndeployer();
     }
 
     /**
      * Write output data to the unit testing client.
      */
-    private void writeData(JsonObject jsonObject) throws IOException {
-
+    private void writeData(TestSuiteSummary testSummary) throws IOException {
+        JsonObject jsonObject = createResponseJSON(testSummary);
         OutputStream out = socket.getOutputStream();
         ObjectOutputStream o = new ObjectOutputStream(out);
         o.writeObject(jsonObject.toString());
         out.flush();
+    }
+
+    /**
+     * Create a json response message including all the details of the test suite.
+     *
+     * @return json message
+     */
+    private JsonObject createResponseJSON(TestSuiteSummary testSummary) {
+        JsonObject jsonResponse = new JsonObject();
+        jsonResponse.addProperty(Constants.DEPLOYMENT_STATUS, testSummary.getDeploymentStatus());
+        jsonResponse.addProperty(Constants.DEPLOYMENT_EXCEPTION, testSummary.getDeploymentException());
+        jsonResponse.addProperty(Constants.DEPLOYMENT_DESCRIPTION, testSummary.getDescription());
+        jsonResponse.addProperty(Constants.MEDIATION_STATUS, testSummary.getMediationStatus());
+        jsonResponse.addProperty(Constants.MEDIATION_EXCEPTION, testSummary.getMediationException());
+
+        JsonArray jsonArray = new JsonArray();
+        for (TestCaseSummary summary : testSummary.getTestCaseSumamryList()) {
+            JsonObject testObject = new JsonObject();
+            testObject.addProperty(Constants.MEDIATION_STATUS, summary.getMediationStatus());
+            testObject.addProperty(Constants.ASSERTION_STATUS, summary.getAssertionStatus());
+            testObject.addProperty(Constants.ASSERTION_EXCEPTION, summary.getTestException());
+
+            jsonArray.add(testObject);
+        }
+
+        jsonResponse.add("testCases", jsonArray);
+        return jsonResponse;
     }
 
     /**
@@ -238,6 +274,52 @@ public class RequestHandler implements Runnable {
             }
 
             isTransportPassThroughPortChecked = true;
+        }
+    }
+
+    /**
+     * Add user sent registry resources into the mock registry.
+     *
+     * @param resourceMap map which has registry resources
+     */
+    private void addRegistryResourcesToMockRegistry(Map<String, RegistryResource> resourceMap) {
+        SynapseConfiguration synapseConfiguration = UnitTestingExecutor.getExecuteInstance().getSynapseConfiguration();
+        UnitTestMockRegistry mockRegistry = (UnitTestMockRegistry) synapseConfiguration.getRegistry();
+
+        for (Map.Entry<String, RegistryResource> resource : resourceMap.entrySet()) {
+            mockRegistry.addResource(resource.getKey(), resource.getValue());
+        }
+    }
+
+    /**
+     * Clear unit test mock registry resources and remove connector test folder in temp if exists.
+     *
+     * @param synapseTestCases map which has test suite data
+     */
+    private void clearRegistryAndConnectorResources(SynapseTestCase synapseTestCases) {
+        ArtifactData readArtifactData = synapseTestCases.getArtifacts();
+
+        try {
+            //remove connector resources include test directory in temp
+            if (!readArtifactData.getConnectorResources().isEmpty()) {
+                String connectorDestination = System.getProperty(Constants.PRAM_TEMP_DIR) + File.separator
+                        + Constants.CONNECTOR_TEST_FOLDER;
+                FileUtils.deleteDirectory(new File(connectorDestination));
+
+                log.info("Removed connector resources from the temp directory");
+            }
+
+            //clear registry resources map in mock registry
+            if (!readArtifactData.getRegistryResources().isEmpty()) {
+                SynapseConfiguration synapseConfiguration = UnitTestingExecutor.getExecuteInstance()
+                        .getSynapseConfiguration();
+                UnitTestMockRegistry mockRegistry = (UnitTestMockRegistry) synapseConfiguration.getRegistry();
+                mockRegistry.clearResources();
+
+                log.info("Clear registry resources from the UnitTestMockRegistry");
+            }
+        } catch (IOException e) {
+            log.error("Exception while removing mock connector directory in temp", e);
         }
     }
 

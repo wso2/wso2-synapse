@@ -137,7 +137,7 @@ class ConfigModifier {
                 NamedNodeMap attributeListOfEndPoint = endPointNode.getAttributes();
 
                 String valueOfName;
-                if(attributeListOfEndPoint.getNamedItem(ARTIFACT_NAME_ATTRIBUTE) != null) {
+                if (attributeListOfEndPoint.getNamedItem(ARTIFACT_NAME_ATTRIBUTE) != null) {
                     valueOfName = attributeListOfEndPoint.getNamedItem(ARTIFACT_NAME_ATTRIBUTE).getNodeValue();
                 } else {
                     continue;
