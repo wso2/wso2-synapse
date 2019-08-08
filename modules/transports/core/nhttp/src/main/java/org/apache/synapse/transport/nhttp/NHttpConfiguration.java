@@ -291,22 +291,26 @@ public final class NHttpConfiguration {
      * @param def default value to return if the property is not set
      * @return the value of the property to be used
      */
-    public boolean getBooleanValue(String name, boolean def) {
+    boolean getBooleanValue(String name, boolean def) {
+
         String val = System.getProperty(name);
         if (val == null) {
             val = props.getProperty(name);
         }
 
-        if (val != null && Boolean.parseBoolean(val)) {
-            if (log.isDebugEnabled()) {
-                log.debug("Using nhttp tuning parameter : " + name);
+        if (val != null) {
+            val = val.trim();
+            if (Boolean.parseBoolean(val)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Using nhttp tuning parameter : " + name);
+                }
+                return true;
+            } else if (!Boolean.parseBoolean(val)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Using nhttp tuning parameter : " + name);
+                }
+                return false;
             }
-            return true;
-        } else if (val != null && !Boolean.parseBoolean(val)) {
-            if (log.isDebugEnabled()) {
-                log.debug("Using nhttp tuning parameter : " + name);
-            }
-            return false;
         }
         return def;
     }
