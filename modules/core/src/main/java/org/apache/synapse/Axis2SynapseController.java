@@ -329,22 +329,24 @@ public class Axis2SynapseController implements SynapseController {
 
             // detach the synapse handlers
             if (configurationContext != null) {
-                List<Phase> inflowPhases =
-                        configurationContext.getAxisConfiguration().getInFlowPhases();
-                for (Phase inPhase : inflowPhases) {
-                    // we are interested about the Dispatch phase in the inflow
-                    if (PhaseMetadata.PHASE_DISPATCH.equals(inPhase.getPhaseName())) {
-                        List<HandlerDescription> synapseHandlers
-                                = new ArrayList<HandlerDescription>();
-                        for (Handler handler : inPhase.getHandlers()) {
-                            if (SynapseDispatcher.NAME.equals(handler.getName()) ||
+                if (configurationContext.getAxisConfiguration() != null) {
+                    List<Phase> inflowPhases =
+                            configurationContext.getAxisConfiguration().getInFlowPhases();
+                    for (Phase inPhase : inflowPhases) {
+                        // we are interested about the Dispatch phase in the inflow
+                        if (PhaseMetadata.PHASE_DISPATCH.equals(inPhase.getPhaseName())) {
+                            List<HandlerDescription> synapseHandlers
+                                    = new ArrayList<HandlerDescription>();
+                            for (Handler handler : inPhase.getHandlers()) {
+                                if (SynapseDispatcher.NAME.equals(handler.getName()) ||
                                     SynapseMustUnderstandHandler.NAME.equals(handler.getName())) {
-                                synapseHandlers.add(handler.getHandlerDesc());
+                                    synapseHandlers.add(handler.getHandlerDesc());
+                                }
                             }
-                        }
 
-                        for (HandlerDescription handlerMD : synapseHandlers) {
-                            inPhase.removeHandler(handlerMD);
+                            for (HandlerDescription handlerMD : synapseHandlers) {
+                                inPhase.removeHandler(handlerMD);
+                            }
                         }
                     }
                 }
@@ -666,8 +668,10 @@ public class Axis2SynapseController implements SynapseController {
      */
     private void undeploySynapseService() throws AxisFault {
         log.info("Undeploying the Synapse service...");
-        configurationContext.getAxisConfiguration().removeService(
-                SynapseConstants.SYNAPSE_SERVICE_NAME);
+        if (configurationContext.getAxisConfiguration() != null) {
+            configurationContext.getAxisConfiguration().removeService(
+                    SynapseConstants.SYNAPSE_SERVICE_NAME);
+        }
     }
 
     /**
