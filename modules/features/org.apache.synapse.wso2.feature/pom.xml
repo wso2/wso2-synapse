@@ -1,26 +1,27 @@
 <!--
- ~ Copyright (c) 2005-2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
- ~
- ~ WSO2 Inc. licenses this file to you under the Apache License,
- ~ Version 2.0 (the "License"); you may not use this file except
- ~ in compliance with the License.
- ~ You may obtain a copy of the License at
- ~
- ~    http://www.apache.org/licenses/LICENSE-2.0
- ~
- ~ Unless required by applicable law or agreed to in writing,
- ~ software distributed under the License is distributed on an
- ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- ~ KIND, either express or implied.  See the License for the
- ~ specific language governing permissions and limitations
- ~ under the License.
- -->
- <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+~ Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+~
+~ WSO2 Inc. licenses this file to you under the Apache License,
+~ Version 2.0 (the "License"); you may not use this file except
+~ in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing,
+~ software distributed under the License is distributed on an
+~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~ KIND, either express or implied. See the License for the
+~ specific language governing permissions and limitations
+~ under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <parent>
-       <artifactId>synapse-features</artifactId>
-       <groupId>org.apache.synapse</groupId>
-       <version>2.1.7-wso2v118-SNAPSHOT</version>
+        <artifactId>synapse-features</artifactId>
+        <groupId>org.apache.synapse</groupId>
+        <version>2.1.7-wso2v118-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -48,9 +49,9 @@
             <artifactId>synapse-tasks</artifactId>
         </dependency>
         <dependency>
-           <groupId>org.apache.synapse</groupId>
-           <artifactId>synapse-samples</artifactId>
-       </dependency>
+            <groupId>org.apache.synapse</groupId>
+            <artifactId>synapse-samples</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.quartz-scheduler.wso2</groupId>
             <artifactId>quartz</artifactId>
@@ -60,9 +61,9 @@
             <artifactId>gson</artifactId>
         </dependency>
         <dependency>
-           <groupId>org.wso2.caching</groupId>
-           <artifactId>wso2caching-core</artifactId>
-       </dependency>
+            <groupId>org.wso2.caching</groupId>
+            <artifactId>wso2caching-core</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.wso2.orbit.com.jayway.jsonpath</groupId>
             <artifactId>json-path</artifactId>
@@ -71,10 +72,10 @@
             <groupId>net.minidev</groupId>
             <artifactId>json-smart</artifactId>
         </dependency>
-      	<dependency>
+        <dependency>
             <groupId>com.damnhandy.wso2</groupId>
             <artifactId>handy-uri-templates</artifactId>
-	    </dependency>
+        </dependency>
         <dependency>
             <groupId>org.wso2.orbit.com.github.fge</groupId>
             <artifactId>json-schema-validator-all</artifactId>
@@ -135,14 +136,15 @@
                                 <bundleDef>com.damnhandy.wso2:handy-uri-templates</bundleDef>
                                 <bundleDef>org.wso2.orbit.com.jayway.jsonpath:json-path</bundleDef>
                                 <bundleDef>net.minidev:json-smart</bundleDef>
-                                <bundleDef>net.minidev:accessors-smart:${net.minidev.accessors-smart.version}</bundleDef>
+                                <bundleDef>net.minidev:accessors-smart:${net.minidev.accessors-smart.version}
+                                </bundleDef>
                                 <bundleDef>org.ow2.asm:asm:${org.ow2.asm.asm.version}</bundleDef>
                                 <!-- Json schema validator dependencies -->
                                 <bundleDef>org.wso2.orbit.com.googlecode.libphonenumber:libphonenumber</bundleDef>
                                 <!--<bundleDef>org.wso2.orbit.joda-time:joda-time:${joda-time.version}</bundleDef>-->
                                 <bundleDef>com.google.guava:guava:${google.guava.version}</bundleDef>
                                 <bundleDef>org.wso2.orbit.com.github.fge:json-schema-validator-all</bundleDef>
-                           </bundles>
+                            </bundles>
                         </configuration>
                     </execution>
                 </executions>
