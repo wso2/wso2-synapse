@@ -327,6 +327,11 @@
              <scope>test</scope>
          </dependency>
          <dependency>
+             <groupId>net.sf.saxon.wso2</groupId>
+             <artifactId>saxon</artifactId>
+             <version>${saxon.wso2.version}</version>
+         </dependency>
+         <dependency>
              <groupId>net.sf.saxon</groupId>
              <artifactId>saxon-xqj</artifactId>
              <version>${saxon.version}</version>
@@ -425,6 +430,11 @@
              <version>${project.version}</version>
          </dependency>
          <dependency>
+             <groupId>org.apache.synapse</groupId>
+             <artifactId>synapse-fix-transport</artifactId>
+             <version>${project.version}</version>
+         </dependency>
+         <dependency>
              <groupId>org.apache.geronimo.specs</groupId>
              <artifactId>geronimo-jms_1.1_spec</artifactId>
              <version>${jms-1.1-spec.version}</version>
@@ -491,6 +501,11 @@
              <version>${com.damnhandy.version}</version>
          </dependency>
          <dependency>
+             <groupId>com.damnhandy.wso2</groupId>
+             <artifactId>handy-uri-templates</artifactId>
+             <version>${damnhandy.version}</version>
+         </dependency>
+         <dependency>
              <groupId>javax.jms</groupId>
              <artifactId>jms</artifactId>
              <version>${javax.jms.version}</version>
@@ -517,9 +532,19 @@
              <version>${quartz.version}</version>
          </dependency>
          <dependency>
+             <groupId>org.quartz-scheduler.wso2</groupId>
+             <artifactId>quartz</artifactId>
+             <version>${quartz.wso2.version}</version>
+         </dependency>
+         <dependency>
              <groupId>quickfixj</groupId>
              <artifactId>quickfixj-all</artifactId>
              <version>${qfj.version}</version>
+         </dependency>
+         <dependency>
+             <groupId>quickfixj.wso2</groupId>
+             <artifactId>quickfixj</artifactId>
+             <version>${quickfixj.wso2.version}</version>
          </dependency>
          <dependency>
              <groupId>oro</groupId>
@@ -532,9 +557,19 @@
              <version>${jsch.version}</version>
          </dependency>
          <dependency>
+             <groupId>org.wso2.orbit.com.jcraft</groupId>
+             <artifactId>jsch</artifactId>
+             <version>${jsch.wso2.version}</version>
+         </dependency>
+         <dependency>
              <groupId>commons-net</groupId>
              <artifactId>commons-net</artifactId>
              <version>${commons.net.version}</version>
+         </dependency>
+         <dependency>
+             <groupId>org.wso2.orbit.commons-net</groupId>
+             <artifactId>commons-net</artifactId>
+             <version>${commons.net.wso2.version}</version>
          </dependency>
          <dependency>
              <groupId>de.schlichtherle.io</groupId>
@@ -572,6 +607,21 @@
              <version>${hc.httpclient.version}</version>
          </dependency>
          <dependency>
+             <groupId>org.apache.httpcomponents.wso2</groupId>
+             <artifactId>httpcore</artifactId>
+             <version>${httpcore.wso2.version}</version>
+         </dependency>
+         <dependency>
+             <groupId>org.wso2.orbit.httpcomponents</groupId>
+             <artifactId>httpcore-nio</artifactId>
+             <version>${httpcore-nio.version}</version>
+         </dependency>
+         <dependency>
+             <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
+             <artifactId>httpclient</artifactId>
+             <version>${httpclient.wso2.version}</version>
+         </dependency>
+         <dependency>
              <groupId>org.apache.axis2.transport</groupId>
              <artifactId>axis2-transport-testkit</artifactId>
              <version>${axis2.transport.version}</version>
@@ -583,6 +633,11 @@
          </dependency>
          <dependency>
              <groupId>org.wso2.org.apache.commons</groupId>
+             <artifactId>commons-vfs2</artifactId>
+             <version>${commons.vfs.version}</version>
+         </dependency>
+         <dependency>
+             <groupId>org.apache.commons.wso2</groupId>
              <artifactId>commons-vfs2</artifactId>
              <version>${commons.vfs.version}</version>
          </dependency>
@@ -999,12 +1054,6 @@
               <scope>test</scope>
           </dependency>
           <dependency>
-              <groupId>org.apache.activemq</groupId>
-              <artifactId>activemq-core</artifactId>
-              <version>${activemq.version}</version>
-              <scope>test</scope>
-          </dependency>
-          <dependency>
               <groupId>org.eclipse.jetty</groupId>
               <artifactId>jetty-server</artifactId>
               <version>${jetty.version}</version>
@@ -1029,16 +1078,24 @@
               <scope>test</scope>
           </dependency>
           <dependency>
-              <groupId>org.powermock</groupId>
-              <artifactId>powermock-api-mockito2</artifactId>
-              <version>${powermock.version}</version>
-              <scope>test</scope>
+              <groupId>jcifs.wso2</groupId>
+              <artifactId>jcifs</artifactId>
+              <version>${jcifs.wso2.version}</version>
           </dependency>
           <dependency>
-              <groupId>org.powermock</groupId>
-              <artifactId>powermock-module-junit4</artifactId>
-              <version>${powermock.version}</version>
-              <scope>test</scope>
+              <groupId>net.minidev</groupId>
+              <artifactId>accessors-smart</artifactId>
+              <version>${net.minidev.accessors-smart.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.ow2.asm</groupId>
+              <artifactId>asm</artifactId>
+              <version>${org.ow2.asm.asm.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>net.minidev</groupId>
+              <artifactId>json-smart</artifactId>
+              <version>${json.smart.version}</version>
           </dependency>
           <dependency>
               <groupId>io.netty</groupId>
@@ -1111,6 +1168,7 @@
       <module>modules/transports</module>
       <module>modules/tasks</module>
       <module>modules/core</module>
+      <module>modules/features</module>
       <module>modules/extensions</module>
       <module>modules/samples</module>
       <module>modules/patches</module>
@@ -1159,15 +1217,20 @@
       <com.google.code.gson.version>2.8.5</com.google.code.gson.version>
       <org.codehaus.jettison.wso2.version>1.1.wso2v1</org.codehaus.jettison.wso2.version>
       <com.damnhandy.version>2.1.6</com.damnhandy.version>
+      <damnhandy.version>${com.damnhandy.version}.wso2v2</damnhandy.version>
       <javax.jms.version>1.1</javax.jms.version>
       <org.antlr.version>3.4</org.antlr.version>
        <com.jayway.jsonpath.version>2.4.0.wso2v2</com.jayway.jsonpath.version>
       <qfj.version>1.5.3</qfj.version>
+      <quickfixj.wso2.version>${qfj.version}.wso2v1</quickfixj.wso2.version>
       <org.bouncycastle.version>1.60.0.wso2v1</org.bouncycastle.version>
       <imp.pkg.version.wso2.bouncycastle>[1.52.0,2.0.0)</imp.pkg.version.wso2.bouncycastle>
       <hc.httpcore.version>4.3.3</hc.httpcore.version>
+      <httpcore.wso2.version>${hc.httpcore.version}.wso2v1</httpcore.wso2.version>
       <httpcore-nio.wso2.version>4.3.3-wso2v4</httpcore-nio.wso2.version>
-      <hc.httpclient.version>4.3.2</hc.httpclient.version>
+      <httpcore-nio.version>4.3.3.wso2v4</httpcore-nio.version>
+      <hc.httpclient.version>4.3.6</hc.httpclient.version>
+      <httpclient.wso2.version>${hc.httpclient.version}.wso2v2</httpclient.wso2.version>
       <aspectj.version>1.8.5</aspectj.version>
       <spring.version>1.2.8</spring.version>
       <commons-codec.version>1.12</commons-codec.version>
@@ -1179,8 +1242,10 @@
       <commons.pool.version>1.3</commons.pool.version>
       <commons.vfs.version>2.2-wso2v6</commons.vfs.version>
       <truezip.version>6.6</truezip.version>
-      <commons.net.version>1.4.1</commons.net.version>
+      <commons.net.version>3.4</commons.net.version>
+      <commons.net.wso2.version>${commons.net.version}.wso2v1</commons.net.wso2.version>
       <jsch.version>0.1.51.wso2v1</jsch.version>
+      <jsch.wso2.version>0.1.54.wso2v1</jsch.wso2.version>
       <oro.version>2.0.8</oro.version>
       <slf4j.version>1.5.6</slf4j.version>
       <mina.version>1.1.0</mina.version>
@@ -1207,6 +1272,7 @@
       <!-- startup, quartz -->
       <commons-collections.version>3.2.1</commons-collections.version>
       <quartz.version>2.1.1</quartz.version>
+      <quartz.wso2.version>${quartz.version}.wso2v1</quartz.wso2.version>
       <geronimo-spec.version>1.1</geronimo-spec.version>
       <!-- xalan xsltc  -->
       <bcel.version>5.2</bcel.version>
@@ -1215,6 +1281,11 @@
       <JLex.version>0.0</JLex.version>
       <!-- misc -->
       <junit.version>4.8.2</junit.version>
+      <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>
+      <jcifs.wso2.version>1.3.17.wso2v1</jcifs.wso2.version>
+      <net.minidev.accessors-smart.version>1.2</net.minidev.accessors-smart.version>
+      <org.ow2.asm.asm.version>5.2</org.ow2.asm.asm.version>
+      <json.smart.version>2.3</json.smart.version>
       <!-- Warning: log4j versions above 1.2.14 introduce additional transitive dependencies,
              some of which are not available from the Maven central repository. -->
       <log4j.version>1.2.14</log4j.version>
@@ -1222,6 +1293,7 @@
       <derby.version>10.4.2.0</derby.version>
       <wrapper.version>3.2.3</wrapper.version>
       <saxon.version>8.9</saxon.version>
+      <saxon.wso2.version>${saxon.version}.0.wso2v2</saxon.wso2.version>
       <commons_io.version>2.0</commons_io.version>
       <commons-cli.version>1.0</commons-cli.version>
       <jline.version>0.9.94</jline.version>
