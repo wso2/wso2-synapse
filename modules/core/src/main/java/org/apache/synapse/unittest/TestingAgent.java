@@ -263,12 +263,16 @@ class TestingAgent {
     void processTestCases(SynapseTestCase synapseTestCase, TestSuiteSummary testSuiteSummary) {
         int testCaseCount = synapseTestCase.getTestCases().getTestCaseCount();
         log.info(testCaseCount + " Test case(s) ready to execute");
+        String currentTestCaseName = null;
 
         try {
             //execute test cases with synapse configurations and test data
             for (int i = 0; i < testCaseCount; i++) {
                 TestCaseSummary testSummary = new TestCaseSummary();
                 TestCase currentTestCase = synapseTestCase.getTestCases().getTestCase(i);
+                testSummary.setTestCaseName(currentTestCase.getTestCaseName());
+                testSuiteSummary.setRecentTestCaseName(currentTestCaseName);
+                currentTestCaseName = currentTestCase.getTestCaseName();
 
                 switch (artifactType) {
                     case TYPE_SEQUENCE:
@@ -312,6 +316,7 @@ class TestingAgent {
         } catch (Exception e) {
             log.error("Error occurred while running test cases", e);
             exception = CommonUtils.stackTraceToString(e);
+            testSuiteSummary.setRecentTestCaseName(currentTestCaseName);
             testSuiteSummary.setMediationStatus(Constants.FAILED_KEY);
             testSuiteSummary.setMediationException(exception);
         }

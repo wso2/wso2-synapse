@@ -35,7 +35,7 @@ public class Constants {
 
     //artifact key word constants
     static final String API_CONTEXT = "context";
-    static final String ARTIFACT_NAME_ATTRIBUTE = "name";
+    static final String NAME_ATTRIBUTE = "name";
     static final String ARTIFACT_TRANSPORTS_ATTRIBUTE = "transports";
     static final String ARTIFACT_KEY_ATTRIBUTE = "key";
     static final String ARTIFACT = "artifact";
@@ -115,11 +115,14 @@ public class Constants {
     //test summary report constants
     static final String PASSED_KEY = "PASSED";
     static final String FAILED_KEY = "FAILED";
+    static final String SKIPPED_KEY = "SKIPPED";
     static final String DEPLOYMENT_STATUS = "deploymentStatus";
     static final String DEPLOYMENT_EXCEPTION = "deploymentException";
     static final String DEPLOYMENT_DESCRIPTION = "deploymentDescription";
+    static final String TEST_CASE_NAME = "testCaseName";
     static final String MEDIATION_STATUS = "mediationStatus";
     static final String MEDIATION_EXCEPTION = "mediationException";
+    static final String CURRENT_TESTCASE = "currentTestCase";
     static final String ASSERTION_EXCEPTION = "exception";
     static final String ASSERTION_STATUS = "assertionStatus";
 

@@ -22,6 +22,7 @@ public class TestCaseSummary {
 
     private static final String SKIPPED_STATE = "SKIPPED";
     private static final String FAILED_STATE = "FAILED";
+    private String testCaseName;
     private String exception;
     private String mediationStatus = SKIPPED_STATE;
     private String assertionStatus = SKIPPED_STATE;
@@ -54,6 +55,15 @@ public class TestCaseSummary {
     }
 
     /**
+     * Get test case name.
+     *
+     * @return test cases name
+     */
+    public String getTestCaseName() {
+        return testCaseName;
+    }
+
+    /**
      * Set test case failure exception.
      *
      * @param exception test case exception
@@ -78,6 +88,15 @@ public class TestCaseSummary {
      */
     public void setAssertionStatus(String assertionStatus) {
         this.assertionStatus = assertionStatus;
+    }
+
+    /**
+     * Set test case name.
+     *
+     * @param testCaseName test cases name
+     */
+    public void setTestCaseName(String testCaseName) {
+        this.testCaseName = testCaseName;
     }
 
     /**

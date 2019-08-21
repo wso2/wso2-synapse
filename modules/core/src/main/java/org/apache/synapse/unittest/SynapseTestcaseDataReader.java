@@ -48,7 +48,6 @@ import javax.xml.stream.XMLStreamException;
 
 import static org.apache.synapse.unittest.Constants.ARTIFACT;
 import static org.apache.synapse.unittest.Constants.ARTIFACT_KEY_ATTRIBUTE;
-import static org.apache.synapse.unittest.Constants.ARTIFACT_NAME_ATTRIBUTE;
 import static org.apache.synapse.unittest.Constants.ARTIFACTS;
 import static org.apache.synapse.unittest.Constants.ARTIFACT_TRANSPORTS_ATTRIBUTE;
 import static org.apache.synapse.unittest.Constants.ASSERTION_ACTUAL;
@@ -58,6 +57,7 @@ import static org.apache.synapse.unittest.Constants.CONNECTOR_RESOURCES;
 import static org.apache.synapse.unittest.Constants.HTTPS_KEY;
 import static org.apache.synapse.unittest.Constants.HTTP_KEY;
 import static org.apache.synapse.unittest.Constants.MOCK_SERVICES;
+import static org.apache.synapse.unittest.Constants.NAME_ATTRIBUTE;
 import static org.apache.synapse.unittest.Constants.REGISTRY_MEDIA_TYPE;
 import static org.apache.synapse.unittest.Constants.REGISTRY_NAME;
 import static org.apache.synapse.unittest.Constants.REGISTRY_PATH;
@@ -149,7 +149,7 @@ class SynapseTestcaseDataReader {
                     = testArtifactDataNode.getFirstElement().getAttributeValue(new QName(ARTIFACT_KEY_ATTRIBUTE));
         } else {
             testArtifactNameOrKey
-                    = testArtifactDataNode.getFirstElement().getAttributeValue(new QName(ARTIFACT_NAME_ATTRIBUTE));
+                    = testArtifactDataNode.getFirstElement().getAttributeValue(new QName(NAME_ATTRIBUTE));
         }
         testArtifact.setArtifactNameOrKey(testArtifactNameOrKey);
 
@@ -203,7 +203,7 @@ class SynapseTestcaseDataReader {
                         = artifact.getFirstElement().getAttributeValue(new QName(ARTIFACT_KEY_ATTRIBUTE));
             } else {
                 supportiveArtifactNameOrKey
-                        = artifact.getFirstElement().getAttributeValue(new QName(ARTIFACT_NAME_ATTRIBUTE));
+                        = artifact.getFirstElement().getAttributeValue(new QName(NAME_ATTRIBUTE));
             }
             supportiveArtifact.setArtifactNameOrKey(supportiveArtifactNameOrKey);
 
@@ -299,8 +299,10 @@ class SynapseTestcaseDataReader {
         }
 
         while (testCaseIterator.hasNext()) {
-            OMElement testCaseNode = (OMElement) (testCaseIterator.next());
             TestCase testCase = new TestCase();
+            OMElement testCaseNode = (OMElement) (testCaseIterator.next());
+            String testCaseName = testCaseNode.getAttributeValue(new QName(NAME_ATTRIBUTE));
+            testCase.setTestCaseName(testCaseName);
 
             //Read input child from test-case node
             QName qualifiedInput = new QName("", TEST_CASE_INPUT, "");

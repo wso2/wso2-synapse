@@ -78,7 +78,7 @@ public class RequestHandler implements Runnable {
             } else {
                 log.error("Reading Synapse testcase data failed");
                 testSuiteSummary.setDescription("Failed while reading synapseTestCase data");
-                testSuiteSummary.setDeploymentStatus(Constants.FAILED_KEY);
+                testSuiteSummary.setDeploymentStatus(Constants.SKIPPED_KEY);
                 testSuiteSummary.setDeploymentException(exception);
             }
 
@@ -142,8 +142,15 @@ public class RequestHandler implements Runnable {
             }
 
             //configure the artifact if there are mock-services to append
+            String exceptionWhileMocking = null;
             if (readMockServiceData.getMockServicesCount() > 0) {
-                ConfigModifier.endPointModifier(readArtifactData, readMockServiceData);
+                exceptionWhileMocking = ConfigModifier.endPointModifier(readArtifactData, readMockServiceData);
+            }
+
+            //check is there any error occurred while mocking endpoints if yes stop the testing and return the exception
+            if (exceptionWhileMocking != null) {
+                exception = exceptionWhileMocking;
+                return null;
             }
 
             //wrap the artifact data, testcase data and mock service data as one
@@ -233,11 +240,13 @@ public class RequestHandler implements Runnable {
         jsonResponse.addProperty(Constants.DEPLOYMENT_EXCEPTION, testSummary.getDeploymentException());
         jsonResponse.addProperty(Constants.DEPLOYMENT_DESCRIPTION, testSummary.getDescription());
         jsonResponse.addProperty(Constants.MEDIATION_STATUS, testSummary.getMediationStatus());
+        jsonResponse.addProperty(Constants.CURRENT_TESTCASE, testSummary.getRecentTestCaseName());
         jsonResponse.addProperty(Constants.MEDIATION_EXCEPTION, testSummary.getMediationException());
 
         JsonArray jsonArray = new JsonArray();
         for (TestCaseSummary summary : testSummary.getTestCaseSumamryList()) {
             JsonObject testObject = new JsonObject();
+            testObject.addProperty(Constants.TEST_CASE_NAME, summary.getTestCaseName());
             testObject.addProperty(Constants.MEDIATION_STATUS, summary.getMediationStatus());
             testObject.addProperty(Constants.ASSERTION_STATUS, summary.getAssertionStatus());
             testObject.addProperty(Constants.ASSERTION_EXCEPTION, summary.getTestException());
