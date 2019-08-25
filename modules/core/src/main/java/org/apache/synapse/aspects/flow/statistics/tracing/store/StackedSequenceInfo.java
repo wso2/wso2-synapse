@@ -1,25 +1,26 @@
 package org.apache.synapse.aspects.flow.statistics.tracing.store;
 
-import org.apache.synapse.SequenceType;
+import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.tracing.manager.helpers.Util;
 
+@Deprecated // TODO Confirm and remove
 public class StackedSequenceInfo {
-    private String statisticDataUnitId;
-    private SequenceType type;
-    private String componentName; // TODO Hold the statisticDataUnit inside to get all info
+    private StatisticDataUnit statisticDataUnit;
+    private String spanReferenceId;
     private boolean isStarted;
 
-    public StackedSequenceInfo(String statisticDataUnitId, String componentName) {
-        this.statisticDataUnitId = statisticDataUnitId;
-        this.componentName = componentName;
+    public StackedSequenceInfo(StatisticDataUnit statisticDataUnit) {
+        this.statisticDataUnit = statisticDataUnit;
+        this.spanReferenceId = Util.extractId(statisticDataUnit);
         this.isStarted = false;
     }
 
-    public String getComponentName() {
-        return componentName;
+    public StatisticDataUnit getStatisticDataUnit() {
+        return statisticDataUnit;
     }
 
-    public void setComponentName(String componentName) {
-        this.componentName = componentName;
+    public String getSpanReferenceId() {
+        return spanReferenceId;
     }
 
     public boolean isStarted() {
@@ -28,21 +29,5 @@ public class StackedSequenceInfo {
 
     public void setStarted(boolean started) {
         isStarted = started;
-    }
-
-    public String getStatisticDataUnitId() {
-        return statisticDataUnitId;
-    }
-
-    public void setStatisticDataUnitId(String statisticDataUnitId) {
-        this.statisticDataUnitId = statisticDataUnitId;
-    }
-
-    public SequenceType getType() {
-        return type;
-    }
-
-    public void setType(SequenceType type) {
-        this.type = type;
     }
 }

@@ -25,11 +25,12 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
 import org.apache.synapse.aspects.flow.statistics.log.templates.AsynchronousExecutionEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.ParentReopenEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsOpenEvent;
 import org.apache.synapse.aspects.flow.statistics.tracing.holder.TracingManagerHolder;
+import org.apache.synapse.aspects.flow.statistics.tracing.manager.helpers.SpanEventCounter;
+import org.apache.synapse.aspects.flow.statistics.tracing.manager.helpers.Util;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
@@ -108,14 +109,24 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
             addEventAndIncrementCount(messageContext, openEvent);
 
-//            TracingHandler.startSpan(statisticDataUnit, null); // TODO Senthuran added this
-			StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit); // TODO senthuran added this
-			TracingManagerHolder.getOpenTracingManager().startSpan(statisticDataUnit, messageContext, null);
+			SpanEventCounter.getNextAbsoluteIndex(); // TODO senthuran added this
 
-//			DummyTracingHandler.runDummySimulation(); // TODO Senthuran added this
+			System.out.println("MsgCtx: " + Util.getObjectReference(messageContext) + "[OPEN_EVENT]reportEntryEvent:\n\t\t[" + statisticDataUnit.getCurrentIndex() + "](" + SpanEventCounter.getCurrentAbsoluteIndex() + ")[Parent: "+ statisticDataUnit.getParentIndex() + "] Component - Name: " + componentName + ", Type: " + componentType + ", ShouldTrackParent: " + statisticDataUnit.isShouldTrackParent());
+			TracingManagerHolder.getOpenTracingManager()
+					.handleOpenEntryEvent(
+//							String.valueOf(SpanEventCounter.getCurrentAbsoluteIndex()), // TODO check and remove
+							String.valueOf(statisticDataUnit.getCurrentIndex()),
+							statisticDataUnit, messageContext);
+
+			// TODO senthuran added this
+			System.out.println("\t\t\tStatisticsReportingIndex: " + statisticDataUnit.getCurrentIndex());
 
 			return statisticDataUnit.getCurrentIndex();
 		}
+
+		// TODO senthuran added this
+		System.out.println("\t\t\tStatisticsReportingIndex: " + "NULL");
+
 		return null;
 	}
 
@@ -139,8 +150,22 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
+			System.out.println("MsgCtx: " + Util.getObjectReference(messageContext) + "[OPEN_EVENT]reportChildEntryEvent:\n\t\t[" + statisticDataUnit.getCurrentIndex() + "](" + SpanEventCounter.getCurrentAbsoluteIndex() + ")[Parent: "+ statisticDataUnit.getParentIndex() + "] Component - Name: " + componentName + ", Type: " + componentType + ", ShouldTrackParent: " + statisticDataUnit.isShouldTrackParent());
+			TracingManagerHolder.getOpenTracingManager()
+					.handleOpenChildEntryEvent(
+//							String.valueOf(SpanEventCounter.getCurrentAbsoluteIndex()), // TODO double check and remove
+							String.valueOf(statisticDataUnit.getCurrentIndex()),
+							statisticDataUnit,
+							messageContext);
+			// TODO senthuran added this
+			System.out.println("\t\t\tStatisticsReportingIndex: " + statisticDataUnit.getCurrentIndex());
+
 			return statisticDataUnit.getCurrentIndex();
 		}
+
+		// TODO senthuran added this
+		System.out.println("\t\t\tStatisticsReportingIndex: " + "NULL");
+
 		return null;
 	}
 
@@ -166,8 +191,22 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			statisticDataUnit.setFlowContinuableMediator(true);
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
+			System.out.println("MsgCtx: " + Util.getObjectReference(messageContext) + "[OPEN_EVENT]reportFlowContinuableEvent:\n\t\t[" + statisticDataUnit.getCurrentIndex() + "](" + SpanEventCounter.getCurrentAbsoluteIndex() + ")[Parent: "+  statisticDataUnit.getParentIndex() + "] Component - Name: " + componentName + ", Type: " + componentType + ", ShouldTrackParent: " + statisticDataUnit.isShouldTrackParent());
+			TracingManagerHolder.getOpenTracingManager()
+					.handleOpenFlowContinuableEvent(
+//							String.valueOf(SpanEventCounter.getCurrentAbsoluteIndex()), // TODO double check and remove
+							String.valueOf(statisticDataUnit.getCurrentIndex()),
+							statisticDataUnit,
+							messageContext);
+			// TODO senthuran added this
+			System.out.println("\t\t\tStatisticsReportingIndex: " + statisticDataUnit.getCurrentIndex());
+
 			return statisticDataUnit.getCurrentIndex();
 		}
+
+		// TODO senthuran added this
+		System.out.println("\t\t\tStatisticsReportingIndex: " + "NULL");
+
 		return null;
 
 	}
@@ -194,8 +233,19 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			statisticDataUnit.setFlowSplittingMediator(true);
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
+			System.out.println("MsgCtx: " + Util.getObjectReference(messageContext) + "[OPEN_EVENT]reportFlowSplittingEvent:\n\t\t[" + statisticDataUnit.getCurrentIndex() + "](" + SpanEventCounter.getCurrentAbsoluteIndex() + ")[Parent: "+  statisticDataUnit.getParentIndex() + "] Component - Name: " + componentName + ", Type: " + componentType + ", ShouldTrackParent: " + statisticDataUnit.isShouldTrackParent());
+			TracingManagerHolder.getOpenTracingManager()
+					.handleOpenFlowSplittingEvent(
+//							String.valueOf(SpanEventCounter.getCurrentAbsoluteIndex()), // TODO double check and remove
+							String.valueOf(statisticDataUnit.getCurrentIndex()),
+							statisticDataUnit,
+							messageContext);
+			// TODO senthuran added this
+			System.out.println("\t\t\tStatisticsReportingIndex: " + statisticDataUnit.getCurrentIndex());
 			return statisticDataUnit.getCurrentIndex();
 		}
+		// TODO senthuran added this
+		System.out.println("\t\t\tStatisticsReportingIndex: " + "NULL");
 		return null;
 
 	}
@@ -222,8 +272,19 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			statisticDataUnit.setFlowAggregateMediator(true);
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
+			System.out.println("MsgCtx: " + Util.getObjectReference(messageContext) + "[OPEN_EVENT]reportFlowAggregateEvent:\n\t\t[" + statisticDataUnit.getCurrentIndex() + "](" + SpanEventCounter.getCurrentAbsoluteIndex() + ")[Parent: "+  statisticDataUnit.getParentIndex() + "] Component - Name: " + componentName + ", Type: " + componentType + ", ShouldTrackParent: " + statisticDataUnit.isShouldTrackParent());
+			TracingManagerHolder.getOpenTracingManager()
+					.handleOpenFlowAggregateEvent(
+//							String.valueOf(SpanEventCounter.getCurrentAbsoluteIndex()), // TODO double check and remove
+							String.valueOf(statisticDataUnit.getCurrentIndex()),
+							statisticDataUnit,
+							messageContext);
+			// TODO senthuran added this
+			System.out.println("\t\t\tStatisticsReportingIndex: " + statisticDataUnit.getCurrentIndex());
 			return statisticDataUnit.getCurrentIndex();
 		}
+		// TODO senthuran added this
+		System.out.println("\t\t\tStatisticsReportingIndex: " + "NULL");
 		return null;
 
 	}
@@ -233,12 +294,17 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 	 *
 	 * @param messageContext synapse message context.
 	 */
-	public static void reportFlowAsynchronousEvent(MessageContext messageContext) {
+	public static void reportFlowAsynchronousEvent(MessageContext messageContext) { // TODO Senthuran: No absoluteindex?
 		if (shouldReportStatistic(messageContext)) {
 			BasicStatisticDataUnit dataUnit = new BasicStatisticDataUnit();
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 			AsynchronousExecutionEvent asynchronousExecutionEvent = new AsynchronousExecutionEvent(dataUnit);
+			System.out.println("MsgCtx: " + Util.getObjectReference(messageContext) + "[OPEN_EVENT]reportFlowAsynchronousEvent:\n\t\t[" + dataUnit.getCurrentIndex() + "] [Parent: N/A] Component - CurrentIndex: " + dataUnit.getCurrentIndex());
+			TracingManagerHolder.getOpenTracingManager()
+					.handleOpenFlowAsynchronousEvent(
+//							String.valueOf(SpanEventCounter.getCurrentAbsoluteIndex()), dataUnit, messageContext); // TODO double check and remove
+							String.valueOf(dataUnit.getCurrentIndex()), dataUnit, messageContext);
             addEventAndIncrementCount(messageContext, asynchronousExecutionEvent);
 		}
 	}
@@ -264,9 +330,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 		StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
         addEventAndIncrementCount(messageContext, openEvent);
 
-//		TracingHandler.startSpan(statisticDataUnit, null); // TODO Senthuran added this
-		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit); // TODO senthuran added this
-		TracingManagerHolder.getOpenTracingManager().startSpan(statisticDataUnit, messageContext, null);
+		SpanEventCounter.getNextAbsoluteIndex(); // TODO senthuran added this
 
 	}
 
@@ -277,6 +341,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
      * @param synCtx synapse message context.
      */
     public static void openContinuationEvents(MessageContext synCtx) {
+    	// TODO senthuran: no getNextAbsoluteSpanEventCounter?
         if (shouldReportStatistic(synCtx)) {
             BasicStatisticDataUnit basicStatisticDataUnit = new BasicStatisticDataUnit();
 
@@ -284,7 +349,14 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
             basicStatisticDataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(synCtx));
 
             ParentReopenEvent parentReopenEvent = new ParentReopenEvent(basicStatisticDataUnit);
-            addEvent(synCtx, parentReopenEvent);
-        }
+			addEvent(synCtx, parentReopenEvent);
+			System.out.println(
+					"MsgCtx: " + Util.getObjectReference(synCtx) + "[OPEN_EVENT]openContinuationEvents:\n\t\t[" + basicStatisticDataUnit.getCurrentIndex() + "][Parent: N/A] Component - CurrentIndex: " + basicStatisticDataUnit.getCurrentIndex());
+			TracingManagerHolder.getOpenTracingManager()
+					.handleOpenContinuationEvents(
+							String.valueOf(SpanEventCounter.getCurrentAbsoluteIndex()), basicStatisticDataUnit, synCtx);
+			// TODO double check and remove
+//							String.valueOf(SpanEventCounter.getCurrentAbsoluteIndex()), basicStatisticDataUnit, synCtx);
+		}
     }
 }

@@ -1,4 +1,4 @@
-package org.apache.synapse.aspects.flow.statistics.tracing.manager.handlers;
+package org.apache.synapse.aspects.flow.statistics.tracing.manager.handlers.old;
 
 import io.jaegertracing.internal.JaegerTracer;
 import io.opentracing.Span;
@@ -49,7 +49,7 @@ public abstract class JaegerSpanHandler {
 
     protected void endSpan(BasicStatisticDataUnit basicStatisticDataUnit) {
         String spanId = getIdOf(basicStatisticDataUnit);
-        spanStore.finishActiveSpan(spanId);
+        spanStore.finishActiveSpan(spanId, basicStatisticDataUnit);
         System.out.println("");
         System.out.println("Finished Span - currentIndex: " + basicStatisticDataUnit.getCurrentIndex() +
                 ", statisticsId: " + basicStatisticDataUnit.getStatisticId());

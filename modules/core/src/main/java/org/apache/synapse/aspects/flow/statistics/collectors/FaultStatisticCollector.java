@@ -39,6 +39,7 @@ public class FaultStatisticCollector extends RuntimeStatisticCollector {
 	 * @param messageContext messageContext of the message flow.
 	 */
 	public static void reportFault(MessageContext messageContext) {
+		System.out.println("[REPORT_FAULT]");
 		if (shouldReportStatistic(messageContext)) {
 			boolean isFaultCreated = isFaultAlreadyReported(messageContext);
 			if (!isFaultCreated) {

@@ -77,9 +77,9 @@ public class DummyTracingHandler {
 
 
         try {
-//            DummyTracingHandler.startSpan(names[0], null);
+//            DummyTracingHandler.handleOpenEvent(names[0], null);
 //            Thread.sleep(2500);
-//            DummyTracingHandler.finishSpan(names[0]);
+//            DummyTracingHandler.handleCloseEvent(names[0]);
 
             DummyTracingHandler.startSpan(names[0], null);
             Thread.sleep(500);

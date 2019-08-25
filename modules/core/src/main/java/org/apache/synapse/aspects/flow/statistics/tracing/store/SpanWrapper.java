@@ -1,29 +1,23 @@
 package org.apache.synapse.aspects.flow.statistics.tracing.store;
 
 import io.opentracing.Span;
+import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 
 public class SpanWrapper {
+    private String id;
     private Span span;
+    private StatisticDataUnit statisticDataUnit;
     private boolean isCloseable; // Is eligible for closing
 
-    private String uniqueElementId;
-
-    public SpanWrapper(Span span, boolean isCloseable, String uniqueElementId) {
+    public SpanWrapper(String id, Span span, StatisticDataUnit statisticDataUnit, boolean isCloseable) {
+        this.id = id;
         this.span = span;
+        this.statisticDataUnit = statisticDataUnit;
         this.isCloseable = isCloseable;
-        this.uniqueElementId = uniqueElementId;
     }
 
-    public boolean isCloseable() {
-        return isCloseable;
-    }
-
-    public void setCloseable(boolean closeable) {
-        isCloseable = closeable;
-    }
-
-    public SpanWrapper(Span span) {
-        this.span = span;
+    public String getId() {
+        return id;
     }
 
     public Span getSpan() {
@@ -34,11 +28,15 @@ public class SpanWrapper {
         this.span = span;
     }
 
-    public String getUniqueElementId() {
-        return uniqueElementId;
+    public StatisticDataUnit getStatisticDataUnit() {
+        return statisticDataUnit;
     }
 
-    public void setUniqueElementId(String uniqueElementId) {
-        this.uniqueElementId = uniqueElementId;
+    public void setStatisticDataUnit(StatisticDataUnit statisticDataUnit) {
+        this.statisticDataUnit = statisticDataUnit;
+    }
+
+    public boolean isCloseable() {
+        return isCloseable;
     }
 }

@@ -1,4 +1,4 @@
-package org.apache.synapse.aspects.flow.statistics.tracing.manager.handlers;
+package org.apache.synapse.aspects.flow.statistics.tracing.manager.handlers.old;
 
 import io.jaegertracing.internal.JaegerTracer;
 import io.opentracing.Span;
@@ -26,7 +26,7 @@ public class RESTAPIHandler /*extends JaegerSpanHandler*/ {
 //        super(tracer, spanStore);
 //    }
 //
-//    public void startSpan(StatisticDataUnit statisticDataUnit, Span parentSpan) {
+//    public void handleOpenEvent(StatisticDataUnit statisticDataUnit, Span parentSpan) {
 //        if (isStartAllowed(statisticDataUnit)) {
 //            beginSpan(statisticDataUnit, parentSpan);
 //        }
@@ -40,7 +40,7 @@ public class RESTAPIHandler /*extends JaegerSpanHandler*/ {
 //        return true;
 //    }
 //
-//    public void finishSpan(BasicStatisticDataUnit basicStatisticDataUnit) {
+//    public void handleCloseEvent(BasicStatisticDataUnit basicStatisticDataUnit) {
 //        if (spanStore.getActiveSpans().size() > 2) {
 //            endSpan(basicStatisticDataUnit);
 //        } else {

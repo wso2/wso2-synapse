@@ -26,6 +26,8 @@ import org.apache.synapse.aspects.flow.statistics.log.templates.CallbackCompleti
 import org.apache.synapse.aspects.flow.statistics.log.templates.CallbackHandledEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.CallbackReceivedEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.CallbackSentEvent;
+import org.apache.synapse.aspects.flow.statistics.tracing.holder.TracingManagerHolder;
+import org.apache.synapse.aspects.flow.statistics.tracing.manager.handlers.spanextend.SpanExtendingCounter;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 
 public class CallbackStatisticCollector extends RuntimeStatisticCollector {
@@ -48,6 +50,9 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 
 			CallbackSentEvent callbackSentEvent = new CallbackSentEvent(dataUnit);
             addEventAndIncrementCallbackCount(messageContext, callbackSentEvent);
+
+			System.out.println("[ADD_CALLBACK] Counter - " + SpanExtendingCounter.incrementAndGetValue());
+			TracingManagerHolder.getOpenTracingManager().handleAddCallback(messageContext, callbackId);
 		}
 	}
 
@@ -70,6 +75,9 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 
 			CallbackCompletionEvent callbackCompletionEvent = new CallbackCompletionEvent(dataUnit);
             addEventAndDecrementCallbackCount(oldMessageContext, callbackCompletionEvent);
+
+			System.out.println("[CALLBACK_COMPLETION_EVENT] Counter - " + SpanExtendingCounter.decrementAndGetValue());
+			TracingManagerHolder.getOpenTracingManager().handleAddCallback(oldMessageContext, callbackId);
 		}
 	}
 
@@ -91,6 +99,9 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 
 			CallbackReceivedEvent callbackReceivedEvent = new CallbackReceivedEvent(dataUnit);
             addEvent(oldMessageContext, callbackReceivedEvent);
+
+			System.out.println("[UPDATE_PARENTS_FOR_CALLBACK]");
+			TracingManagerHolder.getOpenTracingManager().handleUpdateParentsForCallback(oldMessageContext, callbackId);
 		}
 	}
 
@@ -112,6 +123,12 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 
 			CallbackHandledEvent callbackHandledEvent = new CallbackHandledEvent(dataUnit);
             addEventAndDecrementCallbackCount(synapseOutMsgCtx, callbackHandledEvent);
+
+			SpanExtendingCounter.decrementAndGetValue();
+
+			System.out.println("[REPORT_CALLBACK_HANDLING_COMPLETION] Counter - " + SpanExtendingCounter.getValue());
+			TracingManagerHolder.getOpenTracingManager()
+					.handleReportCallbackHandlingCompletion(synapseOutMsgCtx, callbackId);
 		}
 	}
 }

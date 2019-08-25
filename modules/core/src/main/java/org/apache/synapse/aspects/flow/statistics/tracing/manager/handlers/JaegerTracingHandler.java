@@ -1,21 +1,15 @@
-package org.apache.synapse.aspects.flow.statistics.tracing.manager;
+package org.apache.synapse.aspects.flow.statistics.tracing.manager.handlers;
 
 import io.opentracing.Span;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.tracing.manager.subhandlers.SubHandler;
 
-public interface OpenTracingManager {
-    void initializeTracer();
+public interface JaegerTracingHandler {
+    // Open Events
 
-    void resolveHandler();
-
-    void addSubHandler(Object referrer, SubHandler subHandler);
-
-    void removeSubHandler(Object referrer);
-
-    void handleOpenEvent(StatisticDataUnit statisticDataUnit, MessageContext synCtx, Span parentSpan);
+    // TODO old. Consider removing
+    void handleOpenEvent(String absoluteId, StatisticDataUnit statisticDataUnit, MessageContext synCtx, Span parentSpan);
 
     void handleOpenEntryEvent(String absoluteId, StatisticDataUnit statisticDataUnit, MessageContext synCtx);
 
@@ -27,12 +21,16 @@ public interface OpenTracingManager {
 
     void handleOpenFlowAggregateEvent(String absoluteId, StatisticDataUnit statisticDataUnit, MessageContext synCtx);
 
-    void handleOpenFlowAsynchronousEvent(String absoluteId, BasicStatisticDataUnit statisticDataUnit, MessageContext synCtx);
+    void handleOpenFlowAsynchronousEvent(String absoluteId, BasicStatisticDataUnit statisticDataUnit,
+                                         MessageContext synCtx);
 
-    void handleOpenContinuationEvents(String absoluteId, BasicStatisticDataUnit statisticDataUnit, MessageContext synCtx);
+    void handleOpenContinuationEvents(String absoluteId, BasicStatisticDataUnit statisticDataUnit,
+                                      MessageContext synCtx);
 
 
+    // Close Events
 
+    // TODO old. Consider removing
     void handleCloseEvent(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx);
 
     void handleCloseEntryEvent(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx);
@@ -42,6 +40,7 @@ public interface OpenTracingManager {
     void handleTryEndFlow(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx);
 
 
+    // Callback Events
 
     void handleAddCallback(MessageContext messageContext, String callbackId);
 
@@ -52,11 +51,13 @@ public interface OpenTracingManager {
     void handleReportCallbackHandlingCompletion(MessageContext synapseOutMsgCtx, String callbackId);
 
 
-    void handleStackInsertion(MessageContext synCtx);
+    // Stack Events // TODO Check whether necessary
 
-    void handleStackRemoval(MessageContext synCtx);
+    void handleStateStackInsertion(MessageContext synCtx);
 
-    void handleStackClearance(MessageContext synCtx);
+    void handleStateStackRemoval(MessageContext synCtx);
 
-    void closeTracer();
+    void handleStateStackClearance(MessageContext synCtx);
+
+    void handleCloseOuterLevelSpan();
 }
