@@ -29,6 +29,7 @@ public class TestSuiteSummary {
     private String description;
     private String deploymentStatus = SKIPPED_STATE;
     private String mediationStatus = SKIPPED_STATE;
+    private String recentTestCaseName;
     private String mediationException;
     private List<TestCaseSummary> testCases = new ArrayList<>();
 
@@ -109,6 +110,15 @@ public class TestSuiteSummary {
     }
 
     /**
+     * Get test suite name which failed in mediation state.
+     *
+     * @return test case name
+     */
+    public String getRecentTestCaseName() {
+        return recentTestCaseName;
+    }
+
+    /**
      * Set test suite description.
      *
      * @param description test suite description
@@ -151,6 +161,15 @@ public class TestSuiteSummary {
      */
     public void setMediationException(String mediationException) {
         this.mediationException = mediationException;
+    }
+
+    /**
+     * Set test case name which run recently.
+     *
+     * @param recentTestCaseName test case name
+     */
+    public void setRecentTestCaseName(String recentTestCaseName) {
+        this.recentTestCaseName = recentTestCaseName;
     }
 
     /**

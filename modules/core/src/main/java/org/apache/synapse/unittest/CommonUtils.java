@@ -43,4 +43,25 @@ class CommonUtils {
         }
         return sb.toString();
     }
+
+    /**
+     * Get stack trace from the exception with custom error message.
+     *
+     * @param exception exception
+     * @param customErrorMessage custom error message
+     * @return exception stack trace as a string
+     */
+    static String stackTraceToString(Throwable exception, String customErrorMessage) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(customErrorMessage);
+        sb.append(Constants.NEW_LINE);
+        sb.append(exception.getMessage());
+        sb.append(Constants.NEW_LINE);
+
+        for (StackTraceElement element : exception.getStackTrace()) {
+            sb.append(element.toString());
+            sb.append(Constants.NEW_LINE);
+        }
+        return sb.toString();
+    }
 }
