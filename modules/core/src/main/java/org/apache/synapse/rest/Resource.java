@@ -39,6 +39,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.rest.cors.CORSConfiguration;
 import org.apache.synapse.rest.dispatch.DispatcherHelper;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
@@ -310,10 +311,16 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
                             statisticReportingIndex, true);
                 }
                 return;
+            } else {
+                // Handle CORS for other HTTP Methods
+                handleCORSHeaders(synCtx, false);
             }
 
             synCtx.setProperty(RESTConstants.SYNAPSE_RESOURCE, name);
             RESTUtils.populateQueryParamsToMessageContext(synCtx);
+        } else {
+            // Add CORS headers for response message
+            RESTUtils.handleCORSHeadersForResponse(synCtx);
         }
 
         SequenceMediator sequence = synCtx.isResponse() ? outSequence : inSequence;
@@ -393,6 +400,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
                     synCtx.setResponse(true);
                     synCtx.setTo(null);
                     transportHeaders.put(HttpHeaders.ALLOW, getSupportedMethods());
+                    handleCORSHeaders(synCtx, true);
                     Axis2Sender.sendBack(synCtx);
                     return true;
                 } else {
@@ -406,8 +414,59 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
             synCtx.setResponse(true);
             synCtx.setTo(null);
             transportHeaders.put(HttpHeaders.ALLOW, getSupportedMethods());
+            handleCORSHeaders(synCtx, true);
             Axis2Sender.sendBack(synCtx);
             return true;
+        }
+    }
+
+    /**
+     * Functions to handle CORS Headers
+     *
+     * @param synCtx Synapse message context
+     */
+    private void handleCORSHeaders(MessageContext synCtx, boolean updateHeaders) {
+
+        CORSConfiguration corsConfiguration = CORSConfiguration.getCORSConfig();
+        if (corsConfiguration.isEnabled()) {
+            org.apache.axis2.context.MessageContext msgCtx = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+            Map<String,String> transportHeaders = (Map<String,String>) msgCtx.getProperty(
+                    org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+            if (transportHeaders != null) {
+                String supportedMethods = getSupportedMethods();
+                String allowedOrigin = getAllowedOrigins(transportHeaders.get(RESTConstants.CORS_HEADER_ORIGIN),
+                        corsConfiguration.getAllowedOrigins());
+                if (updateHeaders) {
+                    transportHeaders.put(RESTConstants.CORS_HEADER_ACCESS_CTL_ALLOW_METHODS, supportedMethods);
+                    transportHeaders.put(RESTConstants.CORS_HEADER_ACCESS_CTL_ALLOW_ORIGIN, allowedOrigin);
+                    transportHeaders.put(RESTConstants.CORS_HEADER_ACCESS_CTL_ALLOW_HEADERS,
+                            corsConfiguration.getAllowedHeaders());
+                }
+
+                synCtx.setProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_METHODS, supportedMethods);
+                synCtx.setProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_ORIGIN, allowedOrigin);
+                synCtx.setProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_HEADERS,
+                        corsConfiguration.getAllowedHeaders());
+                synCtx.setProperty(RESTConstants.INTERNAL_CORS_HEADER_ORIGIN,
+                        transportHeaders.get(RESTConstants.CORS_HEADER_ORIGIN));
+            }
+        }
+    }
+
+    /**
+     * Function to retrieve allowed origin header string
+     *
+     * @param origin Received origin
+     * @param allowedOrigins allowed origin set
+     * @return
+     */
+    private String getAllowedOrigins(String origin, Set<String> allowedOrigins) {
+        if (allowedOrigins.contains("*")) {
+            return "*";
+        } else if (allowedOrigins.contains(origin)) {
+            return origin;
+        } else {
+            return null;
         }
     }
 
