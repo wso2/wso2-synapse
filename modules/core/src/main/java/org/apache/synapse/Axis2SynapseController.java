@@ -735,8 +735,10 @@ public class Axis2SynapseController implements SynapseController {
         log.info("Undeploying Proxy services...");
 
         for (ProxyService proxy : synapseConfiguration.getProxyServices()) {
-            configurationContext.getAxisConfiguration().removeService(
-                    proxy.getName());
+            if (configurationContext.getAxisConfiguration() != null) {
+                configurationContext.getAxisConfiguration().removeService(
+                        proxy.getName());
+            }
         }
     }
 
