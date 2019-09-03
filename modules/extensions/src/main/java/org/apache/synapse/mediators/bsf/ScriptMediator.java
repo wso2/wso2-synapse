@@ -588,7 +588,7 @@ public class ScriptMediator extends AbstractMediator {
             log.debug("Initializing script mediator for language : " + language);
         }
 
-        engineManager = new ScriptEngineManager();
+        engineManager = new ScriptEngineManager(null);
         if (!language.equals(NASHORN_JAVA_SCRIPT)) {
             engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
         }
@@ -597,21 +597,19 @@ public class ScriptMediator extends AbstractMediator {
         engineManager.registerEngineExtension("groovy", new GroovyScriptEngineFactory());
         engineManager.registerEngineExtension("rb", new JRubyScriptEngineFactory());
         engineManager.registerEngineExtension("py", new JythonScriptEngineFactory());
+
+        ScriptEngine scrEngine = null;
         if (language.equals(NASHORN_JAVA_SCRIPT)) {
-            this.scriptEngine = engineManager.getEngineByName(NASHORN);
+            scrEngine  = engineManager.getEngineByName(NASHORN);
         } else {
-            this.scriptEngine = engineManager.getEngineByExtension(language);
+            scrEngine = engineManager.getEngineByExtension(language);
         }
+        this.scriptEngine = scrEngine;
 
         pool = new LinkedBlockingQueue<ScriptEngineWrapper>(poolSize);
 
         for (int i = 0; i< poolSize; i++) {
-            ScriptEngineWrapper sew;
-            if (language.equals(NASHORN_JAVA_SCRIPT)) {
-                sew = new ScriptEngineWrapper(engineManager.getEngineByName(NASHORN));
-            } else {
-                sew = new ScriptEngineWrapper(engineManager.getEngineByExtension(language));
-            }
+            ScriptEngineWrapper sew = new ScriptEngineWrapper(scrEngine);
             pool.add(sew);
         }
         if (language.equals(NASHORN_JAVA_SCRIPT)) {
