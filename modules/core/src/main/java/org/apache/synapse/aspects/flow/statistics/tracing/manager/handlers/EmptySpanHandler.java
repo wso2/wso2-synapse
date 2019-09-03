@@ -1,17 +1,13 @@
 package org.apache.synapse.aspects.flow.statistics.tracing.manager.handlers;
 
-import io.opentracing.Span;
+import org.apache.synapse.ContinuationState;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SequenceType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 
 @Deprecated // TODO Remove
-public class EmptyHandler implements JaegerTracingHandler {
-    @Override
-    public void handleOpenEvent(String absoluteId, StatisticDataUnit statisticDataUnit, MessageContext synCtx, Span parentSpan) {
-
-    }
-
+public class EmptySpanHandler implements JaegerTracingSpanHandler {
     @Override
     public void handleOpenEntryEvent(String absoluteId, StatisticDataUnit statisticDataUnit, MessageContext synCtx) {
 
@@ -44,11 +40,6 @@ public class EmptyHandler implements JaegerTracingHandler {
 
     @Override
     public void handleOpenContinuationEvents(String absoluteId, BasicStatisticDataUnit statisticDataUnit, MessageContext synCtx) {
-
-    }
-
-    @Override
-    public void handleCloseEvent(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx) {
 
     }
 
@@ -88,22 +79,17 @@ public class EmptyHandler implements JaegerTracingHandler {
     }
 
     @Override
-    public void handleStateStackInsertion(MessageContext synCtx) {
+    public void handleStateStackInsertion(MessageContext synCtx, String seqName, SequenceType seqType) {
 
     }
 
     @Override
-    public void handleStateStackRemoval(MessageContext synCtx) {
+    public void handleStateStackRemoval(ContinuationState continuationState, MessageContext synCtx) {
 
     }
 
     @Override
     public void handleStateStackClearance(MessageContext synCtx) {
-
-    }
-
-    @Override
-    public void handleCloseOuterLevelSpan() {
 
     }
 }

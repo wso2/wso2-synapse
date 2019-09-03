@@ -53,18 +53,18 @@ public class ContinuationStackManager {
 
     // TODO senthuran added this
     private synchronized static void printStack(MessageContext synCtx) {
-//        Stack<ContinuationState> continuationStatesStack = synCtx.getContinuationStateStack();
-//        if (continuationStatesStack != null) {
-//            System.out.println("\tContinuation Stack:");
-//            System.out.println("\t===================");
-//            for (ContinuationState continuationState : continuationStatesStack) {
-//                System.out.println("\t\t-------------------");
-//                printAbstractContinuationState((AbstractContinuationState) continuationState);
-//                System.out.println("\t\t-------------------");
-//            }
-//            System.out.println("\t===================");
-//            System.out.println("");
-//        }
+        Stack<ContinuationState> continuationStatesStack = synCtx.getContinuationStateStack();
+        if (continuationStatesStack != null) {
+            System.out.println("\tContinuation Stack:");
+            System.out.println("\t===================");
+            for (ContinuationState continuationState : continuationStatesStack) {
+                System.out.println("\t\t-------------------");
+                printAbstractContinuationState((AbstractContinuationState) continuationState);
+                System.out.println("\t\t-------------------");
+            }
+            System.out.println("\t===================");
+            System.out.println("");
+        }
     }
 
     private static void printAbstractContinuationState(AbstractContinuationState abstractContinuationState) {
@@ -95,7 +95,8 @@ public class ContinuationStackManager {
         if (synCtx.isContinuationEnabled() && !SequenceType.ANON.equals(seqType)) {
             //ignore Anonymous type sequences
             synCtx.pushContinuationState(new SeqContinuationState(seqType, seqName));
-            TracingManagerHolder.getOpenTracingManager().handleStackInsertion(synCtx); // TODO senthuran added this
+            TracingManagerHolder.getOpenTracingManager().getHandler()
+                    .handleStateStackInsertion(synCtx, seqName, seqType); // TODO senthuran added this
         }
         System.out.println("\t addSeqContinuationState"); // TODO Senthuran Added this
         printStack(synCtx);
@@ -254,7 +255,8 @@ public class ContinuationStackManager {
         Stack<ContinuationState> continuationStack = synCtx.getContinuationStateStack();
         if (synCtx.isContinuationEnabled()) {
             synchronized (continuationStack){
-                TracingManagerHolder.getOpenTracingManager().handleStackClearance(synCtx); // TODO Senthuran added this
+                TracingManagerHolder.getOpenTracingManager().getHandler()
+                        .handleStateStackClearance(synCtx); // TODO Senthuran added this
                 continuationStack.clear();
             }
         }
@@ -288,8 +290,9 @@ public class ContinuationStackManager {
         Stack<ContinuationState> continuationStack = synCtx.getContinuationStateStack();
         synchronized (continuationStack) {
             if (!continuationStack.isEmpty()) {
-                TracingManagerHolder.getOpenTracingManager().handleStackRemoval(synCtx); // TODO Senthuran added this
-                continuationStack.pop();
+                ContinuationState poppedContinuationState = continuationStack.pop(); // TODO Senthuran added this
+                TracingManagerHolder.getOpenTracingManager().getHandler()
+                        .handleStateStackRemoval(poppedContinuationState, synCtx); // TODO Senthuran added this
             }
         }
         System.out.println("\t Pop from stack "); // TODO senthuran added this

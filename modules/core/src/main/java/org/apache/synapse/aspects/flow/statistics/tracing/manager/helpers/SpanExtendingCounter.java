@@ -1,4 +1,4 @@
-package org.apache.synapse.aspects.flow.statistics.tracing.manager.handlers.spanextend;
+package org.apache.synapse.aspects.flow.statistics.tracing.manager.helpers;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

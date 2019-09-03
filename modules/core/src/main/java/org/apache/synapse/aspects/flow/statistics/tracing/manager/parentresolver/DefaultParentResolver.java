@@ -7,7 +7,6 @@ import org.apache.synapse.aspects.flow.statistics.tracing.store.SpanStore;
 import org.apache.synapse.aspects.flow.statistics.tracing.store.SpanWrapper;
 
 public class DefaultParentResolver implements ParentResolver {
-    // TODO Experimental
     public static Span resolveParent(StatisticDataUnit statisticDataUnit, SpanStore spanStore) {
         String parentId = String.valueOf(statisticDataUnit.getParentIndex());
         SpanWrapper parent = spanStore.getActiveSpans().get(parentId);
@@ -24,8 +23,13 @@ public class DefaultParentResolver implements ParentResolver {
     }
 
     private static boolean isParentAcceptable(StatisticDataUnit child, StatisticDataUnit parent) {
-        return parent.isFlowContinuableMediator() || isEndpointOrInboundEndpoint(parent) ||
+        return parent.isFlowContinuableMediator() || isForEachMediator(parent) || isEndpointOrInboundEndpoint(parent) ||
                 (isEndpointOrInboundEndpoint(child) && isCallMediatorOrSendMediator(parent));
+    }
+
+    private static boolean isForEachMediator(StatisticDataUnit statisticDataUnit) {
+        return statisticDataUnit.getComponentType().equals(ComponentType.MEDIATOR) &&
+                statisticDataUnit.getComponentName().equalsIgnoreCase("foreachmediator");
     }
 
     private static boolean isEndpointOrInboundEndpoint(StatisticDataUnit statisticDataUnit) {
@@ -34,14 +38,11 @@ public class DefaultParentResolver implements ParentResolver {
     }
 
     private static boolean isCallMediatorOrSendMediator(StatisticDataUnit statisticDataUnit) {
-        if (statisticDataUnit.getComponentType().equals(ComponentType.MEDIATOR)) {
-            return statisticDataUnit.getComponentName().equalsIgnoreCase("sendmediator") ||
-                    statisticDataUnit.getComponentName().equalsIgnoreCase("callmediator");
-        }
-        return false;
+        return statisticDataUnit.getComponentType().equals(ComponentType.MEDIATOR) &&
+                (statisticDataUnit.getComponentName().equalsIgnoreCase("sendmediator") ||
+                        statisticDataUnit.getComponentName().equalsIgnoreCase("callmediator"));
     }
 
-    // TODO Experimental
     public static Span resolveAlternativeParent(SpanStore spanStore) {
         SpanWrapper parent = spanStore.getAlternativeParent();
         if (parent != null) {

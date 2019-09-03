@@ -13,71 +13,36 @@ import java.util.concurrent.locks.ReentrantLock;
  * Stores and managers spans.
  */
 public class SpanStore {
-    private Map<String, SpanWrapper> activeSpans;
-    private Stack<StackedSequenceInfo> activeStackedSequences = new Stack<>(); // TODO confirm and remove
-
-    private Stack<SpanWrapper> eligibleAlternativeParents = new Stack<>();
-
-    private SpanWrapper outerLevelSpan = null;
-
-    public void assignOuterLevelSpan(SpanWrapper spanWrapper) {
-        LOCK.lock();
-        try {
-            outerLevelSpan = spanWrapper;
-        } finally {
-            LOCK.unlock();
-        }
-    }
-
-    public SpanWrapper getOuterLevelSpanWrapper() {
-        return this.outerLevelSpan;
-    }
-
     private final ReentrantLock LOCK = new ReentrantLock(true);
+
+    private SpanWrapper outerLevelSpan;
+    private Map<String, SpanWrapper> activeSpans;
+    private List<StackedSequenceInfo> stackedSequences;
+    private Stack<SpanWrapper> eligibleAlternativeParents;
 
     public SpanStore() {
         this.activeSpans = new HashMap<>();
+        this.stackedSequences = new Stack<>();
+        this.eligibleAlternativeParents = new Stack<>();
+        this.outerLevelSpan = null;
     }
 
-    private void addEligibleAlternativeParent(SpanWrapper spanWrapper) {
-        eligibleAlternativeParents.push(spanWrapper);
-    }
 
-    public SpanWrapper getAlternativeParent() {
-        LOCK.lock();
-        try {
-            if (eligibleAlternativeParents.isEmpty()) {
-                return null;
-            }
-            return eligibleAlternativeParents.peek();
-        } finally {
-            LOCK.unlock();
-        }
-    }
+    // Active spans related
 
     public Map<String, SpanWrapper> getActiveSpans() {
         return activeSpans;
     }
 
-    public Stack<StackedSequenceInfo> getActiveStackedSequences() {
-        return activeStackedSequences;
-    }
+    public synchronized SpanWrapper addActiveSpan(String spanId, Span activeSpan, StatisticDataUnit statisticDataUnit,
+                                                  MessageContext synCtx) {
+        SpanWrapper spanWrapper = createActiveSpanWrapper(spanId, activeSpan, statisticDataUnit, synCtx);
+        activeSpans.put(spanId, spanWrapper);
 
-    public SpanWrapper addActiveSpan(String spanId, Span activeSpan, StatisticDataUnit statisticDataUnit,
-                            MessageContext synCtx) {
-        LOCK.lock();
-        try {
-            SpanWrapper spanWrapper = createActiveSpanWrapper(spanId, activeSpan, statisticDataUnit, synCtx);
-            activeSpans.put(spanId, spanWrapper);
-
-            // TODO experimental
-            if (spanWrapper.getStatisticDataUnit().isFlowContinuableMediator()) {
-                addEligibleAlternativeParent(spanWrapper);
-            }
-            return spanWrapper;
-        } finally {
-            LOCK.unlock();
+        if (spanWrapper.getStatisticDataUnit().isFlowContinuableMediator()) {
+            addEligibleAlternativeParent(spanWrapper);
         }
+        return spanWrapper;
     }
 
     private SpanWrapper createActiveSpanWrapper(String spanId, Span activeSpan, StatisticDataUnit statisticDataUnit, MessageContext synCtx) {
@@ -85,34 +50,14 @@ public class SpanStore {
         return new SpanWrapper(spanId, activeSpan, statisticDataUnit, true);
     }
 
-    public void finishActiveSpan(String spanWrapperId, BasicStatisticDataUnit basicStatisticDataUnit) {
-        LOCK.lock();
-        try {
-            SpanWrapper spanWrapper = getSpanWrapperById(spanWrapperId);
-            if (spanWrapper != null && spanWrapper.isCloseable() && spanWrapper.getSpan() != null) {
-                if (spanWrapper.getStatisticDataUnit() != null) {
-                    setSpanTags(spanWrapper, basicStatisticDataUnit);
-                }
-                spanWrapper.getSpan().finish();
-//                removeSpanWrapper(spanWrapperId); TODO This should be removed i guess
+    public synchronized void finishActiveSpan(String spanWrapperId, BasicStatisticDataUnit basicStatisticDataUnit) {
+        SpanWrapper spanWrapper = getSpanWrapperById(spanWrapperId);
+        if (spanWrapper != null && spanWrapper.isCloseable() && spanWrapper.getSpan() != null) {
+            if (spanWrapper.getStatisticDataUnit() != null) {
+                setSpanTags(spanWrapper, basicStatisticDataUnit);
             }
-        } finally {
-            LOCK.unlock();
+            spanWrapper.getSpan().finish();
         }
-    }
-
-    private void setSpanTags(SpanWrapper spanWrapper, BasicStatisticDataUnit basicStatisticDataUnit) {
-        StatisticsLog statisticsLog = new StatisticsLog(spanWrapper.getStatisticDataUnit());
-        Span span = spanWrapper.getSpan();
-        StatisticDataUnit endEventDataUnit = (StatisticDataUnit) basicStatisticDataUnit;
-        statisticsLog.setAfterPayload(endEventDataUnit.getPayload());
-        span.setTag("noOfFaults", statisticsLog.getNoOfFaults());
-        span.setTag("componentName", statisticsLog.getComponentName());
-        span.setTag("componentType", statisticsLog.getComponentTypeToString());
-        span.setTag("componentId", statisticsLog.getComponentId());
-        span.setTag("hashcode", statisticsLog.getHashCode());
-        span.setTag("beforePayload", statisticsLog.getBeforePayload());
-        span.setTag("afterPayload", statisticsLog.getAfterPayload());
     }
 
     private SpanWrapper getSpanWrapperById(String spanWrapperId) {
@@ -124,21 +69,19 @@ public class SpanStore {
         return null;
     }
 
-    private void removeSpanWrapper(String spanWrapperId) {
-        activeSpans.remove(spanWrapperId);
+
+    // Stacked sequences related
+
+    public List<StackedSequenceInfo> getStackedSequences() {
+        return stackedSequences;
     }
 
-    public void pushToActiveCallMediatorSequences(StackedSequenceInfo stackedSequenceInfo) {
-        LOCK.lock();
-        try{
-            activeStackedSequences.push(stackedSequenceInfo);
-        } finally {
-            LOCK.unlock();
-        }
+    public synchronized void addStackedSequence(StackedSequenceInfo stackedSequenceInfo) {
+        stackedSequences.add(stackedSequenceInfo);
     }
 
-    public boolean containsActiveCallMediatorSequenceWithId(String id) {
-        for (StackedSequenceInfo activeCallMediatorSequence : activeStackedSequences) {
+    public boolean containsStackedSequenceWithId(String id) {
+        for (StackedSequenceInfo activeCallMediatorSequence : stackedSequences) {
             if (Objects.equals(id, activeCallMediatorSequence.getSpanReferenceId())) {
                 return true;
             }
@@ -146,149 +89,83 @@ public class SpanStore {
         return false;
     }
 
-    public StackedSequenceInfo popActiveCallMediatorSequences() {
-        LOCK.lock();
-        try {
-            if (activeStackedSequences == null || activeStackedSequences.isEmpty()) {
-                return null;
-            }
-            return activeStackedSequences.pop();
-        } finally {
-            LOCK.unlock();
+    @Deprecated // TODO remove
+    public synchronized StackedSequenceInfo popStackedSequences() {
+        if (stackedSequences == null || stackedSequences.isEmpty()) {
+            return null;
+        }
+        return null;
+    }
+
+
+    // Alternative parents related
+
+    private void addEligibleAlternativeParent(SpanWrapper spanWrapper) {
+        eligibleAlternativeParents.push(spanWrapper);
+    }
+
+    public synchronized SpanWrapper getAlternativeParent() {
+        if (eligibleAlternativeParents.isEmpty()) {
+            return null;
+        }
+        return eligibleAlternativeParents.peek();
+    }
+
+
+    // Outer level span related
+
+    public synchronized void assignOuterLevelSpan(SpanWrapper spanWrapper) {
+        outerLevelSpan = spanWrapper;
+    }
+
+    public SpanWrapper getOuterLevelSpanWrapper() {
+        return this.outerLevelSpan;
+    }
+
+
+    // Others
+
+    private void setSpanTags(SpanWrapper spanWrapper, BasicStatisticDataUnit basicStatisticDataUnit) {
+        StatisticsLog statisticsLog = new StatisticsLog(spanWrapper.getStatisticDataUnit());
+        Span span = spanWrapper.getSpan();
+        if (basicStatisticDataUnit instanceof StatisticDataUnit) {
+            StatisticDataUnit endEventDataUnit = (StatisticDataUnit) basicStatisticDataUnit;
+            statisticsLog.setAfterPayload(endEventDataUnit.getPayload());
+            span.setTag("noOfFaults", statisticsLog.getNoOfFaults());
+            span.setTag("componentName", statisticsLog.getComponentName());
+            span.setTag("componentType", statisticsLog.getComponentTypeToString());
+            span.setTag("componentId", statisticsLog.getComponentId());
+            span.setTag("hashcode", statisticsLog.getHashCode());
+            span.setTag("beforePayload", statisticsLog.getBeforePayload());
+            span.setTag("afterPayload", statisticsLog.getAfterPayload());
         }
     }
 
-    public void printActiveSpans() {
-        LOCK.lock();
-        try {
-            System.out.println("");
-            System.out.print("\t\tActive Spans (Keys): [");
-            for (String key : activeSpans.keySet()) {
-                System.out.print(key + ", ");
-            }
-            System.out.println("]");
-            System.out.println("");
-        } finally {
-            LOCK.unlock();
+    // TODO remove
+    public synchronized void printActiveSpans() {
+        System.out.println("");
+        System.out.print("\t\tActive Spans (Keys): [");
+        for (String key : activeSpans.keySet()) {
+            System.out.print(key + ", ");
         }
+        System.out.println("]");
+        System.out.println("");
     }
 
-//    public void printactiveCallMediatorSequences() {
-//        LOCK.lock();
-//        try{
-//            System.out.println("");
-//            System.out.print("\t\tActive Call Mediator Sequences: [");
-//            for (StackedSequenceInfo activeCallMediatorSequence : activeStackedSequences) {
-//                System.out.print(activeCallMediatorSequence.getSpanReferenceId() + ". " +
-//                        activeCallMediatorSequence.getStatisticDataUnit().getComponentName() + ", ");
-//            }
-//            System.out.println("]");
-//            System.out.println("");
-//        } finally {
-//            LOCK.unlock();
-//        }
-//    }
-
-    public void printactiveCallMediatorSequences() {
-        LOCK.lock();
-        try{
-            System.out.println("");
-            System.out.println("\t\tActive Call Mediator Sequences:");
-            for (StackedSequenceInfo activeCallMediatorSequence : activeStackedSequences) {
+    // TODO remove
+    public synchronized void printStackedSequences() {
+        System.out.println("");
+        System.out.println("\t\tActive Call Mediator Sequences:");
+        for (StackedSequenceInfo activeCallMediatorSequence : stackedSequences) {
+            if (activeCallMediatorSequence.isSpanActive()) {
+                System.out.print("*" + activeCallMediatorSequence.getSpanReferenceId() + ". " +
+                        activeCallMediatorSequence.getStatisticDataUnit().getComponentName() + "* , ");
+            } else {
                 System.out.print(activeCallMediatorSequence.getSpanReferenceId() + ". " +
-                        activeCallMediatorSequence.getStatisticDataUnit().getComponentName() + ", ");
+                        activeCallMediatorSequence.getStatisticDataUnit().getComponentName() + " , ");
             }
-            System.out.println("]");
-            System.out.println("");
-        } finally {
-            LOCK.unlock();
         }
+        System.out.println("]");
+        System.out.println("");
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // TODO Old Below. Remove when finalized
-// public class SpanStore {
-
-//    public Span getRootSpan() {
-//        return rootSpan;
-//    }
-//
-//    public void setRootSpan(Span rootSpan) {
-//        this.rootSpan = rootSpan;
-//    }
-//
-//    public Map<String, Span> getActiveSpans() {
-//        return activeSpans;
-//    }
-//
-//    public void addActiveSpan(String spanId, Span activeSpan) {
-//        activeSpans.put(spanId, activeSpan);
-//    }
-//
-//    public void finishActiveSpan(String spanId) {
-//        Span span = getSpanById(spanId, activeSpans);
-//        if (span != null) {
-//            span.finish();
-//            removeSpan(spanId, activeSpans);
-//        }
-//    }
-//
-//    public void finishActiveSpanWithEndTime(String spanId, Long endTime) {
-//        Span span = getSpanById(spanId, activeSpans);
-//        if (span != null) {
-//            Long startTime = Long.parseLong(span.getBaggageItem("startTime"));
-//            Long collectedDuration = endTime - startTime;
-//            span.setTag("startTime", String.valueOf(startTime));
-//            span.setTag("endTime", String.valueOf(endTime));
-//            span.setTag("collectedDuration", String.valueOf(collectedDuration));
-//            span.finish();
-//            removeSpan(spanId, activeSpans);
-//        }
-//    }
-//
-//    public void setDuration(String spanId, Long endTime) {
-//        Span span = getSpanById(spanId, activeSpans);
-//        Long startTime = Long.parseLong(span.getBaggageItem("startTime"));
-//        Long duration = endTime - startTime;
-//        span.setBaggageItem("endTime", String.valueOf(endTime));
-//        span.setBaggageItem("collectedDuration", String.valueOf(duration));
-//    }
-//
-//    private Span getSpanById(String spanId, Map<String, Span> spans) {
-//        for (Map.Entry<String, Span> spanEntry : spans.entrySet()) {
-//            if (spanEntry.getKey().equals(spanId)) {
-//                return spanEntry.getValue();
-//            }
-//        }
-//        return null;
-//    }
-//
-//    private void removeSpan(String spanId, Map<String, Span> spans) {
-//        spans.remove(spanId);
-//    }
-// }

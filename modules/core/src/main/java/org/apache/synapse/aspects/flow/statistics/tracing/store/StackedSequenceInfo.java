@@ -3,16 +3,15 @@ package org.apache.synapse.aspects.flow.statistics.tracing.store;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.tracing.manager.helpers.Util;
 
-@Deprecated // TODO Confirm and remove
 public class StackedSequenceInfo {
     private StatisticDataUnit statisticDataUnit;
     private String spanReferenceId;
-    private boolean isStarted;
+    private boolean isSpanActive;
 
     public StackedSequenceInfo(StatisticDataUnit statisticDataUnit) {
         this.statisticDataUnit = statisticDataUnit;
         this.spanReferenceId = Util.extractId(statisticDataUnit);
-        this.isStarted = false;
+        this.isSpanActive = false;
     }
 
     public StatisticDataUnit getStatisticDataUnit() {
@@ -23,11 +22,11 @@ public class StackedSequenceInfo {
         return spanReferenceId;
     }
 
-    public boolean isStarted() {
-        return isStarted;
+    public boolean isSpanActive() {
+        return isSpanActive;
     }
 
-    public void setStarted(boolean started) {
-        isStarted = started;
+    public void setSpanActive(boolean spanActive) {
+        isSpanActive = spanActive;
     }
 }
