@@ -3,23 +3,49 @@ package org.apache.synapse.aspects.flow.statistics.tracing.manager.parentresolve
 import io.opentracing.Span;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.tracing.manager.helpers.Util;
 import org.apache.synapse.aspects.flow.statistics.tracing.store.SpanStore;
 import org.apache.synapse.aspects.flow.statistics.tracing.store.SpanWrapper;
 
+import java.util.Stack;
+
 public class DefaultParentResolver implements ParentResolver {
+    private static final String BEGINNING_INDEX = "0"; // TODO make them int
+    private static final String BEGINNING_INDEX_PARENT = "-1";
+
     public static Span resolveParent(StatisticDataUnit statisticDataUnit, SpanStore spanStore) {
         String parentId = String.valueOf(statisticDataUnit.getParentIndex());
-        SpanWrapper parent = spanStore.getActiveSpans().get(parentId);
-        if (parent == null) {
-            return null;
+        SpanWrapper parent = getLatestActiveSpanWithId(parentId, spanStore);
+        if (parent != null) {
+            if (isParentAcceptable(statisticDataUnit, parent.getStatisticDataUnit())) {
+                System.out.println("");
+                System.out.println(statisticDataUnit.getCurrentIndex() + "'s parent is " + parentId);
+                System.out.println("");
+                return parent.getSpan();
+            }
+            return resolveAlternativeParent(spanStore);
         }
-        if (isParentAcceptable(statisticDataUnit, parent.getStatisticDataUnit())) {
-            System.out.println("");
-            System.out.println(statisticDataUnit.getCurrentIndex() + "'s parent is " + parentId);
-            System.out.println("");
-            return parent.getSpan();
+        return null;
+    }
+
+    // Such as an API which is inside a PROXY_SERVICE
+    private static boolean isAnAdditionalEntryPoint(StatisticDataUnit statisticDataUnit, String parentId,
+                                                 SpanStore spanStore) {
+        return BEGINNING_INDEX_PARENT.equals(parentId) && BEGINNING_INDEX.equals(Util.extractId(statisticDataUnit)) &&
+                isAlreadyABeginningIndexExists(spanStore);
+    }
+
+    private static boolean isAlreadyABeginningIndexExists(SpanStore spanStore) {
+        return spanStore.getActiveSpans().get(BEGINNING_INDEX) != null &&
+                !spanStore.getActiveSpans().get(BEGINNING_INDEX).isEmpty() ;
+    }
+
+    private static SpanWrapper getLatestActiveSpanWithId(String spanId, SpanStore spanStore) {
+        Stack<SpanWrapper> spanWrappers = spanStore.getActiveSpans().get(spanId);
+        if (spanWrappers != null && !spanWrappers.isEmpty()) {
+            return spanWrappers.peek();
         }
-        return resolveAlternativeParent(spanStore);
+        return null;
     }
 
     private static boolean isParentAcceptable(StatisticDataUnit child, StatisticDataUnit parent) {
