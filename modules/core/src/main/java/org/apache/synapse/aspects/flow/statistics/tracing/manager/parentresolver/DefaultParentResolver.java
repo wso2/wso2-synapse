@@ -1,49 +1,42 @@
 package org.apache.synapse.aspects.flow.statistics.tracing.manager.parentresolver;
 
 import io.opentracing.Span;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.tracing.manager.helpers.Util;
 import org.apache.synapse.aspects.flow.statistics.tracing.store.SpanStore;
 import org.apache.synapse.aspects.flow.statistics.tracing.store.SpanWrapper;
 
-import java.util.Stack;
+import java.util.List;
 
 public class DefaultParentResolver implements ParentResolver {
-    private static final String BEGINNING_INDEX = "0"; // TODO make them int
-    private static final String BEGINNING_INDEX_PARENT = "-1";
+//    public static Span resolveParent(StatisticDataUnit statisticDataUnit, SpanStore spanStore, MessageContext synCtx) {
+//        String parentId = String.valueOf(statisticDataUnit.getParentIndex());
+//        SpanWrapper parent = spanStore.getSpanWrapper(parentId);
+//        if (parent != null) {
+//            if (isParentAcceptable(statisticDataUnit, parent.getStatisticDataUnit())) {
+//                System.out.println("");
+//                System.out.println(statisticDataUnit.getCurrentIndex() + "'s parent is " + parentId);
+//                System.out.println("");
+//                return parent.getSpan();
+//            }
+//            return resolveAlternativeParent(spanStore);
+//        }
+//        return null;
+//    }
 
-    public static Span resolveParent(StatisticDataUnit statisticDataUnit, SpanStore spanStore) {
+    public static Span resolveParent(StatisticDataUnit statisticDataUnit, SpanStore spanStore, MessageContext synCtx) {
         String parentId = String.valueOf(statisticDataUnit.getParentIndex());
-        SpanWrapper parent = getLatestActiveSpanWithId(parentId, spanStore);
+        SpanWrapper parent = spanStore.getSpanWrapper(parentId);
         if (parent != null) {
+            if (isLoopBackMediator(statisticDataUnit)) {
+                return resolveLatestDesiredParent(ComponentType.SEQUENCE, null, true, spanStore).getSpan();
+            }
             if (isParentAcceptable(statisticDataUnit, parent.getStatisticDataUnit())) {
-                System.out.println("");
                 System.out.println(statisticDataUnit.getCurrentIndex() + "'s parent is " + parentId);
-                System.out.println("");
                 return parent.getSpan();
             }
             return resolveAlternativeParent(spanStore);
-        }
-        return null;
-    }
-
-    // Such as an API which is inside a PROXY_SERVICE
-    private static boolean isAnAdditionalEntryPoint(StatisticDataUnit statisticDataUnit, String parentId,
-                                                 SpanStore spanStore) {
-        return BEGINNING_INDEX_PARENT.equals(parentId) && BEGINNING_INDEX.equals(Util.extractId(statisticDataUnit)) &&
-                isAlreadyABeginningIndexExists(spanStore);
-    }
-
-    private static boolean isAlreadyABeginningIndexExists(SpanStore spanStore) {
-        return spanStore.getActiveSpans().get(BEGINNING_INDEX) != null &&
-                !spanStore.getActiveSpans().get(BEGINNING_INDEX).isEmpty() ;
-    }
-
-    private static SpanWrapper getLatestActiveSpanWithId(String spanId, SpanStore spanStore) {
-        Stack<SpanWrapper> spanWrappers = spanStore.getActiveSpans().get(spanId);
-        if (spanWrappers != null && !spanWrappers.isEmpty()) {
-            return spanWrappers.peek();
         }
         return null;
     }
@@ -69,6 +62,11 @@ public class DefaultParentResolver implements ParentResolver {
                         statisticDataUnit.getComponentName().equalsIgnoreCase("callmediator"));
     }
 
+    private static boolean isLoopBackMediator(StatisticDataUnit statisticDataUnit) {
+        return statisticDataUnit.getComponentType().equals(ComponentType.MEDIATOR) &&
+                statisticDataUnit.getComponentName().equalsIgnoreCase("loopbackmediator");
+    }
+
     public static Span resolveAlternativeParent(SpanStore spanStore) {
         SpanWrapper parent = spanStore.getAlternativeParent();
         if (parent != null) {
@@ -77,19 +75,37 @@ public class DefaultParentResolver implements ParentResolver {
         return null;
     }
 
-    // TODO on hold for now
-//    public static Span resolveParent(StatisticDataUnit statisticDataUnit, SpanStore spanStore) {
-//        String parentId = String.valueOf(statisticDataUnit.getParentIndex());
-//        if (isSpanActive(parentId, spanStore)) {
-//            System.out.println("");
-//            System.out.println(statisticDataUnit.getCurrentIndex() + "'s parent is " + parentId);
-//            System.out.println("");
-//            return spanStore.getActiveSpans().get(parentId).getSpan();
-//        }
-//        return null;
-//    }
+    public static synchronized SpanWrapper resolveLatestDesiredParent(ComponentType desiredComponentType,
+                                                                      String desiredComponentName,
+                                                                      boolean shouldIgnoreComponentNameCase,
+                                                                      SpanStore spanStore) {
+        List<SpanWrapper> spanWrappers = spanStore.getSpanWrappersByInsertionOrder();
+        if (!spanWrappers.isEmpty()) {
+            boolean doesComponentTypeMatch = desiredComponentType == null;
+            boolean doesComponentNameMatch = desiredComponentName == null;
 
-    private static boolean isSpanActive(String spanId, SpanStore spanStore) {
-        return spanStore.getActiveSpans().containsKey(spanId);
+            for (int i = spanWrappers.size() - 1; i >= 0; i--) {
+                SpanWrapper spanWrapper = spanWrappers.get(i);
+
+                if (!doesComponentTypeMatch) {
+                    doesComponentTypeMatch = spanWrapper.getStatisticDataUnit().getComponentType().equals(desiredComponentType);
+                }
+
+                if (!doesComponentNameMatch) {
+                    if (shouldIgnoreComponentNameCase) {
+                        doesComponentNameMatch =
+                                spanWrapper.getStatisticDataUnit().getComponentName().equalsIgnoreCase(desiredComponentName);
+                    } else {
+                        doesComponentNameMatch =
+                                spanWrapper.getStatisticDataUnit().getComponentName().equals(desiredComponentName);
+                    }
+                }
+
+                if (doesComponentTypeMatch && doesComponentNameMatch) {
+                    return spanWrapper;
+                }
+            }
+        }
+        return null;
     }
 }

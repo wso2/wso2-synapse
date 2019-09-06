@@ -6,6 +6,7 @@ import io.jaegertracing.internal.samplers.ConstSampler;
 import io.jaegertracing.internal.senders.NoopSender;
 import org.apache.synapse.aspects.flow.statistics.tracing.manager.handlers.DefaultSpanHandler;
 import org.apache.synapse.aspects.flow.statistics.tracing.manager.handlers.JaegerTracingSpanHandler;
+import org.apache.synapse.aspects.flow.statistics.tracing.manager.scopemanagement.TracingScopeManager;
 import org.apache.synapse.aspects.flow.statistics.tracing.manager.subhandlers.SubHandler;
 import org.apache.synapse.aspects.flow.statistics.tracing.store.SpanStore;
 
@@ -53,7 +54,8 @@ public class JaegerTracingManager implements OpenTracingManager {
 
     @Override
     public void resolveHandler() {
-        this.handler = new DefaultSpanHandler(tracer, spanStore); // TODO Make this to resolve programmatically
+        // TODO Make this to resolve programmatically
+        this.handler = new DefaultSpanHandler(tracer, new TracingScopeManager(), spanStore);
 //        this.handler = new EmptySpanHandler();
     }
 

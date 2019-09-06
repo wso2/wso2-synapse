@@ -13,6 +13,8 @@ import org.apache.synapse.aspects.flow.statistics.tracing.manager.helpers.SpanEx
 import org.apache.synapse.aspects.flow.statistics.tracing.manager.helpers.SpanTagger;
 import org.apache.synapse.aspects.flow.statistics.tracing.manager.parentresolver.DefaultParentResolver;
 import org.apache.synapse.aspects.flow.statistics.tracing.manager.helpers.Util;
+import org.apache.synapse.aspects.flow.statistics.tracing.manager.scopemanagement.TracingScope;
+import org.apache.synapse.aspects.flow.statistics.tracing.manager.scopemanagement.TracingScopeManager;
 import org.apache.synapse.aspects.flow.statistics.tracing.store.SpanStore;
 import org.apache.synapse.aspects.flow.statistics.tracing.store.SpanWrapper;
 import org.apache.synapse.aspects.flow.statistics.tracing.store.StackedSequenceInfo;
@@ -24,79 +26,56 @@ import java.util.Objects;
 
 public class DefaultSpanHandler implements JaegerTracingSpanHandler {
     private JaegerTracer tracer;
-    private final SpanStore spanStore;
+    private TracingScopeManager tracingScopeManager;
+//    private final SpanStore spanStore;
 
-    public DefaultSpanHandler(JaegerTracer tracer, SpanStore spanStore) {
+    public DefaultSpanHandler(JaegerTracer tracer, TracingScopeManager tracingScopeManager, SpanStore spanStore) {
         this.tracer = tracer;
-        this.spanStore = spanStore;
+        this.tracingScopeManager = tracingScopeManager;
+//        this.spanStore = spanStore;
     }
 
     @Override
     public void handleOpenEntryEvent(String absoluteId, StatisticDataUnit statisticDataUnit, MessageContext synCtx) {
-        synchronized (spanStore) {
-            if (!isStackableSequence(statisticDataUnit)) {
-                beginSpan(absoluteId, statisticDataUnit, synCtx);
-            } else {
-                // Will begin during addSeqContinuationState
-                addStackedSequence(statisticDataUnit); // TODO fix. Absorb for now
-            }
-            printStateInfoForDebug(synCtx);
-        }
+        startSpanOrStackSequence(absoluteId, statisticDataUnit, synCtx);
     }
 
     @Override
     public void handleOpenChildEntryEvent(String absoluteId, StatisticDataUnit statisticDataUnit,
                                            MessageContext synCtx) {
-        synchronized (spanStore) {
-            if (!isStackableSequence(statisticDataUnit)) {
-                beginSpan(absoluteId, statisticDataUnit, synCtx);
-            } else {
-                // Will begin during addSeqContinuationState
-                addStackedSequence(statisticDataUnit); // TODO fix. Absorb for now
-            }
-            printStateInfoForDebug(synCtx);
-        }
+        startSpanOrStackSequence(absoluteId, statisticDataUnit, synCtx);
     }
 
     @Override
     public void handleOpenFlowContinuableEvent(String absoluteId, StatisticDataUnit statisticDataUnit,
                                                 MessageContext synCtx) {
-        synchronized (spanStore) {
-            if (!isStackableSequence(statisticDataUnit)) {
-                beginSpan(absoluteId, statisticDataUnit, synCtx);
-            } else {
-                // Will begin during addSeqContinuationState
-                addStackedSequence(statisticDataUnit); // TODO fix. Absorb for now
-            }
-            printStateInfoForDebug(synCtx);
-        }
+        startSpanOrStackSequence(absoluteId, statisticDataUnit, synCtx);
     }
 
     @Override
     public void handleOpenFlowSplittingEvent(String absoluteId, StatisticDataUnit statisticDataUnit,
                                               MessageContext synCtx) {
-        synchronized (spanStore) {
-            if (!isStackableSequence(statisticDataUnit)) {
-                beginSpan(absoluteId, statisticDataUnit, synCtx);
-            } else {
-                // Will begin during addSeqContinuationState
-                addStackedSequence(statisticDataUnit); // TODO fix. Absorb for now
-            }
-            printStateInfoForDebug(synCtx);
-        }
+        startSpanOrStackSequence(absoluteId, statisticDataUnit, synCtx);
     }
 
     @Override
     public void handleOpenFlowAggregateEvent(String absoluteId, StatisticDataUnit statisticDataUnit,
                                               MessageContext synCtx) {
-        synchronized (spanStore) {
-            if (!isStackableSequence(statisticDataUnit)) {
-                beginSpan(absoluteId, statisticDataUnit, synCtx);
+        startSpanOrStackSequence(absoluteId, statisticDataUnit, synCtx);
+    }
+
+    private void startSpanOrStackSequence(String absoluteId, StatisticDataUnit statisticDataUnit,
+                                          MessageContext synCtx) {
+        // TODO lock on tracingScope if stuff like callback counter are going to reside in tracingScope
+        TracingScope tracingScope = tracingScopeManager.getTracingScope(synCtx);
+        synchronized (tracingScope.getSpanStore()) {
+            if (!isStackableSequence(statisticDataUnit, tracingScope.getSpanStore())) {
+                beginSpan(absoluteId, statisticDataUnit, synCtx, tracingScope.getSpanStore());
             } else {
                 // Will begin during addSeqContinuationState
-                addStackedSequence(statisticDataUnit); // TODO fix. Absorb for now
+                addStackedSequence(statisticDataUnit, tracingScope.getSpanStore());
             }
-            printStateInfoForDebug(synCtx);
+            printStateInfoForDebug(synCtx, tracingScope.getSpanStore());
         }
     }
 
@@ -114,23 +93,25 @@ public class DefaultSpanHandler implements JaegerTracingSpanHandler {
 
     @Override
     public void handleCloseEntryEvent(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx) {
-        synchronized (spanStore) {
-            if (!isStackableSequence(basicStatisticDataUnit)) {
-                endSpan(basicStatisticDataUnit, synCtx);
+        TracingScope tracingScope = tracingScopeManager.getTracingScope(synCtx);
+        synchronized (tracingScope.getSpanStore()) {
+            if (!isStackableSequence(basicStatisticDataUnit, tracingScope.getSpanStore())) {
+                endSpan(basicStatisticDataUnit, synCtx, tracingScope.getSpanStore(), tracingScope);
             }
             // Else: Will end during pop from stack
-            printStateInfoForDebug(synCtx);
+            printStateInfoForDebug(synCtx, tracingScope.getSpanStore());
         }
     }
 
     @Override
     public void handleCloseFlowForcefully(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx) {
-        synchronized (spanStore) {
-            if (!isStackableSequence(basicStatisticDataUnit)) {
-                endSpan(basicStatisticDataUnit, synCtx);
+        TracingScope tracingScope = tracingScopeManager.getTracingScope(synCtx);
+        synchronized (tracingScope.getSpanStore()) {
+            if (!isStackableSequence(basicStatisticDataUnit, tracingScope.getSpanStore())) {
+                endSpan(basicStatisticDataUnit, synCtx, tracingScope.getSpanStore(), tracingScope);
             }
             // Else: Will end during pop from stack
-            printStateInfoForDebug(synCtx);
+            printStateInfoForDebug(synCtx, tracingScope.getSpanStore());
             // TODO for now, ignore if not there. But need to be sophisticated i guess
         }
     }
@@ -142,7 +123,8 @@ public class DefaultSpanHandler implements JaegerTracingSpanHandler {
 
     @Override
     public void handleAddCallback(MessageContext messageContext, String callbackId) {
-        // Absorb
+        TracingScope tracingScope = tracingScopeManager.getTracingScope(messageContext);
+        tracingScope.incrementPendingCallbacksCount();
     }
 
     @Override
@@ -161,8 +143,8 @@ public class DefaultSpanHandler implements JaegerTracingSpanHandler {
             synchronized (spanStore) {
                 doHackyCleanup(); // TODO remove
 
-                SpanWrapper outerLevelSpanWrapper = spanStore.getOuterLevelSpanWrapper();
-                spanStore.finishActiveSpan(outerLevelSpanWrapper);
+                SpanWrapper outerLevelSpanWrapper = tracingScope.getSpanStore().getOuterLevelSpanWrapper();
+                tracingScope.getSpanStore().finishActiveSpan(outerLevelSpanWrapper);
 
                 System.out.println("Finished Span - currentIndex: " + outerLevelSpanWrapper.getStatisticDataUnit().getCurrentIndex() +
                         ", statisticsId: " + outerLevelSpanWrapper.getStatisticDataUnit().getStatisticId());
@@ -172,38 +154,43 @@ public class DefaultSpanHandler implements JaegerTracingSpanHandler {
 
     @Override
     public void handleStateStackInsertion(MessageContext synCtx, String seqName, SequenceType seqType) {
-        synchronized (spanStore) {
-            StackedSequenceInfo stackedSequenceInfo = findStackedSequenceInfo(synCtx, seqName, seqType, false);
+        TracingScope tracingScope = tracingScopeManager.getTracingScope(synCtx);
+        synchronized (tracingScope.getSpanStore()) {
+            StackedSequenceInfo stackedSequenceInfo =
+                    findStackedSequenceInfo(synCtx, seqName, seqType, tracingScope.getSpanStore(),false);
             if (stackedSequenceInfo != null) {
                 StatisticDataUnit statisticDataUnit = stackedSequenceInfo.getStatisticDataUnit();
                 stackedSequenceInfo.setSpanActive(true);
-                beginSpan(stackedSequenceInfo.getSpanReferenceId(), statisticDataUnit, synCtx);
-                printStateInfoForDebug(synCtx);
+                beginSpan(stackedSequenceInfo.getSpanReferenceId(), statisticDataUnit, synCtx,
+                        tracingScope.getSpanStore());
+                printStateInfoForDebug(synCtx, tracingScope.getSpanStore());
             } else {
                 // TODO look carefully
-                System.out.println("EXCEPTIONAL: Next Unstarted Call Mediator Sequence Reference is null");
+                System.out.println("EXCEPTIONAL: Next Unstarted Stacked Sequence Reference is null");
             }
         }
     }
 
     @Override
     public void handleStateStackRemoval(ContinuationState continuationState, MessageContext synCtx) {
-        synchronized (spanStore) {
+        TracingScope tracingScope = tracingScopeManager.getTracingScope(synCtx);
+        synchronized (tracingScope.getSpanStore()) {
             if (continuationState instanceof SeqContinuationState) { // No other type will be kept track of // TODO ensure
                 StackedSequenceInfo stackedSequenceInfo =
                         findStackedSequenceInfo(
                                 synCtx,
                                 ((SeqContinuationState)continuationState).getSeqName(),
                                 ((SeqContinuationState)continuationState).getSeqType(),
+                                tracingScope.getSpanStore(),
                                 true);
                 if (stackedSequenceInfo != null) {
                     stackedSequenceInfo.setSpanActive(false);
-                    finishStackedSequenceSpan(synCtx, stackedSequenceInfo);
-                    spanStore.getStackedSequences().remove(stackedSequenceInfo);
+                    finishStackedSequenceSpan(synCtx, stackedSequenceInfo, tracingScope.getSpanStore());
+                    tracingScope.getSpanStore().getStackedSequences().remove(stackedSequenceInfo);
                     System.out.println("Finished Span - currentIndex: " +
                             stackedSequenceInfo.getStatisticDataUnit().getCurrentIndex() +
                             ", statisticsId: " + stackedSequenceInfo.getStatisticDataUnit().getStatisticId());
-                    printStateInfoForDebug(synCtx);
+                    printStateInfoForDebug(synCtx, tracingScope.getSpanStore());
                 }
             }
         }
@@ -211,21 +198,24 @@ public class DefaultSpanHandler implements JaegerTracingSpanHandler {
 
     @Override
     public void handleStateStackClearance(MessageContext synCtx) {
-        synchronized (spanStore) {
-            List<StackedSequenceInfo> stackedSequences = spanStore.getStackedSequences();
+        TracingScope tracingScope = tracingScopeManager.getTracingScope(synCtx);
+        synchronized (tracingScope.getSpanStore()) {
+            List<StackedSequenceInfo> stackedSequences = tracingScope.getSpanStore().getStackedSequences();
             for (StackedSequenceInfo stackedSequence : stackedSequences) {
-                finishStackedSequenceSpan(synCtx, stackedSequence);
+                finishStackedSequenceSpan(synCtx, stackedSequence, tracingScope.getSpanStore());
             }
             stackedSequences.clear();
         }
     }
 
     // TODO Remove this absoluteIndex story in all the places
-    private void beginSpan(String spanId, StatisticDataUnit statisticDataUnit, MessageContext synCtx) {
-        Span parentSpan = DefaultParentResolver.resolveParent(statisticDataUnit, spanStore);
+    private void beginSpan(String spanId, StatisticDataUnit statisticDataUnit, MessageContext synCtx,
+                           SpanStore spanStore) {
+        Span parentSpan = DefaultParentResolver.resolveParent(statisticDataUnit, spanStore, synCtx);
         Span span = tracer.buildSpan(statisticDataUnit.getComponentName()).asChildOf(parentSpan).start();
         SpanTagger.setDebugSpanTags(span, spanId, statisticDataUnit, synCtx); // TODO remove debug tags
         SpanWrapper spanWrapper = spanStore.addActiveSpan(spanId, span, statisticDataUnit, synCtx);
+
         if (spanStore.getOuterLevelSpanWrapper() == null && isEligibleForOuterLevelSpan(statisticDataUnit)) {
             spanStore.assignOuterLevelSpan(spanWrapper);
         }
@@ -236,17 +226,34 @@ public class DefaultSpanHandler implements JaegerTracingSpanHandler {
         spanStore.printActiveSpans();
     }
 
-    private void endSpan(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx) {
+    private void endSpan(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx, SpanStore spanStore,
+                         TracingScope tracingScope) {
         String spanWrapperId = Util.extractId(basicStatisticDataUnit);
-        SpanWrapper spanWrapper = spanStore.getFinishableSpanWrapper(spanWrapperId);
-//        if ((spanStore.getOuterLevelSpanWrapper() != null && !spanStore.getOuterLevelSpanWrapper().equals(spanWrapper))
-        if (!Objects.equals(spanStore.getOuterLevelSpanWrapper(), spanWrapper) || canEndOuterLevelSpan(synCtx)) {
-            spanStore.finishActiveSpan(spanWrapper);
+        SpanWrapper spanWrapper = spanStore.getSpanWrapper(spanWrapperId);
 
+        if (Objects.equals(spanWrapper, spanStore.getOuterLevelSpanWrapper())) {
+            // An outer level span
+            if (isTheMostOuterLevelSpan(tracingScope, spanWrapper)) {
+                if (canEndTheMostOuterLevelSpan(synCtx)) {
+                    // The most outer level span, and no callbacks are pending
+                    spanStore.finishActiveSpan(spanWrapper);
+                    System.out.println("Finished Span - currentIndex: " + basicStatisticDataUnit.getCurrentIndex() +
+                            ", statisticsId: " + basicStatisticDataUnit.getStatisticId());
+                }
+                // Else - Absorb. Will be handled when all the callbacks are received back
+            } else {
+                // Outer level span, but not the most outer level
+                doHackyCleanup(spanStore);
+                spanStore.finishActiveSpan(spanWrapper);
+                System.out.println("Finished Span - currentIndex: " + basicStatisticDataUnit.getCurrentIndex() +
+                        ", statisticsId: " + basicStatisticDataUnit.getStatisticId());
+            }
+        } else {
+            // A non-outer level span
+            spanStore.finishActiveSpan(spanWrapper);
             System.out.println("Finished Span - currentIndex: " + basicStatisticDataUnit.getCurrentIndex() +
                     ", statisticsId: " + basicStatisticDataUnit.getStatisticId());
         }
-        // Else - Absorb. Will be handled when all the callbacks are handled/reported
 
         spanStore.printActiveSpans();
     }
@@ -256,14 +263,19 @@ public class DefaultSpanHandler implements JaegerTracingSpanHandler {
                 statisticDataUnit.getComponentType() == ComponentType.API; // TODO what about other components
     }
 
-    private boolean canEndOuterLevelSpan(MessageContext synCtx) {
+    private boolean isTheMostOuterLevelSpan(TracingScope tracingScope, SpanWrapper spanWrapper) {
+        return tracingScope.isOuterLevelScope() &&
+                Objects.equals(tracingScope.getSpanStore().getOuterLevelSpanWrapper(), spanWrapper);
+    }
+
+    private boolean canEndTheMostOuterLevelSpan(MessageContext synCtx) {
         return SpanExtendingCounter.getValue() == 0 &&
                 synCtx.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY) != null &&
                 ((StatisticsReportingEventHolder) synCtx.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY))
                         .isEvenCollectionFinished();
     }
 
-    private boolean isStackableSequence(BasicStatisticDataUnit basicStatisticDataUnit) {
+    private boolean isStackableSequence(BasicStatisticDataUnit basicStatisticDataUnit, SpanStore spanStore) {
         if (basicStatisticDataUnit instanceof StatisticDataUnit) {
             // Check is performed during an Open Event
             return ((StatisticDataUnit) basicStatisticDataUnit).getComponentType() == ComponentType.SEQUENCE &&
@@ -282,22 +294,23 @@ public class DefaultSpanHandler implements JaegerTracingSpanHandler {
                 String.valueOf(basicStatisticDataUnit.getCurrentIndex()));
     }
 
-    private void addStackedSequence(StatisticDataUnit statisticDataUnit) {
+    private void addStackedSequence(StatisticDataUnit statisticDataUnit, SpanStore spanStore) {
         StackedSequenceInfo stackedSequenceInfo = new StackedSequenceInfo(statisticDataUnit);
         spanStore.addStackedSequence(stackedSequenceInfo);
     }
 
-    private void finishStackedSequenceSpan(MessageContext synCtx, StackedSequenceInfo stackedSequenceInfo) {
+    private void finishStackedSequenceSpan(MessageContext synCtx, StackedSequenceInfo stackedSequenceInfo,
+                                           SpanStore spanStore) {
         String spanWrapperId = stackedSequenceInfo.getSpanReferenceId();
-        SpanWrapper spanWrapper = spanStore.getFinishableSpanWrapper(spanWrapperId);
+        SpanWrapper spanWrapper = spanStore.getSpanWrapper(spanWrapperId);
         spanStore.finishActiveSpan(spanWrapper);
 
-        System.out.println("Finished Call Mediator Sequence Span - ComponentName: " +
+        System.out.println("Finished Stacked Sequence Span - ComponentName: " +
                 stackedSequenceInfo.getStatisticDataUnit().getComponentName());
     }
 
     private StackedSequenceInfo findStackedSequenceInfo(MessageContext synCtx, String seqName, SequenceType seqType,
-                                                        boolean desiredSpanActiveState) {
+                                                        SpanStore spanStore, boolean desiredSpanActiveState) {
         for (StackedSequenceInfo stackedSequenceInfo : spanStore.getStackedSequences()) {
             if (seqType.toString().equals(stackedSequenceInfo.getStatisticDataUnit().getComponentName()) &&
                     (stackedSequenceInfo.isSpanActive() == desiredSpanActiveState)) {
@@ -308,18 +321,19 @@ public class DefaultSpanHandler implements JaegerTracingSpanHandler {
     }
 
     // TODO Remove. Hacky - to handle non-ending stacked sequences (until fixing stack pop for all mediators)
-    private void doHackyCleanup() {
+    private void doHackyCleanup(SpanStore spanStore) {
         if (!spanStore.getStackedSequences().isEmpty()) {
+            System.out.println("Doing Hacky Cleanup");
             List<StackedSequenceInfo> stackedSequences = spanStore.getStackedSequences();
             for (StackedSequenceInfo stackedSequence : stackedSequences) {
-                finishStackedSequenceSpan(null, stackedSequence);
+                finishStackedSequenceSpan(null, stackedSequence, spanStore);
             }
             stackedSequences.clear();
         }
     }
 
     // TODO remove
-    private synchronized void printStateInfoForDebug(MessageContext synCtx) {
+    private synchronized void printStateInfoForDebug(MessageContext synCtx, SpanStore spanStore) {
         spanStore.printActiveSpans();
         spanStore.printStackedSequences();
     }

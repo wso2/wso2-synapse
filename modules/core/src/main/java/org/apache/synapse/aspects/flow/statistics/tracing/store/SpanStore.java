@@ -14,36 +14,32 @@ import java.util.concurrent.locks.ReentrantLock;
  * Stores and managers spans.
  */
 public class SpanStore {
-    private final ReentrantLock LOCK = new ReentrantLock(true);
-
     private SpanWrapper outerLevelSpan;
-    private Map<String, Stack<SpanWrapper>> activeSpans;
+    private Map<String, SpanWrapper> activeSpans;
     private List<StackedSequenceInfo> stackedSequences;
     private Stack<SpanWrapper> eligibleAlternativeParents;
+
+    private List<SpanWrapper> spanWrappersByInsertionOrder; // TODO under construction
 
     public SpanStore() {
         this.activeSpans = new HashMap<>();
         this.stackedSequences = new Stack<>();
         this.eligibleAlternativeParents = new Stack<>();
         this.outerLevelSpan = null;
+        spanWrappersByInsertionOrder = new ArrayList<>();
     }
 
     // Active spans related
 
-    public Map<String, Stack<SpanWrapper>> getActiveSpans() {
+    public Map<String, SpanWrapper> getActiveSpans() {
         return activeSpans;
     }
 
     public SpanWrapper addActiveSpan(String spanId, Span activeSpan, StatisticDataUnit statisticDataUnit,
                                                   MessageContext synCtx) {
         SpanWrapper spanWrapper = createActiveSpanWrapper(spanId, activeSpan, statisticDataUnit, synCtx);
-        if (!activeSpans.containsKey(spanId)) {
-            Stack<SpanWrapper> spanWrappers = new Stack<>();
-            spanWrappers.push(spanWrapper);
-            activeSpans.put(spanId, spanWrappers);
-        } else {
-            activeSpans.get(spanId).add(spanWrapper);
-        }
+        activeSpans.put(spanId, spanWrapper);
+        spanWrappersByInsertionOrder.add(spanWrapper);
 
         if (spanWrapper.getStatisticDataUnit().isFlowContinuableMediator()) {
             addEligibleAlternativeParent(spanWrapper);
@@ -51,7 +47,8 @@ public class SpanStore {
         return spanWrapper;
     }
 
-    private SpanWrapper createActiveSpanWrapper(String spanId, Span activeSpan, StatisticDataUnit statisticDataUnit, MessageContext synCtx) {
+    private SpanWrapper createActiveSpanWrapper(String spanId, Span activeSpan, StatisticDataUnit statisticDataUnit,
+                                                MessageContext synCtx) {
         // TODO Implement properly. Revise "isCloseable"
         return new SpanWrapper(spanId, activeSpan, statisticDataUnit, true);
     }
@@ -65,18 +62,8 @@ public class SpanStore {
         }
     }
 
-    public SpanWrapper getFinishableSpanWrapper(String spanWrapperId) {
-        Stack<SpanWrapper> spanWrappers = activeSpans.get(spanWrapperId);
-        if (spanWrappers != null && !spanWrappers.isEmpty()) {
-            if (spanWrappers.size() == 1) {
-                // Last in the stack. Further elements will refer this as parent
-                return spanWrappers.peek();
-            } else {
-                // Not the last in the stack. No further element will refer this as parent
-                return spanWrappers.pop();
-            }
-        }
-        return null;
+    public SpanWrapper getSpanWrapper(String spanWrapperId) {
+        return activeSpans.get(spanWrapperId);
     }
 
     // Stacked sequences related
@@ -101,6 +88,11 @@ public class SpanStore {
 
     // Alternative parents related
 
+
+    public List<SpanWrapper> getSpanWrappersByInsertionOrder() {
+        return spanWrappersByInsertionOrder;
+    }
+
     private void addEligibleAlternativeParent(SpanWrapper spanWrapper) {
         eligibleAlternativeParents.push(spanWrapper);
     }
@@ -115,7 +107,7 @@ public class SpanStore {
 
     // Outer level span related
 
-    public synchronized void assignOuterLevelSpan(SpanWrapper spanWrapper) {
+    public void assignOuterLevelSpan(SpanWrapper spanWrapper) {
         outerLevelSpan = spanWrapper;
     }
 
@@ -140,7 +132,7 @@ public class SpanStore {
     // TODO remove
     public synchronized void printStackedSequences() {
         System.out.println("");
-        System.out.println("\t\tActive Call Mediator Sequences:");
+        System.out.println("\t\tActive Stacked Sequences:");
         for (StackedSequenceInfo activeCallMediatorSequence : stackedSequences) {
             if (activeCallMediatorSequence.isSpanActive()) {
                 System.out.print("*" + activeCallMediatorSequence.getSpanReferenceId() + ". " +
