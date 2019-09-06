@@ -139,9 +139,11 @@ public class DefaultSpanHandler implements JaegerTracingSpanHandler {
 
     @Override
     public void handleReportCallbackHandlingCompletion(MessageContext synapseOutMsgCtx, String callbackId) {
-        if (canEndOuterLevelSpan(synapseOutMsgCtx)) {
-            synchronized (spanStore) {
-                doHackyCleanup(); // TODO remove
+        TracingScope tracingScope = tracingScopeManager.getTracingScope(synapseOutMsgCtx);
+        tracingScope.decrementPendingCallbacksCount();
+        if (canEndTheMostOuterLevelSpan(synapseOutMsgCtx)) {
+            synchronized (tracingScope.getSpanStore()) {
+                doHackyCleanup(tracingScope.getSpanStore()); // TODO remove
 
                 SpanWrapper outerLevelSpanWrapper = tracingScope.getSpanStore().getOuterLevelSpanWrapper();
                 tracingScope.getSpanStore().finishActiveSpan(outerLevelSpanWrapper);
@@ -256,6 +258,38 @@ public class DefaultSpanHandler implements JaegerTracingSpanHandler {
         }
 
         spanStore.printActiveSpans();
+
+
+
+        // TODO remove this when the above is 100% correct
+//        String spanWrapperId = Util.extractId(basicStatisticDataUnit);
+//        SpanWrapper spanWrapper = spanStore.getSpanWrapper(spanWrapperId);
+//
+//        if (Objects.equals(spanWrapper, spanStore.getOuterLevelSpanWrapper())) {
+//            // An outer level span
+//            if (isTheMostOuterLevelSpan(tracingScope, spanWrapper)) {
+//                if (canEndTheMostOuterLevelSpan(synCtx)) {
+//                    // The most outer level span, and no callbacks are pending
+//                    spanStore.finishActiveSpan(spanWrapper);
+//                    System.out.println("Finished Span - currentIndex: " + basicStatisticDataUnit.getCurrentIndex() +
+//                            ", statisticsId: " + basicStatisticDataUnit.getStatisticId());
+//                }
+//                // Else - Absorb. Will be handled when all the callbacks are received back
+//            } else {
+//                // Outer level span, but not the most outer level
+//                doHackyCleanup(spanStore);
+//                spanStore.finishActiveSpan(spanWrapper);
+//                System.out.println("Finished Span - currentIndex: " + basicStatisticDataUnit.getCurrentIndex() +
+//                        ", statisticsId: " + basicStatisticDataUnit.getStatisticId());
+//            }
+//        } else {
+//            // A non-outer level span
+//            spanStore.finishActiveSpan(spanWrapper);
+//            System.out.println("Finished Span - currentIndex: " + basicStatisticDataUnit.getCurrentIndex() +
+//                    ", statisticsId: " + basicStatisticDataUnit.getStatisticId());
+//        }
+//
+//        spanStore.printActiveSpans();
     }
 
     private boolean isEligibleForOuterLevelSpan(StatisticDataUnit statisticDataUnit) {
