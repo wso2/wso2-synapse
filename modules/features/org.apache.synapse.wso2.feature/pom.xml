@@ -99,6 +99,14 @@
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
         </dependency>
+        <dependency>
+            <groupId>commons-dbcp.wso2</groupId>
+            <artifactId>commons-dbcp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-pool.wso2</groupId>
+            <artifactId>commons-pool</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -144,6 +152,10 @@
                                 <bundleDef>com.google.guava:guava:${google.guava.version}</bundleDef>
                                 <bundleDef>org.wso2.orbit.com.github.fge:json-schema-validator-all</bundleDef>
                             </bundles>
+                            <importBundles>
+                                <importBundleDef>commons-dbcp.wso2:commons-dbcp</importBundleDef>
+                                <importBundleDef>commons-pool.wso2:commons-pool</importBundleDef>
+                            </importBundles>
                         </configuration>
                     </execution>
                 </executions>
