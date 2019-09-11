@@ -51,6 +51,7 @@ import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsColl
 import java.io.IOException;
 import java.util.Properties;
 
+import static org.apache.synapse.transport.passthru.TargetContext.CONNECTION_INFORMATION;
 
 /**
  * This class is handling events from the transport -- > client.
@@ -169,6 +170,8 @@ public class TargetHandler implements NHttpClientEventHandler {
             
             TargetRequest request = TargetContext.getRequest(conn);
             if (request != null) {
+                TargetContext targetContext = (TargetContext)conn.getContext().getAttribute(CONNECTION_INFORMATION);
+                targetContext.updateLastStateUpdatedTime();
                 request.start(conn);
                 targetConfiguration.getMetrics().incrementMessagesSent();
             }
