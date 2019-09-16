@@ -51,8 +51,6 @@ import java.io.OutputStream;
 import java.util.Properties;
 import java.util.UUID;
 
-import static org.apache.synapse.transport.passthru.SourceContext.CONNECTION_INFORMATION;
-
 /**
  * This is the class where transport interacts with the client. This class
  * receives events for a particular connection. These events give information
@@ -128,7 +126,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                 setCorrelationId(conn);
                 SourceContext sourceContext = (SourceContext)
-                        conn.getContext().getAttribute(CONNECTION_INFORMATION);
+                        conn.getContext().getAttribute(TargetContext.CONNECTION_INFORMATION);
                 sourceContext.updateLastStateUpdatedTime();
             }
             httpContext.setAttribute(PassThroughConstants.REQ_ARRIVAL_TIME, System.currentTimeMillis());
