@@ -248,7 +248,7 @@ public class TargetContext {
     }
 
     public static Boolean isCorrelationIdAvailable(NHttpConnection connection) {
-        if (connection != null && connection.getContext() != null && connection.getContext().getAttribute(PassThroughConstants.CORRELATION_ID) != null) {
+        if (connection.getContext().getAttribute(PassThroughConstants.CORRELATION_ID) != null) {
             return true;
         }
         return false;
