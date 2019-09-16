@@ -147,7 +147,13 @@ public class SourceHandler implements NHttpServerEventHandler {
                 conn.getContext().setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_END_TIME, System.currentTimeMillis());
             }
             OutputStream os = getOutputStream(method, request);
-            sourceConfiguration.getWorkerPool().execute(new ServerWorker(request, sourceConfiguration, os));
+            Object correlationId = conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID);
+            if (correlationId != null) {
+                sourceConfiguration.getWorkerPool().execute(new ServerWorker(request, sourceConfiguration, os,
+                        System.currentTimeMillis(), correlationId.toString()));
+            } else {
+                sourceConfiguration.getWorkerPool().execute(new ServerWorker(request, sourceConfiguration, os));
+            }
         } catch (HttpException e) {
             log.error("HttpException occurred when request is processing probably when creating SourceRequest", e);
 
