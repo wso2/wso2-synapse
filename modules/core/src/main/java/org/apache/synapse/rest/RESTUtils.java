@@ -26,7 +26,6 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.rest.cors.CORSConfiguration;
 import org.apache.synapse.rest.dispatch.RESTDispatcher;
 import org.apache.synapse.rest.dispatch.DefaultDispatcher;
 import org.apache.synapse.rest.dispatch.URLMappingBasedDispatcher;
@@ -39,7 +38,6 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class RESTUtils {
 
@@ -137,41 +135,6 @@ public class RESTUtils {
                     String existingValue = (String) synCtx.getProperty(RESTConstants.REST_QUERY_PARAM_PREFIX + name);
                     value = RESTConstants.QUERY_PARAM_DELIMITER + entry;
                     synCtx.setProperty(RESTConstants.REST_QUERY_PARAM_PREFIX + name, existingValue + value);
-                }
-            }
-        }
-    }
-
-    /**
-     * Function to set CORS headers to response message transport headers extracting from synapse message context
-     *
-     * @param synCtx
-     */
-    public static void handleCORSHeadersForResponse(MessageContext synCtx) {
-        CORSConfiguration corsConfiguration = CORSConfiguration.getCORSConfig();
-        if (corsConfiguration.isEnabled()) {
-            org.apache.axis2.context.MessageContext msgCtx = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-            Map<String,String> transportHeaders = (Map<String,String>) msgCtx.getProperty(
-                    org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-            if (transportHeaders != null) {
-                if (synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_METHODS) != null) {
-                    transportHeaders.put(RESTConstants.CORS_HEADER_ACCESS_CTL_ALLOW_METHODS,
-                            (String) synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_METHODS));
-                }
-
-                if (synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_ORIGIN) != null) {
-                    transportHeaders.put(RESTConstants.CORS_HEADER_ACCESS_CTL_ALLOW_ORIGIN,
-                            (String) synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_ORIGIN));
-                }
-
-                if (synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_HEADERS) != null) {
-                    transportHeaders.put(RESTConstants.CORS_HEADER_ACCESS_CTL_ALLOW_HEADERS,
-                            (String) synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_HEADERS));
-                }
-
-                if (synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ORIGIN) != null) {
-                    transportHeaders.put(RESTConstants.CORS_HEADER_ORIGIN,
-                            (String) synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ORIGIN));
                 }
             }
         }

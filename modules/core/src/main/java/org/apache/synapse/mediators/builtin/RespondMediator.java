@@ -7,7 +7,8 @@ import org.apache.synapse.SynapseLog;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.mediators.AbstractMediator;
-import org.apache.synapse.rest.RESTUtils;
+import org.apache.synapse.rest.cors.SynapseCORSConfiguration;
+import org.apache.synapse.rest.cors.CORSHelper;
 
 public class RespondMediator extends AbstractMediator{
 
@@ -35,7 +36,7 @@ public class RespondMediator extends AbstractMediator{
         String proxyName = (String) synCtx.getProperty(SynapseConstants.PROXY_SERVICE);
         if (proxyName == null || proxyName.isEmpty()) {
             // Add CORS headers for API response
-            RESTUtils.handleCORSHeadersForResponse(synCtx);
+            CORSHelper.handleCORSHeadersForResponse(SynapseCORSConfiguration.getInstance(), synCtx);
         }
 
         Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
