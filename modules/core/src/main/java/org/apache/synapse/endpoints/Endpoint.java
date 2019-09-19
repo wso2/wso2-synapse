@@ -24,6 +24,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.Nameable;
 import org.apache.synapse.SynapseArtifact;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.json.JSONObject;
 
 import java.util.List;
 
@@ -149,5 +150,12 @@ public interface Endpoint extends ManagedLifecycle, SynapseArtifact, Nameable {
     public void setIsEdited(boolean isEdited);
 
     public void setComponentStatisticsId(ArtifactHolder holder);
+
+    /**
+     * Get the json representation of the endpoint.
+     *
+     * @return JSONObject
+     */
+    public JSONObject getJsonRepresentation();
 
 }
