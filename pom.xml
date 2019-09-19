@@ -1298,6 +1298,7 @@
       <net.minidev.accessors-smart.version>1.2</net.minidev.accessors-smart.version>
       <org.ow2.asm.asm.version>5.2</org.ow2.asm.asm.version>
       <json.smart.version>2.3</json.smart.version>
+       <org.wso2.json.version>3.0.0.wso2v1</org.wso2.json.version>
       <!-- Warning: log4j versions above 1.2.14 introduce additional transitive dependencies,
              some of which are not available from the Maven central repository. -->
       <log4j.version>1.2.14</log4j.version>
