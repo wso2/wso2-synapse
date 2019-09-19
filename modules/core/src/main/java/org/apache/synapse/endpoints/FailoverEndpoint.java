@@ -34,9 +34,12 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.xml.stream.XMLStreamException;
 
@@ -279,6 +282,13 @@ public class FailoverEndpoint extends AbstractEndpoint {
             }
         }
         return false;
+    }
+
+    protected void createJsonRepresentation() {
+        endpointJson = new JSONObject();
+        endpointJson.put(NAME_JSON_ATT, getName());
+        endpointJson.put(TYPE_JSON_ATT, "Failover Endpoint");
+        endpointJson.put(CHILDREN_JSON_ATT, getEndpointChildrenAsJson(getChildren()));
     }
 
     public boolean isDynamic() {
