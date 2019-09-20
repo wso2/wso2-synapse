@@ -50,6 +50,7 @@ import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HTTPTransportUtils;
 import org.apache.axis2.util.MessageContextBuilder;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpInetConnection;
@@ -60,6 +61,7 @@ import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.ssl.SSLIOSession;
 import org.apache.http.protocol.HTTP;
+import org.apache.log4j.MDC;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiatorProvider;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
@@ -79,12 +81,17 @@ import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
 public class ServerWorker implements Runnable {
 
   	private static final Log log = LogFactory.getLog(ServerWorker.class);
+    /** logger for correlation.log */
+    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
     /** the incoming message to be processed */
     private org.apache.axis2.context.MessageContext msgContext = null;
     /** the http request */
     private SourceRequest request = null;
     /** The configuration of the receiver */
     private SourceConfiguration sourceConfiguration = null;
+
+    private long initiationTimestamp = 0;
+    private String correlationId;
 
     private static final String SOAP_ACTION_HEADER = "SOAPAction";
 
@@ -122,8 +129,30 @@ public class ServerWorker implements Runnable {
                 System.currentTimeMillis());
     }
 
+    public ServerWorker(final SourceRequest request,
+            final SourceConfiguration sourceConfiguration,final OutputStream os, long initiationTimestamp,
+            String correlationId) {
+        this(request, sourceConfiguration, os);
+        this.initiationTimestamp = initiationTimestamp;
+        this.correlationId = correlationId;
+    }
+
     public void run() {
         try {
+             /* Remove correlation id MDC thread local value that can be persisting from the
+               previous usage of this thread */
+            MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+            /* Subsequent to removing the correlation id MDC thread local value, a new value is put in case
+               there is one */
+            if (StringUtils.isNotEmpty(correlationId)) {
+                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, correlationId);
+                /* Log the time taken to switch from the previous thread to this thread */
+                if (initiationTimestamp != 0) {
+                    correlationLog.info((System.currentTimeMillis() - initiationTimestamp) +
+                            "|Thread switch latency");
+                }
+            }
+
             CustomLogSetter.getInstance().clearThreadLocalContent();
             TenantInfoInitiator tenantInfoInitiator = TenantInfoInitiatorProvider.getTenantInfoInitiator();
             if (tenantInfoInitiator != null) {

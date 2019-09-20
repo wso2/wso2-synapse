@@ -21,6 +21,7 @@ package org.apache.synapse.endpoints;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.json.JSONObject;
 
 /**
  * This class represents an actual endpoint to send the message. It is responsible for sending the
@@ -50,6 +51,14 @@ public class AddressEndpoint extends AbstractEndpoint {
         if (getContext() != null) {
             getContext().onSuccess();
         }
+    }
+
+    protected void createJsonRepresentation() {
+        endpointJson = new JSONObject();
+        endpointJson.put("name", getName());
+        endpointJson.put("type", "Address Endpoint");
+        endpointJson.put("address", getDefinition().getAddress());
+        setAdvancedProperties();
     }
 
     public void send(MessageContext synCtx) {

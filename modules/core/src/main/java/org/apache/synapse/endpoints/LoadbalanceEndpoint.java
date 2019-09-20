@@ -41,6 +41,7 @@ import org.apache.synapse.endpoints.algorithms.AlgorithmContext;
 import org.apache.synapse.endpoints.algorithms.LoadbalanceAlgorithm;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
+import org.json.JSONObject;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
@@ -147,6 +148,17 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
     @Override
     public boolean isInitialized() {
         return loadBalanceEPInitialized;
+    }
+
+    protected void createJsonRepresentation() {
+
+        endpointJson = new JSONObject();
+        endpointJson.put(NAME_JSON_ATT, getName());
+        endpointJson.put(TYPE_JSON_ATT, "Load Balance Endpoint");
+        endpointJson.put("algorithm", getAlgorithm().getName());
+        endpointJson.put("buildMessage", isBuildMessageAtt());
+        endpointJson.put("isFailover", isFailover());
+        endpointJson.put(CHILDREN_JSON_ATT, getEndpointChildrenAsJson(getChildren()));
     }
 
     public void send(MessageContext synCtx) {

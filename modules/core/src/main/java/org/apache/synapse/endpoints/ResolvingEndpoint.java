@@ -31,6 +31,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.context.ConfigurationContext;
+import org.json.JSONObject;
 
 /**
  * 
@@ -57,6 +58,13 @@ public class ResolvingEndpoint extends AbstractEndpoint {
         } else {
             sendMessage(synCtx);
         }
+    }
+
+    @Override
+    protected void createJsonRepresentation() {
+        endpointJson = new JSONObject();
+        endpointJson.put(NAME_JSON_ATT, getName());
+        endpointJson.put(TYPE_JSON_ATT, "Resolving Endpoint");
     }
 
     /**
