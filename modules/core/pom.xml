@@ -414,6 +414,11 @@
             <artifactId>powermock-module-junit4</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.graphql-java</groupId>
+            <artifactId>graphql-java</artifactId>
+            <version>2019-08-22T10-39-43-a6c4461</version>
+        </dependency>
     </dependencies>
 <properties>
 		<version.orbit.rabbitmq>3.6.6.wso2v1</version.orbit.rabbitmq>
