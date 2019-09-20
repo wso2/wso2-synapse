@@ -1137,6 +1137,11 @@
               <artifactId>commons-pool</artifactId>
               <version>${commons.pool.wso2.version}</version>
           </dependency>
+          <dependency>
+              <groupId>com.graphql-java</groupId>
+              <artifactId>graphql-java</artifactId>
+              <version>2019-08-22T10-39-43-a6c4461</version>
+          </dependency>
       </dependencies>
    </dependencyManagement>
     <reporting>
