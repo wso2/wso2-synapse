@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.synapse</groupId>
         <artifactId>Apache-Synapse</artifactId>
-        <version>2.1.7-wso2v124-SNAPSHOT</version>
+        <version>2.1.7-wso2v124</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -37,7 +37,7 @@
         <connection>scm:svn:http://svn.apache.org/repos/asf/synapse/trunk/java/modules/integration</connection>
         <developerConnection>scm:svn:https://svn.apache.org/repos/asf/synapse/trunk/java/modules/integration</developerConnection>
         <url>http://svn.apache.org/viewvc/synapse/trunk/java/modules/integration</url>
-      <tag>HEAD</tag>
+      <tag>v2.1.7-wso2v124</tag>
   </scm>
 
     <build>
