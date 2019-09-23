@@ -255,8 +255,7 @@ public class RelayUtils {
             if (pipe != null) {
                 InputStream in = pipe.getInputStream();
                 bufferedInputStream = new BufferedInputStream(in);
-                // TODO: need to handle properly for the moment lets use around 100k
-                // buffer.
+                // TODO: need to handle properly for the moment lets use around 100k buffer.
                 bufferedInputStream.mark(128 * 1024);
                 messageContext.setProperty(PassThroughConstants.BUFFERED_INPUT_STREAM,
                         bufferedInputStream);
