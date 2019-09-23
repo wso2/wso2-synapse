@@ -107,6 +107,10 @@
             <groupId>commons-pool.wso2</groupId>
             <artifactId>commons-pool</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.antlr.wso2</groupId>
+            <artifactId>antlr-runtime</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -155,6 +159,7 @@
                             <importBundles>
                                 <importBundleDef>commons-dbcp.wso2:commons-dbcp</importBundleDef>
                                 <importBundleDef>commons-pool.wso2:commons-pool</importBundleDef>
+                                <importBundleDef>org.antlr.wso2:antlr-runtime</importBundleDef>
                             </importBundles>
                         </configuration>
                     </execution>

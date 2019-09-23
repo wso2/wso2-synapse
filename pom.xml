@@ -1137,6 +1137,11 @@
               <artifactId>commons-pool</artifactId>
               <version>${commons.pool.wso2.version}</version>
           </dependency>
+          <dependency>
+              <groupId>org.antlr.wso2</groupId>
+              <artifactId>antlr-runtime</artifactId>
+              <version>${antlr.wso2.version}</version>
+          </dependency>
       </dependencies>
    </dependencyManagement>
     <reporting>
@@ -1230,7 +1235,8 @@
       <damnhandy.version>${com.damnhandy.version}.wso2v2</damnhandy.version>
       <javax.jms.version>1.1</javax.jms.version>
       <org.antlr.version>3.4</org.antlr.version>
-       <com.jayway.jsonpath.version>2.4.0.wso2v2</com.jayway.jsonpath.version>
+      <antlr.wso2.version>3.2.0.wso2v1</antlr.wso2.version>
+      <com.jayway.jsonpath.version>2.4.0.wso2v2</com.jayway.jsonpath.version>
       <qfj.version>1.5.3</qfj.version>
       <quickfixj.wso2.version>${qfj.version}.wso2v1</quickfixj.wso2.version>
       <org.bouncycastle.version>1.60.0.wso2v1</org.bouncycastle.version>
