@@ -384,4 +384,3 @@ public abstract class AbstractDBMediatorFactory extends AbstractMediatorFactory 
     }
 
 }
-

@@ -51,6 +51,9 @@ public class PassThroughConstants {
     public static final String SERIALIZED_BYTES = "SerializedBytes";
 
     public static final String CONTENT_TYPE = "CONTENT_TYPE";
+    // This property can be used to remove character encode. By default character encoding is enabled in the ESB profile.
+    // If this property is set to 'false', the 'CHARACTER_SET_ENCODING' property cannot be used.
+    public static final String SET_CHARACTER_ENCODING = "setCharacterEncoding";
 
     public static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
     public static final String CONTENT_TYPE_MULTIPART_RELATED = "multipart/related";
@@ -243,11 +246,11 @@ public class PassThroughConstants {
     //property to set the correlation id value in message context and http context
     public static final String CORRELATION_ID = "correlation_id";
     //system property to enable/disable correlation logging
-    public static final String CORRELATION_LOGS_SYS_PROPERTY = "EnableCorrelationLogs";
+    public static final String CORRELATION_LOGS_SYS_PROPERTY = "enableCorrelationLogs";
     //property to set the correlation ID as a MDC property in log4J
     public static final String CORRELATION_MDC_PROPERTY = "Correlation-ID";
     //correlation logger name in log4J properties
-    public static final String CORRELATION_LOGGER = "CORRELATION_LOGGER";
+    public static final String CORRELATION_LOGGER = "correlation";
     //default header that carries the correlation ID. Header name is configurable at passthru-http.properties
     public static final String CORRELATION_DEFAULT_HEADER = "activityid";
 }

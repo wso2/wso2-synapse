@@ -1,0 +1,170 @@
+<!--
+~ Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+~
+~ WSO2 Inc. licenses this file to you under the Apache License,
+~ Version 2.0 (the "License"); you may not use this file except
+~ in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing,
+~ software distributed under the License is distributed on an
+~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~ KIND, either express or implied. See the License for the
+~ specific language governing permissions and limitations
+~ under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <parent>
+        <artifactId>synapse-features</artifactId>
+        <groupId>org.apache.synapse</groupId>
+        <version>2.1.7-wso2v126-SNAPSHOT</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>org.apache.synapse.wso2.feature</artifactId>
+    <packaging>pom</packaging>
+    <name>WSO2 Carbon - Synapse Feature</name>
+    <url>http://wso2.org</url>
+    <description>This feature contains the synapse core feature</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.synapse</groupId>
+            <artifactId>synapse-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.synapse</groupId>
+            <artifactId>synapse-commons</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.synapse</groupId>
+            <artifactId>synapse-extensions</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.synapse</groupId>
+            <artifactId>synapse-tasks</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.synapse</groupId>
+            <artifactId>synapse-samples</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.quartz-scheduler.wso2</groupId>
+            <artifactId>quartz</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.caching</groupId>
+            <artifactId>wso2caching-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.orbit.com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.damnhandy.wso2</groupId>
+            <artifactId>handy-uri-templates</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.orbit.com.github.fge</groupId>
+            <artifactId>json-schema-validator-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.orbit.com.googlecode.libphonenumber</groupId>
+            <artifactId>libphonenumber</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.orbit.joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.minidev</groupId>
+            <artifactId>accessors-smart</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-dbcp.wso2</groupId>
+            <artifactId>commons-dbcp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-pool.wso2</groupId>
+            <artifactId>commons-pool</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.antlr.wso2</groupId>
+            <artifactId>antlr-runtime</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.wso2.maven</groupId>
+                <artifactId>carbon-p2-plugin</artifactId>
+                <version>${carbon.p2.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>4-p2-feature-generation</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>p2-feature-gen</goal>
+                        </goals>
+                        <configuration>
+                            <id>org.apache.synapse.wso2</id>
+                            <adviceFile>
+                                <properties>
+                                    <propertyDef>org.wso2.carbon.p2.category.type:server</propertyDef>
+                                </properties>
+                            </adviceFile>
+                            <propertiesFile>../../etc/feature.properties</propertiesFile>
+                            <bundles>
+                                <bundleDef>org.apache.synapse:synapse-samples</bundleDef>
+                                <bundleDef>org.apache.synapse:synapse-core</bundleDef>
+                                <bundleDef>org.apache.synapse:synapse-commons</bundleDef>
+                                <bundleDef>org.apache.synapse:synapse-extensions</bundleDef>
+                                <bundleDef>org.apache.synapse:synapse-tasks</bundleDef>
+                                <bundleDef>net.sf.saxon.wso2:saxon</bundleDef>
+                                <bundleDef>org.quartz-scheduler.wso2:quartz</bundleDef>
+                                <bundleDef>com.google.code.gson:gson:${com.google.code.gson.version}</bundleDef>
+                                <bundleDef>org.wso2.caching:wso2caching-core</bundleDef>
+                                <bundleDef>com.damnhandy.wso2:handy-uri-templates</bundleDef>
+                                <bundleDef>org.wso2.orbit.com.jayway.jsonpath:json-path</bundleDef>
+                                <bundleDef>net.minidev:json-smart</bundleDef>
+                                <bundleDef>net.minidev:accessors-smart:${net.minidev.accessors-smart.version}
+                                </bundleDef>
+                                <bundleDef>org.ow2.asm:asm:${org.ow2.asm.asm.version}</bundleDef>
+                                <!-- Json schema validator dependencies -->
+                                <bundleDef>org.wso2.orbit.com.googlecode.libphonenumber:libphonenumber</bundleDef>
+                                <!--<bundleDef>org.wso2.orbit.joda-time:joda-time:${joda-time.version}</bundleDef>-->
+                                <bundleDef>com.google.guava:guava:${google.guava.version}</bundleDef>
+                                <bundleDef>org.wso2.orbit.com.github.fge:json-schema-validator-all</bundleDef>
+                            </bundles>
+                            <importBundles>
+                                <importBundleDef>commons-dbcp.wso2:commons-dbcp</importBundleDef>
+                                <importBundleDef>commons-pool.wso2:commons-pool</importBundleDef>
+                                <importBundleDef>org.antlr.wso2:antlr-runtime</importBundleDef>
+                            </importBundles>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

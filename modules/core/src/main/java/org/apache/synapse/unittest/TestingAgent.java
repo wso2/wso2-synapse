@@ -18,19 +18,32 @@
 
 package org.apache.synapse.unittest;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import javafx.util.Pair;
 import org.apache.axiom.om.OMElement;
+import org.apache.axis2.AxisFault;
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.description.Parameter;
+import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.http.HttpResponse;
 import org.apache.log4j.Logger;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
+import org.apache.synapse.deployers.APIDeployer;
+import org.apache.synapse.deployers.EndpointDeployer;
+import org.apache.synapse.deployers.LocalEntryDeployer;
+import org.apache.synapse.deployers.ProxyServiceDeployer;
+import org.apache.synapse.deployers.SequenceDeployer;
 import org.apache.synapse.unittest.testcase.data.classes.SynapseTestCase;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
+import org.apache.synapse.unittest.testcase.data.classes.TestCaseSummary;
+import org.apache.synapse.unittest.testcase.data.classes.TestSuiteSummary;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.AbstractMap;
+import java.util.HashMap;
+import java.util.Map;
 import javax.xml.namespace.QName;
 
 import static org.apache.synapse.unittest.Constants.API_CONTEXT;
@@ -54,7 +67,7 @@ class TestingAgent {
     private String key = null;
     private OMElement artifactNode = null;
     private String exception = null;
-    private ArrayList<Boolean> testCasesResult = new ArrayList<>();
+    private Map<String, String> deploymentStats = new HashMap<>();
 
     /**
      * Check artifact type and pass the test-artifact data to the relevant deployment mechanism.
@@ -62,7 +75,7 @@ class TestingAgent {
      * @param synapseTestCase test cases data received from client
      * @return Result of the deployment and exception status
      */
-    Pair<Boolean, String> processTestArtifact(SynapseTestCase synapseTestCase) {
+    Map.Entry<Boolean, TestSuiteSummary> processTestArtifact(SynapseTestCase synapseTestCase, TestSuiteSummary testSuiteSummary) {
         artifactType = synapseTestCase.getArtifacts().getTestArtifact().getArtifactType();
         proxyTransportMethod = synapseTestCase.getArtifacts().getTestArtifact().getTransportMethod();
         String artifactNameOrKey = synapseTestCase.getArtifacts().getTestArtifact().getArtifactNameOrKey();
@@ -75,35 +88,45 @@ class TestingAgent {
             switch (artifactType) {
 
                 case TYPE_SEQUENCE:
-                    Pair<SynapseConfiguration, String> pairOfSequenceDeployment =
+                    Map.Entry<SynapseConfiguration, String> pairOfSequenceDeployment =
                             config.deploySequenceArtifact(artifact, artifactNameOrKey);
                     synapseConfiguration = pairOfSequenceDeployment.getKey();
                     key = pairOfSequenceDeployment.getValue();
 
                     if (key.equals(artifactNameOrKey)) {
                         isArtifactDeployed = true;
+                        deploymentStats.put(artifactNameOrKey, TYPE_SEQUENCE);
+                        testSuiteSummary.setDeploymentStatus(Constants.PASSED_KEY);
                         log.info("Sequence artifact deployed successfully");
                     } else {
-                        log.error("Sequence deployment failed");
+                        String errorMessage = "Sequence " + artifactNameOrKey + " deployment failed";
+                        log.error(errorMessage);
+                        testSuiteSummary.setDeploymentStatus(Constants.FAILED_KEY);
+                        testSuiteSummary.setDeploymentException(errorMessage);
                     }
                     break;
 
                 case TYPE_PROXY:
-                    Pair<SynapseConfiguration, String> pairOfProxyDeployment =
+                    Map.Entry<SynapseConfiguration, String> pairOfProxyDeployment =
                             config.deployProxyArtifact(artifact, artifactNameOrKey);
                     synapseConfiguration = pairOfProxyDeployment.getKey();
                     key = pairOfProxyDeployment.getValue();
 
                     if (key.equals(artifactNameOrKey)) {
                         isArtifactDeployed = true;
+                        deploymentStats.put(artifactNameOrKey, TYPE_PROXY);
+                        testSuiteSummary.setDeploymentStatus(Constants.PASSED_KEY);
                         log.info("Proxy artifact deployed successfully");
                     } else {
-                        log.error("Proxy deployment failed");
+                        String errorMessage = "Proxy " + artifactNameOrKey + " deployment failed";
+                        log.error(errorMessage);
+                        testSuiteSummary.setDeploymentStatus(Constants.FAILED_KEY);
+                        testSuiteSummary.setDeploymentException(errorMessage);
                     }
                     break;
 
                 case TYPE_API:
-                    Pair<SynapseConfiguration, String> pairofApiDeployment =
+                    Map.Entry<SynapseConfiguration, String> pairofApiDeployment =
                             config.deployApiArtifact(artifact, artifactNameOrKey);
                     synapseConfiguration = pairofApiDeployment.getKey();
                     key = pairofApiDeployment.getValue();
@@ -111,9 +134,14 @@ class TestingAgent {
 
                     if (key.equals(artifactNameOrKey)) {
                         isArtifactDeployed = true;
+                        deploymentStats.put(artifactNameOrKey, TYPE_API);
+                        testSuiteSummary.setDeploymentStatus(Constants.PASSED_KEY);
                         log.info("API artifact deployed successfully");
                     } else {
-                        log.error("API deployment failed");
+                        String errorMessage = "API " + artifactNameOrKey + " deployment failed";
+                        log.error(errorMessage);
+                        testSuiteSummary.setDeploymentStatus(Constants.FAILED_KEY);
+                        testSuiteSummary.setDeploymentException(errorMessage);
                     }
                     break;
 
@@ -123,10 +151,12 @@ class TestingAgent {
             }
         } catch (Exception e) {
             log.error("Artifact deployment failed", e);
-            exception = e.toString();
+            exception = CommonUtils.stackTraceToString(e);
+            testSuiteSummary.setDeploymentStatus(Constants.FAILED_KEY);
+            testSuiteSummary.setDeploymentException(exception);
         }
 
-        return new Pair<>(isArtifactDeployed, exception);
+        return new AbstractMap.SimpleEntry<>(isArtifactDeployed, testSuiteSummary);
     }
 
     /**
@@ -135,7 +165,8 @@ class TestingAgent {
      * @param synapseTestCase test cases data received from client
      * @return Result of the deployment and exception status
      */
-    Pair<Boolean, String> processSupportiveArtifacts(SynapseTestCase synapseTestCase) {
+    Map.Entry<Boolean, TestSuiteSummary> processSupportiveArtifacts(SynapseTestCase synapseTestCase,
+                                                                    TestSuiteSummary testSuiteSummary) {
         boolean isArtifactDeployed = true;
 
         for (int x = 0; x < synapseTestCase.getArtifacts().getSupportiveArtifactCount(); x++) {
@@ -146,7 +177,9 @@ class TestingAgent {
 
                 } catch (Exception e) {
                     log.error("Artifact deployment failed", e);
-                    exception = e.toString();
+                    exception = CommonUtils.stackTraceToString(e);
+                    testSuiteSummary.setDeploymentStatus(Constants.FAILED_KEY);
+                    testSuiteSummary.setDeploymentException(exception);
                 }
             } else {
                 log.error(synapseTestCase.getArtifacts().getSupportiveArtifact(x).getArtifactType()
@@ -155,7 +188,7 @@ class TestingAgent {
             }
         }
 
-        return new Pair<>(isArtifactDeployed, exception);
+        return new AbstractMap.SimpleEntry<>(isArtifactDeployed, testSuiteSummary);
     }
 
     /**
@@ -174,35 +207,35 @@ class TestingAgent {
 
         switch (supportiveArtifactType) {
             case TYPE_SEQUENCE:
-                Pair<SynapseConfiguration, String> pairOfSequenceDeployment =
+                Map.Entry<SynapseConfiguration, String> pairOfSequenceDeployment =
                         config.deploySequenceArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairOfSequenceDeployment.getKey();
                 key = pairOfSequenceDeployment.getValue();
                 break;
 
             case TYPE_PROXY:
-                Pair<SynapseConfiguration, String> pairofProxyDeployment =
+                Map.Entry<SynapseConfiguration, String> pairofProxyDeployment =
                         config.deployProxyArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairofProxyDeployment.getKey();
                 key = pairofProxyDeployment.getValue();
                 break;
 
             case TYPE_API:
-                Pair<SynapseConfiguration, String> pairofApiDeployment =
+                Map.Entry<SynapseConfiguration, String> pairofApiDeployment =
                         config.deployApiArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairofApiDeployment.getKey();
                 key = pairofApiDeployment.getValue();
                 break;
 
             case TYPE_ENDPOINT:
-                Pair<SynapseConfiguration, String> pairOfEndpointDeployment =
+                Map.Entry<SynapseConfiguration, String> pairOfEndpointDeployment =
                         config.deployEndpointArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairOfEndpointDeployment.getKey();
                 key = pairOfEndpointDeployment.getValue();
                 break;
 
             case TYPE_LOCAL_ENTRY:
-                Pair<SynapseConfiguration, String> pairOfLocalEntryDeployment =
+                Map.Entry<SynapseConfiguration, String> pairOfLocalEntryDeployment =
                         config.deployLocalEntryArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairOfLocalEntryDeployment.getKey();
                 key = pairOfLocalEntryDeployment.getValue();
@@ -213,7 +246,8 @@ class TestingAgent {
         }
 
         if (key.equals(artifactNameOrKey)) {
-            log.info(supportiveArtifactType + " artifact deployed successfully");
+            log.info(artifactNameOrKey + " - " + supportiveArtifactType + " artifact deployed successfully");
+            deploymentStats.put(artifactNameOrKey, supportiveArtifactType);
             return true;
 
         } else {
@@ -225,43 +259,41 @@ class TestingAgent {
      * Check artifact type and pass the test case data to the relevant mediation.
      *
      * @param synapseTestCase test cases data received from client
-     * @return Result of the mediation and exception status
      */
-    Pair<JsonObject, String> processTestCases(SynapseTestCase synapseTestCase) {
-        boolean isAssert = false;
-        JsonObject resultOfTestCases = new JsonObject();
+    void processTestCases(SynapseTestCase synapseTestCase, TestSuiteSummary testSuiteSummary) {
         int testCaseCount = synapseTestCase.getTestCases().getTestCaseCount();
-
         log.info(testCaseCount + " Test case(s) ready to execute");
+        String currentTestCaseName = null;
 
         try {
             //execute test cases with synapse configurations and test data
             for (int i = 0; i < testCaseCount; i++) {
+                TestCaseSummary testSummary = new TestCaseSummary();
                 TestCase currentTestCase = synapseTestCase.getTestCases().getTestCase(i);
+                testSummary.setTestCaseName(currentTestCase.getTestCaseName());
+                testSuiteSummary.setRecentTestCaseName(currentTestCaseName);
+                currentTestCaseName = currentTestCase.getTestCaseName();
 
                 switch (artifactType) {
                     case TYPE_SEQUENCE:
-                        Pair<Boolean, MessageContext> mediateResult =
+                        Map.Entry<Boolean, MessageContext> mediateResult =
                                 TestCasesMediator.sequenceMediate(currentTestCase, synapseConfiguration, key);
 
+                        testSuiteSummary.setMediationStatus(Constants.PASSED_KEY);
                         Boolean mediationResult = mediateResult.getKey();
                         MessageContext resultedMessageContext = mediateResult.getValue();
 
                         //check whether mediation is success or not
-                        Pair<Boolean, String> assertSeqResult = checkAssertionWithSequenceMediation
-                                (mediationResult, resultedMessageContext, currentTestCase, i);
-                        isAssert = assertSeqResult.getKey();
-                        exception = assertSeqResult.getValue();
+                        checkAssertionWithSequenceMediation
+                                (mediationResult, resultedMessageContext, currentTestCase, i, testSummary);
                         break;
 
                     case TYPE_PROXY:
                         HttpResponse invokedProxyResult = TestCasesMediator
                                 .proxyServiceExecutor(currentTestCase, proxyTransportMethod, key);
 
-                        Pair<Boolean, String> assertProxyResult =
-                                checkAssertionWithProxyMediation(invokedProxyResult, currentTestCase, i);
-                        isAssert = assertProxyResult.getKey();
-                        exception = assertProxyResult.getValue();
+                        testSuiteSummary.setMediationStatus(Constants.PASSED_KEY);
+                        checkAssertionWithProxyMediation(invokedProxyResult, currentTestCase, i, testSummary);
                         break;
 
                     case TYPE_API:
@@ -270,25 +302,24 @@ class TestingAgent {
                         HttpResponse invokedApiResult = TestCasesMediator.apiResourceExecutor
                                 (currentTestCase, context, resourceMethod);
 
-                        Pair<Boolean, String> assertAPIResult =
-                                checkAssertionWithAPIMediation(invokedApiResult, currentTestCase, i);
-                        isAssert = assertAPIResult.getKey();
-                        exception = assertAPIResult.getValue();
+                        testSuiteSummary.setMediationStatus(Constants.PASSED_KEY);
+                        checkAssertionWithAPIMediation(invokedApiResult, currentTestCase, i, testSummary);
+
                         break;
 
                     default:
                         break;
                 }
-                resultOfTestCases.addProperty("test-case " + (i + 1), isAssert);
-                testCasesResult.add(isAssert);
+
+                testSuiteSummary.addTestCaseSumamry(testSummary);
             }
         } catch (Exception e) {
             log.error("Error occurred while running test cases", e);
-            exception = e.toString();
+            exception = CommonUtils.stackTraceToString(e);
+            testSuiteSummary.setRecentTestCaseName(currentTestCaseName);
+            testSuiteSummary.setMediationStatus(Constants.FAILED_KEY);
+            testSuiteSummary.setMediationException(exception);
         }
-
-        //check all test cases are success
-        return new Pair<>(checkAllTestCasesCorrect(resultOfTestCases), exception);
     }
 
     /**
@@ -297,23 +328,20 @@ class TestingAgent {
      * @param mediationResult        result of mediation of sequence
      * @param resultedMessageContext message context of mediation of sequence
      * @param currentTestCase        current running test case data
-     * @return result of assertion or mediation result
      */
-    private Pair<Boolean, String> checkAssertionWithSequenceMediation(
-            boolean mediationResult, MessageContext resultedMessageContext, TestCase currentTestCase, int index) {
-        boolean isAssert = false;
+    private void checkAssertionWithSequenceMediation(
+            boolean mediationResult, MessageContext resultedMessageContext, TestCase currentTestCase,
+            int index, TestCaseSummary testSummary) {
         String assertMessage;
         if (mediationResult) {
-            Pair<Boolean, String> assertOfSequence = Assertor.doAssertionSequence(currentTestCase, resultedMessageContext, index + 1);
-            isAssert = assertOfSequence.getKey();
-            assertMessage = assertOfSequence.getValue();
-
+            testSummary.setMediationStatus(Constants.PASSED_KEY);
+            Assertor.doAssertionSequence(currentTestCase, resultedMessageContext, index + 1, testSummary);
         } else {
             assertMessage = "Sequence mediation failed";
-            log.error("Sequence mediation failed");
+            log.error(assertMessage);
+            testSummary.setMediationStatus(Constants.FAILED_KEY);
+            testSummary.setTestException(assertMessage);
         }
-
-        return new Pair<>(isAssert, assertMessage);
     }
 
     /**
@@ -321,24 +349,22 @@ class TestingAgent {
      *
      * @param invokedProxyResult result of proxy invoke
      * @param currentTestCase    current running test case data
-     * @return result of assertion or invoke result
      */
-    private Pair<Boolean, String> checkAssertionWithProxyMediation(HttpResponse invokedProxyResult,
-                                                                   TestCase currentTestCase, int index) {
-        boolean isAssert = false;
+    private void checkAssertionWithProxyMediation(HttpResponse invokedProxyResult,
+                                                                        TestCase currentTestCase, int index,
+                                                                        TestCaseSummary testSummary) {
+
         String assertMessage;
         if (invokedProxyResult != null) {
-            Pair<Boolean, String> assertOfProxy = Assertor.doAssertionService
-                    (currentTestCase, invokedProxyResult, index + 1);
-
-            isAssert = assertOfProxy.getKey();
-            assertMessage = assertOfProxy.getValue();
+            testSummary.setMediationStatus(Constants.PASSED_KEY);
+            Assertor.doAssertionService
+                    (currentTestCase, invokedProxyResult, index + 1, testSummary);
         } else {
             assertMessage = "Proxy service invoke failed";
-            log.error("Proxy service invoke failed");
+            log.error(assertMessage);
+            testSummary.setMediationStatus(Constants.FAILED_KEY);
+            testSummary.setTestException(assertMessage);
         }
-
-        return new Pair<>(isAssert, assertMessage);
     }
 
     /**
@@ -346,51 +372,81 @@ class TestingAgent {
      *
      * @param invokedApiResult result of API invoke
      * @param currentTestCase  current running test case data
-     * @return result of assertion or invoke result
      */
-    private Pair<Boolean, String> checkAssertionWithAPIMediation(HttpResponse invokedApiResult,
-                                                                 TestCase currentTestCase, int index) {
-        boolean isAssert = false;
+    private void checkAssertionWithAPIMediation(HttpResponse invokedApiResult,
+                                                                      TestCase currentTestCase, int index,
+                                                                      TestCaseSummary testSummary) {
         String assertMessage;
         if (invokedApiResult != null) {
-            Pair<Boolean, String> assertOfApi = Assertor.doAssertionService
-                    (currentTestCase, invokedApiResult, index + 1);
-
-            isAssert = assertOfApi.getKey();
-            assertMessage = assertOfApi.getValue();
+            testSummary.setMediationStatus(Constants.PASSED_KEY);
+            Assertor.doAssertionService
+                    (currentTestCase, invokedApiResult, index + 1, testSummary);
         } else {
             assertMessage = "API resource invoke failed";
-            log.error("API resource invoke failed");
+            log.error(assertMessage);
+            testSummary.setMediationStatus(Constants.FAILED_KEY);
+            testSummary.setTestException(assertMessage);
         }
-
-        return new Pair<>(isAssert, assertMessage);
     }
 
     /**
-     * Check all the test cases are run correctly as expected.
-     *
-     * @param currentAllTestCaseResult test cases results
-     * @return sucess message as a JSON
+     * Undeploy all the artifacts used in the recent unit test.
      */
-    private JsonObject checkAllTestCasesCorrect(JsonObject currentAllTestCaseResult) {
-        boolean isAllSuccess = true;
-        JsonObject resultOfTestCases;
+    void artifactUndeployer() {
+        try {
+            //create a synapse configuration and set all axis2 configuration to it
+            SynapseConfiguration synapseConfig = UnitTestingExecutor.getExecuteInstance().getSynapseConfiguration();
+            AxisConfiguration axisConfiguration = synapseConfig.getAxisConfiguration();
+            ConfigurationContext configurationContext = new ConfigurationContext(axisConfiguration);
+            SynapseEnvironment synapseEnvironment = new Axis2SynapseEnvironment(configurationContext, synapseConfig);
 
-        for (boolean testCase : testCasesResult) {
-            if (!testCase) {
-                isAllSuccess = false;
-                break;
+            axisConfiguration.addParameter(new Parameter(SynapseConstants.SYNAPSE_ENV, synapseEnvironment));
+            axisConfiguration.addParameter(new Parameter(SynapseConstants.SYNAPSE_CONFIG, synapseConfig));
+            configurationContext.setAxisConfiguration(axisConfiguration);
+
+            for (Map.Entry<String, String> unDeployEntry : deploymentStats.entrySet()) {
+                String artifactName = unDeployEntry.getKey();
+                String unDeployableArtifactType = unDeployEntry.getValue();
+
+                switch (unDeployableArtifactType) {
+                    case TYPE_SEQUENCE:
+                        SequenceDeployer sequenceDeployer = new SequenceDeployer();
+                        sequenceDeployer.init(configurationContext);
+                        sequenceDeployer.undeploySynapseArtifact(artifactName);
+                        break;
+
+                    case TYPE_PROXY:
+                        ProxyServiceDeployer proxyDeployer = new ProxyServiceDeployer();
+                        proxyDeployer.init(configurationContext);
+                        proxyDeployer.undeploySynapseArtifact(artifactName);
+                        break;
+
+                    case TYPE_API:
+                        APIDeployer apiDeployer = new APIDeployer();
+                        apiDeployer.init(configurationContext);
+                        apiDeployer.undeploySynapseArtifact(artifactName);
+                        break;
+
+                    case TYPE_ENDPOINT:
+                        EndpointDeployer endpointDeployer = new EndpointDeployer();
+                        endpointDeployer.init(configurationContext);
+                        endpointDeployer.undeploySynapseArtifact(artifactName);
+                        break;
+
+                    case TYPE_LOCAL_ENTRY:
+                        LocalEntryDeployer localEntryDeployer = new LocalEntryDeployer();
+                        localEntryDeployer.init(configurationContext);
+                        localEntryDeployer.undeploySynapseArtifact(artifactName);
+                        break;
+
+                    default:
+                        break;
+                }
             }
-        }
+            log.info("Undeployed all the deployed test and supportive artifacts");
 
-        if (isAllSuccess) {
-            resultOfTestCases = new JsonParser()
-                    .parse("{'test-cases':'SUCCESS'}").getAsJsonObject();
-        } else {
-            resultOfTestCases = currentAllTestCaseResult;
+        } catch (AxisFault e) {
+            log.error("Error while undeploying the artifacts", e);
         }
-
-        return resultOfTestCases;
     }
-
 }

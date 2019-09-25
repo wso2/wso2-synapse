@@ -20,8 +20,8 @@ package org.apache.synapse.unittest;
 
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import javafx.util.Pair;
 import org.apache.log4j.Logger;
+import org.apache.synapse.commons.emulator.RequestProcessor;
 import org.apache.synapse.commons.emulator.core.Emulator;
 import org.apache.synapse.commons.emulator.core.EmulatorType;
 import org.apache.synapse.commons.emulator.http.dsl.HttpConsumerContext;
@@ -31,6 +31,7 @@ import org.apache.synapse.unittest.testcase.data.classes.ServiceResource;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.apache.synapse.commons.emulator.http.dsl.dto.consumer.IncomingMessage.request;
 import static org.apache.synapse.commons.emulator.http.dsl.dto.consumer.OutgoingMessage.response;
@@ -93,17 +94,20 @@ class MockServiceCreator {
      * @param emulator HttpConsumerContext emulator object
      */
     private static void routeThroughResourceMethod(ServiceResource resource, HttpConsumerContext emulator) {
+        int serviceResponseStatusCode = resource.getStatusCode();
+        HttpResponseStatus responseStatus = HttpResponseStatus.valueOf(serviceResponseStatusCode);
+
         String serviceMethod = resource.getMethod();
         String serviceSubContext = resource.getSubContext();
         String serviceRequestPayload = "";
         if (resource.getRequestPayload() != null) {
-            serviceRequestPayload = Trimmer.trimStrings(resource.getRequestPayload());
+            serviceRequestPayload = RequestProcessor.trimStrings(resource.getRequestPayload());
         }
 
         String serviceResponsePayload = resource.getResponsePayload();
 
-        List<Pair<String, String>> requestHeaders = new ArrayList<>();
-        List<Pair<String, String>> responseHeaders = new ArrayList<>();
+        List<Map.Entry<String, String>> requestHeaders = new ArrayList<>();
+        List<Map.Entry<String, String>> responseHeaders = new ArrayList<>();
 
         if (resource.getRequestHeaders() != null) {
             requestHeaders = resource.getRequestHeaders();
@@ -119,15 +123,15 @@ class MockServiceCreator {
                 //adding headers of request
                 IncomingMessage incomingMessage =
                         request().withMethod(HttpMethod.GET).withPath(serviceSubContext);
-                for (Pair<String, String> header : requestHeaders) {
+                for (Map.Entry<String, String> header : requestHeaders) {
                     incomingMessage.withHeader(header.getKey(), header.getValue());
                 }
                 emulator.when(incomingMessage);
 
                 //adding headers of response
                 OutgoingMessage outGoingMessage =
-                        response().withBody(serviceResponsePayload).withStatusCode(HttpResponseStatus.OK);
-                for (Pair<String, String> header : responseHeaders) {
+                        response().withBody(serviceResponsePayload).withStatusCode(responseStatus);
+                for (Map.Entry<String, String> header : responseHeaders) {
                     outGoingMessage.withHeader(header.getKey(), header.getValue());
                 }
 
@@ -138,15 +142,15 @@ class MockServiceCreator {
                 //adding headers of request
                 incomingMessage = request().withMethod(HttpMethod.POST)
                         .withBody(serviceRequestPayload).withPath(serviceSubContext);
-                for (Pair<String, String> header : requestHeaders) {
+                for (Map.Entry<String, String> header : requestHeaders) {
                     incomingMessage.withHeader(header.getKey(), header.getValue());
                 }
                 emulator.when(incomingMessage);
 
                 //adding headers of response
                 outGoingMessage =
-                        response().withBody(serviceResponsePayload).withStatusCode(HttpResponseStatus.OK);
-                for (Pair<String, String> header : responseHeaders) {
+                        response().withBody(serviceResponsePayload).withStatusCode(responseStatus);
+                for (Map.Entry<String, String> header : responseHeaders) {
                     outGoingMessage.withHeader(header.getKey(), header.getValue());
                 }
 
@@ -156,15 +160,15 @@ class MockServiceCreator {
             default:
                 //adding headers of request
                 incomingMessage = request().withMethod(HttpMethod.GET).withPath(serviceSubContext);
-                for (Pair<String, String> header : requestHeaders) {
+                for (Map.Entry<String, String> header : requestHeaders) {
                     incomingMessage.withHeader(header.getKey(), header.getValue());
                 }
                 emulator.when(incomingMessage);
 
                 //adding headers of response
                 outGoingMessage =
-                        response().withBody(serviceResponsePayload).withStatusCode(HttpResponseStatus.OK);
-                for (Pair<String, String> header : responseHeaders) {
+                        response().withBody(serviceResponsePayload).withStatusCode(responseStatus);
+                for (Map.Entry<String, String> header : responseHeaders) {
                     outGoingMessage.withHeader(header.getKey(), header.getValue());
                 }
 

@@ -30,7 +30,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="format" minOccurs="1" maxOccurs="1">
-                    <xs:complexType>
+                    <xs:complexType mixed="true">
                         <xs:sequence>
                             <xs:any minOccurs="0" maxOccurs="1" processContents="skip"/>
                         </xs:sequence>
@@ -41,14 +41,16 @@
                         <xs:sequence>
                             <xs:element name="arg" minOccurs="0" maxOccurs="unbounded">
                                 <xs:complexType>
-                                    <xs:attributeGroup ref="valueOrExpression"/>
+                                    <xs:attribute name="value" type="xs:string" use="optional"/>
+                                    <xs:attribute name="evaluator" type="xs:string" use="optional"/>
+                                    <xs:attribute name="expression" type="xs:string" use="optional"/>
                                 </xs:complexType>
                             </xs:element>
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>
-            <xs:attribute name="media-type" use="required" default="xml">
+            <xs:attribute name="media-type" use="required">
                 <xs:simpleType>
                     <xs:restriction base="xs:string">
                         <xs:enumeration value="xml"/>

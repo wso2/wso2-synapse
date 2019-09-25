@@ -34,6 +34,8 @@ import java.util.Properties;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -216,7 +218,7 @@ public class AccessLogger {
                         BufferedReader input = new BufferedReader(new FileReader(existing));
                         Pattern pattern = Pattern.compile(DATE_EXTRACT_REGEX);
                         String line = input.readLine();
-                        if (!line.isEmpty()) {
+                        if (StringUtils.isNotEmpty(line)) {
                             Matcher matcher = pattern.matcher(line);
                             if (matcher.find()) {
                                 String date = matcher.group(1);

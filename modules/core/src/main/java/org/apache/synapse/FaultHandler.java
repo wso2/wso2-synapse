@@ -104,7 +104,7 @@ public abstract class FaultHandler {
             Stack faultStack = synCtx.getFaultStack();
             if (faultStack != null && !faultStack.isEmpty()) {
                 ((FaultHandler) faultStack.pop()).handleFault(synCtx, se);
-            } else{
+            } else {
                 throw new RuntimeException(se);
             }
         }

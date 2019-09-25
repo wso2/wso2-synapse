@@ -25,6 +25,7 @@ import org.apache.axiom.om.OMText;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -92,7 +93,11 @@ public class TemplateContext {
                 	}
                     return expression.getExpression();
                 } else {
-                    return resolveExpressionValue(synCtx, expression);
+                    if (expression.getExpression() instanceof SynapseJsonPath) {
+                        return expression.evaluateValue(synCtx);
+                    } else {
+                        return resolveExpressionValue(synCtx, expression);
+                    }
                 }
             } else if (expression.getKeyValue() != null) {
                 return expression.evaluateValue(synCtx);

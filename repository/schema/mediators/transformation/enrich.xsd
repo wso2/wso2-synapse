@@ -35,7 +35,7 @@
         </xs:complexType>
     </xs:element>
 
-    <xs:complexType name="SourceEnrich">
+    <xs:complexType name="SourceEnrich" mixed="true">
         <xs:sequence>
             <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
         </xs:sequence>
@@ -62,6 +62,7 @@
                     <xs:enumeration value="replace"/>
                     <xs:enumeration value="child"/>
                     <xs:enumeration value="sibling"/>
+                    <xs:enumeration value="custom"/>
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>

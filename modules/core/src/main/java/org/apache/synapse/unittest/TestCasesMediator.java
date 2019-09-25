@@ -18,7 +18,6 @@
 
 package org.apache.synapse.unittest;
 
-import javafx.util.Pair;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMDocument;
 import org.apache.axiom.om.OMElement;
@@ -45,6 +44,7 @@ import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -87,9 +87,9 @@ public class TestCasesMediator {
      * @param currentTestCase current test case
      * @param synConfig       synapse configuration used to deploy sequenceDeployer
      * @param key             key of the sequence deployer
-     * @return result of mediation and message context as a Pair<>
+     * @return result of mediation and message context as a Map.Entry
      */
-    static Pair<Boolean, MessageContext> sequenceMediate(TestCase currentTestCase, SynapseConfiguration synConfig,
+    static Map.Entry<Boolean, MessageContext> sequenceMediate(TestCase currentTestCase, SynapseConfiguration synConfig,
                                                          String key) {
         Mediator sequenceMediator = synConfig.getSequence(key);
         MessageContext msgCtxt = createSynapseMessageContext(currentTestCase.getInputPayload(), synConfig);
@@ -101,7 +101,7 @@ public class TestCasesMediator {
                     .mediate(setInputMessageProperties(msgCtxt, currentTestCase.getPropertyMap()));
         }
 
-        return new Pair<>(mediationResult, msgCtxt);
+        return new AbstractMap.SimpleEntry<>(mediationResult, msgCtxt);
     }
 
     /**
@@ -195,8 +195,13 @@ public class TestCasesMediator {
             case POST_METHOD:
                 //set headers
                 HttpPost httpPost = setPostHeaders(currentTestCase, url);
+                String postPayload = currentTestCase.getInputPayload();
 
-                StringEntity postEntity = new StringEntity(currentTestCase.getInputPayload());
+                if (postPayload == null) {
+                    postPayload = "";
+                }
+
+                StringEntity postEntity = new StringEntity(postPayload);
                 httpPost.setEntity(postEntity);
                 response = clientConnector.execute(httpPost);
                 break;

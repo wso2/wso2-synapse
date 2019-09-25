@@ -27,6 +27,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.util.xpath.SynapseXPath;
+import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 import java.net.*;
@@ -70,6 +71,16 @@ public class HTTPEndpoint extends AbstractEndpoint {
         if (getContext() != null) {
             getContext().onSuccess();
         }
+    }
+
+    protected void createJsonRepresentation() {
+        endpointJson = new JSONObject();
+        endpointJson.put(NAME_JSON_ATT, getName());
+        endpointJson.put(TYPE_JSON_ATT, "HTTP Endpoint");
+        endpointJson.put("method", getHttpMethod());
+        endpointJson.put("uriTemplate", getUriTemplate().expand());
+        endpointJson.put("errorHandler", getErrorHandler());
+        setAdvancedProperties();
     }
 
     public void send(MessageContext synCtx) {

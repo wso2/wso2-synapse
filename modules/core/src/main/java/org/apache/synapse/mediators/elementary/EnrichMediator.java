@@ -23,6 +23,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSyntaxException;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.OMText;
@@ -118,10 +119,15 @@ public class EnrichMediator extends AbstractMediator {
             for (Object node : (ArrayList) sourceProperty) {
                 if (node instanceof OMText) {
                     String propertyString = ((OMTextImpl) node).getText();
-                    sourcePropertyJson = jsonParser.parse(propertyString);
-                    if (!(sourcePropertyJson instanceof JsonObject || sourcePropertyJson instanceof JsonArray)) {
+                    try {
+                        sourcePropertyJson = jsonParser.parse(propertyString);
+                        if (!(sourcePropertyJson instanceof JsonObject || sourcePropertyJson instanceof JsonArray)) {
+                            isSourcePropertyXML = true;
+                            break;
+                        }
+                    } catch (JsonSyntaxException e) {
+                        synLog.traceOrDebug("Source is not a valid json");
                         isSourcePropertyXML = true;
-                        break;
                     }
                 } else if (node instanceof OMElement) {
                     isSourcePropertyXML = true;
@@ -129,9 +135,14 @@ public class EnrichMediator extends AbstractMediator {
                 }
             }
         } else if (sourceProperty instanceof String) {
-            sourcePropertyJson = jsonParser.parse((String) sourceProperty);
-            if (!(sourcePropertyJson instanceof JsonObject || sourcePropertyJson instanceof JsonArray
-                    || sourcePropertyJson instanceof JsonPrimitive)) {
+            try {
+                sourcePropertyJson = jsonParser.parse((String) sourceProperty);
+                if (!(sourcePropertyJson instanceof JsonObject || sourcePropertyJson instanceof JsonArray
+                        || sourcePropertyJson instanceof JsonPrimitive)) {
+                    isSourcePropertyXML = true;
+                }
+            } catch (JsonSyntaxException e) {
+                synLog.traceOrDebug("Source string is not a valid json");
                 isSourcePropertyXML = true;
             }
         }

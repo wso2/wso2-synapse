@@ -127,4 +127,7 @@ public final class Constants {
     public static final String SYNAPSE_COMMONS_ENABLE_XML_NULL_FOR_EMPTY_ELEMENT =
             "synapse.commons.enableXmlNullForEmptyElement";
 
+    // Property to preserve spaces in XML -> JSON transformation
+    public static final String PRESERVE_SPACES = "PRESERVE_SPACES";
+
 }

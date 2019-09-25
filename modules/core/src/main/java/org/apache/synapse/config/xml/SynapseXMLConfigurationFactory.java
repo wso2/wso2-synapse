@@ -54,6 +54,7 @@ import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.registry.Registry;
 import org.apache.synapse.rest.API;
 import org.apache.synapse.task.TaskManager;
+import org.apache.synapse.unittest.UnitTestMockRegistry;
 
 import javax.xml.namespace.QName;
 import java.util.HashMap;
@@ -136,7 +137,14 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
         if (config.getRegistry() != null) {
             handleException("Only one remote registry can be defined within a configuration");
         }
-        Registry registry = RegistryFactory.createRegistry(elem, properties);
+
+        Registry registry;
+        if (Boolean.parseBoolean(System.getProperty("synapseTest"))) {
+            registry = UnitTestMockRegistry.getInstance();
+        } else {
+            registry = RegistryFactory.createRegistry(elem, properties);
+        }
+
         config.setRegistry(registry);
         return registry;
     }

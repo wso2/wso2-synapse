@@ -21,12 +21,10 @@ package org.apache.synapse.rest;
 import org.apache.axiom.util.UIDGenerator;
 import org.apache.axis2.Constants;
 import org.apache.http.HttpHeaders;
-import org.apache.http.HttpStatus;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
@@ -41,11 +39,11 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.rest.cors.SynapseCORSConfiguration;
+import org.apache.synapse.rest.cors.CORSHelper;
 import org.apache.synapse.rest.dispatch.DispatcherHelper;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -314,47 +312,17 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
                             statisticReportingIndex, true);
                 }
                 return;
+            } else {
+                // Handle CORS for other HTTP Methods
+                CORSHelper.handleCORSHeaders(SynapseCORSConfiguration.getInstance(), synCtx, getSupportedMethods(), false);
+
             }
 
             synCtx.setProperty(RESTConstants.SYNAPSE_RESOURCE, name);
-            String path = RESTUtils.getFullRequestPath(synCtx);
-
-            int queryIndex = path.indexOf('?');
-            if (queryIndex != -1) {
-                String query = path.substring(queryIndex + 1);
-                String[] entries = query.split(RESTConstants.QUERY_PARAM_DELIMITER);
-                String name = null, value ;
-                for (String entry : entries) {
-                    int index = entry.indexOf('=');
-                    if (index != -1) {
-                        try {
-                            name = entry.substring(0, index);
-                            value = URLDecoder.decode(entry.substring(index + 1),
-                                    RESTConstants.DEFAULT_ENCODING);
-                            synCtx.setProperty(RESTConstants.REST_QUERY_PARAM_PREFIX + name, value);
-                        } catch (UnsupportedEncodingException uee) {
-                            handleException("Error processing " + method + " request for : " + path, uee);
-                        } catch (IllegalArgumentException e) {
-                            String errorMessage = "Error processing " + method + " request for : " + path
-                                    + " due to an error in the request sent by the client";
-                            synCtx.setProperty(SynapseConstants.ERROR_CODE, HttpStatus.SC_BAD_REQUEST);
-                            synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, errorMessage);
-                            org.apache.axis2.context.MessageContext inAxisMsgCtx =
-                                    ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-                            inAxisMsgCtx.setProperty(SynapseConstants.HTTP_SC, HttpStatus.SC_BAD_REQUEST);
-                            handleException(errorMessage, e);
-
-                        }
-                    } else {
-                        // If '=' sign isn't presnet in the entry means that the '&' character is part of
-                        // the query parameter value. If so query parameter value should be updated appending
-                        // the remaining characters.
-                        String existingValue = (String) synCtx.getProperty(RESTConstants.REST_QUERY_PARAM_PREFIX + name);
-                        value = RESTConstants.QUERY_PARAM_DELIMITER + entry;
-                        synCtx.setProperty(RESTConstants.REST_QUERY_PARAM_PREFIX + name, existingValue + value);
-                    }
-                }
-            }
+            RESTUtils.populateQueryParamsToMessageContext(synCtx);
+        } else {
+            // Add CORS headers for response message
+            CORSHelper.handleCORSHeadersForResponse(SynapseCORSConfiguration.getInstance(), synCtx);
         }
 
         SequenceMediator sequence = synCtx.isResponse() ? outSequence : inSequence;
@@ -434,6 +402,8 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
                     synCtx.setResponse(true);
                     synCtx.setTo(null);
                     transportHeaders.put(HttpHeaders.ALLOW, getSupportedMethods());
+                    CORSHelper.handleCORSHeaders(SynapseCORSConfiguration.getInstance(), synCtx, getSupportedMethods(),true);
+
                     Axis2Sender.sendBack(synCtx);
                     return true;
                 } else {
@@ -447,6 +417,8 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
             synCtx.setResponse(true);
             synCtx.setTo(null);
             transportHeaders.put(HttpHeaders.ALLOW, getSupportedMethods());
+            CORSHelper.handleCORSHeaders(SynapseCORSConfiguration.getInstance(), synCtx, getSupportedMethods(), true);
+
             Axis2Sender.sendBack(synCtx);
             return true;
         }

@@ -530,8 +530,10 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                             // try to create a throttle object
                             synchronized (throttleLock) {
                                 // Creates the throttle from the policy
-                                throttle = ThrottleFactory.createMediatorThrottle(
+                                if (throttle == null) {
+                                    throttle = ThrottleFactory.createMediatorThrottle(
                                         PolicyEngine.getPolicy((OMElement) entryValue));
+                                }
 
                                 //For non-clustered  environment , must re-initiates
                                 //For  clustered  environment,
