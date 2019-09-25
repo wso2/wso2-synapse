@@ -47,11 +47,20 @@ public class TransformMediator extends AbstractMediator {
 
     @Override
     public boolean mediate(MessageContext synCtx) {
+        if (!propertiesArrayList.isEmpty()) {
+            try {
+                String jsonPayloadFromOMElement = JsonUtil.toJsonString(((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                        .getEnvelope().getBody().getFirstElement(), jsonOutputFactory).toString();
+                JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
+                        jsonPayloadFromOMElement, true, true);
+            } catch (AxisFault af) {
+                handleException("Axisfault : ", synCtx);
+            }
+        }
         if (schemaKey != null) {
             // Derive actual key from message context
             String generatedSchemaKey = schemaKey.evaluateValue(synCtx);
-            Object jsonSchemaObj = null;
-            jsonSchemaObj = synCtx.getEntry(generatedSchemaKey);
+            Object jsonSchemaObj = synCtx.getEntry(generatedSchemaKey);
             String schema = ((OMTextImpl) jsonSchemaObj).getText();
             try {
                 String jsonPayload;
@@ -67,19 +76,9 @@ public class TransformMediator extends AbstractMediator {
                 JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
                         result, true, true);
             } catch (ValidatorException e) {
-                handleException("ValidatorException : ", synCtx);
+                handleException("ValidatorException : " + e.getMessage(), synCtx);
             } catch (ParserException e) {
-                handleException("ParserException : ", synCtx);
-            } catch (AxisFault af) {
-                handleException("Axisfault : ", synCtx);
-            }
-            return true;
-        } else if (!propertiesArrayList.isEmpty()) {
-            try {
-                String jsonPayloadFromOMElement = JsonUtil.toJsonString(((Axis2MessageContext) synCtx).getAxis2MessageContext()
-                        .getEnvelope().getBody().getFirstElement(), jsonOutputFactory).toString();
-                JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
-                        jsonPayloadFromOMElement, true, true);
+                handleException("ParserException : " + e.getMessage(), synCtx);
             } catch (AxisFault af) {
                 handleException("Axisfault : ", synCtx);
             }
@@ -101,7 +100,7 @@ public class TransformMediator extends AbstractMediator {
         for (MediatorProperty prop : list) {
             properties.setProperty(prop.getName(), prop.getValue());
         }
-        this.jsonOutputFactory = JsonUtil.generateJSONOutputFactory(properties);
+        this.jsonOutputFactory = JsonUtil.generateJSONOutputFactoryWithOveride(properties);
     }
 
     public List<MediatorProperty> getProperties() {

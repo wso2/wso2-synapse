@@ -268,6 +268,72 @@ public final class JsonUtil {
     }
 
     /**
+     * Generate factory that is used to create JSON Writers
+     * This is will override the global configration
+     *
+     * @param props Properties that are loaded
+     * @return JsonXMLOutputFactory that is used to create JSON Writers
+     */
+    public static JsonXMLOutputFactory generateJSONOutputFactoryWithOveride(Properties props) {
+        boolean jsonoutMultiplePI;
+        boolean jsonoutAutoArray;
+        boolean jsonOutAutoPrimitive;
+        boolean jsonOutEnableNsDeclarations;
+        char jsonOutNamespaceSepChar;
+        String jsonoutCustomReplaceRegex;
+        String jsonoutCustomReplaceSequence;
+        String jsonoutcustomRegex;
+        boolean xmlNilReadWriteEnabled;
+        boolean xmlWriteNullForEmptyElements;
+        boolean preserverNamespacesForJson;
+        boolean processNCNames;
+
+        preserverNamespacesForJson = Boolean.parseBoolean(props.getProperty
+                (Constants.SYNAPSE_COMMONS_JSON_PRESERVE_NAMESPACE, Boolean.toString(jsonOutputFactory.getConfig().isPreserverNamespacesForJson())));
+        jsonoutMultiplePI = Boolean.parseBoolean(props.getProperty
+                (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_JSON_OUT_MULTIPLE_PI, Boolean.toString(jsonOutputFactory.getConfig().isMultiplePI())));
+        jsonoutAutoArray = Boolean.parseBoolean(props.getProperty
+                (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_JSON_OUT_AUTO_ARRAY, Boolean.toString(jsonOutputFactory.getConfig().isAutoArray())));
+        jsonOutAutoPrimitive = Boolean.parseBoolean(props.getProperty
+                (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_AUTO_PRIMITIVE, Boolean.toString(jsonOutputFactory.getConfig().isAutoPrimitive())).trim().toLowerCase());
+        jsonOutEnableNsDeclarations = Boolean.parseBoolean(props.getProperty
+                (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_ENABLE_NS_DECLARATIONS,
+                        Boolean.toString(jsonOutputFactory.getConfig().isNamespaceDeclarations())).trim().toLowerCase());
+        jsonOutNamespaceSepChar = props.getProperty
+                (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_NAMESPACE_SEP_CHAR, Character.toString(jsonOutputFactory.getConfig().getNamespaceSeparator())).trim().charAt(0);
+        jsonoutCustomReplaceRegex = props
+                .getProperty(Constants.SYNAPSE_COMMONS_JSON_DISABLE_AUTO_PRIMITIVE_CUSTOM_REPLACE_REGEX, jsonOutputFactory.getConfig().getCustomReplaceRegex());
+        jsonoutCustomReplaceSequence = props
+                .getProperty(Constants.SYNAPSE_COMMONS_JSON_DISABLE_AUTO_PRIMITIVE_CUSTOM_REPLACE_SEQUENCE, jsonOutputFactory.getConfig().getCustomReplaceSequence());
+        jsonoutcustomRegex = props.getProperty
+                (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_DISABLE_AUTO_PRIMITIVE_REGEX, jsonOutputFactory.getConfig().getCustomRegex());
+        xmlNilReadWriteEnabled = Boolean
+                .parseBoolean(props.getProperty(Constants.SYNAPSE_COMMONS_ENABLE_XML_NIL_READ_WRITE, Boolean.toString(jsonOutputFactory.getConfig().isReadWriteXmlNil())));
+        xmlWriteNullForEmptyElements = Boolean.parseBoolean(
+                props.getProperty(Constants.SYNAPSE_COMMONS_ENABLE_XML_NULL_FOR_EMPTY_ELEMENT, Boolean.toString(jsonOutputFactory.getConfig().isWriteNullForEmptyElements())));
+        processNCNames = Boolean.parseBoolean(props.getProperty(
+                Constants.SYNAPSE_COMMONS_JSON_BUILD_VALID_NC_NAMES, Boolean.toString(jsonOutputFactory.getConfig().isProcessNCNames())).trim().toLowerCase());
+
+        //This configuration is used to format the JSON output produced by the JSON writer.
+        JsonXMLConfig jsonOutputConfig = new JsonXMLConfigBuilder()
+                .multiplePI(jsonoutMultiplePI)
+                .autoArray(jsonoutAutoArray)
+                .autoPrimitive(jsonOutAutoPrimitive)
+                .namespaceDeclarations(jsonOutEnableNsDeclarations)
+                .namespaceSeparator(jsonOutNamespaceSepChar)
+                .customReplaceRegex(jsonoutCustomReplaceRegex)
+                .customReplaceSequence(jsonoutCustomReplaceSequence)
+                .customRegex(jsonoutcustomRegex)
+                .readWriteXmlNil(xmlNilReadWriteEnabled)
+                .writeNullForEmptyElement(xmlWriteNullForEmptyElements)
+                .preserverNamespacesForJson(preserverNamespacesForJson)
+                .processNCNames(processNCNames)
+                .build();
+
+        return new JsonXMLOutputFactory(jsonOutputConfig);
+    }
+
+    /**
      * Converts the XML payload of a message context into its JSON representation and writes it to an output stream.<br/>
      * If no XML payload is found, the existing JSON payload will be copied to the output stream.<br/>
      * Note that this method removes all existing namespace declarations and namespace prefixes of the payload that is <br/>
