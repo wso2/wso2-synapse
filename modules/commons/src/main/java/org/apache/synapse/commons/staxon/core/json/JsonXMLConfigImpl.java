@@ -170,7 +170,7 @@ public class JsonXMLConfigImpl implements JsonXMLConfig, Cloneable {
 
     @Override
     public boolean isPreserverNamespacesForJson() {
-        return false;
+        return preserverNamespacesForJson;
     }
 
     public void setPreserverNamespacesForJson(boolean preserverNamespacesForJson) {
@@ -179,7 +179,7 @@ public class JsonXMLConfigImpl implements JsonXMLConfig, Cloneable {
 
     @Override
     public boolean isProcessNCNames() {
-        return false;
+        return processNCNames;
     }
 
     public void setProcessNCNames(boolean processNCNames) {
