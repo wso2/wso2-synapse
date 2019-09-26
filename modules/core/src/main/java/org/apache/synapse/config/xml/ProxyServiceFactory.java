@@ -29,6 +29,7 @@ import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.config.xml.endpoints.EndpointFactory;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -113,7 +114,9 @@ public class ProxyServiceFactory {
             if (pinnedServersValue == null) {
                 // default to all servers
             } else {
-                StringTokenizer st = new StringTokenizer(pinnedServersValue, " ,");
+                String  resolvedPinnedServersValue =
+                        ResolverFactory.getInstance().getResolver(pinnedServersValue).resolve();
+                StringTokenizer st = new StringTokenizer(resolvedPinnedServersValue, " ,");
                 List<String> pinnedServersList = new ArrayList<String>();
                 while (st.hasMoreTokens()) {
                     String token = st.nextToken();
