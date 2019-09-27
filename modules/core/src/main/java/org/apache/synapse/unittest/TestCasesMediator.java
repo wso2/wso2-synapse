@@ -195,8 +195,13 @@ public class TestCasesMediator {
             case POST_METHOD:
                 //set headers
                 HttpPost httpPost = setPostHeaders(currentTestCase, url);
+                String postPayload = currentTestCase.getInputPayload();
 
-                StringEntity postEntity = new StringEntity(currentTestCase.getInputPayload());
+                if (postPayload == null) {
+                    postPayload = "";
+                }
+
+                StringEntity postEntity = new StringEntity(postPayload);
                 httpPost.setEntity(postEntity);
                 response = clientConnector.execute(httpPost);
                 break;

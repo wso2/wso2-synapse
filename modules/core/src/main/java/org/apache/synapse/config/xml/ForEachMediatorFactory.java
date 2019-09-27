@@ -34,12 +34,12 @@ import java.util.List;
 import java.util.Properties;
 
 /**
- * <p></p>The &lt;foreach&gt; mediator is used to split to messages by the given XPath expression
+ * <p></p>The &lt;foreach&gt; mediator is used to split to messages by the given XPath/JSONPath expression
  * and processed as per the provided sequence.
  * <p/>
  * <p/>
  * <pre>
- * &lt;foreach expression="xpath" [sequence="sequence_ref"] [id="foreach_id"] &gt;
+ * &lt;foreach expression="xpath|jsonpath" [sequence="sequence_ref"] [id="foreach_id"] &gt;
  *     &lt;sequence&gt;
  *       (mediator)+
  *     &lt;/sequence&gt;?
@@ -72,15 +72,14 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
         OMAttribute expression = elem.getAttribute(ATT_EXPRN);
         if (expression != null) {
             try {
-                mediator.setExpression(SynapseXPathFactory.getSynapseXPath(elem,
-                                                                           ATT_EXPRN));
+                mediator.setExpression(SynapsePathFactory.getSynapsePath(elem, ATT_EXPRN));
             } catch (JaxenException e) {
                 handleException("Unable to build the ForEach Mediator. " +
-                                "Invalid XPath " +
+                                "Invalid XPath/JSONPath " +
                                 expression.getAttributeValue(), e);
             }
         } else {
-            handleException("XPath expression is required "
+            handleException("XPath/JSONPath expression is required "
                             + "for an ForEach Mediator under the \"expression\" attribute");
         }
 

@@ -26,12 +26,14 @@ import org.apache.synapse.unittest.testcase.data.classes.Artifact;
 import org.apache.synapse.unittest.testcase.data.classes.AssertEqual;
 import org.apache.synapse.unittest.testcase.data.classes.AssertNotNull;
 import org.apache.synapse.unittest.testcase.data.classes.MockService;
+import org.apache.synapse.unittest.testcase.data.classes.RegistryResource;
 import org.apache.synapse.unittest.testcase.data.classes.ServiceResource;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 import org.apache.synapse.unittest.testcase.data.holders.ArtifactData;
 import org.apache.synapse.unittest.testcase.data.holders.MockServiceData;
 import org.apache.synapse.unittest.testcase.data.holders.TestCaseData;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -46,15 +48,20 @@ import javax.xml.stream.XMLStreamException;
 
 import static org.apache.synapse.unittest.Constants.ARTIFACT;
 import static org.apache.synapse.unittest.Constants.ARTIFACT_KEY_ATTRIBUTE;
-import static org.apache.synapse.unittest.Constants.ARTIFACT_NAME_ATTRIBUTE;
 import static org.apache.synapse.unittest.Constants.ARTIFACTS;
 import static org.apache.synapse.unittest.Constants.ARTIFACT_TRANSPORTS_ATTRIBUTE;
 import static org.apache.synapse.unittest.Constants.ASSERTION_ACTUAL;
 import static org.apache.synapse.unittest.Constants.ASSERTION_EXPECTED;
 import static org.apache.synapse.unittest.Constants.ASSERTION_MESSAGE;
+import static org.apache.synapse.unittest.Constants.CONNECTOR_RESOURCES;
 import static org.apache.synapse.unittest.Constants.HTTPS_KEY;
 import static org.apache.synapse.unittest.Constants.HTTP_KEY;
 import static org.apache.synapse.unittest.Constants.MOCK_SERVICES;
+import static org.apache.synapse.unittest.Constants.NAME_ATTRIBUTE;
+import static org.apache.synapse.unittest.Constants.REGISTRY_MEDIA_TYPE;
+import static org.apache.synapse.unittest.Constants.REGISTRY_NAME;
+import static org.apache.synapse.unittest.Constants.REGISTRY_PATH;
+import static org.apache.synapse.unittest.Constants.REGISTRY_RESOURCES;
 import static org.apache.synapse.unittest.Constants.SERVICE_CONTEXT;
 import static org.apache.synapse.unittest.Constants.SERVICE_NAME;
 import static org.apache.synapse.unittest.Constants.SERVICE_PORT;
@@ -142,7 +149,7 @@ class SynapseTestcaseDataReader {
                     = testArtifactDataNode.getFirstElement().getAttributeValue(new QName(ARTIFACT_KEY_ATTRIBUTE));
         } else {
             testArtifactNameOrKey
-                    = testArtifactDataNode.getFirstElement().getAttributeValue(new QName(ARTIFACT_NAME_ATTRIBUTE));
+                    = testArtifactDataNode.getFirstElement().getAttributeValue(new QName(NAME_ATTRIBUTE));
         }
         testArtifact.setArtifactNameOrKey(testArtifactNameOrKey);
 
@@ -196,7 +203,7 @@ class SynapseTestcaseDataReader {
                         = artifact.getFirstElement().getAttributeValue(new QName(ARTIFACT_KEY_ATTRIBUTE));
             } else {
                 supportiveArtifactNameOrKey
-                        = artifact.getFirstElement().getAttributeValue(new QName(ARTIFACT_NAME_ATTRIBUTE));
+                        = artifact.getFirstElement().getAttributeValue(new QName(NAME_ATTRIBUTE));
             }
             supportiveArtifact.setArtifactNameOrKey(supportiveArtifactNameOrKey);
 
@@ -206,6 +213,63 @@ class SynapseTestcaseDataReader {
 
         //set supportive artifact count
         artifactDataHolder.setSupportiveArtifactCount(supportiveArtifactCount);
+
+        //Read and store registry data
+        QName qualifiedRegistryArtifact = new QName("", REGISTRY_RESOURCES, "");
+        OMElement registryArtifactsNode = artifactsNode.getFirstChildWithName(qualifiedRegistryArtifact);
+        Iterator<?> registryIterator = Collections.emptyIterator();
+
+        if (registryArtifactsNode != null) {
+            registryIterator = registryArtifactsNode.getChildElements();
+        }
+
+        while (registryIterator.hasNext()) {
+            OMElement resource = (OMElement) registryIterator.next();
+
+            //Read registry artifact from synapse test data
+            QName qualifiedRegistryArtifactFileName = new QName("", REGISTRY_NAME, "");
+            OMElement registryArtifactsNameNode = resource.getFirstChildWithName(qualifiedRegistryArtifactFileName);
+            String resourceName = registryArtifactsNameNode.getText();
+
+            QName qualifiedRegistryArtifactFilePath = new QName("", REGISTRY_PATH, "");
+            OMElement registryArtifactsPathNode = resource.getFirstChildWithName(qualifiedRegistryArtifactFilePath);
+            String resourcePath = registryArtifactsPathNode.getText();
+
+            QName qualifiedRegistryArtifactFile = new QName("", ARTIFACT, "");
+            OMElement registryArtifactsFileNode = resource.getFirstChildWithName(qualifiedRegistryArtifactFile);
+            String resourceArtifact = registryArtifactsFileNode.getText();
+            if (resourceArtifact.isEmpty()) {
+                resourceArtifact = registryArtifactsFileNode.getFirstOMChild().toString();
+            }
+
+            QName qualifiedRegistryArtifactMediaType = new QName("", REGISTRY_MEDIA_TYPE, "");
+            OMElement registryArtifactsMediaTypeNode = resource.getFirstChildWithName(qualifiedRegistryArtifactMediaType);
+            String resourceMediaType = registryArtifactsMediaTypeNode.getText();
+
+            RegistryResource registryResource = new RegistryResource();
+            registryResource.setRegistryResourceName(resourceName);
+            registryResource.setArtifact(resourceArtifact);
+            registryResource.setRegistryPath(resourcePath);
+            registryResource.setMediaType(resourceMediaType);
+
+            String registryKey = resourcePath + File.separator + resourceName;
+            artifactDataHolder.addRegistryResource(registryKey, registryResource);
+        }
+
+        //Read and store registry data
+        QName qualifiedConnectorResources = new QName("", CONNECTOR_RESOURCES, "");
+        OMElement connectorResourcesNode = artifactsNode.getFirstChildWithName(qualifiedConnectorResources);
+        Iterator<?> connectorIterator = Collections.emptyIterator();
+
+        if (connectorResourcesNode != null) {
+            connectorIterator = connectorResourcesNode.getChildElements();
+        }
+
+        while (connectorIterator.hasNext()) {
+            OMElement resource = (OMElement) connectorIterator.next();
+            String connectorResourceFileBase64 = resource.getText();
+            artifactDataHolder.addConnectorResource(connectorResourceFileBase64);
+        }
 
         log.info("Artifact data from descriptor data read successfully");
         return artifactDataHolder;
@@ -235,8 +299,10 @@ class SynapseTestcaseDataReader {
         }
 
         while (testCaseIterator.hasNext()) {
-            OMElement testCaseNode = (OMElement) (testCaseIterator.next());
             TestCase testCase = new TestCase();
+            OMElement testCaseNode = (OMElement) (testCaseIterator.next());
+            String testCaseName = testCaseNode.getAttributeValue(new QName(NAME_ATTRIBUTE));
+            testCase.setTestCaseName(testCaseName);
 
             //Read input child from test-case node
             QName qualifiedInput = new QName("", TEST_CASE_INPUT, "");

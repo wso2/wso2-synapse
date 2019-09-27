@@ -25,6 +25,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
+import org.json.JSONObject;
 
 /**
  * This class represents an endpoint with the EPR as the 'To' header of the message. It is
@@ -32,6 +33,7 @@ import org.apache.synapse.transport.passthru.util.RelayUtils;
  * using any QOS etc as specified
  */
 public class DefaultEndpoint extends AbstractEndpoint {
+
     public void onFault(MessageContext synCtx) {
 
         // For setting Car name (still for Proxy)
@@ -53,6 +55,15 @@ public class DefaultEndpoint extends AbstractEndpoint {
         if (getContext() != null) {
             getContext().onSuccess();
         }
+    }
+
+    @Override
+    protected void createJsonRepresentation() {
+        endpointJson = new JSONObject();
+        endpointJson.put(NAME_JSON_ATT, getName());
+        endpointJson.put(TYPE_JSON_ATT, "Default Endpoint");
+        endpointJson.put(CHILDREN_JSON_ATT, getEndpointChildrenAsJson(getChildren()));
+        setAdvancedProperties();
     }
 
     public void send(MessageContext synCtx) {

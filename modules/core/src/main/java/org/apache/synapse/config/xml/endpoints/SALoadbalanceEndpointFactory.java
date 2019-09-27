@@ -121,6 +121,7 @@ public class SALoadbalanceEndpointFactory extends EndpointFactory {
             // set load balance algorithm
             LoadbalanceAlgorithm algorithm = LoadbalanceAlgorithmFactory.
                     createLoadbalanceAlgorithm(loadbalanceElement, endpoints);
+            algorithm.setLoadBalanceEndpoint(loadbalanceEndpoint);
             loadbalanceEndpoint.setAlgorithm(algorithm);
 
             //set buildMessage attribute

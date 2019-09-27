@@ -52,6 +52,10 @@ public class APISerializer {
             apiElt.addAttribute("port", String.valueOf(api.getPort()), null);
         }
 
+        if (api.getSwaggerResourcePath() != null) {
+            apiElt.addAttribute("publishSwagger", api.getSwaggerResourcePath(), null);
+        }
+
         StatisticsConfigurable statisticsConfigurable = api.getAspectConfiguration();
 
         if (statisticsConfigurable != null && statisticsConfigurable.isStatisticsEnable()) {

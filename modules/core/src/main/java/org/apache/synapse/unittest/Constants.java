@@ -35,13 +35,26 @@ public class Constants {
 
     //artifact key word constants
     static final String API_CONTEXT = "context";
-    static final String ARTIFACT_NAME_ATTRIBUTE = "name";
+    static final String NAME_ATTRIBUTE = "name";
     static final String ARTIFACT_TRANSPORTS_ATTRIBUTE = "transports";
     static final String ARTIFACT_KEY_ATTRIBUTE = "key";
     static final String ARTIFACT = "artifact";
     static final String TEST_ARTIFACT = "test-artifact";
     static final String SUPPORTIVE_ARTIFACTS = "supportive-artifacts";
     static final String ARTIFACTS = "artifacts";
+
+    //registry resources key word constants
+    static final String REGISTRY_RESOURCES = "registry-resources";
+    static final String REGISTRY_NAME = "file-name";
+    static final String REGISTRY_PATH = "registry-path";
+    static final String REGISTRY_MEDIA_TYPE = "media-type";
+    static final String LOCAL_REGISTRY_TYPE = "local";
+    static final String GOVERNANCE_REGISTRY_TYPE = "gov";
+    static final String CONFIGURATION_REGISTRY_TYPE = "conf";
+
+    //connector resource key word constants
+    static final String CONNECTOR_RESOURCES = "connector-resources";
+    static final String CONNECTOR_TEST_FOLDER = "test";
 
     //test case key word constants
     static final String TEST_CASES = "test-cases";
@@ -98,4 +111,24 @@ public class Constants {
     static final String HTTPS_KEY = "https";
     static final String HTTPS_LOCALHOST_URL = "https://localhost:";
     static final String PROXY_INVOKE_PREFIX_URL = "/services/";
+
+    //test summary report constants
+    static final String PASSED_KEY = "PASSED";
+    static final String FAILED_KEY = "FAILED";
+    static final String SKIPPED_KEY = "SKIPPED";
+    static final String DEPLOYMENT_STATUS = "deploymentStatus";
+    static final String DEPLOYMENT_EXCEPTION = "deploymentException";
+    static final String DEPLOYMENT_DESCRIPTION = "deploymentDescription";
+    static final String TEST_CASE_NAME = "testCaseName";
+    static final String MEDIATION_STATUS = "mediationStatus";
+    static final String MEDIATION_EXCEPTION = "mediationException";
+    static final String CURRENT_TESTCASE = "currentTestCase";
+    static final String ASSERTION_EXCEPTION = "exception";
+    static final String ASSERTION_STATUS = "assertionStatus";
+
+    //parameter constants
+    static final String PRAM_TEMP_DIR = "java.io.tmpdir";
+
+    //common constants
+    static final String NEW_LINE = "\n";
 }

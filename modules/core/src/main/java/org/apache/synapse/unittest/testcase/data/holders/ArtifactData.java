@@ -18,8 +18,12 @@
 package org.apache.synapse.unittest.testcase.data.holders;
 
 import org.apache.synapse.unittest.testcase.data.classes.Artifact;
+import org.apache.synapse.unittest.testcase.data.classes.RegistryResource;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Class responsible for the holding the data of synapse configuration data.
@@ -29,7 +33,8 @@ public class ArtifactData {
     private int supportiveArtifactCount;
     private Artifact testArtifact;
     private ArrayList<Artifact> supportiveArtifacts = new ArrayList<>();
-
+    private Map<String, RegistryResource> registryResources = new HashMap<>();
+    private ArrayList<String> connectorResources = new ArrayList<>();
 
     /**
      * Set supportive-artifact.
@@ -59,6 +64,25 @@ public class ArtifactData {
     }
 
     /**
+     * Add registry-resources.
+     *
+     * @param key registry resource key
+     * @param registryResource registry resource object
+     */
+    public void addRegistryResource(String key, RegistryResource registryResource) {
+        this.registryResources.put(key, registryResource);
+    }
+
+    /**
+     * Add connector-resources.
+     *
+     * @param base64Encode connector resource key
+     */
+    public void addConnectorResource(String base64Encode) {
+        this.connectorResources.add(base64Encode);
+    }
+
+    /**
      * Get test-artifact.
      *
      * @return testArtifact
@@ -74,6 +98,33 @@ public class ArtifactData {
      */
     public Artifact getSupportiveArtifact(int elementIndex) {
         return supportiveArtifacts.get(elementIndex);
+    }
+
+    /**
+     * Get registry resource.
+     *
+     * @return registry resource
+     */
+    public RegistryResource getRegistryResource(String key) {
+        return registryResources.get(key);
+    }
+
+    /**
+     * Get registry resources.
+     *
+     * @return registry resources
+     */
+    public Map<String, RegistryResource> getRegistryResources() {
+        return registryResources;
+    }
+
+    /**
+     * Get connector resources.
+     *
+     * @return connector resources
+     */
+    public List<String> getConnectorResources() {
+        return connectorResources;
     }
 
     /**

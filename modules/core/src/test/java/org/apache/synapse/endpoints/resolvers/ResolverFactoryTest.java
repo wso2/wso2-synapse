@@ -17,11 +17,11 @@
 package org.apache.synapse.endpoints.resolvers;
 
 import junit.framework.TestCase;
-import org.apache.synapse.config.xml.endpoints.resolvers.DefaultResolver;
-import org.apache.synapse.config.xml.endpoints.resolvers.Resolver;
-import org.apache.synapse.config.xml.endpoints.resolvers.ResolverException;
-import org.apache.synapse.config.xml.endpoints.resolvers.ResolverFactory;
-import org.apache.synapse.config.xml.endpoints.resolvers.SystemResolver;
+import org.apache.synapse.commons.resolvers.DefaultResolver;
+import org.apache.synapse.commons.resolvers.Resolver;
+import org.apache.synapse.commons.resolvers.ResolverException;
+import org.apache.synapse.commons.resolvers.ResolverFactory;
+import org.apache.synapse.commons.resolvers.SystemResolver;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
 import org.junit.runner.RunWith;

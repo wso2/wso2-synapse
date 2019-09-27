@@ -23,12 +23,22 @@ import java.util.List;
 import java.util.Map;
 
 public class TestCase {
+    private String testCaseName;
     private String requestPath;
     private String requestMethod;
     private String inputPayload;
     private List<Map<String, String>> propertyMap = new ArrayList<>();
     private List<AssertEqual> assertEquals = new ArrayList<>();
     private List<AssertNotNull> assertNotNull = new ArrayList<>();
+
+    /**
+     * Get name of the test case.
+     *
+     * @return name of the requested test case
+     */
+    public String getTestCaseName() {
+        return testCaseName;
+    }
 
     /**
      * Get input payload of particular test case.
@@ -136,5 +146,14 @@ public class TestCase {
      */
     public void setRequestMethod(String requestMethod) {
         this.requestMethod = requestMethod;
+    }
+
+    /**
+     * Set test case name.
+     *
+     * @param testCaseName name of the particular test case
+     */
+    public void setTestCaseName(String testCaseName) {
+        this.testCaseName = testCaseName;
     }
 }

@@ -81,6 +81,11 @@ public class APIFactory {
             api.setPort(Integer.parseInt(portAtt.getAttributeValue()));
         }
 
+        OMAttribute publishSwagger = apiElt.getAttribute(new QName("publishSwagger"));
+        if (publishSwagger != null) {
+            api.setSwaggerResourcePath(publishSwagger.getAttributeValue());
+        }
+
         Iterator resources = apiElt.getChildrenWithName(new QName(
                 XMLConfigConstants.SYNAPSE_NAMESPACE, "resource"));
         boolean noResources = true;

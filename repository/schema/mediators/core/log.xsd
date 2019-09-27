@@ -36,7 +36,7 @@
             <xs:sequence>
                 <xs:element name="property" type="mediatorProperty" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
-            <xs:attribute name="level" type="logLevel" use="required" default="simple"/>
+            <xs:attribute name="level" type="logLevel" use="required"/>
             <xs:attribute name="separator" type="xs:string" use="optional" default=", "/>
             <xs:attribute name="category" type="logCategory" use="optional" default="INFO"/>
         </xs:complexType>
