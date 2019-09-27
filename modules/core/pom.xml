@@ -191,16 +191,21 @@
                             org.apache.synapse.debug.*,
                             org.apache.synapse.messageflowtracer.*
                         </Export-Package>
-						<Import-Package>
-							!javax.xml.namespace,
-							javax.xml.namespace;
-							version=0.0.0,
-							!javax.xml.soap,
-							javax.xml.soap; version=${javax.xml.soap.version},
-							!org.apache.commons.io,
-							org.apache.commons.io; version=0.0.0,
-							org.quartz.*;version="${quartz.version}",
-							*;resolution:=optional,
+                        <Import-Package>
+                            !javax.xml.namespace,
+                            javax.xml.namespace;
+                            version=0.0.0,
+                            !javax.xml.soap,
+                            javax.xml.soap; version=${javax.xml.soap.version},
+                            !org.apache.commons.io,
+                            org.apache.commons.io; version=0.0.0,
+                            org.quartz.*;version="${quartz.version}",
+
+                            io.jaegertracing.*,
+                            io.opentracing.*,
+                            com.squareup.*
+
+                            *;resolution:=optional,
                         </Import-Package>
 						<DynamicImport-Package>*</DynamicImport-Package>
 					</instructions>
@@ -373,37 +378,73 @@
             <groupId>org.wso2.orbit.com.googlecode.libphonenumber</groupId>
             <artifactId>libphonenumber</artifactId>
         </dependency>
-		<dependency>
-			<groupId>org.jacoco</groupId>
-			<artifactId>org.jacoco.agent</artifactId>
-			<classifier>runtime</classifier>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.powermock</groupId>
-			<artifactId>powermock-api-mockito2</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.powermock</groupId>
-			<artifactId>powermock-module-junit4</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.activemq</groupId>
-			<artifactId>activemq-broker</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.github.stefanbirkner</groupId>
-			<artifactId>system-rules</artifactId>
-			<scope>test</scope>
-		</dependency>
+        <dependency>
+            <groupId>org.jacoco</groupId>
+            <artifactId>org.jacoco.agent</artifactId>
+            <classifier>runtime</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-module-junit4</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-broker</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Jaeger Tracing Client -->
+        <dependency>
+            <groupId>io.jaegertracing</groupId>
+            <artifactId>jaeger-client</artifactId>
+            <version>${version.io.jaegertracing}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jaegertracing</groupId>
+            <artifactId>jaeger-core</artifactId>
+            <version>${version.io.jaegertracing}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jaegertracing</groupId>
+            <artifactId>jaeger-thrift</artifactId>
+            <version>${version.io.jaegertracing}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jaegertracing</groupId>
+            <artifactId>jaeger-tracerresolver</artifactId>
+            <version>${version.io.jaegertracing}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libthrift</artifactId>
+            <version>${version.org.apache.thrift.libthrift}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>${version.com.squareup.okhttp3}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okio</groupId>
+            <artifactId>okio</artifactId>
+            <version>${version.com.squareup.okio}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.stefanbirkner</groupId>
+            <artifactId>system-rules</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-mockito2</artifactId>
@@ -415,7 +456,11 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-<properties>
-		<version.orbit.rabbitmq>3.6.6.wso2v1</version.orbit.rabbitmq>
-	</properties>
+    <properties>
+        <version.orbit.rabbitmq>3.6.6.wso2v1</version.orbit.rabbitmq>
+        <version.io.jaegertracing>0.32.0</version.io.jaegertracing>
+		<version.org.apache.thrift.libthrift>0.11.0</version.org.apache.thrift.libthrift>
+		<version.com.squareup.okhttp3>3.9.0</version.com.squareup.okhttp3>
+		<version.com.squareup.okio>1.13.0</version.com.squareup.okio>
+    </properties>
 </project>
