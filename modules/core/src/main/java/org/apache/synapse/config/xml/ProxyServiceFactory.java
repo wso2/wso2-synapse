@@ -359,7 +359,13 @@ public class ProxyServiceFactory {
                     if (propertyValue != null) {
                         proxy.addParameter(pname.getAttributeValue(), propertyValue);
                     } else {
-                        proxy.addParameter(pname.getAttributeValue(), prop.getText().trim());
+                        String  resolvedParameter;
+                        if (prop.getText().trim() == null) {
+                            resolvedParameter = null;
+                        } else {
+                            resolvedParameter = ResolverFactory.getInstance().getResolver(prop.getText().trim()).resolve();
+                        }
+                        proxy.addParameter(pname.getAttributeValue(), resolvedParameter);
                     }
                 } else {
                     handleException("Invalid property specified for proxy service : " + name);
