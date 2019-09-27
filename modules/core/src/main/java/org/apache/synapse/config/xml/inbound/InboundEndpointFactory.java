@@ -28,6 +28,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.inbound.InboundEndpoint;
@@ -147,7 +148,13 @@ public class InboundEndpointFactory {
                 } else if (parameter.getFirstElement() != null) {
                     inboundEndpoint.addParameter(paramName, parameter.getFirstElement().toString());
                 } else {
-                    inboundEndpoint.addParameter(paramName, parameter.getText());
+                    String  resolvedParameter;
+                    if (parameter.getText() == null) {
+                        resolvedParameter = null;
+                    } else {
+                        resolvedParameter = ResolverFactory.getInstance().getResolver(parameter.getText()).resolve();
+                    }
+                    inboundEndpoint.addParameter(paramName, resolvedParameter);
                 }
             }
         }
