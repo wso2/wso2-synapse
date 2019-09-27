@@ -22,7 +22,6 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.tracing.manager.helpers.SpanEventCounter;
 
 import java.util.LinkedList;
 import java.util.List;

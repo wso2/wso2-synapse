@@ -23,8 +23,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
+import org.apache.synapse.aspects.flow.statistics.opentracing.OpenTracingManagerHolder;
 import org.apache.synapse.aspects.flow.statistics.util.MediationFlowController;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapsePropertiesLoader;
@@ -40,6 +40,11 @@ public abstract class RuntimeStatisticCollector {
      * Is statistics collection enabled in synapse.properties file.
      */
     private static boolean isStatisticsEnabled;
+
+    /**
+     * Is OpenTracing enabled in synapse.properties file.
+     */
+    private static boolean isOpenTracingEnabled;
 
     /**
      * Is payload collection enabled in synapse.properties file.
@@ -64,6 +69,9 @@ public abstract class RuntimeStatisticCollector {
     public static void init() {
         isStatisticsEnabled = Boolean.parseBoolean(
                 SynapsePropertiesLoader.getPropertyValue(StatisticsConstants.STATISTICS_ENABLE, String.valueOf(false)));
+        isOpenTracingEnabled = Boolean.parseBoolean(
+                SynapsePropertiesLoader
+                        .getPropertyValue(StatisticsConstants.OPENTRACING_ENABLE, String.valueOf(false)));
         if (isStatisticsEnabled) {
             if (log.isDebugEnabled()) {
                 log.debug("Mediation statistics collection is enabled.");
@@ -95,11 +103,65 @@ public abstract class RuntimeStatisticCollector {
                     eventConsumerTime;
             log.info("Statistics Entry Expiration time set to " + eventExpireTime + " milliseconds");
             new MediationFlowController();
+
+            initOpenTracing(isCollectingPayloads, isCollectingProperties);
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Statistics is not enabled in \'synapse.properties\' file.");
             }
         }
+    }
+
+    private static void initOpenTracing(boolean isCollectingPayloads, boolean isCollectingProperties) {
+        final String DEFAULT_JAEGER_SAMPLER_MANAGER_HOST = "localhost";
+        final String DEFAULT_JAEGER_SAMPLER_MANAGER_PORT = "5778";
+        final String DEFAULT_JAEGER_SENDER_AGENT_HOST = "localhost";
+        final String DEFAULT_JAEGER_SENDER_AGENT_PORT = "6831";
+        final String DEFAULT_JAEGER_REPORTER_MAX_QUEUE_SIZE = "100";
+        final String DEFAULT_JAEGER_REPORTER_FLUSH_INTERVAL = "10000";
+
+        // Jaeger Sampler Configurations
+        String samplerManagerHost =
+                SynapsePropertiesLoader.getPropertyValue(
+                        StatisticsConstants.JAEGER_SAMPLER_MANAGER_HOST, DEFAULT_JAEGER_SAMPLER_MANAGER_HOST);
+        String samplerManagerPort =
+                SynapsePropertiesLoader.getPropertyValue(
+                        StatisticsConstants.JAEGER_SAMPLER_MANAGER_PORT, DEFAULT_JAEGER_SAMPLER_MANAGER_PORT);
+        String samplerManagerHostPort = samplerManagerHost + ":" + samplerManagerPort;
+
+        // Jaeger Sender Configurations
+        String senderAgentHost =
+                SynapsePropertiesLoader.getPropertyValue(
+                        StatisticsConstants.JAEGER_SENDER_AGENT_HOST, DEFAULT_JAEGER_SENDER_AGENT_HOST);
+        String senderAgentPort =
+                SynapsePropertiesLoader.getPropertyValue(
+                        StatisticsConstants.JAEGER_SENDER_AGENT_PORT, DEFAULT_JAEGER_SENDER_AGENT_PORT);
+
+        // Jaeger Reporter Configurations
+        String logSpans =
+                SynapsePropertiesLoader.getPropertyValue(
+                        StatisticsConstants.JAEGER_REPORTER_LOG_SPANS, String.valueOf(false));
+        String reporterMaxQueueSize =
+                SynapsePropertiesLoader.getPropertyValue(
+                        StatisticsConstants.JAEGER_REPORTER_MAX_QUEUE_SIZE, DEFAULT_JAEGER_REPORTER_MAX_QUEUE_SIZE);
+        String reporterFlushInterval =
+                SynapsePropertiesLoader.getPropertyValue(
+                        StatisticsConstants.JAEGER_REPORTER_FLUSH_INTERVAL, DEFAULT_JAEGER_REPORTER_FLUSH_INTERVAL);
+
+        int senderAgentPortInt = Integer.parseInt(senderAgentPort);
+        boolean logSpansBoolean = Boolean.parseBoolean(logSpans);
+        int reporterMaxQueueSizeInt = Integer.parseInt(reporterMaxQueueSize);
+        int reporterFlushIntervalInt = Integer.parseInt(reporterFlushInterval);
+
+        OpenTracingManagerHolder.loadJaegerConfigurations(
+                samplerManagerHostPort,
+                senderAgentHost,
+                senderAgentPortInt,
+                logSpansBoolean,
+                reporterMaxQueueSizeInt,
+                reporterFlushIntervalInt); // TODO discuss about config at the end
+
+        OpenTracingManagerHolder.setCollectingFlags(isCollectingPayloads, isCollectingProperties);
     }
 
     /**
@@ -141,6 +203,15 @@ public abstract class RuntimeStatisticCollector {
 
     public static boolean isStatisticsEnabled() {
         return isStatisticsEnabled;
+    }
+
+    /**
+     * Returns whether OpenTracing has been enabled.
+     *
+     * @return true if open tracing has been enabled.
+     */
+    public static boolean isOpenTracingEnabled() {
+        return isOpenTracingEnabled;
     }
 
     /**

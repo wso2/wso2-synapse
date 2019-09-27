@@ -201,6 +201,11 @@
                             !org.apache.commons.io,
                             org.apache.commons.io; version=0.0.0,
                             org.quartz.*;version="${quartz.version}",
+
+                            io.jaegertracing.*,
+                            io.opentracing.*,
+                            com.squareup.*
+
                             *;resolution:=optional,
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>

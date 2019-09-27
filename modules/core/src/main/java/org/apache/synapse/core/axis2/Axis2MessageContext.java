@@ -325,7 +325,6 @@ public class Axis2MessageContext implements MessageContext {
      */
     public Axis2MessageContext(org.apache.axis2.context.MessageContext axisMsgCtx,
                                SynapseConfiguration synCfg, SynapseEnvironment synEnv) {
-        System.out.println("[NEW AXIS2 MESSAGE CONTEXT] "); // TODO Senthuran added this
         setAxis2MessageContext(axisMsgCtx);
         this.synCfg = synCfg;
         this.synEnv = synEnv;

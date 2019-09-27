@@ -27,7 +27,6 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.aspects.flow.statistics.tracing.holder.TracingManagerHolder;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 /**

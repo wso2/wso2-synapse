@@ -26,8 +26,8 @@ import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUni
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.templates.EndFlowEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsCloseEvent;
-import org.apache.synapse.aspects.flow.statistics.tracing.holder.TracingManagerHolder;
-import org.apache.synapse.aspects.flow.statistics.tracing.manager.helpers.Util;
+import org.apache.synapse.aspects.flow.statistics.opentracing.OpenTracingManagerHolder;
+import org.apache.synapse.aspects.flow.statistics.opentracing.management.helpers.TracingUtils;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
@@ -75,9 +75,10 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 				addEventAndDecrementCount(messageContext, closeEvent);
 			}
 
-			System.out.println("MsgCtx: " + Util.getObjectReference(messageContext) + "[CLOSE_EVENT]closeEntryEvent:\n\t\t[" + currentIndex + "[Parent: "+ statisticDataUnit.getParentIndex() +"] Component - Name: " + componentName + ", Type: " + componentType);
-			TracingManagerHolder.getOpenTracingManager().getHandler().
-					handleCloseEntryEvent(statisticDataUnit, messageContext);
+			if (isOpenTracingEnabled()) {
+				OpenTracingManagerHolder.getOpenTracingManager().getHandler().
+						handleCloseEntryEvent(statisticDataUnit, messageContext);
+			}
 
 		}
 	}
@@ -103,9 +104,10 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
                 addEventAndCloseFlow(messageContext, endFlowEvent);
             }
 
-			System.out.println("MsgCtx: " + Util.getObjectReference(messageContext) + "[CLOSE_EVENT]closeFlowForcefully:\n\t\tComponent - CurrentIndex: " + dataUnit.getCurrentIndex());
-			TracingManagerHolder.getOpenTracingManager().getHandler()
-					.handleCloseFlowForcefully(dataUnit, messageContext);
+            if (isOpenTracingEnabled()) {
+				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
+						.handleCloseFlowForcefully(dataUnit, messageContext);
+			}
 
         }
 	}
@@ -122,7 +124,6 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 	public static void tryEndFlow(MessageContext messageContext, String componentName, ComponentType componentType,
 								  Integer currentIndex, boolean isContentAltering) {
 		if (shouldReportStatistic(messageContext)) {
-			System.out.println("MsgCtx: " + Util.getObjectReference(messageContext) + "[CLOSE_EVENT]tryEndFlow:\n\t\t[" + currentIndex + "]Component - Name: " + componentName + ", Type: " + componentType);
 			closeEntryEvent(messageContext, componentName, componentType, currentIndex, isContentAltering);
 //			closeFlowForcefully(messageContext);
 		}

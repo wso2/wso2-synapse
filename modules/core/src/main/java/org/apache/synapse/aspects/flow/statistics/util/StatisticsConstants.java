@@ -44,6 +44,46 @@ public class StatisticsConstants {
 	public final static String COLLECT_ALL_STATISTICS = "mediation.flow.statistics.collect.all";
 
 	/**
+	 * Enable OpenTracing.
+	 */
+	public static final String OPENTRACING_ENABLE = "opentracing.enable";
+
+	/**
+	 * Manager Host of Jaeger Sampler.
+	 */
+	public static final String JAEGER_SAMPLER_MANAGER_HOST = "jaeger.sampler.manager.host";
+
+	/**
+	 * Manager Port of Jaeger Sampler.
+	 */
+	public static final String JAEGER_SAMPLER_MANAGER_PORT = "jaeger.sampler.manager.port";
+
+	/**
+	 * Agent Host of Jaeger Sender.
+	 */
+	public static final String JAEGER_SENDER_AGENT_HOST = "jaeger.sender.agent.host";
+
+	/**
+	 * Agent Port of Jaeger Sender.
+	 */
+	public static final String JAEGER_SENDER_AGENT_PORT = "jaeger.sender.agent.port";
+
+	/**
+	 * Log spans in Jaeger Reporter.
+	 */
+	public static final String JAEGER_REPORTER_LOG_SPANS = "jaeger.reporter.log.spans";
+
+	/**
+	 * Max queue size of Jaeger Reporter.
+	 */
+	public static final String JAEGER_REPORTER_MAX_QUEUE_SIZE = "jaeger.reporter.max.queue.size";
+
+	/**
+	 * Flush interval of Jaeger Reporter.
+	 */
+	public static final String JAEGER_REPORTER_FLUSH_INTERVAL = "jaeger.reporter.flush.interval";
+
+	/**
 	 * Flow statistic queue size.
 	 */
 	public static final String FLOW_STATISTICS_QUEUE_SIZE = "mediation.flow.statistics.queue.size";
