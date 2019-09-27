@@ -189,7 +189,11 @@
 							org.apache.synapse.carbonext.*,
                             org.apache.synapse.continuation.*,
                             org.apache.synapse.debug.*,
-                            org.apache.synapse.messageflowtracer.*
+                            org.apache.synapse.messageflowtracer.*,
+
+							io.jaegertracing.*,
+							io.opentracing.*,
+							com.squareup.*
                         </Export-Package>
                         <Import-Package>
                             !javax.xml.namespace,
@@ -207,6 +211,10 @@
 
                             *;resolution:=optional,
                         </Import-Package>
+						<!-- TODO Is pvt package good -->
+						<Private-Package>
+							org.apache.thrift; version="[0.11.0,1.0.0)"
+						</Private-Package>
 						<DynamicImport-Package>*</DynamicImport-Package>
 					</instructions>
 				</configuration>
@@ -399,42 +407,45 @@
             <artifactId>activemq-broker</artifactId>
             <scope>test</scope>
         </dependency>
+
         <!-- Jaeger Tracing Client -->
-        <dependency>
-            <groupId>io.jaegertracing</groupId>
-            <artifactId>jaeger-client</artifactId>
-            <version>${version.io.jaegertracing}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.jaegertracing</groupId>
-            <artifactId>jaeger-core</artifactId>
-            <version>${version.io.jaegertracing}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.jaegertracing</groupId>
-            <artifactId>jaeger-thrift</artifactId>
-            <version>${version.io.jaegertracing}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.jaegertracing</groupId>
-            <artifactId>jaeger-tracerresolver</artifactId>
-            <version>${version.io.jaegertracing}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.thrift</groupId>
-            <artifactId>libthrift</artifactId>
-            <version>${version.org.apache.thrift.libthrift}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>${version.com.squareup.okhttp3}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.squareup.okio</groupId>
-            <artifactId>okio</artifactId>
-            <version>${version.com.squareup.okio}</version>
-        </dependency>
+		<dependency>
+			<groupId>io.jaegertracing</groupId>
+			<artifactId>jaeger-client</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.jaegertracing</groupId>
+			<artifactId>jaeger-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.jaegertracing</groupId>
+			<artifactId>jaeger-thrift</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.jaegertracing</groupId>
+			<artifactId>jaeger-tracerresolver</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.opentracing.contrib</groupId>
+			<artifactId>opentracing-tracerresolver</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.opentracing</groupId>
+			<artifactId>opentracing-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.thrift</groupId>
+			<artifactId>libthrift</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.squareup.okhttp3</groupId>
+			<artifactId>okhttp</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.squareup.okio</groupId>
+			<artifactId>okio</artifactId>
+		</dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
@@ -463,9 +474,5 @@
     </dependencies>
     <properties>
         <version.orbit.rabbitmq>3.6.6.wso2v1</version.orbit.rabbitmq>
-        <version.io.jaegertracing>0.32.0</version.io.jaegertracing>
-		<version.org.apache.thrift.libthrift>0.11.0</version.org.apache.thrift.libthrift>
-		<version.com.squareup.okhttp3>3.9.0</version.com.squareup.okhttp3>
-		<version.com.squareup.okio>1.13.0</version.com.squareup.okio>
     </properties>
 </project>
