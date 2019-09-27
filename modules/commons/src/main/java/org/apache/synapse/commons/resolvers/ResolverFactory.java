@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.synapse.config.xml.endpoints.resolvers;
+package org.apache.synapse.commons.resolvers;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.config.xml.MediatorFactoryFinder;
 import java.util.ServiceLoader;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,7 +31,7 @@ public class ResolverFactory {
     private static final int RESOLVER_INDEX = 2;
     private static ResolverFactory resolverFactory = new ResolverFactory();
     private final Pattern rePattern = Pattern.compile("(\\$)([a-zA-Z0-9]+):([_a-zA-Z0-9]+)");
-    private static final Log log = LogFactory.getLog(MediatorFactoryFinder.class);
+    private static final Log log = LogFactory.getLog(ResolverFactory.class);
     private static final String SYSTEM_VARIABLE_PREFIX = "$SYSTEM";
 
     private Map<String, Class<? extends Resolver>> resolverMap = new HashMap<>();
