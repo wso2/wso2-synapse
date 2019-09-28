@@ -27,6 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.message.store.Constants;
 import org.apache.synapse.message.store.MessageStore;
@@ -157,7 +158,11 @@ public class MessageStoreFactory {
                             handleException("Synapse configuration is null.");
                         }
                     } else {
-                        registerParameter(parameters, paramName, paramValue);
+                        String resolvedParameter = paramValue;
+                        if (resolvedParameter != null) {
+                            resolvedParameter = ResolverFactory.getInstance().getResolver(paramValue).resolve();
+                        }
+                        registerParameter(parameters, paramName, resolvedParameter);
                     }
                 }
             }
