@@ -1090,8 +1090,8 @@ public class SynapseDebugManager implements Observer {
         result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_MESSAGE_ID,
                 synCtx.getMessageID() != null ? synCtx.getMessageID() : "");
         result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_DIRECTION, synCtx.isResponse() ? "response" : "request");
-        if (((String) ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty("messageType"))
-                .contains("json")) {
+        Object messageTypeProperty = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty("messageType");
+        if (messageTypeProperty != null && ((String) messageTypeProperty).contains("json")) {
             InputStream jsonPayloadStream = JsonUtil
                     .getJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext());
             if (jsonPayloadStream != null) {
