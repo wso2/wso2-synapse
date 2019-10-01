@@ -241,7 +241,7 @@ public class SamplingService implements Task, ManagedLifecycle {
                         }
                         Thread.sleep(storeConnectionAttemptDelay);
                     } catch (InterruptedException e1) {
-                        //ignore
+                        Thread.currentThread().interrupt();
                     }
                 } else {
                     throw new SynapseException("Error while fetching message from " + messageProcessor.getName(), e);
