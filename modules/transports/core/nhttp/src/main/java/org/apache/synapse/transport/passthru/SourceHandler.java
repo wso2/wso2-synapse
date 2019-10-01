@@ -45,6 +45,7 @@ import org.apache.synapse.transport.passthru.jmx.LatencyCollector;
 import org.apache.synapse.transport.passthru.jmx.LatencyView;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 
+import javax.net.ssl.SSLException;
 import javax.ws.rs.HttpMethod;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -420,7 +421,10 @@ public class SourceHandler implements NHttpServerEventHandler {
                 log.debug(conn + ": I/O error (Probably the keepalive connection " +
                         "was closed):" + e.getMessage());
             }
-        } else if (e.getMessage() != null) {
+        } else if (e instanceof SSLException) {
+            log.warn("I/O error: " + e.getMessage());
+        }
+        else if (e.getMessage() != null) {
             String msg = e.getMessage().toLowerCase();
             if (msg.indexOf("broken") != -1) {
                 log.warn("I/O error (Probably the connection " +
