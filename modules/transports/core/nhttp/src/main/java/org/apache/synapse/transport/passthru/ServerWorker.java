@@ -243,7 +243,7 @@ public class ServerWorker implements Runnable {
 				 * This reverseProxyMode was introduce to avoid the LB exposing
 				 * it's own web service when REST call was initiated
 				 */
-				boolean reverseProxyMode = NHttpConfiguration.getInstance().isReverseProxyMode();
+				boolean reverseProxyMode = PassThroughConfiguration.getInstance().isReverseProxyMode();
 				AxisService axisService = null;
 				if (!reverseProxyMode) {
 					RequestURIBasedDispatcher requestDispatcher = new RequestURIBasedDispatcher();
@@ -259,14 +259,14 @@ public class ServerWorker implements Runnable {
 
                 boolean isCustomRESTDispatcher = false;
                 String requestURI = request.getRequest().getRequestLine().getUri();
-                if (requestURI.matches(NHttpConfiguration.getInstance().getRestUriApiRegex())
-                        || requestURI.matches(NHttpConfiguration.getInstance().getRestUriProxyRegex())) {
+                if (requestURI.matches(PassThroughConfiguration.getInstance().getRestUriApiRegex())
+                        || requestURI.matches(PassThroughConfiguration.getInstance().getRestUriProxyRegex())) {
                     isCustomRESTDispatcher = true;
                 }
 
                 if (!isCustomRESTDispatcher) {
                     if (axisService == null) {
-                        String defaultSvcName = NHttpConfiguration.getInstance().getNhttpDefaultServiceName();
+                        String defaultSvcName = PassThroughConfiguration.getInstance().getPassThroughDefaultServiceName();
                         axisService = msgContext.getConfigurationContext().getAxisConfiguration().
                                 getService(defaultSvcName);
                         msgContext.setAxisService(axisService);
