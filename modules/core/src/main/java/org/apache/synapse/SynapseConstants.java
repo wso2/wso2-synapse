@@ -493,6 +493,8 @@ public final class SynapseConstants {
     public static final String FORCE_ERROR_PROPERTY = "FORCE_ERROR_ON_SOAP_FAULT";
     public static final int ENDPOINT_CUSTOM_ERROR = 500000;
 
+    // Error code for XML/JSON parsing errors
+    public static final int MESSAGE_PARSING_ERROR = 601000;
 
     // Fail-safe mode properties
     public static final String FAIL_SAFE_MODE_STATUS = "failsafe.mode.enable";
