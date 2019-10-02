@@ -59,6 +59,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 
 		// Enable statistics, if user enabled for all artifacts
 		if (!isCollectingStatistics) {
+//			isCollectingStatistics = isCollectingStatistics || RuntimeStatisticCollector.isCollectingAllStatistics();
 			isCollectingStatistics = isCollectingStatistics || RuntimeStatisticCollector.isCollectingAllStatistics();
 		}
 

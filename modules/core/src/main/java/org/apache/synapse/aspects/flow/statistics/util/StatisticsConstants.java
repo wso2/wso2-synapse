@@ -26,7 +26,14 @@ public class StatisticsConstants {
 	/**
 	 * Statistics enabled globally.
 	 */
-	public final static String STATISTICS_ENABLE = "mediation.flow.statistics.enable";
+	public final static String STATISTICS_ENABLE = "mediation.flow.statistics.enable"; // TODO don't expose to user
+
+	/**
+	 * Enable OpenTracing.
+	 */
+	public static final String OPENTRACING_ENABLE = "opentracing.enable";
+
+	public static final String EI_ANALYTICS_ENABLE = "ei.analytics.enable";
 
 	/**
 	 * Enable collecting message payloads.
@@ -42,11 +49,6 @@ public class StatisticsConstants {
 	 * Enable statistics collecting for all artifacts
 	 */
 	public final static String COLLECT_ALL_STATISTICS = "mediation.flow.statistics.collect.all";
-
-	/**
-	 * Enable OpenTracing.
-	 */
-	public static final String OPENTRACING_ENABLE = "opentracing.enable";
 
 	/**
 	 * Manager Host of Jaeger Sampler.

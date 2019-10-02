@@ -40,6 +40,11 @@ public class StatisticsReportingEventHolder {
 
     private boolean messageFlowError = false;
 
+    /**
+     * Denotes whether to publish data for EI Analytics or not.
+     */
+    private boolean publishEIAnalytics;
+
     public StatisticsReportingEventHolder() {
         eventQueue = new ConcurrentLinkedQueue<StatisticsReportingEvent>();
         countHolder = new StatisticsReportingCountHolder();
@@ -77,4 +82,11 @@ public class StatisticsReportingEventHolder {
         this.messageFlowError = messageFlowError;
     }
 
+    public void setPublishEIAnalytics(boolean publishEIAnalytics) {
+        this.publishEIAnalytics = publishEIAnalytics;
+    }
+
+    public boolean isPublishEIAnalytics() {
+        return publishEIAnalytics;
+    }
 }
