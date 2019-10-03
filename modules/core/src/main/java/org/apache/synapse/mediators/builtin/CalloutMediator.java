@@ -433,7 +433,7 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                 endpoint = new AddressEndpoint();
                 endpointDefinition = new EndpointDefinition();
                 endpointDefinition.setAddress(serviceURL);
-                endpointDefinition.addSuspendErrorCode(-1);
+                endpointDefinition.addSuspendErrorCode("-1");
                 endpointDefinition.addTimeoutErrorCode(-1);
                 ((AddressEndpoint) endpoint).setDefinition(endpointDefinition);
                 isWrappingEndpointCreated = true;

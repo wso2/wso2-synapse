@@ -160,16 +160,16 @@ public class EndpointDefinition implements AspectConfigurable {
     private int timeoutAction = SynapseConstants.NONE;
 
     /** The initial suspend duration when an endpoint is marked inactive */
-    private long initialSuspendDuration = -1;
+    private String initialSuspendDuration = "-1";
     /** The suspend duration ratio for the next duration - this is the geometric series multipler */
-    private float suspendProgressionFactor = 1;
+    private String suspendProgressionFactor = "1";
     /** This is the maximum duration for which a node will be suspended */
     private long suspendMaximumDuration = Long.MAX_VALUE;
     /** A list of error codes, which directly puts an endpoint into suspend mode */
-    private final List<Integer> suspendErrorCodes = new ArrayList<Integer>();
+    private final List<String> suspendErrorCodes = new ArrayList<String>();
 
     /** No of retries to attempt on timeout, before an endpoint is makred inactive */
-    private int retriesOnTimeoutBeforeSuspend = 0;
+    private String retriesOnTimeoutBeforeSuspend = "0";
     /** The delay between retries for a timeout out endpoint */
     private int retryDurationOnTimeout = 0;
     /** A list of error codes which puts the endpoint into timeout mode */
@@ -605,7 +605,7 @@ public class EndpointDefinition implements AspectConfigurable {
      *
      * @return suspendOnFailDuration
      */
-    public long getInitialSuspendDuration() {
+    public String getInitialSuspendDuration() {
         return initialSuspendDuration;
     }
 
@@ -614,7 +614,7 @@ public class EndpointDefinition implements AspectConfigurable {
      *
      * @param initialSuspendDuration a duration in milliseconds
      */
-    public void setInitialSuspendDuration(long initialSuspendDuration) {
+    public void setInitialSuspendDuration(String initialSuspendDuration) {
         this.initialSuspendDuration = initialSuspendDuration;
     }
 
@@ -626,11 +626,11 @@ public class EndpointDefinition implements AspectConfigurable {
 //        this.traceState = traceState;
 //    }
 
-    public float getSuspendProgressionFactor() {
+    public String getSuspendProgressionFactor() {
         return suspendProgressionFactor;
     }
 
-    public void setSuspendProgressionFactor(float suspendProgressionFactor) {
+    public void setSuspendProgressionFactor(String suspendProgressionFactor) {
         this.suspendProgressionFactor = suspendProgressionFactor;
     }
 
@@ -642,11 +642,11 @@ public class EndpointDefinition implements AspectConfigurable {
         this.suspendMaximumDuration = suspendMaximumDuration;
     }
 
-    public int getRetriesOnTimeoutBeforeSuspend() {
+    public String getRetriesOnTimeoutBeforeSuspend() {
         return retriesOnTimeoutBeforeSuspend;
     }
 
-    public void setRetriesOnTimeoutBeforeSuspend(int retriesOnTimeoutBeforeSuspend) {
+    public void setRetriesOnTimeoutBeforeSuspend(String retriesOnTimeoutBeforeSuspend) {
         this.retriesOnTimeoutBeforeSuspend = retriesOnTimeoutBeforeSuspend;
     }
 
@@ -658,7 +658,7 @@ public class EndpointDefinition implements AspectConfigurable {
         this.retryDurationOnTimeout = retryDurationOnTimeout;
     }
 
-    public List<Integer> getSuspendErrorCodes() {
+    public List<String> getSuspendErrorCodes() {
         return suspendErrorCodes;
     }
 
@@ -682,7 +682,7 @@ public class EndpointDefinition implements AspectConfigurable {
         this.replicationDisabled = replicationDisabled;
     }
 
-    public void addSuspendErrorCode(int code) {
+    public void addSuspendErrorCode(String code) {
         suspendErrorCodes.add(code);
     }
 
