@@ -19,6 +19,7 @@
 package org.apache.synapse.endpoints;
 
 import org.apache.axis2.context.ConfigurationContext;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
@@ -64,9 +65,9 @@ public class EndpointContext {
     /** The time in ms, until the next retry - depending on a timeout or suspension */
     private long localNextRetryTime = -1;
     /** The number of attempts left for timeout failures, until they make the endpoint suspended */
-    private int  localRemainingRetries = -1;
+    private String localRemainingRetries = "-1";
     /** The duration in ms for the last suspension */
-    private long localLastSuspendDuration = -1;
+    private String localLastSuspendDuration = "-1";
 
     /** Is the environment clustered ? */
     private boolean isClustered = false;
@@ -183,30 +184,30 @@ public class EndpointContext {
                     break;
                 }
                 case ST_TIMEOUT: {
-                    Integer retries
-                            = (Integer) cfgCtx.getPropertyNonReplicable(REMAINING_RETRIES_KEY);
+                    String retries = (String) cfgCtx.getPropertyNonReplicable(REMAINING_RETRIES_KEY);
                     if (retries == null) {
                         retries = definition.getRetriesOnTimeoutBeforeSuspend();
                     }
+                    if (StringUtils.isNumeric(retries)) {
 
-                    if (retries <= 0) {
-                        log.info("Endpoint : " + endpointName + printEndpointAddress() +
-                                " has been marked for SUSPENSION," +
-                                " but no further retries remain. Thus it will be SUSPENDED.");
+                        Integer retriesInt = Integer.parseInt(retries);
+                        if (retriesInt <= 0) {
+                            log.info("Endpoint : " + endpointName + printEndpointAddress() +
+                                    " has been marked for SUSPENSION," +
+                                    " but no further retries remain. Thus it will be SUSPENDED.");
 
-                        setState(ST_SUSPENDED);
+                            setState(ST_SUSPENDED);
 
-                    } else {
-                        Replicator.setAndReplicateState(
-                                REMAINING_RETRIES_KEY, (retries - 1), cfgCtx);
-                        long nextRetry = System.currentTimeMillis()
-                                + definition.getRetryDurationOnTimeout();
-                        Replicator.setAndReplicateState(NEXT_RETRY_TIME_KEY, nextRetry, cfgCtx);
+                        } else {
+                            Replicator.setAndReplicateState(REMAINING_RETRIES_KEY, (retriesInt - 1), cfgCtx);
+                            long nextRetry = System.currentTimeMillis() + definition.getRetryDurationOnTimeout();
+                            Replicator.setAndReplicateState(NEXT_RETRY_TIME_KEY, nextRetry, cfgCtx);
 
-                        log.warn("Endpoint : " + endpointName + printEndpointAddress() +
-                                " is marked as TIMEOUT and " +
-                                "will be retried : " + (retries - 1) + " more time/s after : " +
-                                new Date(nextRetry) + " until its marked SUSPENDED for failure");
+                            log.warn("Endpoint : " + endpointName + printEndpointAddress() +
+                                    " is marked as TIMEOUT and " +
+                                    "will be retried : " + (retriesInt - 1) + " more time/s after : " +
+                                    new Date(nextRetry) + " until its marked SUSPENDED for failure");
+                        }
                     }
                     break;
                 }
@@ -231,32 +232,32 @@ public class EndpointContext {
             switch (state) {
                 case ST_ACTIVE: {
                     localRemainingRetries = definition.getRetriesOnTimeoutBeforeSuspend();
-                    localLastSuspendDuration = -1;
+                    localLastSuspendDuration = "-1";
                     break;
                 }
                 case ST_TIMEOUT: {
-                    int retries = localRemainingRetries;
-                    if (retries == -1) {
-                        retries = definition.getRetriesOnTimeoutBeforeSuspend();
-                    }
+                    String retries = localRemainingRetries;
+                    if (StringUtils.isNumeric(retries)) {
+                        int retriesInt = Integer.parseInt(retries);
+                        if (retriesInt == -1) {
+                            retries = definition.getRetriesOnTimeoutBeforeSuspend();
+                        }
 
-                    if (retries <= 0) {
-                        log.info("Endpoint : " + endpointName + printEndpointAddress()
-                                + " has been marked for SUSPENSION, "
-                                + "but no further retries remain. Thus it will be SUSPENDED.");
+                        if (retriesInt <= 0) {
+                            log.info("Endpoint : " + endpointName + printEndpointAddress() + " has been marked for SUSPENSION, "
+                                    + "but no further retries remain. Thus it will be SUSPENDED.");
 
-                        setState(ST_SUSPENDED);
+                            setState(ST_SUSPENDED);
 
-                    } else {
-                        localRemainingRetries = retries - 1;
-                        localNextRetryTime =
-                                System.currentTimeMillis() + definition.getRetryDurationOnTimeout();
+                        } else {
+                            localRemainingRetries = Integer.toString(retriesInt - 1);
+                            localNextRetryTime = System.currentTimeMillis() + definition.getRetryDurationOnTimeout();
 
-                        log.warn("Endpoint : " + endpointName + printEndpointAddress()
-                                + " is marked as TIMEOUT and " +
-                                "will be retried : " + localRemainingRetries + " more time/s " +
-                                "after : " + new Date(localNextRetryTime)
-                                + " until its marked SUSPENDED for failure");
+                            log.warn("Endpoint : " + endpointName + printEndpointAddress() + " is marked as TIMEOUT and "
+                                    +
+                                    "will be retried : " + localRemainingRetries + " more time/s " +
+                                    "after : " + new Date(localNextRetryTime) + " until its marked SUSPENDED for failure");
+                        }
                     }
                     break;
                 }
@@ -267,8 +268,8 @@ public class EndpointContext {
                 case ST_OFF: {
                     // mark as in maintenence, and reset all other information
                     localRemainingRetries = definition == null ?
-                            -1 : definition.getRetriesOnTimeoutBeforeSuspend();
-                    localLastSuspendDuration = -1;
+                            "-1" : definition.getRetriesOnTimeoutBeforeSuspend();
+                    localLastSuspendDuration = "-1";
                     break;
                 }
             }
@@ -323,43 +324,47 @@ public class EndpointContext {
      */
     private void computeNextRetryTimeForSuspended() {
         boolean notYetSuspended = true;
-        long lastSuspendDuration = definition.getInitialSuspendDuration();
+        String lastSuspendDuration = definition.getInitialSuspendDuration();
         if (isClustered) {
             Long lastDuration = (Long) cfgCtx.getPropertyNonReplicable(LAST_SUSPEND_DURATION_KEY);
+            String lastDurationString = lastSuspendDuration.toString();
             if (lastDuration != null) {
-                lastSuspendDuration = lastDuration;
+                lastSuspendDuration = lastDurationString;
                 notYetSuspended = false;
             }
-        } else if (localLastSuspendDuration > 0) {
+        } else if (StringUtils.isNumeric(localLastSuspendDuration) && Integer.parseInt(localLastSuspendDuration) > 0) {
+
             lastSuspendDuration = localLastSuspendDuration;
             notYetSuspended = false;
         }
 
-        long nextSuspendDuration = (notYetSuspended ?
-                definition.getInitialSuspendDuration() :
-                (long) (lastSuspendDuration * definition.getSuspendProgressionFactor()));
+        if (StringUtils.isNumeric(lastSuspendDuration)) {
+            long lastSuspendDurationLong = Long.parseLong(lastSuspendDuration);
+            long nextSuspendDuration = (notYetSuspended ?
+                    Long.parseLong(definition.getInitialSuspendDuration()) :
+                    (long) (lastSuspendDurationLong * Integer.parseInt(definition.getSuspendProgressionFactor())));
 
-        if (nextSuspendDuration > definition.getSuspendMaximumDuration()) {
-            nextSuspendDuration = definition.getSuspendMaximumDuration();
-        } else if (nextSuspendDuration < 0) {
-            nextSuspendDuration = SynapseConstants.DEFAULT_ENDPOINT_SUSPEND_TIME;
+            if (nextSuspendDuration > definition.getSuspendMaximumDuration()) {
+                nextSuspendDuration = definition.getSuspendMaximumDuration();
+            } else if (nextSuspendDuration < 0) {
+                nextSuspendDuration = SynapseConstants.DEFAULT_ENDPOINT_SUSPEND_TIME;
+            }
+
+            long nextRetryTime = System.currentTimeMillis() + nextSuspendDuration;
+
+            if (isClustered) {
+                Replicator.setAndReplicateState(LAST_SUSPEND_DURATION_KEY, nextSuspendDuration, cfgCtx);
+                Replicator.setAndReplicateState(NEXT_RETRY_TIME_KEY, nextRetryTime, cfgCtx);
+            } else {
+                localLastSuspendDuration = Long.toString(nextSuspendDuration);
+                localNextRetryTime = nextRetryTime;
+            }
+
+            log.warn("Suspending endpoint : " + endpointName + printEndpointAddress() +
+                    (notYetSuspended ? " -" : " - last suspend duration was : " + lastSuspendDuration + "ms and") +
+                    " current suspend duration is : " + nextSuspendDuration + "ms - " +
+                    "Next retry after : " + new Date(nextRetryTime));
         }
-
-        long nextRetryTime = System.currentTimeMillis() + nextSuspendDuration;
-
-        if (isClustered) {
-            Replicator.setAndReplicateState(LAST_SUSPEND_DURATION_KEY, nextSuspendDuration, cfgCtx);
-            Replicator.setAndReplicateState(NEXT_RETRY_TIME_KEY, nextRetryTime, cfgCtx);
-        } else {
-            localLastSuspendDuration = nextSuspendDuration;
-            localNextRetryTime = nextRetryTime;
-        }
-
-        log.warn("Suspending endpoint : " + endpointName + printEndpointAddress() +
-                (notYetSuspended ? " -" :
-                        " - last suspend duration was : " + lastSuspendDuration + "ms and") +
-                " current suspend duration is : " + nextSuspendDuration + "ms - " +
-                "Next retry after : " + new Date(nextRetryTime));
     }
 
     /**

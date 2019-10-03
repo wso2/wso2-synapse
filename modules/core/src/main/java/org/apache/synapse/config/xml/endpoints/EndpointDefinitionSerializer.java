@@ -132,7 +132,7 @@ public class EndpointDefinitionSerializer {
             }
         }
 
-        if (endpointDefinition.getInitialSuspendDuration() != -1 ||
+        if (!endpointDefinition.getInitialSuspendDuration().isEmpty() ||
             !endpointDefinition.getSuspendErrorCodes().isEmpty()) {
 
             OMElement suspendOnFailure = fac.createOMElement(
@@ -148,19 +148,20 @@ public class EndpointDefinitionSerializer {
                 suspendOnFailure.addChild(errorCodes);
             }
 
-            if (endpointDefinition.getInitialSuspendDuration() != -1) {
+            if (!endpointDefinition.getInitialSuspendDuration().isEmpty()) {
                 OMElement initialDuration = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_INITIAL_DURATION,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
-                initialDuration.setText(Long.toString(endpointDefinition.getInitialSuspendDuration()));
+                initialDuration.setText(endpointDefinition.getInitialSuspendDuration());
                 suspendOnFailure.addChild(initialDuration);
             }
 
-            if (endpointDefinition.getSuspendProgressionFactor() != -1) {
+            if (endpointDefinition.getSuspendProgressionFactor().equals("-1")
+                    || !endpointDefinition.getSuspendProgressionFactor().isEmpty()) {
                 OMElement progressionFactor = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_PROGRESSION_FACTOR,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
-                progressionFactor.setText(Float.toString(endpointDefinition.getSuspendProgressionFactor()));
+                progressionFactor.setText(endpointDefinition.getSuspendProgressionFactor());
                 suspendOnFailure.addChild(progressionFactor);
             }
 
@@ -177,7 +178,9 @@ public class EndpointDefinitionSerializer {
         }
 
         if (endpointDefinition.getRetryDurationOnTimeout() > 0 ||
-            !endpointDefinition.getTimeoutErrorCodes().isEmpty()) {
+                !endpointDefinition.getTimeoutErrorCodes().isEmpty() ||
+                !endpointDefinition.getRetriesOnTimeoutBeforeSuspend().isEmpty()
+                || endpointDefinition.getRetryDurationOnTimeout() > 0) {
 
             OMElement markAsTimedout = fac.createOMElement(
                 org.apache.synapse.config.xml.XMLConfigConstants.MARK_FOR_SUSPENSION,
@@ -192,11 +195,11 @@ public class EndpointDefinitionSerializer {
                 markAsTimedout.addChild(errorCodes);
             }
 
-            if (endpointDefinition.getRetriesOnTimeoutBeforeSuspend() > 0) {
+            if (!endpointDefinition.getRetriesOnTimeoutBeforeSuspend().isEmpty()) {
                 OMElement retries = fac.createOMElement(
-                    org.apache.synapse.config.xml.XMLConfigConstants.RETRIES_BEFORE_SUSPENSION,
-                    SynapseConstants.SYNAPSE_OMNAMESPACE);
-                retries.setText(Long.toString(endpointDefinition.getRetriesOnTimeoutBeforeSuspend()));
+                        org.apache.synapse.config.xml.XMLConfigConstants.RETRIES_BEFORE_SUSPENSION,
+                        SynapseConstants.SYNAPSE_OMNAMESPACE);
+                retries.setText(endpointDefinition.getRetriesOnTimeoutBeforeSuspend());
                 markAsTimedout.addChild(retries);
             }
 

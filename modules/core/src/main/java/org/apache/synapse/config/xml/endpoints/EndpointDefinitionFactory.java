@@ -21,11 +21,11 @@ package org.apache.synapse.config.xml.endpoints;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.util.xpath.SynapseXPath;
@@ -219,8 +219,7 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 XMLConfigConstants.RETRIES_BEFORE_SUSPENSION));
             if (retriesBeforeSuspend != null && retriesBeforeSuspend.getText() != null) {
                 try {
-                    definition.setRetriesOnTimeoutBeforeSuspend(
-                        Integer.parseInt(retriesBeforeSuspend.getText().trim()));
+                    definition.setRetriesOnTimeoutBeforeSuspend(retriesBeforeSuspend.getText().trim());
                 } catch (NumberFormatException e) {
                     handleException("The retries before suspend [for timeouts] should be " +
                         "specified as a valid number : " + retriesBeforeSuspend.getText(), e);
@@ -248,9 +247,16 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
 
             log.warn("Configuration uses deprecated style for endpoint 'suspendDurationOnFailure'");
             try {
-                definition.setInitialSuspendDuration(
-                        1000 * Long.parseLong(suspendDurationOnFailure.getText().trim()));
-                definition.setSuspendProgressionFactor((float) 1.0);
+                String suspendDurationOnFailureText = suspendDurationOnFailure.getText().trim();
+                if (StringUtils.isNumeric(suspendDurationOnFailureText)) {
+                    definition.setInitialSuspendDuration(
+                            Long.toString(1000 * Long.parseLong(suspendDurationOnFailureText)));
+
+                } else {
+                    definition.setInitialSuspendDuration(suspendDurationOnFailureText);
+                }
+
+                definition.setSuspendProgressionFactor("1.0");
             } catch (NumberFormatException e) {
                 handleException("The initial suspend duration should be specified " +
                     "as a valid number : " + suspendDurationOnFailure.getText(), e);
@@ -272,7 +278,7 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 while (st.hasMoreTokens()) {
                     String s = st.nextToken();
                     try {
-                        definition.addSuspendErrorCode(Integer.parseInt(s));
+                        definition.addSuspendErrorCode(s);
                     } catch (NumberFormatException e) {
                         handleException("The suspend error codes should be specified " +
                             "as valid numbers separated by commas : " + suspendCodes.getText(), e);
@@ -285,8 +291,8 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 XMLConfigConstants.SUSPEND_INITIAL_DURATION));
             if (initialDuration != null && initialDuration.getText() != null) {
                 try {
-                    definition.setInitialSuspendDuration(
-                        Integer.parseInt(initialDuration.getText().trim()));
+                    definition.setInitialSuspendDuration(initialDuration.getText().trim());
+
                 } catch (NumberFormatException e) {
                     handleException("The initial suspend duration should be specified " +
                         "as a valid number : " + initialDuration.getText(), e);
@@ -298,8 +304,7 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 XMLConfigConstants.SUSPEND_PROGRESSION_FACTOR));
             if (progressionFactor != null && progressionFactor.getText() != null) {
                 try {
-                    definition.setSuspendProgressionFactor(
-                        Float.parseFloat(progressionFactor.getText().trim()));
+                    definition.setSuspendProgressionFactor(progressionFactor.getText().trim());
                 } catch (NumberFormatException e) {
                     handleException("The suspend duration progression factor should be specified " +
                         "as a valid float : " + progressionFactor.getText(), e);
