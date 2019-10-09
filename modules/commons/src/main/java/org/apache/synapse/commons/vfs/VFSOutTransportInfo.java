@@ -126,9 +126,9 @@ public class VFSOutTransportInfo implements OutTransportInfo {
         if (properties.containsKey(VFSConstants.TRANSPORT_FILE_LOCKING)) {
             String strFileLocking = properties.get(VFSConstants.TRANSPORT_FILE_LOCKING);
             if (VFSConstants.TRANSPORT_FILE_LOCKING_ENABLED.equals(strFileLocking)) {
-                fileLocking = true;
+                this.fileLocking = true;
             } else if (VFSConstants.TRANSPORT_FILE_LOCKING_DISABLED.equals(strFileLocking)) {
-                fileLocking = false;
+                this.fileLocking = false;
             }
         } else {
             this.fileLocking = fileLocking;
