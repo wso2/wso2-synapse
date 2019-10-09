@@ -228,9 +228,9 @@ public class SamplingService implements Task, ManagedLifecycle {
 				}
 				break;
 			} catch (SynapseException synapseException) {
-                /*used message in the exception to keep Interface MessageConsumer unchanged.
-                If it is a connection exception retry, otherwise throw  as it is
-                */
+                                /*used message in the exception to keep Interface MessageConsumer unchanged.
+                                 If it is a connection exception retry, otherwise throw  as it is
+                                */
 				if (synapseException.getMessage().contains(MessageProcessorConstants.STORE_CONNECTION_ERROR)) {
 					try {
 						//on last try to connect throw the exception
