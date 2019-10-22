@@ -154,6 +154,12 @@ public class InvokeMediator extends AbstractMediator implements
 		return false;
 	}
 
+	@Override
+	public boolean isContentAware() {
+		//parameters with expression will  be evaluated by relevant mediators in the template
+		return false;
+	}
+
     public boolean mediate(MessageContext synCtx, ContinuationState continuationState) {
         SynapseLog synLog = getLog(synCtx);
 
