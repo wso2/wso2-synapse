@@ -18,7 +18,11 @@ package org.apache.synapse.commons.util;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -31,6 +35,9 @@ public class FilePropertyLoader {
 
     private static final Log log = LogFactory.getLog(FilePropertyLoader.class);
     private static final String CONF_LOCATION = "conf.location";
+    private static final String SYNAPSE_PROPERTY_FILE = "synapse.properties";
+    private static final String FILE_PROPERTY_PATH = "synapse.commons.file.properties.location";
+    private static final String FILE_PROPERTY_FILENAME = "synapse.commons.file.properties.file.name";
     private static FilePropertyLoader fileLoaderInstance = new FilePropertyLoader();
     private static Map fileProperty;
     private static String fileValue;
@@ -59,7 +66,7 @@ public class FilePropertyLoader {
 
     public static void loadPropertiesFile(){
         try {
-            fileProperty = readFileProperties("file.properties");
+            fileProperty = readFileProperties();
 
             if (fileProperty != null) {
                 setFileProperty(fileProperty);
@@ -69,48 +76,63 @@ public class FilePropertyLoader {
         }
     }
 
-    static Map readFileProperties(String name) throws FileNotFoundException {
+    static Map readFileProperties() throws FileNotFoundException {
 
-        InputStream in = new FileInputStream(System.getProperty(CONF_LOCATION) + File.separator + name);
+        Properties properties = MiscellaneousUtil.loadProperties(SYNAPSE_PROPERTY_FILE);
+        String filePath = properties.getProperty(FILE_PROPERTY_PATH);
+        String fileName = properties.getProperty(FILE_PROPERTY_FILENAME);
 
-        if (in == null) {
-            return null;
-        } else {
-            try {
-                Properties rawProps = new Properties();
-                Map props = new HashMap();
-                rawProps.load(in);
-                for (Iterator it = rawProps.entrySet().iterator(); it.hasNext(); ) {
-                    Map.Entry entry = (Map.Entry)it.next();
-                    String strValue = (String)entry.getValue();
-                    Object value;
-                    if (strValue.equals("true")) {
-                        value = Boolean.TRUE;
-                    } else if (strValue.equals("false")) {
-                        value = Boolean.FALSE;
-                    } else {
-                        try {
-                            value = Integer.valueOf(strValue);
-                        } catch (NumberFormatException ex) {
-                            value = strValue;
-                        }
-                    }
-                    props.put(entry.getKey(), value);
-                }
-                if (log.isDebugEnabled()) {
-                    log.debug("Loaded factory properties from " + name + ": " + props);
-                }
-                return props;
-            } catch (IOException ex) {
-                log.error("Failed to read " + name, ex);
+        if(filePath.equals("default")){
+            filePath = System.getProperty(CONF_LOCATION);
+        }
+
+        File fileDir = new File(filePath + File.separator + fileName);
+        boolean isFileExists = fileDir.exists();
+
+        if (isFileExists) {
+            InputStream in = new FileInputStream(filePath + File.separator + fileName);
+
+            if (in == null) {
                 return null;
-            } finally {
+            } else {
                 try {
-                    in.close();
+                    Properties rawProps = new Properties();
+                    Map props = new HashMap();
+                    rawProps.load(in);
+                    for (Iterator it = rawProps.entrySet().iterator(); it.hasNext(); ) {
+                        Map.Entry entry = (Map.Entry)it.next();
+                        String strValue = (String)entry.getValue();
+                        Object value;
+                        if (strValue.equals("true")) {
+                            value = Boolean.TRUE;
+                        } else if (strValue.equals("false")) {
+                            value = Boolean.FALSE;
+                        } else {
+                            try {
+                                value = Integer.valueOf(strValue);
+                            } catch (NumberFormatException ex) {
+                                value = strValue;
+                            }
+                        }
+                        props.put(entry.getKey(), value);
+                    }
+                    if (log.isDebugEnabled()) {
+                        log.debug("Loaded factory properties from " + fileName + ": " + props);
+                    }
+                    return props;
                 } catch (IOException ex) {
-                    // Ignore
+                    log.error("Failed to read " + fileName, ex);
+                    return null;
+                } finally {
+                    try {
+                        in.close();
+                    } catch (IOException ex) {
+                        // Ignore
+                    }
                 }
             }
+        } else {
+            return null;
         }
     }
 }
