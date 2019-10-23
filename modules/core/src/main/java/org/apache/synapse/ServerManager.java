@@ -22,6 +22,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
+import org.apache.synapse.commons.util.FilePropertyLoader;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.wso2.securevault.PasswordManager;
 import org.wso2.securevault.SecurityConstants;
@@ -107,6 +108,10 @@ public class ServerManager {
         doInit();
         initialized = true;
         RuntimeStatisticCollector.init();
+
+        //Loading file properties before synapse environment start
+        log.debug("Loading file property configurations");
+        FilePropertyLoader.loadPropertiesFile();
 
         return this.serverContextInformation.getServerState();
     }
