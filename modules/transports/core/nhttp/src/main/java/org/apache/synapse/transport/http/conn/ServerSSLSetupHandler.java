@@ -27,6 +27,7 @@ import org.apache.http.nio.reactor.ssl.SSLSetupHandler;
 import org.apache.synapse.transport.certificatevalidation.CertificateVerificationException;
 import org.apache.synapse.transport.certificatevalidation.RevocationVerificationManager;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
@@ -77,7 +78,13 @@ public class ServerSSLSetupHandler implements SSLSetupHandler {
         SocketAddress remoteAddress = iosession.getRemoteAddress();
         String address;
         if (remoteAddress instanceof InetSocketAddress) {
-            address = ((InetSocketAddress) remoteAddress).getHostName();
+            InetSocketAddress inetSocketAddress = (InetSocketAddress) remoteAddress;
+            InetAddress internetAddress = inetSocketAddress.getAddress();
+            if (internetAddress != null) {
+                address = internetAddress.getHostAddress();
+            } else {
+                address = inetSocketAddress.getHostName();
+            }
         } else {
             address = remoteAddress.toString();
         }
