@@ -20,16 +20,22 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.util.FilePropertyLoader;
 
 /**
- *  File Property resolver can be used to resolve file property variables in the synapse config.
+ * File Property resolver can be used to resolve file property variables in the synapse config.
  */
 public class FilePropertyResolver implements Resolver {
 
     private static final Log LOG = LogFactory.getLog(FilePropertyResolver.class);
 
-    //input is the file property key value which needs to resolve
+    /**
+     * input is the file property key value which needs to resolve
+     */
     private String input;
 
-    // set file property variable which needs to resolved
+    /**
+     * set file property variable which needs to resolved
+     *
+     * @param input
+     */
     @Override
     public void setVariable(String input) {
         this.input = input;
@@ -37,18 +43,21 @@ public class FilePropertyResolver implements Resolver {
 
     /**
      * file property variable is resolved in this function
+     *
      * @return resolved value for the file property variable
      */
     @Override
     public String resolve() {
-        FilePropertyLoader fileLoaderObject = FilePropertyLoader.getFileLoaderInstance();
-        fileLoaderObject.setFileValue(input);
-        String filePropertyValue = fileLoaderObject.getFileValue();
+        FilePropertyLoader propertyLoader = FilePropertyLoader.getInstance();
+        String PropertyValue = propertyLoader.getValue(input);
 
-        LOG.debug("resolving PropertiesFile value "+filePropertyValue);
-        if (filePropertyValue == null) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Resolving File Property value " + PropertyValue);
+        }
+
+        if (PropertyValue == null) {
             throw new ResolverException("File Property variable could not be found");
         }
-        return filePropertyValue;
+        return PropertyValue;
     }
 }
