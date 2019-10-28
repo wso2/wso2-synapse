@@ -31,7 +31,7 @@ public class ResolverFactory {
     private static final int RESOLVER_INDEX = 2;
     private static ResolverFactory resolverFactory = new ResolverFactory();
     private final Pattern rePattern = Pattern.compile("(\\$)([a-zA-Z0-9]+):([_a-zA-Z0-9]+)");
-    private static final Log log = LogFactory.getLog(ResolverFactory.class);
+    private static final Log LOG = LogFactory.getLog(ResolverFactory.class);
     private static final String SYSTEM_VARIABLE_PREFIX = "$SYSTEM";
     private static final String FILE_PROPERTY_VARIABLE_PREFIX = "$FILEPROPERTY";
 
@@ -116,13 +116,13 @@ public class ResolverFactory {
             className = packageList[packageList.length - 1];
             if (resolverMap.get(className.toLowerCase()) == null) {
                 resolverMap.put(className.toLowerCase(), resolver.getClass());
-                if (log.isDebugEnabled()) {
-                    log.debug("Added Resolver " + className + " to resolver factory ");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Added Resolver " + className + " to resolver factory ");
                 }
             }
             else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Failed to Resolver " + className + " to resolver factory. Already exist");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Failed to Resolver " + className + " to resolver factory. Already exist");
                 }
             }
         }

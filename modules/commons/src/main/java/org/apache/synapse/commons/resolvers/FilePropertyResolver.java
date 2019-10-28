@@ -24,13 +24,12 @@ import org.apache.synapse.commons.util.FilePropertyLoader;
  */
 public class FilePropertyResolver implements Resolver {
 
-    private static final Log log = LogFactory.getLog(FilePropertyResolver.class);
+    private static final Log LOG = LogFactory.getLog(FilePropertyResolver.class);
 
+    //input is the file property key value which needs to resolve
     private String input;
 
-    /**
-     * set environment variable which needs to resolved
-     **/
+    // set file property variable which needs to resolved
     @Override
     public void setVariable(String input) {
         this.input = input;
@@ -46,7 +45,7 @@ public class FilePropertyResolver implements Resolver {
         fileLoaderObject.setFileValue(input);
         String filePropertyValue = fileLoaderObject.getFileValue();
 
-        log.debug("resolving PropertiesFile value "+filePropertyValue);
+        LOG.debug("resolving PropertiesFile value "+filePropertyValue);
         if (filePropertyValue == null) {
             throw new ResolverException("File Property variable could not be found");
         }

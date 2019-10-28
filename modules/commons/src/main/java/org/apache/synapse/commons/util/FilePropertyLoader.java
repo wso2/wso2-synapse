@@ -33,7 +33,7 @@ import java.util.Properties;
  */
 public class FilePropertyLoader {
 
-    private static final Log log = LogFactory.getLog(FilePropertyLoader.class);
+    private static final Log LOG = LogFactory.getLog(FilePropertyLoader.class);
     private static final String CONF_LOCATION = "conf.location";
     private static final String SYNAPSE_PROPERTY_FILE = "synapse.properties";
     private static final String FILE_PROPERTY_PATH = "synapse.commons.file.properties.location";
@@ -116,12 +116,12 @@ public class FilePropertyLoader {
                         }
                         props.put(entry.getKey(), value);
                     }
-                    if (log.isDebugEnabled()) {
-                        log.debug("Loaded factory properties from " + fileName + ": " + props);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Loaded factory properties from " + fileName + ": " + props);
                     }
                     return props;
                 } catch (IOException ex) {
-                    log.error("Failed to read " + fileName, ex);
+                    LOG.error("Failed to read " + fileName, ex);
                     return null;
                 } finally {
                     try {
