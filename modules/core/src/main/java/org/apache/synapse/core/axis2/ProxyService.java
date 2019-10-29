@@ -41,6 +41,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.mediators.Value;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
@@ -58,6 +59,8 @@ import org.apache.synapse.util.resolver.CustomXmlSchemaURIResolver;
 import org.apache.synapse.util.resolver.ResourceMap;
 import org.apache.synapse.util.resolver.UserDefinedWSDLLocator;
 import org.apache.synapse.util.resolver.UserDefinedXmlSchemaURIResolver;
+import org.apache.synapse.util.xpath.SynapseXPath;
+import org.jaxen.JaxenException;
 import org.xml.sax.InputSource;
 
 import javax.xml.namespace.QName;
@@ -70,6 +73,10 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.apache.synapse.util.resolver.SecureVaultResolver.resolve;
 
 /**
  * <proxy-service name="string" [transports="(http |https |jms )+|all"] [trace="enable|disable"]>
@@ -255,6 +262,8 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     private boolean isEdited;
 
+    private SynapseEnvironment synapseEnvironment;
+
     private AxisService axisService;
 
     /**
@@ -304,6 +313,10 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
      */
     public AxisService buildAxisService(SynapseConfiguration synCfg, AxisConfiguration axisCfg) {
 
+        Parameter synapseEnv = axisCfg.getParameter(SynapseConstants.SYNAPSE_ENV);
+        if (synapseEnv != null) {
+            synapseEnvironment = (SynapseEnvironment) synapseEnv.getValue();
+        }
         auditInfo("Building Axis service for Proxy service : " + name);
 
         if (pinnedServers != null && !pinnedServers.isEmpty()) {
@@ -642,6 +655,10 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
             Parameter p = new Parameter();
             p.setName(name);
+
+            if (value instanceof String) {
+                value = resolve(synapseEnvironment, (String) value);
+            }
             p.setValue(value);
 
             try {
