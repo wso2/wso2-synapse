@@ -28,7 +28,6 @@ import org.wso2.securevault.PasswordManager;
 import org.wso2.securevault.SecurityConstants;
 
 import javax.management.NotCompliantMBeanException;
-import java.io.IOException;
 import java.util.Date;
 
 /**
