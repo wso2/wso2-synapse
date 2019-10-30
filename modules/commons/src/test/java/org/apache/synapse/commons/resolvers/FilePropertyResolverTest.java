@@ -19,18 +19,18 @@ package org.apache.synapse.commons.resolvers;
 
 import junit.framework.TestCase;
 import org.apache.synapse.commons.util.FilePropertyLoader;
-import java.util.HashMap;
-import java.util.Map;
 
 public class FilePropertyResolverTest extends TestCase {
 
+    /**
+     * Test file property resolve method
+     */
     public void testResolve() {
-        Map<String,String> fileProps = new HashMap<String,String>();
-        fileProps.put("testKey", "testValue");
-        FilePropertyLoader fileLoaderObject = FilePropertyLoader.getFileLoaderInstance();
-        fileLoaderObject.setFileProperty(fileProps);
-        fileLoaderObject.setFileValue("testKey");
-        String filePropertyValue = fileLoaderObject.getFileValue();
+        String inputValue = "testKey";
+        FilePropertyLoader propertyLoader = FilePropertyLoader.getInstance();
+        System.setProperty("conf.location", System.getProperty("user.dir") + "/src/test/resources/");
+        propertyLoader.loadPropertiesFile();
+        String filePropertyValue = propertyLoader.getValue(inputValue);
         assertEquals("Couldn't resolve the file property variable", "testValue", filePropertyValue);
     }
 }
