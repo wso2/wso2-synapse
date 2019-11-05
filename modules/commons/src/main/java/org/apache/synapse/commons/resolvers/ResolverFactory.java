@@ -31,9 +31,8 @@ public class ResolverFactory {
     private static final int RESOLVER_INDEX = 2;
     private static ResolverFactory resolverFactory = new ResolverFactory();
     private final Pattern rePattern = Pattern.compile("(\\$)([a-zA-Z0-9]+):([_a-zA-Z0-9]+)");
-    private static final Log LOG = LogFactory.getLog(ResolverFactory.class);
+    private static final Log log = LogFactory.getLog(ResolverFactory.class);
     private static final String SYSTEM_VARIABLE_PREFIX = "$SYSTEM";
-    private static final String FILE_PROPERTY_VARIABLE_PREFIX = "$FILE";
 
     private Map<String, Class<? extends Resolver>> resolverMap = new HashMap<>();
 
@@ -78,23 +77,6 @@ public class ResolverFactory {
                     throw new ResolverException("Resolver could not be found");
                 }
             }
-        } else if(input.startsWith(FILE_PROPERTY_VARIABLE_PREFIX)){
-            Matcher matcher = rePattern.matcher(input);
-            Resolver resolverObject = null;
-            if (matcher.find()){
-                Class<? extends Resolver> resolverClass = resolverMap.get(matcher.group(RESOLVER_INDEX).toLowerCase());
-                if (resolverClass != null) {
-                    try {
-                        resolverObject = resolverClass.newInstance();
-                        resolverObject.setVariable(matcher.group(3));
-                        return resolverObject;
-                    } catch (IllegalAccessException | InstantiationException e) {
-                        throw new ResolverException("Resolver could not be initialized", e);
-                    }
-                } else {
-                    throw new ResolverException("Resolver could not be found");
-                }
-            }
         }
 
         Resolver resolver = new DefaultResolver();
@@ -105,7 +87,6 @@ public class ResolverFactory {
 
     private void registerResolvers() {
         resolverMap.put("system", SystemResolver.class);
-        resolverMap.put("file", FilePropertyResolver.class);
     }
 
     private void registerExterns() {
@@ -116,13 +97,13 @@ public class ResolverFactory {
             className = packageList[packageList.length - 1];
             if (resolverMap.get(className.toLowerCase()) == null) {
                 resolverMap.put(className.toLowerCase(), resolver.getClass());
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Added Resolver " + className + " to resolver factory ");
+                if (log.isDebugEnabled()) {
+                    log.debug("Added Resolver " + className + " to resolver factory ");
                 }
             }
             else {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Failed to Resolver " + className + " to resolver factory. Already exist");
+                if (log.isDebugEnabled()) {
+                    log.debug("Failed to Resolver " + className + " to resolver factory. Already exist");
                 }
             }
         }
