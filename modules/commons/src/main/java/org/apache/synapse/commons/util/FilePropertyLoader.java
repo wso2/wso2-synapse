@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,13 @@ public class FilePropertyLoader {
         String filePath = properties.getProperty(FILE_PROPERTY_PATH);
         String fileName = properties.getProperty(FILE_PROPERTY_FILENAME);
 
+        if ( null == fileName || fileName.isEmpty()) {
+            throw new SynapseCommonsException(FILE_PROPERTY_FILENAME + "is empty or null");
+        }
+        if ( null == filePath || filePath.isEmpty()) {
+            throw new SynapseCommonsException(FILE_PROPERTY_PATH + "is empty or null");
+        }
+
         if (("default").equals(filePath)) {
             filePath = System.getProperty(CONF_LOCATION);
         }
@@ -68,10 +75,9 @@ public class FilePropertyLoader {
                 Properties rawProps = new Properties();
                 propertyMap = new HashMap();
                 rawProps.load(in);
-                for (Iterator it = rawProps.entrySet().iterator(); it.hasNext(); ) {
-                    Map.Entry entry = (Map.Entry) it.next();
-                    String strValue = (String) entry.getValue();
-                    propertyMap.put(entry.getKey(), strValue);
+                for (Map.Entry<Object, Object> propertyEntry : rawProps.entrySet()) {
+                    String strValue = (String) propertyEntry.getValue();
+                    propertyMap.put(propertyEntry.getKey(), strValue);
                 }
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Loaded factory properties from " + fileName + ": " + propertyMap);

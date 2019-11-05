@@ -33,7 +33,7 @@ public class ResolverFactory {
     private final Pattern rePattern = Pattern.compile("(\\$)([a-zA-Z0-9]+):([_a-zA-Z0-9]+)");
     private static final Log LOG = LogFactory.getLog(ResolverFactory.class);
     private static final String SYSTEM_VARIABLE_PREFIX = "$SYSTEM";
-    private static final String FILE_PROPERTY_VARIABLE_PREFIX = "$FILEPROPERTY";
+    private static final String FILE_PROPERTY_VARIABLE_PREFIX = "$FILE";
 
     private Map<String, Class<? extends Resolver>> resolverMap = new HashMap<>();
 
@@ -89,7 +89,7 @@ public class ResolverFactory {
                         resolverObject.setVariable(matcher.group(3));
                         return resolverObject;
                     } catch (IllegalAccessException | InstantiationException e) {
-                        throw new ResolverException("Resolver could not be found");
+                        throw new ResolverException("Resolver could not be initialized", e);
                     }
                 } else {
                     throw new ResolverException("Resolver could not be found");
@@ -105,7 +105,7 @@ public class ResolverFactory {
 
     private void registerResolvers() {
         resolverMap.put("system", SystemResolver.class);
-        resolverMap.put("fileproperty", FilePropertyResolver.class);
+        resolverMap.put("file", FilePropertyResolver.class);
     }
 
     private void registerExterns() {
