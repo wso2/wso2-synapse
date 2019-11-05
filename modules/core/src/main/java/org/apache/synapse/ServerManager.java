@@ -22,7 +22,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
-import org.apache.synapse.commons.util.FilePropertyLoader;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.wso2.securevault.PasswordManager;
 import org.wso2.securevault.SecurityConstants;
@@ -84,14 +83,14 @@ public class ServerManager {
      * @param serverConfigurationInformation ServerConfigurationInformation instance
      * @param serverContextInformation       ServerContextInformation instance
      * @return ServerState - State of the server which is
-     * {@link org.apache.synapse.ServerState#INITIALIZED}, if successful
+     *          {@link org.apache.synapse.ServerState#INITIALIZED}, if successful
      */
     public synchronized ServerState init(
             ServerConfigurationInformation serverConfigurationInformation,
             ServerContextInformation serverContextInformation) {
 
         classLoader = Thread.currentThread().getContextClassLoader();
-
+        
         // sets the initializations parameters
         this.serverConfigurationInformation = serverConfigurationInformation;
 
@@ -109,13 +108,6 @@ public class ServerManager {
         initialized = true;
         RuntimeStatisticCollector.init();
 
-        //Loading file properties before the task services start
-        if (log.isDebugEnabled()) {
-            log.debug("Loading file property configurations");
-        }
-        FilePropertyLoader propertyLoader = FilePropertyLoader.getInstance();
-        propertyLoader.loadPropertiesFile();
-
         return this.serverContextInformation.getServerState();
     }
 
@@ -123,7 +115,7 @@ public class ServerManager {
      * Shuts down the Server instance. If the Server is stopped this will shutdown the
      * ServerManager, and if it is running (i.e. in the STARTED state) this will first stop the
      * ServerManager and shutdown it in turn.
-     *
+     * 
      * @return the state after the shutdown, {@link org.apache.synapse.ServerState#UNDETERMINED}
      */
     public synchronized ServerState shutdown() {
@@ -169,7 +161,7 @@ public class ServerManager {
      * {@link org.apache.synapse.SynapseException} will be thrown
      *
      * @return the state of the server after starting, for a successful start
-     * {@link org.apache.synapse.ServerState#STARTED}
+     *          {@link org.apache.synapse.ServerState#STARTED}
      */
     public synchronized ServerState start() {
 
@@ -210,9 +202,9 @@ public class ServerManager {
 
     /**
      * Put transport listeners and senders into maintenance mode.
-     *
+     * 
      * @return the state of the server after maintenance request, for a successful execution
-     * {@link org.apache.synapse.ServerState#MAINTENANCE}
+     *          {@link org.apache.synapse.ServerState#MAINTENANCE}
      */
     public synchronized ServerState startMaintenance() {
 
@@ -238,9 +230,9 @@ public class ServerManager {
 
     /**
      * Ends server maintenance resuming transport listeners, senders and tasks.
-     *
+     * 
      * @return the state of the server after maintenance request, for a successful execution
-     * {@link org.apache.synapse.ServerState#MAINTENANCE}
+     *          {@link org.apache.synapse.ServerState#MAINTENANCE}
      */
     public synchronized ServerState endMaintenance() {
 
@@ -254,7 +246,7 @@ public class ServerManager {
             synapseController.endMaintenance();
             changeState(ServerState.STARTED);
         } else {
-            String message = "Couldn't leave maintenance mode."
+            String message = "Couldn't leave maintenance mode." 
                     + " The server has not been in maintenance.";
             handleException(message);
         }
@@ -267,7 +259,7 @@ public class ServerManager {
      * {@link org.apache.synapse.SynapseException} will be thrown
      *
      * @return the state of the system after stopping, which is
-     * {@link org.apache.synapse.ServerState#STOPPED} for a successful stopping
+     *          {@link org.apache.synapse.ServerState#STOPPED} for a successful stopping
      */
     public synchronized ServerState stop() {
 
@@ -308,7 +300,8 @@ public class ServerManager {
      * @param maxWaitMillis the maximum number of ms to wait until a graceful stop is achieved,
      *                      before forcing a stop
      * @return if successful ServerState#STOPPED
-     * @throws SynapseException
+     *                      
+     * @throws SynapseException 
      */
     public synchronized ServerState stopGracefully(long maxWaitMillis) {
 
@@ -316,14 +309,14 @@ public class ServerManager {
         final long endTime = startTime + maxWaitMillis;
         final long waitIntervalMillis = 2000;
         log.info(new StringBuilder("Requesting a graceful shutdown at: ").append(new Date())
-                .append(" in a maximum of ").append(maxWaitMillis / 1000)
+                .append(" in a maximum of ").append(maxWaitMillis/1000)
                 .append(" seconds.").toString());
 
         startMaintenance();
 
         // wait until it is safe to to stop the server or the maximum time to wait is over
         if (synapseController.waitUntilSafeToStop(waitIntervalMillis, endTime)) {
-            log.info(new StringBuilder("The instance could not be gracefully stopped in: ")
+            log.info(new StringBuilder("The instance could not be gracefully stopped in: ") 
                     .append(maxWaitMillis / 1000)
                     .append(" seconds. Performing an immediate stop...").toString());
         }
@@ -359,9 +352,9 @@ public class ServerManager {
         return serverContextInformation;
     }
 
-    /**
+    /** 
      * Returns the context class loader of the original thread.
-     *
+     * 
      * @return the context class loader of the original thread.
      */
     public ClassLoader getClassLoader() {
@@ -372,7 +365,7 @@ public class ServerManager {
      * Has server manager been initialized ?
      *
      * @return true if the server manager has been initialized by given required
-     * configuration information
+     *         configuration information
      */
     public boolean isInitialized() {
         return initialized;
@@ -380,7 +373,7 @@ public class ServerManager {
 
     /**
      * Retrieves the state of the server.
-     *
+     * 
      * @return the state of the server
      */
     public ServerState getServerState() {
@@ -411,7 +404,7 @@ public class ServerManager {
 
             // initializes the SynapseController
             this.synapseController.init(serverConfigurationInformation, serverContextInformation);
-
+            
             // mark as initialized
             changeState(ServerState.INITIALIZED);
         } else {
@@ -430,7 +423,7 @@ public class ServerManager {
         if (serverState == ServerState.INITIALIZED || serverState == ServerState.STOPPED) {
 
             //shutdown debug manager and close TCP connection in the debug interface
-            if (serverContextInformation.isServerDebugModeEnabled()) {
+            if(serverContextInformation.isServerDebugModeEnabled()) {
                 serverContextInformation.getSynapseDebugManager().shutdownDebugManager();
             }
 
@@ -456,7 +449,7 @@ public class ServerManager {
 
     /**
      * Changes the server state to the specified state.
-     *
+     * 
      * @param serverState the new server state
      */
     private void changeState(ServerState serverState) {
