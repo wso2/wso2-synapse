@@ -27,9 +27,8 @@ public class FilePropertyResolverTest extends TestCase {
      */
     public void testResolve() {
         String inputValue = "testKey";
-        FilePropertyLoader propertyLoader = FilePropertyLoader.getInstance();
         System.setProperty("conf.location", System.getProperty("user.dir") + "/src/test/resources/");
-        propertyLoader.loadPropertiesFile();
+        FilePropertyLoader propertyLoader = FilePropertyLoader.getInstance();
         String filePropertyValue = propertyLoader.getValue(inputValue);
         assertEquals("Couldn't resolve the file property variable", "testValue", filePropertyValue);
     }
