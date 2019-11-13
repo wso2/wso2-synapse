@@ -69,7 +69,6 @@ public class SequenceMediatorFactory extends AbstractListMediatorFactory {
         }
         addChildren(elem, seqMediator, properties);
         seqMediator.setSequenceType(SequenceType.ANON);
-
         return seqMediator;
     }
     

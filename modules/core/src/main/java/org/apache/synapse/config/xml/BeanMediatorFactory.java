@@ -73,9 +73,7 @@ public class BeanMediatorFactory extends AbstractMediatorFactory {
         } else {
             handleException("'action' attribute of Bean mediator is required.");
         }
-
         addAllCommentChildrenToList(elem, mediator.getCommentsList());
-
         return mediator;
     }
 
