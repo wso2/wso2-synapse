@@ -341,4 +341,14 @@ public class SynapseJsonPath extends SynapsePath {
         }
         return rootObject;
     }
+
+    /**
+     * This method will return the boolean value of the jsonpath.
+     *
+     * @param synCtx message context
+     * @return boolean value
+     */
+    public boolean booleanValueOf(MessageContext synCtx) {
+        return Boolean.parseBoolean(this.stringValueOf(synCtx));
+    }
 }
