@@ -115,9 +115,7 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
         }
 
         processProperties(httpEndpoint, epConfig);
-
         CommentListUtil.populateComments(epConfig, httpEndpoint.getCommentsList());
-
         return httpEndpoint;
     }
 

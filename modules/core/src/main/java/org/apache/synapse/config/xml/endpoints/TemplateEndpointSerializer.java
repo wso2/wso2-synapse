@@ -70,9 +70,7 @@ public class TemplateEndpointSerializer extends EndpointSerializer {
                 paramElement.addAttribute(fac.createOMAttribute("value", nullNS, entry.getValue()));
             }
         }
-
         CommentListUtil.serializeComments(endpointElement, ((TemplateEndpoint) epr).getCommentsList());
-
         return endpointElement;
     }
 }

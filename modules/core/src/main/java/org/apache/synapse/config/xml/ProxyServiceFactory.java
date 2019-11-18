@@ -384,12 +384,9 @@ public class ProxyServiceFactory {
                 new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "enableSec")) != null) {
             proxy.setWsSecEnabled(true);
         }
-
         CommentListUtil.populateComments(elem, proxy.getCommentsList());
-
         return proxy;
     }
-
 
     private static void handleException(String msg) {
         log.error(msg);

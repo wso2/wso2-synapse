@@ -153,9 +153,7 @@ public class APIFactory {
                 }
             }
         }
-
         CommentListUtil.populateComments(apiElt, api.getCommentsList());
-
         return api;
     }
 

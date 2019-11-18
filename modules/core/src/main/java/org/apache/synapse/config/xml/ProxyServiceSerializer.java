@@ -238,7 +238,6 @@ public class ProxyServiceSerializer {
         if (parent != null) {
             parent.addChild(proxy);
         }
-
         CommentListUtil.serializeComments(proxy, service.getCommentsList());
         return proxy;
     }
