@@ -330,7 +330,9 @@ public class TestCasesMediator {
                     OMAbstractFactory.getSOAP11Factory().createOMDocument();
             omDocument.addChild(envelope);
 
-            envelope.getBody().addChild(createOMElement(payload));
+            if (payload != null) {
+                envelope.getBody().addChild(createOMElement(payload));
+            }
 
             synapseMessageContext.setEnvelope(envelope);
         } catch (Exception e) {
