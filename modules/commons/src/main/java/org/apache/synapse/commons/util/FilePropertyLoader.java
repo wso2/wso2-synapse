@@ -34,9 +34,8 @@ public class FilePropertyLoader {
 
     private static final Log LOG = LogFactory.getLog(FilePropertyLoader.class);
     private static final String CONF_LOCATION = "conf.location";
-    private static final String SYNAPSE_PROPERTY_FILE = "synapse.properties";
-    private static final String FILE_PROPERTY_PATH = "synapse.commons.file.properties.location";
-    private static final String FILE_PROPERTY_FILENAME = "synapse.commons.file.properties.file.name";
+    private static final String FILE_PROPERTY_PATH = "synapse.commons.file.properties.path";
+    private static final String DEFAULT_PROPERTY_FILE = "file.properties";
     private Map propertyMap;
 
     private static FilePropertyLoader fileLoaderInstance;
@@ -55,26 +54,20 @@ public class FilePropertyLoader {
 
     private void loadPropertiesFile() throws SynapseCommonsException {
 
-        Properties properties = MiscellaneousUtil.loadProperties(SYNAPSE_PROPERTY_FILE);
-        String filePath = properties.getProperty(FILE_PROPERTY_PATH);
-        String fileName = properties.getProperty(FILE_PROPERTY_FILENAME);
+        String filePath = System.getProperty(FILE_PROPERTY_PATH);
 
-        if ( null == fileName || fileName.isEmpty()) {
-            throw new SynapseCommonsException(FILE_PROPERTY_FILENAME + "is empty or null");
-        }
         if ( null == filePath || filePath.isEmpty()) {
-            throw new SynapseCommonsException(FILE_PROPERTY_PATH + "is empty or null");
+            throw new SynapseCommonsException(FILE_PROPERTY_PATH + " is empty or null");
         }
-
         if (("default").equals(filePath)) {
-            filePath = System.getProperty(CONF_LOCATION);
+            filePath = System.getProperty(CONF_LOCATION) + File.separator + DEFAULT_PROPERTY_FILE;
         }
 
-        File file = new File(filePath + File.separator + fileName);
+        File file = new File(filePath);
         boolean isFileExists = file.exists();
 
         if (isFileExists) {
-            try (InputStream in = new FileInputStream(filePath + File.separator + fileName)) {
+            try (InputStream in = new FileInputStream(filePath)) {
                 Properties rawProps = new Properties();
                 propertyMap = new HashMap();
                 rawProps.load(in);
@@ -83,13 +76,13 @@ public class FilePropertyLoader {
                     propertyMap.put(propertyEntry.getKey(), strValue);
                 }
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Loaded factory properties from " + fileName + ": " + propertyMap);
+                    LOG.debug("Loaded factory properties from " + filePath + ": " + propertyMap);
                 }
             } catch (IOException ex) {
-                throw new SynapseCommonsException("Failed to read " + fileName, ex);
+                throw new SynapseCommonsException("Failed to read " + filePath, ex);
             }
         } else {
-            throw new SynapseCommonsException(fileName + " file cannot found in " + filePath);
+            throw new SynapseCommonsException(filePath + " file cannot found in " + filePath);
         }
     }
 }
