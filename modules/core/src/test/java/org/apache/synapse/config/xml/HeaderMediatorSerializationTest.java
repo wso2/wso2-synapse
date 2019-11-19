@@ -34,27 +34,27 @@ public class HeaderMediatorSerializationTest extends AbstractTestCase {
         headerMediatorSerializer = new HeaderMediatorSerializer();
     }
 
-    public void testHeaderMediatorSerializationScenarioOne() throws Exception {
+    public void testHeaderMediatorSerializationWithNameAndValue() throws Exception {
         String inputXml = "<header xmlns=\"http://ws.apache.org/ns/synapse\" name=\"To\" " +
                 "value=\"http://127.0.0.1:10001/services/Services\"/>";
         assertTrue(serialization(inputXml, headerMediatorFactory, headerMediatorSerializer));
         assertTrue(serialization(inputXml, headerMediatorSerializer));
     }
 
-    public void testHeaderMediatorSerializationScenarioTwo() throws Exception {
+    public void testHeaderMediatorSerializationWithNameAndAction() throws Exception {
         String inputXml = "<header xmlns=\"http://ws.apache.org/ns/synapse\" name=\"To\" action=\"remove\"/>";
         assertTrue(serialization(inputXml, headerMediatorFactory, headerMediatorSerializer));
         assertTrue(serialization(inputXml, headerMediatorSerializer));
     }
 
-    public void testHeaderMediatorSerializationScenarioThree() throws Exception {
+    public void testHeaderMediatorSerializationWithNameAndExpression() throws Exception {
         String inputXml = "<header xmlns=\"http://ws.apache.org/ns/synapse\" name=\"To\" " +
                 "expression=\"fn:concat('http://localhost:9764/services/Axis2SampleService_',get-property('epr'))\"/>";
         assertTrue(serialization(inputXml, headerMediatorFactory, headerMediatorSerializer));
         assertTrue(serialization(inputXml, headerMediatorSerializer));
     }
 
-    public void testHeaderMediatorSerializationScenarioFour() throws Exception {
+    public void testHeaderMediatorSerializationWithNameAndJsonpathExpression() throws Exception {
         String inputXml = "<header xmlns:t=\"https://www.test.com\" xmlns=\"http://ws.apache.org/ns/synapse\" " +
                 "name=\"t:PlaceHolder\" expression=\"json-eval($.stockquote)\"/>";
         assertTrue(serialization(inputXml, headerMediatorFactory, headerMediatorSerializer));

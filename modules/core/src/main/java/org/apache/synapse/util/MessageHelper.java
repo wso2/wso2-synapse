@@ -404,11 +404,7 @@ public class MessageHelper {
 
         newMC.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
             getClonedTransportHeaders(mc));
-
-        if (newMC.getProperty(PassThroughConstants.PASS_THROUGH_PIPE) != null) {
-            newMC.removeProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-        }
-
+        newMC.removeProperty(PassThroughConstants.PASS_THROUGH_PIPE);
         return newMC;
     }
 
