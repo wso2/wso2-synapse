@@ -1,5 +1,5 @@
 /**
- *  Copyright (c) 2005-2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -21,14 +21,20 @@ package org.apache.synapse.commons.json.jsonprocessor.utils;
 import org.apache.synapse.commons.json.jsonprocessor.constants.ValidatorConstants;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
 
+/**
+ * Handle data type conversions for JSON parser.
+ */
 public class DataTypeConverter {
+
+    // use without instantiating
+    private DataTypeConverter() {
+    }
 
     public static Boolean convertToBoolean(String value) throws ParserException {
         if (value != null && !value.isEmpty()) {
             value = value.replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
             if (value.equals("true") || value.equals("false")) {
-                boolean result = Boolean.parseBoolean(value);
-                return result;
+                return Boolean.parseBoolean(value);
             }
             throw new ParserException("Cannot convert the sting : " + value + " to boolean");
         }
@@ -39,8 +45,7 @@ public class DataTypeConverter {
         if (value != null && !value.isEmpty()) {
             value = value.replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
             try {
-                int i = Integer.parseInt(value.trim());
-                return i;
+                return Integer.parseInt(value.trim());
             } catch (NumberFormatException nfe) {
                 throw new ParserException("NumberFormatException: " + nfe.getMessage());
             }
@@ -52,8 +57,7 @@ public class DataTypeConverter {
         if (value != null && !value.isEmpty()) {
             value = value.replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
             try {
-                double i = Double.parseDouble(value.trim());
-                return i;
+                return Double.parseDouble(value.trim());
             } catch (NumberFormatException nfe) {
                 throw new ParserException("NumberFormatException: " + nfe.getMessage());
             }

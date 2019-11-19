@@ -1,5 +1,5 @@
 /**
- *  Copyright (c) 2005-2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -19,6 +19,7 @@
 package org.apache.synapse.commons.json.jsonprocessor.parser;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.commons.logging.Log;
@@ -29,6 +30,7 @@ import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorExcepti
 import org.apache.synapse.commons.json.jsonprocessor.utils.GSONDataTypeConverter;
 import org.apache.synapse.commons.json.jsonprocessor.validators.ArrayValidator;
 import org.apache.synapse.commons.json.jsonprocessor.validators.BooleanValidator;
+import org.apache.synapse.commons.json.jsonprocessor.validators.NullValidator;
 import org.apache.synapse.commons.json.jsonprocessor.validators.NumericValidator;
 import org.apache.synapse.commons.json.jsonprocessor.validators.ObjectValidator;
 import org.apache.synapse.commons.json.jsonprocessor.validators.StringValidator;
@@ -59,30 +61,32 @@ public class JsonProcessor {
      * @throws ParserException    Exception occurs in data type parsing.
      */
     public static String parseJson(String inputString, String inputSchema) throws ValidatorException, ParserException {
-        JsonObject schemaObject = null;
-        JsonElement schema = parser.parse(inputSchema);
-        if (schema.isJsonObject()) {
-            schemaObject = schema.getAsJsonObject();
-        } else if (schema.isJsonPrimitive()) {
-            // if schema is primitive it should be a boolean
-            boolean valid = schema.getAsBoolean();
-            if (valid) {
-                return inputString;
-            } else if (!valid) {
-                ValidatorException exception = new ValidatorException("JSON schema is not valid for all elements");
-                logger.error("JSON schema is false, so all validations will fail", exception);
-                throw exception;
+        if (inputString != null && !inputString.isEmpty() && inputSchema != null && !inputSchema.isEmpty()) {
+            JsonObject schemaObject;
+            JsonElement schema = parser.parse(inputSchema);
+            if (schema.isJsonObject()) {
+                schemaObject = schema.getAsJsonObject();
+            } else if (schema.isJsonPrimitive()) {
+                // if schema is primitive it should be a boolean
+                boolean valid = schema.getAsBoolean();
+                if (valid) {
+                    return inputString;
+                } else {
+                    ValidatorException exception = new ValidatorException("JSON schema is not valid for all elements");
+                    logger.error("JSON schema is false, so all validations will fail", exception);
+                    throw exception;
+                }
             } else {
                 ValidatorException exception = new ValidatorException("Unexpected JSON schema");
                 logger.error("JSON schema should be an object or boolean", exception);
                 throw exception;
             }
+            return parseJson(inputString, schemaObject);
         } else {
-            ValidatorException exception = new ValidatorException("Unexpected JSON schema");
-            logger.error("JSON schema should be an object or boolean", exception);
+            ParserException exception = new ParserException("Invalid inputs");
+            logger.error("Input json and schema should not be null", exception);
             throw exception;
         }
-        return parseJson(inputString, schemaObject);
     }
 
     /**
@@ -96,31 +100,42 @@ public class JsonProcessor {
      * @throws ParserException    Exception occurs in data type parsing.
      */
     public static String parseJson(String inputString, Object schema) throws ValidatorException, ParserException {
-        JsonElement input = parser.parse(inputString);
-        JsonElement result = null;
-        JsonObject schemaObject = (JsonObject) schema;
-        String type = schemaObject.get(ValidatorConstants.TYPE_KEY).toString().replaceAll(ValidatorConstants
-                .REGEX, "");
-        if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
-            result = BooleanValidator.validateBoolean(schemaObject, input.toString());
-        } else if (ValidatorConstants.NOMINAL_KEYS.contains(type)) {
-            result = StringValidator.validateNominal(schemaObject, input.toString());
-        } else if (ValidatorConstants.NUMERIC_KEYS.contains(type)) {
-            result = NumericValidator.validateNumeric(schemaObject, input.toString());
-        } else if (ValidatorConstants.ARRAY_KEYS.contains(type)) {
-            result = ArrayValidator.validateArray(GSONDataTypeConverter.getMapFromString(input.toString()),
-                    schemaObject);
-        } else if (ValidatorConstants.NULL_KEYS.contains(type)) {
-            // todo add null implementation
-        } else if (ValidatorConstants.OBJECT_KEYS.contains(type)) {
-            if (input.isJsonObject()) {
-                result = ObjectValidator.validateObject(input.getAsJsonObject(), schemaObject);
-            } else {
-                ValidatorException exception = new ValidatorException("Expected a json object input");
-                logger.error("Expected a JSON as input but found : " + input.toString(), exception);
-                throw exception;
+        if (inputString != null && !inputString.isEmpty() && schema instanceof JsonObject) {
+            JsonElement result = null;
+            JsonObject schemaObject = (JsonObject) schema;
+            String type = schemaObject.get(ValidatorConstants.TYPE_KEY).toString().replaceAll(
+                    ValidatorConstants.REGEX, "");
+            if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
+                result = BooleanValidator.validateBoolean(schemaObject, inputString);
+            } else if (ValidatorConstants.NOMINAL_KEYS.contains(type)) {
+                result = StringValidator.validateNominal(schemaObject, inputString);
+            } else if (ValidatorConstants.NUMERIC_KEYS.contains(type)) {
+                result = NumericValidator.validateNumeric(schemaObject, inputString);
+            } else if (ValidatorConstants.ARRAY_KEYS.contains(type)) {
+                result = ArrayValidator.validateArray(GSONDataTypeConverter.getMapFromString(inputString),
+                        schemaObject);
+            } else if (ValidatorConstants.NULL_KEYS.contains(type)) {
+                NullValidator.validateNull(schemaObject, inputString);
+                result = JsonNull.INSTANCE;
+            } else if (ValidatorConstants.OBJECT_KEYS.contains(type)) {
+                JsonElement input = parser.parse(inputString);
+                if (input.isJsonObject()) {
+                    result = ObjectValidator.validateObject(input.getAsJsonObject(), schemaObject);
+                } else {
+                    ValidatorException exception = new ValidatorException("Expected a json object input");
+                    logger.error("Expected a JSON as input but found : " + inputString, exception);
+                    throw exception;
+                }
             }
+            if (result != null) {
+                return result.toString();
+            }
+            return null;
         }
-        return result.toString();
+        else {
+            ParserException exception = new ParserException("Invalid inputs");
+            logger.error("Input json and schema should not be null, schema should be a JSON object", exception);
+            throw exception;
+        }
     }
 }
