@@ -1,5 +1,5 @@
 /**
- *  Copyright (c) 2005-2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -57,9 +57,9 @@ public class ObjectValidator {
     /**
      * This method will validate a given JSON input object according to
      *
-     * @param object
-     * @param schema
-     * @return
+     * @param object JSON Object
+     * @param schema JSON schema
+     * @return validated object
      * @throws ParserException    Exception occurred in data type conversions.
      * @throws ValidatorException Exception occurred in schema validations.
      */
