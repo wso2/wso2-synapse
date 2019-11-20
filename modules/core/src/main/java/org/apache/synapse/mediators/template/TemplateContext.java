@@ -70,9 +70,9 @@ public class TemplateContext {
             Object paramValue = getEvaluatedParamValue(synCtxt, parameter, (Value) propertyValue);
             if (paramValue != null) {
                 mappedValues.put(parameter, paramValue);
-                //remove temp property from the context
-                removeProperty(synCtxt, mapping);
             }
+            //remove temp property from the context
+            removeProperty(synCtxt, mapping);
         }
     }
 
