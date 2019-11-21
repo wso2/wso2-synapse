@@ -20,27 +20,27 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
-import org.apache.synapse.mediators.builtin.TransformMediator;
+import org.apache.synapse.mediators.builtin.JSONTransformMediator;
 
 /**
- * Serializer for Transform mediator
+ * Serializer for JSON Transform mediator
  */
-public class TransformMediatorSerializer extends AbstractMediatorSerializer {
+public class JSONTransformMediatorSerializer extends AbstractMediatorSerializer {
     @Override
     protected OMElement serializeSpecificMediator(Mediator mediator) {
-        if (!(mediator instanceof TransformMediator)) {
+        if (!(mediator instanceof JSONTransformMediator)) {
             handleException("Unsupported mediator passed in for serialization : " + mediator.getType());
         }
-        TransformMediator transformMediator = (TransformMediator) mediator;
-        OMElement transformElement = fac.createOMElement("transform", synNS);
-        if (transformMediator.getSchemaKey() != null) {
+        JSONTransformMediator jsonTransformMediator = (JSONTransformMediator) mediator;
+        OMElement transformElement = fac.createOMElement("jsontransform", synNS);
+        if (jsonTransformMediator.getSchemaKey() != null) {
             // Serialize Value using ValueSerializer
             ValueSerializer keySerializer = new ValueSerializer();
-            keySerializer.serializeValue(transformMediator.getSchemaKey(), "schema", transformElement);
-        } else if (transformMediator.getProperties() != null && !transformMediator.getProperties().isEmpty()) {
-            super.serializeProperties(transformElement, transformMediator.getProperties());
+            keySerializer.serializeValue(jsonTransformMediator.getSchemaKey(), "schema", transformElement);
+        } else if (jsonTransformMediator.getProperties() != null && !jsonTransformMediator.getProperties().isEmpty()) {
+            super.serializeProperties(transformElement, jsonTransformMediator.getProperties());
         } else {
-            handleException("Invalid Transform mediator. Should either contain schema or properties");
+            handleException("Invalid JSONTransform mediator. Should either contain schema or properties");
         }
         saveTracingState(transformElement, mediator);
         return transformElement;
@@ -48,6 +48,6 @@ public class TransformMediatorSerializer extends AbstractMediatorSerializer {
 
     @Override
     public String getMediatorClassName() {
-        return TransformMediator.class.getName();
+        return JSONTransformMediator.class.getName();
     }
 }

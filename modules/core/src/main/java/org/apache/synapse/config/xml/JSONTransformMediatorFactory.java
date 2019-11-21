@@ -26,45 +26,45 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.mediators.Value;
-import org.apache.synapse.mediators.builtin.TransformMediator;
+import org.apache.synapse.mediators.builtin.JSONTransformMediator;
 
 import javax.xml.namespace.QName;
 import java.util.List;
 import java.util.Properties;
 
 /**
- * Mediator Factory for Transform mediator
+ * Mediator Factory for JSON Transform mediator
  */
-public class TransformMediatorFactory extends AbstractMediatorFactory {
+public class JSONTransformMediatorFactory extends AbstractMediatorFactory {
     private static final Log log = LogFactory.getLog(IterateMediatorFactory.class);
-    private static final QName TRANSFORM_Q = new QName(SynapseConstants.SYNAPSE_NAMESPACE, "transform");
+    private static final QName JSON_TRANSFORM_Q = new QName(SynapseConstants.SYNAPSE_NAMESPACE, "jsontransform");
     private static final QName ATT_SCHEMA = new QName("schema");
 
     @Override
     protected Mediator createSpecificMediator(OMElement elem, Properties properties) {
-        TransformMediator transformMediator = new TransformMediator();
-        processAuditStatus(transformMediator, elem);
+        JSONTransformMediator JSONTransformMediator = new JSONTransformMediator();
+        processAuditStatus(JSONTransformMediator, elem);
         OMAttribute schema = elem.getAttribute(ATT_SCHEMA);
         if (schema != null) {
             // ValueFactory for creating dynamic or static Value
             ValueFactory keyFac = new ValueFactory();
             // create dynamic or static key based on OMElement
             Value generatedKey = keyFac.createValue("schema", elem);
-            transformMediator.setSchemaKey(generatedKey);
+            JSONTransformMediator.setSchemaKey(generatedKey);
         }
         List<MediatorProperty> mediatorPropertyList = MediatorPropertyFactory.getMediatorProperties(elem);
         if (!mediatorPropertyList.isEmpty()) {
-            transformMediator.addAllProperties(mediatorPropertyList);
+            JSONTransformMediator.addAllProperties(mediatorPropertyList);
         }
         if (schema == null && mediatorPropertyList.isEmpty()) {
-            handleException(TRANSFORM_Q.getLocalPart() +
+            handleException(JSON_TRANSFORM_Q.getLocalPart() +
                     " mediator should contain either a schema or custom properties");
         }
-        return transformMediator;
+        return JSONTransformMediator;
     }
 
     @Override
     public QName getTagQName() {
-        return TRANSFORM_Q;
+        return JSON_TRANSFORM_Q;
     }
 }

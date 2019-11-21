@@ -99,7 +99,7 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
             RespondMediatorFactory.class,
             CommentMediatorFactory.class,
             ForEachMediatorFactory.class,
-            TransformMediatorFactory.class
+            JSONTransformMediatorFactory.class
     };
 
     private final static MediatorFactoryFinder instance  = new MediatorFactoryFinder();

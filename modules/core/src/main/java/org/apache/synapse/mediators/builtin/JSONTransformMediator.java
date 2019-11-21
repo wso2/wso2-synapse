@@ -41,7 +41,7 @@ import java.util.Properties;
  * Via this mediator we can override the global properties which are used in XML to JSON transformations.
  * These properties can be used individually for each artifact.
  */
-public class TransformMediator extends AbstractMediator {
+public class JSONTransformMediator extends AbstractMediator {
     private Value schemaKey = null;
     /**
      * The holder for the custom properties
