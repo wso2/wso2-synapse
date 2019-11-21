@@ -37,8 +37,6 @@ public class BooleanValidator {
     private BooleanValidator() {
     }
 
-    private static Log logger = LogFactory.getLog(BooleanValidator.class.getName());
-
     /**
      * Validate a boolean string according to a given schema.
      *
@@ -51,8 +49,8 @@ public class BooleanValidator {
     public static JsonPrimitive validateBoolean(JsonObject inputObject, String value) throws ValidatorException,
             ParserException {
         if (value == null) {
-            ValidatorException exception = new ValidatorException("Expected a boolean but found null");
-            logger.error("Received null input to be validated with : " + inputObject.toString(), exception);
+            ValidatorException exception = new ValidatorException("Received null input to be validated with : " +
+                    inputObject.toString() + ". Expected a boolean but found null");
             throw exception;
         }
         Boolean parsedValue = DataTypeConverter.convertToBoolean(value);
@@ -61,9 +59,7 @@ public class BooleanValidator {
             JsonArray enumElements = inputObject.getAsJsonArray(ValidatorConstants.ENUM);
             if (enumElements.size() > 0 && !enumElements.contains(new JsonPrimitive(parsedValue))) {
                 ValidatorException exception = new ValidatorException("input \"" + value + "\" not contains any " +
-                        "element from the enum");
-                logger.error("Input : " + value + " not contains any value from the enum : " +
-                        enumElements.toString(), exception);
+                        "element from the enum  : " + enumElements.toString());
                 throw exception;
             }
         }
@@ -72,7 +68,6 @@ public class BooleanValidator {
                 (ValidatorConstants.CONST).getAsBoolean())) {
             ValidatorException exception = new ValidatorException("String \"" + value + "\" is not equal to the const" +
                     " value");
-            logger.error("Input " + value + " not contains the value from const", exception);
             throw exception;
         }
         return new JsonPrimitive(parsedValue);

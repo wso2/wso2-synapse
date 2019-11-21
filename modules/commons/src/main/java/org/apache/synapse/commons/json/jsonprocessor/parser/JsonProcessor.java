@@ -46,9 +46,6 @@ public class JsonProcessor {
 
     }
 
-    // Logger instance
-    private static Log logger = LogFactory.getLog(JsonProcessor.class.getName());
-
     // JSON parser instance
     private static JsonParser parser = new JsonParser();
 
@@ -73,19 +70,17 @@ public class JsonProcessor {
                 if (valid) {
                     return inputString;
                 } else {
-                    ValidatorException exception = new ValidatorException("JSON schema is not valid for all elements");
-                    logger.error("JSON schema is false, so all validations will fail", exception);
+                    ValidatorException exception =
+                            new ValidatorException("JSON schema is false, so all validations will fail");
                     throw exception;
                 }
             } else {
-                ValidatorException exception = new ValidatorException("Unexpected JSON schema");
-                logger.error("JSON schema should be an object or boolean", exception);
+                ValidatorException exception = new ValidatorException("JSON schema should be an object or boolean");
                 throw exception;
             }
             return parseJson(inputString, schemaObject);
         } else {
-            ParserException exception = new ParserException("Invalid inputs");
-            logger.error("Input json and schema should not be null", exception);
+            ParserException exception = new ParserException("Input json and schema should not be null");
             throw exception;
         }
     }
@@ -123,8 +118,8 @@ public class JsonProcessor {
                 if (input.isJsonObject()) {
                     result = ObjectValidator.validateObject(input.getAsJsonObject(), schemaObject);
                 } else {
-                    ValidatorException exception = new ValidatorException("Expected a json object input");
-                    logger.error("Expected a JSON as input but found : " + inputString, exception);
+                    ValidatorException exception = new ValidatorException(
+                            "Expected a JSON as input but found : " + inputString);
                     throw exception;
                 }
             }
@@ -133,8 +128,8 @@ public class JsonProcessor {
             }
             return null;
         } else {
-            ParserException exception = new ParserException("Invalid inputs");
-            logger.error("Input json and schema should not be null, schema should be a JSON object", exception);
+            ParserException exception = new ParserException("Input json and schema should not be null, " +
+                    "schema should be a JSON object");
             throw exception;
         }
     }

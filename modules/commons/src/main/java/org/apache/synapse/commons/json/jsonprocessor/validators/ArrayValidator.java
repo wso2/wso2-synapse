@@ -169,8 +169,8 @@ public class ArrayValidator {
             additionalItemsSchema, boolean notAllowAdditional) throws ValidatorException, ParserException {
 
         if (notAllowAdditional && inputArray.size() > schemaArray.size()) {
-            ValidatorException exception = new ValidatorException("Array contains additional items than in the schema");
-            logger.error("Array : " + inputArray.toString() + " has more items than allowed in the schema", exception);
+            ValidatorException exception = new ValidatorException(
+                    "Array : " + inputArray.toString() + " has more items than allowed in the schema");
             throw exception;
         }
         int i = 0;
@@ -281,21 +281,21 @@ public class ArrayValidator {
 
         final String errorMsg = "Error occurs while validating the structure of array : ";
         if (minItems != -1 && inputArray.size() < minItems) {
-            ValidatorException exception = new ValidatorException("Array violated the minItems constraint");
-            logger.error(errorMsg + inputArray.toString(), exception);
+            ValidatorException exception = new ValidatorException(errorMsg + inputArray.toString() +
+                    ". Array violated the minItems constraint");
             throw exception;
         }
         if (maxItems != -1 && inputArray.size() > maxItems) {
-            ValidatorException exception = new ValidatorException("Array violated the maxItems constraint");
-            logger.error(errorMsg + inputArray.toString(), exception);
+            ValidatorException exception = new ValidatorException(errorMsg + inputArray.toString() +
+                    ". Array violated the maxItems constraint");
             throw exception;
         }
         if (uniqueItems) {
             Set<JsonElement> temporarySet = new HashSet();
             for (JsonElement element : inputArray) {
                 if (!temporarySet.add(element)) {
-                    ValidatorException exception = new ValidatorException("Array violated the uniqueItems constraint");
-                    logger.error(errorMsg + inputArray.toString(), exception);
+                    ValidatorException exception = new ValidatorException(errorMsg +
+                            inputArray.toString() + ". Array violated the uniqueItems constraint");
                     throw exception;
                 }
             }

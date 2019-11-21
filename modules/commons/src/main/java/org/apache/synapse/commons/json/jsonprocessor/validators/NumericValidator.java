@@ -37,9 +37,6 @@ public class NumericValidator {
     private NumericValidator() {
     }
 
-    // Logger instance
-    private static Log logger = LogFactory.getLog(NumericValidator.class.getName());
-
     private static final String INTEGER_STRING = "integer";
     private static final String NUMBER_STRING = "number";
 
@@ -79,9 +76,8 @@ public class NumericValidator {
                         (ValidatorConstants.REGEX, ""));
                 if (doubleValue % multipleOf != 0) {
                     ValidatorException exception = new ValidatorException("Number " + value + " is not a multiple of " +
-                            "" + multipleOf);
-                    logger.error("multipleOf constraint in " + inputObject.toString() + " is violated by the input " +
-                            value, exception);
+                            "" + multipleOf + ". multipleOf constraint in " + inputObject.toString() + " is violated " +
+                            "by the input " + value);
                     throw new ValidatorException(exception);
                 }
             }
@@ -91,9 +87,8 @@ public class NumericValidator {
                         "");
                 if (!minimumString.isEmpty() && doubleValue < DataTypeConverter.convertToDouble(minimumString)) {
                     ValidatorException exception = new ValidatorException("Number " + value + " is less than the " +
-                            "minimum allowed value");
-                    logger.error("minimumValue constraint in " + inputObject.toString() + " is violated by the input " +
-                            ": " + value, exception);
+                            "minimum allowed value" + ". minimumValue constraint in " + inputObject.toString() +
+                            " is violated by the input " + ": " + value);
                     throw exception;
                 }
             }
@@ -102,9 +97,8 @@ public class NumericValidator {
                         "");
                 if (!maximumString.isEmpty() && doubleValue > DataTypeConverter.convertToDouble(maximumString)) {
                     ValidatorException exception = new ValidatorException("Number " + value + " is greater than the " +
-                            "maximum allowed value");
-                    logger.error("maximumValue constraint in " + inputObject.toString() + " is violated by the input " +
-                            ": " + value, exception);
+                            "maximum allowed value. maximumValue constraint in " + inputObject.toString() +
+                            " is violated by the input " + ": " + value);
                     throw exception;
                 }
             }
@@ -115,9 +109,8 @@ public class NumericValidator {
                         "");
                 if (!minimumString.isEmpty() && doubleValue <= DataTypeConverter.convertToDouble(minimumString)) {
                     ValidatorException exception = new ValidatorException("Number " + value + " is less than the " +
-                            "minimum allowed value");
-                    logger.error("exclusiveMinimum constraint in " + inputObject.toString() + " is violated by the " +
-                            "input : " + value, exception);
+                            "minimum allowed value. ExclusiveMinimum constraint in " + inputObject.toString() +
+                            " is violated by the " + "input : " + value );
                     throw exception;
                 }
             }
@@ -127,9 +120,8 @@ public class NumericValidator {
                         "");
                 if (!maximumString.isEmpty() && doubleValue >= DataTypeConverter.convertToDouble(maximumString)) {
                     ValidatorException exception = new ValidatorException("Number " + value + " is greater than the " +
-                            "maximum allowed value");
-                    logger.error("exclusiveMaximum constraint in " + inputObject.toString() + " is violated by the " +
-                            "input : " + value, exception);
+                            "maximum allowed value. ExclusiveMaximum constraint in " +
+                            inputObject.toString() + " is violated by the " + "input : " + value);
                     throw exception;
                 }
             }
@@ -138,9 +130,8 @@ public class NumericValidator {
                 JsonArray enumElements = inputObject.getAsJsonArray(ValidatorConstants.ENUM);
                 if (enumElements.size() > 0 && !enumElements.contains(new JsonPrimitive(doubleValue))) {
                     ValidatorException exception = new ValidatorException("Number \"" + value + "\" not contains any " +
-                            "element from the enum");
-                    logger.error("input " + value + " not contains any value from the enum in " + inputObject
-                            .toString(), exception);
+                            "element from the enum. Input " + value + " not contains any value from the enum in " +
+                            inputObject.toString());
                     throw exception;
                 }
             }
@@ -148,9 +139,7 @@ public class NumericValidator {
             if (inputObject.has(ValidatorConstants.CONST) && !doubleValue.equals(inputObject.getAsJsonPrimitive
                     (ValidatorConstants.CONST).getAsDouble())) {
                 ValidatorException exception = new ValidatorException("Number \"" + value + "\" is not equal to the " +
-                        "const value");
-                logger.error("input " + value + " not contains the const defined in " + inputObject
-                        .toString(), exception);
+                        "const value input " + value + " not contains the const defined in " + inputObject.toString());
                 throw exception;
             }
             // convert to integer of give value is a float
@@ -161,8 +150,8 @@ public class NumericValidator {
                 return new JsonPrimitive(doubleValue);
             }
         }
-        ParserException exception = new ParserException("\"" + value + "\"" + " is not a number");
-        logger.error("A number expected in the schema " + inputObject.toString() + " but received " + value, exception);
+        ParserException exception = new ParserException("\"" + value + "\"" + " is not a number. " +
+                "A number expected in the schema " + inputObject.toString() + " but received " + value);
         throw exception;
     }
 

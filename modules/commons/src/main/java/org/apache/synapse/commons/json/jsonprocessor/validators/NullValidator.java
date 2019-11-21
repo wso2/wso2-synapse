@@ -32,9 +32,6 @@ public class NullValidator {
     private NullValidator() {
     }
 
-    // Logger instance
-    private static Log logger = LogFactory.getLog(NullValidator.class.getName());
-
     /**
      * Validate a null input against schema.
      *
@@ -46,9 +43,9 @@ public class NullValidator {
     public static void validateNull(JsonObject inputObject, String value) throws ValidatorException {
         if (value != null && !(value.equals("") || value.equals("null") || value.equals("\"\"") || value.equals
                 ("\"null\""))) {
-            ValidatorException exception = new ValidatorException("Expected a null but found a value");
-            logger.error("Received not null input" + value + " to be validated with : " + inputObject
-                    .toString(), exception);
+            ValidatorException exception = new ValidatorException("Expected a null but found a value. " +
+                    "Received not null input" + value + " to be validated with : " + inputObject
+                    .toString());
             throw exception;
         }
     }
