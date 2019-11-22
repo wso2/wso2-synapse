@@ -164,7 +164,10 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
                     try {
                         artifactName = updateSynapseArtifact(
                                 element, filename, existingArtifactName, properties);
-                    } catch (SynapseArtifactDeploymentException | OMException ex) {
+                    }
+                    /*  Multiple exception types can throw from the libraries like wstx and couldn't catch
+                    specific exception type. Hence, generic Exception can use to overcome the issue. */
+                    catch (Exception ex) {
                         log.error("Update of the Synapse Artifact from file : " + filename + " : Failed!", ex);
                         log.info("The updated file has been backed up into : " +
                                  backupFile(deploymentFileData.getFile()));

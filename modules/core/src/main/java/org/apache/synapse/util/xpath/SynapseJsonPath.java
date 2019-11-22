@@ -289,6 +289,10 @@ public class SynapseJsonPath extends SynapsePath {
      * @return corrected jsonObject.
      */
     private Object formatJsonPathResponse(Object input) {
+        // Return numeric result of ison-eval() as it is Ex: .length() function
+        if (input instanceof Number) {
+            return input;
+        }
         JsonElement jsonElement = (JsonElement) input;
         if (jsonElement.isJsonPrimitive()) {
             return jsonElement.getAsString();
@@ -340,5 +344,15 @@ public class SynapseJsonPath extends SynapsePath {
 
         }
         return rootObject;
+    }
+
+    /**
+     * This method will return the boolean value of the jsonpath.
+     *
+     * @param synCtx message context
+     * @return boolean value
+     */
+    public boolean booleanValueOf(MessageContext synCtx) {
+        return Boolean.parseBoolean(this.stringValueOf(synCtx));
     }
 }
