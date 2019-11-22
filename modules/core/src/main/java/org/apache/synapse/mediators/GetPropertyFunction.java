@@ -108,7 +108,8 @@ public class GetPropertyFunction implements Function , XPathFunction {
                         !XMLConfigConstants.SCOPE_TRANSPORT.equals(argOne) &&
                             !XMLConfigConstants.SCOPE_REGISTRY.equals(argOne) &&
                             !XMLConfigConstants.SCOPE_FUNC.equals(argOne) &&
-                            !XMLConfigConstants.SCOPE_SYSTEM.equals(argOne)) {
+                            !XMLConfigConstants.SCOPE_SYSTEM.equals(argOne) &&
+                            !XMLConfigConstants.SCOPE_ENVIRONMENT.equals(argOne)) {
                         return evaluate(XMLConfigConstants.SCOPE_DEFAULT, args.get(0),
                             args.get(1), context.getNavigator());
                     } else {
@@ -345,6 +346,17 @@ public class GetPropertyFunction implements Function , XPathFunction {
             } else {
                 if (traceOrDebugOn) {
                     traceOrDebug(traceOn, "System property " + key + " not found");
+                }
+                return NULL_STRING;
+            }
+
+        } else if (XMLConfigConstants.SCOPE_ENVIRONMENT.equals(scope)) {
+            String propVal = System.getenv(key);
+            if (propVal != null) {
+                return propVal;
+            } else {
+                if (traceOrDebugOn) {
+                    traceOrDebug(traceOn, "Environment property " + key + " not found");
                 }
                 return NULL_STRING;
             }
