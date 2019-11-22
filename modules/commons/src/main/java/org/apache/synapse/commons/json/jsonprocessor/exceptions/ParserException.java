@@ -1,4 +1,4 @@
-/**
+/*
  *  Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
@@ -23,22 +23,7 @@ package org.apache.synapse.commons.json.jsonprocessor.exceptions;
  */
 public class ParserException extends Exception {
 
-    public ParserException() {
-        // TODO Auto-generated constructor stub
-    }
-
     public ParserException(String message) {
         super(message);
-        // TODO Auto-generated constructor stub
-    }
-
-    public ParserException(Throwable cause) {
-        super(cause);
-        // TODO Auto-generated constructor stub
-    }
-
-    public ParserException(String message, Throwable cause) {
-        super(message, cause);
-        // TODO Auto-generated constructor stub
     }
 }

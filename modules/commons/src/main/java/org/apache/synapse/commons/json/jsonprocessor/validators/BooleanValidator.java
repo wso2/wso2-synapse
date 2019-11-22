@@ -1,4 +1,4 @@
-/**
+/*
  *  Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
@@ -21,8 +21,6 @@ package org.apache.synapse.commons.json.jsonprocessor.validators;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.json.jsonprocessor.constants.ValidatorConstants;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
@@ -49,26 +47,23 @@ public class BooleanValidator {
     public static JsonPrimitive validateBoolean(JsonObject inputObject, String value) throws ValidatorException,
             ParserException {
         if (value == null) {
-            ValidatorException exception = new ValidatorException("Received null input to be validated with : " +
+            throw new ValidatorException("Received null input to be validated with : " +
                     inputObject.toString() + ". Expected a boolean but found null");
-            throw exception;
         }
         Boolean parsedValue = DataTypeConverter.convertToBoolean(value);
         // Enum validations
         if (inputObject.has(ValidatorConstants.ENUM)) {
             JsonArray enumElements = inputObject.getAsJsonArray(ValidatorConstants.ENUM);
             if (enumElements.size() > 0 && !enumElements.contains(new JsonPrimitive(parsedValue))) {
-                ValidatorException exception = new ValidatorException("input \"" + value + "\" not contains any " +
+                throw new ValidatorException("input \"" + value + "\" not contains any " +
                         "element from the enum  : " + enumElements.toString());
-                throw exception;
             }
         }
         //Const validation
         if (inputObject.has(ValidatorConstants.CONST) && !parsedValue.equals(inputObject.getAsJsonPrimitive
                 (ValidatorConstants.CONST).getAsBoolean())) {
-            ValidatorException exception = new ValidatorException("String \"" + value + "\" is not equal to the const" +
+            throw new ValidatorException("String \"" + value + "\" is not equal to the const" +
                     " value");
-            throw exception;
         }
         return new JsonPrimitive(parsedValue);
     }

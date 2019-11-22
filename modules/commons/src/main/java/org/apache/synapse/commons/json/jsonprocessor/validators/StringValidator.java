@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  * <p>
  * WSO2 Inc. licenses this file to you under the Apache License,
@@ -19,8 +19,6 @@
 package org.apache.synapse.commons.json.jsonprocessor.validators;
 
 import com.google.gson.*;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.json.jsonprocessor.constants.ValidatorConstants;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
@@ -51,9 +49,8 @@ public class StringValidator {
     public static JsonPrimitive validateNominal(JsonObject inputObject, String value) throws ValidatorException,
             ParserException {
         if (value == null) {
-            ValidatorException exception = new ValidatorException("Expected a string in the schema " +
+            throw new ValidatorException("Expected a string in the schema " +
                     inputObject.toString() + " but found null input");
-            throw exception;
         }
         // String length validations
         if (inputObject.has(MAX_LENGTH)) {
@@ -62,10 +59,9 @@ public class StringValidator {
             if (!maxLengthString.isEmpty()) {
                 int maxLength = DataTypeConverter.convertToInt(maxLengthString);
                 if (value.length() > maxLength) {
-                    ValidatorException exception = new ValidatorException("String \"" + value + "\" violated the max " +
+                    throw new ValidatorException("String \"" + value + "\" violated the max " +
                             "length constraint. Input string : " + value +
                             " violated the maxLength constraint defined in : " + inputObject.toString());
-                    throw exception;
                 }
             }
         }
@@ -75,10 +71,9 @@ public class StringValidator {
             if (!minLengthString.isEmpty()) {
                 int minLength = DataTypeConverter.convertToInt(minLengthString);
                 if (value.length() < minLength) {
-                    ValidatorException exception = new ValidatorException("String \"" + value +
+                    throw new ValidatorException("String \"" + value +
                             "\" violated the min " + "length constraint. Input string : " + value +
                             " violated the minLength constraint defined in : " + inputObject.toString());
-                    throw exception;
                 }
             }
         }
@@ -86,29 +81,26 @@ public class StringValidator {
         if (inputObject.has(STR_PATTERN)) {
             String patternString = inputObject.get(STR_PATTERN).getAsString().replaceAll(ValidatorConstants.REGEX, "");
             if (!patternString.isEmpty() && !value.matches(patternString)) {
-                ValidatorException exception = new ValidatorException("String \"" + value + "\" violated the regex " +
+                throw new ValidatorException("String \"" + value + "\" violated the regex " +
                         "constraint " + patternString + ". Input string : " + value +
                         " not matching with any regex defined in : " + inputObject.toString());
-                throw exception;
             }
         }
         // Enum validations
         if (inputObject.has(ValidatorConstants.ENUM)) {
             JsonArray enumElements = inputObject.getAsJsonArray(ValidatorConstants.ENUM);
             if (enumElements.size() > 0 && !enumElements.contains(new JsonPrimitive(value))) {
-                ValidatorException exception = new ValidatorException("String \"" + value + "\" not contains any " +
+                throw new ValidatorException("String \"" + value + "\" not contains any " +
                         "element from the enum. Input string : " + value +
                         " not contains any value defined in the enum of : " + inputObject.toString());
-                throw exception;
             }
         }
         //Const validation
         if (inputObject.has(ValidatorConstants.CONST) && !value.equals(inputObject.getAsJsonPrimitive
                 (ValidatorConstants.CONST).getAsString())) {
-            ValidatorException exception = new ValidatorException("String \"" + value +
+            throw new ValidatorException("String \"" + value +
                     "\" is not equal to the const" + " value. Input string : " + value +
                     " not contains the const value defined in : " + inputObject.toString());
-            throw exception;
         }
         return new JsonPrimitive(value);
     }

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
@@ -22,8 +22,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.json.jsonprocessor.constants.ValidatorConstants;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
@@ -70,18 +68,14 @@ public class JsonProcessor {
                 if (valid) {
                     return inputString;
                 } else {
-                    ValidatorException exception =
-                            new ValidatorException("JSON schema is false, so all validations will fail");
-                    throw exception;
+                    throw new ValidatorException("JSON schema is false, so all validations will fail");
                 }
             } else {
-                ValidatorException exception = new ValidatorException("JSON schema should be an object or boolean");
-                throw exception;
+                throw new ValidatorException("JSON schema should be an object or boolean");
             }
             return parseJson(inputString, schemaObject);
         } else {
-            ParserException exception = new ParserException("Input json and schema should not be null");
-            throw exception;
+            throw new ParserException("Input json and schema should not be null");
         }
     }
 
@@ -95,7 +89,7 @@ public class JsonProcessor {
      * @throws ValidatorException Exception occurs in validation process.
      * @throws ParserException    Exception occurs in data type parsing.
      */
-    public static String parseJson(String inputString, Object schema) throws ValidatorException, ParserException {
+    private static String parseJson(String inputString, Object schema) throws ValidatorException, ParserException {
         if (inputString != null && !inputString.isEmpty() && schema instanceof JsonObject) {
             JsonElement result = null;
             JsonObject schemaObject = (JsonObject) schema;
@@ -118,9 +112,8 @@ public class JsonProcessor {
                 if (input.isJsonObject()) {
                     result = ObjectValidator.validateObject(input.getAsJsonObject(), schemaObject);
                 } else {
-                    ValidatorException exception = new ValidatorException(
+                    throw new ValidatorException(
                             "Expected a JSON as input but found : " + inputString);
-                    throw exception;
                 }
             }
             if (result != null) {
@@ -128,9 +121,8 @@ public class JsonProcessor {
             }
             return null;
         } else {
-            ParserException exception = new ParserException("Input json and schema should not be null, " +
+            throw new ParserException("Input json and schema should not be null, " +
                     "schema should be a JSON object");
-            throw exception;
         }
     }
 }

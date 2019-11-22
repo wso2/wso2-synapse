@@ -1,4 +1,4 @@
-/**
+/*
  *  Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
@@ -22,8 +22,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.json.jsonprocessor.constants.ValidatorConstants;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
@@ -70,9 +68,8 @@ public class ObjectValidator {
             JsonArray requiredArray = schema.getAsJsonArray(REQUIRED);
             for (JsonElement element : requiredArray) {
                 if (!object.has(element.getAsString())) {
-                    ValidatorException exception = new ValidatorException("Input object : " + object.toString() +
+                    throw new ValidatorException("Input object : " + object.toString() +
                             " does not contains all the elements required in the schema : " + schema.toString());
-                    throw exception;
                 }
             }
         }
@@ -99,9 +96,9 @@ public class ObjectValidator {
         // doing structural validation
         doStructuralValidation(maximumProperties, minimumProperties, entryInput);
 
-        ArrayList<String> inputProperties = new ArrayList();
-        ArrayList<String> patternProperties = new ArrayList();
-        ArrayList<String> schemaProperties = new ArrayList();
+        ArrayList<String> inputProperties = new ArrayList<>();
+        ArrayList<String> patternProperties = new ArrayList<>();
+        ArrayList<String> schemaProperties = new ArrayList<>();
 
         if (schemaObject != null && !schemaObject.entrySet().isEmpty()) {
             for (Map.Entry<String, JsonElement> entry : schemaObject.entrySet()) {
@@ -207,10 +204,9 @@ public class ObjectValidator {
                 boolean allowAdditional = DataTypeConverter.convertToBoolean(schema.get(ADDITIONAL_PROPERTIES)
                         .getAsString());
                 if (!allowAdditional && !inputProperties.isEmpty()) {
-                    ValidatorException exception = new ValidatorException("Input object " + object.toString() +
+                    throw new ValidatorException("Input object " + object.toString() +
                             " has additional properties than schema " + schema.toString() +
                             " and additional properties are not allowed");
-                    throw exception;
                 }
             } else if (schema.get(ADDITIONAL_PROPERTIES).isJsonObject()) {
                 JsonObject additionalSchema = schema.get(ADDITIONAL_PROPERTIES).getAsJsonObject();
@@ -284,16 +280,14 @@ public class ObjectValidator {
         int numOfProperties = entryInput.size();
 
         if (minimumProperties != -1 && numOfProperties < minimumProperties) {
-            ValidatorException exception = new ValidatorException("Object violates the minimum number of properties " +
+            throw new ValidatorException("Object violates the minimum number of properties " +
                     "constraint. Input object has less number of properties than allowed minimum " +
                     minimumProperties);
-            throw exception;
         }
         if (maximumProperties != -1 && numOfProperties > maximumProperties) {
-            ValidatorException exception = new ValidatorException("Object violates the maximum number of properties " +
+            throw new ValidatorException("Object violates the maximum number of properties " +
                     "constraint. Input object has higher number of properties than allowed maximum " +
                     maximumProperties);
-            throw exception;
         }
     }
 

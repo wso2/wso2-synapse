@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  * <p>
  * WSO2 Inc. licenses this file to you under the Apache License,
@@ -40,9 +40,6 @@ public class ArrayValidator {
     private ArrayValidator() {
 
     }
-
-    // Logger instance
-    private static Log logger = LogFactory.getLog(ArrayValidator.class.getName());
 
     private static final String MIN_ITEMS = "minItems";
     private static final String MAX_ITEMS = "maxItems";
@@ -114,13 +111,7 @@ public class ArrayValidator {
         if (input.getValue().isJsonArray()) {
             inputArray = input.getValue().getAsJsonArray();
         } else {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Structural corrections : Wrapping " + input.getValue().toString() + " inside an array");
-            }
             inputArray = singleElementArrayCorrection(input.getValue());
-            if (logger.isDebugEnabled()) {
-                logger.debug("Structural correction converting an");
-            }
         }
 
         // Structural validations
@@ -169,9 +160,8 @@ public class ArrayValidator {
             additionalItemsSchema, boolean notAllowAdditional) throws ValidatorException, ParserException {
 
         if (notAllowAdditional && inputArray.size() > schemaArray.size()) {
-            ValidatorException exception = new ValidatorException(
+            throw new ValidatorException(
                     "Array : " + inputArray.toString() + " has more items than allowed in the schema");
-            throw exception;
         }
         int i = 0;
         for (JsonElement element : schemaArray) {
@@ -281,22 +271,19 @@ public class ArrayValidator {
 
         final String errorMsg = "Error occurs while validating the structure of array : ";
         if (minItems != -1 && inputArray.size() < minItems) {
-            ValidatorException exception = new ValidatorException(errorMsg + inputArray.toString() +
+            throw new ValidatorException(errorMsg + inputArray.toString() +
                     ". Array violated the minItems constraint");
-            throw exception;
         }
         if (maxItems != -1 && inputArray.size() > maxItems) {
-            ValidatorException exception = new ValidatorException(errorMsg + inputArray.toString() +
+            throw new ValidatorException(errorMsg + inputArray.toString() +
                     ". Array violated the maxItems constraint");
-            throw exception;
         }
         if (uniqueItems) {
-            Set<JsonElement> temporarySet = new HashSet();
+            Set<JsonElement> temporarySet = new HashSet<>();
             for (JsonElement element : inputArray) {
                 if (!temporarySet.add(element)) {
-                    ValidatorException exception = new ValidatorException(errorMsg +
+                    throw new ValidatorException(errorMsg +
                             inputArray.toString() + ". Array violated the uniqueItems constraint");
-                    throw exception;
                 }
             }
         }

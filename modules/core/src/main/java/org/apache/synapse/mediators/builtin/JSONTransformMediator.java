@@ -1,4 +1,4 @@
-/**
+/*
  *  Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
@@ -26,6 +26,7 @@ import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
 import org.apache.synapse.commons.json.jsonprocessor.parser.JsonProcessor;
 import org.apache.synapse.commons.staxon.core.json.JsonXMLOutputFactory;
+import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
@@ -46,7 +47,7 @@ public class JSONTransformMediator extends AbstractMediator {
     /**
      * The holder for the custom properties
      */
-    private List<MediatorProperty> propertiesArrayList = new ArrayList<MediatorProperty>();
+    private List<MediatorProperty> propertiesArrayList = new ArrayList<>();
     private JsonXMLOutputFactory jsonOutputFactory;
 
     @Override
@@ -70,7 +71,14 @@ public class JSONTransformMediator extends AbstractMediator {
             String generatedSchemaKey = schemaKey.evaluateValue(synCtx);
             Object jsonSchemaObj = synCtx.getEntry(generatedSchemaKey);
             if (jsonSchemaObj != null) {
-                String schema = ((OMTextImpl) jsonSchemaObj).getText();
+                String schema = "";
+                if (jsonSchemaObj instanceof OMTextImpl) {
+                    schema = ((OMTextImpl) jsonSchemaObj).getText();
+                } else if (jsonSchemaObj instanceof String) {
+                    schema = (String) jsonSchemaObj;
+                } else {
+                    handleException("Can not find valid JSON Schema content", synCtx);
+                }
                 try {
                     String jsonPayload;
                     if (JsonUtil.hasAJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext())) {
@@ -90,7 +98,7 @@ public class JSONTransformMediator extends AbstractMediator {
                             "JSON stream after applying the JSON schema", af, synCtx);
                 }
             } else {
-                handleException("Schema does not exist in the sepcified location : " + generatedSchemaKey, synCtx);
+                handleException("Schema does not exist in the specified location : " + generatedSchemaKey, synCtx);
             }
         }
         return true;

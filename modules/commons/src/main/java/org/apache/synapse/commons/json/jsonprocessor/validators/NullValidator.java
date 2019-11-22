@@ -1,4 +1,4 @@
-/**
+/*
  *  Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
@@ -19,8 +19,6 @@
 package org.apache.synapse.commons.json.jsonprocessor.validators;
 
 import com.google.gson.JsonObject;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
 
 /**
@@ -37,16 +35,14 @@ public class NullValidator {
      *
      * @param inputObject input schema.
      * @param value       null value.
-     * @return JsonPrimitive of null.
      * @throws ValidatorException exception occurs in validation.
      */
     public static void validateNull(JsonObject inputObject, String value) throws ValidatorException {
         if (value != null && !(value.equals("") || value.equals("null") || value.equals("\"\"") || value.equals
                 ("\"null\""))) {
-            ValidatorException exception = new ValidatorException("Expected a null but found a value. " +
+            throw new ValidatorException("Expected a null but found a value. " +
                     "Received not null input" + value + " to be validated with : " + inputObject
                     .toString());
-            throw exception;
         }
     }
 }

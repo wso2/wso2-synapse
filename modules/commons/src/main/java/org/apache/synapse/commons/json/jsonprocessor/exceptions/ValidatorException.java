@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
@@ -23,26 +23,7 @@ package org.apache.synapse.commons.json.jsonprocessor.exceptions;
  */
 public class ValidatorException extends Exception {
 
-    public ValidatorException() {
-    }
-
     public ValidatorException(String message) {
         super(message);
     }
-
-    public ValidatorException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public ValidatorException(Throwable cause) {
-        super(cause);
-    }
-
-    public ValidatorException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
-    }
 }
-
-
-
-
