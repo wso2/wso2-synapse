@@ -73,6 +73,7 @@ import org.apache.synapse.transport.nhttp.util.NhttpUtil;
 import org.apache.synapse.transport.nhttp.util.RESTUtil;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
 
 /**
@@ -375,6 +376,20 @@ public class ServerWorker implements Runnable {
         }
     }
 
+    /**
+     * This method will read the entire content from the input stream of the request and discard it if
+     * there is an Exception.
+     *
+     * @param msgContext Synapse message context.
+     */
+    private void consumeInputOnException(MessageContext msgContext) {
+        try {
+            RelayUtils.consumeAndDiscardMessage(msgContext);
+        } catch (AxisFault axisFault) {
+            log.error("Exception while consuming the input stream on Axis Fault", axisFault);
+        }
+    }
+
     public  void processEntityEnclosingRequest(MessageContext msgContext, boolean injectToAxis2Engine) {
         try {
             String contentTypeHeader = request.getHeaders().get(HTTP.CONTENT_TYPE);
@@ -579,7 +594,8 @@ public class ServerWorker implements Runnable {
         if (e == null) {
             e = new Exception(msg);
         }
-
+        //consume and discard the remaining input in the pipe
+        consumeInputOnException(msgContext);
         try {
             MessageContext faultContext = MessageContextBuilder
                     .createFaultMessageContext(msgContext, e);
