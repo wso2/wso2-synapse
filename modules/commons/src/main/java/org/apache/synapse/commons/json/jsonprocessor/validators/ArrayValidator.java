@@ -19,8 +19,6 @@
 package org.apache.synapse.commons.json.jsonprocessor.validators;
 
 import com.google.gson.*;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.json.jsonprocessor.constants.ValidatorConstants;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
@@ -168,24 +166,29 @@ public class ArrayValidator {
             JsonObject tempObj = element.getAsJsonObject();
             // Checking for empty input schema Ex:- {}
             if (!tempObj.entrySet().isEmpty()) {
-                String type = tempObj.get(ValidatorConstants.TYPE_KEY).toString().replaceAll(ValidatorConstants
-                        .REGEX, "");
-                if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
-                    inputArray.set(i, BooleanValidator.validateBoolean(tempObj, inputArray.get(i).getAsString()));
-                } else if (ValidatorConstants.NOMINAL_KEYS.contains(type)) {
-                    inputArray.set(i, StringValidator.validateNominal(tempObj, inputArray.get(i).getAsString()));
-                } else if (ValidatorConstants.NUMERIC_KEYS.contains(type)) {
-                    inputArray.set(i, NumericValidator.validateNumeric(tempObj, inputArray.get(i).getAsString()));
-                } else if (ValidatorConstants.ARRAY_KEYS.contains(type)) {
-                    inputArray.set(i, ArrayValidator.validateArray(
-                            GSONDataTypeConverter.getMapFromString(inputArray.get(i).toString()), tempObj));
-                } else if (ValidatorConstants.NULL_KEYS.contains(type)) {
-                    if (inputArray.get(i) != null) {
-                        NullValidator.validateNull(tempObj, inputArray.get(i).toString());
+                if (tempObj.has(ValidatorConstants.TYPE_KEY)) {
+                    String type = tempObj.get(ValidatorConstants.TYPE_KEY).toString().replaceAll(ValidatorConstants
+                            .REGEX, "");
+                    if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
+                        inputArray.set(i, BooleanValidator.validateBoolean(tempObj, inputArray.get(i).getAsString()));
+                    } else if (ValidatorConstants.NOMINAL_KEYS.contains(type)) {
+                        inputArray.set(i, StringValidator.validateNominal(tempObj, inputArray.get(i).getAsString()));
+                    } else if (ValidatorConstants.NUMERIC_KEYS.contains(type)) {
+                        inputArray.set(i, NumericValidator.validateNumeric(tempObj, inputArray.get(i).getAsString()));
+                    } else if (ValidatorConstants.ARRAY_KEYS.contains(type)) {
+                        inputArray.set(i, ArrayValidator.validateArray(
+                                GSONDataTypeConverter.getMapFromString(inputArray.get(i).toString()), tempObj));
+                    } else if (ValidatorConstants.NULL_KEYS.contains(type)) {
+                        if (inputArray.get(i) != null) {
+                            NullValidator.validateNull(tempObj, inputArray.get(i).toString());
+                        }
+                        inputArray.set(i, JsonNull.INSTANCE);
+                    } else if (ValidatorConstants.OBJECT_KEYS.contains(type)) {
+                        inputArray.set(i, ObjectValidator.validateObject(inputArray.get(i).getAsJsonObject(), tempObj));
                     }
-                    inputArray.set(i, JsonNull.INSTANCE);
-                } else if (ValidatorConstants.OBJECT_KEYS.contains(type)) {
-                    inputArray.set(i, ObjectValidator.validateObject(inputArray.get(i).getAsJsonObject(), tempObj));
+                } else {
+                    throw new ValidatorException("Array items should contain a type " +
+                            "declaration");
                 }
             }
             i++;
@@ -216,43 +219,47 @@ public class ArrayValidator {
      */
     private static void processSchemaWithOneItem(JsonArray inputArray, JsonObject schemaObject) throws
             ValidatorException, ParserException {
-
-        String type = schemaObject.get(ValidatorConstants.TYPE_KEY).toString().replaceAll(ValidatorConstants
-                .REGEX, "");
-        int i = 0;
-        if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
-            for (JsonElement element : inputArray) {
-                inputArray.set(i, BooleanValidator.validateBoolean(schemaObject, element.getAsString()));
-                i++;
-            }
-        } else if (ValidatorConstants.NUMERIC_KEYS.contains(type)) {
-            for (JsonElement element : inputArray) {
-                inputArray.set(i, NumericValidator.validateNumeric(schemaObject, element.getAsString()));
-                i++;
-            }
-        } else if (ValidatorConstants.NOMINAL_KEYS.contains(type)) {
-            for (JsonElement element : inputArray) {
-                inputArray.set(i, StringValidator.validateNominal(schemaObject, element.getAsString()));
-                i++;
-            }
-        } else if (ValidatorConstants.ARRAY_KEYS.contains(type)) {
-            for (JsonElement element : inputArray) {
-                inputArray.set(i, ArrayValidator.validateArray(GSONDataTypeConverter.getMapFromString(
-                        element.getAsString()), schemaObject));
-                i++;
-            }
-        } else if (ValidatorConstants.OBJECT_KEYS.contains(type)) {
-            for (JsonElement element : inputArray) {
-                inputArray.set(i, ObjectValidator.validateObject(element.getAsJsonObject(), schemaObject));
-                i++;
-            }
-        } else if (ValidatorConstants.NULL_KEYS.contains(type)) {
-            for (JsonElement element : inputArray) {
-                if (element != null) {
-                    NullValidator.validateNull(schemaObject, element.toString());
+        if (schemaObject.has(ValidatorConstants.TYPE_KEY)) {
+            String type = schemaObject.get(ValidatorConstants.TYPE_KEY).toString().replaceAll(ValidatorConstants
+                    .REGEX, "");
+            int i = 0;
+            if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
+                for (JsonElement element : inputArray) {
+                    inputArray.set(i, BooleanValidator.validateBoolean(schemaObject, element.getAsString()));
+                    i++;
                 }
-                inputArray.set(i, JsonNull.INSTANCE);
-                i++;
+            } else if (ValidatorConstants.NUMERIC_KEYS.contains(type)) {
+                for (JsonElement element : inputArray) {
+                    inputArray.set(i, NumericValidator.validateNumeric(schemaObject, element.getAsString()));
+                    i++;
+                }
+            } else if (ValidatorConstants.NOMINAL_KEYS.contains(type)) {
+                for (JsonElement element : inputArray) {
+                    inputArray.set(i, StringValidator.validateNominal(schemaObject, element.getAsString()));
+                    i++;
+                }
+            } else if (ValidatorConstants.ARRAY_KEYS.contains(type)) {
+                for (JsonElement element : inputArray) {
+                    inputArray.set(i, ArrayValidator.validateArray(GSONDataTypeConverter.getMapFromString(
+                            element.getAsString()), schemaObject));
+                    i++;
+                }
+            } else if (ValidatorConstants.OBJECT_KEYS.contains(type)) {
+                for (JsonElement element : inputArray) {
+                    inputArray.set(i, ObjectValidator.validateObject(element.getAsJsonObject(), schemaObject));
+                    i++;
+                }
+            } else if (ValidatorConstants.NULL_KEYS.contains(type)) {
+                for (JsonElement element : inputArray) {
+                    if (element != null) {
+                        NullValidator.validateNull(schemaObject, element.toString());
+                    }
+                    inputArray.set(i, JsonNull.INSTANCE);
+                    i++;
+                }
+            } else {
+                throw new ValidatorException("Schema for array must have a type declaration" +
+                        schemaObject.toString());
             }
         }
     }
