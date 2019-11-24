@@ -21,12 +21,12 @@ package org.apache.synapse.mediators.builtin;
 import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.axis2.AxisFault;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseLog;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
 import org.apache.synapse.commons.json.jsonprocessor.parser.JsonProcessor;
 import org.apache.synapse.commons.staxon.core.json.JsonXMLOutputFactory;
-import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
@@ -52,6 +52,19 @@ public class JSONTransformMediator extends AbstractMediator {
 
     @Override
     public boolean mediate(MessageContext synCtx) {
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
+        SynapseLog synLog = getLog(synCtx);
+        if (synLog.isTraceOrDebugEnabled()) {
+            synLog.traceOrDebug("Start : JSONTransform mediator");
+            if (synLog.isTraceTraceEnabled()) {
+                synLog.traceTrace("Message : " + synCtx.getEnvelope());
+            }
+        }
+
         if (!propertiesArrayList.isEmpty()) {
             try {
                 //Passing the the custom jsonOutputFactory and converting the Envelope body to JSON
@@ -61,6 +74,9 @@ public class JSONTransformMediator extends AbstractMediator {
                 //Update the jsonstream with the newly build payload
                 JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
                         jsonPayloadFromOMElement, true, true);
+                if (synLog.isTraceOrDebugEnabled()) {
+                    synLog.traceOrDebug("JSON stream after converting xml to json : " + jsonPayloadFromOMElement);
+                }
             } catch (AxisFault af) {
                 handleException("Axisfault occured when updating the " +
                         "JSON stream after applying the properties: ", af, synCtx);
@@ -91,6 +107,10 @@ public class JSONTransformMediator extends AbstractMediator {
                     String result = JsonProcessor.parseJson(jsonPayload, schema);
                     JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
                             result, true, true);
+                    if (synLog.isTraceOrDebugEnabled()) {
+                        synLog.traceOrDebug("JSON stream after applying schema : " +
+                                ((result != null) ? result : ""));
+                    }
                 } catch (ValidatorException | ParserException e) {
                     handleException(e.getMessage(), e, synCtx);
                 } catch (AxisFault af) {
@@ -101,6 +121,7 @@ public class JSONTransformMediator extends AbstractMediator {
                 handleException("Schema does not exist in the specified location : " + generatedSchemaKey, synCtx);
             }
         }
+        synLog.traceOrDebug("End : JSON Transform mediator");
         return true;
     }
 
