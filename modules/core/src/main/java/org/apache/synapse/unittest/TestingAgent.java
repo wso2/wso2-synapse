@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -75,7 +75,8 @@ class TestingAgent {
      * @param synapseTestCase test cases data received from client
      * @return Result of the deployment and exception status
      */
-    Map.Entry<Boolean, TestSuiteSummary> processTestArtifact(SynapseTestCase synapseTestCase, TestSuiteSummary testSuiteSummary) {
+    Map.Entry<Boolean, TestSuiteSummary> processTestArtifact(SynapseTestCase synapseTestCase,
+                                                             TestSuiteSummary testSuiteSummary) {
         artifactType = synapseTestCase.getArtifacts().getTestArtifact().getArtifactType();
         proxyTransportMethod = synapseTestCase.getArtifacts().getTestArtifact().getTransportMethod();
         String artifactNameOrKey = synapseTestCase.getArtifacts().getTestArtifact().getArtifactNameOrKey();
