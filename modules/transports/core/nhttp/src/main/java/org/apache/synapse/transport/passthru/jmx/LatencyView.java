@@ -151,7 +151,7 @@ public class LatencyView implements LatencyViewMBean {
     private void notifyTimes(long reqArrival, long reqDeparture,
                              long resArrival, long resDeparture) {
         long latencyBe = (resArrival - reqDeparture);
-        long latency = (resDeparture - reqArrival) - latencyBe;
+        long latency = (resDeparture - reqArrival) + latencyBe;
         lastLatency.update(latency);
         lastLatencyBe.update(latencyBe);
     }

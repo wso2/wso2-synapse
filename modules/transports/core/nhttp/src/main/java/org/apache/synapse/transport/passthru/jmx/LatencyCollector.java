@@ -95,7 +95,7 @@ public class LatencyCollector {
             long tResDeparture = (Long) o4;
 
             backendLatency = (tResArrival - tReqDeparture);
-            latency = (tResDeparture - tReqArrival) - backendLatency;
+            latency = (tResDeparture - tReqArrival) + backendLatency;
         }
         o1 = context.getAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_START_TIME);
         o2 = context.getAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_END_TIME);
