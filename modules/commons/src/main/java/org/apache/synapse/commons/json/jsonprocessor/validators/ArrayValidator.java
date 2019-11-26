@@ -1,24 +1,28 @@
 /*
  * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
- * <p>
+ *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
+ * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
 
 package org.apache.synapse.commons.json.jsonprocessor.validators;
 
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.synapse.commons.json.jsonprocessor.constants.ValidatorConstants;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
@@ -34,16 +38,16 @@ import java.util.Set;
  */
 public class ArrayValidator {
 
-    // Use without instantiation
-    private ArrayValidator() {
-
-    }
-
     private static final String MIN_ITEMS = "minItems";
     private static final String MAX_ITEMS = "maxItems";
     private static final String ITEMS = "items";
     private static final String UNIQUE_ITEMS = "uniqueItems";
     private static final String ADDITIONAL_ITEMS = "additionalItems";
+
+    // Use without instantiation
+    private ArrayValidator() {
+
+    }
 
     /**
      * This method will validates an input array according to a given schema.
@@ -64,13 +68,13 @@ public class ArrayValidator {
         boolean notAllowAdditional = false;
         // parsing the properties related to arrays from the schema, if they exists.
         if (schema.has(UNIQUE_ITEMS)) {
-            String uniqueItemsString = schema.get(UNIQUE_ITEMS).getAsString().replaceAll(ValidatorConstants.REGEX, "");
+            String uniqueItemsString = schema.get(UNIQUE_ITEMS).getAsString().replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
             if (!uniqueItemsString.isEmpty()) {
                 uniqueItems = DataTypeConverter.convertToBoolean(uniqueItemsString);
             }
         }
         if (schema.has(MIN_ITEMS)) {
-            String minItemsString = schema.get(MIN_ITEMS).getAsString().replaceAll(ValidatorConstants.REGEX, "");
+            String minItemsString = schema.get(MIN_ITEMS).getAsString().replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
             if (!minItemsString.isEmpty()) {
                 minItems = DataTypeConverter.convertToInt(minItemsString);
                 if (minItems < 0) {
@@ -79,7 +83,7 @@ public class ArrayValidator {
             }
         }
         if (schema.has(MAX_ITEMS)) {
-            String maxItemsString = schema.get(MAX_ITEMS).getAsString().replaceAll(ValidatorConstants.REGEX, "");
+            String maxItemsString = schema.get(MAX_ITEMS).getAsString().replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
             if (!maxItemsString.isEmpty()) {
                 maxItems = DataTypeConverter.convertToInt(maxItemsString);
                 if (maxItems < 0) {
@@ -97,9 +101,11 @@ public class ArrayValidator {
             if (tempElement.isJsonPrimitive() && !tempElement.getAsBoolean()) {
                 notAllowAdditional = true;
             } else if (tempElement.isJsonObject() && !tempElement.getAsJsonObject().entrySet().isEmpty()) {
-                String jsonString = "{\"type\": \"array\",\"items\": " + schema.get(ADDITIONAL_ITEMS).toString() + "}";
+                StringBuffer jsonString = new StringBuffer("{\"type\": \"array\",\"items\": ");
+                jsonString.append(schema.get(ADDITIONAL_ITEMS).toString());
+                jsonString.append("}");
                 parser = new JsonParser();
-                additionalItemsSchema = parser.parse(jsonString).getAsJsonObject();
+                additionalItemsSchema = parser.parse(jsonString.toString()).getAsJsonObject();
             }
         }
 
@@ -127,6 +133,9 @@ public class ArrayValidator {
                 // Item is a JSON object
                 JsonObject schemaObject = schema.get(ITEMS).getAsJsonObject();
                 processSchemaWithOneItem(inputArray, schemaObject);
+            } else {
+                throw new ValidatorException("Schema for Array is invalid. " +
+                        "Should contain either JsonArray or JsonObject");
             }
         }
         return inputArray;
@@ -168,7 +177,7 @@ public class ArrayValidator {
             if (!tempObj.entrySet().isEmpty()) {
                 if (tempObj.has(ValidatorConstants.TYPE_KEY)) {
                     String type = tempObj.get(ValidatorConstants.TYPE_KEY).toString().replaceAll(ValidatorConstants
-                            .REGEX, "");
+                            .QUOTE_REPLACE_REGEX, "");
                     if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
                         inputArray.set(i, BooleanValidator.validateBoolean(tempObj, inputArray.get(i).getAsString()));
                     } else if (ValidatorConstants.NOMINAL_KEYS.contains(type)) {
@@ -221,7 +230,7 @@ public class ArrayValidator {
             ValidatorException, ParserException {
         if (schemaObject.has(ValidatorConstants.TYPE_KEY)) {
             String type = schemaObject.get(ValidatorConstants.TYPE_KEY).toString().replaceAll(ValidatorConstants
-                    .REGEX, "");
+                    .QUOTE_REPLACE_REGEX, "");
             int i = 0;
             if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
                 for (JsonElement element : inputArray) {

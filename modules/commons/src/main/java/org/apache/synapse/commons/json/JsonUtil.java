@@ -108,10 +108,8 @@ public final class JsonUtil {
 
     static {
         Properties properties = MiscellaneousUtil.loadProperties("synapse.properties");
-        if (properties != null) {
-            isJsonToXmlPiEnabled = Boolean.parseBoolean(
-                    properties.getProperty(Constants.SYNAPSE_JSON_TO_XML_PROCESS_INSTRUCTION_ENABLE, "false").trim());
-        }
+        isJsonToXmlPiEnabled = Boolean.parseBoolean(
+                properties.getProperty(Constants.SYNAPSE_JSON_TO_XML_PROCESS_INSTRUCTION_ENABLE, "false").trim());
         jsonOutputFactory = generateJSONOutputFactory(properties);
         jsonInputFactory = generateJSONInputFactory(properties);
         xmlInputFactoryNoPIs = generateJsonXMLInputFactory(properties);
@@ -608,7 +606,8 @@ public final class JsonUtil {
      * @param element       Source XML element
      * @param processAttrbs Whether to remove the namespaces from attributes as well
      * @param properties    Message context properties
-     * @param jsonOutputFactory JsonOutputFactory with all the configurations
+     * @param jsonOutputFactory JsonOutputFactory with all the configurations.
+     *                          Pass null to use global configuration
      */
     public static void transformElement(OMElement element, boolean processAttrbs,
                                         Map properties, JsonXMLOutputFactory jsonOutputFactory) {

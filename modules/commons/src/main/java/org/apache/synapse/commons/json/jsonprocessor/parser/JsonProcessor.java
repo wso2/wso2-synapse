@@ -23,6 +23,7 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.commons.json.jsonprocessor.constants.ValidatorConstants;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
@@ -40,13 +41,13 @@ import org.apache.synapse.commons.json.jsonprocessor.validators.StringValidator;
  */
 public class JsonProcessor {
 
+    // JSON parser instance
+    private static JsonParser parser = new JsonParser();
+
     // Use without instantiating
     private JsonProcessor() {
 
     }
-
-    // JSON parser instance
-    private static JsonParser parser = new JsonParser();
 
     /**
      * This method parse a given JSON string according to the given schema. Both as string.
@@ -58,17 +59,17 @@ public class JsonProcessor {
      * @throws ParserException    Exception occurs in data type parsing.
      */
     public static String parseJson(String inputString, String inputSchema) throws ValidatorException, ParserException {
-        if (inputString != null && !inputString.isEmpty() && inputSchema != null && !inputSchema.isEmpty()) {
+        if (StringUtils.isNotEmpty(inputString) && StringUtils.isNotEmpty(inputSchema)) {
             JsonObject schemaObject;
             JsonElement schema;
             try {
                 schema = parser.parse(inputSchema);
             } catch (JsonSyntaxException ex) {
-                throw new ValidatorException("Invalid JSON schema " + ex.getMessage());
+                throw new ValidatorException("Invalid JSON schema", ex);
             }
             if (schema.isJsonObject()) {
                 // Handling empty JSON objects - valid for all inputs
-                if(schema.toString().replaceAll("\\s+","").equals("{}")) {
+                if (schema.toString().replaceAll("\\s+","").equals("{}")) {
                     return inputString;
                 }
                 schemaObject = schema.getAsJsonObject();
@@ -100,12 +101,12 @@ public class JsonProcessor {
      * @throws ParserException    Exception occurs in data type parsing.
      */
     private static String parseJson(String inputString, Object schema) throws ValidatorException, ParserException {
-        if (inputString != null && !inputString.isEmpty() && schema instanceof JsonObject) {
+        if (StringUtils.isNotEmpty(inputString) && schema instanceof JsonObject) {
             JsonElement result = null;
             JsonObject schemaObject = (JsonObject) schema;
             if (((JsonObject) schema).has(ValidatorConstants.TYPE_KEY)) {
                 String type = schemaObject.get(ValidatorConstants.TYPE_KEY).toString().replaceAll(
-                        ValidatorConstants.REGEX, "");
+                        ValidatorConstants.QUOTE_REPLACE_REGEX, "");
                 if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
                     result = BooleanValidator.validateBoolean(schemaObject, inputString);
                 } else if (ValidatorConstants.NOMINAL_KEYS.contains(type)) {

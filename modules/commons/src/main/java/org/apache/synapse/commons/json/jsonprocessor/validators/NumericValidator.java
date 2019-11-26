@@ -1,17 +1,17 @@
 /*
- *  Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *  WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License.
- *  You may obtain a copy of the License at
+ * WSO2 Inc. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
+ * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
@@ -31,17 +31,17 @@ import org.apache.synapse.commons.json.jsonprocessor.utils.DataTypeConverter;
  */
 public class NumericValidator {
 
-    // use without instantiating.
-    private NumericValidator() {
-    }
-
     private static final String INTEGER_STRING = "integer";
-
     private static final String MINIMUM_VALUE = "minimum";
     private static final String MAXIMUM_VALUE = "maximum";
     private static final String EXCLUSIVE_MINIMUM = "exclusiveMinimum";
     private static final String EXCLUSIVE_MAXIMUM = "exclusiveMaximum";
     private static final String MULTIPLE_OF = "multipleOf";
+
+    // use without instantiating.
+    private NumericValidator() {
+
+    }
 
     /**
      * Take JSON schema, number as a string input and validate.
@@ -64,13 +64,13 @@ public class NumericValidator {
             String type = null;
             if (inputObject.has(ValidatorConstants.TYPE_KEY)) {
                 type = inputObject.get(ValidatorConstants.TYPE_KEY).getAsString().replaceAll(ValidatorConstants
-                        .REGEX, "");
+                        .QUOTE_REPLACE_REGEX, "");
             }
             // handling multiples of condition
             Double doubleValue = DataTypeConverter.convertToDouble(value);
             if (inputObject.has(MULTIPLE_OF)) {
                 multipleOf = DataTypeConverter.convertToDouble(inputObject.get(MULTIPLE_OF).getAsString().replaceAll
-                        (ValidatorConstants.REGEX, ""));
+                        (ValidatorConstants.QUOTE_REPLACE_REGEX, ""));
                 if (doubleValue % multipleOf != 0) {
                     throw new ValidatorException("Number " + value + " is not a multiple of " +
                             "" + multipleOf + ". multipleOf constraint in " + inputObject.toString() + " is violated " +
@@ -79,8 +79,8 @@ public class NumericValidator {
             }
             // handling maximum and minimum
             if (inputObject.has(MINIMUM_VALUE)) {
-                String minimumString = inputObject.get(MINIMUM_VALUE).getAsString().replaceAll(ValidatorConstants.REGEX,
-                        "");
+                String minimumString = inputObject.get(MINIMUM_VALUE).getAsString().
+                        replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
                 if (!minimumString.isEmpty() && doubleValue < DataTypeConverter.convertToDouble(minimumString)) {
                     throw new ValidatorException("Number " + value + " is less than the " +
                             "minimum allowed value" + ". minimumValue constraint in " + inputObject.toString() +
@@ -88,8 +88,8 @@ public class NumericValidator {
                 }
             }
             if (inputObject.has(MAXIMUM_VALUE)) {
-                String maximumString = inputObject.get(MAXIMUM_VALUE).getAsString().replaceAll(ValidatorConstants.REGEX,
-                        "");
+                String maximumString = inputObject.get(MAXIMUM_VALUE).getAsString().
+                        replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
                 if (!maximumString.isEmpty() && doubleValue > DataTypeConverter.convertToDouble(maximumString)) {
                     throw new ValidatorException("Number " + value + " is greater than the " +
                             "maximum allowed value. maximumValue constraint in " + inputObject.toString() +
@@ -99,7 +99,7 @@ public class NumericValidator {
             // handling exclusive maximum and minimum
             if (inputObject.has(EXCLUSIVE_MINIMUM)) {
                 String minimumString = inputObject.get(EXCLUSIVE_MINIMUM).getAsString().replaceAll(ValidatorConstants
-                                .REGEX,
+                                .QUOTE_REPLACE_REGEX,
                         "");
                 if (!minimumString.isEmpty() && doubleValue <= DataTypeConverter.convertToDouble(minimumString)) {
                     throw new ValidatorException("Number " + value + " is less than the " +
@@ -109,7 +109,7 @@ public class NumericValidator {
             }
             if (inputObject.has(EXCLUSIVE_MAXIMUM)) {
                 String maximumString = inputObject.get(EXCLUSIVE_MAXIMUM).getAsString().replaceAll(ValidatorConstants
-                                .REGEX,
+                                .QUOTE_REPLACE_REGEX,
                         "");
                 if (!maximumString.isEmpty() && doubleValue >= DataTypeConverter.convertToDouble(maximumString)) {
                     throw new ValidatorException("Number " + value + " is greater than the " +
@@ -133,7 +133,7 @@ public class NumericValidator {
                         "const value input " + value + " not contains the const defined in " + inputObject.toString());
             }
             // convert to integer of give value is a float
-            if (type != null && type.equals(INTEGER_STRING)) {
+            if (INTEGER_STRING.equals(type)) {
                 return new JsonPrimitive(DataTypeConverter.convertToInt(value));
             } else {
                 // this condition address both type number and empty json schemas

@@ -1,24 +1,26 @@
 /*
  * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
- * <p>
+ *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
+ * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
 
 package org.apache.synapse.commons.json.jsonprocessor.validators;
 
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import org.apache.synapse.commons.json.jsonprocessor.constants.ValidatorConstants;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
@@ -29,13 +31,14 @@ import org.apache.synapse.commons.json.jsonprocessor.utils.DataTypeConverter;
  */
 public class StringValidator {
 
-    // Use without instantiating.
-    private StringValidator() {
-    }
-
     private static final String MIN_LENGTH = "minLength";
     private static final String MAX_LENGTH = "maxLength";
     private static final String STR_PATTERN = "pattern";
+
+    // Use without instantiating.
+    private StringValidator() {
+
+    }
 
     /**
      * Validate a given string against its schema.
@@ -55,7 +58,7 @@ public class StringValidator {
         // String length validations
         if (inputObject.has(MAX_LENGTH)) {
             String maxLengthString = inputObject.get(MAX_LENGTH).
-                    getAsString().replaceAll(ValidatorConstants.REGEX, "");
+                    getAsString().replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
             if (!maxLengthString.isEmpty()) {
                 int maxLength = DataTypeConverter.convertToInt(maxLengthString);
                 if (value.length() > maxLength) {
@@ -67,7 +70,7 @@ public class StringValidator {
         }
         if (inputObject.has(MIN_LENGTH)) {
             String minLengthString = inputObject.get(MIN_LENGTH).getAsString().
-                    replaceAll(ValidatorConstants.REGEX, "");
+                    replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
             if (!minLengthString.isEmpty()) {
                 int minLength = DataTypeConverter.convertToInt(minLengthString);
                 if (value.length() < minLength) {
@@ -79,7 +82,7 @@ public class StringValidator {
         }
         // String pattern validations
         if (inputObject.has(STR_PATTERN)) {
-            String patternString = inputObject.get(STR_PATTERN).getAsString().replaceAll(ValidatorConstants.REGEX, "");
+            String patternString = inputObject.get(STR_PATTERN).getAsString().replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
             if (!patternString.isEmpty() && !value.matches(patternString)) {
                 throw new ValidatorException("String \"" + value + "\" violated the regex " +
                         "constraint " + patternString + ". Input string : " + value +

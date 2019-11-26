@@ -18,7 +18,11 @@
 
 package org.apache.synapse.commons.json.jsonprocessor.utils;
 
-import com.google.gson.*;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -52,6 +56,8 @@ public class GSONDataTypeConverter {
             arrayObject.add(inputElement);
         }
         temp.add("test", arrayObject);
+        //converting Set<Map.Entry<String, JsonElement>> to Map.Entry<String, JsonElement>
+        //the key 'test' will be removed eventually
         Set<Map.Entry<String, JsonElement>> entries = temp.entrySet();
         Iterator itr = entries.iterator();
         return (Map.Entry<String, JsonElement>) itr.next();

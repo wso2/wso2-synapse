@@ -1,17 +1,17 @@
 /*
- *  Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *  WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License.
- *  You may obtain a copy of the License at
+ * WSO2 Inc. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
+ * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
@@ -39,15 +39,16 @@ import java.util.regex.Pattern;
  */
 public class ObjectValidator {
 
-    // Use without instantiating.
-    private ObjectValidator() {
-    }
-
     private final static String ADDITIONAL_PROPERTIES = "additionalProperties";
     private final static String MAX_PROPERTIES = "maxProperties";
     private final static String MIN_PROPERTIES = "minProperties";
     private final static String PATTERN_PROPERTIES = "patternProperties";
     private final static String REQUIRED = "required";
+
+    // Use without instantiating.
+    private ObjectValidator() {
+
+    }
 
     /**
      * This method will validate a given JSON input object according to
@@ -64,7 +65,7 @@ public class ObjectValidator {
         int maximumProperties = -1;
         // check whether all the required elements are present.
         // keyword MUST be an array. Elements of this array, if any, MUST be strings, and MUST be unique.
-        if (schema.has(REQUIRED) && schema.get(REQUIRED).isJsonArray()) {
+        if (schema.has(REQUIRED)) {
             JsonArray requiredArray = schema.getAsJsonArray(REQUIRED);
             for (JsonElement element : requiredArray) {
                 if (!object.has(element.getAsString())) {
@@ -75,14 +76,14 @@ public class ObjectValidator {
         }
         if (schema.has(MIN_PROPERTIES)) {
             String minPropertiesString = schema.get(MIN_PROPERTIES).getAsString().replaceAll
-                    (ValidatorConstants.REGEX, "");
+                    (ValidatorConstants.QUOTE_REPLACE_REGEX, "");
             if (!minPropertiesString.isEmpty()) {
                 minimumProperties = DataTypeConverter.convertToInt(minPropertiesString);
             }
         }
         if (schema.has(MAX_PROPERTIES)) {
             String maxPropertiesString = schema.get(MAX_PROPERTIES).getAsString().replaceAll
-                    (ValidatorConstants.REGEX, "");
+                    (ValidatorConstants.QUOTE_REPLACE_REGEX, "");
             if (!maxPropertiesString.isEmpty()) {
                 maximumProperties = DataTypeConverter.convertToInt(maxPropertiesString);
             }
@@ -142,7 +143,7 @@ public class ObjectValidator {
                     JsonObject schemaObj = schemaObject.getAsJsonObject(keyValue);
                     if (schemaObj.has(ValidatorConstants.TYPE_KEY)) {
                         String type = schemaObj.get(ValidatorConstants.TYPE_KEY).toString().replaceAll
-                                (ValidatorConstants.REGEX, "");
+                                (ValidatorConstants.QUOTE_REPLACE_REGEX, "");
                         validateAndUpdateEntriesMap(schemaObject, entry, type);
                     }
                 }
@@ -216,7 +217,7 @@ public class ObjectValidator {
     }
 
     /**
-     * This  method will process input objects matching with "patternProperties" regular expression.
+     * This method will process input objects matching with "patternProperties" regular expression.
      *
      * @param object            input JSON object.
      * @param schema            input schema.
@@ -235,7 +236,7 @@ public class ObjectValidator {
             JsonObject tempSchema = pattern.getValue().getAsJsonObject();
             if (tempSchema.has(ValidatorConstants.TYPE_KEY)) {
                 String type = tempSchema.get(ValidatorConstants.TYPE_KEY).getAsString().replaceAll(ValidatorConstants
-                        .REGEX, "");
+                        .QUOTE_REPLACE_REGEX, "");
                 // get the list of keys matched the regular expression
                 ArrayList<String> matchingKeys = getMatchRegexAgainstStringSet(inputObjectKeyset, regex);
                 for (String key : matchingKeys) {
@@ -311,7 +312,7 @@ public class ObjectValidator {
         if (!schema.entrySet().isEmpty() && !keysArray.isEmpty()) {
             if (schema.has(ValidatorConstants.TYPE_KEY)) {
                 String type = schema.get(ValidatorConstants.TYPE_KEY).toString().replaceAll
-                        (ValidatorConstants.REGEX, "");
+                        (ValidatorConstants.QUOTE_REPLACE_REGEX, "");
                 for (String key : keysArray) {
                     parseAndReplaceValues(input, schema, type, key);
                 }
