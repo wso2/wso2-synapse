@@ -82,7 +82,7 @@ public class FilePropertyLoader {
                 throw new SynapseCommonsException("Failed to read " + filePath, ex);
             }
         } else {
-            throw new SynapseCommonsException(filePath + " file cannot found in " + filePath);
+            throw new SynapseCommonsException("File cannot found in " + filePath);
         }
     }
 }
