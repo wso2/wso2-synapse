@@ -30,9 +30,7 @@ public class ValidatorConstants {
     private ValidatorConstants() {
     }
 
-    public static final String QUOTE_REPLACE_REGEX = "^\"|\"$";
     public static final String TYPE_KEY = "type";
-    public static final String ITEM_KEY = "items";
     public static final String ENUM = "enum";
     public static final String CONST = "const";
 

@@ -27,6 +27,7 @@ import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
 import org.apache.synapse.commons.json.jsonprocessor.utils.DataTypeConverter;
 import org.apache.synapse.commons.json.jsonprocessor.utils.GSONDataTypeConverter;
+import org.apache.synapse.commons.json.jsonprocessor.utils.JsonProcessorUtils;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -75,15 +76,15 @@ public class ObjectValidator {
             }
         }
         if (schema.has(MIN_PROPERTIES)) {
-            String minPropertiesString = schema.get(MIN_PROPERTIES).getAsString().replaceAll
-                    (ValidatorConstants.QUOTE_REPLACE_REGEX, "");
+            String minPropertiesString = JsonProcessorUtils.replaceEnclosingQuotes(
+                    schema.get(MIN_PROPERTIES).getAsString());
             if (!minPropertiesString.isEmpty()) {
                 minimumProperties = DataTypeConverter.convertToInt(minPropertiesString);
             }
         }
         if (schema.has(MAX_PROPERTIES)) {
-            String maxPropertiesString = schema.get(MAX_PROPERTIES).getAsString().replaceAll
-                    (ValidatorConstants.QUOTE_REPLACE_REGEX, "");
+            String maxPropertiesString = JsonProcessorUtils.replaceEnclosingQuotes(
+                    schema.get(MAX_PROPERTIES).getAsString());
             if (!maxPropertiesString.isEmpty()) {
                 maximumProperties = DataTypeConverter.convertToInt(maxPropertiesString);
             }
@@ -142,8 +143,8 @@ public class ObjectValidator {
                 if (schemaObject.has(keyValue) && schemaObject.get(keyValue).isJsonObject()) {
                     JsonObject schemaObj = schemaObject.getAsJsonObject(keyValue);
                     if (schemaObj.has(ValidatorConstants.TYPE_KEY)) {
-                        String type = schemaObj.get(ValidatorConstants.TYPE_KEY).toString().replaceAll
-                                (ValidatorConstants.QUOTE_REPLACE_REGEX, "");
+                        String type = JsonProcessorUtils.replaceEnclosingQuotes(
+                                schemaObj.get(ValidatorConstants.TYPE_KEY).toString());
                         validateAndUpdateEntriesMap(schemaObject, entry, type);
                     }
                 }
@@ -235,8 +236,8 @@ public class ObjectValidator {
             String regex = pattern.getKey();
             JsonObject tempSchema = pattern.getValue().getAsJsonObject();
             if (tempSchema.has(ValidatorConstants.TYPE_KEY)) {
-                String type = tempSchema.get(ValidatorConstants.TYPE_KEY).getAsString().replaceAll(ValidatorConstants
-                        .QUOTE_REPLACE_REGEX, "");
+                String type = JsonProcessorUtils.replaceEnclosingQuotes(
+                        tempSchema.get(ValidatorConstants.TYPE_KEY).getAsString());
                 // get the list of keys matched the regular expression
                 ArrayList<String> matchingKeys = getMatchRegexAgainstStringSet(inputObjectKeyset, regex);
                 for (String key : matchingKeys) {
@@ -311,8 +312,8 @@ public class ObjectValidator {
             ParserException {
         if (!schema.entrySet().isEmpty() && !keysArray.isEmpty()) {
             if (schema.has(ValidatorConstants.TYPE_KEY)) {
-                String type = schema.get(ValidatorConstants.TYPE_KEY).toString().replaceAll
-                        (ValidatorConstants.QUOTE_REPLACE_REGEX, "");
+                String type = JsonProcessorUtils.replaceEnclosingQuotes(
+                        schema.get(ValidatorConstants.TYPE_KEY).toString());
                 for (String key : keysArray) {
                     parseAndReplaceValues(input, schema, type, key);
                 }

@@ -28,6 +28,7 @@ import org.apache.synapse.commons.json.jsonprocessor.constants.ValidatorConstant
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
 import org.apache.synapse.commons.json.jsonprocessor.utils.GSONDataTypeConverter;
+import org.apache.synapse.commons.json.jsonprocessor.utils.JsonProcessorUtils;
 import org.apache.synapse.commons.json.jsonprocessor.validators.ArrayValidator;
 import org.apache.synapse.commons.json.jsonprocessor.validators.BooleanValidator;
 import org.apache.synapse.commons.json.jsonprocessor.validators.NullValidator;
@@ -105,8 +106,8 @@ public class JsonProcessor {
             JsonElement result = null;
             JsonObject schemaObject = (JsonObject) schema;
             if (((JsonObject) schema).has(ValidatorConstants.TYPE_KEY)) {
-                String type = schemaObject.get(ValidatorConstants.TYPE_KEY).toString().replaceAll(
-                        ValidatorConstants.QUOTE_REPLACE_REGEX, "");
+                String type = JsonProcessorUtils.replaceEnclosingQuotes(
+                        schemaObject.get(ValidatorConstants.TYPE_KEY).toString());
                 if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
                     result = BooleanValidator.validateBoolean(schemaObject, inputString);
                 } else if (ValidatorConstants.NOMINAL_KEYS.contains(type)) {

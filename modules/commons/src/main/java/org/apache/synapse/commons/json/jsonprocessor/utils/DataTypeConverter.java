@@ -32,7 +32,7 @@ public class DataTypeConverter {
 
     public static Boolean convertToBoolean(String value) throws ParserException {
         if (value != null && !value.isEmpty()) {
-            value = value.replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
+            value = JsonProcessorUtils.replaceEnclosingQuotes(value);
             if (value.equals("true") || value.equals("false")) {
                 return Boolean.parseBoolean(value);
             }
@@ -43,7 +43,7 @@ public class DataTypeConverter {
 
     public static int convertToInt(String value) throws ParserException {
         if (value != null && !value.isEmpty()) {
-            value = value.replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
+            value = JsonProcessorUtils.replaceEnclosingQuotes(value);
             try {
                 return Integer.parseInt(value.trim());
             } catch (NumberFormatException nfe) {
@@ -55,7 +55,7 @@ public class DataTypeConverter {
 
     public static double convertToDouble(String value) throws ParserException {
         if (value != null && !value.isEmpty()) {
-            value = value.replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
+            value = JsonProcessorUtils.replaceEnclosingQuotes(value);
             try {
                 return Double.parseDouble(value.trim());
             } catch (NumberFormatException nfe) {

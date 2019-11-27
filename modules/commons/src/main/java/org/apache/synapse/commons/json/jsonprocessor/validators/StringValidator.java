@@ -25,6 +25,7 @@ import org.apache.synapse.commons.json.jsonprocessor.constants.ValidatorConstant
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
 import org.apache.synapse.commons.json.jsonprocessor.utils.DataTypeConverter;
+import org.apache.synapse.commons.json.jsonprocessor.utils.JsonProcessorUtils;
 
 /**
  * This class validate strings against the given schema object.
@@ -57,8 +58,8 @@ public class StringValidator {
         }
         // String length validations
         if (inputObject.has(MAX_LENGTH)) {
-            String maxLengthString = inputObject.get(MAX_LENGTH).
-                    getAsString().replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
+            String maxLengthString = JsonProcessorUtils.replaceEnclosingQuotes(
+                    inputObject.get(MAX_LENGTH).getAsString());
             if (!maxLengthString.isEmpty()) {
                 int maxLength = DataTypeConverter.convertToInt(maxLengthString);
                 if (value.length() > maxLength) {
@@ -69,8 +70,8 @@ public class StringValidator {
             }
         }
         if (inputObject.has(MIN_LENGTH)) {
-            String minLengthString = inputObject.get(MIN_LENGTH).getAsString().
-                    replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
+            String minLengthString = JsonProcessorUtils.replaceEnclosingQuotes(
+                    inputObject.get(MIN_LENGTH).getAsString());
             if (!minLengthString.isEmpty()) {
                 int minLength = DataTypeConverter.convertToInt(minLengthString);
                 if (value.length() < minLength) {
@@ -82,7 +83,8 @@ public class StringValidator {
         }
         // String pattern validations
         if (inputObject.has(STR_PATTERN)) {
-            String patternString = inputObject.get(STR_PATTERN).getAsString().replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
+            String patternString = JsonProcessorUtils.replaceEnclosingQuotes(
+                    inputObject.get(STR_PATTERN).getAsString());
             if (!patternString.isEmpty() && !value.matches(patternString)) {
                 throw new ValidatorException("String \"" + value + "\" violated the regex " +
                         "constraint " + patternString + ". Input string : " + value +

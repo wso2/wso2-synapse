@@ -25,6 +25,7 @@ import org.apache.synapse.commons.json.jsonprocessor.constants.ValidatorConstant
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
 import org.apache.synapse.commons.json.jsonprocessor.utils.DataTypeConverter;
+import org.apache.synapse.commons.json.jsonprocessor.utils.JsonProcessorUtils;
 
 /**
  * validate numeric instances according to the given schema.
@@ -59,18 +60,18 @@ public class NumericValidator {
             throw new ValidatorException("Expected a number but found null");
         }
         //replacing enclosing quotes
-        value = value.replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
+        value = JsonProcessorUtils.replaceEnclosingQuotes(value);
         if (isNumeric(value)) {
             String type = null;
             if (inputObject.has(ValidatorConstants.TYPE_KEY)) {
-                type = inputObject.get(ValidatorConstants.TYPE_KEY).getAsString().replaceAll(ValidatorConstants
-                        .QUOTE_REPLACE_REGEX, "");
+                type = JsonProcessorUtils.replaceEnclosingQuotes(
+                        inputObject.get(ValidatorConstants.TYPE_KEY).getAsString());
             }
             // handling multiples of condition
             Double doubleValue = DataTypeConverter.convertToDouble(value);
             if (inputObject.has(MULTIPLE_OF)) {
-                multipleOf = DataTypeConverter.convertToDouble(inputObject.get(MULTIPLE_OF).getAsString().replaceAll
-                        (ValidatorConstants.QUOTE_REPLACE_REGEX, ""));
+                multipleOf = DataTypeConverter.convertToDouble(JsonProcessorUtils.replaceEnclosingQuotes(
+                        inputObject.get(MULTIPLE_OF).getAsString()));
                 if (doubleValue % multipleOf != 0) {
                     throw new ValidatorException("Number " + value + " is not a multiple of " +
                             "" + multipleOf + ". multipleOf constraint in " + inputObject.toString() + " is violated " +
@@ -79,8 +80,8 @@ public class NumericValidator {
             }
             // handling maximum and minimum
             if (inputObject.has(MINIMUM_VALUE)) {
-                String minimumString = inputObject.get(MINIMUM_VALUE).getAsString().
-                        replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
+                String minimumString = JsonProcessorUtils.replaceEnclosingQuotes(
+                        inputObject.get(MINIMUM_VALUE).getAsString());
                 if (!minimumString.isEmpty() && doubleValue < DataTypeConverter.convertToDouble(minimumString)) {
                     throw new ValidatorException("Number " + value + " is less than the " +
                             "minimum allowed value" + ". minimumValue constraint in " + inputObject.toString() +
@@ -88,8 +89,8 @@ public class NumericValidator {
                 }
             }
             if (inputObject.has(MAXIMUM_VALUE)) {
-                String maximumString = inputObject.get(MAXIMUM_VALUE).getAsString().
-                        replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
+                String maximumString = JsonProcessorUtils.replaceEnclosingQuotes(
+                        inputObject.get(MAXIMUM_VALUE).getAsString());
                 if (!maximumString.isEmpty() && doubleValue > DataTypeConverter.convertToDouble(maximumString)) {
                     throw new ValidatorException("Number " + value + " is greater than the " +
                             "maximum allowed value. maximumValue constraint in " + inputObject.toString() +
@@ -98,9 +99,8 @@ public class NumericValidator {
             }
             // handling exclusive maximum and minimum
             if (inputObject.has(EXCLUSIVE_MINIMUM)) {
-                String minimumString = inputObject.get(EXCLUSIVE_MINIMUM).getAsString().replaceAll(ValidatorConstants
-                                .QUOTE_REPLACE_REGEX,
-                        "");
+                String minimumString = JsonProcessorUtils.replaceEnclosingQuotes(
+                        inputObject.get(EXCLUSIVE_MINIMUM).getAsString());
                 if (!minimumString.isEmpty() && doubleValue <= DataTypeConverter.convertToDouble(minimumString)) {
                     throw new ValidatorException("Number " + value + " is less than the " +
                             "minimum allowed value. ExclusiveMinimum constraint in " + inputObject.toString() +
@@ -108,9 +108,8 @@ public class NumericValidator {
                 }
             }
             if (inputObject.has(EXCLUSIVE_MAXIMUM)) {
-                String maximumString = inputObject.get(EXCLUSIVE_MAXIMUM).getAsString().replaceAll(ValidatorConstants
-                                .QUOTE_REPLACE_REGEX,
-                        "");
+                String maximumString = JsonProcessorUtils.replaceEnclosingQuotes(
+                        inputObject.get(EXCLUSIVE_MAXIMUM).getAsString());
                 if (!maximumString.isEmpty() && doubleValue >= DataTypeConverter.convertToDouble(maximumString)) {
                     throw new ValidatorException("Number " + value + " is greater than the " +
                             "maximum allowed value. ExclusiveMaximum constraint in " +

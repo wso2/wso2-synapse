@@ -28,6 +28,7 @@ import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
 import org.apache.synapse.commons.json.jsonprocessor.utils.DataTypeConverter;
 import org.apache.synapse.commons.json.jsonprocessor.utils.GSONDataTypeConverter;
+import org.apache.synapse.commons.json.jsonprocessor.utils.JsonProcessorUtils;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -68,13 +69,14 @@ public class ArrayValidator {
         boolean notAllowAdditional = false;
         // parsing the properties related to arrays from the schema, if they exists.
         if (schema.has(UNIQUE_ITEMS)) {
-            String uniqueItemsString = schema.get(UNIQUE_ITEMS).getAsString().replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
+            String uniqueItemsString = JsonProcessorUtils.replaceEnclosingQuotes(
+                    schema.get(UNIQUE_ITEMS).getAsString());
             if (!uniqueItemsString.isEmpty()) {
                 uniqueItems = DataTypeConverter.convertToBoolean(uniqueItemsString);
             }
         }
         if (schema.has(MIN_ITEMS)) {
-            String minItemsString = schema.get(MIN_ITEMS).getAsString().replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
+            String minItemsString = JsonProcessorUtils.replaceEnclosingQuotes(schema.get(MIN_ITEMS).getAsString());
             if (!minItemsString.isEmpty()) {
                 minItems = DataTypeConverter.convertToInt(minItemsString);
                 if (minItems < 0) {
@@ -83,7 +85,7 @@ public class ArrayValidator {
             }
         }
         if (schema.has(MAX_ITEMS)) {
-            String maxItemsString = schema.get(MAX_ITEMS).getAsString().replaceAll(ValidatorConstants.QUOTE_REPLACE_REGEX, "");
+            String maxItemsString = JsonProcessorUtils.replaceEnclosingQuotes(schema.get(MAX_ITEMS).getAsString());
             if (!maxItemsString.isEmpty()) {
                 maxItems = DataTypeConverter.convertToInt(maxItemsString);
                 if (maxItems < 0) {
@@ -176,8 +178,7 @@ public class ArrayValidator {
             // Checking for empty input schema Ex:- {}
             if (!tempObj.entrySet().isEmpty()) {
                 if (tempObj.has(ValidatorConstants.TYPE_KEY)) {
-                    String type = tempObj.get(ValidatorConstants.TYPE_KEY).toString().replaceAll(ValidatorConstants
-                            .QUOTE_REPLACE_REGEX, "");
+                    String type = JsonProcessorUtils.replaceEnclosingQuotes(tempObj.get(ValidatorConstants.TYPE_KEY).toString());
                     if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
                         inputArray.set(i, BooleanValidator.validateBoolean(tempObj, inputArray.get(i).getAsString()));
                     } else if (ValidatorConstants.NOMINAL_KEYS.contains(type)) {
@@ -229,8 +230,8 @@ public class ArrayValidator {
     private static void processSchemaWithOneItem(JsonArray inputArray, JsonObject schemaObject) throws
             ValidatorException, ParserException {
         if (schemaObject.has(ValidatorConstants.TYPE_KEY)) {
-            String type = schemaObject.get(ValidatorConstants.TYPE_KEY).toString().replaceAll(ValidatorConstants
-                    .QUOTE_REPLACE_REGEX, "");
+            String type = JsonProcessorUtils.replaceEnclosingQuotes(
+                    schemaObject.get(ValidatorConstants.TYPE_KEY).toString());
             int i = 0;
             if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
                 for (JsonElement element : inputArray) {
