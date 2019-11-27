@@ -1142,6 +1142,52 @@
               <artifactId>antlr-runtime</artifactId>
               <version>${antlr.wso2.version}</version>
           </dependency>
+          <!-- Jaeger Tracing related dependencies -->
+          <dependency>
+              <groupId>io.jaegertracing</groupId>
+              <artifactId>jaeger-client</artifactId>
+              <version>${io.jaegertracing.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>io.jaegertracing</groupId>
+              <artifactId>jaeger-core</artifactId>
+              <version>${io.jaegertracing.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>io.jaegertracing</groupId>
+              <artifactId>jaeger-thrift</artifactId>
+              <version>${io.jaegertracing.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>io.jaegertracing</groupId>
+              <artifactId>jaeger-tracerresolver</artifactId>
+              <version>${io.jaegertracing.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>io.opentracing.contrib</groupId>
+              <artifactId>opentracing-tracerresolver</artifactId>
+              <version>${io.opentracing.contrib.tracerresolver.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>io.opentracing</groupId>
+              <artifactId>opentracing-api</artifactId>
+              <version>${io.opentracing.api.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.apache.thrift</groupId>
+              <artifactId>libthrift</artifactId>
+              <version>${org.apache.thrift.libthrift.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>com.squareup.okhttp3</groupId>
+              <artifactId>okhttp</artifactId>
+              <version>${com.squareup.okhttp3.okhttp.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>com.squareup.okio</groupId>
+              <artifactId>okio</artifactId>
+              <version>${com.squareup.okio.version}</version>
+          </dependency>
       </dependencies>
    </dependencyManagement>
     <reporting>
@@ -1316,6 +1362,13 @@
       <commons_io.version>2.0</commons_io.version>
       <commons-cli.version>1.0</commons-cli.version>
       <jline.version>0.9.94</jline.version>
+       <!-- Jaeger Tracing dependency versions -->
+       <io.jaegertracing.version>0.32.0</io.jaegertracing.version>
+       <io.opentracing.contrib.tracerresolver.version>0.1.5</io.opentracing.contrib.tracerresolver.version>
+       <io.opentracing.api.version>0.31.0</io.opentracing.api.version>
+       <org.apache.thrift.libthrift.version>0.11.0</org.apache.thrift.libthrift.version>
+       <com.squareup.okhttp3.okhttp.version>3.9.0</com.squareup.okhttp3.okhttp.version>
+       <com.squareup.okio.version>1.13.0</com.squareup.okio.version>
       <!-- dependencies of Synapse extensions module -->
       <saxon-HE.version>9.5.1-8</saxon-HE.version>
       <wso2commons.version>1.2</wso2commons.version>
