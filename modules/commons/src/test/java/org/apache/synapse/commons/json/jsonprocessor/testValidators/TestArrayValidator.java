@@ -396,7 +396,7 @@ public class TestArrayValidator {
 
         String schema = "{ \"type\": \"array\", \"items\":[{\"type\":\"null\"},{ \"type\": \"null\"}," +
                 "{ \"type\": \"null\"}]}";
-        String testPayload = "[\"\",\"null\"," + null + "]";
+        String testPayload = "[null,null,null]";;
         String expectedPayload = "[null,null,null]";
         JsonObject schemaObject = (JsonObject) parser.parse(schema);
         JsonArray expected = (JsonArray) parser.parse(expectedPayload);
@@ -413,7 +413,7 @@ public class TestArrayValidator {
     public void testSchemaWithValidNull() throws ValidatorException, ParserException {
 
         String schema = "{ \"type\": \"array\", \"items\":{\"type\":\"null\"}}";
-        String testPayload = "[\"\",\"null\"," + null + "]";
+        String testPayload = "[\"null\",\"null\", \"null\"]";
         String expectedPayload = "[null,null,null]";
         JsonObject schemaObject = (JsonObject) parser.parse(schema);
         JsonArray expected = (JsonArray) parser.parse(expectedPayload);

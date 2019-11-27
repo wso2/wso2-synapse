@@ -59,6 +59,7 @@ public class TestNullValidator {
      */
     @Test
     public void testEmptyInput() throws ValidatorException {
+        thrown.expect(ValidatorException.class);
         String schema = "{\"type\":\"null\"}";
         String testPayload = "";
         JsonObject schemaObject = (JsonObject) parser.parse(schema);

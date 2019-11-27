@@ -11,5 +11,5 @@
   "allNumericArray" : ["3","1","4"],
   "Hello"           : 890,
   "league_goals"    : "10",
-  "nullArray"       : ["",null,"null"]
+  "nullArray"       : [null,null,null]
 }
