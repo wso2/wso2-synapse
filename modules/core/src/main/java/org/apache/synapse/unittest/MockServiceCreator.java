@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -74,9 +74,7 @@ class MockServiceCreator {
             }
 
             emulator.operations().start();
-
             log.info("Mock service started for " + mockServiceName + " in - http://" + host + ":" + port + context);
-
         } catch (Exception e) {
             log.error("Error in initiating mock service named " + mockServiceName, e);
         }
@@ -109,7 +107,7 @@ class MockServiceCreator {
             requestHeaders = resource.getRequestHeaders();
         }
 
-        if(resource.getResponseHeaders() != null) {
+        if (resource.getResponseHeaders() != null) {
             responseHeaders = resource.getResponseHeaders();
         }
 

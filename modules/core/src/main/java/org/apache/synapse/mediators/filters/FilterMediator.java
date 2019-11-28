@@ -37,6 +37,8 @@ import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.ListMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
+import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
 import java.util.regex.Matcher;
@@ -282,7 +284,11 @@ public class FilterMediator extends AbstractListMediator implements
 
         if (xpath != null) {
             try {
-                return xpath.booleanValueOf(synCtx);
+                if (xpath instanceof SynapseXPath) {
+                    return xpath.booleanValueOf(synCtx);
+                } else if (xpath instanceof SynapseJsonPath) {
+                    return ((SynapseJsonPath) xpath).booleanValueOf(synCtx);
+                }
             } catch (JaxenException e) {
                 handleException("Error evaluating XPath expression : " + xpath, e, synCtx);
             }

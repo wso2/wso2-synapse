@@ -1,17 +1,17 @@
 /*
  * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
-
+ *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
-
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
-
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied. See the License for the
+ * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
@@ -45,10 +45,6 @@ import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.libraries.util.LibDeployerUtils;
 
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -61,6 +57,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 /**
  * Class responsible for the deploy the connector resources uses for Unit test flow.
@@ -131,7 +131,7 @@ class ConnectorDeployer {
     }
 
     /**
-     * Get the deployer for the Synapse Library
+     * Get the deployer for the Synapse Library.
      *
      * @param axisConfig AxisConfiguration instance
      * @return Deployer instance
@@ -161,7 +161,7 @@ class ConnectorDeployer {
     }
 
     /**
-     * Performing the action of enabling/disabling the given meidation library
+     * Performing the action of enabling/disabling the given meidation library.
      *
      * @param libName library name
      * @param packageName package name
@@ -204,7 +204,8 @@ class ConnectorDeployer {
      *
      * @param axisConfig AxisConfiguration of the current tenant
      */
-    private static void undeployingLocalEntries(Library library, SynapseConfiguration config, AxisConfiguration axisConfig) {
+    private static void undeployingLocalEntries(Library library, SynapseConfiguration config,
+                                                AxisConfiguration axisConfig) {
         if (log.isDebugEnabled()) {
             log.debug("Start : Removing Local registry entries from the configuration");
         }
@@ -269,11 +270,12 @@ class ConnectorDeployer {
     }
 
     /**
-     * Deploy the local entries from lib
+     * Deploy the local entries from lib.
      *
      * @param axisConfig AxisConfiguration of the current tenant
      */
-    private static void deployingLocalEntries(Library library, SynapseConfiguration config, AxisConfiguration axisConfig) {
+    private static void deployingLocalEntries(Library library, SynapseConfiguration config,
+                                              AxisConfiguration axisConfig) {
         if (log.isDebugEnabled()) {
             log.debug("Start : Adding Local registry entries to the configuration");
         }
@@ -415,7 +417,7 @@ class ConnectorDeployer {
     }
 
     /**
-     * Helper method to retrieve the Synapse configuration from the relevant axis configuration
+     * Helper method to retrieve the Synapse configuration from the relevant axis configuration.
      *
      * @param axisConfig AxisConfiguration of the current tenant
      * @return extracted SynapseConfiguration from the relevant AxisConfiguration
@@ -426,7 +428,7 @@ class ConnectorDeployer {
     }
 
     /**
-     * Performing the action of importing the given meidation library
+     * Performing the action of importing the given meidation library.
      *
      * @param libName library name
      * @param packageName package name
@@ -445,7 +447,7 @@ class ConnectorDeployer {
                 log.error("Could not add Synapse Import", axisFault);
             }
         } else {
-            log.error( "Could not add Synapse Import. Invalid import params for libName : " +
+            log.error("Could not add Synapse Import. Invalid import params for libName : " +
                     libName + " packageName : " + packageName);
         }
     }
@@ -485,7 +487,7 @@ class ConnectorDeployer {
     }
 
     /**
-     * Creates an <code>OMElement</code> from the given string
+     * Creates an <code>OMElement</code> from the given string.
      *
      * @param str the XML string
      * @return the <code>OMElement</code> representation of the given string

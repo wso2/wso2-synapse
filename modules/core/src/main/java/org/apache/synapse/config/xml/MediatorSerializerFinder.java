@@ -75,6 +75,7 @@ public class MediatorSerializerFinder {
             RespondMediatorSerializer.class,
             CommentMediatorSerializer.class,
             ForEachMediatorSerializer.class,
+            JSONTransformMediatorSerializer.class
     };
 
     private final static MediatorSerializerFinder instance = new MediatorSerializerFinder();

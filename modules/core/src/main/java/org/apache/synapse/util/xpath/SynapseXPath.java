@@ -56,18 +56,18 @@ import org.jaxen.JaxenException;
 import org.jaxen.UnresolvableException;
 import org.jaxen.util.SingletonList;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
 
 
 
@@ -179,9 +179,10 @@ public class SynapseXPath extends SynapsePath {
 	 // for get-property() method
 	 if (XMLConfigConstants.SCOPE_REGISTRY.equals(propertyScope)
 			|| XMLConfigConstants.SCOPE_SYSTEM.equals(propertyScope)
-			|| XMLConfigConstants.SCOPE_TRANSPORT.equals(propertyScope)) {
-	    contentAware = false;
-	    return;
+             || XMLConfigConstants.SCOPE_TRANSPORT.equals(propertyScope)
+             || XMLConfigConstants.SCOPE_SYSTEM.equals(propertyScope)) {
+         contentAware = false;
+         return;
 	 }
 
         if(xpathString.contains("$trp") || xpathString.contains("$ctx") || xpathString.contains("$axis2")){

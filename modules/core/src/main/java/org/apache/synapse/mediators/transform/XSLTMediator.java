@@ -262,14 +262,10 @@ public class XSLTMediator extends AbstractMediator {
                 " against source XPath : " + source + " reason : " + e.getMessage(), e, synCtx);
 
         }
-        org.apache.axis2.context.MessageContext axis2MsgCtx =
-                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-        if (JsonUtil.hasAJsonPayload(axis2MsgCtx)) {
-            JsonUtil.setJsonStream(axis2MsgCtx,
-                    JsonUtil.toJsonStream(axis2MsgCtx.getEnvelope().getBody().getFirstElement()));
-        }
-        synLog.traceOrDebug("End : XSLT mediator");
+        //removing JSONstream from the message Context since it is outdated.
+        JsonUtil.removeJsonStream(((Axis2MessageContext) synCtx).getAxis2MessageContext());
 
+        synLog.traceOrDebug("End : XSLT mediator");
         return true;
     }
 
