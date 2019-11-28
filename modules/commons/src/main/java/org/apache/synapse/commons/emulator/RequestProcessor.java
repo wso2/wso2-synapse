@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -60,10 +60,10 @@ public class RequestProcessor {
         //remove CDATA tag from the string if exists
         if (trimedString.startsWith("<![CDATA[")) {
             trimedString = trimedString.substring(9);
-            int i = trimedString.indexOf("]]>");
-            if (i == -1)
+            int index = trimedString.indexOf("]]>");
+            if (index == -1)
                 throw new IllegalStateException("argument starts with <![CDATA[ but cannot find pairing ]]>");
-            trimedString = trimedString.substring(0, i);
+            trimedString = trimedString.substring(0, index);
         }
 
         trimedString = convertStringToRelatedDocumentType(trimedString);
@@ -107,16 +107,16 @@ public class RequestProcessor {
      * @return converted document element as a string
      */
     private static String nodeToString(Node node) {
-        StringWriter sw = new StringWriter();
+        StringWriter stringWriter = new StringWriter();
         try {
-            Transformer t = TransformerFactory.newInstance().newTransformer();
-            t.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-            t.setOutputProperty(OutputKeys.INDENT, "yes");
-            t.transform(new DOMSource(node), new StreamResult(sw));
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.transform(new DOMSource(node), new StreamResult(stringWriter));
         } catch (Exception e) {
             log.error("nodeToString Transformer Exception", e);
         }
-        return sw.toString();
+        return stringWriter.toString();
     }
 
     /**

@@ -225,6 +225,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     /**
      * This method is to set the unit test mode is enabled.
      * unit test message context and environment initializes
+     *
+     * @param contextInformation current ServerContextInformation
      */
     private void setSeverUnitTestMode(ServerContextInformation contextInformation) {
         if (Boolean.parseBoolean(System.getProperty("synapseTest"))) {

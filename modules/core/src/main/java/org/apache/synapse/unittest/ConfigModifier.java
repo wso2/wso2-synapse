@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -232,9 +232,10 @@ class ConfigModifier {
     }
 
     /**
-     * Thread wait until all services are started by checking the ports
+     * Thread wait until all services are started by checking the ports.
      *
      * @param port mock service port
+     * @return boolean value of port availability
      */
     private static boolean checkPortAvailability(int port) {
         boolean isAvailable;
