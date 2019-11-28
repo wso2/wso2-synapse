@@ -69,7 +69,6 @@ public class SequenceMediatorFactory extends AbstractListMediatorFactory {
         }
         addChildren(elem, seqMediator, properties);
         seqMediator.setSequenceType(SequenceType.ANON);
-
         return seqMediator;
     }
     
@@ -109,7 +108,6 @@ public class SequenceMediatorFactory extends AbstractListMediatorFactory {
                 throw new SynapseException(msg);
             }
         }
-
         addAllCommentChildrenToList(elem, seqMediator.getCommentsList());
         return seqMediator;
     }

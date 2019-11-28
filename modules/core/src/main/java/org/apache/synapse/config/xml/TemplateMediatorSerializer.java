@@ -56,9 +56,7 @@ public class TemplateMediatorSerializer extends AbstractListMediatorSerializer {
         if (mediator.getErrorHandler() != null) {
             templateElem.addAttribute(fac.createOMAttribute("onError", nullNS, mediator.getErrorHandler()));
         }
-
         CommentListUtil.serializeComments(templateElem, mediator.getCommentsList());
-
         return templateElem;
     }
 

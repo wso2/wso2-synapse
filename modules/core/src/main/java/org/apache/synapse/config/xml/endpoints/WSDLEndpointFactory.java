@@ -195,9 +195,7 @@ public class WSDLEndpointFactory extends DefaultEndpointFactory {
 
         // process the parameters
         processProperties(wsdlEndpoint, epConfig);
-
         CommentListUtil.populateComments(epConfig, wsdlEndpoint.getCommentsList());
-
         return wsdlEndpoint;
     }
 

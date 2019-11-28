@@ -163,7 +163,6 @@ public abstract class EndpointSerializer {
             element.addAttribute(EndpointFactory.ON_FAULT_Q.getLocalPart(),
                     messageStore, null);
         }
-
         CommentListUtil.serializeComments(element, ((AbstractEndpoint) endpoint).getCommentsList());
     }
 

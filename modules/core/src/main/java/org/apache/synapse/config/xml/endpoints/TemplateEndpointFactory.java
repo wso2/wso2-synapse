@@ -87,9 +87,7 @@ public class TemplateEndpointFactory extends EndpointFactory {
             templateEndpoint.addParameter(paramName.getAttributeValue(),
                     paramValue.getAttributeValue());
         }
-
         CommentListUtil.populateComments(endpointElement, templateEndpoint.getCommentsList());
-
         return templateEndpoint;
     }
 }
