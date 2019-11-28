@@ -385,18 +385,6 @@ public class Axis2SynapseController implements SynapseController {
      */
     public SynapseEnvironment createSynapseEnvironment() {
 
-        try {
-        	deployMediationLibraryArtifacts();
-        	deployMediatorExtensions();
-            deploySynapseService();
-            deployProxyServices();
-            deployEventSources();
-            //deployMediatorExtensions();
-        } catch (AxisFault axisFault) {
-            log.fatal("Synapse startup failed...", axisFault);
-            throw new SynapseException("Synapse startup failed", axisFault);
-        }
-
         synapseEnvironment = new Axis2SynapseEnvironment(
                 configurationContext, synapseConfiguration, serverContextInformation);
         MessageContextCreatorForAxis2.setSynEnv(synapseEnvironment);
@@ -411,11 +399,54 @@ public class Axis2SynapseController implements SynapseController {
 
         }
 
+        //we initialize xpath extensions here since synapse environment is available
+        initXpathExtensions(synapseEnvironment);
+
+        try {
+            deployMediationLibraryArtifacts();
+            deployMediatorExtensions();
+            deploySynapseService();
+            deployProxyServices();
+            deployEventSources();
+            //deployMediatorExtensions();
+        } catch (AxisFault axisFault) {
+            log.fatal("Synapse startup failed...", axisFault);
+            throw new SynapseException("Synapse startup failed", axisFault);
+        }
+
         synapseEnvironment.getTaskManager().init(taskDescriptionRepository, taskScheduler, synapseConfiguration.getTaskManager());
         synapseConfiguration.init(synapseEnvironment);
         synapseEnvironment.setInitialized(true);
 
         return synapseEnvironment;
+    }
+
+    /**
+     * This method initializes Xpath Extensions available through synapse.properties file.
+     * Xpath Extensions can be defined in Variable Context Extensions + Function Context Extensions
+     * synapse.xpath.var.extensions --> Variable Extensions
+     * synapse.xpath.func.extensions --> Function Extensions
+     *
+     * @param synapseEnvironment SynapseEnvironment
+     */
+    private void initXpathExtensions(SynapseEnvironment synapseEnvironment) {
+        Axis2SynapseEnvironment axis2SynapseEnvironment = (Axis2SynapseEnvironment) synapseEnvironment;
+
+        /*Initialize Function Context extensions for xpath
+         */
+        List<SynapseXpathFunctionContextProvider> functionExtensions =
+                XpathExtensionUtil.getRegisteredFunctionExtensions();
+        for (SynapseXpathFunctionContextProvider functionExtension : functionExtensions) {
+            axis2SynapseEnvironment.setXpathFunctionExtensions(functionExtension);
+        }
+
+        /*Initialize Variable Context extensions for xpath
+         */
+        List<SynapseXpathVariableResolver> variableExtensions =
+                XpathExtensionUtil.getRegisteredVariableExtensions();
+        for (SynapseXpathVariableResolver variableExtension : variableExtensions) {
+            axis2SynapseEnvironment.setXpathVariableExtensions(variableExtension);
+        }
     }
 
 	/**
