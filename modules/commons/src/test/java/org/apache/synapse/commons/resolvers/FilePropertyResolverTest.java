@@ -27,7 +27,7 @@ public class FilePropertyResolverTest extends TestCase {
      */
     public void testResolve() {
         String inputValue = "testKey";
-        System.setProperty("synapse.commons.file.properties.path", System.getProperty("user.dir") + "/src/test/resources/file.properties");
+        System.setProperty(FilePropertyLoader.FILE_PROPERTY_PATH, System.getProperty("user.dir") + "/src/test/resources/file.properties");
         FilePropertyLoader propertyLoader = FilePropertyLoader.getInstance();
         String filePropertyValue = propertyLoader.getValue(inputValue);
         assertEquals("Couldn't resolve the file property variable", "testValue", filePropertyValue);

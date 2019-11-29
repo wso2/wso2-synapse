@@ -34,7 +34,7 @@ public class FilePropertyLoader {
 
     private static final Log LOG = LogFactory.getLog(FilePropertyLoader.class);
     private static final String CONF_LOCATION = "conf.location";
-    private static final String FILE_PROPERTY_PATH = "synapse.commons.file.properties.path";
+    public static final String FILE_PROPERTY_PATH = "properties.file.path";
     private static final String DEFAULT_PROPERTY_FILE = "file.properties";
     private Map propertyMap;
 
