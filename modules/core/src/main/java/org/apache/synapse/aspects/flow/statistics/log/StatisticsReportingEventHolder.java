@@ -41,9 +41,9 @@ public class StatisticsReportingEventHolder {
     private boolean messageFlowError = false;
 
     /**
-     * Denotes whether to publish data for EI Analytics or not.
+     * Denotes whether to publish data for Mediation Flow Statistics or not.
      */
-    private boolean publishEIAnalytics;
+    private boolean publishMediationFlowStatistics;
 
     public StatisticsReportingEventHolder() {
         eventQueue = new ConcurrentLinkedQueue<StatisticsReportingEvent>();
@@ -82,11 +82,11 @@ public class StatisticsReportingEventHolder {
         this.messageFlowError = messageFlowError;
     }
 
-    public void setPublishEIAnalytics(boolean publishEIAnalytics) {
-        this.publishEIAnalytics = publishEIAnalytics;
+    public void setPublishMediationFlowStatistics(boolean publishMediationFlowStatistics) {
+        this.publishMediationFlowStatistics = publishMediationFlowStatistics;
     }
 
-    public boolean isPublishEIAnalytics() {
-        return publishEIAnalytics;
+    public boolean isPublishMediationFlowStatistics() {
+        return publishMediationFlowStatistics;
     }
 }

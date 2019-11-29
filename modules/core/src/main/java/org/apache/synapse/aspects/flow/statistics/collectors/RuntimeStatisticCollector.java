@@ -46,7 +46,7 @@ public abstract class RuntimeStatisticCollector {
      */
     private static boolean isOpenTracingEnabled;
 
-    private static boolean isEIAnalyticsEnabled;
+    private static boolean isMediationFlowStatisticsEnabled;
 
     /**
      * Is payload collection enabled in synapse.properties file.
@@ -69,16 +69,14 @@ public abstract class RuntimeStatisticCollector {
      * Initialize statistics collection when ESB starts.
      */
     public static void init() {
-//        isStatisticsEnabled = Boolean.parseBoolean(
-//                SynapsePropertiesLoader.getPropertyValue(StatisticsConstants.STATISTICS_ENABLE, String.valueOf(false)));
-        isEIAnalyticsEnabled = Boolean.parseBoolean(
+        isMediationFlowStatisticsEnabled = Boolean.parseBoolean(
                 SynapsePropertiesLoader.getPropertyValue(
-                        StatisticsConstants.EI_ANALYTICS_ENABLE,
+                        StatisticsConstants.STATISTICS_ENABLE,
                         String.valueOf(false)));
         isOpenTracingEnabled = Boolean.parseBoolean(
                 SynapsePropertiesLoader
                         .getPropertyValue(StatisticsConstants.OPENTRACING_ENABLE, String.valueOf(false)));
-        isStatisticsEnabled = isEIAnalyticsEnabled || isOpenTracingEnabled;
+        isStatisticsEnabled = isMediationFlowStatisticsEnabled || isOpenTracingEnabled;
         if (isStatisticsEnabled) {
             if (log.isDebugEnabled()) {
                 log.debug("Mediation statistics collection is enabled.");
@@ -266,7 +264,7 @@ public abstract class RuntimeStatisticCollector {
         StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
         if (eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
-            eventHolder.setPublishEIAnalytics(isEIAnalyticsEnabled);
+            eventHolder.setPublishMediationFlowStatistics(isMediationFlowStatisticsEnabled);
             messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
         }
         if (eventHolder.isEvenCollectionFinished()) {
@@ -289,7 +287,7 @@ public abstract class RuntimeStatisticCollector {
         StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
         if (eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
-            eventHolder.setPublishEIAnalytics(isEIAnalyticsEnabled);
+            eventHolder.setPublishMediationFlowStatistics(isMediationFlowStatisticsEnabled);
             messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
         }
 
@@ -316,7 +314,7 @@ public abstract class RuntimeStatisticCollector {
         StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
         if (eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
-            eventHolder.setPublishEIAnalytics(isEIAnalyticsEnabled);
+            eventHolder.setPublishMediationFlowStatistics(isMediationFlowStatisticsEnabled);
             messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
         }
 
@@ -341,7 +339,7 @@ public abstract class RuntimeStatisticCollector {
         StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
         if (eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
-            eventHolder.setPublishEIAnalytics(isEIAnalyticsEnabled);
+            eventHolder.setPublishMediationFlowStatistics(isMediationFlowStatisticsEnabled);
             messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
         }
         if (eventHolder.isEvenCollectionFinished()) {
@@ -366,7 +364,7 @@ public abstract class RuntimeStatisticCollector {
         StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
         if (eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
-            eventHolder.setPublishEIAnalytics(isEIAnalyticsEnabled);
+            eventHolder.setPublishMediationFlowStatistics(isMediationFlowStatisticsEnabled);
             messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
         }
 
@@ -387,7 +385,7 @@ public abstract class RuntimeStatisticCollector {
         StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
         if (eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
-            eventHolder.setPublishEIAnalytics(isEIAnalyticsEnabled);
+            eventHolder.setPublishMediationFlowStatistics(isMediationFlowStatisticsEnabled);
             messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
         }
 
