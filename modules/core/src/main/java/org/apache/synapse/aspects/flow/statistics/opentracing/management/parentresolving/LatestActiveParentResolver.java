@@ -48,7 +48,7 @@ public class LatestActiveParentResolver extends AbstractParentResolver {
         for (int i = parentableSpans.size() - 1; i >= 0; i--) {
             SpanWrapper spanWrapper = parentableSpans.get(i);
             StatisticDataUnit statisticDataUnit = spanWrapper.getStatisticDataUnit();
-            if (isCallMediator(statisticDataUnit) || // TODO add CallOut
+            if (isCallMediator(statisticDataUnit) ||
                     isSendMediator(statisticDataUnit) ||
                     isFlowContinuableMediator(statisticDataUnit)) {
                 return spanWrapper;

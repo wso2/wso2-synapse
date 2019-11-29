@@ -80,14 +80,14 @@ public class ArtifactHolderStore {
         return stackCopy;
     }
 
-    public static synchronized String getStackString(String componentUniqueId) { // TODO For Debugging. Remove
+    public static synchronized String getStackString(String componentUniqueId) {
         if (componentUniqueId == null) {
             return "null";
         }
         return getStackString(structuringElementStacks.get(componentUniqueId));
     }
 
-    private static String getStackString(Stack<StructuringElement> stack) { // TODO For Debugging. Remove
+    private static String getStackString(Stack<StructuringElement> stack) {
         StringBuilder stringBuilder = new StringBuilder();
         if (stack != null) {
             stringBuilder.append("[");

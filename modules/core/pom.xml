@@ -211,7 +211,6 @@
 
                             *;resolution:=optional,
                         </Import-Package>
-						<!-- TODO Is pvt package good -->
 						<Private-Package>
 							org.apache.thrift; version="[0.11.0,1.0.0)"
 						</Private-Package>

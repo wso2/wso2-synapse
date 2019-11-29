@@ -26,7 +26,7 @@ public class StatisticsConstants {
 	/**
 	 * Statistics enabled globally.
 	 */
-	public final static String STATISTICS_ENABLE = "mediation.flow.statistics.enable"; // TODO don't expose to user
+	public final static String STATISTICS_ENABLE = "mediation.flow.statistics.enable";
 
 	/**
 	 * Enable OpenTracing.

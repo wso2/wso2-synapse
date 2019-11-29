@@ -106,7 +106,6 @@ public class SpanStore {
                 */
                 parentSpanWrapper.addAnonymousSequence(spanId, spanWrapper);
             }
-            SpanTagger.updateDebugSpanTags(parentSpanWrapper);
         }
         componentUniqueIdWiseSpanWrappers.put(statisticDataUnit.getComponentId(), spanWrapper);
         activeSpanWrappers.add(spanWrapper);

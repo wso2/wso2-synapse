@@ -142,24 +142,4 @@ public class SpanWrapper {
             parentSpanWrapper.addKnownSynCtxHashCodeToAllParents(synCtxHashCode);
         }
     }
-
-    public String getStringSynCtxIdentityHashCodeMembers() { // TODO For Debugging. remove
-        StringBuilder sb = new StringBuilder("[");
-        for (String synCtxIdentityHashCode : knownSynCtxHashCodes) {
-            sb.append(synCtxIdentityHashCode);
-            sb.append(", ");
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    public String getStringAnonymousSequenceMembers() { // TODO For Debugging. remove
-        StringBuilder sb = new StringBuilder("[");
-        for (String anonSeqKey : anonymousSequences.keySet()) {
-            sb.append(anonSeqKey);
-            sb.append(", ");
-        }
-        sb.append("]");
-        return sb.toString();
-    }
 }

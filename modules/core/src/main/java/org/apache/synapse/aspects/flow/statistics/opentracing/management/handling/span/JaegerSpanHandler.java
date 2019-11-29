@@ -136,7 +136,6 @@ public class JaegerSpanHandler implements OpenTracingSpanHandler {
         Span span = tracer.buildSpan(statisticDataUnit.getComponentName()).asChildOf(parentSpan).start();
         String spanId = TracingUtils.extractId(statisticDataUnit);
         SpanWrapper spanWrapper = spanStore.addSpanWrapper(spanId, span, statisticDataUnit, parentSpanWrapper, synCtx);
-        SpanTagger.setDebugSpanTags(spanWrapper, spanId, statisticDataUnit, synCtx); // TODO remove debug tags
 
         if (isOuterLevelSpan(statisticDataUnit, spanStore)) {
             spanStore.assignOuterLevelSpan(spanWrapper);
@@ -252,12 +251,6 @@ public class JaegerSpanHandler implements OpenTracingSpanHandler {
      * @param spanStore Span store object.
      */
     private void cleanupContinuationStateSequences(SpanStore spanStore) {
-        /*
-        TODO: 2019-09-23
-         Pop continuation state stack when there are mediators other than call mediator too. Currently it happens
-         only when there is a Call mediator.
-         As a temporary solution in OpenTracing point of view, the remaining ones in the stack are cleaned up.
-         */
         if (!spanStore.getContinuationStateSequenceInfos().isEmpty()) {
             List<ContinuationStateSequenceInfo> continuationStateSequences =
                     spanStore.getContinuationStateSequenceInfos();

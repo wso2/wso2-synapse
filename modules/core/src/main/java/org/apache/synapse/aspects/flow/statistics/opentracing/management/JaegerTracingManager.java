@@ -30,6 +30,9 @@ import java.io.FileReader;
  * Coordinates the Jaeger span handler with the tracer.
  */
 public class JaegerTracingManager implements OpenTracingManager {
+
+    private static final String SERVICE_NAME = "wso2-synapse";
+
     /**
      * The common tracer object.
      */
@@ -72,24 +75,6 @@ public class JaegerTracingManager implements OpenTracingManager {
     }
 
     private static String getServiceName() {
-//        return "wso2-synapse";
-        return loadServiceName();
-    }
-
-    private static String loadServiceName() { // TODO For Debugging. Remove.
-        StringBuilder contentBuilder = new StringBuilder();
-        try (BufferedReader br = new BufferedReader(new FileReader("/Users/senthuran/Desktop/hacky.txt")))
-        {
-            String sCurrentLine;
-            while ((sCurrentLine = br.readLine()) != null)
-            {
-                contentBuilder.append(sCurrentLine);
-            }
-        }
-        catch (Exception e)
-        {
-            // Do nothing
-        }
-        return contentBuilder.toString();
+        return SERVICE_NAME;
     }
 }

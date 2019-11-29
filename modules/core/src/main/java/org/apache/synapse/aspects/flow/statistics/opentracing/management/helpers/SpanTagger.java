@@ -36,69 +36,6 @@ public class SpanTagger {
      */
     private SpanTagger() {}
 
-    public static void updateDebugSpanTags(SpanWrapper spanWrapper) { // TODO For Debugging. Remove this & usage.
-        spanWrapper.getSpan().setTag("debug.allSynCtxRefs", spanWrapper.getStringSynCtxIdentityHashCodeMembers());
-        spanWrapper.getSpan().setTag("debug.anonSeqIds", spanWrapper.getStringAnonymousSequenceMembers());
-        spanWrapper.getSpan().setTag("debug.debugTagsUpdated", "true");
-    }
-
-    public static void setDebugSpanTags(SpanWrapper spanWrapper, String absoluteIndex, StatisticDataUnit statisticDataUnit,
-                                        MessageContext synCtx) { // TODO For Debugging. Remove.
-        Span span = spanWrapper.getSpan();
-
-        span.setTag("debug.allSynCtxRefs", spanWrapper.getStringSynCtxIdentityHashCodeMembers());
-        span.setTag("debug.anonSeqIds", spanWrapper.getStringAnonymousSequenceMembers());
-        span.setTag("debug.debugTagsUpdated", "false");
-
-        if (statisticDataUnit != null) {
-            // SpanWrapper level
-            if (spanWrapper.getChildStructuredElementIds() != null) {
-                StringBuilder childList = new StringBuilder("[");
-                for (String childComponentId : spanWrapper.getChildStructuredElementIds()) {
-                    childList.append(childComponentId).append(", ");
-                }
-                childList.append("]");
-                span.setTag("debug.childComponentIds", childList.toString());
-            } else {
-                span.setTag("debug.childComponentIds", "null");
-            }
-
-
-            span.setTag("debug.allIds",
-                    statisticDataUnit.getCurrentIndex() + "(" + absoluteIndex + ")[" +statisticDataUnit.getParentIndex() + "]");
-            span.setTag("debug.synCtx", synCtx.toString());
-            span.setTag("debug.synCtxReference", TracingUtils.getSystemIdentityHashCode(synCtx));
-
-            // BasicStatisticUnit level (parent)
-            span.setTag("debug.currentIndex", statisticDataUnit.getCurrentIndex());
-            span.setTag("debug.statisticId", statisticDataUnit.getStatisticId());
-            span.setTag("debug.isTracingEnabled", statisticDataUnit.isTracingEnabled());
-            span.setTag("debug.isOutOnlyFlow", statisticDataUnit.isOutOnlyFlow());
-
-            // StatisticDataUnit level
-            span.setTag("debug.parentIndex", statisticDataUnit.getParentIndex());
-            span.setTag("debug.shouldTrackParent", statisticDataUnit.isShouldTrackParent());
-            span.setTag("debug.continuationCall", statisticDataUnit.isContinuationCall());
-            span.setTag("debug.flowContinuableMediator", statisticDataUnit.isFlowContinuableMediator());
-            span.setTag("debug.flowSplittingMediator", statisticDataUnit.isFlowSplittingMediator());
-            span.setTag("debug.flowAggregateMediator", statisticDataUnit.isFlowAggregateMediator());
-            span.setTag("debug.isIndividualStatisticCollected", statisticDataUnit.isIndividualStatisticCollected());
-            span.setTag("debug.artifactHolderStackString", statisticDataUnit.artifactHolderStackString);
-
-            if (statisticDataUnit.getParentList() != null) {
-                StringBuilder parentList = new StringBuilder("[");
-                for (Integer integer : statisticDataUnit.getParentList()) {
-                    parentList.append(integer).append(", ");
-                }
-                parentList.append("]");
-                span.setTag("debug.parentList", parentList.toString());
-            } else {
-                span.setTag("debug.parentList", "null");
-            }
-        }
-        span.setTag("debug.threadId", Thread.currentThread().getId());
-    }
-
     /**
      * Sets tags to the span which is contained in the provided span wrapper, from information acquired from the
      * given basic statistic data unit.
@@ -118,7 +55,7 @@ public class SpanTagger {
                     span.setTag("afterPayload", statisticsLog.getAfterPayload());
                 }
 
-                if (OpenTracingManagerHolder.isCollectingProperties()) { // TODO confirm in code review
+                if (OpenTracingManagerHolder.isCollectingProperties()) {
                     if (spanWrapper.getStatisticDataUnit().getContextPropertyMap() != null) {
                         span.setTag("beforeContextPropertyMap",
                                 spanWrapper.getStatisticDataUnit().getContextPropertyMap().toString());
