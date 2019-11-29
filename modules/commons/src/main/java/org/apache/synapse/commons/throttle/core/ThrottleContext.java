@@ -348,7 +348,7 @@ public abstract class ThrottleContext {
      */
     public void flushCallerContext(CallerContext callerContext, String id) {
         if (dataHolder != null && callerContext != null && id != null) {
-            dataHolder.addCallerContext(id, callerContext); // have to do ,because we always gets
+            dataHolder.addCallerContext(id, callerContext); // have to do, because we always get
             //  any property as non-replicable
             replicateCaller(id);
         }
