@@ -178,5 +178,7 @@ class MockServiceCreator {
         for (HTTPProtocolEmulator emulatorService : emulatorServiceList) {
             emulatorService.shutdown();
         }
+
+        emulatorServiceList.clear();
     }
 }
