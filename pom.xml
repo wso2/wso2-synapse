@@ -1142,6 +1142,11 @@
               <artifactId>antlr-runtime</artifactId>
               <version>${antlr.wso2.version}</version>
           </dependency>
+          <dependency>
+              <groupId>org.wso2.orbit.io.jaeger</groupId>
+              <artifactId>jaegerclient</artifactId>
+              <version>${jaegerclient.version}</version>
+          </dependency>
       </dependencies>
    </dependencyManagement>
     <reporting>
@@ -1316,6 +1321,8 @@
       <commons_io.version>2.0</commons_io.version>
       <commons-cli.version>1.0</commons-cli.version>
       <jline.version>0.9.94</jline.version>
+       <!-- Jaeger Tracing -->
+       <jaegerclient.version>0.32.0.wso2v2</jaegerclient.version>
       <!-- dependencies of Synapse extensions module -->
       <saxon-HE.version>9.5.1-8</saxon-HE.version>
       <wso2commons.version>1.2</wso2commons.version>

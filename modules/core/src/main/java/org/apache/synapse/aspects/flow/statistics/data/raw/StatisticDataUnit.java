@@ -103,6 +103,8 @@ public class StatisticDataUnit extends BasicStatisticDataUnit {
 	 */
 	private Map<String, Object> transportPropertyMap;
 
+	public String artifactHolderStackString; // TODO Remove
+
 	public String getPayload() {
 		return payload;
 	}
