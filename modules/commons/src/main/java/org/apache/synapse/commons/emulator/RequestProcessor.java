@@ -18,13 +18,16 @@
 
 package org.apache.synapse.commons.emulator;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.Map;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
@@ -32,8 +35,7 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.StringReader;
-import java.io.StringWriter;
+
 
 /**
  * Class responsible for removing the unwanted whitespaces in any type of inputs.
@@ -61,8 +63,9 @@ public class RequestProcessor {
         if (trimedString.startsWith("<![CDATA[")) {
             trimedString = trimedString.substring(9);
             int index = trimedString.indexOf("]]>");
-            if (index == -1)
+            if (index == -1) {
                 throw new IllegalStateException("argument starts with <![CDATA[ but cannot find pairing ]]>");
+            }
             trimedString = trimedString.substring(0, index);
         }
 
@@ -128,8 +131,13 @@ public class RequestProcessor {
      */
     private static String convertAsJSONString(String inputString) {
         try {
-            JsonObject inputJSON = new JsonParser().parse(inputString).getAsJsonObject();
-            return inputJSON.toString();
+            Gson gson = new GsonBuilder()
+                    .setPrettyPrinting()
+                    .registerTypeAdapterFactory(new TreeMapTypeAdapterFactory())
+                    .create();
+
+            Map root = gson.fromJson(inputString, Map.class);
+            return gson.toJson(root);
         } catch (Exception e) {
             return inputString;
         }
