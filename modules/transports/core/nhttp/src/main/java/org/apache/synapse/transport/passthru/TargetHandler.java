@@ -51,6 +51,7 @@ import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsColl
 import java.io.IOException;
 import java.util.Properties;
 
+import static org.apache.synapse.transport.passthru.TargetContext.CONNECTION_INFORMATION;
 
 /**
  * This class is handling events from the transport -- > client.
@@ -169,6 +170,8 @@ public class TargetHandler implements NHttpClientEventHandler {
             
             TargetRequest request = TargetContext.getRequest(conn);
             if (request != null) {
+                TargetContext targetContext = TargetContext.get(conn);
+                targetContext.updateLastStateUpdatedTime();
                 request.start(conn);
                 targetConfiguration.getMetrics().incrementMessagesSent();
             }
@@ -316,7 +319,7 @@ public class TargetHandler implements NHttpClientEventHandler {
 
             //check correlation logs enabled
             if (targetConfiguration.isCorrelationLoggingEnabled()
-                    && context.getAttribute(PassThroughConstants.CORRELATION_ID) != null) {
+                    && TargetContext.isCorrelationIdAvailable(conn)) {
                 long startTime = (long) context.getAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME);
                 MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
                         context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
@@ -829,8 +832,7 @@ public class TargetHandler implements NHttpClientEventHandler {
     private void logHttpRequestErrorInCorrelationLog(NHttpClientConnection conn, String state) {
 
         TargetContext targetContext = TargetContext.get(conn);
-        if (targetContext != null
-                && conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID) != null) {
+        if (targetContext != null && TargetContext.isCorrelationIdAvailable(conn)) {
             String url = "", method = "";
             if (targetContext.getRequest() != null) {
                 url = targetContext.getRequest().getUrl().toString();

@@ -18,6 +18,12 @@
  */
 package org.apache.synapse.transport.http.access;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.util.MiscellaneousUtil;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -30,17 +36,9 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Properties;
-
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.commons.util.MiscellaneousUtil;
-import org.apache.synapse.transport.nhttp.NHttpConfiguration;
 
 /**
  * Class that logs the Http Accesses to the access log files. Code segment borrowed from
@@ -48,8 +46,7 @@ import org.apache.synapse.transport.nhttp.NHttpConfiguration;
  */
 public class AccessLogger {
 
-    /** The name of the system property used to specify/override the nhttp properties location */
-    public static final String NHTTP_PROPERTIES = "nhttp.properties";
+    private static final String ACCESS_LOG_PROPERTIES = "access-log.properties";
 
     //property name of nhttp log directory
     public static final String NHTTP_LOG_DIRECTORY = "nhttp.log.directory";
@@ -59,6 +56,8 @@ public class AccessLogger {
     private final static String DATE_EXTRACT_REGEX = "\\[([^]]+)\\]";
 
     private final static String DATE_FORMAT_STRING = "dd/MMM/yyyy:HH:mm:ss Z";
+
+    private static final String IS_LOG_ROTATABLE = "nhttp.is.log.rotatable";
 
     private static Log log = LogFactory.getLog(ACCESS_LOG_ID);
 
@@ -112,7 +111,7 @@ public class AccessLogger {
     /**
      * Can the log file be rotated.
      */
-    protected boolean isRotatable = NHttpConfiguration.getInstance().isLogRotatable();
+    private boolean isRotatable = getBooleanValue(IS_LOG_ROTATABLE, true);
 
     /**
      * Log the specified message to the log file, switching files if the date
@@ -176,6 +175,36 @@ public class AccessLogger {
         }
     }
 
+    /**
+     * Get properties that tune access-log.properties. Preference to system properties
+     *
+     * @param name name of the system/config property
+     * @param def  default value to return if the property is not set
+     * @return the value of the property to be used
+     */
+    private boolean getBooleanValue(String name, boolean def) {
+
+        Properties props = MiscellaneousUtil.loadProperties(ACCESS_LOG_PROPERTIES);
+
+        String val = System.getProperty(name);
+        if (val == null) {
+            val = props.getProperty(name);
+        }
+
+        if (Boolean.parseBoolean(val)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Using tuning parameter : " + name);
+            }
+            return true;
+        } else if (val != null && !Boolean.parseBoolean(val)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Using tuning parameter : " + name);
+            }
+            return false;
+        }
+        return def;
+    }
+
     protected synchronized void initOpen() {
         /* Make sure date is correct */
         dateStamp = fileDateFormatter.format(
@@ -189,7 +218,7 @@ public class AccessLogger {
     protected synchronized void open() {
         // Create the directory if necessary
         File dir;
-        Properties synapseProps = MiscellaneousUtil.loadProperties(NHTTP_PROPERTIES);
+        Properties synapseProps = MiscellaneousUtil.loadProperties(ACCESS_LOG_PROPERTIES);
         String nhttpLogDir =  synapseProps.getProperty(NHTTP_LOG_DIRECTORY);
         if (nhttpLogDir != null) {
             dir = new File(nhttpLogDir);

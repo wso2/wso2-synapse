@@ -29,6 +29,7 @@ import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.Entry;
+import org.json.JSONObject;
 
 import java.util.List;
 
@@ -57,6 +58,13 @@ public class IndirectEndpoint extends AbstractEndpoint {
             informFailure(synCtx, SynapseConstants.ENDPOINT_IN_DIRECT_NOT_READY,
                     "Couldn't find the endpoint with the key : " + key);
         }
+    }
+
+    @Override
+    protected void createJsonRepresentation() {
+        endpointJson = new JSONObject();
+        endpointJson.put(NAME_JSON_ATT, getName());
+        endpointJson.put(TYPE_JSON_ATT, "Indirect Endpoint");
     }
 
     public String getKey() {

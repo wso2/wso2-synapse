@@ -79,9 +79,7 @@ public class TemplateFactory {
             handleException("endpoint element is required in an endpoint template");
         }
         template.setElement(endpointElement);
-
         CommentListUtil.populateComments(element, template.getCommentsList());
-
         return template;
     }
 

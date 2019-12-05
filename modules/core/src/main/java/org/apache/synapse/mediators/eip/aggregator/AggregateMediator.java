@@ -203,6 +203,11 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                         handleException("Failed to evaluate correlate expression: " + correlateExpression.toString(), synCtx);
                     }
                 }
+                if(result instanceof Boolean) {
+                    if (!(Boolean)result) {
+                        return true;
+                    }
+                }
             }
             if (result != null) {
 

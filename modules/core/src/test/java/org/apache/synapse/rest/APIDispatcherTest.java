@@ -20,6 +20,7 @@ package org.apache.synapse.rest;
 
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.rest.version.ContextVersionStrategy;
 import org.apache.synapse.rest.version.DefaultStrategy;
@@ -93,6 +94,7 @@ public class APIDispatcherTest extends RESTMediationTestCase {
         assertFalse(handler.process(synCtx));
 
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API, TEST_API);
+        synCtx.setProperty(SynapseConstants.ARTIFACT_NAME, SynapseConstants.FAIL_SAFE_MODE_API + TEST_API);
         assertTrue(handler.process(synCtx));
     }
 

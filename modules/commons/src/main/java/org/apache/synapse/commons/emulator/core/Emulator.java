@@ -23,11 +23,22 @@ import org.apache.synapse.commons.emulator.http.HTTPProtocolEmulator;
 
 public class Emulator extends Thread {
     private static final Logger log = Logger.getLogger(Emulator.class);
-    private static HTTPProtocolEmulator httpProtocolEmulator;
+    private HTTPProtocolEmulator httpProtocolEmulator;
     private EmulatorType emulatorType;
 
-    public static HTTPProtocolEmulator getHttpEmulator() {
-        httpProtocolEmulator = new HTTPProtocolEmulator(new Emulator());
+    /**
+     * Constructor of the class.
+     */
+    public Emulator() {
+        httpProtocolEmulator = new HTTPProtocolEmulator(this);
+    }
+
+    /**
+     * Get the HTTPProtocolEmulator object.
+     *
+     * @return object of HTTPProtocolEmulator
+     */
+    public HTTPProtocolEmulator getHttpProtocolEmulator() {
         return httpProtocolEmulator;
     }
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.synapse.config.xml.endpoints.resolvers;
+package org.apache.synapse.commons.resolvers;
 
 public class ResolverException extends RuntimeException {
 

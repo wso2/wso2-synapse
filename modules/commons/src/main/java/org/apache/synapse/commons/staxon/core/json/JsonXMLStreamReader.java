@@ -210,7 +210,7 @@ public class JsonXMLStreamReader extends AbstractXMLStreamReader<JsonXMLStreamRe
                     }
                     readEndElementTag();
                 }
-                return true;
+                return consume();
             case END_ARRAY:
                 source.endArray();
                 if (getScope().isRoot() && documentArray) {

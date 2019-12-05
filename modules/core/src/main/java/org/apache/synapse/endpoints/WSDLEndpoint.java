@@ -22,6 +22,7 @@ package org.apache.synapse.endpoints;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.json.JSONObject;
 
 /**
  * WSDLEndpoint represents the endpoints built using a WSDL document. It stores the details about
@@ -60,6 +61,18 @@ public class WSDLEndpoint extends AbstractEndpoint {
 
     public void onSuccess() {
         getContext().onSuccess();
+    }
+
+    @Override
+    protected void createJsonRepresentation() {
+
+        endpointJson = new JSONObject();
+        endpointJson.put(NAME_JSON_ATT, getName());
+        endpointJson.put(TYPE_JSON_ATT, "WSDL Endpoint");
+        endpointJson.put("wsdlUri", getWsdlURI());
+        endpointJson.put("serviceName", getServiceName());
+        endpointJson.put("portName", getPortName());
+        setAdvancedProperties();
     }
 
     public void send(MessageContext synCtx) {

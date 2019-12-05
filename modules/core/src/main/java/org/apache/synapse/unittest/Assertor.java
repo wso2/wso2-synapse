@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -58,8 +58,8 @@ class Assertor {
      * @param mediateMsgCtxt  message context used for the mediation
      * @return true if assertion is success otherwise false
      */
-    static Map.Entry<Boolean, TestCaseSummary> doAssertionSequence(TestCase currentTestCase, MessageContext mediateMsgCtxt,
-                                                          int testCaseNumber, TestCaseSummary testSummary) {
+    static Map.Entry<Boolean, TestCaseSummary> doAssertionSequence(
+            TestCase currentTestCase, MessageContext mediateMsgCtxt, int testCaseNumber, TestCaseSummary testSummary) {
 
         boolean isSequenceAssertComplete = false;
         boolean isAssertEqualComplete = false;

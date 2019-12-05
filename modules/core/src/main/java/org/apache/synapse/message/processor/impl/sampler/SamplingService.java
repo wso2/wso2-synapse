@@ -72,6 +72,17 @@ public class SamplingService implements Task, ManagedLifecycle {
 	private final String concurrencyPropName;
 	private final String sequencePropName;
 
+    /*
+     * Number of connection attempts to store before shutting down the processor.
+     * -1 value to indicate that retry needs to happen forever.
+     */
+	private int maxConnectionAttemptsToStore = -1;
+
+    /*
+     * Time (in milliseconds) between two attempts to connect to the store.
+     */
+	private int storeConnectionAttemptDelay = 1000;
+
     /**
      * Specifies whether the service should be started as deactivated or not
      */
@@ -128,7 +139,7 @@ public class SamplingService implements Task, ManagedLifecycle {
 			if (!this.messageProcessor.isDeactivated()) {
 				for (int i = 0; i < concurrency; i++) {
 
-					final MessageContext messageContext = fetch(messageConsumer);
+					final MessageContext messageContext = fetch();
 
 					if (messageContext != null) {
 						dispatch(messageContext);
@@ -168,6 +179,18 @@ public class SamplingService implements Task, ManagedLifecycle {
 		setMessageConsumer();
 
 		Map<String, Object> parameterMap = messageProcessor.getParameters();
+		String maxConnectionAttemptsToStore =
+				(String) parameterMap.get(MessageProcessorConstants.MAX_STORE_CONNECT_ATTEMPTS);
+		String storeConnectionAttemptDelay =
+				(String) parameterMap.get(MessageProcessorConstants.STORE_CONNECTION_RETRY_INTERVAL);
+
+		if (null != maxConnectionAttemptsToStore) {
+			this.maxConnectionAttemptsToStore = Integer.parseInt(maxConnectionAttemptsToStore);
+		}
+
+		if (null != storeConnectionAttemptDelay) {
+			this.storeConnectionAttemptDelay = Integer.parseInt(storeConnectionAttemptDelay);
+		}
 		sequence = (String) parameterMap.get(sequencePropName);
 		String conc = (String) parameterMap.get(concurrencyPropName);
 		if (conc != null) {
@@ -189,18 +212,42 @@ public class SamplingService implements Task, ManagedLifecycle {
 
 	/**
 	 * Receives the next message from the message store.
-	 * 
-	 * @param msgConsumer
-	 *            message consumer
+	 *
 	 * @return {@link MessageContext} of the last message received from the
 	 *         store.
 	 */
-	public MessageContext fetch(MessageConsumer msgConsumer) {
-		MessageContext newMsg = messageConsumer.receive();
-		if (newMsg != null) {
-			messageConsumer.ack();
+	public MessageContext fetch() {
+		MessageContext newMsg = null;
+		for (int connAttempt = 0;
+			 connAttempt < maxConnectionAttemptsToStore || maxConnectionAttemptsToStore == -1;
+			 connAttempt++) {
+			try {
+				newMsg = messageConsumer.receive();
+				if (newMsg != null) {
+					messageConsumer.ack();
+				}
+				break;
+			} catch (SynapseException synapseException) {
+                                /*used message in the exception to keep Interface MessageConsumer unchanged.
+                                 If it is a connection exception retry, otherwise throw  as it is
+                                */
+				if (synapseException.getMessage().contains(MessageProcessorConstants.STORE_CONNECTION_ERROR)) {
+					try {
+						//on last try to connect throw the exception
+						if (connAttempt == maxConnectionAttemptsToStore - 1) {
+							throw new SynapseException("Error while connecting to message store "
+									+ messageProcessor.getName(), synapseException);
+						}
+						Thread.sleep(storeConnectionAttemptDelay);
+					} catch (InterruptedException interruptedException) {
+						Thread.currentThread().interrupt();
+					}
+				} else {
+					throw new SynapseException("Error while fetching message from "
+							+ messageProcessor.getName(), synapseException);
+				}
+			}
 		}
-
 		return newMsg;
 	}
 

@@ -108,9 +108,7 @@ public class APISerializer {
         } else if (api.getProtocol() == RESTConstants.PROTOCOL_HTTPS_ONLY) {
             apiElt.addAttribute("transports", Constants.TRANSPORT_HTTPS, null);
         }
-
         CommentListUtil.serializeComments(apiElt, api.getCommentsList());
-
         return apiElt;
     }
 

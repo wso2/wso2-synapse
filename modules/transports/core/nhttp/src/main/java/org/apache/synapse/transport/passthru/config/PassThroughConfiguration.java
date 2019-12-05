@@ -55,6 +55,12 @@ public class PassThroughConfiguration {
     private static final String REST_URI_API_REGEX = "rest_uri_api_regex";
     private static final String REST_URI_PROXY_REGEX = "rest_uri_proxy_regex";
 
+    /** Reverse proxy mode is enabled or not */
+    private Boolean reverseProxyMode = null;
+
+    /** Default Synapse service name */
+    private String passThroughDefaultServiceName = null;
+
     private static final Log log = LogFactory.getLog(PassThroughConfiguration.class);
 
     private static PassThroughConfiguration _instance = new PassThroughConfiguration();
@@ -162,10 +168,10 @@ public class PassThroughConfiguration {
          if (log.isDebugEnabled()) {
              log.debug("Loading the file '" + filePath + "' from classpath");
          }
-         
+
          InputStream in  = null;
-         
-         //if we reach to this assume that the we may have to looking to the customer provided external location for the 
+
+         //if we reach to this assume that the we may have to looking to the customer provided external location for the
          //given properties
  		if (System.getProperty(PassThroughConstants.CONF_LOCATION) != null) {
  			try {
@@ -313,4 +319,27 @@ public class PassThroughConfiguration {
         return getBooleanProperty(PassThroughConfigPNames.HTTP_LISTENING_IO_REACTOR_SHARING_ENABLE, false);
     }
 
+    /**
+     * Check for reverse proxy mode
+     *
+     * @return whether reverse proxy mode is enabled
+     */
+    public boolean isReverseProxyMode() {
+        if (reverseProxyMode == null) {
+            reverseProxyMode = Boolean.parseBoolean(System.getProperty("reverseProxyMode"));
+        }
+        return reverseProxyMode;
+    }
+
+    /**
+     * Get the default synapse service name
+     *
+     * @return default synapse service name
+     */
+    public String getPassThroughDefaultServiceName() {
+        if (passThroughDefaultServiceName == null) {
+            passThroughDefaultServiceName = getStringProperty("passthru.default.service", "__SynapseService");
+        }
+        return passThroughDefaultServiceName;
+    }
 }

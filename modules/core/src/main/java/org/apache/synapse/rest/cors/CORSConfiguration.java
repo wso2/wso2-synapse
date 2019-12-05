@@ -18,55 +18,32 @@
 
 package org.apache.synapse.rest.cors;
 
-import org.apache.synapse.config.SynapsePropertiesLoader;
-import org.apache.synapse.rest.RESTConstants;
-
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
- * This class holds CORS configurations made in synapse.properties file
+ * {@code CORSConfiguration} is the interface that need to be implemented in order hold the CORS configuration information
  */
-public class CORSConfiguration {
+public interface CORSConfiguration {
 
-    private static CORSConfiguration corsConfigs = null;
+    /**
+     * Returns allowed origins in the configuration.
+     *
+     * @return allowed origins
+     */
+    Set<String> getAllowedOrigins();
 
-    private boolean enabled;
-    private Set<String> allowedOrigins;
-    private String allowedHeaders;
+    /**
+     * Returns allowed headers in the configuration.
+     *
+     * @return allowed headers
+     */
+    String getAllowedHeaders();
 
-    private CORSConfiguration() {
-        enabled = SynapsePropertiesLoader.getBooleanProperty(RESTConstants.CORS_CONFIGURATION_ENABLED, true);
+    /**
+     * Returns if CORS is enabled.
+     *
+     * @return boolean enabled
+     */
+    boolean isEnabled();
 
-        //Retrieve allowed origin list
-        String allowedOriginListStr =
-                SynapsePropertiesLoader.getPropertyValue(RESTConstants.CORS_CONFIGURATION_ACCESS_CTL_ALLOW_ORIGIN, "");
-        allowedOrigins = new HashSet<>(Arrays.asList(allowedOriginListStr.split(",")));
-
-        //Retrieve allowed headers
-        allowedHeaders =
-                SynapsePropertiesLoader.getPropertyValue(RESTConstants.CORS_CONFIGURATION_ACCESS_CTL_ALLOW_HEADERS, "");
-    }
-
-    public static CORSConfiguration getCORSConfig() {
-        if (corsConfigs != null) {
-            return corsConfigs;
-        }
-        //init CORS configurations
-        corsConfigs = new CORSConfiguration();
-        return corsConfigs;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public Set<String> getAllowedOrigins() {
-        return allowedOrigins;
-    }
-
-    public String getAllowedHeaders() {
-        return allowedHeaders;
-    }
 }
