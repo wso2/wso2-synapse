@@ -37,6 +37,7 @@ import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.MessageHelper;
+import org.json.JSONObject;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -94,6 +95,16 @@ public class RecipientListEndpoint extends AbstractEndpoint {
 	public void destroy() {
 		super.destroy();
 	}
+
+    @Override
+    protected void createJsonRepresentation() {
+
+        endpointJson = new JSONObject();
+        endpointJson.put(NAME_JSON_ATT, getName());
+        endpointJson.put(TYPE_JSON_ATT, "Recipient List Endpoint");
+        endpointJson.put("poolSize", getCurrentPoolSize());
+        endpointJson.put(CHILDREN_JSON_ATT, getEndpointChildrenAsJson(getChildren()));
+    }
 
     @Override
     public void send(MessageContext synCtx) {

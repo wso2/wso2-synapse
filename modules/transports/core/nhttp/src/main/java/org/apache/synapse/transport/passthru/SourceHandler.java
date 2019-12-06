@@ -45,6 +45,7 @@ import org.apache.synapse.transport.passthru.jmx.LatencyCollector;
 import org.apache.synapse.transport.passthru.jmx.LatencyView;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 
+import javax.net.ssl.SSLException;
 import javax.ws.rs.HttpMethod;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -123,7 +124,12 @@ public class SourceHandler implements NHttpServerEventHandler {
     public void requestReceived(NHttpServerConnection conn) {
         try {
             HttpContext httpContext = conn.getContext();
-            setCorrelationId(conn);
+            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+                setCorrelationId(conn);
+                SourceContext sourceContext = (SourceContext)
+                        conn.getContext().getAttribute(TargetContext.CONNECTION_INFORMATION);
+                sourceContext.updateLastStateUpdatedTime();
+            }
             httpContext.setAttribute(PassThroughConstants.REQ_ARRIVAL_TIME, System.currentTimeMillis());
             httpContext.setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_START_TIME, System.currentTimeMillis());
             if (isMessageSizeValidationEnabled) {
@@ -140,7 +146,13 @@ public class SourceHandler implements NHttpServerEventHandler {
                 conn.getContext().setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_END_TIME, System.currentTimeMillis());
             }
             OutputStream os = getOutputStream(method, request);
-            sourceConfiguration.getWorkerPool().execute(new ServerWorker(request, sourceConfiguration, os));
+            Object correlationId = conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID);
+            if (correlationId != null) {
+                sourceConfiguration.getWorkerPool().execute(new ServerWorker(request, sourceConfiguration, os,
+                        System.currentTimeMillis(), correlationId.toString()));
+            } else {
+                sourceConfiguration.getWorkerPool().execute(new ServerWorker(request, sourceConfiguration, os));
+            }
         } catch (HttpException e) {
             log.error("HttpException occurred when request is processing probably when creating SourceRequest", e);
 
@@ -409,7 +421,10 @@ public class SourceHandler implements NHttpServerEventHandler {
                 log.debug(conn + ": I/O error (Probably the keepalive connection " +
                         "was closed):" + e.getMessage());
             }
-        } else if (e.getMessage() != null) {
+        } else if (e instanceof SSLException) {
+            log.warn("I/O error: " + e.getMessage());
+        }
+        else if (e.getMessage() != null) {
             String msg = e.getMessage().toLowerCase();
             if (msg.indexOf("broken") != -1) {
                 log.warn("I/O error (Probably the connection " +

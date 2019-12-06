@@ -13,30 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.synapse.config.xml.endpoints.resolvers;
+package org.apache.synapse.commons.resolvers;
 
 /**
- * Default Resolver is the class used in general case where any resolver is not used
+ *  Interface which can be used to resolve variables in the synapse config.
  */
-public class DefaultResolver implements Resolver {
+public interface Resolver {
 
-    private String input;
-
-    /**
-     * Return the variable passed
-     * @return input
-     */
-    @Override
-    public String resolve() {
-
-        return input;
-    }
-
-    /**
-     * sets the input value
-     */
-    @Override
-    public void setVariable(String input) {
-        this.input = input;
-    }
+    void setVariable(String input);
+    String resolve();
 }

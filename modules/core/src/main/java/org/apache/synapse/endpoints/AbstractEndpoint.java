@@ -50,6 +50,8 @@ import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.transport.passthru.util.RelayConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -115,6 +117,14 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     protected String artifactContainerName;
 
     private boolean isEdited = false;
+
+    /** Attributes for json representation  */
+    public static final String NAME_JSON_ATT = "name";
+    public static final String TYPE_JSON_ATT = "type";
+    public static final String CHILDREN_JSON_ATT = "children";
+
+    /** json representation of the endpoint */
+    JSONObject endpointJson = null;
 
     /**
      * Holds the list of comments associated with the proxy service.
@@ -897,4 +907,61 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
             StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.ENDPOINT, holder);
         }
     }
+
+    /**
+     * Set advanced properties of the endpoint to json object.
+     */
+    protected void setAdvancedProperties() {
+
+        JSONObject advancedProps = new JSONObject();
+        endpointJson.put("advanced", advancedProps);
+        setSuspendStateProperties(getDefinition(), advancedProps);
+        setTimeoutStateProperties(getDefinition(), advancedProps);
+    }
+
+    /**
+     * Set time-out state properties of the endpoint to json object.
+     */
+    private void setTimeoutStateProperties(EndpointDefinition definition, JSONObject advancedProps) {
+
+        JSONObject timeoutStateProps = new JSONObject();
+        advancedProps.put("timeoutState", timeoutStateProps);
+        timeoutStateProps.put("errorCodes", definition.getTimeoutErrorCodes());
+        timeoutStateProps.put("reties", definition.getRetriesOnTimeoutBeforeSuspend());
+    }
+
+    /**
+     * Set suspend state properties of the endpoint to json object.
+     */
+    private void setSuspendStateProperties(EndpointDefinition definition, JSONObject advancedProps) {
+
+        JSONObject suspendStatePros = new JSONObject();
+        advancedProps.put("suspendState", suspendStatePros);
+        suspendStatePros.put("errorCodes", definition.getSuspendErrorCodes());
+        suspendStatePros.put("maxDuration", definition.getSuspendMaximumDuration());
+        suspendStatePros.put("initialDuration", definition.getInitialSuspendDuration());
+    }
+
+    protected JSONArray getEndpointChildrenAsJson(List<Endpoint> children) {
+        JSONArray childrenJsonList = new JSONArray();
+
+        if (children != null && children.size() != 0) {
+            for (Endpoint child : children) {
+                childrenJsonList.put(child.getJsonRepresentation());
+            }
+        }
+        return childrenJsonList;
+    }
+
+    @Override
+    public JSONObject getJsonRepresentation() {
+
+        if (endpointJson == null) {
+            createJsonRepresentation();
+        }
+        return endpointJson;
+    }
+
+    protected abstract void createJsonRepresentation();
+
 }

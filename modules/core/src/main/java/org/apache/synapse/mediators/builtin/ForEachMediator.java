@@ -137,22 +137,21 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
             for (JsonElement element : iterableJsonArray) {
                 try {
                     updateIteratedMessage(synCtx, element);
+                    boolean mediateResult = mediateSequence(synCtx);
+                    modifiedPayloadArray.add(EIPUtils.tryParseJsonString(parser,
+                            JsonUtil.jsonPayloadToString(((Axis2MessageContext) synCtx).getAxis2MessageContext())));
+                    msgCounter++;
+                    if (synLog.isTraceOrDebugEnabled()) {
+                        synLog.traceOrDebug("Incrementing foreach counter , " + counterPropName + " = "
+                                + msgCounter);
+                    }
+                    synCtx.setProperty(counterPropName, msgCounter);
+                    if (!mediateResult) { // break the loop if mediate result is false
+                        break;
+                    }
                 } catch (AxisFault axisFault) {
-                    handleException("Error creating an iterated copy of the message", axisFault, synCtx);
-                }
-                boolean mediateResult = mediateSequence(synCtx);
-                modifiedPayloadArray.add(EIPUtils.tryParseJsonString(parser,
-                        JsonUtil.jsonPayloadToString(((Axis2MessageContext) synCtx).getAxis2MessageContext())));
-                msgCounter++;
-
-                if (synLog.isTraceOrDebugEnabled()) {
-                    synLog.traceOrDebug("Incrementing foreach counter , " + counterPropName + " = "
-                            + msgCounter);
-                }
-                synCtx.setProperty(counterPropName, msgCounter);
-
-                if (!mediateResult) { // break the loop if mediate result is false
-                    break;
+                    handleException("Error updating the stream with iterater element : " +
+                            element.toString(), axisFault, synCtx);
                 }
             }
             JsonElement jsonPayloadElement = parsedJsonPayload
@@ -161,7 +160,7 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
                 JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
                         jsonPayloadElement.toString(), true, true);
             } catch (AxisFault af) {
-                handleException("Error creating an iterated copy of the message", af, synCtx);
+                handleException("Error updating the json stream after foreach transformation", af, synCtx);
             }
         } else {
             SOAPEnvelope processingEnvelope = synCtx.getEnvelope();

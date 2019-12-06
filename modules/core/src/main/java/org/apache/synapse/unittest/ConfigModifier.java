@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -66,6 +66,9 @@ class ConfigModifier {
 
     private static Logger log = Logger.getLogger(ConfigModifier.class.getName());
 
+    private static final String EMPTY_XMLNS = "xmlns=\"\"";
+    private static final String NULL_XMLNS = "xmlns=\"NULL\"";
+
     /**
      * Method parse the artifact data received and replaces actual endpoint urls with mock urls.
      * Call mock service creator with relevant mock service data.
@@ -86,11 +89,13 @@ class ConfigModifier {
 
         for (Artifact artifact : allArtifacts) {
             try {
+                String artifactNode = artifact.getArtifact().toString();
+                artifactNode = artifactNode.replaceAll(EMPTY_XMLNS, NULL_XMLNS);
                 //Build document using artifact data to parse the XML
                 DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
                 DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
                 Document document = docBuilder
-                        .parse(new InputSource(new StringReader(artifact.getArtifact().toString())));
+                        .parse(new InputSource(new StringReader(artifactNode)));
 
                 //Find relevant endpoint and update actual one. Start the mock service
                 Document parsedDocument =
@@ -103,7 +108,8 @@ class ConfigModifier {
                 transformer.setOutputProperty(OutputKeys.INDENT, "yes");
                 StringWriter writer = new StringWriter();
                 transformer.transform(new DOMSource(parsedDocument), new StreamResult(writer));
-                artifact.setArtifact(writer.getBuffer().toString().replaceAll("xmlns=\"\"", ""));
+                artifact.setArtifact(writer.getBuffer().toString().replaceAll(EMPTY_XMLNS, "")
+                        .replaceAll(NULL_XMLNS, EMPTY_XMLNS));
 
                 //check services are ready to serve by checking the ports
                 if (!mockServicePorts.isEmpty()) {
@@ -226,9 +232,10 @@ class ConfigModifier {
     }
 
     /**
-     * Thread wait until all services are started by checking the ports
+     * Thread wait until all services are started by checking the ports.
      *
      * @param port mock service port
+     * @return boolean value of port availability
      */
     private static boolean checkPortAvailability(int port) {
         boolean isAvailable;

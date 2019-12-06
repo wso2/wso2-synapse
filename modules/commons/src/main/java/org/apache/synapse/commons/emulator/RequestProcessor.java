@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -18,13 +18,16 @@
 
 package org.apache.synapse.commons.emulator;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.Map;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
@@ -32,8 +35,7 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.StringReader;
-import java.io.StringWriter;
+
 
 /**
  * Class responsible for removing the unwanted whitespaces in any type of inputs.
@@ -60,10 +62,11 @@ public class RequestProcessor {
         //remove CDATA tag from the string if exists
         if (trimedString.startsWith("<![CDATA[")) {
             trimedString = trimedString.substring(9);
-            int i = trimedString.indexOf("]]>");
-            if (i == -1)
+            int index = trimedString.indexOf("]]>");
+            if (index == -1) {
                 throw new IllegalStateException("argument starts with <![CDATA[ but cannot find pairing ]]>");
-            trimedString = trimedString.substring(0, i);
+            }
+            trimedString = trimedString.substring(0, index);
         }
 
         trimedString = convertStringToRelatedDocumentType(trimedString);
@@ -107,16 +110,16 @@ public class RequestProcessor {
      * @return converted document element as a string
      */
     private static String nodeToString(Node node) {
-        StringWriter sw = new StringWriter();
+        StringWriter stringWriter = new StringWriter();
         try {
-            Transformer t = TransformerFactory.newInstance().newTransformer();
-            t.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-            t.setOutputProperty(OutputKeys.INDENT, "yes");
-            t.transform(new DOMSource(node), new StreamResult(sw));
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.transform(new DOMSource(node), new StreamResult(stringWriter));
         } catch (Exception e) {
             log.error("nodeToString Transformer Exception", e);
         }
-        return sw.toString();
+        return stringWriter.toString();
     }
 
     /**
@@ -128,8 +131,13 @@ public class RequestProcessor {
      */
     private static String convertAsJSONString(String inputString) {
         try {
-            JsonObject inputJSON = new JsonParser().parse(inputString).getAsJsonObject();
-            return inputJSON.toString();
+            Gson gson = new GsonBuilder()
+                    .setPrettyPrinting()
+                    .registerTypeAdapterFactory(new TreeMapTypeAdapterFactory())
+                    .create();
+
+            Map root = gson.fromJson(inputString, Map.class);
+            return gson.toJson(root);
         } catch (Exception e) {
             return inputString;
         }

@@ -19,6 +19,7 @@
 package org.apache.synapse.rest;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.rest.dispatch.URLMappingHelper;
 
@@ -237,6 +238,7 @@ public class URLMappingBasedDispatcherTest extends RESTMediationTestCase {
 
         MessageContext synCtx = getMessageContext(synapseConfig, false, "/test/foo/bar", "GET");
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API, api.getName());
+        synCtx.setProperty(SynapseConstants.ARTIFACT_NAME, SynapseConstants.FAIL_SAFE_MODE_API + api.getName());
         synCtx.setResponse(true);
         handler.process(synCtx);
         assertNull(synCtx.getProperty(PROP_NAME));

@@ -36,7 +36,7 @@ public class JsonXMLConfigBuilder {
         this(new JsonXMLConfigImpl());
     }
 
-    protected JsonXMLConfigBuilder(JsonXMLConfigImpl config) {
+    public JsonXMLConfigBuilder(JsonXMLConfigImpl config) {
         this.config = config;
     }
 
@@ -190,4 +190,25 @@ public class JsonXMLConfigBuilder {
         return this;
     }
 
+    /**
+     * Set preserveNamespaces property and return receiver.
+     *
+     * @param preserverNamespacesForJson true if writing null, false if writing ""
+     * @return this
+     */
+    public JsonXMLConfigBuilder preserverNamespacesForJson(boolean preserverNamespacesForJson) {
+        config.setPreserverNamespacesForJson(preserverNamespacesForJson);
+        return this;
+    }
+
+    /**
+     * Set processNCNames property and return receiver.
+     *
+     * @param processNCNames true if writing null, false if writing ""
+     * @return this
+     */
+    public JsonXMLConfigBuilder processNCNames(boolean processNCNames) {
+        config.setProcessNCNames(processNCNames);
+        return this;
+    }
 }

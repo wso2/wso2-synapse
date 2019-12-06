@@ -315,9 +315,6 @@ public abstract class AbstractXMLStreamReader<T> implements XMLStreamReader {
      * @throws XMLStreamException
      */
     protected void readAttr(String prefix, String localName, String namespaceURI, String value) throws XMLStreamException {
-        if (scope.isStartTagClosed()) {
-            throw new XMLStreamException("Cannot read attribute: element has children or text", locationProvider);
-        }
         if (prefix == null && namespaceURI == null) {
             throw new IllegalArgumentException("at least one of prefix and namespaceURI must not be null!");
         }

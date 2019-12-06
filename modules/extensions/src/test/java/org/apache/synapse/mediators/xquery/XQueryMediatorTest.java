@@ -88,7 +88,7 @@ public class XQueryMediatorTest extends TestCase {
             "</commission>";
 
     public void testQueryWithAll() throws Exception {
-        MessageContext mc = TestUtils.getTestContext("<foo/>", null);
+        MessageContext mc = TestUtils.getAxis2MessageContext("<foo/>", null);
         XQueryMediator mediator = new XQueryMediator();
         mediator.setQuerySource("declare variable $intVar as xs:int external;" +
                 "declare variable $boolVar as xs:boolean external;" +
@@ -157,7 +157,7 @@ public class XQueryMediatorTest extends TestCase {
     }
 
     public void testQueryWithPayload() throws Exception {
-        MessageContext mc = TestUtils.getTestContext(sampleXml, null);
+        MessageContext mc = TestUtils.getAxis2MessageContext(sampleXml, null);
         XQueryMediator mediator = new XQueryMediator();
         List<MediatorVariable> list = new ArrayList<MediatorVariable>();
         MediatorVariable variable = new MediatorCustomVariable(new QName("payload"));
@@ -173,7 +173,7 @@ public class XQueryMediatorTest extends TestCase {
 
     public void testQueryWithPayloadTwo() throws Exception {
 
-        MessageContext mc = TestUtils.getTestContext(sampleXml2, null);
+        MessageContext mc = TestUtils.getAxis2MessageContext(sampleXml2, null);
         XQueryMediator mediator = new XQueryMediator();
         List<MediatorVariable> list = new ArrayList<MediatorVariable>();
         MediatorVariable variable = new MediatorCustomVariable(new QName("payload"));
@@ -198,7 +198,7 @@ public class XQueryMediatorTest extends TestCase {
 
     public void testQueryWithPayloadThree() throws Exception {
         try {
-            MessageContext mc = TestUtils.getTestContext(sampleXml3, null);
+            MessageContext mc = TestUtils.getAxis2MessageContext(sampleXml3, null);
             XQueryMediator mediator = new XQueryMediator();
             List<MediatorVariable> list = new ArrayList<MediatorVariable>();
             MediatorVariable variable = new MediatorCustomVariable(new QName("payload"));
@@ -220,7 +220,7 @@ public class XQueryMediatorTest extends TestCase {
 
     public void testQueryWithPayloadFour() throws Exception {
         try {
-            MessageContext mc = TestUtils.getTestContext(sampleXml3, null);
+            MessageContext mc = TestUtils.getAxis2MessageContext(sampleXml3, null);
             XQueryMediator mediator = new XQueryMediator();
             List<MediatorVariable> list = new ArrayList<MediatorVariable>();
             MediatorVariable variable = new MediatorCustomVariable(new QName("payload"));
@@ -251,7 +251,7 @@ public class XQueryMediatorTest extends TestCase {
     }
 
     public void testQueryReturnInt() throws Exception {
-        MessageContext mc = TestUtils.getTestContext("<foo/>", null);
+        MessageContext mc = TestUtils.getAxis2MessageContext("<foo/>", null);
         XQueryMediator mediator = new XQueryMediator();
         mediator.setQuerySource("for $n in 1 to 10 return $n*$n");
         assertTrue(mediator.mediate(mc));
@@ -259,7 +259,7 @@ public class XQueryMediatorTest extends TestCase {
     }
 
     public void testQueryReturnBoolean() throws Exception {
-        MessageContext mc = TestUtils.getTestContext("<foo/>", null);
+        MessageContext mc = TestUtils.getAxis2MessageContext("<foo/>", null);
         XQueryMediator mediator = new XQueryMediator();
         mediator.setQuerySource("declare variable $boolVar as xs:boolean external; $boolVar");
         List<MediatorVariable> list = new ArrayList<MediatorVariable>();

@@ -50,6 +50,7 @@ import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HTTPTransportUtils;
 import org.apache.axis2.util.MessageContextBuilder;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpInetConnection;
@@ -60,6 +61,7 @@ import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.ssl.SSLIOSession;
 import org.apache.http.protocol.HTTP;
+import org.apache.log4j.MDC;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiatorProvider;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
@@ -71,6 +73,7 @@ import org.apache.synapse.transport.nhttp.util.NhttpUtil;
 import org.apache.synapse.transport.nhttp.util.RESTUtil;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
 
 /**
@@ -79,12 +82,17 @@ import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
 public class ServerWorker implements Runnable {
 
   	private static final Log log = LogFactory.getLog(ServerWorker.class);
+    /** logger for correlation.log */
+    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
     /** the incoming message to be processed */
     private org.apache.axis2.context.MessageContext msgContext = null;
     /** the http request */
     private SourceRequest request = null;
     /** The configuration of the receiver */
     private SourceConfiguration sourceConfiguration = null;
+
+    private long initiationTimestamp = 0;
+    private String correlationId;
 
     private static final String SOAP_ACTION_HEADER = "SOAPAction";
 
@@ -122,8 +130,30 @@ public class ServerWorker implements Runnable {
                 System.currentTimeMillis());
     }
 
+    public ServerWorker(final SourceRequest request,
+            final SourceConfiguration sourceConfiguration,final OutputStream os, long initiationTimestamp,
+            String correlationId) {
+        this(request, sourceConfiguration, os);
+        this.initiationTimestamp = initiationTimestamp;
+        this.correlationId = correlationId;
+    }
+
     public void run() {
         try {
+             /* Remove correlation id MDC thread local value that can be persisting from the
+               previous usage of this thread */
+            MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+            /* Subsequent to removing the correlation id MDC thread local value, a new value is put in case
+               there is one */
+            if (StringUtils.isNotEmpty(correlationId)) {
+                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, correlationId);
+                /* Log the time taken to switch from the previous thread to this thread */
+                if (initiationTimestamp != 0) {
+                    correlationLog.info((System.currentTimeMillis() - initiationTimestamp) +
+                            "|Thread switch latency");
+                }
+            }
+
             CustomLogSetter.getInstance().clearThreadLocalContent();
             TenantInfoInitiator tenantInfoInitiator = TenantInfoInitiatorProvider.getTenantInfoInitiator();
             if (tenantInfoInitiator != null) {
@@ -214,7 +244,7 @@ public class ServerWorker implements Runnable {
 				 * This reverseProxyMode was introduce to avoid the LB exposing
 				 * it's own web service when REST call was initiated
 				 */
-				boolean reverseProxyMode = NHttpConfiguration.getInstance().isReverseProxyMode();
+				boolean reverseProxyMode = PassThroughConfiguration.getInstance().isReverseProxyMode();
 				AxisService axisService = null;
 				if (!reverseProxyMode) {
 					RequestURIBasedDispatcher requestDispatcher = new RequestURIBasedDispatcher();
@@ -230,14 +260,14 @@ public class ServerWorker implements Runnable {
 
                 boolean isCustomRESTDispatcher = false;
                 String requestURI = request.getRequest().getRequestLine().getUri();
-                if (requestURI.matches(NHttpConfiguration.getInstance().getRestUriApiRegex())
-                        || requestURI.matches(NHttpConfiguration.getInstance().getRestUriProxyRegex())) {
+                if (requestURI.matches(PassThroughConfiguration.getInstance().getRestUriApiRegex())
+                        || requestURI.matches(PassThroughConfiguration.getInstance().getRestUriProxyRegex())) {
                     isCustomRESTDispatcher = true;
                 }
 
                 if (!isCustomRESTDispatcher) {
                     if (axisService == null) {
-                        String defaultSvcName = NHttpConfiguration.getInstance().getNhttpDefaultServiceName();
+                        String defaultSvcName = PassThroughConfiguration.getInstance().getPassThroughDefaultServiceName();
                         axisService = msgContext.getConfigurationContext().getAxisConfiguration().
                                 getService(defaultSvcName);
                         msgContext.setAxisService(axisService);
@@ -343,6 +373,20 @@ public class ServerWorker implements Runnable {
         } catch (Exception e) {
             String encodedURL = StringEscapeUtils.escapeHtml(request.getUri());
             handleException("Error processing " + request.getMethod() + " request for : " + encodedURL + ". ", e);
+        }
+    }
+
+    /**
+     * This method will read the entire content from the input stream of the request and discard it if
+     * there is an Exception.
+     *
+     * @param msgContext Synapse message context.
+     */
+    private void consumeInputOnException(MessageContext msgContext) {
+        try {
+            RelayUtils.consumeAndDiscardMessage(msgContext);
+        } catch (AxisFault axisFault) {
+            log.error("Exception while consuming the input stream on Axis Fault", axisFault);
         }
     }
 
@@ -550,7 +594,8 @@ public class ServerWorker implements Runnable {
         if (e == null) {
             e = new Exception(msg);
         }
-
+        //consume and discard the remaining input in the pipe
+        consumeInputOnException(msgContext);
         try {
             MessageContext faultContext = MessageContextBuilder
                     .createFaultMessageContext(msgContext, e);

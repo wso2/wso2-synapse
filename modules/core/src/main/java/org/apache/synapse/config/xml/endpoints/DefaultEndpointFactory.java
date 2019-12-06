@@ -90,9 +90,7 @@ public class DefaultEndpointFactory extends EndpointFactory {
         }
 
         processProperties(defaultEndpoint, epConfig);
-
         CommentListUtil.populateComments(defaultElement, defaultEndpoint.getCommentsList());
-        
         return defaultEndpoint;
     }
 

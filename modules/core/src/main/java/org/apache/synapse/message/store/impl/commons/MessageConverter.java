@@ -45,9 +45,11 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.util.UUIDGenerator;
 
 import java.io.ByteArrayInputStream;
@@ -302,6 +304,9 @@ public final class MessageConverter {
             properties = synCtx.getPropertyKeySet().iterator();
             while (properties.hasNext()) {
                 String key = properties.next();
+                if (isExcludedMessageStoreProperty(key)) {
+                    continue;
+                }
                 Object value = synCtx.getProperty(key);
                 if (value instanceof String) {
                     synMsg.addProperty(key, (String) value);
@@ -324,6 +329,17 @@ public final class MessageConverter {
             throw new SynapseException("Cannot store message to store.");
         }
         return message;
+    }
+
+    /**
+     * Check the given property is an excluded message store property
+     *
+     * @return true if property is an excluded message store property
+     */
+    private static boolean isExcludedMessageStoreProperty(String property) {
+        return SynapseConstants.PROXY_SERVICE.equals(property) ||
+                RESTConstants.SYNAPSE_REST_API.equals(property) ||
+                RESTConstants.SYNAPSE_RESOURCE.equals(property);
     }
 
     private static SOAPEnvelope getSoapEnvelope(String soapEnvelpe) {

@@ -18,6 +18,12 @@ public class CustomClassEndpoint extends AbstractEndpoint{
 	public void onSuccess() {
 		//TODO
 	}
+
+	@Override
+	protected void createJsonRepresentation() {
+		//TODO
+	}
+
 	public void send(MessageContext synMessageContext) {
 		//TODO
 	}

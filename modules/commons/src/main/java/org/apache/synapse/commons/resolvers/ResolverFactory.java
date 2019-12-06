@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.synapse.config.xml.endpoints.resolvers;
+package org.apache.synapse.commons.resolvers;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.config.xml.MediatorFactoryFinder;
 import java.util.ServiceLoader;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,8 +31,9 @@ public class ResolverFactory {
     private static final int RESOLVER_INDEX = 2;
     private static ResolverFactory resolverFactory = new ResolverFactory();
     private final Pattern rePattern = Pattern.compile("(\\$)([a-zA-Z0-9]+):([_a-zA-Z0-9]+)");
-    private static final Log log = LogFactory.getLog(MediatorFactoryFinder.class);
+    private static final Log LOG = LogFactory.getLog(ResolverFactory.class);
     private static final String SYSTEM_VARIABLE_PREFIX = "$SYSTEM";
+    private static final String FILE_PROPERTY_VARIABLE_PREFIX = "$FILE";
 
     private Map<String, Class<? extends Resolver>> resolverMap = new HashMap<>();
 
@@ -79,6 +78,23 @@ public class ResolverFactory {
                     throw new ResolverException("Resolver could not be found");
                 }
             }
+        } else if(input.startsWith(FILE_PROPERTY_VARIABLE_PREFIX)){
+            Matcher matcher = rePattern.matcher(input);
+            Resolver resolverObject = null;
+            if (matcher.find()){
+                Class<? extends Resolver> resolverClass = resolverMap.get(matcher.group(RESOLVER_INDEX).toLowerCase());
+                if (resolverClass != null) {
+                    try {
+                        resolverObject = resolverClass.newInstance();
+                        resolverObject.setVariable(matcher.group(3));
+                        return resolverObject;
+                    } catch (IllegalAccessException | InstantiationException e) {
+                        throw new ResolverException("Resolver could not be initialized", e);
+                    }
+                } else {
+                    throw new ResolverException("Resolver could not be found");
+                }
+            }
         }
 
         Resolver resolver = new DefaultResolver();
@@ -89,6 +105,7 @@ public class ResolverFactory {
 
     private void registerResolvers() {
         resolverMap.put("system", SystemResolver.class);
+        resolverMap.put("file", FilePropertyResolver.class);
     }
 
     private void registerExterns() {
@@ -99,13 +116,13 @@ public class ResolverFactory {
             className = packageList[packageList.length - 1];
             if (resolverMap.get(className.toLowerCase()) == null) {
                 resolverMap.put(className.toLowerCase(), resolver.getClass());
-                if (log.isDebugEnabled()) {
-                    log.debug("Added Resolver " + className + " to resolver factory ");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Added Resolver " + className + " to resolver factory ");
                 }
             }
             else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Failed to Resolver " + className + " to resolver factory. Already exist");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Failed to Resolver " + className + " to resolver factory. Already exist");
                 }
             }
         }

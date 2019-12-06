@@ -107,6 +107,15 @@ public interface JsonXMLConfig {
             return true;
         }
 
+        @Override
+        public boolean isPreserverNamespacesForJson() {
+            return false;
+        }
+
+        @Override
+        public boolean isProcessNCNames() {
+            return false;
+        }
     };
 
     /**
@@ -210,4 +219,17 @@ public interface JsonXMLConfig {
      */
     public boolean isWriteNullForEmptyElements();
 
+    /**
+     * Preserves the namespace declarations in the JSON output in XML to JSON transformations.
+     *
+     * @return preserveNamespacesForJson
+     */
+    public boolean isPreserverNamespacesForJson();
+
+    /**
+     * Builds valid XML NCNames when building XML element names in XML to JSON transformations.
+     *
+     * @return processNCNames
+     */
+    public boolean isProcessNCNames();
 }

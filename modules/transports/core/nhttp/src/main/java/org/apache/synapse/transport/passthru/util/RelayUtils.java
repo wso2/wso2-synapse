@@ -187,7 +187,7 @@ public class RelayUtils {
                     try {
                         String contentType = (String) messageContext.getProperty(Constants.Configuration.CONTENT_TYPE);
 
-                        if (PassThroughConstants.JSON_CONTENT_TYPE.equals(contentType) && forceJSONValidation) {
+                        if (PassThroughConstants.JSON_CONTENT_TYPE.equals(getMIMEContentType(contentType)) && forceJSONValidation) {
                             rawData = byteArrayOutputStream.toString();
                             JsonParser jsonParser = new JsonParser();
                             jsonParser.parse(rawData);
@@ -216,7 +216,26 @@ public class RelayUtils {
         return;
     }
 
-
+    /**
+     * Get MIME content type out of content-type header
+     * @param contentType content type header value
+     * @return MIME content type
+     */
+    public static String getMIMEContentType(String contentType) {
+        String type;
+        int index = contentType.indexOf(';');
+        if (index > 0) {
+            type = contentType.substring(0, index);
+        } else {
+            int commaIndex = contentType.indexOf(',');
+            if (commaIndex > 0) {
+                type = contentType.substring(0, commaIndex);
+            } else {
+                type = contentType;
+            }
+        }
+        return type;
+    }
 
     /**
      * Function to check whether the processing request (enclosed within MessageContext) is a DELETE request without

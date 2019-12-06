@@ -28,6 +28,8 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.json.JSONObject;
+
 /**
  * Class which defines  custom  user defined endpoints. Custom Endpoint implementations must extend
  * the  <code>AbstractEndpoint</code> class.
@@ -78,6 +80,13 @@ public class ClassEndpoint extends AbstractEndpoint  {
 		} else {
 			sendMessage(synCtx);
 		}
+	}
+
+	@Override
+	protected void createJsonRepresentation() {
+		endpointJson = new JSONObject();
+		endpointJson.put(NAME_JSON_ATT, getName());
+		endpointJson.put(TYPE_JSON_ATT, "Class Endpoint");
 	}
 
 	/**

@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNamespace;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.commons.util.PropertyHelper;
 
 import javax.xml.namespace.QName;
@@ -94,7 +95,9 @@ public class TaskDescriptionFactory {
                 if (pinnedServersValue == null) {
                     // default to all servers
                 } else {
-                    StringTokenizer st = new StringTokenizer(pinnedServersValue, " ,");
+                    String  resolvedPinnedServersValue =
+                            ResolverFactory.getInstance().getResolver(pinnedServersValue).resolve();
+                    StringTokenizer st = new StringTokenizer(resolvedPinnedServersValue, " ,");
                     List<String> pinnedServersList = new ArrayList<String>();
                     while (st.hasMoreTokens()) {
                         String token = st.nextToken();

@@ -80,6 +80,8 @@ public class PropertyMediator extends AbstractMediator {
     /** Define the Content type of the resource **/
     public static final String CONTENT_TYPE = "text/plain";
 
+    private static final String EMPTY_CONTENT = "";
+
     /**
      * Sets a property into the current (local) Synapse Context or into the Axis Message Context
      * or into Transports Header and removes above properties from the corresponding locations.
@@ -205,6 +207,7 @@ public class PropertyMediator extends AbstractMediator {
 
                 Registry registry = synCtx.getConfiguration().getRegistry();
                 registry.newNonEmptyResource(path, false, CONTENT_TYPE, resultValue.toString(), propertyName);
+                registry.updateResource(path, EMPTY_CONTENT);
             }
 
         } else {

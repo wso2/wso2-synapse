@@ -154,8 +154,7 @@ public class TargetContext {
                 conn.getContext().getAttribute(CONNECTION_INFORMATION);
         if (targetContext != null) {
             targetContext.setState(state);
-            if (targetContext.getTargetConfiguration().isCorrelationLoggingEnabled()
-                    && conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID) != null) {
+            if (targetContext.getTargetConfiguration().isCorrelationLoggingEnabled() && isCorrelationIdAvailable(conn)) {
                 long lastStateUpdateTime = targetContext.getLastStateUpdatedTime();
                 String url = "", method = "";
                 if (targetContext.getRequest() != null) {
@@ -246,5 +245,12 @@ public class TargetContext {
     public long updateLastStateUpdatedTime() {
         this.lastStateUpdatedTime = System.currentTimeMillis();
         return this.lastStateUpdatedTime;
+    }
+
+    public static Boolean isCorrelationIdAvailable(NHttpConnection connection) {
+        if (connection.getContext().getAttribute(PassThroughConstants.CORRELATION_ID) != null) {
+            return true;
+        }
+        return false;
     }
 }

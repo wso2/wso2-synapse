@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -23,7 +23,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import org.apache.log4j.Logger;
 import org.apache.synapse.commons.emulator.RequestProcessor;
 import org.apache.synapse.commons.emulator.core.Emulator;
-import org.apache.synapse.commons.emulator.core.EmulatorType;
+import org.apache.synapse.commons.emulator.http.HTTPProtocolEmulator;
 import org.apache.synapse.commons.emulator.http.dsl.HttpConsumerContext;
 import org.apache.synapse.commons.emulator.http.dsl.dto.consumer.IncomingMessage;
 import org.apache.synapse.commons.emulator.http.dsl.dto.consumer.OutgoingMessage;
@@ -45,8 +45,7 @@ import static org.apache.synapse.unittest.Constants.POST_METHOD;
 class MockServiceCreator {
 
     private static Logger log = Logger.getLogger(MockServiceCreator.class.getName());
-    private static boolean isMockServiceCreated = false;
-
+    private static List<HTTPProtocolEmulator> emulatorServiceList = new ArrayList<>();
     private MockServiceCreator() {
     }
 
@@ -61,13 +60,10 @@ class MockServiceCreator {
     static void startMockServiceServer(String mockServiceName, String host, int port, String context,
                                               List<ServiceResource> resources) {
 
-        //set flag to mock service started
-        if (!isMockServiceCreated) {
-            isMockServiceCreated = true;
-        }
-
         try {
-            HttpConsumerContext emulator = Emulator.getHttpEmulator()
+            HTTPProtocolEmulator httpEmulator = new Emulator().getHttpProtocolEmulator();
+            emulatorServiceList.add(httpEmulator);
+            HttpConsumerContext emulator = httpEmulator
                     .consumer()
                     .host(host)
                     .port(port)
@@ -78,9 +74,7 @@ class MockServiceCreator {
             }
 
             emulator.operations().start();
-
             log.info("Mock service started for " + mockServiceName + " in - http://" + host + ":" + port + context);
-
         } catch (Exception e) {
             log.error("Error in initiating mock service named " + mockServiceName, e);
         }
@@ -113,7 +107,7 @@ class MockServiceCreator {
             requestHeaders = resource.getRequestHeaders();
         }
 
-        if(resource.getResponseHeaders() != null) {
+        if (resource.getResponseHeaders() != null) {
             responseHeaders = resource.getResponseHeaders();
         }
 
@@ -181,9 +175,10 @@ class MockServiceCreator {
      * Stop all services created from the emulator by checking thread-id.
      */
     static void stopServices() {
-        if (isMockServiceCreated) {
-            new Emulator().shutdown(EmulatorType.HTTP_CONSUMER);
-            isMockServiceCreated = false;
+        for (HTTPProtocolEmulator emulatorService : emulatorServiceList) {
+            emulatorService.shutdown();
         }
+
+        emulatorServiceList.clear();
     }
 }

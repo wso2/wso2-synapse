@@ -277,15 +277,9 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                         // before uploading the file
                         if (vfsOutInfo.isFileLockingEnabled()) {
                             acquireLockForSending(responseFile, vfsOutInfo, fso);
-                            if (!responseFile.exists()) {
-                                responseFile.createFile();
-                            }
                             populateResponseFile(responseFile, msgCtx,append, true, fso);
                             VFSUtils.releaseLock(fsManager, responseFile, fso);
                         } else {
-                            if (!responseFile.exists()) {
-                                responseFile.createFile();
-                            }
                             populateResponseFile(responseFile, msgCtx,append, false, fso);
                         }
 
@@ -309,11 +303,9 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                     // if file locking is not disabled acquire the lock before uploading the file
                     if (vfsOutInfo.isFileLockingEnabled()) {
                         acquireLockForSending(replyFile, vfsOutInfo, fso);
-                        replyFile.createFile();
                         populateResponseFile(replyFile, msgCtx, append, true, fso);
                         VFSUtils.releaseLock(fsManager, replyFile, fso);
                     } else {
-                        replyFile.createFile();
                         populateResponseFile(replyFile, msgCtx, append, false, fso);
                     }
                 }

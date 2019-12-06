@@ -75,6 +75,7 @@ public class MediatorSerializerFinder {
             RespondMediatorSerializer.class,
             CommentMediatorSerializer.class,
             ForEachMediatorSerializer.class,
+            JSONTransformMediatorSerializer.class
             GraphQLMediatorSerializer.class,
             JWTMediatorSerializer.class
     };
