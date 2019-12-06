@@ -193,11 +193,11 @@
                         </Export-Package>
                         <Import-Package>
                             !javax.xml.namespace,
-                            javax.xml.namespace;
-                            version=0.0.0,
-                            !javax.xml.soap,
-                            javax.xml.soap; version=${javax.xml.soap.version},
-                            !org.apache.commons.io,
+							!javax.xml.soap,
+							!org.apache.commons.io,
+							javax.xml.namespace;
+							version=0.0.0,
+							javax.xml.soap; version=${javax.xml.soap.version},
                             org.apache.commons.io; version=0.0.0,
                             org.quartz.*;version="${quartz.version}",
                             *;resolution:=optional
@@ -427,7 +427,4 @@
 			<version>${org.wso2.json.version}</version>
 		</dependency>
     </dependencies>
-    <properties>
-        <version.orbit.rabbitmq>3.6.6.wso2v1</version.orbit.rabbitmq>
-    </properties>
 </project>
