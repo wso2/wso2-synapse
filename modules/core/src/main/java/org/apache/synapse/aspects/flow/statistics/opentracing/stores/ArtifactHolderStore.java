@@ -47,8 +47,7 @@ public class ArtifactHolderStore {
     public static synchronized void addStructuringElementStack(String componentUniqueId,
                                                                ArtifactHolder artifactHolderReference) {
         if (artifactHolderReference != null) {
-            Stack<StructuringElement> stackCopy =
-                    getCopiedStack(componentUniqueId, artifactHolderReference.getStack());
+            Stack<StructuringElement> stackCopy = getCopiedStack(componentUniqueId, artifactHolderReference.getStack());
             structuringElementStacks.put(componentUniqueId, stackCopy);
         }
     }
@@ -78,27 +77,5 @@ public class ArtifactHolderStore {
             }
         }
         return stackCopy;
-    }
-
-    public static synchronized String getStackString(String componentUniqueId) {
-        if (componentUniqueId == null) {
-            return "null";
-        }
-        return getStackString(structuringElementStacks.get(componentUniqueId));
-    }
-
-    private static String getStackString(Stack<StructuringElement> stack) {
-        StringBuilder stringBuilder = new StringBuilder();
-        if (stack != null) {
-            stringBuilder.append("[");
-            for (StructuringElement structuringElement : stack) {
-                stringBuilder.append(structuringElement.toString());
-                stringBuilder.append(" ,");
-            }
-            stringBuilder.append("]");
-        } else {
-            stringBuilder.append("null");
-        }
-        return stringBuilder.toString();
     }
 }

@@ -1015,6 +1015,12 @@
               <artifactId>libphonenumber</artifactId>
               <version>${com.googlecode.libphonenumber.version}</version>
          </dependency>
+          <!--Jaeger Tracing-->
+          <dependency>
+              <groupId>org.wso2.orbit.io.jaeger</groupId>
+              <artifactId>jaeger-client</artifactId>
+              <version>${jaeger-client.version}</version>
+          </dependency>
           <!--Mockito Dependency-->
           <dependency>
               <groupId>org.powermock</groupId>
@@ -1141,11 +1147,6 @@
               <groupId>org.antlr.wso2</groupId>
               <artifactId>antlr-runtime</artifactId>
               <version>${antlr.wso2.version}</version>
-          </dependency>
-          <dependency>
-              <groupId>org.wso2.orbit.io.jaeger</groupId>
-              <artifactId>jaegerclient</artifactId>
-              <version>${jaegerclient.version}</version>
           </dependency>
       </dependencies>
    </dependencyManagement>
@@ -1321,8 +1322,6 @@
       <commons_io.version>2.0</commons_io.version>
       <commons-cli.version>1.0</commons-cli.version>
       <jline.version>0.9.94</jline.version>
-       <!-- Jaeger Tracing -->
-       <jaegerclient.version>0.32.0.wso2v2</jaegerclient.version>
       <!-- dependencies of Synapse extensions module -->
       <saxon-HE.version>9.5.1-8</saxon-HE.version>
       <wso2commons.version>1.2</wso2commons.version>
@@ -1362,6 +1361,7 @@
        <system.rules.version>1.17.0</system.rules.version>
        <io.netty.version>4.0.30.Final</io.netty.version>
        <version.org.wso2.orbit.javax.activation>1.1.1.wso2v3</version.org.wso2.orbit.javax.activation>
+       <jaeger-client.version>0.32.0.wso2v1</jaeger-client.version>
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->

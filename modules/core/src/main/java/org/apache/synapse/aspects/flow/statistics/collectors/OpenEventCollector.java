@@ -93,9 +93,6 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			if (aspectConfiguration != null) {
 				statisticDataUnit.setComponentId(aspectConfiguration.getUniqueId());
 				statisticDataUnit.setHashCode(aspectConfiguration.getHashCode());
-				statisticDataUnit.artifactHolderStackString =
-                        ArtifactHolderStore.getStackString(
-                                aspectConfiguration.getUniqueId()); // TODO Remove
 			}
 			int parentIndex = StatisticDataCollectionHelper
 					.getParentFlowPosition(messageContext, statisticDataUnit.getCurrentIndex());
@@ -290,9 +287,6 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 		if(aspectConfiguration != null) {
 			statisticDataUnit.setComponentId(aspectConfiguration.getUniqueId());
 			statisticDataUnit.setHashCode(aspectConfiguration.getHashCode());
-            statisticDataUnit.artifactHolderStackString =
-                    ArtifactHolderStore.getStackString(
-                            aspectConfiguration.getUniqueId()); // TODO Remove
 		}
 		int parentIndex = StatisticDataCollectionHelper
 				.getParentFlowPosition(messageContext, statisticDataUnit.getCurrentIndex());

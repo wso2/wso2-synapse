@@ -155,6 +155,7 @@
                                 <!--<bundleDef>org.wso2.orbit.joda-time:joda-time:${joda-time.version}</bundleDef>-->
                                 <bundleDef>com.google.guava:guava:${google.guava.version}</bundleDef>
                                 <bundleDef>org.wso2.orbit.com.github.fge:json-schema-validator-all</bundleDef>
+                                <bundleDef>org.wso2.orbit.io.jaeger:jaeger-client</bundleDef>
                             </bundles>
                             <importBundles>
                                 <importBundleDef>commons-dbcp.wso2:commons-dbcp</importBundleDef>

@@ -79,7 +79,11 @@ public abstract class RuntimeStatisticCollector {
         isStatisticsEnabled = isMediationFlowStatisticsEnabled || isOpenTracingEnabled;
         if (isStatisticsEnabled) {
             if (log.isDebugEnabled()) {
-                log.debug("Mediation statistics collection is enabled.");
+                if (isMediationFlowStatisticsEnabled) {
+                    log.debug("Mediation statistics collection is enabled.");
+                } else if (isOpenTracingEnabled) {
+                    log.debug("OpenTracing is enabled.");
+                }
             }
 
             Long eventConsumerTime = Long.parseLong(SynapsePropertiesLoader.getPropertyValue(
@@ -109,7 +113,9 @@ public abstract class RuntimeStatisticCollector {
             log.info("Statistics Entry Expiration time set to " + eventExpireTime + " milliseconds");
             new MediationFlowController();
 
-            initOpenTracing(isCollectingPayloads, isCollectingProperties);
+            if (isOpenTracingEnabled) {
+                initOpenTracing(isCollectingPayloads, isCollectingProperties);
+            }
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Statistics is not enabled in \'synapse.properties\' file.");
@@ -164,7 +170,7 @@ public abstract class RuntimeStatisticCollector {
                 senderAgentPortInt,
                 logSpansBoolean,
                 reporterMaxQueueSizeInt,
-                reporterFlushIntervalInt); // TODO discuss about config at the end
+                reporterFlushIntervalInt);
 
         OpenTracingManagerHolder.setCollectingFlags(isCollectingPayloads, isCollectingProperties);
     }
