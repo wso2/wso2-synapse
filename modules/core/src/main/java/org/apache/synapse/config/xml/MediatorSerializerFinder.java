@@ -75,7 +75,8 @@ public class MediatorSerializerFinder {
             RespondMediatorSerializer.class,
             CommentMediatorSerializer.class,
             ForEachMediatorSerializer.class,
-            GraphQLMediatorSerializer.class
+            GraphQLMediatorSerializer.class,
+            JWTMediatorSerializer.class
     };
 
     private final static MediatorSerializerFinder instance = new MediatorSerializerFinder();

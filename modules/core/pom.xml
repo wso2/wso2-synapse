@@ -206,6 +206,14 @@
 					</instructions>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>8</source>
+					<target>8</target>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
@@ -419,6 +427,11 @@
             <artifactId>graphql-java</artifactId>
             <version>2019-08-22T10-39-43-a6c4461</version>
         </dependency>
+		<dependency>
+			<groupId>com.nimbusds</groupId>
+			<artifactId>nimbus-jose-jwt</artifactId>
+			<version>6.0</version>
+		</dependency>
     </dependencies>
 <properties>
 		<version.orbit.rabbitmq>3.6.6.wso2v1</version.orbit.rabbitmq>

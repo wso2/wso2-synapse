@@ -45,6 +45,8 @@ import java.net.URL;
  */
 public class GraphQLMediator  extends AbstractMediator {
 
+
+
     /**The reference to the graphql api.*/
     private GraphQL graphql;
 
@@ -61,13 +63,15 @@ public class GraphQLMediator  extends AbstractMediator {
             String sdl = Resources.toString(url, Charsets.UTF_8);
             GraphQLSchema graphQLSchema = buildSchema(sdl);
             this.graphql = GraphQL.newGraphQL(graphQLSchema).build();
+
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Unable to create the GraphQL api");
         }
     }
 
 
     public boolean mediate(MessageContext messageContext) {
+
         ExecutionResult executionResult = graphql.execute((String) messageContext.getProperty("query"), messageContext);
         messageContext.setProperty("result", new Gson().toJson(executionResult.toSpecification()));
         return true;
@@ -77,16 +81,11 @@ public class GraphQLMediator  extends AbstractMediator {
             throws  ClassNotFoundException, IllegalAccessException, InstantiationException {
 
         TypeDefinitionRegistry typeRegistry = new SchemaParser().parse(sdl);
-
         Class clazz = this.getClass().getClassLoader().loadClass(runtimeWiringClassName.trim());
         RuntimewiringInterface datafetcher = (RuntimewiringInterface) clazz.newInstance();
-
         RuntimeWiring runtimeWiring  = datafetcher.buildWiring();
-
         SchemaGenerator schemaGenerator = new SchemaGenerator();
         return schemaGenerator.makeExecutableSchema(typeRegistry, runtimeWiring);
-
-
     }
 
     public void setSchemaPath(String schemaPath) {

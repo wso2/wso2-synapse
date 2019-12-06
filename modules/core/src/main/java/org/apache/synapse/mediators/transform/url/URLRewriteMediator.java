@@ -88,7 +88,7 @@ public class URLRewriteMediator extends AbstractMediator {
     private URI getInputAddress(MessageContext messageContext) {
         String uriString = null;
         if (inputProperty != null) {
-            Object prop = messageContext.getProperty(inputProperty);
+            Object prop =(inputProperty);
             if (prop != null && prop instanceof String) {
                 uriString = (String) prop;
             }

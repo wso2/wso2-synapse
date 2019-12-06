@@ -1135,6 +1135,12 @@
               <version>11.0</version>
           </dependency>
 
+          <dependency>
+              <groupId>org.wso2.carbon.identity.inbound.auth.oauth2</groupId>
+              <artifactId>org.wso2.carbon.identity.oauth</artifactId>
+              <version>6.2.21</version>
+          </dependency>
+
       </dependencies>
    </dependencyManagement>
     <reporting>
