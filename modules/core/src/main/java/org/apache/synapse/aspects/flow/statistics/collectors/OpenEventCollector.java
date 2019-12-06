@@ -109,8 +109,8 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
             addEventAndIncrementCount(messageContext, openEvent);
 
             if (isOpenTracingEnabled()) {
-				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
-						.handleOpenEntryEvent(statisticDataUnit, messageContext);
+            	OpenTracingManagerHolder.getOpenTracingManager().getHandler()
+		            .handleOpenEntryEvent(statisticDataUnit, messageContext);
 			}
 
 			return statisticDataUnit.getCurrentIndex();

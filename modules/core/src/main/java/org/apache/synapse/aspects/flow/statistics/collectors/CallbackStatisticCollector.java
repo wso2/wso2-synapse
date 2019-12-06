@@ -52,7 +52,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 
             if (isOpenTracingEnabled()) {
 				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
-						.handleAddCallback(messageContext, callbackId);
+					.handleAddCallback(messageContext, callbackId);
 			}
 		}
 	}
@@ -79,7 +79,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 
             if (isOpenTracingEnabled()) {
 				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
-						.handleCallbackCompletionEvent(oldMessageContext, callbackId);
+					.handleCallbackCompletionEvent(oldMessageContext, callbackId);
 			}
 		}
 	}
@@ -105,7 +105,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 
             if (isOpenTracingEnabled()) {
 				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
-						.handleUpdateParentsForCallback(oldMessageContext, callbackId);
+					.handleUpdateParentsForCallback(oldMessageContext, callbackId);
 			}
 		}
 	}
@@ -131,7 +131,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 
 			if (isOpenTracingEnabled()) {
 				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
-						.handleReportCallbackHandlingCompletion(synapseOutMsgCtx, callbackId);
+					.handleReportCallbackHandlingCompletion(synapseOutMsgCtx, callbackId);
 			}
 
 		}

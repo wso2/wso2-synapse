@@ -77,7 +77,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 
 			if (isOpenTracingEnabled()) {
 				OpenTracingManagerHolder.getOpenTracingManager().getHandler().
-						handleCloseEntryEvent(statisticDataUnit, messageContext);
+					handleCloseEntryEvent(statisticDataUnit, messageContext);
 			}
 
 		}
@@ -106,7 +106,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 
             if (isOpenTracingEnabled()) {
 				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
-						.handleCloseFlowForcefully(dataUnit, messageContext);
+					.handleCloseFlowForcefully(dataUnit, messageContext);
 			}
 
         }
