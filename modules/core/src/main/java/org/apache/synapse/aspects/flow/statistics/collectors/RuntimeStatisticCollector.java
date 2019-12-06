@@ -69,13 +69,10 @@ public abstract class RuntimeStatisticCollector {
      * Initialize statistics collection when ESB starts.
      */
     public static void init() {
-        isMediationFlowStatisticsEnabled = Boolean.parseBoolean(
-                SynapsePropertiesLoader.getPropertyValue(
-                        StatisticsConstants.STATISTICS_ENABLE,
-                        String.valueOf(false)));
-        isOpenTracingEnabled = Boolean.parseBoolean(
-                SynapsePropertiesLoader
-                        .getPropertyValue(StatisticsConstants.OPENTRACING_ENABLE, String.valueOf(false)));
+        isMediationFlowStatisticsEnabled =
+            SynapsePropertiesLoader.getBooleanProperty(StatisticsConstants.STATISTICS_ENABLE, false);
+        isOpenTracingEnabled =
+            SynapsePropertiesLoader.getBooleanProperty(StatisticsConstants.OPENTRACING_ENABLE, false);
         isStatisticsEnabled = isMediationFlowStatisticsEnabled || isOpenTracingEnabled;
         if (isStatisticsEnabled) {
             if (log.isDebugEnabled()) {
@@ -90,22 +87,22 @@ public abstract class RuntimeStatisticCollector {
                     StatisticsConstants.FLOW_STATISTICS_EVENT_CONSUME_TIME,
                     StatisticsConstants.FLOW_STATISTICS_DEFAULT_EVENT_CONSUME_INTERVAL));
 
-            isCollectingPayloads = Boolean.parseBoolean(SynapsePropertiesLoader.getPropertyValue(
-                    StatisticsConstants.COLLECT_MESSAGE_PAYLOADS, String.valueOf(false)));
+            isCollectingPayloads =
+                SynapsePropertiesLoader.getBooleanProperty(StatisticsConstants.COLLECT_MESSAGE_PAYLOADS, false);
 
             if (!isCollectingPayloads && log.isDebugEnabled()) {
                 log.debug("Payload collecting is not enabled in \'synapse.properties\' file.");
             }
 
-            isCollectingProperties = Boolean.parseBoolean(SynapsePropertiesLoader.getPropertyValue(
-                    StatisticsConstants.COLLECT_MESSAGE_PROPERTIES, String.valueOf(false)));
+            isCollectingProperties =
+                SynapsePropertiesLoader.getBooleanProperty(StatisticsConstants.COLLECT_MESSAGE_PROPERTIES, false);
 
             if (!isCollectingProperties && log.isDebugEnabled()) {
                 log.debug("Property collecting is not enabled in \'synapse.properties\' file.");
             }
 
-            isCollectingAllStatistics = Boolean.parseBoolean(SynapsePropertiesLoader.getPropertyValue(
-                    StatisticsConstants.COLLECT_ALL_STATISTICS, String.valueOf(false)));
+            isCollectingAllStatistics =
+                SynapsePropertiesLoader.getBooleanProperty(StatisticsConstants.COLLECT_ALL_STATISTICS, false);
 
             eventExpireTime =
                     SynapseConfigUtils.getGlobalTimeoutInterval() + SynapseConfigUtils.getTimeoutHandlerInterval() +
