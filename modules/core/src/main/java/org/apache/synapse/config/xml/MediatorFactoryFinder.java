@@ -99,7 +99,7 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
             RespondMediatorFactory.class,
             CommentMediatorFactory.class,
             ForEachMediatorFactory.class,
-            JSONTransformMediatorFactory.class
+            JSONTransformMediatorFactory.class,
             GraphQLMediatorFactory.class,
             JWTMediatorFactory.class
     };

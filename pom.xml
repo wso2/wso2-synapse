@@ -925,6 +925,11 @@
             <version>${commons.dbcp.version}</version>
          </dependency>
          <dependency>
+            <groupId>commons-dbcp.wso2</groupId>
+            <artifactId>commons-dbcp</artifactId>
+            <version>${commons.dbcp.wso2.version}</version>
+         </dependency>
+         <dependency>
             <groupId>commons-pool</groupId>
             <artifactId>commons-pool</artifactId>
             <version>${commons.pool.version}</version>
@@ -1127,6 +1132,11 @@
               <artifactId>netty-codec-http</artifactId>
               <version>${io.netty.version}</version>
           </dependency>
+          <dependency>
+              <groupId>commons-pool.wso2</groupId>
+              <artifactId>commons-pool</artifactId>
+              <version>${commons.pool.wso2.version}</version>
+          </dependency>
       </dependencies>
    </dependencyManagement>
     <reporting>
@@ -1239,7 +1249,9 @@
       <!-- Synapse and related components -->
       <synapse.version>${project.version}</synapse.version>
       <commons.dbcp.version>1.2.2</commons.dbcp.version>
+      <commons.dbcp.wso2.version>1.4.0.wso2v1</commons.dbcp.wso2.version>
       <commons.pool.version>1.3</commons.pool.version>
+      <commons.pool.wso2.version>1.5.0.wso2v1</commons.pool.wso2.version>
       <commons.vfs.version>2.2-wso2v6</commons.vfs.version>
       <truezip.version>6.6</truezip.version>
       <commons.net.version>3.4</commons.net.version>
@@ -1251,8 +1263,8 @@
       <mina.version>1.1.0</mina.version>
       <jms-1.1-spec.version>1.1</jms-1.1-spec.version>
       <!-- Axis2 and its dependencies -->
-      <axis2.version>1.6.1-wso2v37</axis2.version>
-      <axis2.transport.version>2.0.0-wso2v36</axis2.transport.version>
+      <axis2.version>1.6.1-wso2v38</axis2.version>
+      <axis2.transport.version>2.0.0-wso2v38</axis2.transport.version>
       <axiom.version>1.2.11-wso2v16</axiom.version>
       <xml_schema.version>1.4.7</xml_schema.version>
       <xml_apis.version>1.3.04</xml_apis.version>
@@ -1286,6 +1298,7 @@
       <net.minidev.accessors-smart.version>1.2</net.minidev.accessors-smart.version>
       <org.ow2.asm.asm.version>5.2</org.ow2.asm.asm.version>
       <json.smart.version>2.3</json.smart.version>
+       <org.wso2.json.version>3.0.0.wso2v1</org.wso2.json.version>
       <!-- Warning: log4j versions above 1.2.14 introduce additional transitive dependencies,
              some of which are not available from the Maven central repository. -->
       <log4j.version>1.2.14</log4j.version>
