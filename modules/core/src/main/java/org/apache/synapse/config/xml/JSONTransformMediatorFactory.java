@@ -36,7 +36,7 @@ import java.util.Properties;
  * Mediator Factory for JSON Transform mediator
  */
 public class JSONTransformMediatorFactory extends AbstractMediatorFactory {
-    private static final Log log = LogFactory.getLog(IterateMediatorFactory.class);
+    private static final Log log = LogFactory.getLog(JSONTransformMediatorFactory.class);
     private static final QName JSON_TRANSFORM_Q = new QName(SynapseConstants.SYNAPSE_NAMESPACE, "jsontransform");
     private static final QName ATT_SCHEMA = new QName("schema");
 
