@@ -146,9 +146,6 @@ public abstract class RuntimeStatisticCollector {
                         StatisticsConstants.JAEGER_SENDER_AGENT_PORT, DEFAULT_JAEGER_SENDER_AGENT_PORT);
 
         // Jaeger Reporter Configurations
-        String logSpans =
-                SynapsePropertiesLoader.getPropertyValue(
-                        StatisticsConstants.JAEGER_REPORTER_LOG_SPANS, String.valueOf(false));
         String reporterMaxQueueSize =
                 SynapsePropertiesLoader.getPropertyValue(
                         StatisticsConstants.JAEGER_REPORTER_MAX_QUEUE_SIZE, DEFAULT_JAEGER_REPORTER_MAX_QUEUE_SIZE);
@@ -157,7 +154,8 @@ public abstract class RuntimeStatisticCollector {
                         StatisticsConstants.JAEGER_REPORTER_FLUSH_INTERVAL, DEFAULT_JAEGER_REPORTER_FLUSH_INTERVAL);
 
         int senderAgentPortInt = Integer.parseInt(senderAgentPort);
-        boolean logSpansBoolean = Boolean.parseBoolean(logSpans);
+        boolean logSpans =
+            SynapsePropertiesLoader.getBooleanProperty(StatisticsConstants.JAEGER_REPORTER_LOG_SPANS, false);
         int reporterMaxQueueSizeInt = Integer.parseInt(reporterMaxQueueSize);
         int reporterFlushIntervalInt = Integer.parseInt(reporterFlushInterval);
 
@@ -165,7 +163,7 @@ public abstract class RuntimeStatisticCollector {
                 samplerManagerHostPort,
                 senderAgentHost,
                 senderAgentPortInt,
-                logSpansBoolean,
+                logSpans,
                 reporterMaxQueueSizeInt,
                 reporterFlushIntervalInt);
 
