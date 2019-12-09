@@ -35,6 +35,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
@@ -251,7 +252,7 @@ public class AccessLogger {
                             Matcher matcher = pattern.matcher(line);
                             if (matcher.find()) {
                                 String date = matcher.group(1);
-                                SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT_STRING);
+                                SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT_STRING,Locale.ENGLISH);
                                 dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
                                 Date lastDateFromLog = dateFormat.parse(date);
                                 // if same day - write to the existing file
