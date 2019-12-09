@@ -18,10 +18,18 @@
 
 package org.apache.synapse.rest.cors;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.rest.RESTConstants;
 
-import java.util.Arrays;
+import java.net.InterfaceAddress;
+import java.net.MalformedURLException;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.URL;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -30,10 +38,11 @@ import java.util.Set;
  */
 public class SynapseCORSConfiguration implements CORSConfiguration {
 
+    private static Log LOG = LogFactory.getLog(SynapseCORSConfiguration.class);
     private static SynapseCORSConfiguration corsConfigs = null;
 
     private boolean enabled;
-    private Set<String> allowedOrigins;
+    private Set<String> allowedOrigins = new HashSet<>();
     private String allowedHeaders;
 
     private SynapseCORSConfiguration() {
@@ -41,8 +50,33 @@ public class SynapseCORSConfiguration implements CORSConfiguration {
 
         //Retrieve allowed origin list
         String allowedOriginListStr =
-                SynapsePropertiesLoader.getPropertyValue(RESTConstants.CORS_CONFIGURATION_ACCESS_CTL_ALLOW_ORIGIN, "");
-        allowedOrigins = new HashSet<>(Arrays.asList(allowedOriginListStr.split(",")));
+                SynapsePropertiesLoader.getPropertyValue(RESTConstants.CORS_CONFIGURATION_ACCESS_CTL_ALLOW_ORIGIN, null);
+        if (allowedOriginListStr != null) {
+            String[] originList = allowedOriginListStr.split(",");
+            for (String origin : originList) {
+                String trimmedOrigin = origin.trim();
+                allowedOrigins.add(trimmedOrigin);
+                try {
+                    URL url = new URL(trimmedOrigin);
+                    if (url.getHost().equals("localhost")) {
+                        // Add localhost IPs as allowed origin
+                        Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+                        while (networkInterfaces.hasMoreElements()) {
+                            NetworkInterface nInterface = networkInterfaces.nextElement();
+                            for (InterfaceAddress iAddr : nInterface.getInterfaceAddresses()) {
+                                URL localUrl =
+                                        new URL(url.getProtocol(), iAddr.getAddress().getHostAddress(), url.getPort(), "");
+                                allowedOrigins.add(localUrl.toString());
+                            }
+                        }
+                    }
+                } catch (MalformedURLException e) {
+                    throw new SynapseException("Provided origin URL " + trimmedOrigin + " is malformed", e);
+                } catch (SocketException e) {
+                    throw new SynapseException("Error occurred while retrieving network interfaces", e);
+                }
+            }
+        }
 
         //Retrieve allowed headers
         allowedHeaders =
