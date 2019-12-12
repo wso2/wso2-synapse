@@ -52,7 +52,7 @@ public class JSONTansformerMediatorSerializerTest extends AbstractTestCase {
 
     public void testJSONTransformWithSchemaAndProperties() {
 
-        String inputXml = "<jsontransform xmlns=\"http://ws.apache.org/ns/synapse\">" +
+        String inputXml = "<jsontransform xmlns=\"http://ws.apache.org/ns/synapse\" schema=\"schema.json\">" +
                 "<property name=\"check\" value=\"true\" />" +
                 "<property name=\"check1\" value=\"false\" />" +
                 "</jsontransform>";
