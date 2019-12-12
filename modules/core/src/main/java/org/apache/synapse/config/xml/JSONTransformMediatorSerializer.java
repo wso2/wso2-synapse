@@ -33,13 +33,18 @@ public class JSONTransformMediatorSerializer extends AbstractMediatorSerializer 
         }
         JSONTransformMediator jsonTransformMediator = (JSONTransformMediator) mediator;
         OMElement transformElement = fac.createOMElement("jsontransform", synNS);
-        if (jsonTransformMediator.getSchemaKey() != null) {
+        boolean isSchemaEmpty = jsonTransformMediator.getSchemaKey() == null;
+        if (!isSchemaEmpty) {
             // Serialize Value using ValueSerializer
             ValueSerializer keySerializer = new ValueSerializer();
             keySerializer.serializeValue(jsonTransformMediator.getSchemaKey(), "schema", transformElement);
-        } else if (jsonTransformMediator.getProperties() != null && !jsonTransformMediator.getProperties().isEmpty()) {
+        }
+        boolean isPropertiesEmpty = jsonTransformMediator.getProperties() == null ||
+                jsonTransformMediator.getProperties().isEmpty();
+        if (!isPropertiesEmpty) {
             super.serializeProperties(transformElement, jsonTransformMediator.getProperties());
-        } else {
+        }
+        if (isSchemaEmpty && isPropertiesEmpty) {
             handleException("Invalid JSONTransform mediator. Should either contain schema or properties");
         }
         saveTracingState(transformElement, mediator);
