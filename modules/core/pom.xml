@@ -189,18 +189,18 @@
 							org.apache.synapse.carbonext.*,
                             org.apache.synapse.continuation.*,
                             org.apache.synapse.debug.*,
-                            org.apache.synapse.messageflowtracer.*
+                            org.apache.synapse.messageflowtracer.*,
                         </Export-Package>
-						<Import-Package>
-							!javax.xml.namespace,
-							javax.xml.namespace;
-							version=0.0.0,
-							!javax.xml.soap,
-							javax.xml.soap; version=${javax.xml.soap.version},
-							!org.apache.commons.io,
-							org.apache.commons.io; version=0.0.0,
-							org.quartz.*;version="${quartz.version}",
-							*;resolution:=optional,
+                        <Import-Package>
+                            !javax.xml.namespace,
+                            !javax.xml.soap,
+                            !org.apache.commons.io,
+                            javax.xml.namespace;
+                            version=0.0.0,
+                            javax.xml.soap; version=${javax.xml.soap.version},
+                            org.apache.commons.io; version=0.0.0,
+                            org.quartz.*;version="${quartz.version}",
+                            *;resolution:=optional
                         </Import-Package>
 						<DynamicImport-Package>*</DynamicImport-Package>
 					</instructions>
@@ -373,37 +373,44 @@
             <groupId>org.wso2.orbit.com.googlecode.libphonenumber</groupId>
             <artifactId>libphonenumber</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.jacoco</groupId>
+            <artifactId>org.jacoco.agent</artifactId>
+            <classifier>runtime</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-module-junit4</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-broker</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Jaeger Tracing -->
 		<dependency>
-			<groupId>org.jacoco</groupId>
-			<artifactId>org.jacoco.agent</artifactId>
-			<classifier>runtime</classifier>
-			<scope>test</scope>
+			<groupId>org.wso2.orbit.io.jaeger</groupId>
+			<artifactId>jaeger-client</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.powermock</groupId>
-			<artifactId>powermock-api-mockito2</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.powermock</groupId>
-			<artifactId>powermock-module-junit4</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.activemq</groupId>
-			<artifactId>activemq-broker</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.github.stefanbirkner</groupId>
-			<artifactId>system-rules</artifactId>
-			<scope>test</scope>
-		</dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.stefanbirkner</groupId>
+            <artifactId>system-rules</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-mockito2</artifactId>
@@ -420,7 +427,4 @@
 			<version>${org.wso2.json.version}</version>
 		</dependency>
     </dependencies>
-<properties>
-		<version.orbit.rabbitmq>3.6.6.wso2v1</version.orbit.rabbitmq>
-	</properties>
 </project>

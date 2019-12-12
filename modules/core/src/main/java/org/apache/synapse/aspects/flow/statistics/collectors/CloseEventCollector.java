@@ -21,14 +21,13 @@ package org.apache.synapse.aspects.flow.statistics.collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 import org.apache.synapse.aspects.flow.statistics.log.templates.EndFlowEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsCloseEvent;
-import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
+import org.apache.synapse.aspects.flow.statistics.opentracing.OpenTracingManagerHolder;
+import org.apache.synapse.aspects.flow.statistics.opentracing.management.helpers.TracingUtils;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
@@ -75,6 +74,12 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 			}else {
 				addEventAndDecrementCount(messageContext, closeEvent);
 			}
+
+			if (isOpenTracingEnabled()) {
+				OpenTracingManagerHolder.getOpenTracingManager().getHandler().
+					handleCloseEntryEvent(statisticDataUnit, messageContext);
+			}
+
 		}
 	}
 
@@ -98,6 +103,12 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
             } else {
                 addEventAndCloseFlow(messageContext, endFlowEvent);
             }
+
+            if (isOpenTracingEnabled()) {
+				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
+					.handleCloseFlowForcefully(dataUnit, messageContext);
+			}
+
         }
 	}
 

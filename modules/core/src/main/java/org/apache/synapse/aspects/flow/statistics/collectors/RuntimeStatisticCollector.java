@@ -23,8 +23,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
+import org.apache.synapse.aspects.flow.statistics.opentracing.OpenTracingManagerHolder;
 import org.apache.synapse.aspects.flow.statistics.util.MediationFlowController;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapsePropertiesLoader;
@@ -40,6 +40,13 @@ public abstract class RuntimeStatisticCollector {
      * Is statistics collection enabled in synapse.properties file.
      */
     private static boolean isStatisticsEnabled;
+
+    /**
+     * Is OpenTracing enabled in synapse.properties file.
+     */
+    private static boolean isOpenTracingEnabled;
+
+    private static boolean isMediationFlowStatisticsEnabled;
 
     /**
      * Is payload collection enabled in synapse.properties file.
@@ -62,44 +69,105 @@ public abstract class RuntimeStatisticCollector {
      * Initialize statistics collection when ESB starts.
      */
     public static void init() {
-        isStatisticsEnabled = Boolean.parseBoolean(
-                SynapsePropertiesLoader.getPropertyValue(StatisticsConstants.STATISTICS_ENABLE, String.valueOf(false)));
+        isMediationFlowStatisticsEnabled =
+            SynapsePropertiesLoader.getBooleanProperty(StatisticsConstants.STATISTICS_ENABLE, false);
+        isOpenTracingEnabled =
+            SynapsePropertiesLoader.getBooleanProperty(StatisticsConstants.OPENTRACING_ENABLE, false);
+        isStatisticsEnabled = isMediationFlowStatisticsEnabled || isOpenTracingEnabled;
         if (isStatisticsEnabled) {
             if (log.isDebugEnabled()) {
-                log.debug("Mediation statistics collection is enabled.");
+                if (isMediationFlowStatisticsEnabled) {
+                    log.debug("Mediation statistics collection is enabled.");
+                } else if (isOpenTracingEnabled) {
+                    log.debug("OpenTracing is enabled.");
+                }
             }
 
             Long eventConsumerTime = Long.parseLong(SynapsePropertiesLoader.getPropertyValue(
                     StatisticsConstants.FLOW_STATISTICS_EVENT_CONSUME_TIME,
                     StatisticsConstants.FLOW_STATISTICS_DEFAULT_EVENT_CONSUME_INTERVAL));
 
-            isCollectingPayloads = Boolean.parseBoolean(SynapsePropertiesLoader.getPropertyValue(
-                    StatisticsConstants.COLLECT_MESSAGE_PAYLOADS, String.valueOf(false)));
+            isCollectingPayloads =
+                SynapsePropertiesLoader.getBooleanProperty(StatisticsConstants.COLLECT_MESSAGE_PAYLOADS, false);
 
             if (!isCollectingPayloads && log.isDebugEnabled()) {
                 log.debug("Payload collecting is not enabled in \'synapse.properties\' file.");
             }
 
-            isCollectingProperties = Boolean.parseBoolean(SynapsePropertiesLoader.getPropertyValue(
-                    StatisticsConstants.COLLECT_MESSAGE_PROPERTIES, String.valueOf(false)));
+            isCollectingProperties =
+                SynapsePropertiesLoader.getBooleanProperty(StatisticsConstants.COLLECT_MESSAGE_PROPERTIES, false);
 
             if (!isCollectingProperties && log.isDebugEnabled()) {
                 log.debug("Property collecting is not enabled in \'synapse.properties\' file.");
             }
 
-            isCollectingAllStatistics = Boolean.parseBoolean(SynapsePropertiesLoader.getPropertyValue(
-                    StatisticsConstants.COLLECT_ALL_STATISTICS, String.valueOf(false)));
+            isCollectingAllStatistics =
+                SynapsePropertiesLoader.getBooleanProperty(StatisticsConstants.COLLECT_ALL_STATISTICS, false);
 
             eventExpireTime =
                     SynapseConfigUtils.getGlobalTimeoutInterval() + SynapseConfigUtils.getTimeoutHandlerInterval() +
                     eventConsumerTime;
             log.info("Statistics Entry Expiration time set to " + eventExpireTime + " milliseconds");
             new MediationFlowController();
+
+            if (isOpenTracingEnabled) {
+                initOpenTracing(isCollectingPayloads, isCollectingProperties);
+            }
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Statistics is not enabled in \'synapse.properties\' file.");
             }
         }
+    }
+
+    private static void initOpenTracing(boolean isCollectingPayloads, boolean isCollectingProperties) {
+        final String DEFAULT_JAEGER_SAMPLER_MANAGER_HOST = "localhost";
+        final String DEFAULT_JAEGER_SAMPLER_MANAGER_PORT = "5778";
+        final String DEFAULT_JAEGER_SENDER_AGENT_HOST = "localhost";
+        final String DEFAULT_JAEGER_SENDER_AGENT_PORT = "6831";
+        final String DEFAULT_JAEGER_REPORTER_MAX_QUEUE_SIZE = "100";
+        final String DEFAULT_JAEGER_REPORTER_FLUSH_INTERVAL = "10000";
+
+        // Jaeger Sampler Configurations
+        String samplerManagerHost =
+                SynapsePropertiesLoader.getPropertyValue(
+                        StatisticsConstants.JAEGER_SAMPLER_MANAGER_HOST, DEFAULT_JAEGER_SAMPLER_MANAGER_HOST);
+        String samplerManagerPort =
+                SynapsePropertiesLoader.getPropertyValue(
+                        StatisticsConstants.JAEGER_SAMPLER_MANAGER_PORT, DEFAULT_JAEGER_SAMPLER_MANAGER_PORT);
+        String samplerManagerHostPort = samplerManagerHost + ":" + samplerManagerPort;
+
+        // Jaeger Sender Configurations
+        String senderAgentHost =
+                SynapsePropertiesLoader.getPropertyValue(
+                        StatisticsConstants.JAEGER_SENDER_AGENT_HOST, DEFAULT_JAEGER_SENDER_AGENT_HOST);
+        String senderAgentPort =
+                SynapsePropertiesLoader.getPropertyValue(
+                        StatisticsConstants.JAEGER_SENDER_AGENT_PORT, DEFAULT_JAEGER_SENDER_AGENT_PORT);
+
+        // Jaeger Reporter Configurations
+        String reporterMaxQueueSize =
+                SynapsePropertiesLoader.getPropertyValue(
+                        StatisticsConstants.JAEGER_REPORTER_MAX_QUEUE_SIZE, DEFAULT_JAEGER_REPORTER_MAX_QUEUE_SIZE);
+        String reporterFlushInterval =
+                SynapsePropertiesLoader.getPropertyValue(
+                        StatisticsConstants.JAEGER_REPORTER_FLUSH_INTERVAL, DEFAULT_JAEGER_REPORTER_FLUSH_INTERVAL);
+
+        int senderAgentPortInt = Integer.parseInt(senderAgentPort);
+        boolean logSpans =
+            SynapsePropertiesLoader.getBooleanProperty(StatisticsConstants.JAEGER_REPORTER_LOG_SPANS, false);
+        int reporterMaxQueueSizeInt = Integer.parseInt(reporterMaxQueueSize);
+        int reporterFlushIntervalInt = Integer.parseInt(reporterFlushInterval);
+
+        OpenTracingManagerHolder.loadJaegerConfigurations(
+                samplerManagerHostPort,
+                senderAgentHost,
+                senderAgentPortInt,
+                logSpans,
+                reporterMaxQueueSizeInt,
+                reporterFlushIntervalInt);
+
+        OpenTracingManagerHolder.setCollectingFlags(isCollectingPayloads, isCollectingProperties);
     }
 
     /**
@@ -141,6 +209,15 @@ public abstract class RuntimeStatisticCollector {
 
     public static boolean isStatisticsEnabled() {
         return isStatisticsEnabled;
+    }
+
+    /**
+     * Returns whether OpenTracing has been enabled.
+     *
+     * @return true if open tracing has been enabled.
+     */
+    public static boolean isOpenTracingEnabled() {
+        return isOpenTracingEnabled;
     }
 
     /**
@@ -188,6 +265,7 @@ public abstract class RuntimeStatisticCollector {
         StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
         if (eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
+            eventHolder.setPublishMediationFlowStatistics(isMediationFlowStatisticsEnabled);
             messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
         }
         if (eventHolder.isEvenCollectionFinished()) {
@@ -210,6 +288,7 @@ public abstract class RuntimeStatisticCollector {
         StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
         if (eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
+            eventHolder.setPublishMediationFlowStatistics(isMediationFlowStatisticsEnabled);
             messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
         }
 
@@ -236,6 +315,7 @@ public abstract class RuntimeStatisticCollector {
         StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
         if (eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
+            eventHolder.setPublishMediationFlowStatistics(isMediationFlowStatisticsEnabled);
             messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
         }
 
@@ -260,6 +340,7 @@ public abstract class RuntimeStatisticCollector {
         StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
         if (eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
+            eventHolder.setPublishMediationFlowStatistics(isMediationFlowStatisticsEnabled);
             messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
         }
         if (eventHolder.isEvenCollectionFinished()) {
@@ -284,6 +365,7 @@ public abstract class RuntimeStatisticCollector {
         StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
         if (eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
+            eventHolder.setPublishMediationFlowStatistics(isMediationFlowStatisticsEnabled);
             messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
         }
 
@@ -304,6 +386,7 @@ public abstract class RuntimeStatisticCollector {
         StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
         if (eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
+            eventHolder.setPublishMediationFlowStatistics(isMediationFlowStatisticsEnabled);
             messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
         }
 

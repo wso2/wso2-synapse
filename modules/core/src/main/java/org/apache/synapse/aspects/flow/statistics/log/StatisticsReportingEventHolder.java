@@ -40,6 +40,11 @@ public class StatisticsReportingEventHolder {
 
     private boolean messageFlowError = false;
 
+    /**
+     * Denotes whether to publish data for Mediation Flow Statistics or not.
+     */
+    private boolean publishMediationFlowStatistics;
+
     public StatisticsReportingEventHolder() {
         eventQueue = new ConcurrentLinkedQueue<StatisticsReportingEvent>();
         countHolder = new StatisticsReportingCountHolder();
@@ -77,4 +82,11 @@ public class StatisticsReportingEventHolder {
         this.messageFlowError = messageFlowError;
     }
 
+    public void setPublishMediationFlowStatistics(boolean publishMediationFlowStatistics) {
+        this.publishMediationFlowStatistics = publishMediationFlowStatistics;
+    }
+
+    public boolean isPublishMediationFlowStatistics() {
+        return publishMediationFlowStatistics;
+    }
 }
