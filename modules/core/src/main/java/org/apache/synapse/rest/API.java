@@ -320,6 +320,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION, versionStrategy.getVersion());
         synCtx.setProperty(RESTConstants.REST_API_CONTEXT, context);
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION_STRATEGY, versionStrategy.getVersionType());
+        synCtx.setProperty(SynapseConstants.ARTIFACT_NAME, SynapseConstants.FAIL_SAFE_MODE_API + getName());
 
         // get API log for this message and attach to the message context
         ((Axis2MessageContext) synCtx).setServiceLog(apiLog);

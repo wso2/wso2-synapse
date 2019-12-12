@@ -58,7 +58,7 @@ public class AccessTimeUtil {
      */
     public static String getTimeZone() {
         try {
-            int offset = TimeZone.getDefault().getRawOffset();
+            int offset = TimeZone.getDefault().getOffset(System.currentTimeMillis());
             return calculateTimeZoneOffset(offset);
         } catch (Exception e) {
             return "";
