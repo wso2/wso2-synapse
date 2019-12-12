@@ -37,9 +37,11 @@ public class JSONTransformMediatorSerializer extends AbstractMediatorSerializer 
             // Serialize Value using ValueSerializer
             ValueSerializer keySerializer = new ValueSerializer();
             keySerializer.serializeValue(jsonTransformMediator.getSchemaKey(), "schema", transformElement);
-        } else if (jsonTransformMediator.getProperties() != null && !jsonTransformMediator.getProperties().isEmpty()) {
+        }
+        if (jsonTransformMediator.getProperties() != null && !jsonTransformMediator.getProperties().isEmpty()) {
             super.serializeProperties(transformElement, jsonTransformMediator.getProperties());
-        } else {
+        }
+        if (jsonTransformMediator.getSchemaKey() == null && jsonTransformMediator.getProperties() == null) {
             handleException("Invalid JSONTransform mediator. Should either contain schema or properties");
         }
         saveTracingState(transformElement, mediator);
