@@ -60,6 +60,7 @@ public class JSONTransformMediatorFactory extends AbstractMediatorFactory {
             handleException(JSON_TRANSFORM_Q.getLocalPart() +
                     " mediator should contain either a schema or custom properties");
         }
+        addAllCommentChildrenToList(elem, JSONTransformMediator.getCommentsList());
         return JSONTransformMediator;
     }
 

@@ -48,6 +48,7 @@ public class JSONTransformMediatorSerializer extends AbstractMediatorSerializer 
             handleException("Invalid JSONTransform mediator. Should either contain schema or properties");
         }
         saveTracingState(transformElement, mediator);
+        serializeComments(transformElement, jsonTransformMediator.getCommentsList());
         return transformElement;
     }
 
