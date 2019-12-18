@@ -43,20 +43,21 @@ public class HostConnectionsTest {
     public static Object[][] data() {
 
         return new Object[][]{
-                {10, 20},
-                {20, 25},
+                {10, 20, 3},
+                {20, 25, 5},
         };
     }
 
     @Test
     @UseDataProvider("data")
-    public void testGetConnection(final int connectionIdleTime, final int maximumConnectionLifeSpan) throws Exception {
+    public void testGetConnection(final int connectionIdleTime, final int maximumConnectionLifeSpan,
+                                  final int connectionGraceTime) throws Exception {
 
         NHttpClientConnection nHttpClientConnection = Mockito.mock(NHttpClientConnection.class);
         List<NHttpClientConnection> freeConnections = new ArrayList<>();
         freeConnections.add(nHttpClientConnection);
         ConnectionTimeoutConfiguration conf = new ConnectionTimeoutConfiguration(connectionIdleTime,
-                                                                                 maximumConnectionLifeSpan);
+                maximumConnectionLifeSpan, connectionGraceTime);
         HostConnections hostConnections = new HostConnections(null, 1, conf);
         MemberModifier.field(HostConnections.class, "freeConnections").set(hostConnections, freeConnections);
         long currentTime = System.currentTimeMillis();
@@ -64,14 +65,14 @@ public class HostConnectionsTest {
         Mockito.when((Long) nHttpClientConnection.getContext().getAttribute(PassThroughConstants.CONNECTION_INIT_TIME))
                 .thenReturn(0L);
         Mockito.when((Long) nHttpClientConnection.getContext().getAttribute(PassThroughConstants
-                                                                                    .CONNECTION_RELEASE_TIME))
+                                                                                    .CONNECTION_EXPIRY_TIME))
                 .thenReturn(currentTime);
         hostConnections.getConnection();
         Mockito.verify(nHttpClientConnection, times(1)).shutdown();
         Mockito.when((Long) nHttpClientConnection.getContext().getAttribute(PassThroughConstants.CONNECTION_INIT_TIME))
                 .thenReturn(currentTime);
         Mockito.when((Long) nHttpClientConnection.getContext().getAttribute(PassThroughConstants
-                                                                                    .CONNECTION_RELEASE_TIME))
+                                                                                    .CONNECTION_EXPIRY_TIME))
                 .thenReturn(0L);
         hostConnections.getConnection();
         Mockito.verify(nHttpClientConnection, times(1)).shutdown();

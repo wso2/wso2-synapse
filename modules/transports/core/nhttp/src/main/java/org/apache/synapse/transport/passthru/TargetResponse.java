@@ -36,12 +36,12 @@ import java.util.Map;
  * This class represents a response coming from the target server.
  */
 public class TargetResponse {
-    // private Log log = LogFactory.getLog(TargetResponse.class);
+     private Log log = LogFactory.getLog(TargetResponse.class);
     /** To pipe the incoming data through */
     private Pipe pipe = null;
     /** Headers of the response */
     private Map<String, String> headers = new HashMap<String, String>();
-    /** Excess headers of the response */ 
+    /** Excess headers of the response */
     private Map excessHeaders = new MultiValueMap();
     /** The status of the response */
     private int status = HttpStatus.SC_OK;
@@ -65,6 +65,10 @@ public class TargetResponse {
     /** logger for correlation.log */
     private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
 
+    // Constants for honoring keep-alive header coming from backend
+    private static final String KEEP_ALIVE_HEADER = "Keep-Alive";
+    private static final String KEEP_ALIVE_TIMEOUT = "timeout=";
+
     public TargetResponse(TargetConfiguration targetConfiguration,
                           HttpResponse response,
                           NHttpClientConnection conn,
@@ -85,14 +89,23 @@ public class TargetResponse {
             	if(this.headers.containsKey(header.getName())) {
             		addExcessHeader(header);
             	} else {
-            		this.headers.put(header.getName(), header.getValue());
-            	}
-             }        
-        }   
+                    this.headers.put(header.getName(), header.getValue());
+                }
+                // If the keep-alive header is set
+                if (header.getName().equalsIgnoreCase(KEEP_ALIVE_HEADER)) {
+                    // Retrieve the keep-alive timeout
+                    String keepAlive = header.getValue();
+                    if (keepAlive != null && keepAlive.contains(KEEP_ALIVE_TIMEOUT)) {
+                        conn.getContext().setAttribute(PassThroughConstants.CONNECTION_KEEP_ALIVE_TIME_OUT,
+                                getKeepAliveTimeout(keepAlive));
+                    }
+                }
+            }
+        }
 
         this.expectResponseBody = expectResponseBody;
         this.forceShutdownConnectionOnComplete = forceShutdownConnectionOnComplete;
-    }    
+    }
 
     /**
      * Starts the response
@@ -100,7 +113,7 @@ public class TargetResponse {
      */
     public void start(NHttpClientConnection conn) {
         TargetContext.updateState(conn, ProtocolState.RESPONSE_HEAD);
-        
+
         if (expectResponseBody) {
             pipe
                 = new Pipe(conn, targetConfiguration.getBufferFactory().getBuffer(), "target", targetConfiguration);
@@ -112,13 +125,13 @@ public class TargetResponse {
                 entity.setChunked(true);
             }
             response.setEntity(entity);
-        } else {            
+        } else {
             if (!connStrategy.keepAlive(response, conn.getContext()) || forceShutdownConnectionOnComplete) {
                 try {
                     // this is a connection we should not re-use
                     TargetContext.updateState(conn, ProtocolState.CLOSING);
                     targetConfiguration.getConnections().shutdownConnection(conn);
-                                       
+
                 } catch (Exception ignore) {
 
                 }
@@ -139,9 +152,9 @@ public class TargetResponse {
      * @return number of bites read
      */
     public int read(NHttpClientConnection conn, ContentDecoder decoder) throws IOException {
-    	
+
     	int bytes=0;
-    	
+
     	if(pipe != null){
     		bytes = pipe.produce(decoder);
     	}
@@ -161,7 +174,7 @@ public class TargetResponse {
             } else {
                 if (conn instanceof LoggingNHttpClientConnection) {
                     ((LoggingNHttpClientConnection) conn).setReleaseConn(true);
-                } 
+                }
             }
         }
         return bytes;
@@ -178,7 +191,7 @@ public class TargetResponse {
     public Map getExcessHeaders() {
     	return this.excessHeaders;
     }
-    
+
     public void addExcessHeader(Header h) {
     	this.excessHeaders.put(h.getName(), h.getValue());
     }
@@ -205,5 +218,34 @@ public class TargetResponse {
 
     public ProtocolVersion getVersion() {
         return version;
+    }
+
+    /**
+     * Retrieve the keep-alive timeout value
+     * @param keepAlive header value which has timeout in seconds
+     * @return keep-alive timeout in milliseconds
+     */
+    private int getKeepAliveTimeout(String keepAlive) {
+        int keepAliveTimeout = -1;
+        String timeout;
+
+        try {
+            timeout = keepAlive.split(KEEP_ALIVE_TIMEOUT)[1];
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            log.error("Value is not specified in KeepAlive Timeout header.");
+            return -1;
+        }
+        // If header has more than one property
+        int commaIndex = timeout.indexOf(',');
+        if (commaIndex != -1) {
+            timeout = timeout.substring(0, commaIndex);
+        }
+
+        try {
+            keepAliveTimeout = Integer.parseInt(timeout) * 1000;
+        } catch (NumberFormatException e) {
+            log.error("Error parsing value " + timeout + " as connection keep-alive timeout.", e);
+        }
+        return keepAliveTimeout;
     }
 }

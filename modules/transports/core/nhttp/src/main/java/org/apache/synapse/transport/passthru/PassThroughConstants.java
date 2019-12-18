@@ -25,7 +25,12 @@ public class PassThroughConstants {
     public static final String CONNECTION_POOL = "CONNECTION_POOL";
     public static final String TUNNEL_HANDLER = "TUNNEL_HANDLER";
     public static final String CONNECTION_INIT_TIME = "CONNECTION_INIT_TIME";
-    public static final String CONNECTION_RELEASE_TIME = "CONNECTION_RELEASE_TIME";
+    // The time at which the connection is removed from the connection pool.
+    // This is calculated using the keep alive timeout or connection idle time.
+    public static final String CONNECTION_EXPIRY_TIME = "CONNECTION_EXPIRY_TIME";
+    // The time after which the connection will be closed by the backend.
+    // This time is mentioned as an HTTP header in the response from the backend.
+    public static final String CONNECTION_KEEP_ALIVE_TIME_OUT = "CONNECTION_KEEP_ALIVE_TIME_OUT";
 
     public static final String TRUE = "TRUE";
 

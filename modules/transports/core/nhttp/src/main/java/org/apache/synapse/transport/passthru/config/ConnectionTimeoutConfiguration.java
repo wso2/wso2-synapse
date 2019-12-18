@@ -34,10 +34,12 @@ public class ConnectionTimeoutConfiguration {
 
     private int connectionIdleTime;
     private int maximumConnectionLifeSpan;
+    private int connectionGraceTime;
 
-    public ConnectionTimeoutConfiguration(int connectionIdleTime, int maximumConnectionLifeSpan) {
+    public ConnectionTimeoutConfiguration(int connectionIdleTime, int maximumConnectionLifeSpan, int connectionGraceTime) {
         this.connectionIdleTime = connectionIdleTime;
         this.maximumConnectionLifeSpan = maximumConnectionLifeSpan;
+        this.connectionGraceTime = connectionGraceTime;
     }
 
     public int getConnectionIdleTime() {
@@ -46,5 +48,9 @@ public class ConnectionTimeoutConfiguration {
 
     public int getMaximumConnectionLifeSpane() {
         return maximumConnectionLifeSpan;
+    }
+
+    public int getConnectionGraceTime() {
+        return connectionGraceTime;
     }
 }
