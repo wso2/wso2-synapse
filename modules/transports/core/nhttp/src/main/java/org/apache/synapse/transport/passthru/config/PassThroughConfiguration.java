@@ -149,10 +149,10 @@ public class PassThroughConfiguration {
         int idleTime;
         // Giving higher priority for grace time if it is configured, than for the configured idle time
         if (isIntPropertyConfigured(PassThroughConfigPNames.CONNECTION_GRACE_TIME)) {
-            idleTime = getDefaultConnectionIdleTime();
+            idleTime = getIdleTimeFromGraceTime();
         } else {
             // Setting idle time if it is configured, if not, using the default grace time to calculate idle time
-            idleTime = getIntProperty(PassThroughConfigPNames.CONNECTION_IDLE_TIME, getDefaultConnectionIdleTime());
+            idleTime = getIntProperty(PassThroughConfigPNames.CONNECTION_IDLE_TIME, getIdleTimeFromGraceTime());
         }
 
         if (idleTime < 0) {
@@ -171,7 +171,7 @@ public class PassThroughConfiguration {
      * For the default value, grace time is reduced to avoid connection being used at the moment it is being closed
      * @return default connection idle time
      */
-    private int getDefaultConnectionIdleTime(){
+    private int getIdleTimeFromGraceTime(){
         return getIntProperty(HttpConnectionParams.SO_TIMEOUT, 60000) - getConnectionGraceTime();
     }
 

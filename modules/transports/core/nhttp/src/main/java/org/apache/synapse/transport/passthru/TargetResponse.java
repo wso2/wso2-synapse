@@ -227,7 +227,14 @@ public class TargetResponse {
      */
     private int getKeepAliveTimeout(String keepAlive) {
         int keepAliveTimeout = -1;
-        String timeout = keepAlive.split(KEEP_ALIVE_TIMEOUT)[1];
+        String timeout;
+
+        try {
+            timeout = keepAlive.split(KEEP_ALIVE_TIMEOUT)[1];
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            log.error("Value is not specified in KeepAlive Timeout header.");
+            return -1;
+        }
         // If header has more than one property
         int commaIndex = timeout.indexOf(',');
         if (commaIndex != -1) {
