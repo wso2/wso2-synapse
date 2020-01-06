@@ -342,6 +342,8 @@ public class BlockingMsgSender {
                 axisInMsgCtx.getProperty(HTTPConstants.ERROR_HTTP_STATUS_CODES));
         axisOutMsgCtx.setProperty(SynapseConstants.DISABLE_CHUNKING,
                 axisInMsgCtx.getProperty(SynapseConstants.DISABLE_CHUNKING));
+        axisOutMsgCtx.setProperty(SynapseConstants.NO_KEEPALIVE,
+                axisInMsgCtx.getProperty(SynapseConstants.NO_KEEPALIVE));
         // Fill MessageContext
         BlockingMsgSenderUtils.fillMessageContext(endpointDefinition, axisOutMsgCtx, synapseInMsgCtx);
         if (JsonUtil.hasAJsonPayload(axisInMsgCtx)) {
