@@ -503,12 +503,15 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     public void update() {
 	    String[] tasksInRegistry = taskManager.getTaskNames();
 	    int taskCountInRegistry = 0;
-	    for (String taskName : tasksInRegistry) {
-	    	String task = taskName.substring(0, taskName.lastIndexOf(SYMBOL_UNDERSCORE));
-		    if (task.equals(TASK_PREFIX + name)) {
-			    taskCountInRegistry++;
-		    }
-	    }
+        for (String taskName : tasksInRegistry) {
+            //filters only the message processor tasks since the member count is not relevant for others
+            if (taskName.startsWith(TASK_PREFIX)) {
+                String task = taskName.substring(0, taskName.lastIndexOf(SYMBOL_UNDERSCORE));
+                if (task.equals(TASK_PREFIX + name)) {
+                    taskCountInRegistry++;
+                }
+            }
+        }
 	    if (taskCountInRegistry > memberCount) {
 		    this.stopTasks(taskCountInRegistry);
 	    }
