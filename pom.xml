@@ -1215,8 +1215,7 @@
       <maven.site.plugin.version>2.0-beta-6</maven.site.plugin.version>
       <maven.surefire.plugin.version>2.12.4</maven.surefire.plugin.version>
       <maven.surefire.plugin.version.2.2>2.2</maven.surefire.plugin.version.2.2>
-      <maven.jacoco.plugin.version>0.7.4</maven.jacoco.plugin.version>
-      <jacoco.version>0.8.2</jacoco.version>
+      <maven.jacoco.plugin.version>0.8.2</maven.jacoco.plugin.version>
       <maven.assembly.plugin.version>2.2-beta-2</maven.assembly.plugin.version>
       <maven.bundle.plugin.version>1.4.0</maven.bundle.plugin.version>
       <maven.dependency.plugin.version>2.0</maven.dependency.plugin.version>
@@ -1345,7 +1344,6 @@
       <google.guava.version>27.0-jre</google.guava.version>
       <joda-time.version>2.9.4.wso2v1</joda-time.version>
       <com.googlecode.libphonenumber.version>7.4.2.wso2v1</com.googlecode.libphonenumber.version>
-      <maven.jacoco.plugin.version>0.8.2</maven.jacoco.plugin.version>
       <jacoco.agent.version>0.8.2</jacoco.agent.version>
       <jacoco.ant.version>0.8.2</jacoco.ant.version>
       <powermock.version>1.7.1</powermock.version>
