@@ -222,7 +222,8 @@ public class PassThroughConstants {
 
     public static final String ORIGINAL_HTTP_SC = "ORIGINAL_STATUS_CODE";
     public static final String ORIGINAL_HTTP_REASON_PHRASE = "HTTP_REASON_PHRASE";
-
+    public static final String INTERNAL_EXCEPTION_ORIGIN = "_INTERNAL_EXCEPTION_ORIGIN";
+    public static final String INTERNAL_EXCEPTION_TIME_OUT = "TIME_OUT";
 
     public static final String MESSAGE_SIZE_VALIDATION_SUM = "MESSAGE_SIZE_VALIDATION_SUM";
     public static final String SOURCE_CONNECTION_DROPPED = "SOURCE_CONNECTION_DROPPED";

@@ -663,6 +663,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                     logHttpRequestErrorInCorrelationLog(conn, "Timeout in " + state);
                 }
                 if (requestMsgCtx != null) {
+                    requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                            PassThroughConstants.INTERNAL_EXCEPTION_TIME_OUT);
                     targetErrorHandler.handleError(requestMsgCtx,
                             ErrorCodes.CONNECTION_TIMEOUT,
                             "Error in Sender",
