@@ -130,14 +130,14 @@ public class SourceResponse {
             entity = new BasicHttpEntity();
 
             long contentLength = -1;
-            String contentLengthHeader = null;
-            if (headers.get(HTTP.CONTENT_LEN) != null && headers.get(HTTP.CONTENT_LEN).size() > 0) {
-                contentLengthHeader = headers.get(HTTP.CONTENT_LEN).first();
-            }
-
-            if (contentLengthHeader != null) {
-                contentLength = Long.parseLong(contentLengthHeader);
-                headers.remove(HTTP.CONTENT_LEN);
+            String contentLengthHeader;
+            for (String header : headers.keySet()) {
+                if (HTTP.CONTENT_LEN.equalsIgnoreCase(header)) {
+                    contentLengthHeader = headers.get(header).first();
+                    contentLength = Long.parseLong(contentLengthHeader);
+                    headers.remove(header);
+                    break;
+                }
             }
 
             if (contentLength != -1) {
