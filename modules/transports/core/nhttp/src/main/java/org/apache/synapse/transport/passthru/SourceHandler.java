@@ -170,7 +170,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         }
     }
 
-    private void setCorrelationId(NHttpServerConnection conn) {
+    public void setCorrelationId(NHttpServerConnection conn) {
         HttpContext httpContext = conn.getContext();
         String correlationHeaderName = PassThroughConfiguration.getInstance().getCorrelationHeaderName();
         Header[] correlationHeader = conn.getHttpRequest().getHeaders(correlationHeaderName);
