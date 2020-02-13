@@ -439,12 +439,31 @@ public class PassThroughListeningIOReactorManager {
         return null;
     }
 
-
+    /**
+     * ShutdownIOReactor which is registered by HTTPListener running on given port
+     *
+     * @param port                Port of  axis2 PTT Listener
+     * @param sourceConfiguration Source Configuration from Source handler
+     * @param timeout             Maximum timeout value for shutdown
+     * @throws IOException Exception throwing when Shutdown
+     */
+    public void shutdownIOReactor(int port, SourceConfiguration sourceConfiguration, long timeout)
+            throws IOException {
+        long startTime = System.currentTimeMillis();
+        long timeoutTime = startTime + timeout;
+        while (sourceConfiguration.getMetrics().getUnServedRequestCount() > 0) {
+            if (System.currentTimeMillis() > timeoutTime) {
+                log.info("Shutting down listener since Socket Timeout exceeded");
+                break;
+            }
+        }
+        shutdownIOReactor(port);
+    }
 
     /**
      * ShutdownIOReactor which is registered by HTTPListener running on given port
      *
-     * @param port Port of  axis2 PTT Listener
+     * @param port Port of axis2 PTT Listener
      * @throws IOException Exception throwing when Shutdown
      */
     public void shutdownIOReactor(int port) throws IOException {

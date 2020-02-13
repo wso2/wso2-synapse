@@ -59,6 +59,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.impl.nio.reactor.DefaultListeningIOReactor;
 import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.nio.reactor.IOReactorExceptionHandler;
+import org.apache.http.params.HttpConnectionParams;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.http.conn.ServerConnFactory;
 import org.apache.synapse.transport.nhttp.config.ServerConnFactoryBuilder;
@@ -420,13 +421,26 @@ public class PassThroughHttpListener implements TransportListener {
         log.info("Stopping Pass-through " + namePrefix + " Listener..");
         try {
             int wait = PassThroughConfiguration.getInstance().getListenerShutdownWaitTime();
+            boolean isGracefulShutdownEnabled = Boolean.parseBoolean(
+                    System.getProperty("gracefulShutdown", "true"));
+            long so_timeout = PassThroughConfiguration.getInstance()
+                    .getIntProperty(HttpConnectionParams.SO_TIMEOUT, Pipe.DEFAULT_TIME_OUT_VALUE);
+            passThroughListeningIOReactorManager.pauseIOReactor(operatingPort);
             if (wait > 0) {
-                passThroughListeningIOReactorManager.pauseIOReactor(operatingPort);
                 log.info("Waiting " + wait/1000 + " seconds to cleanup active connections...");
                 Thread.sleep(wait);
                 passThroughListeningIOReactorManager.shutdownIOReactor(operatingPort, wait);
             } else {
-                passThroughListeningIOReactorManager.shutdownIOReactor(operatingPort);
+                if (isGracefulShutdownEnabled) {
+                    if (sourceConfiguration.getMetrics().getUnServedRequestCount() > 0) {
+                        log.info("Waiting to cleanup active " + namePrefix + " connections : " +
+                                sourceConfiguration.getMetrics().getUnServedRequestCount());
+                    }
+                    passThroughListeningIOReactorManager.shutdownIOReactor(
+                            operatingPort, sourceConfiguration, so_timeout);
+                } else {
+                    passThroughListeningIOReactorManager.shutdownIOReactor(operatingPort);
+                }
             }
             serviceTracker.stop();
             handler.stop();

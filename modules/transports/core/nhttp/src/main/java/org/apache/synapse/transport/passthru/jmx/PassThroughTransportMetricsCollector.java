@@ -57,6 +57,22 @@ public class PassThroughTransportMetricsCollector extends MetricsCollector {
         view.disconnected();
     }
 
+    public void requestReceived() {
+        view.requestReceived();
+    }
+
+    public void requestServed() {
+        view.requestServed();
+    }
+
+    public void timeoutOccured() {
+        view.timeoutOccured();
+    }
+
+    public void exceptionOccured() {
+        view.exceptionOccured();
+    }
+
     @Override
     public void notifyReceivedMessageSize(long l) {
         super.notifyReceivedMessageSize(l);
@@ -75,6 +91,10 @@ public class PassThroughTransportMetricsCollector extends MetricsCollector {
 
     public int getActiveConnectionCount() {
         return view.getActiveConnections();
+    }
+
+    public int getUnServedRequestCount() {
+        return view.getUnServedRequests();
     }
 }
 
