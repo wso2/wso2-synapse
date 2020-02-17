@@ -146,7 +146,8 @@ public class DeliveryAgent {
                 }
                 if (queue.size() == maxWaitingMessages) {
                     MessageContext msgCtx = queue.poll();
-
+                    msgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                            PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
                     targetErrorHandler.handleError(msgCtx,
                             ErrorCodes.CONNECTION_TIMEOUT,
                             "Error connecting to the back end",
@@ -185,6 +186,8 @@ public class DeliveryAgent {
 			MessageContext msgCtx = queue.poll();
 
 			if (msgCtx != null) {
+                msgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                        PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
 				targetErrorHandler.handleError(msgCtx, errorCode,
 				                               "Error connecting to the back end", null,
 				                               ProtocolState.REQUEST_READY);

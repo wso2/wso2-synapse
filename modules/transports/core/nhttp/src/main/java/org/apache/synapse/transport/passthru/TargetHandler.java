@@ -184,6 +184,8 @@ public class TargetHandler implements NHttpClientEventHandler {
 
             MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
             if (requestMsgCtx != null) {
+                requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                        PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
                 targetErrorHandler.handleError(requestMsgCtx,
                         ErrorCodes.SND_IO_ERROR,
                         "Error in Sender",
@@ -197,6 +199,8 @@ public class TargetHandler implements NHttpClientEventHandler {
 
             MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
             if (requestMsgCtx != null) {
+                requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                        PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
                 targetErrorHandler.handleError(requestMsgCtx,
                         ErrorCodes.SND_HTTP_ERROR,
                         "Error in Sender",
@@ -244,6 +248,8 @@ public class TargetHandler implements NHttpClientEventHandler {
             informWriterError(conn);
 
             if (requestMsgCtx != null) {
+                requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                        PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
                 targetErrorHandler.handleError(requestMsgCtx,
                         ErrorCodes.SND_HTTP_ERROR,
                         "Error in Sender",
@@ -258,6 +264,8 @@ public class TargetHandler implements NHttpClientEventHandler {
             informWriterError(conn);
 
             if (requestMsgCtx != null) {
+                requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                        PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
                 targetErrorHandler.handleError(requestMsgCtx,
                         ErrorCodes.SND_HTTP_ERROR,
                         "Error in Sender",
@@ -590,6 +598,8 @@ public class TargetHandler implements NHttpClientEventHandler {
         if (isFault) {
             MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
             if (requestMsgCtx != null) {
+                requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                        PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
                 targetErrorHandler.handleError(requestMsgCtx,
                         ErrorCodes.CONNECTION_CLOSED,
                         "Error in Sender",
@@ -663,6 +673,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                     logHttpRequestErrorInCorrelationLog(conn, "Timeout in " + state);
                 }
                 if (requestMsgCtx != null) {
+                    requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                            PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
                     targetErrorHandler.handleError(requestMsgCtx,
                             ErrorCodes.CONNECTION_TIMEOUT,
                             "Error in Sender",
@@ -720,6 +732,8 @@ public class TargetHandler implements NHttpClientEventHandler {
         TargetContext.updateState(conn, ProtocolState.CLOSED);
         targetConfiguration.getConnections().shutdownConnection(conn, true);
         if (requestMsgCtx != null) {
+            requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                    PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
             targetErrorHandler.handleError(requestMsgCtx,
                     ErrorCodes.SND_INVALID_STATE,
                     "Error in Sender",
@@ -773,6 +787,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                 logHttpRequestErrorInCorrelationLog(conn, "IO Exception in " + state.name());
             }
             if (requestMsgCtx != null) {
+                requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                        PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
                 targetErrorHandler.handleError(requestMsgCtx,
                         ErrorCodes.SND_IO_ERROR,
                         "Error in Sender",
@@ -788,6 +804,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                 logHttpRequestErrorInCorrelationLog(conn, "HTTP Exception in " + state.name());
             }
             if (requestMsgCtx != null) {
+                requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                        PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
                 targetErrorHandler.handleError(requestMsgCtx,
                         ErrorCodes.PROTOCOL_VIOLATION,
                         "Error in Sender",
