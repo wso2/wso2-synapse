@@ -675,7 +675,8 @@ public class Axis2FlexibleMEPClient {
                     || Constants.Configuration.HTTP_METHOD_DELETE.equals(httpMethod)
                     || Constants.Configuration.HTTP_METHOD_PUT.equals(httpMethod)
                     || RESTConstants.METHOD_OPTIONS.equals(httpMethod)
-                    || Constants.Configuration.HTTP_METHOD_HEAD.equals(httpMethod);
+                    || Constants.Configuration.HTTP_METHOD_HEAD.equals(httpMethod)
+                    || Constants.Configuration.HTTP_METHOD_PATCH.equals(httpMethod);
 
             if (!isRestRequest) {
 
