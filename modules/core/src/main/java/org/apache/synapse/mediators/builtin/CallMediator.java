@@ -243,7 +243,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         MessageContext synOutCtx = null;
         if (outOnlyMessage) {
             try {
-                synOutCtx = MessageHelper.cloneMessageContext(synInCtx);
+                synOutCtx = MessageHelper.cloneMessageContext(synInCtx, true, true, false, false);
             } catch (AxisFault axisFault) {
                 handleException("Error occurred while cloning msg context", axisFault, synInCtx);
             }
