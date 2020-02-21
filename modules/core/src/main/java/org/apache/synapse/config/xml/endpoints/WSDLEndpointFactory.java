@@ -126,7 +126,6 @@ public class WSDLEndpointFactory extends DefaultEndpointFactory {
             String noParsing = properties.getProperty(SKIP_WSDL_PARSING);
 
             if (wsdlURI != null) {
-                wsdlURI = ResolverFactory.getInstance().getResolver(wsdlURI).resolve();
                 wsdlEndpoint.setWsdlURI(wsdlURI.trim());
                 if (noParsing == null || !JavaUtils.isTrueExplicitly(noParsing)) {
                     try {

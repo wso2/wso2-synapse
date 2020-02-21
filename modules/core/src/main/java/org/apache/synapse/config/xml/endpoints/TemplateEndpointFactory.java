@@ -50,7 +50,6 @@ public class TemplateEndpointFactory extends EndpointFactory {
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "uri"));
         if (endpointURIAttribute != null) {
             String endpointURI = endpointURIAttribute.getAttributeValue();
-            endpointURI = ResolverFactory.getInstance().getResolver(endpointURI).resolve();
             templateEndpoint.addParameter("uri", endpointURI);
         }
 

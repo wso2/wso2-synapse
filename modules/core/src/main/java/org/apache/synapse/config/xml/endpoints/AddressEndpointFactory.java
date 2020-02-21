@@ -118,7 +118,6 @@ public class AddressEndpointFactory extends DefaultEndpointFactory {
 
         if (address != null) {
             String addressURI = address.getAttributeValue();
-            addressURI = ResolverFactory.getInstance().getResolver(addressURI).resolve();
             endpointDefinition.setAddress(addressURI.trim());
         } else {
             handleException("Invalid endpoint definition. " +

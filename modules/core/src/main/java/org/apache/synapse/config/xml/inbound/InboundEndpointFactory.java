@@ -152,7 +152,7 @@ public class InboundEndpointFactory {
                     if (parameter.getText() == null) {
                         resolvedParameter = null;
                     } else {
-                        resolvedParameter = ResolverFactory.getInstance().getResolver(parameter.getText()).resolve();
+                        resolvedParameter = parameter.getText();
                     }
                     inboundEndpoint.addParameter(paramName, resolvedParameter);
                 }
