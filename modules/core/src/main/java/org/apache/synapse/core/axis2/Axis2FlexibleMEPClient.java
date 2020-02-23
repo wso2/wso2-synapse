@@ -159,7 +159,22 @@ public class Axis2FlexibleMEPClient {
         String preserveAddressingProperty = (String) synapseOutMessageContext.getProperty(
                 SynapseConstants.PRESERVE_WS_ADDRESSING);
         MessageContext axisOutMsgCtx = cloneForSend(originalInMsgCtx, preserveAddressingProperty);
-
+        Object TRIGGER_NAME;
+        if ((TRIGGER_NAME = synapseOutMessageContext.getProperty(SynapseConstants.PROXY_SERVICE)) != null) {
+            axisOutMsgCtx.setProperty(PassThroughConstants.INTERNAL_TRIGGER_TYPE, SynapseConstants.PROXY_SERVICE_TYPE);
+            axisOutMsgCtx.setProperty(PassThroughConstants.INTERNAL_TRIGGER_NAME, TRIGGER_NAME.toString());
+        } else if ((TRIGGER_NAME = synapseOutMessageContext.getProperty(RESTConstants.SYNAPSE_REST_API)) != null) {
+            axisOutMsgCtx.setProperty(PassThroughConstants.INTERNAL_TRIGGER_TYPE, SynapseConstants.FAIL_SAFE_MODE_API);
+            axisOutMsgCtx.setProperty(PassThroughConstants.INTERNAL_TRIGGER_NAME, TRIGGER_NAME.toString());
+        } else if ((TRIGGER_NAME = synapseOutMessageContext.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME))
+                != null) {
+            axisOutMsgCtx.setProperty(PassThroughConstants.INTERNAL_TRIGGER_TYPE,
+                    SynapseConstants.FAIL_SAFE_MODE_INBOUND_ENDPOINT);
+            axisOutMsgCtx.setProperty(PassThroughConstants.INTERNAL_TRIGGER_NAME, TRIGGER_NAME.toString());
+        } else {
+            axisOutMsgCtx.setProperty(PassThroughConstants.INTERNAL_TRIGGER_TYPE, "anonymous");
+            axisOutMsgCtx.setProperty(PassThroughConstants.INTERNAL_TRIGGER_NAME, "anonymous");
+        }
 
         if (log.isDebugEnabled()) {
             log.debug("Message [Original Request Message ID : "

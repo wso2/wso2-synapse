@@ -224,7 +224,8 @@ public class PassThroughConstants {
     public static final String ORIGINAL_HTTP_REASON_PHRASE = "HTTP_REASON_PHRASE";
     public static final String INTERNAL_EXCEPTION_ORIGIN = "_INTERNAL_EXCEPTION_ORIGIN";
     public static final String INTERNAL_ORIGIN_ERROR_HANDLER = "TARGET_ERROR_HANDLER";
-
+    public static final String INTERNAL_TRIGGER_TYPE = "_INTERNAL_TRIGGER_TYPE";
+    public static final String INTERNAL_TRIGGER_NAME = "_INTERNAL_TRIGGER_NAME";
 
     public static final String MESSAGE_SIZE_VALIDATION_SUM = "MESSAGE_SIZE_VALIDATION_SUM";
     public static final String SOURCE_CONNECTION_DROPPED = "SOURCE_CONNECTION_DROPPED";

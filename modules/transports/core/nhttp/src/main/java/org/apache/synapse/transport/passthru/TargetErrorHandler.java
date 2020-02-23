@@ -30,6 +30,10 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
+
 public class TargetErrorHandler {
     private Log log = LogFactory.getLog(TargetErrorHandler.class);
 
@@ -123,7 +127,7 @@ public class TargetErrorHandler {
                     }
                     if (exceptionToRaise != null) {
                         faultMessageContext.setProperty(
-                                PassThroughConstants.ERROR_DETAIL, exceptionToRaise.toString());
+                                PassThroughConstants.ERROR_DETAIL, getStackTrace(exceptionToRaise));
                         faultMessageContext.setProperty(
                                 PassThroughConstants.ERROR_EXCEPTION, exceptionToRaise);
                         envelope.getBody().getFault().getDetail().setText(
@@ -151,6 +155,14 @@ public class TargetErrorHandler {
     private int getErrorCode(int errorCode, ProtocolState state) {
         return errorCode + state.ordinal();
     }
+
+    private String getStackTrace(Throwable aThrowable) {
+        final Writer result = new StringWriter();
+        final PrintWriter printWriter = new PrintWriter(result);
+        aThrowable.printStackTrace(printWriter);
+        return result.toString();
+    }
+
 
     private void updateFaultInfo(int errorCode, MessageContext mc, PassThroughTransportMetricsCollector metrics) {
         if (mc.getAxisOperation() != null &&
