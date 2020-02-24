@@ -18,12 +18,16 @@
 
 package org.apache.synapse.unittest;
 
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.util.AXIOMUtil;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.commons.emulator.RequestProcessor;
+import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.unittest.testcase.data.classes.AssertEqual;
 import org.apache.synapse.unittest.testcase.data.classes.AssertNotNull;
@@ -34,11 +38,14 @@ import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
+import javax.xml.stream.XMLStreamException;
 
+import static org.apache.synapse.unittest.Constants.EMPTY_VALUE;
 import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_AXIS2;
 import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_BODY;
 import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_CONTEXT;
 import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_TRANSPORT;
+import static org.apache.synapse.unittest.Constants.TEXT_NAMESPACE;
 
 
 /**
@@ -167,9 +174,7 @@ class Assertor {
         String messageOfAssertEqual = null;
 
         for (AssertEqual assertItem : assertEquals) {
-
             if (!isAssertEqualFailed) {
-
                 String actual = assertItem.getActual();
                 String expected = RequestProcessor.trimStrings(assertItem.getExpected());
                 String message = assertItem.getMessage();
@@ -185,9 +190,33 @@ class Assertor {
                 switch (actualProperty) {
 
                     case INPUT_PROPERTY_BODY:
-                        mediatedResult =
-                                RequestProcessor.trimStrings(messageContext.getEnvelope().getBody().getFirstElement()
-                                        .toString());
+                        try {
+                            org.apache.axis2.context.MessageContext axis2MsgContxt =
+                                    ((Axis2MessageContext) messageContext).getAxis2MessageContext();
+                            if (JsonUtil.hasAJsonPayload(axis2MsgContxt)) {
+                                if (JsonUtil.getJsonPayload(axis2MsgContxt) != null) {
+                                    mediatedResult = RequestProcessor.trimStrings(
+                                            IOUtils.toString(JsonUtil.getJsonPayload(axis2MsgContxt)));
+                                } else {
+                                    mediatedResult = EMPTY_VALUE;
+                                }
+                            } else {
+                                String omElement = messageContext.getEnvelope().getBody().getFirstElement().toString();
+                                if (omElement.contains(TEXT_NAMESPACE)) {
+                                    OMElement omElementOfText = AXIOMUtil.stringToOM(omElement);
+                                    mediatedResult = RequestProcessor.trimStrings(omElementOfText.getText());
+                                } else {
+                                    mediatedResult = RequestProcessor.trimStrings(omElement);
+                                }
+                            }
+                        } catch (XMLStreamException e) {
+                            mediatedResult = EMPTY_VALUE;
+                            log.error("Exception while reading the text output from the message context", e);
+                        } catch (IOException e) {
+                            mediatedResult = EMPTY_VALUE;
+                            log.error("Exception while reading the JSON output from the message context", e);
+                        }
+
                         isAssert = expected.equals(mediatedResult);
                         break;
 
