@@ -35,6 +35,7 @@ import org.apache.synapse.deployers.EndpointDeployer;
 import org.apache.synapse.deployers.LocalEntryDeployer;
 import org.apache.synapse.deployers.ProxyServiceDeployer;
 import org.apache.synapse.deployers.SequenceDeployer;
+import org.apache.synapse.deployers.TemplateDeployer;
 import org.apache.synapse.unittest.testcase.data.classes.SynapseTestCase;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 import org.apache.synapse.unittest.testcase.data.classes.TestCaseSummary;
@@ -52,7 +53,7 @@ import static org.apache.synapse.unittest.Constants.TYPE_ENDPOINT;
 import static org.apache.synapse.unittest.Constants.TYPE_LOCAL_ENTRY;
 import static org.apache.synapse.unittest.Constants.TYPE_PROXY;
 import static org.apache.synapse.unittest.Constants.TYPE_SEQUENCE;
-
+import static org.apache.synapse.unittest.Constants.TYPE_TEMPLATE;
 
 /**
  * Testing agent deploy receiving artifact data in relevant deployer and mediate test cases on it.
@@ -241,6 +242,12 @@ class TestingAgent {
                 synapseConfiguration = pairOfLocalEntryDeployment.getKey();
                 key = pairOfLocalEntryDeployment.getValue();
                 break;
+            case TYPE_TEMPLATE:
+                Map.Entry<SynapseConfiguration, String> pairOfTemplateDeployment =
+                        config.deployTemplateArtifact(artifact, artifactNameOrKey);
+                synapseConfiguration = pairOfTemplateDeployment.getKey();
+                key = pairOfTemplateDeployment.getValue();
+                break;
 
             default:
                 throw new IOException("Undefined operation type for <test-artifact> given in unit testing agent");
@@ -304,7 +311,6 @@ class TestingAgent {
 
                         testSuiteSummary.setMediationStatus(Constants.PASSED_KEY);
                         checkAssertionWithAPIMediation(invokedApiResult, currentTestCase, i, testSummary);
-
                         break;
 
                     default:
@@ -437,6 +443,12 @@ class TestingAgent {
                         LocalEntryDeployer localEntryDeployer = new LocalEntryDeployer();
                         localEntryDeployer.init(configurationContext);
                         localEntryDeployer.undeploySynapseArtifact(artifactName);
+                        break;
+
+                    case TYPE_TEMPLATE:
+                        TemplateDeployer templateDeployer = new TemplateDeployer();
+                        templateDeployer.init(configurationContext);
+                        templateDeployer.undeploySynapseArtifact(artifactName);
                         break;
 
                     default:

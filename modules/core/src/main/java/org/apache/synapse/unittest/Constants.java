@@ -32,6 +32,7 @@ public class Constants {
     static final String TYPE_API = "api";
     static final String TYPE_ENDPOINT = "endpoint";
     static final String TYPE_LOCAL_ENTRY = "localEntry";
+    static final String TYPE_TEMPLATE = "template";
 
     //artifact key word constants
     static final String API_CONTEXT = "context";
@@ -131,4 +132,11 @@ public class Constants {
 
     //common constants
     static final String NEW_LINE = "\n";
+    static final String EMPTY_VALUE = "";
+
+    //input data formats
+    static final String XML_FORMAT = "XML";
+    static final String JSON_FORMAT = "JSON";
+    static final String TEXT_FORMAT = "TEXT";
+    static final String TEXT_NAMESPACE = "http://ws.apache.org/commons/ns/payload";
 }

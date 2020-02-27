@@ -19,10 +19,14 @@
 package org.apache.synapse.unittest;
 
 import org.apache.axiom.om.OMAbstractFactory;
-import org.apache.axiom.om.OMDocument;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.axiom.util.UIDGenerator;
 import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.context.OperationContext;
+import org.apache.axis2.context.ServiceContext;
+import org.apache.axis2.description.InOutAxisOperation;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -36,6 +40,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -50,8 +55,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import javax.xml.namespace.QName;
 
 import static org.apache.synapse.unittest.Constants.DELETE_METHOD;
+import static org.apache.synapse.unittest.Constants.EMPTY_VALUE;
 import static org.apache.synapse.unittest.Constants.GET_METHOD;
 import static org.apache.synapse.unittest.Constants.HTTPS_KEY;
 import static org.apache.synapse.unittest.Constants.HTTPS_LOCALHOST_URL;
@@ -60,12 +67,16 @@ import static org.apache.synapse.unittest.Constants.HTTP_LOCALHOST_URL;
 import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_SCOPE_AXIS2;
 import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_SCOPE_DEFAULT;
 import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_SCOPE_TRANSPORT;
+import static org.apache.synapse.unittest.Constants.JSON_FORMAT;
 import static org.apache.synapse.unittest.Constants.POST_METHOD;
 import static org.apache.synapse.unittest.Constants.PROXY_INVOKE_PREFIX_URL;
 import static org.apache.synapse.unittest.Constants.PUT_METHOD;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_NAME;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_SCOPE;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_VALUE;
+import static org.apache.synapse.unittest.Constants.TEXT_FORMAT;
+import static org.apache.synapse.unittest.Constants.TEXT_NAMESPACE;
+import static org.apache.synapse.unittest.Constants.XML_FORMAT;
 
 
 /**
@@ -89,8 +100,8 @@ public class TestCasesMediator {
      * @param key             key of the sequence deployer
      * @return result of mediation and message context as a Map.Entry
      */
-    static Map.Entry<Boolean, MessageContext> sequenceMediate(TestCase currentTestCase, SynapseConfiguration synConfig,
-                                                         String key) {
+    static Map.Entry<Boolean, MessageContext> sequenceMediate(TestCase currentTestCase, SynapseConfiguration
+            synConfig, String key) {
         Mediator sequenceMediator = synConfig.getSequence(key);
         MessageContext msgCtxt = createSynapseMessageContext(currentTestCase.getInputPayload(), synConfig);
 
@@ -323,18 +334,34 @@ public class TestCasesMediator {
             ConfigurationContext configurationContext = new ConfigurationContext(axisConfig);
             SynapseEnvironment env = new Axis2SynapseEnvironment(configurationContext, synapseConfig);
 
+            //Create custom Axis2MessageContext with required data and SOAP1.1 envelop
             synapseMessageContext = new Axis2MessageContext(messageContext, synapseConfig, env);
-            SOAPEnvelope envelope =
-                    OMAbstractFactory.getSOAP11Factory().getDefaultEnvelope();
-            OMDocument omDocument =
-                    OMAbstractFactory.getSOAP11Factory().createOMDocument();
-            omDocument.addChild(envelope);
+            synapseMessageContext.setContinuationEnabled(true);
+            synapseMessageContext.setMessageID(UIDGenerator.generateURNString());
+            synapseMessageContext.setEnvelope(OMAbstractFactory.getSOAP11Factory().createSOAPEnvelope());
+            SOAPEnvelope envelope = synapseMessageContext.getEnvelope();
+            envelope.addChild(OMAbstractFactory.getSOAP12Factory().createSOAPBody());
+            ((Axis2MessageContext) synapseMessageContext).getAxis2MessageContext()
+                    .setConfigurationContext(configurationContext);
+            ((Axis2MessageContext) synapseMessageContext).getAxis2MessageContext()
+                    .setOperationContext(new OperationContext(new InOutAxisOperation(), new ServiceContext()));
 
             if (payload != null) {
-                envelope.getBody().addChild(createOMElement(payload));
-            }
+                Map.Entry<String, String> inputPayload = CommonUtils.checkInputStringFormat(payload);
+                String inputPayloadType = inputPayload.getKey();
+                String trimmedInputPayload = inputPayload.getValue();
 
-            synapseMessageContext.setEnvelope(envelope);
+                if (inputPayloadType.equals(XML_FORMAT)) {
+                    envelope.getBody().addChild(createOMElement(trimmedInputPayload));
+                } else if (inputPayloadType.equals(JSON_FORMAT)) {
+                    org.apache.axis2.context.MessageContext axis2MessageContext =
+                            ((Axis2MessageContext) synapseMessageContext).getAxis2MessageContext();
+                    envelope.getBody().addChild(
+                            JsonUtil.getNewJsonPayload(axis2MessageContext, trimmedInputPayload, true, true));
+                } else if (inputPayloadType.equals(TEXT_FORMAT)) {
+                    envelope.getBody().addChild(getTextElement(trimmedInputPayload));
+                }
+            }
         } catch (Exception e) {
             log.error("Exception while creating synapse message context", e);
         }
@@ -420,5 +447,21 @@ public class TestCasesMediator {
         }
 
         return messageContext;
+    }
+
+    /**
+     * Create OMElement for the text input payload with a namespace.
+     *
+     * @param content input message
+     * @return OMElement of input message
+     */
+    private static OMElement getTextElement(String content) {
+        OMFactory factory = OMAbstractFactory.getOMFactory();
+        OMElement textElement = factory.createOMElement(new QName(TEXT_NAMESPACE, "text"));
+        if (content == null) {
+            content = EMPTY_VALUE;
+        }
+        textElement.setText(content);
+        return textElement;
     }
 }
