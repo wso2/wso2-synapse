@@ -24,6 +24,7 @@ import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.util.ElementHelper;
 import org.apache.axiom.soap.SOAP11Constants;
+import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.axis2.transport.http.HTTPConstants;
@@ -508,10 +509,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
 				//we only validate response for certain protocols (i.e HTTP/HTTPS)
 				isResponseValidationNotRequired = !isResponseValidationRequiredEndpoint(endpointReferenceValue);
 			}
+			SOAPEnvelope originalEnvelop = messageContext.getEnvelope();
 			try {
 				// Send message to the client
 				while (!isSuccessful && !isTerminated) {
-					tryToDispatchToEndpoint(messageContext, endpoint);
+					tryToDispatchToEndpoint(messageContext, endpoint, originalEnvelop);
 
 					isTerminated = messageProcessor.isDeactivated();
 					if (!isTerminated && (messageProcessor instanceof ScheduledMessageProcessor)) {
@@ -546,15 +548,17 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	 *
 	 * @param messageToDispatch MessageContext containing message to forward
 	 * @param endpoint                endpoint to forward message to
+	 * @param originalEnvelop   SoapEnvelope of original message to be forwarded
 	 */
-	private void tryToDispatchToEndpoint(MessageContext messageToDispatch, Endpoint endpoint) {
+	private void tryToDispatchToEndpoint(MessageContext messageToDispatch, Endpoint endpoint,
+										 SOAPEnvelope originalEnvelop) {
 
 		isSuccessful = false;
 		MessageContext outCtx = null;
 
 		try {
 			// For each retry we need to have a fresh copy of the original message
-			messageToDispatch.setEnvelope(MessageHelper.cloneSOAPEnvelope(messageToDispatch.getEnvelope()));
+			messageToDispatch.setEnvelope(MessageHelper.cloneSOAPEnvelope(originalEnvelop));
 			setSoapHeaderBlock(messageToDispatch);
 			updateAxis2MessageContext(messageToDispatch);
 
