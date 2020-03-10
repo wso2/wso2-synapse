@@ -252,7 +252,7 @@ public class AccessLogger {
                             Matcher matcher = pattern.matcher(line);
                             if (matcher.find()) {
                                 String date = matcher.group(1);
-                                SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT_STRING,Locale.ENGLISH);
+                                SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT_STRING, Locale.ENGLISH);
                                 dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
                                 Date lastDateFromLog = dateFormat.parse(date);
                                 // if same day - write to the existing file
