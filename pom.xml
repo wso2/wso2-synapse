@@ -1360,7 +1360,7 @@
        <io.netty.version>4.0.30.Final</io.netty.version>
        <version.org.wso2.orbit.javax.activation>1.1.1.wso2v3</version.org.wso2.orbit.javax.activation>
        <version.orbit.rabbitmq>3.6.6.wso2v1</version.orbit.rabbitmq>
-       <jaeger-client.version>0.32.0.wso2v1</jaeger-client.version>
+       <jaeger-client.version>0.32.0.wso2v2</jaeger-client.version>
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->
