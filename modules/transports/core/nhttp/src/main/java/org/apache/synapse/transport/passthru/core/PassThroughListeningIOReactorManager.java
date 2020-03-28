@@ -448,10 +448,11 @@ public class PassThroughListeningIOReactorManager {
      * @throws IOException Exception throwing when Shutdown
      */
     public void shutdownIOReactor(int port, SourceConfiguration sourceConfiguration, long timeout)
-            throws IOException {
+            throws IOException, InterruptedException {
         long startTime = System.currentTimeMillis();
         long timeoutTime = startTime + timeout;
         while (sourceConfiguration.getMetrics().getUnServedRequestCount() > 0) {
+            Thread.sleep(1000);
             if (System.currentTimeMillis() > timeoutTime) {
                 log.info("Shutting down listener since Socket Timeout exceeded");
                 break;
