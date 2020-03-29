@@ -449,6 +449,10 @@ public class PassThroughListeningIOReactorManager {
      */
     public void shutdownIOReactor(int port, SourceConfiguration sourceConfiguration, long timeout)
             throws IOException, InterruptedException {
+        if (sourceConfiguration.getMetrics().getUnServedRequestCount() > 0) {
+            log.info("Waiting to cleanup active connections on port " + port + ": " +
+                    sourceConfiguration.getMetrics().getUnServedRequestCount());
+        }
         long startTime = System.currentTimeMillis();
         long timeoutTime = startTime + timeout;
         while (sourceConfiguration.getMetrics().getUnServedRequestCount() > 0) {

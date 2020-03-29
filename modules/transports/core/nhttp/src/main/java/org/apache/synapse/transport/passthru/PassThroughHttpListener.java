@@ -421,21 +421,17 @@ public class PassThroughHttpListener implements TransportListener {
         log.info("Stopping Pass-through " + namePrefix + " Listener..");
         try {
             int wait = PassThroughConfiguration.getInstance().getListenerShutdownWaitTime();
-            boolean isGracefulShutdownEnabled = Boolean.parseBoolean(
-                    System.getProperty("gracefulShutdown", "true"));
-            long so_timeout = PassThroughConfiguration.getInstance()
-                    .getIntProperty(HttpConnectionParams.SO_TIMEOUT, Pipe.DEFAULT_TIME_OUT_VALUE);
             passThroughListeningIOReactorManager.pauseIOReactor(operatingPort);
             if (wait > 0) {
                 log.info("Waiting " + wait/1000 + " seconds to cleanup active connections...");
                 Thread.sleep(wait);
                 passThroughListeningIOReactorManager.shutdownIOReactor(operatingPort, wait);
             } else {
+                boolean isGracefulShutdownEnabled = Boolean.parseBoolean(
+                        System.getProperty("gracefulShutdown", "true"));
                 if (isGracefulShutdownEnabled) {
-                    if (sourceConfiguration.getMetrics().getUnServedRequestCount() > 0) {
-                        log.info("Waiting to cleanup active " + namePrefix + " connections : " +
-                                sourceConfiguration.getMetrics().getUnServedRequestCount());
-                    }
+                    long so_timeout = PassThroughConfiguration.getInstance()
+                            .getIntProperty(HttpConnectionParams.SO_TIMEOUT, Pipe.DEFAULT_TIME_OUT_VALUE);
                     passThroughListeningIOReactorManager.shutdownIOReactor(
                             operatingPort, sourceConfiguration, so_timeout);
                 } else {
