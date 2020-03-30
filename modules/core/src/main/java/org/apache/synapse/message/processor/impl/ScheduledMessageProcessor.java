@@ -18,11 +18,6 @@
  */
 package org.apache.synapse.message.processor.impl;
 
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.Callable;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
@@ -41,6 +36,11 @@ import org.apache.synapse.task.Task;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskManager;
 import org.apache.synapse.task.TaskManagerObserver;
+
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.Callable;
 
 
 /**
@@ -310,10 +310,21 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
 	@Override
 	public void destroy(boolean preserveState) {
+		destroy(preserveState, false);
+	}
+
+	@Override
+	public void destroy(boolean preserveState , boolean isArtifactUpdate) {
 
 		if (!preserveState) {
-			stop();
 			deleteMessageProcessorState();
+		}
+		if (isArtifactUpdate || !preserveState) {
+			/*
+			All the tasks need to be stopped during artifact update and re deployed so that the changes in member
+			count is captured.
+			*/
+			stop();
 		}
 		/*
 		 * If the Task is scheduled with an interval value < 1000 ms, it is
