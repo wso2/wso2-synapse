@@ -321,9 +321,9 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		}
 		if (isArtifactUpdate || !preserveState) {
 			/*
-			All the tasks need to be stopped during artifact update and re deployed so that the changes in member
-			count is captured.
-			*/
+			 * All the tasks need to be stopped during artifact update and re deployed so that the changes in member
+			 * count is captured.
+			 */
 			stop();
 		}
 		/*
