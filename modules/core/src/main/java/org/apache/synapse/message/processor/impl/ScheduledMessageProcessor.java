@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 
+import static org.apache.synapse.SynapseConstants.IS_NON_REGISTRY_MODE;
 
 /**
  * Implements the common message processor infrastructure which is used by the
@@ -561,6 +562,15 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     }
 
 	private ProcessorState getProcessorState() {
+
+		if (IS_NON_REGISTRY_MODE) {
+			String state = taskManager.getMessageProcessorState(
+					TASK_PREFIX + name + SYMBOL_UNDERSCORE + DEFAULT_TASK_SUFFIX);
+			if (logger.isDebugEnabled()) {
+				logger.debug("Message processor [" + name + "] state [" + state + "]");
+			}
+			return state == null ? ProcessorState.INITIAL : ProcessorState.valueOf(state);
+		}
 		Properties resourceProperties = registry.getResourceProperties(REG_PROCESSOR_BASE_PATH + getName());
 
 		if (resourceProperties == null) {
@@ -579,11 +589,22 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	}
 
 	private void setMessageProcessorState(ProcessorState state) {
+
+		if (IS_NON_REGISTRY_MODE) {
+			taskManager.setMessageProcessorState(TASK_PREFIX + name + SYMBOL_UNDERSCORE + DEFAULT_TASK_SUFFIX,
+			                                     state.name());
+			return;
+		}
 		registry.newNonEmptyResource(REG_PROCESSOR_BASE_PATH + getName(), false, "text/plain", state.toString(),
 				MP_STATE);
 	}
 
     private void deleteMessageProcessorState() {
+
+	    if (IS_NON_REGISTRY_MODE) {
+		    taskManager.removeMessageProcessorState(TASK_PREFIX + name + SYMBOL_UNDERSCORE + DEFAULT_TASK_SUFFIX);
+		    return;
+	    }
         if (registry.getResourceProperties(REG_PROCESSOR_BASE_PATH + getName()) != null) {
             registry.delete(REG_PROCESSOR_BASE_PATH + getName());
         }

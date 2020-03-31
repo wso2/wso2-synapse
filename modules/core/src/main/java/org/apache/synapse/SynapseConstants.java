@@ -21,8 +21,9 @@ package org.apache.synapse;
 
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMNamespace;
-import javax.xml.namespace.QName;
+
 import java.util.regex.Pattern;
+import javax.xml.namespace.QName;
 
 /**
  * Global constants for the Apache Synapse project
@@ -578,5 +579,8 @@ public final class SynapseConstants {
 
     // Common property for all artifacts
     public static final String ARTIFACT_NAME = "ARTIFACT_NAME";
+
+    // Registry mode used in WSO2 Micro Integrator.
+    public static final boolean IS_NON_REGISTRY_MODE = Boolean.parseBoolean(System.getProperty("NonRegistryMode"));
 
 }

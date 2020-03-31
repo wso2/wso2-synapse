@@ -57,6 +57,12 @@ public interface TaskManager {
 
     public void setConfigurationProperties(Properties properties);
 
+	void setMessageProcessorState(String name, String state);
+
+	String getMessageProcessorState(String name);
+
+	void removeMessageProcessorState(String name);
+
 	/**
 	 * Adds a new Observer to the list of observers of this task manager.
 	 *

@@ -19,12 +19,6 @@ package org.apache.synapse.startup.quartz;
  *  under the License.
  */
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.Callable;
-
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -49,6 +43,12 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.impl.StdSchedulerFactory;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.Callable;
 
 public class QuartzTaskManager implements TaskManager {
     private static final Log logger = LogFactory.getLog(QuartzTaskManager.class.getName());
@@ -440,6 +440,21 @@ public class QuartzTaskManager implements TaskManager {
         synchronized (lock) {
             this.configProperties.putAll(properties);
         }
+    }
+
+    @Override
+    public void setMessageProcessorState(String name, String state) {
+        // do nothing
+    }
+
+    @Override
+    public String getMessageProcessorState(String name) {
+        return null;
+    }
+
+    @Override
+    public void removeMessageProcessorState(String name) {
+        // do nothing
     }
 
     private void assertInitialized() {
