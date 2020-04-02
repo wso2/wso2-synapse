@@ -282,15 +282,21 @@ public class Target {
                                      MessageContext synCtx) {
         if (action.equals(ACTION_REPLACE) && !sourceNodeList.isEmpty() && sourceNodeList.get(0) instanceof OMText) {
             String sourceString = ((OMText)sourceNodeList.get(0)).getText();
-            JsonElement jsonElement = jsonParser.parse(sourceString);
-            if (jsonElement instanceof JsonObject || jsonElement instanceof JsonArray) {
-                try {
-                    JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
-                            sourceString, true, true);
-                    return;
-                } catch (AxisFault af) {
-                    log.error("Could not add json object to the json stream", af);
+            try {
+                JsonElement jsonElement = jsonParser.parse(sourceString);
+                if (jsonElement instanceof JsonObject || jsonElement instanceof JsonArray) {
+                    try {
+                        JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
+                                sourceString, true, true);
+                        return;
+                    } catch (AxisFault af) {
+                        log.error("Could not add json object to the json stream", af);
+                    }
                 }
+            } catch (JsonSyntaxException ex) {
+                synLog.traceOrDebug("Source property string is not a valid json");
+                //continue treating source as xml
+                insertElement(sourceNodeList, e, synLog);
             }
         }
         insertElement(sourceNodeList, e, synLog);
