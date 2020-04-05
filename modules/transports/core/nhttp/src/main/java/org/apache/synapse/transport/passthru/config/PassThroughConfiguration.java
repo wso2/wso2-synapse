@@ -48,7 +48,7 @@ public class PassThroughConfiguration {
                                                          Runtime.getRuntime().availableProcessors();
     private static final int DEFAULT_MAX_ACTIVE_CON = -1;
     private static final int DEFAULT_LISTENER_SHUTDOWN_WAIT_TIME = 0;
-    private static final int DEFAULT_CONNECTION_GRACE_TIME = 3000;
+    private static final int DEFAULT_CONNECTION_GRACE_TIME = 10000;
     private Boolean isKeepAliveDisabled = null;
 
     //additional rest dispatch handlers
