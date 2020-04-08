@@ -180,26 +180,30 @@ public class DeliveryAgent {
         }
     }
 
-	public void errorConnecting(HttpRoute route, int errorCode, String message) {
-		Queue<MessageContext> queue = waitingMessages.get(route);
-		if (queue != null) {
-			MessageContext msgCtx = queue.poll();
+    public void errorConnecting(HttpRoute route, int errorCode, String message, Exception exceptionToRaise) {
+        Queue<MessageContext> queue = waitingMessages.get(route);
+        if (queue != null) {
+            MessageContext msgCtx = queue.poll();
 
-			if (msgCtx != null) {
+            if (msgCtx != null) {
                 msgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
                         PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
-				targetErrorHandler.handleError(msgCtx, errorCode,
-				                               "Error connecting to the back end", null,
-				                               ProtocolState.REQUEST_READY);
-				synchronized (msgCtx) {
-					msgCtx.setProperty(PassThroughConstants.WAIT_BUILDER_IN_STREAM_COMPLETE,
-					                   Boolean.TRUE);
-					msgCtx.notifyAll();
-				}
-			}
-		} else {
-			throw new IllegalStateException("Queue cannot be null for: " + route);
-		}
+                targetErrorHandler.handleError(msgCtx, errorCode,
+                        "Error connecting to the back end", exceptionToRaise,
+                        ProtocolState.REQUEST_READY);
+                synchronized (msgCtx) {
+                    msgCtx.setProperty(PassThroughConstants.WAIT_BUILDER_IN_STREAM_COMPLETE,
+                            Boolean.TRUE);
+                    msgCtx.notifyAll();
+                }
+            }
+        } else {
+            throw new IllegalStateException("Queue cannot be null for: " + route);
+        }
+    }
+
+	public void errorConnecting(HttpRoute route, int errorCode, String message) {
+		errorConnecting(route, errorCode, message, null);
 	}
 
     /**
