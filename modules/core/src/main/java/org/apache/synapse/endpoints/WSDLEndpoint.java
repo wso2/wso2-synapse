@@ -20,8 +20,11 @@
 package org.apache.synapse.endpoints;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axis2.addressing.EndpointReference;
+import org.apache.axis2.client.Options;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.json.JSONObject;
 
 /**
@@ -44,6 +47,19 @@ public class WSDLEndpoint extends AbstractEndpoint {
 
         // For setting Car name (still for Proxy)
         logSetter();
+
+        if (synCtx.getProperty(EPConstants.TENANT_INFO_ID) != null &&
+                ((int) synCtx.getProperty(EPConstants.TENANT_INFO_ID)) != EPConstants.SUPER_TENANT_ID) {
+            org.apache.axis2.context.MessageContext axis2MessageContext =
+                    ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+            Options options = axis2MessageContext.getOptions();
+            EndpointReference to = options.getTo();
+            if (to.getAddress() != null && to.getAddress().contains(EPConstants.LOCAL_TRANSPORT_IDENTIFIER)) {
+                // removing the local transport identifier from the uri scheme
+                options.setTo(new EndpointReference(
+                        to.getAddress().substring(EPConstants.LOCAL_TRANSPORT_IDENTIFIER.length())));
+            }
+        }
 
         // is this an actual leaf endpoint
         if (getParentEndpoint() != null) {
