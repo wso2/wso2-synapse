@@ -464,6 +464,10 @@ public class PropertyMediator extends AbstractMediator {
     	if (expression != null) {
             contentAware = expression.isContentAware();
         }
+
+        if (dynamicNameValue != null && dynamicNameValue.getExpression() != null) {
+            contentAware = contentAware || dynamicNameValue.getExpression().isContentAware();
+        }
         
     	if (XMLConfigConstants.SCOPE_AXIS2.equals(scope) ) {
             // the logic will be determine the contentaware true
