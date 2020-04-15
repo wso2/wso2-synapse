@@ -42,6 +42,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.commons.json.Constants;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
@@ -158,6 +159,7 @@ public class Target {
                     throw new SynapseException("Invalid Target object to be enrich.");
                 }
             }
+            removeOutdatedJsonStream(((Axis2MessageContext) synContext).getAxis2MessageContext());
         } else if (targetType == EnrichMediator.BODY) {
             SOAPEnvelope env = synContext.getEnvelope();
             SOAPBody body = env.getBody();
@@ -177,6 +179,7 @@ public class Target {
                         synLog.error("Invalid Object type to be inserted into message body");
                     }
                 }
+                removeOutdatedJsonStream(((Axis2MessageContext) synContext).getAxis2MessageContext());
             }
         } else if (targetType == EnrichMediator.ENVELOPE) {
             OMNode node = sourceNodeList.get(0);
@@ -191,6 +194,7 @@ public class Target {
                 synLog.error("SOAPEnvelope is expected");
                 throw new SynapseException("A SOAPEnvelope is expected");
             }
+            removeOutdatedJsonStream(((Axis2MessageContext) synContext).getAxis2MessageContext());
         } else if (targetType == EnrichMediator.PROPERTY) {
             assert property != null : "Property cannot be null for PROPERTY type";
 			if (action != null && property != null) {
@@ -297,9 +301,11 @@ public class Target {
                 synLog.traceOrDebug("Source property string is not a valid json");
                 //continue treating source as xml
                 insertElement(sourceNodeList, e, synLog);
+                removeOutdatedJsonStream(((Axis2MessageContext) synCtx).getAxis2MessageContext());
             }
         }
         insertElement(sourceNodeList, e, synLog);
+        removeOutdatedJsonStream(((Axis2MessageContext) synCtx).getAxis2MessageContext());
     }
 
     /**
@@ -528,6 +534,18 @@ public class Target {
         }
 
         return newJsonString;
+    }
+
+    /**
+     * Removes outdated jsonstream (if exists) after enriching XML payload.
+     *
+     * @param axis2MsgCtx Axis2MessageContext of whose json stream should be removed.
+     */
+    private void removeOutdatedJsonStream(org.apache.axis2.context.MessageContext axis2MsgCtx) {
+        // Removing the JSON stream since the payload is now updated.
+        // Json-eval and other JsonUtil functions now needs to convert XML -> JSON
+        // related to wso2/product-ei/issues/1771
+        axis2MsgCtx.removeProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
     }
 
     public SynapsePath getXpath() {
