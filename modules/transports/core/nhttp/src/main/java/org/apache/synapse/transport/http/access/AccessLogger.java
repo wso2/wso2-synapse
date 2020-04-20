@@ -56,7 +56,7 @@ public class AccessLogger {
 
     private final static String DATE_EXTRACT_REGEX = "\\[([^]]+)\\]";
 
-    private final static String DATE_FORMAT_STRING = "dd/MMM/yyyy:HH:mm:ss Z";
+    private final static String DATE_FORMAT_STRING = "dd/MMM/yyyy:HH:mm:ss.SSS Z";
 
     private static final String IS_LOG_ROTATABLE = "nhttp.is.log.rotatable";
 
