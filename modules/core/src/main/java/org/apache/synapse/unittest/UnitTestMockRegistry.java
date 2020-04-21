@@ -155,8 +155,8 @@ public class UnitTestMockRegistry extends AbstractRegistry {
         String entryType = entryArray[0];
         String entryPath = entryArray[1];
 
-        if (!entryPath.startsWith(File.separator)) {
-            entryPath = File.separator + entryPath;
+        if (!entryPath.startsWith(Constants.BACK_SLASH)) {
+            entryPath = Constants.BACK_SLASH + entryPath;
         }
 
         String resourcePath;
