@@ -252,7 +252,7 @@ class SynapseTestcaseDataReader {
             registryResource.setRegistryPath(resourcePath);
             registryResource.setMediaType(resourceMediaType);
 
-            String registryKey = resourcePath + File.separator + resourceName;
+            String registryKey = resourcePath + Constants.BACK_SLASH + resourceName;
             artifactDataHolder.addRegistryResource(registryKey, registryResource);
         }
 

@@ -133,6 +133,7 @@ public class Constants {
     //common constants
     static final String NEW_LINE = "\n";
     static final String EMPTY_VALUE = "";
+    static final String BACK_SLASH = "/";
 
     //input data formats
     static final String XML_FORMAT = "XML";
