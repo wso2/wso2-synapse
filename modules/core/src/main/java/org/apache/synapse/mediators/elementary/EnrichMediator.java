@@ -173,13 +173,6 @@ public class EnrichMediator extends AbstractMediator {
             } catch (JaxenException e) {
                 handleException("Failed to get the source for Enriching", e, synCtx);
             }
-
-            // Removing the JSON stream since the payload is now updated.
-            // Json-eval and other JsonUtil functions now needs to convert XML -> JSON
-            // related to wso2/product-ei/issues/1771
-            if (target.getTargetType() == EnrichMediator.BODY || target.getTargetType() == EnrichMediator.CUSTOM) {
-                axis2MsgCtx.removeProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
-            }
         }
 
         //  If we enrich the body or envelope we need to remove the NO_ENTITY_BODY property
