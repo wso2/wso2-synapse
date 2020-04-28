@@ -86,6 +86,12 @@ public interface PassThroughConfigPNames {
     public String CONNECTION_IDLE_TIME = "transport.sender.connection.idle.time";
 
     /**
+     * Defines the time allocated to avoid a connection being used
+     * at the moment it is being closed or timed out in milliseconds
+     */
+    public String CONNECTION_GRACE_TIME = "transport.sender.connection.grace.time";
+
+    /**
      * Defines the time interval for maximum connection lifespan.
      */
     public String MAXIMUM_CONNECTION_LIFESPAN = "transport.sender.connection.maximum.lifespan";

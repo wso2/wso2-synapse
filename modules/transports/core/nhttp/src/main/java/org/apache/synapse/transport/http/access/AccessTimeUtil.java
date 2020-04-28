@@ -58,7 +58,7 @@ public class AccessTimeUtil {
      */
     public static String getTimeZone() {
         try {
-            int offset = TimeZone.getDefault().getRawOffset();
+            int offset = TimeZone.getDefault().getOffset(System.currentTimeMillis());
             return calculateTimeZoneOffset(offset);
         } catch (Exception e) {
             return "";
@@ -75,7 +75,7 @@ public class AccessTimeUtil {
         private SimpleDateFormat monthFormatter = new SimpleDateFormat("MM");
         private SimpleDateFormat yearFormatter = new SimpleDateFormat("yyyy");
 
-        private SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm:ss");
+        private SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm:ss.SSS");
 
         public AccessDateStruct() {
             TimeZone tz = TimeZone.getDefault();

@@ -58,9 +58,7 @@ public class TemplateSerializer {
         if (parent != null) {
             parent.addChild(templateElement);
         }
-
         CommentListUtil.serializeComments(templateElement, template.getCommentsList());
-
         return templateElement;
     }
 }

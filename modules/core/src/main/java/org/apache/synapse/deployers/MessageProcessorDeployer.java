@@ -23,7 +23,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.config.xml.MessageProcessorFactory;
 import org.apache.synapse.config.xml.MessageProcessorSerializer;
-import org.apache.synapse.config.xml.MessageStoreSerializer;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.processor.impl.AbstractMessageProcessor;
@@ -106,7 +105,7 @@ public class    MessageProcessorDeployer extends AbstractSynapseArtifactDeployer
             MessageProcessor existingMp = getSynapseConfiguration().getMessageProcessors().
                     get(existingArtifactName);
             if (existingMp instanceof AbstractMessageProcessor) {
-                ((AbstractMessageProcessor) existingMp).destroy(true);
+                ((AbstractMessageProcessor) existingMp).destroy(true, true);
             } else {
                 existingMp.destroy();
             }

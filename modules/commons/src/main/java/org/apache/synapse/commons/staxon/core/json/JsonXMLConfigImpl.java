@@ -39,6 +39,8 @@ public class JsonXMLConfigImpl implements JsonXMLConfig, Cloneable {
     private String customReplaceSequence = JsonXMLConfig.DEFAULT.getCustomReplaceSequence();
     private boolean readWriteXmlNil = JsonXMLConfig.DEFAULT.isReadWriteXmlNil();
     private boolean writeNullForEmptyElement = JsonXMLConfig.DEFAULT.isWriteNullForEmptyElements();
+    private boolean preserverNamespacesForJson = JsonXMLConfig.DEFAULT.isPreserverNamespacesForJson();
+    private boolean processNCNames = JsonXMLConfig.DEFAULT.isProcessNCNames();
 
     @Override
     protected JsonXMLConfigImpl clone() {
@@ -166,4 +168,21 @@ public class JsonXMLConfigImpl implements JsonXMLConfig, Cloneable {
         return writeNullForEmptyElement;
     }
 
+    @Override
+    public boolean isPreserverNamespacesForJson() {
+        return preserverNamespacesForJson;
+    }
+
+    public void setPreserverNamespacesForJson(boolean preserverNamespacesForJson) {
+        this.preserverNamespacesForJson = preserverNamespacesForJson;
+    }
+
+    @Override
+    public boolean isProcessNCNames() {
+        return processNCNames;
+    }
+
+    public void setProcessNCNames(boolean processNCNames) {
+        this.processNCNames = processNCNames;
+    }
 }

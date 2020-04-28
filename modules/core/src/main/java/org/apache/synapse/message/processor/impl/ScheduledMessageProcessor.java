@@ -18,11 +18,6 @@
  */
 package org.apache.synapse.message.processor.impl;
 
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.Callable;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
@@ -41,6 +36,11 @@ import org.apache.synapse.task.Task;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskManager;
 import org.apache.synapse.task.TaskManagerObserver;
+
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.Callable;
 
 
 /**
@@ -90,6 +90,8 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	private static final String MP_STATE = "MESSAGE_PROCESSOR_STATE";
 
     private static final String TASK_PREFIX = "MSMP_";
+
+	private static final String SYMBOL_UNDERSCORE = "_";
 
     private static final String DEFAULT_TASK_SUFFIX = "0";
 
@@ -165,7 +167,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 			 */
 			task = this.getTask();
 			TaskDescription taskDescription = new TaskDescription();
-			taskDescription.setName(TASK_PREFIX + name + i);
+			taskDescription.setName(TASK_PREFIX + name + SYMBOL_UNDERSCORE + i);
 			taskDescription.setTaskGroup(MessageProcessorConstants.SCHEDULED_MESSAGE_PROCESSOR_GROUP);
 			/*
 			 * If this interval value is less than 1000 ms, ntask will throw an
@@ -208,7 +210,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
     @Override
     public boolean isDeactivated() {
-		return taskManager.isTaskDeactivated(TASK_PREFIX + name +
+		return taskManager.isTaskDeactivated(TASK_PREFIX + name + SYMBOL_UNDERSCORE +
 		                                                           DEFAULT_TASK_SUFFIX);
 	}
 
@@ -266,9 +268,9 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 				 * This is to immediately stop the scheduler to avoid firing new
 				 * services
 				 */
-				if (taskManager.isTaskExist(TASK_PREFIX + name + i) &&
-						taskManager.isTaskRunning(TASK_PREFIX + name + i)) {
-					taskManager.pause(TASK_PREFIX + name + i);
+				if (taskManager.isTaskExist(TASK_PREFIX + name + SYMBOL_UNDERSCORE + i) &&
+						taskManager.isTaskRunning(TASK_PREFIX + name + SYMBOL_UNDERSCORE + i)) {
+					taskManager.pause(TASK_PREFIX + name + SYMBOL_UNDERSCORE + i);
 				}
 				if (logger.isDebugEnabled()) {
 					logger.debug("ShuttingDown Message Processor Scheduler : " +
@@ -280,7 +282,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 				 * Otherwise a default group is assigned by the ntask task
 				 * manager.
 				 */
-				taskManager.delete(TASK_PREFIX + name + i + "::" +
+				taskManager.delete(TASK_PREFIX + name + SYMBOL_UNDERSCORE + i + "::" +
 						MessageProcessorConstants.SCHEDULED_MESSAGE_PROCESSOR_GROUP);
 				//even the task is existed or not at Task REPO we need to clear the NTaskAdaptor
 				//synapseTaskProperties map which holds taskName and TASK Instance for expired TASK at undeployment.
@@ -308,10 +310,21 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
 	@Override
 	public void destroy(boolean preserveState) {
+		destroy(preserveState, false);
+	}
+
+	@Override
+	public void destroy(boolean preserveState , boolean isArtifactUpdate) {
 
 		if (!preserveState) {
-			stop();
 			deleteMessageProcessorState();
+		}
+		if (isArtifactUpdate || !preserveState) {
+			/*
+			 * All the tasks need to be stopped during artifact update and re deployed so that the changes in member
+			 * count is captured.
+			 */
+			stop();
 		}
 		/*
 		 * If the Task is scheduled with an interval value < 1000 ms, it is
@@ -413,14 +426,14 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		    ((FailoverForwardingService) task).terminate();
 	    }
 		for (int i = 0; i < memberCount; i++) {
-			taskManager.pause(TASK_PREFIX + name + i);
+			taskManager.pause(TASK_PREFIX + name + SYMBOL_UNDERSCORE + i);
 		}
 	}
 
     @Override
     public void resumeService() {
 		for (int i = 0; i < memberCount; i++) {
-			taskManager.resume(TASK_PREFIX + name + i);
+			taskManager.resume(TASK_PREFIX + name + SYMBOL_UNDERSCORE + i);
 		}
 	}
 
@@ -435,17 +448,17 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
          * though the task is blocked from Quartz, still we are executing it. So
          * that implies it is running.
          */
-        return taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX) ||
-               taskManager.isTaskBlocked(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+        return taskManager.isTaskRunning(TASK_PREFIX + name + SYMBOL_UNDERSCORE + DEFAULT_TASK_SUFFIX) ||
+               taskManager.isTaskBlocked(TASK_PREFIX + name + SYMBOL_UNDERSCORE + DEFAULT_TASK_SUFFIX);
 	}
 
     @Override
     public boolean isPaused() {
-		return taskManager.isTaskDeactivated(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+		return taskManager.isTaskDeactivated(TASK_PREFIX + name + SYMBOL_UNDERSCORE + DEFAULT_TASK_SUFFIX);
 	}
 
 	public boolean getActivated() {
-		return taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+		return taskManager.isTaskRunning(TASK_PREFIX + name + SYMBOL_UNDERSCORE + DEFAULT_TASK_SUFFIX);
 	}
 
 	private void setActivated(boolean activated) {
@@ -499,17 +512,21 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
     @Override
     public void update() {
-	    String[] tasksInRegistry = taskManager.getTaskNames();
-	    int taskCountInRegistry = 0;
-	    for (String taskName : tasksInRegistry) {
-		    if (taskName.contains(TASK_PREFIX + name)) {
-			    taskCountInRegistry++;
-		    }
-	    }
-	    if (taskCountInRegistry > memberCount) {
-		    this.stopTasks(taskCountInRegistry);
-	    }
-	    start();
+        String[] tasksInRegistry = taskManager.getTaskNames();
+        int taskCountInRegistry = 0;
+        for (String taskName : tasksInRegistry) {
+            //filters only the message processor tasks since the member count is not relevant for others
+            if (taskName.startsWith(TASK_PREFIX)) {
+                String task = taskName.substring(0, taskName.lastIndexOf(SYMBOL_UNDERSCORE));
+                if (task.equals(TASK_PREFIX + name)) {
+                    taskCountInRegistry++;
+                }
+            }
+        }
+        if (taskCountInRegistry > memberCount) {
+            this.stopTasks(taskCountInRegistry);
+        }
+        start();
     }
 
     @Override

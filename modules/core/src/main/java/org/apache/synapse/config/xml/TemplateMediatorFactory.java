@@ -70,7 +70,6 @@ public class TemplateMediatorFactory extends AbstractListMediatorFactory {
         if (onErrorAttr != null) {
             templateTemplateMediator.setErrorHandler(onErrorAttr.getAttributeValue());
         }
-
         CommentListUtil.populateComments(elem, templateTemplateMediator.getCommentsList());
         return templateTemplateMediator;
     }

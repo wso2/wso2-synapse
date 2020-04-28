@@ -151,6 +151,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         ((Axis2MessageContext) synCtx).setServiceLog(serviceLog);
 
         synCtx.setProperty(SynapseConstants.PROXY_SERVICE, name);
+        synCtx.setProperty(SynapseConstants.ARTIFACT_NAME, SynapseConstants.PROXY_SERVICE_TYPE + name);
 //        synCtx.setTracingState(proxy.getTraceState());
 
         synCtx.setProperty(SynapseConstants.IS_CLIENT_DOING_REST, mc.isDoingREST());

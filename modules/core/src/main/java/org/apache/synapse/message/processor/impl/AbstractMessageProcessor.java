@@ -19,10 +19,6 @@
 
 package org.apache.synapse.message.processor.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
@@ -30,6 +26,10 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.processor.MessageProcessor;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Class <code>AbstractMessageProcessor</code> is handles Message processing of the messages
@@ -189,4 +189,13 @@ public abstract class AbstractMessageProcessor implements MessageProcessor {
      * @param preserveState determine whether to preserve the artifacts state or not
      */
     public void destroy(boolean preserveState){}
+
+    /**
+     * Destroy the artifacts.
+     *
+     * @param preserveState whether to preserve state in registry.
+     * @param isUpdate      whether this is triggered in artifact update flow.
+     */
+    public void destroy(boolean preserveState, boolean isUpdate) {
+    }
 }

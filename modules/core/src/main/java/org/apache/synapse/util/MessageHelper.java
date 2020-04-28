@@ -80,7 +80,7 @@ public class MessageHelper {
     }
 
     /**
-     * This method is similar to {@link MessageHelper#cloneMessageContext(MessageContext, boolean, boolean, boolean)}
+     * This method is similar to {@link MessageHelper#cloneMessageContext(MessageContext, boolean, boolean, boolean, boolean)}
      * In order to refactor the code, new method signature was created and this method calls the new method
      *
      * @param synCtx Synapse MessageContext which has to be cloned
@@ -92,7 +92,24 @@ public class MessageHelper {
      */
     public static MessageContext cloneMessageContext(MessageContext synCtx, boolean cloneSoapEnvelope,
                                                      boolean isCloneJson) throws AxisFault {
-        return cloneMessageContext(synCtx, cloneSoapEnvelope, isCloneJson, false);
+        return cloneMessageContext(synCtx, cloneSoapEnvelope, isCloneJson, false, true);
+    }
+
+    /**
+     * This method is similar to {@link MessageHelper#cloneMessageContext(MessageContext, boolean, boolean, boolean, boolean)}
+     * other than always generating seperate correlation ids for the cloned message contexts
+     *
+     * @param synCtx Synapse MessageContext which has to be cloned
+     * @param cloneSoapEnvelope The flag to say whether to clone the SOAP envelope or not.
+     * @param isCloneJson The flag to say whether to clone the JSON payload or not.
+     * @param isAggregate whether this method is called inside aggregate mediator
+     * @return cloned Synapse MessageContext.
+     * @throws AxisFault if there is a failure in creating the new Synapse MC or in a failure in
+     *                  cloning the underlying axis2 MessageContext.
+     */
+    public static MessageContext cloneMessageContext(MessageContext synCtx, boolean cloneSoapEnvelope,
+                                                     boolean isCloneJson, boolean isAggregate) throws AxisFault {
+        return cloneMessageContext(synCtx, cloneSoapEnvelope, isCloneJson, isAggregate, true);
     }
 
     /**
@@ -105,13 +122,14 @@ public class MessageHelper {
      * @param cloneSoapEnvelope whether to clone the soap envelope.
      * @param isCloneJson whether to clone the JSON payload.
      * @param isAggregate whether this method is called inside aggregate mediator
+     * @param isCloneCorrelationId whether to generate correlation id for the cloned message
      * @return cloned Synapse MessageContext.
      * @throws AxisFault if there is a failure in creating the new Synapse MC or in a failure in
      *                   clonning the underlying axis2 MessageContext.
      * @see MessageHelper#cloneAxis2MessageContext
      */
     public static MessageContext cloneMessageContext(MessageContext synCtx, boolean cloneSoapEnvelope,
-                                                     boolean isCloneJson, boolean isAggregate) throws AxisFault {
+                                                     boolean isCloneJson, boolean isAggregate, boolean isCloneCorrelationId) throws AxisFault {
 
         // creates the new MessageContext and clone the internal axis2 MessageContext
         // inside the synapse message context and place that in the new one
@@ -129,7 +147,7 @@ public class MessageHelper {
         org.apache.axis2.context.MessageContext originalAxis2Ctx =
                 ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         if (originalAxis2Ctx.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)
-                && originalAxis2Ctx.getProperty(PassThroughConstants.CORRELATION_ID) != null) {
+                && originalAxis2Ctx.getProperty(PassThroughConstants.CORRELATION_ID) != null  && isCloneCorrelationId) {
             String originalCorrelationId = originalAxis2Ctx.getProperty(PassThroughConstants.CORRELATION_ID).toString();
             axis2MC.getAxis2MessageContext().setProperty(PassThroughConstants.CORRELATION_ID, originalCorrelationId
                     + "_" + UUID.randomUUID().toString());
@@ -247,7 +265,7 @@ public class MessageHelper {
 
     /**
      * In an effort to refactor the code, this method is deprecated.
-     * Use {@link #cloneMessageContext(MessageContext, boolean, boolean, boolean)}
+     * Use {@link #cloneMessageContext(MessageContext, boolean, boolean, boolean, boolean)}
      * with the isAggregate flag set to true
      * @param synCtx Synapse message context to be cloned.
      * @return The cloned Synapse Message Context.
@@ -255,7 +273,7 @@ public class MessageHelper {
      */
     @Deprecated
     public static MessageContext cloneMessageContextForAggregateMediator(MessageContext synCtx) throws AxisFault {
-        return cloneMessageContext(synCtx, true, false, true);
+        return cloneMessageContext(synCtx, true, false, true, true);
     }
 
     /**
@@ -330,7 +348,7 @@ public class MessageHelper {
     }
 
     /**
-     * This method is similar to {@link MessageHelper#cloneMessageContext(MessageContext, boolean, boolean, boolean)}
+     * This method is similar to {@link MessageHelper#cloneMessageContext(MessageContext, boolean, boolean, boolean, boolean)}
      * In order to refactor the code, new method signature was created and this method calls the new method
      *
      * @param mc Axis2 message context
@@ -404,11 +422,7 @@ public class MessageHelper {
 
         newMC.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
             getClonedTransportHeaders(mc));
-
-        if (newMC.getProperty(PassThroughConstants.PASS_THROUGH_PIPE) != null) {
-            newMC.removeProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-        }
-
+        newMC.removeProperty(PassThroughConstants.PASS_THROUGH_PIPE);
         return newMC;
     }
 

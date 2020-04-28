@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -198,7 +198,7 @@ class SynapseTestcaseDataReader {
 
             //Read artifact name from descriptor data
             String supportiveArtifactNameOrKey;
-            if (testArtifactType.equals(TYPE_LOCAL_ENTRY)) {
+            if (supportiveArtifactType.equals(TYPE_LOCAL_ENTRY)) {
                 supportiveArtifactNameOrKey
                         = artifact.getFirstElement().getAttributeValue(new QName(ARTIFACT_KEY_ATTRIBUTE));
             } else {
@@ -252,7 +252,7 @@ class SynapseTestcaseDataReader {
             registryResource.setRegistryPath(resourcePath);
             registryResource.setMediaType(resourceMediaType);
 
-            String registryKey = resourcePath + File.separator + resourceName;
+            String registryKey = resourcePath + Constants.BACK_SLASH + resourceName;
             artifactDataHolder.addRegistryResource(registryKey, registryResource);
         }
 

@@ -41,6 +41,7 @@ import org.apache.synapse.debug.constructs.EnclosedInlinedSequence;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.commons.throttle.core.AccessRateController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
@@ -347,6 +348,15 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
             domainName = (xForwardHost != null) ? xForwardHost : domainName;
         }
 
+        // Using a unique key to identify each api, proxy and inbound endpoint
+        String uniqueKey;
+        Object artifactName = synCtx.getProperty(SynapseConstants.ARTIFACT_NAME);
+        if (artifactName != null && !artifactName.toString().isEmpty()) {
+            uniqueKey = id + synCtx.getProperty(SynapseConstants.ARTIFACT_NAME);
+        } else {
+            uniqueKey = id;
+        }
+
         //Using remote caller domain name , If there is a throttle configuration for
         // this domain name ,then throttling will occur according to that configuration
         if (domainName != null) {
@@ -367,13 +377,13 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                         //If this is a clustered env.
                         if (isClusteringEnable) {
                             context.setConfigurationContext(cc);
-                            context.setThrottleId(id);
+                            context.setThrottleId(uniqueKey + callerId);
                         }
 
                         try {
                             //Checks for access state
                             AccessInformation accessInformation = accessControler.canAccess(context,
-                                    callerId, ThrottleConstants.DOMAIN_BASE);
+                                    uniqueKey + callerId, ThrottleConstants.DOMAIN_BASE);
                             canAccess = accessInformation.isAccessAllowed();
 
                             if (synLog.isTraceOrDebugEnabled()) {
@@ -431,13 +441,13 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                                 //For clustered env.
                                 if (isClusteringEnable) {
                                     context.setConfigurationContext(cc);
-                                    context.setThrottleId(id);
+                                    context.setThrottleId(uniqueKey + callerId);
                                 }
 
                                 //Checks access state
                                 AccessInformation accessInformation = accessControler.canAccess(
                                         context,
-                                        callerId,
+                                        uniqueKey + callerId,
                                         ThrottleConstants.IP_BASE);
 
                                 canAccess = accessInformation.isAccessAllowed();
@@ -446,10 +456,10 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                                             (canAccess ? "allowed" : "denied")
                                             + " for IP : " + remoteIP);
                                 }
-                                //In the case of both of concurrency throttling and
-                                //rate based throttling have enabled ,
-                                //if the access rate less than maximum concurrent access ,
-                                //then it is possible to occur death situation.To avoid that reset,
+                                //In the case of both concurrency throttling and
+                                //rate based throttling are enabled,
+                                //if the access rate is less than maximum concurrent access,
+                                //then it is possible that occur death situation. To avoid that reset,
                                 //if the access has denied by rate based throttling
                                 if (!canAccess && concurrentAccessController != null) {
                                     concurrentAccessController.incrementAndGet();

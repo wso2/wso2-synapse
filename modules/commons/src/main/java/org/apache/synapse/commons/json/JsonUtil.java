@@ -86,162 +86,265 @@ public final class JsonUtil {
 
     private static boolean isJsonToXmlPiEnabled = false;
 
-    private static boolean preserverNamespacesForJson = false;
-
-    private static final boolean processNCNames;
-
-    private static final boolean jsonOutAutoPrimitive;
-
-    private static final char jsonOutNamespaceSepChar;
-
-    private static final boolean jsonOutEnableNsDeclarations;
-
-    private static final String jsonoutcustomRegex;
-
-    private static final boolean jsonoutAutoArray;
-
-    private static final boolean jsonoutMultiplePI;
-
-    private static final boolean xmloutAutoArray;
-
-    private static final boolean xmloutMultiplePI;
-
-    private static final String jsonoutCustomReplaceRegex;
-
-    private static final String jsonoutCustomReplaceSequence;
-
-    private static final boolean xmlNilReadWriteEnabled;
-
-    private static final boolean xmlWriteNullForEmptyElements;
-
-    static {
-        Properties properties = MiscellaneousUtil.loadProperties("synapse.properties");
-        if (properties == null) {
-            preserverNamespacesForJson = processNCNames = jsonOutEnableNsDeclarations = false;
-            jsonOutAutoPrimitive = true;
-            jsonOutNamespaceSepChar = '_';
-            jsonoutcustomRegex=null;
-            jsonoutCustomReplaceRegex = null;
-            jsonoutCustomReplaceSequence = "";
-            jsonoutAutoArray = true;
-            jsonoutMultiplePI = false;
-            xmloutAutoArray = true;
-            xmloutMultiplePI = false;
-            xmlNilReadWriteEnabled = false;
-            xmlWriteNullForEmptyElements = true;
-        } else {
-            // Preserve the namespace declarations() in the JSON output in the XML -> JSON transformation.
-            String process = properties.getProperty(Constants.SYNAPSE_COMMONS_JSON_PRESERVE_NAMESPACE, "false").trim();
-            preserverNamespacesForJson = Boolean.parseBoolean(process.toLowerCase());
-            // Build valid XML NCNames when building XML element names in the JSON -> XML transformation.
-            process = properties.getProperty(Constants.SYNAPSE_COMMONS_JSON_BUILD_VALID_NC_NAMES, "false").trim();
-            processNCNames = Boolean.parseBoolean(process.toLowerCase());
-            // Enable primitive types in json out put in the XML -> JSON transformation.
-            process = properties.getProperty(Constants.SYNAPSE_COMMONS_JSON_OUTPUT_AUTO_PRIMITIVE, "true").trim();
-            jsonOutAutoPrimitive = Boolean.parseBoolean(process.toLowerCase());
-            // The namespace prefix separate character in the JSON output of the XML -> JSON transformation
-            process = properties.getProperty(Constants.SYNAPSE_COMMONS_JSON_OUTPUT_NAMESPACE_SEP_CHAR, "_").trim();
-            jsonOutNamespaceSepChar = process.charAt(0);
-            // Add XML namespace declarations in the JSON output in the XML -> JSON transformation.
-            process = properties.getProperty(Constants.SYNAPSE_COMMONS_JSON_OUTPUT_ENABLE_NS_DECLARATIONS,
-                    "false").trim();
-            jsonOutEnableNsDeclarations = Boolean.parseBoolean(process.toLowerCase());
-            jsonoutCustomReplaceRegex = properties
-                    .getProperty("synapse.commons.json.json.output.disableAutoPrimitive.customReplaceRegex", null);
-            jsonoutCustomReplaceSequence = properties
-                    .getProperty("synapse.commons.json.json.output.disableAutoPrimitive.customReplaceSequence", "");
-            jsonoutcustomRegex = properties.getProperty
-                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_DISABLE_AUTO_PRIMITIVE_REGEX, null);
-
-            jsonoutAutoArray = Boolean.parseBoolean(properties.getProperty
-                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_JSON_OUT_AUTO_ARRAY, "true"));
-
-            jsonoutMultiplePI = Boolean.parseBoolean(properties.getProperty
-                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_JSON_OUT_MULTIPLE_PI, "true"));
-
-            xmloutAutoArray = Boolean.parseBoolean(properties.getProperty
-                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_XML_OUT_AUTO_ARRAY, "true"));
-
-            xmloutMultiplePI = Boolean.parseBoolean(properties.getProperty
-                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_XML_OUT_MULTIPLE_PI, "false"));
-
-            process = properties.getProperty
-                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_EMPTY_XML_ELEM_TO_EMPTY_STR, "true").trim();
-
-            isJsonToXmlPiEnabled = Boolean.parseBoolean(
-                    properties.getProperty(Constants.SYNAPSE_JSON_TO_XML_PROCESS_INSTRUCTION_ENABLE, "false").trim());
-
-            xmlNilReadWriteEnabled = Boolean
-                    .parseBoolean(properties.getProperty("synapse.commons.enableXmlNilReadWrite", "false"));
-
-            // Used in XML->JSON conversion. Decides whether to set null or "" for an empty XML element w/o nil attrib
-            xmlWriteNullForEmptyElements = Boolean.parseBoolean(
-                    properties.getProperty("synapse.commons.enableXmlNullForEmptyElement", "true"));
-
-        }
-    }
-
-    /**
-     * Configuration used to produce XML that has processing instructions in it.
-     */
-    private static final JsonXMLConfig xmlOutputConfig = new JsonXMLConfigBuilder()
-            .multiplePI(true)
-            .autoArray(true)
-            .autoPrimitive(true)
-            .namespaceDeclarations(false)
-            .namespaceSeparator('\u0D89')
-            .customRegex(jsonoutcustomRegex)
-            .readWriteXmlNil(xmlNilReadWriteEnabled)
-            .build();
-
-    /**
-     * Configuration used to produce XML that has no processing instructions in it.
-     */
-    private static final JsonXMLConfig xmlOutputConfigNoPIs = new JsonXMLConfigBuilder()
-            .multiplePI(xmloutMultiplePI)
-            .autoArray(xmloutAutoArray)
-            .autoPrimitive(true)
-            .namespaceDeclarations(false)
-            .namespaceSeparator('\u0D89')
-            .readWriteXmlNil(xmlNilReadWriteEnabled)
-            .build();
-
-    /**
-     * This configuration is used to format the JSON output produced by the JSON writer.
-     */
-    private static final JsonXMLConfig jsonOutputConfig = new JsonXMLConfigBuilder()
-            .multiplePI(jsonoutMultiplePI)
-            .autoArray(jsonoutAutoArray)
-            .autoPrimitive(jsonOutAutoPrimitive)
-            .namespaceDeclarations(jsonOutEnableNsDeclarations)
-            .namespaceSeparator(jsonOutNamespaceSepChar)
-            .customReplaceRegex(jsonoutCustomReplaceRegex)
-            .customReplaceSequence(jsonoutCustomReplaceSequence)
-            .customRegex(jsonoutcustomRegex)
-            .readWriteXmlNil(xmlNilReadWriteEnabled)
-            .writeNullForEmptyElement(xmlWriteNullForEmptyElements)
-            .build();
-    /// End of JSON/XML INPUT OUTPUT Formatting Configuration.
-
-    /**
-     * Factory used to create JSON Readers
-     */
-    private static final JsonXMLInputFactory jsonInputFactory = new JsonXMLInputFactory(xmlOutputConfig);
-
-    /**
-     * Factory used to create JSON Readers
-     */
-    private static final JsonXMLInputFactory xmlInputFactoryNoPIs = new JsonXMLInputFactory(xmlOutputConfigNoPIs);
-
     /**
      * Factory used to create JSON Writers
      */
-    private static final JsonXMLOutputFactory jsonOutputFactory = new JsonXMLOutputFactory(jsonOutputConfig);
+    private static final JsonXMLOutputFactory jsonOutputFactory;
+
+    /**
+     * Factory used to create JSON Readers
+     */
+    private static final JsonXMLInputFactory jsonInputFactory;
+
+    /**
+     * Factory used to create JSON Readers
+     */
+    private static final JsonXMLInputFactory xmlInputFactoryNoPIs;
 
     /**
      * Factory used to create XML Readers
      */
     private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+
+    static {
+        Properties properties = MiscellaneousUtil.loadProperties("synapse.properties");
+        isJsonToXmlPiEnabled = Boolean.parseBoolean(
+                properties.getProperty(Constants.SYNAPSE_JSON_TO_XML_PROCESS_INSTRUCTION_ENABLE, "false").trim());
+        jsonOutputFactory = generateJSONOutputFactory(properties);
+        jsonInputFactory = generateJSONInputFactory(properties);
+        xmlInputFactoryNoPIs = generateJsonXMLInputFactory(properties);
+    }
+
+    /**
+     * Generate factory that is used to create JSON Readers.
+     * It uses Configuration that is used to produce XML that has no processing instructions in it.
+     *
+     * @param props Properties that are loaded
+     * @return JsonXMLOutputFactory that is used create JSON Readers
+     */
+    public static JsonXMLInputFactory generateJsonXMLInputFactory(Properties props) {
+        boolean xmloutMultiplePI;
+        boolean xmloutAutoArray;
+        boolean xmlNilReadWriteEnabled;
+        if (props == null) {
+            xmloutMultiplePI = false;
+            xmloutAutoArray = true;
+            xmlNilReadWriteEnabled = false;
+        } else {
+            xmloutMultiplePI = Boolean.parseBoolean(props.getProperty
+                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_XML_OUT_MULTIPLE_PI, "false"));
+            xmloutAutoArray = Boolean.parseBoolean(props.getProperty
+                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_XML_OUT_AUTO_ARRAY, "true"));
+            xmlNilReadWriteEnabled = Boolean
+                    .parseBoolean(props.getProperty(Constants.SYNAPSE_COMMONS_ENABLE_XML_NIL_READ_WRITE, "false"));
+        }
+
+        //Configuration used to produce XML that has no processing instructions in it.
+        JsonXMLConfig xmlOutputConfigNoPIs = new JsonXMLConfigBuilder()
+                .multiplePI(xmloutMultiplePI)
+                .autoArray(xmloutAutoArray)
+                .autoPrimitive(true)
+                .namespaceDeclarations(false)
+                .namespaceSeparator('\u0D89')
+                .readWriteXmlNil(xmlNilReadWriteEnabled)
+                .build();
+
+        return new JsonXMLInputFactory(xmlOutputConfigNoPIs);
+    }
+
+    /**
+     * Generate factory that is used to create JSON Readers
+     * It uses Configuration that is used to produce XML that has processing instructions in it.
+     *
+     * @param props Properties that are loaded
+     * @return JsonXMLOutputFactory that is used create JSON Readers
+     */
+    public static JsonXMLInputFactory generateJSONInputFactory(Properties props) {
+        String jsonoutcustomRegex;
+        boolean xmlNilReadWriteEnabled;
+        if (props == null) {
+            jsonoutcustomRegex = null;
+            xmlNilReadWriteEnabled = false;
+        } else {
+            jsonoutcustomRegex = props.getProperty
+                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_DISABLE_AUTO_PRIMITIVE_REGEX, null);
+            xmlNilReadWriteEnabled = Boolean
+                    .parseBoolean(props.getProperty(Constants.SYNAPSE_COMMONS_ENABLE_XML_NIL_READ_WRITE, "false"));
+        }
+
+        //Configuration used to produce XML that has processing instructions in it.
+        JsonXMLConfig xmlOutputConfig = new JsonXMLConfigBuilder()
+                .multiplePI(true)
+                .autoArray(true)
+                .autoPrimitive(true)
+                .namespaceDeclarations(false)
+                .namespaceSeparator('\u0D89')
+                .customRegex(jsonoutcustomRegex)
+                .readWriteXmlNil(xmlNilReadWriteEnabled)
+                .build();
+
+        return new JsonXMLInputFactory(xmlOutputConfig);
+    }
+
+    /**
+     * Generate factory that is used to create JSON Writers
+     * It uses configuration that is used to format the JSON output produced by the JSON writer.
+     *
+     * @param props Properties that are loaded
+     * @return JsonXMLOutputFactory that is used to create JSON Writers
+     */
+    public static JsonXMLOutputFactory generateJSONOutputFactory(Properties props) {
+        boolean jsonoutMultiplePI;
+        boolean jsonoutAutoArray;
+        boolean jsonOutAutoPrimitive;
+        boolean jsonOutEnableNsDeclarations;
+        char jsonOutNamespaceSepChar;
+        String jsonoutCustomReplaceRegex;
+        String jsonoutCustomReplaceSequence;
+        String jsonoutcustomRegex;
+        boolean xmlNilReadWriteEnabled;
+        boolean xmlWriteNullForEmptyElements;
+        boolean preserverNamespacesForJson;
+        boolean processNCNames;
+
+        if (props == null) {
+            preserverNamespacesForJson = false;
+            jsonoutMultiplePI = true;
+            jsonoutAutoArray = true;
+            jsonOutAutoPrimitive = true;
+            jsonOutEnableNsDeclarations = false;
+            jsonOutNamespaceSepChar = '_';
+            jsonoutCustomReplaceRegex = null;
+            jsonoutCustomReplaceSequence = "";
+            jsonoutcustomRegex = null;
+            xmlNilReadWriteEnabled = false;
+            xmlWriteNullForEmptyElements = true;
+            processNCNames = false;
+        } else {
+            preserverNamespacesForJson = Boolean.parseBoolean(props.getProperty
+                    (Constants.SYNAPSE_COMMONS_JSON_PRESERVE_NAMESPACE, "false").trim().toLowerCase());
+            jsonoutMultiplePI = Boolean.parseBoolean(props.getProperty
+                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_JSON_OUT_MULTIPLE_PI, "true"));
+            jsonoutAutoArray = Boolean.parseBoolean(props.getProperty
+                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_JSON_OUT_AUTO_ARRAY, "true"));
+            jsonOutAutoPrimitive = Boolean.parseBoolean(props.getProperty
+                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_AUTO_PRIMITIVE, "true").trim().toLowerCase());
+            jsonOutEnableNsDeclarations = Boolean.parseBoolean(props.getProperty
+                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_ENABLE_NS_DECLARATIONS,
+                            "false").trim().toLowerCase());
+            jsonOutNamespaceSepChar = props.getProperty
+                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_NAMESPACE_SEP_CHAR, "_").trim().charAt(0);
+            jsonoutCustomReplaceRegex = props
+                    .getProperty(Constants.SYNAPSE_COMMONS_JSON_DISABLE_AUTO_PRIMITIVE_CUSTOM_REPLACE_REGEX, null);
+            jsonoutCustomReplaceSequence = props
+                    .getProperty(Constants.SYNAPSE_COMMONS_JSON_DISABLE_AUTO_PRIMITIVE_CUSTOM_REPLACE_SEQUENCE, "");
+            jsonoutcustomRegex = props.getProperty
+                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_DISABLE_AUTO_PRIMITIVE_REGEX, null);
+            xmlNilReadWriteEnabled = Boolean
+                    .parseBoolean(props.getProperty(Constants.SYNAPSE_COMMONS_ENABLE_XML_NIL_READ_WRITE, "false"));
+            xmlWriteNullForEmptyElements = Boolean.parseBoolean(
+                    props.getProperty(Constants.SYNAPSE_COMMONS_ENABLE_XML_NULL_FOR_EMPTY_ELEMENT, "true"));
+            processNCNames = Boolean.parseBoolean(props.getProperty(
+                    Constants.SYNAPSE_COMMONS_JSON_BUILD_VALID_NC_NAMES, "false").trim().toLowerCase());
+        }
+
+        //This configuration is used to format the JSON output produced by the JSON writer.
+        JsonXMLConfig jsonOutputConfig = new JsonXMLConfigBuilder()
+                .multiplePI(jsonoutMultiplePI)
+                .autoArray(jsonoutAutoArray)
+                .autoPrimitive(jsonOutAutoPrimitive)
+                .namespaceDeclarations(jsonOutEnableNsDeclarations)
+                .namespaceSeparator(jsonOutNamespaceSepChar)
+                .customReplaceRegex(jsonoutCustomReplaceRegex)
+                .customReplaceSequence(jsonoutCustomReplaceSequence)
+                .customRegex(jsonoutcustomRegex)
+                .readWriteXmlNil(xmlNilReadWriteEnabled)
+                .writeNullForEmptyElement(xmlWriteNullForEmptyElements)
+                .preserverNamespacesForJson(preserverNamespacesForJson)
+                .processNCNames(processNCNames)
+                .build();
+
+        return new JsonXMLOutputFactory(jsonOutputConfig);
+    }
+
+    /**
+     * Generate factory that is used to create JSON Writers
+     * This is will override the global configration
+     *
+     * @param props Properties that are loaded
+     * @return JsonXMLOutputFactory that is used to create JSON Writers
+     */
+    public static JsonXMLOutputFactory generateJSONOutputFactoryWithOveride(Properties props) {
+
+        boolean jsonoutMultiplePI;
+        boolean jsonoutAutoArray;
+        boolean jsonOutAutoPrimitive;
+        boolean jsonOutEnableNsDeclarations;
+        char jsonOutNamespaceSepChar;
+        String jsonoutCustomReplaceRegex;
+        String jsonoutCustomReplaceSequence;
+        String jsonoutcustomRegex;
+        boolean xmlNilReadWriteEnabled;
+        boolean xmlWriteNullForEmptyElements;
+        boolean preserverNamespacesForJson;
+        boolean processNCNames;
+
+        preserverNamespacesForJson = Boolean.parseBoolean(props.getProperty
+                (Constants.SYNAPSE_COMMONS_JSON_PRESERVE_NAMESPACE,
+                        Boolean.toString(jsonOutputFactory.getConfig().isPreserverNamespacesForJson())));
+        jsonoutMultiplePI = Boolean.parseBoolean(props.getProperty
+                (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_JSON_OUT_MULTIPLE_PI,
+                        Boolean.toString(jsonOutputFactory.getConfig().isMultiplePI())));
+        jsonoutAutoArray = Boolean.parseBoolean(props.getProperty
+                (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_JSON_OUT_AUTO_ARRAY,
+                        Boolean.toString(jsonOutputFactory.getConfig().isAutoArray())));
+        jsonOutAutoPrimitive = Boolean.parseBoolean(props.getProperty
+                (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_AUTO_PRIMITIVE,
+                        Boolean.toString(jsonOutputFactory.getConfig().isAutoPrimitive())).trim().toLowerCase());
+        jsonOutEnableNsDeclarations = Boolean.parseBoolean(props.getProperty
+                (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_ENABLE_NS_DECLARATIONS,
+                        Boolean.toString(jsonOutputFactory.getConfig()
+                                .isNamespaceDeclarations())).trim().toLowerCase());
+        jsonOutNamespaceSepChar = props.getProperty
+                (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_NAMESPACE_SEP_CHAR,
+                        Character.toString(jsonOutputFactory.getConfig().getNamespaceSeparator())).trim().charAt(0);
+        jsonoutCustomReplaceRegex = props
+                .getProperty(Constants.SYNAPSE_COMMONS_JSON_DISABLE_AUTO_PRIMITIVE_CUSTOM_REPLACE_REGEX,
+                        jsonOutputFactory.getConfig().getCustomReplaceRegex());
+        jsonoutCustomReplaceSequence = props
+                .getProperty(Constants.SYNAPSE_COMMONS_JSON_DISABLE_AUTO_PRIMITIVE_CUSTOM_REPLACE_SEQUENCE,
+                        jsonOutputFactory.getConfig().getCustomReplaceSequence());
+        jsonoutcustomRegex = props.getProperty
+                (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_DISABLE_AUTO_PRIMITIVE_REGEX,
+                        jsonOutputFactory.getConfig().getCustomRegex());
+        xmlNilReadWriteEnabled = Boolean
+                .parseBoolean(props.getProperty(Constants.SYNAPSE_COMMONS_ENABLE_XML_NIL_READ_WRITE,
+                        Boolean.toString(jsonOutputFactory.getConfig().isReadWriteXmlNil())));
+        xmlWriteNullForEmptyElements = Boolean.parseBoolean(
+                props.getProperty(Constants.SYNAPSE_COMMONS_ENABLE_XML_NULL_FOR_EMPTY_ELEMENT,
+                        Boolean.toString(jsonOutputFactory.getConfig().isWriteNullForEmptyElements())));
+        processNCNames = Boolean.parseBoolean(props.getProperty(
+                Constants.SYNAPSE_COMMONS_JSON_BUILD_VALID_NC_NAMES,
+                Boolean.toString(jsonOutputFactory.getConfig().isProcessNCNames())).trim().toLowerCase());
+
+        //This configuration is used to format the JSON output produced by the JSON writer.
+        JsonXMLConfig jsonOutputConfig = new JsonXMLConfigBuilder()
+                .multiplePI(jsonoutMultiplePI)
+                .autoArray(jsonoutAutoArray)
+                .autoPrimitive(jsonOutAutoPrimitive)
+                .namespaceDeclarations(jsonOutEnableNsDeclarations)
+                .namespaceSeparator(jsonOutNamespaceSepChar)
+                .customReplaceRegex(jsonoutCustomReplaceRegex)
+                .customReplaceSequence(jsonoutCustomReplaceSequence)
+                .customRegex(jsonoutcustomRegex)
+                .readWriteXmlNil(xmlNilReadWriteEnabled)
+                .writeNullForEmptyElement(xmlWriteNullForEmptyElements)
+                .preserverNamespacesForJson(preserverNamespacesForJson)
+                .processNCNames(processNCNames)
+                .build();
+
+        return new JsonXMLOutputFactory(jsonOutputConfig);
+    }
 
     /**
      * Converts the XML payload of a message context into its JSON representation and writes it to an output stream.<br/>
@@ -287,7 +390,7 @@ public final class JsonUtil {
                 throw new AxisFault("Could not write JSON stream.", e);
             }
         } else if (element != null) { // No JSON stream found. Convert the existing element to JSON.
-            writeAsJson(element, out, populateRequiredProperties(messageContext));
+            writeAsJson(element, out, populateRequiredProperties(messageContext), JsonUtil.jsonOutputFactory);
         } else if (jsonStr != null) { // No JSON stream or element found. See if there's a JSON_STRING set.
             try {
                 out.write(jsonStr.getBytes());
@@ -351,7 +454,8 @@ public final class JsonUtil {
         }
         return pIs ? getReader(jsonStream)
                 : new JsonReaderDelegate(xmlInputFactoryNoPIs.createXMLStreamReader(jsonStream,
-                org.apache.synapse.commons.staxon.core.json.stream.impl.Constants.SCANNER.SCANNER_1), processNCNames);
+                org.apache.synapse.commons.staxon.core.json.stream.impl.Constants.SCANNER.SCANNER_1),
+                jsonOutputFactory.getConfig().isProcessNCNames());
     }
 
     /**
@@ -368,7 +472,8 @@ public final class JsonUtil {
             return null;
         }
         return new JsonReaderDelegate(jsonInputFactory.createXMLStreamReader(jsonStream,
-                org.apache.synapse.commons.staxon.core.json.stream.impl.Constants.SCANNER.SCANNER_1), processNCNames);
+                org.apache.synapse.commons.staxon.core.json.stream.impl.Constants.SCANNER.SCANNER_1),
+                jsonOutputFactory.getConfig().isProcessNCNames());
     }
 
     /**
@@ -381,14 +486,7 @@ public final class JsonUtil {
      * @throws AxisFault
      */
     public static void writeAsJson(OMElement element, OutputStream outputStream) throws AxisFault {
-        if (element == null) {
-            throw new AxisFault("OMElement is null. Cannot convert to JSON.");
-        }
-        if (outputStream == null) {
-            return;
-        }
-        transformElement(element, true);
-        convertOMElementToJson(element, outputStream);
+        writeAsJson(element, outputStream, null, null);
     }
 
     /**
@@ -402,16 +500,18 @@ public final class JsonUtil {
      * @param properties   Message context properties
      * @throws AxisFault
      */
-    public static void writeAsJson(OMElement element, OutputStream outputStream, Map properties) throws
+    public static void writeAsJson(OMElement element, OutputStream outputStream, Map properties,
+                                   JsonXMLOutputFactory jsonOutputFactory) throws
             AxisFault {
+        jsonOutputFactory = jsonOutputFactory == null ? JsonUtil.jsonOutputFactory : jsonOutputFactory;
         if (element == null) {
             throw new AxisFault("OMElement is null. Cannot convert to JSON.");
         }
         if (outputStream == null) {
             return;
         }
-        transformElement(element, properties, true);
-        convertOMElementToJson(element, outputStream);
+        transformElement(element, true, properties, jsonOutputFactory);
+        convertOMElementToJson(element, outputStream, jsonOutputFactory);
     }
 
     /**
@@ -419,9 +519,11 @@ public final class JsonUtil {
      *
      * @param element      OMElement
      * @param outputStream Output stream
+     * @param jsonOutputFactory Object to hold JsonXMLConfigurations
      * @throws AxisFault
      */
-    private static void convertOMElementToJson(OMElement element, OutputStream outputStream) throws AxisFault {
+    private static void convertOMElementToJson(OMElement element, OutputStream outputStream,
+                                               JsonXMLOutputFactory jsonOutputFactory) throws AxisFault {
         XMLEventReader xmlEventReader = null;
         XMLEventWriter jsonWriter = null;
         try {
@@ -437,12 +539,14 @@ public final class JsonUtil {
             xmlEventReader = xmlInputFactory.createXMLEventReader(
                     new XmlReaderDelegate(xmlInputFactory.createXMLStreamReader(
                             new ByteArrayInputStream(xmlStream.toByteArray())
-                    ), processNCNames)
+                    ), jsonOutputFactory.getConfig().isProcessNCNames())
             );
             jsonWriter = jsonOutputFactory.createXMLEventWriter(outputStream);
             jsonWriter.add(xmlEventReader);
             outputStream.flush();
         } catch (XMLStreamException e) {
+            logger.error("#writeAsJson. Could not convert OMElement to JSON. Invalid XML payload. Error>>> " +
+                    e.getLocalizedMessage());
             throw new AxisFault("Could not convert OMElement to JSON. Invalid XML payload.", e);
         } catch (IOException e) {
             logger.error("#writeAsJson. Could not convert OMElement to JSON. Error>>> " + e.getLocalizedMessage());
@@ -465,19 +569,24 @@ public final class JsonUtil {
         }
     }
 
+    public static StringBuilder toJsonString(OMElement element) throws AxisFault {
+        return toJsonString(element, null);
+    }
+
     /**
      * Converts an XML element to its JSON representation and returns it as a String.
      *
      * @param element OMElement to be converted to JSON.
      * @return A String builder instance that contains the converted JSON string.
      */
-    public static StringBuilder toJsonString(OMElement element) throws AxisFault {
+    public static StringBuilder toJsonString(OMElement element, JsonXMLOutputFactory jsonOutputFactory)
+            throws AxisFault {
         if (element == null) {
             return new StringBuilder("{}");
         }
         org.apache.commons.io.output.ByteArrayOutputStream byteStream =
                 new org.apache.commons.io.output.ByteArrayOutputStream();
-        writeAsJson(element.cloneOMElement(), byteStream);
+        writeAsJson(element.cloneOMElement(), byteStream, null, jsonOutputFactory);
         return new StringBuilder(new String(byteStream.toByteArray()));
     }
 
@@ -488,16 +597,7 @@ public final class JsonUtil {
      * @param processAttrbs Whether to remove the namespaces from attributes as well
      */
     public static void transformElement(OMElement element, boolean processAttrbs) {
-        if (element == null) {
-            return;
-        }
-        removeIndentations(element);
-        if (!preserverNamespacesForJson) {
-            removeNamespaces(element, processAttrbs);
-        }
-        if (logger.isDebugEnabled()) {
-            logger.debug("#transformElement. Transformed OMElement. Result: " + element.toString());
-        }
+        transformElement(element, processAttrbs, null, null);
     }
 
     /**
@@ -506,13 +606,23 @@ public final class JsonUtil {
      * @param element       Source XML element
      * @param processAttrbs Whether to remove the namespaces from attributes as well
      * @param properties    Message context properties
+     * @param jsonOutputFactory JsonOutputFactory with all the configurations.
+     *                          Pass null to use global configuration
      */
-    public static void transformElement(OMElement element, Map properties, boolean processAttrbs) {
+    public static void transformElement(OMElement element, boolean processAttrbs,
+                                        Map properties, JsonXMLOutputFactory jsonOutputFactory) {
+        boolean preserveNamespacesForJson =
+                (jsonOutputFactory != null) && jsonOutputFactory.getConfig().isPreserverNamespacesForJson();
         if (element == null) {
             return;
         }
-        removeIndentations(element, properties);
-        if (!preserverNamespacesForJson) {
+        if (properties == null) {
+            removeIndentations(element);
+        } else {
+            removeIndentations(element, properties);
+        }
+
+        if (!preserveNamespacesForJson) {
             removeNamespaces(element, processAttrbs);
         }
         if (logger.isDebugEnabled()) {
@@ -837,6 +947,15 @@ public final class JsonUtil {
         InputStream json = toReadOnlyStream(inputStream);
         messageContext.setProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM, json);
         return json;
+    }
+
+    /**
+     * Removes the JSON stream from the the MessageContext
+     * This method is used to remove the outdated JSON stream
+     * @param messageContext the axis2MessageContext
+     */
+    public static void removeJsonStream(MessageContext messageContext) {
+        messageContext.removeProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
     }
 
     /**

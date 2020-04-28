@@ -77,7 +77,7 @@ public class TargetConfiguration extends BaseConfiguration {
                         new RequestExpectContinue()
          });
         this.connectionTimeoutConfiguration = new ConnectionTimeoutConfiguration(conf.getConnectionIdleTime(),
-                                                                                 conf.getMaximumConnectionLifespan());
+                conf.getMaximumConnectionLifespan(), conf.getConnectionGraceTime());
         this.proxyAuthenticator = proxyAuthenticator;
     }
 

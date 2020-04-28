@@ -232,9 +232,10 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
                 } catch (JaxenException e) {
                     handleException("Invalid XPath expression: " + xpathAttr);
                 }
-                if (target.getAction().equals(Target.ACTION_REPLACE) && (target.getXpath() instanceof SynapseJsonPath)
-                        && ("$".equals(((SynapseJsonPath) target.getXpath()).expression) ||
-                        "$.".equals(((SynapseJsonPath) target.getXpath()).expression))) {
+                SynapsePath targetXPath = target.getXpath();
+                if (target.getAction().equals(Target.ACTION_REPLACE) && (targetXPath instanceof SynapseJsonPath)
+                        && ("$".equals(((SynapseJsonPath) targetXPath).expression) ||
+                        "$.".equals(((SynapseJsonPath) targetXPath).expression))) {
                     handleException("Acting replace is not supported for root path in type custom. " +
                             "Please use type body action replace instead");
                 }

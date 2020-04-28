@@ -174,6 +174,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             }
 
             if (callback != null) {
+                messageCtx.removeProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN);
                 org.apache.synapse.MessageContext SynapseOutMsgCtx = callback.getSynapseOutMsgCtx();
                 ConcurrencyThrottlingUtils.decrementConcurrencyThrottleAccessController(SynapseOutMsgCtx);
 
@@ -196,10 +197,13 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 }
             } else {
                 // TODO invoke a generic synapse error handler for this message
-                log.warn("Synapse received a response for the request with message Id : " +
-                        messageID + " and correlation_id : " + messageCtx.getProperty(PassThroughConstants
-                        .CORRELATION_ID) + " But a callback is not registered (anymore) to process " +
-                        "this response");
+                if (!PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER
+                        .equals(messageCtx.getProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN))) {
+                    log.warn("Synapse received a response for the request with message Id : " + messageID
+                            + " and correlation_id : " + messageCtx.getProperty(PassThroughConstants.CORRELATION_ID)
+                            + " But a callback is not registered (anymore) to process " + "this response");
+                }
+                messageCtx.removeProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN);
             }
 
         } else if (!messageCtx.isPropertyTrue(NhttpConstants.SC_ACCEPTED)){

@@ -1490,21 +1490,21 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             pe.destroy();
         }
 
-        // destroy the Message Stores
-        for (MessageStore ms : messageStores.values()) {
-            if (ms instanceof AbstractMessageProcessor) {
-                ((AbstractMessageProcessor) ms).destroy(preserverState);
-            } else {
-                ms.destroy();
-            }
-        }
-
         // destroy the Message processors
         for (MessageProcessor mp : messageProcessors.values()) {
             if (mp instanceof AbstractMessageProcessor) {
                 ((AbstractMessageProcessor) mp).destroy(preserverState);
             } else {
                 mp.destroy();
+            }
+        }
+
+        // destroy the Message Stores
+        for (MessageStore ms : messageStores.values()) {
+            if (ms instanceof AbstractMessageProcessor) {
+                ((AbstractMessageProcessor) ms).destroy(preserverState);
+            } else {
+                ms.destroy();
             }
         }
 
@@ -1530,9 +1530,6 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         if (registry != null && registry instanceof ManagedLifecycle) {
             ((ManagedLifecycle) registry).init(se);
         }
-
-        //we initialize xpath extensions here since synapse environment is available
-        initXpathExtensions(se);
 
         initCarbonTenantConfigurator(se);
 
@@ -2145,35 +2142,6 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
     public void setAllowHotUpdate(boolean allowHotUpdate) {
         this.allowHotUpdate = allowHotUpdate;
-    }
-
-    /**
-     * This method initializes Xpath Extensions available through synapse.properties file
-     * Xpath Extensions can be defined in Variable Context Extensions + Function Context Extensions
-     * synapse.xpath.var.extensions --> Variable Extensions
-     * synapse.xpath.func.extensions --> Function Extensions
-     *
-     * @param synapseEnvironment SynapseEnvironment
-     */
-    private void initXpathExtensions(SynapseEnvironment synapseEnvironment) {
-        Axis2SynapseEnvironment axis2SynapseEnvironment = (Axis2SynapseEnvironment) synapseEnvironment;
-
-        /*Initialize Function Context extensions for xpath
-        */
-        List<SynapseXpathFunctionContextProvider> functionExtensions =
-                XpathExtensionUtil.getRegisteredFunctionExtensions();
-        for (SynapseXpathFunctionContextProvider functionExtension : functionExtensions) {
-            axis2SynapseEnvironment.setXpathFunctionExtensions(functionExtension);
-        }
-
-        /*Initialize Variable Context extensions for xpath
-        */
-        List<SynapseXpathVariableResolver> variableExtensions =
-                XpathExtensionUtil.getRegisteredVariableExtensions();
-        for (SynapseXpathVariableResolver variableExtension : variableExtensions) {
-            axis2SynapseEnvironment.setXpathVariableExtensions(variableExtension);
-        }
-
     }
 
     /**

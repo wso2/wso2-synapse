@@ -91,9 +91,7 @@ public class AddressEndpointFactory extends DefaultEndpointFactory {
         }
 
         processProperties(addressEndpoint, epConfig);
-
         CommentListUtil.populateComments(addressElement, addressEndpoint.getCommentsList());
-
         return addressEndpoint;
     }
 

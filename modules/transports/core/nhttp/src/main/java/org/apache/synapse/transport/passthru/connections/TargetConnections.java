@@ -25,6 +25,8 @@ import org.apache.http.nio.reactor.ConnectingIOReactor;
 import org.apache.synapse.transport.passthru.ConnectCallback;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.TargetContext;
+import org.apache.synapse.transport.passthru.config.ConnectionTimeoutConfiguration;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
 import java.io.IOException;
@@ -56,6 +58,8 @@ public class TargetConnections {
     /** callback invoked when a connection is made */
     private ConnectCallback callback = null;
 
+    private ConnectionTimeoutConfiguration connectionTimeoutConfiguration;
+
     /**
      * Create a TargetConnections with the given IO-Reactor
      *
@@ -70,6 +74,10 @@ public class TargetConnections {
         this.maxConnections = targetConfiguration.getMaxConnections();
         this.ioReactor = ioReactor;
         this.callback = callback;
+
+        connectionTimeoutConfiguration = new ConnectionTimeoutConfiguration(PassThroughConfiguration.getInstance().
+                getConnectionIdleTime(), PassThroughConfiguration.getInstance().getMaximumConnectionLifespan(),
+                PassThroughConfiguration.getInstance().getConnectionGraceTime());
     }
 
     /**
@@ -196,7 +204,7 @@ public class TargetConnections {
             HostConnections pool = poolMap.get(route);
 
             if (pool == null) {
-                pool = new HostConnections(route, maxConnections);
+                pool = new HostConnections(route, maxConnections, connectionTimeoutConfiguration);
                 poolMap.put(route, pool);
             }
             return pool;

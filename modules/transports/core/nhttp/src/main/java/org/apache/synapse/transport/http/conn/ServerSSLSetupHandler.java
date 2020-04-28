@@ -75,24 +75,24 @@ public class ServerSSLSetupHandler implements SSLSetupHandler {
     public void verify(
             final IOSession iosession,
             final SSLSession sslsession) throws SSLException {
-        SocketAddress remoteAddress = iosession.getRemoteAddress();
-        String address;
-        if (remoteAddress instanceof InetSocketAddress) {
-            InetSocketAddress inetSocketAddress = (InetSocketAddress) remoteAddress;
-            InetAddress internetAddress = inetSocketAddress.getAddress();
-            if (internetAddress != null) {
-                address = internetAddress.getHostAddress();
-            } else {
-                address = inetSocketAddress.getHostName();
-            }
-        } else {
-            address = remoteAddress.toString();
-        }
 
         if (verificationManager != null) {
             try {
                 verificationManager.verifyRevocationStatus(sslsession.getPeerCertificateChain());
             } catch (CertificateVerificationException e) {
+                SocketAddress remoteAddress = iosession.getRemoteAddress();
+                String address;
+                if (remoteAddress instanceof InetSocketAddress) {
+                    InetSocketAddress inetSocketAddress = (InetSocketAddress) remoteAddress;
+                    InetAddress internetAddress = inetSocketAddress.getAddress();
+                    if (internetAddress != null) {
+                        address = internetAddress.getHostAddress();
+                    } else {
+                        address = inetSocketAddress.getHostName();
+                    }
+                } else {
+                    address = remoteAddress.toString();
+                }
                 throw new SSLException("Certificate Chain Validation failed for host : " + address, e);
             }
         }

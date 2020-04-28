@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -32,6 +32,7 @@ public class Constants {
     static final String TYPE_API = "api";
     static final String TYPE_ENDPOINT = "endpoint";
     static final String TYPE_LOCAL_ENTRY = "localEntry";
+    static final String TYPE_TEMPLATE = "template";
 
     //artifact key word constants
     static final String API_CONTEXT = "context";
@@ -131,4 +132,12 @@ public class Constants {
 
     //common constants
     static final String NEW_LINE = "\n";
+    static final String EMPTY_VALUE = "";
+    static final String BACK_SLASH = "/";
+
+    //input data formats
+    static final String XML_FORMAT = "XML";
+    static final String JSON_FORMAT = "JSON";
+    static final String TEXT_FORMAT = "TEXT";
+    static final String TEXT_NAMESPACE = "http://ws.apache.org/commons/ns/payload";
 }

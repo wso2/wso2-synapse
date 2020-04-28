@@ -20,6 +20,7 @@
 package org.apache.synapse.mediators.builtin;
 
 import org.apache.axis2.context.OperationContext;
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.SynapseException;
@@ -28,6 +29,7 @@ import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.mediators.Value;
 import org.apache.synapse.registry.Registry;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.axiom.om.OMElement;
@@ -54,6 +56,8 @@ public class PropertyMediator extends AbstractMediator {
 
     /** The Name of the property  */
     private String name = null;
+    /** The DynamicNameValue of the property if it is dynamic  */
+    private Value dynamicNameValue = null;
     /** The Value to be set  */
     private Object value = null;
     /** The data type of the value */
@@ -80,6 +84,8 @@ public class PropertyMediator extends AbstractMediator {
     /** Define the Content type of the resource **/
     public static final String CONTENT_TYPE = "text/plain";
 
+    private static final String EMPTY_CONTENT = "";
+
     /**
      * Sets a property into the current (local) Synapse Context or into the Axis Message Context
      * or into Transports Header and removes above properties from the corresponding locations.
@@ -102,6 +108,15 @@ public class PropertyMediator extends AbstractMediator {
 
             if (synLog.isTraceTraceEnabled()) {
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
+            }
+        }
+
+        String name = this.name;
+        //checks the name attribute value is a dynamic or not
+        if (dynamicNameValue != null) {
+            name  = dynamicNameValue.evaluateValue(synCtx);
+            if (StringUtils.isEmpty(name)) {
+                log.warn("Evaluated value for " + this.name + " is empty");
             }
         }
 
@@ -205,6 +220,7 @@ public class PropertyMediator extends AbstractMediator {
 
                 Registry registry = synCtx.getConfiguration().getRegistry();
                 registry.newNonEmptyResource(path, false, CONTENT_TYPE, resultValue.toString(), propertyName);
+                registry.updateResource(path, EMPTY_CONTENT);
             }
 
         } else {
@@ -448,6 +464,10 @@ public class PropertyMediator extends AbstractMediator {
     	if (expression != null) {
             contentAware = expression.isContentAware();
         }
+
+        if (dynamicNameValue != null && dynamicNameValue.getExpression() != null) {
+            contentAware = contentAware || dynamicNameValue.getExpression().isContentAware();
+        }
         
     	if (XMLConfigConstants.SCOPE_AXIS2.equals(scope) ) {
             // the logic will be determine the contentaware true
@@ -477,5 +497,14 @@ public class PropertyMediator extends AbstractMediator {
 
     @Override public String getMediatorName() {
         return super.getMediatorName() + ":" + name;
+    }
+
+    /**
+     * Setter for the Value of the Name attribute when it has a dynamic value.
+     *
+     * @param nameValue Value of the dynamic name value
+     */
+    public void setDynamicNameValue(Value nameValue) {
+        this.dynamicNameValue = nameValue;
     }
 }

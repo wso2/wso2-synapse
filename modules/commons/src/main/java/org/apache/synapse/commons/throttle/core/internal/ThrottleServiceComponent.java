@@ -57,12 +57,11 @@ public class ThrottleServiceComponent {
 	 * @param hazelcastInstance hazelcastInstance found from the OSGI service
 	 */
 	@Reference(
-			name = "throttle.core.services",
+			name = "hazelcast.instance.service",
 			service = com.hazelcast.core.HazelcastInstance.class,
 			cardinality = ReferenceCardinality.OPTIONAL,
 			policy = ReferencePolicy.DYNAMIC,
 			unbind = "unsetHazelcastInstance"
-
 	)
 	protected void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
 		ThrottleServiceDataHolder.getInstance().setHazelCastInstance(hazelcastInstance);

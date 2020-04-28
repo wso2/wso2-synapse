@@ -57,6 +57,12 @@ public class HostConnections {
      * maximum life span of a connection
      */
     private int maximumConnectionLifeSpan;
+
+    /**
+     * time allocated to avoid a connection being used at the moment it is being closed or timed out
+     */
+    private int connectionGraceTime;
+
     /**
      * list of free connections available
      */
@@ -84,8 +90,10 @@ public class HostConnections {
         }
         this.route = route;
         this.maxSize = maxSize;
+
         this.connectionIdleTime = connectionTimeoutConfiguration.getConnectionIdleTime();
         this.maximumConnectionLifeSpan = connectionTimeoutConfiguration.getMaximumConnectionLifeSpane();
+        this.connectionGraceTime = connectionTimeoutConfiguration.getConnectionGraceTime();
     }
 
     /**
@@ -104,10 +112,9 @@ public class HostConnections {
                 long currentTime = System.currentTimeMillis();
                 long connectionInitTime = (Long) conn.getContext().getAttribute(PassThroughConstants.
                                                                                         CONNECTION_INIT_TIME);
-                long lastReleasedTime = (Long) conn.getContext().getAttribute(PassThroughConstants.
-                                                                                      CONNECTION_RELEASE_TIME);
-                if (isMaximumLifeSpanExceeded(currentTime, connectionInitTime) || isIdleTimeExceeded(currentTime,
-                                                                                                     lastReleasedTime)) {
+                long expiryTime = (Long) conn.getContext().getAttribute(PassThroughConstants.
+                        CONNECTION_EXPIRY_TIME);
+                if (isMaximumLifeSpanExceeded(currentTime, connectionInitTime) ||  currentTime >= expiryTime ) {
                     freeConnections.remove(conn);
                     try {
                         conn.shutdown();
@@ -124,16 +131,6 @@ public class HostConnections {
             lock.unlock();
         }
         return null;
-    }
-
-    private boolean isIdleTimeExceeded(long currentTime, long lastReleasedTime) {
-        if (connectionIdleTime > 0 && currentTime > lastReleasedTime + connectionIdleTime) {
-            if (log.isDebugEnabled()) {
-                log.debug("Connection has been idle for " + (currentTime - lastReleasedTime) + " milliseconds.");
-            }
-            return true;
-        }
-        return false;
     }
 
     private boolean isMaximumLifeSpanExceeded(long currentTime, long connectionInitTime) {
@@ -153,7 +150,7 @@ public class HostConnections {
         HttpContext ctx = conn.getContext();
         ctx.removeAttribute(ExecutionContext.HTTP_REQUEST);
         ctx.removeAttribute(ExecutionContext.HTTP_RESPONSE);
-        ctx.setAttribute(PassThroughConstants.CONNECTION_RELEASE_TIME, System.currentTimeMillis());
+        ctx.setAttribute(PassThroughConstants.CONNECTION_EXPIRY_TIME, getExpiryTime(conn));
         ctx.removeAttribute(SynapseHTTPRequestFactory.ENDPOINT_URL);
         lock.lock();
         try {
@@ -165,6 +162,24 @@ public class HostConnections {
         } finally {
             lock.unlock();
         }
+    }
+
+    private long getExpiryTime(NHttpClientConnection connection) {
+
+        long expiryTime = System.currentTimeMillis();
+
+        Object keepAlive = connection.getContext().
+                getAttribute(PassThroughConstants.CONNECTION_KEEP_ALIVE_TIME_OUT);
+        if (keepAlive != null) {
+            int keepAliveTimeout = (int) keepAlive;
+            expiryTime = expiryTime + keepAliveTimeout - this.connectionGraceTime;
+        } else {
+            expiryTime = expiryTime + this.connectionIdleTime;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Expiry time set for connection: " + expiryTime + " milliseconds");
+        }
+        return expiryTime;
     }
 
     public void forget(NHttpClientConnection conn) {

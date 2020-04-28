@@ -28,8 +28,10 @@ import org.apache.axiom.om.util.ElementHelper;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfigUtils;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.mediators.Value;
@@ -126,8 +128,10 @@ public class XQueryMediator extends AbstractMediator {
             // perform the xquery
             performQuery(synCtx, synLog);
 
-            synLog.traceOrDebug("End : XQuery mediator");
+            //removing JSONstream from the message Context since it is outdated.
+            JsonUtil.removeJsonStream(((Axis2MessageContext) synCtx).getAxis2MessageContext());
 
+            synLog.traceOrDebug("End : XQuery mediator");
             return true;
 
         } catch (Exception e) {

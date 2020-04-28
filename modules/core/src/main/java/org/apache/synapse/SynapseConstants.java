@@ -576,4 +576,7 @@ public final class SynapseConstants {
 
     public static final String NO_KEEPALIVE = "NO_KEEPALIVE";
 
+    // Common property for all artifacts
+    public static final String ARTIFACT_NAME = "ARTIFACT_NAME";
+
 }
