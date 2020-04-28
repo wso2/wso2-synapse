@@ -71,6 +71,15 @@ public abstract class FaultHandler {
         boolean traceOn = synCtx.getTracingState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
 
+        if (e != null && SynapseConstants.JMS_INVALID_MESSAGE_TYPE_EXCEPTION
+                .equals(synCtx.getProperty(SynapseConstants.JMS_TRANSPORT_EXCEPTION_TRIGGER_TYPE))) {
+            synCtx.setProperty(SynapseConstants.ERROR_CODE, SynapseConstants.JMS_INVALID_MESSAGE_TYPE_ERROR);
+            // use only the first line as the message for multiline exception messages (Axis2 has these)
+            synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, e.getMessage().split("\n")[0]);
+            synCtx.setProperty(SynapseConstants.ERROR_DETAIL, getStackTrace(e));
+            synCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, e);
+        }
+
         if (e != null && synCtx.getProperty(SynapseConstants.ERROR_CODE) == null) {
             synCtx.setProperty(SynapseConstants.ERROR_CODE, SynapseConstants.DEFAULT_ERROR);
             // use only the first line as the message for multiline exception messages (Axis2 has these)
