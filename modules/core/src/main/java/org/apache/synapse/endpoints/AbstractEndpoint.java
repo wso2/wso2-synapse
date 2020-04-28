@@ -521,6 +521,11 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         Integer errorCode = (Integer) synCtx.getProperty(SynapseConstants.ERROR_CODE);
         if (errorCode != null) {
             if (definition.getSuspendErrorCodes().isEmpty()) {
+                // if suspend codes are not defined, jms transport receiving a malformed jms message should not be
+                // considered as a suspend error code
+                if (errorCode == SynapseConstants.JMS_INVALID_MESSAGE_TYPE_ERROR) {
+                    return false;
+                }
                 // if suspend codes are not defined, any error will be fatal for the endpoint
                 if (log.isDebugEnabled()) {
                     log.debug(this.toString() + " encountered a fatal error : " + errorCode);
