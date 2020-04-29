@@ -24,6 +24,8 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.om.OMText;
+import org.apache.axiom.om.impl.builder.StAXBuilder;
+import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAP12Constants;
@@ -53,6 +55,7 @@ import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -579,7 +582,13 @@ public class PayloadFactoryMediator extends AbstractMediator {
      */
     private boolean isXML(String value) {
         try {
-            AXIOMUtil.stringToOM(value);
+            // ignore DTDs and validate xml
+            XMLInputFactory inputFactory = XMLInputFactory.newInstance();
+            inputFactory.setProperty(inputFactory.SUPPORT_DTD, Boolean.FALSE);
+            javax.xml.stream.XMLStreamReader xmlReader = inputFactory.createXMLStreamReader(new StringReader(value));
+            StAXBuilder builder = new StAXOMBuilder(xmlReader);
+            builder.getDocumentElement();
+
             value = value.trim();
             if (!value.endsWith(">") || value.length() < 4) {
                 return false;
