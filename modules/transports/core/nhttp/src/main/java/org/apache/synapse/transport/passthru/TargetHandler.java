@@ -49,11 +49,10 @@ import org.apache.synapse.transport.passthru.connections.HostConnections;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 
 import java.io.IOException;
+import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-
-import static org.apache.synapse.transport.passthru.TargetContext.CONNECTION_INFORMATION;
 
 /**
  * This class is handling events from the transport -- > client.
@@ -950,7 +949,10 @@ public class TargetHandler implements NHttpClientEventHandler {
         if (conn instanceof LoggingNHttpClientConnection) {
             IOSession ioSession = ((LoggingNHttpClientConnection) conn).getIOSession();
             if (ioSession != null) {
-                return ioSession.getRemoteAddress().toString();
+                SocketAddress socketAddress = ioSession.getRemoteAddress();
+                if (socketAddress != null) {
+                    return socketAddress.toString();
+                }
             }
         }
         return "";
