@@ -27,6 +27,7 @@ import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axiom.soap.SOAPHeaderBlock;
+import org.apache.axis2.AxisFault;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -521,7 +522,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 					}
 
 					if (!isSuccessful) {
-						prepareToRetry(messageContext);
+						prepareToRetry(messageContext, originalEnvelop);
 					}
 				}
 			} catch (Exception e) {
@@ -544,6 +545,20 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	}
 
 	/**
+	 * Get a fresh copy of the original message
+	 *
+	 * @param messageToDispatch MessageContext containing current message
+	 * @param originalEnvelop MessageContext containing message to forward (original message)
+	 */
+	private void getFreshCopyOfOriginalMessage(MessageContext messageToDispatch, SOAPEnvelope originalEnvelop)
+			throws AxisFault {
+		// For each retry we need to have a fresh copy of the original message
+		messageToDispatch.setEnvelope(MessageHelper.cloneSOAPEnvelope(originalEnvelop));
+		setSoapHeaderBlock(messageToDispatch);
+		updateAxis2MessageContext(messageToDispatch);
+	}
+
+	/**
 	 * Try to dispatch message to the given endpoint
 	 *
 	 * @param messageToDispatch MessageContext containing message to forward
@@ -558,9 +573,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 		try {
 			// For each retry we need to have a fresh copy of the original message
-			messageToDispatch.setEnvelope(MessageHelper.cloneSOAPEnvelope(originalEnvelop));
-			setSoapHeaderBlock(messageToDispatch);
-			updateAxis2MessageContext(messageToDispatch);
+			getFreshCopyOfOriginalMessage(messageToDispatch, originalEnvelop);
 
 			if (messageConsumer != null && messageConsumer.isAlive()) {
 				messageToDispatch.setProperty(SynapseConstants.BLOCKING_MSG_SENDER, sender);
@@ -822,7 +835,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	 * processor. If the MaxDeliveryAttemptDrop is Enabled, then the message is
 	 * dropped and the message processor continues.
 	 */
-	private void checkAndDeactivateProcessor(MessageContext msgCtx) {
+	private void checkAndDeactivateProcessor(MessageContext msgCtx, SOAPEnvelope originalEnvelop) throws AxisFault {
 		if (maxDeliverAttempts > 0) {
 			this.attemptCount++;
 			if (attemptCount >= maxDeliverAttempts) {
@@ -833,6 +846,8 @@ public class ForwardingService implements Task, ManagedLifecycle {
 							+ "] failed to forward message " + maxDeliverAttempts + " times. Drop message and "
 							+ "continue.");
 				} else if (null != failMessageStore) {
+					// We need to store the original message in the failover store
+					getFreshCopyOfOriginalMessage(msgCtx, originalEnvelop);
 					storeMessageToBackupStoreAndContinue(msgCtx, failMessageStore);
 				} else {
 					terminate();
@@ -850,9 +865,9 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	/*
 	 * Prepares the message processor for the next retry of delivery.
 	 */
-	private void prepareToRetry(MessageContext msgCtx) {
+	private void prepareToRetry(MessageContext msgCtx, SOAPEnvelope originalEnvelop) throws AxisFault {
 		if (!isTerminated) {
-			checkAndDeactivateProcessor(msgCtx);
+			checkAndDeactivateProcessor(msgCtx, originalEnvelop);
 
 			if (log.isDebugEnabled()) {
 				log.debug("Failed to send to client retrying after " + retryInterval +
