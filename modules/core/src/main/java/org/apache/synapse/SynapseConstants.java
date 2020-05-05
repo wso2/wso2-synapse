@@ -40,6 +40,8 @@ public final class SynapseConstants {
     /** An OMNamespace object for the Empty Namespace */
     public static final OMNamespace NULL_NAMESPACE = 
     	OMAbstractFactory.getOMFactory().createOMNamespace("", "");
+    /** The associated xml file of registry */
+    public static final String REGISTRY_FILE = "registry.xml";
     /** The name of the main sequence for message mediation */
     public static final String MAIN_SEQUENCE_KEY  = "main";
     /** The associated xml file of the default main sequence */
