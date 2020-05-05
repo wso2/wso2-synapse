@@ -72,6 +72,7 @@ import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsColl
 import org.apache.synapse.transport.passthru.jmx.TransportView;
 
 import org.apache.synapse.transport.passthru.util.ActiveConnectionMonitor;
+import org.apache.synapse.transport.passthru.util.SessionContextUtil;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -411,7 +412,7 @@ public class PassThroughHttpListener implements TransportListener {
     }
 
     public SessionContext getSessionContext(MessageContext messageContext) {
-        return null;
+        return SessionContextUtil.createSessionContext(messageContext);
     }
 
 
