@@ -29,9 +29,11 @@ import org.apache.axis2.context.ServiceContext;
 import org.apache.axis2.description.InOutAxisOperation;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.http.HttpResponse;
+import org.apache.http.annotation.NotThreadSafe;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
@@ -49,6 +51,7 @@ import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.List;
@@ -122,8 +125,8 @@ public class TestCasesMediator {
      * @param key             key of the proxy service
      * @return response received from the proxy service
      */
-    static HttpResponse proxyServiceExecutor(TestCase currentTestCase, String proxyTransportMethod, String key)
-            throws IOException {
+    static Map.Entry<String, HttpResponse> proxyServiceExecutor(TestCase currentTestCase, String proxyTransportMethod,
+                                                                String key) throws IOException {
 
         String url;
 
@@ -133,37 +136,27 @@ public class TestCasesMediator {
         } else if (proxyTransportMethod.equals(HTTPS_KEY)) {
             url = HTTPS_LOCALHOST_URL + httpsPassThruOperatingPort + PROXY_INVOKE_PREFIX_URL + key;
         } else {
-            return null;
+            return new AbstractMap.SimpleEntry<>("'" + proxyTransportMethod + "' transport is not supported", null);
         }
 
         log.info("Invoking URI - " + url);
 
         HttpClient clientConnector = HttpClientBuilder.create().build();
-        HttpPost httpPost = new HttpPost(url);
+        HttpResponse response;
+        HttpPost httpPost = setPostHeaders(currentTestCase, url);
 
-        //set headers
-        for (Map<String, String> property : currentTestCase.getPropertyMap()) {
-            String scope = property.get(TEST_CASE_INPUT_PROPERTY_SCOPE);
-            //Setting Synapse properties
-            if (scope.equals(INPUT_PROPERTY_SCOPE_TRANSPORT)) {
-                httpPost.setHeader(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
-                        property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
+        try {
+            if (currentTestCase.getInputPayload() != null) {
+                StringEntity postEntity = new StringEntity(currentTestCase.getInputPayload().trim());
+                httpPost.setEntity(postEntity);
             }
+
+            response = clientConnector.execute(httpPost);
+        } catch (IOException e) {
+            throw new IOException("Proxy service invoked URL - " + url + "\n" + e);
         }
 
-        if (currentTestCase.getInputPayload() != null) {
-            StringEntity postEntity = new StringEntity(currentTestCase.getInputPayload().trim());
-            httpPost.setEntity(postEntity);
-        }
-
-        HttpResponse response = clientConnector.execute(httpPost);
-
-        int responseCode = response.getStatusLine().getStatusCode();
-        if (responseCode / 100 == 2) {
-            return response;
-        } else {
-            return null;
-        }
+        return new AbstractMap.SimpleEntry<>(url, response);
     }
 
     /**
@@ -174,8 +167,8 @@ public class TestCasesMediator {
      * @param context         context of the resource
      * @return response received from the API resource
      */
-    static HttpResponse apiResourceExecutor(TestCase currentTestCase, String context, String resourceMethod)
-            throws IOException {
+    static Map.Entry<String, HttpResponse> apiResourceExecutor(TestCase currentTestCase, String context,
+                                                               String resourceMethod) throws IOException {
 
         String url;
         if (currentTestCase.getRequestPath() != null) {
@@ -196,51 +189,55 @@ public class TestCasesMediator {
 
         HttpClient clientConnector = HttpClientBuilder.create().build();
         HttpResponse response;
+        String resourceHTTPMethod = resourceMethod.toUpperCase(Locale.ENGLISH);
+        String invokeUrlWithMethod = resourceHTTPMethod + ": " + url;
+        try {
+            switch (resourceHTTPMethod) {
+                case GET_METHOD:
+                    //set headers and execute
+                    response = clientConnector.execute(setGetHeaders(currentTestCase, url));
+                    break;
 
-        switch (resourceMethod.toUpperCase(Locale.ENGLISH)) {
-            case GET_METHOD:
-                //set headers and execute
-                response = clientConnector.execute(setGetHeaders(currentTestCase, url));
-                break;
+                case POST_METHOD:
+                    //set headers
+                    HttpPost httpPost = setPostHeaders(currentTestCase, url);
+                    String postPayload = currentTestCase.getInputPayload();
 
-            case POST_METHOD:
-                //set headers
-                HttpPost httpPost = setPostHeaders(currentTestCase, url);
-                String postPayload = currentTestCase.getInputPayload();
+                    if (postPayload == null) {
+                        postPayload = EMPTY_VALUE;
+                    }
 
-                if (postPayload == null) {
-                    postPayload = "";
-                }
+                    StringEntity postEntity = new StringEntity(postPayload);
+                    httpPost.setEntity(postEntity);
+                    response = clientConnector.execute(httpPost);
+                    break;
 
-                StringEntity postEntity = new StringEntity(postPayload);
-                httpPost.setEntity(postEntity);
-                response = clientConnector.execute(httpPost);
-                break;
+                case PUT_METHOD:
+                    //set headers
+                    HttpPut httpPut = setPutHeaders(currentTestCase, url);
+                    String putPayload = currentTestCase.getInputPayload();
 
-            case PUT_METHOD:
-                //set headers
-                HttpPut httpPut = setPutHeaders(currentTestCase, url);
+                    if (putPayload == null) {
+                        putPayload = EMPTY_VALUE;
+                    }
+                    StringEntity putEntity = new StringEntity(putPayload);
+                    httpPut.setEntity(putEntity);
+                    response = clientConnector.execute(httpPut);
+                    break;
 
-                StringEntity putEntity = new StringEntity(currentTestCase.getInputPayload());
-                httpPut.setEntity(putEntity);
-                response = clientConnector.execute(httpPut);
-                break;
+                case DELETE_METHOD:
+                    HttpDeleteWithBody httpDelete = setDeleteWithBody(currentTestCase, url);
+                    response = clientConnector.execute(httpDelete);
+                    break;
 
-            case DELETE_METHOD:
-                HttpDelete httpDelete = new HttpDelete(url);
-                response = clientConnector.execute(httpDelete);
-                break;
-
-            default:
-                throw new ClientProtocolException("HTTP client can't find proper request method");
+                default:
+                    throw new ClientProtocolException("HTTP client can't find proper request method");
+            }
+        } catch (IOException e) {
+            throw new IOException("API invoked URL - " + invokeUrlWithMethod + "\n" + e);
         }
 
-        int responseCode = response.getStatusLine().getStatusCode();
-        if (responseCode / 100 == 2) {
-            return response;
-        } else {
-            return null;
-        }
+        return new AbstractMap.SimpleEntry<>(invokeUrlWithMethod, response);
     }
 
 
@@ -311,6 +308,38 @@ public class TestCasesMediator {
         }
 
         return httpPut;
+    }
+
+    /**
+     * Set headers for delete client.
+     *
+     * @param currentTestCase testcase data
+     * @param url             Url of the service
+     * @return HttpDeleteWithBody client with headers and body if exist
+     * @throws IOException while creating payload from StringEntity
+     */
+    private static HttpDeleteWithBody setDeleteWithBody(TestCase currentTestCase, String url) throws IOException {
+        HttpDeleteWithBody httpDelete = new HttpDeleteWithBody(url);
+        //set headers
+        for (Map<String, String> property : currentTestCase.getPropertyMap()) {
+            String scope = property.get(TEST_CASE_INPUT_PROPERTY_SCOPE);
+
+            //Setting Synapse properties
+            if (scope.equals(INPUT_PROPERTY_SCOPE_TRANSPORT)) {
+                httpDelete.setHeader(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
+                        property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
+            }
+        }
+
+        String deletePayload = currentTestCase.getInputPayload();
+
+        if (deletePayload == null) {
+            deletePayload = EMPTY_VALUE;
+        }
+        StringEntity deleteEntity = new StringEntity(deletePayload);
+        httpDelete.setEntity(deleteEntity);
+
+        return httpDelete;
     }
 
     /**
@@ -463,5 +492,19 @@ public class TestCasesMediator {
         }
         textElement.setText(content);
         return textElement;
+    }
+
+    @NotThreadSafe
+    static class HttpDeleteWithBody extends HttpEntityEnclosingRequestBase {
+        static final String METHOD_NAME = "DELETE";
+
+        public String getMethod() {
+            return METHOD_NAME;
+        }
+
+        HttpDeleteWithBody(final String uri) {
+            super();
+            setURI(URI.create(uri));
+        }
     }
 }

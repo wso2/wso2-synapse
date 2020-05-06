@@ -22,6 +22,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
@@ -32,10 +33,10 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.unittest.testcase.data.classes.AssertEqual;
 import org.apache.synapse.unittest.testcase.data.classes.AssertNotNull;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
+import org.apache.synapse.unittest.testcase.data.classes.TestCaseAssertionSummary;
 import org.apache.synapse.unittest.testcase.data.classes.TestCaseSummary;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
 import javax.xml.stream.XMLStreamException;
@@ -45,6 +46,8 @@ import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_AXIS2;
 import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_BODY;
 import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_CONTEXT;
 import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_TRANSPORT;
+import static org.apache.synapse.unittest.Constants.RESPONSE_PROPERTY_HTTP_VERSION;
+import static org.apache.synapse.unittest.Constants.RESPONSE_PROPERTY_STATUS_CODE;
 import static org.apache.synapse.unittest.Constants.TEXT_NAMESPACE;
 
 
@@ -63,44 +66,30 @@ class Assertor {
      *
      * @param currentTestCase current test case
      * @param mediateMsgCtxt  message context used for the mediation
-     * @return true if assertion is success otherwise false
+     * @param testCaseSummary testSummary object for this test case
      */
-    static Map.Entry<Boolean, TestCaseSummary> doAssertionSequence(
-            TestCase currentTestCase, MessageContext mediateMsgCtxt, int testCaseNumber, TestCaseSummary testSummary) {
-
-        boolean isSequenceAssertComplete = false;
-        boolean isAssertEqualComplete = false;
-        boolean isAssertNotNullComplete = false;
-        String assertMessage = null;
+    static void doAssertionSequence(
+            TestCase currentTestCase, MessageContext mediateMsgCtxt, TestCaseSummary testCaseSummary) {
 
         List<AssertEqual> assertEquals = currentTestCase.getAssertEquals();
         List<AssertNotNull> assertNotNulls = currentTestCase.getAssertNotNull();
+        String testCaseName = currentTestCase.getTestCaseName();
 
         if (!assertEquals.isEmpty()) {
-            Map.Entry<Boolean, String> assertSequence = startAssertEqualsForSequence(assertEquals, mediateMsgCtxt);
-            isAssertEqualComplete = assertSequence.getKey();
-            assertMessage = assertSequence.getValue();
-            testSummary.setTestException(assertMessage);
+            startAssertEqualsForSequence(assertEquals, mediateMsgCtxt, testCaseSummary);
         }
 
-        if (!assertNotNulls.isEmpty() && assertMessage == null) {
-            Map.Entry<Boolean, String> assertSequence = startAssertNotNullsForSequence(assertNotNulls, mediateMsgCtxt);
-            isAssertNotNullComplete = assertSequence.getKey();
-            assertMessage = assertSequence.getValue();
-            testSummary.setTestException(assertMessage);
+        if (!assertNotNulls.isEmpty()) {
+            startAssertNotNullsForSequence(assertNotNulls, mediateMsgCtxt, testCaseSummary);
         }
 
-        if ((isAssertEqualComplete && isAssertNotNullComplete) || (isAssertEqualComplete && assertNotNulls.isEmpty()) ||
-                (isAssertNotNullComplete && assertEquals.isEmpty())) {
-            isSequenceAssertComplete = true;
-            testSummary.setAssertionStatus(Constants.PASSED_KEY);
-            log.info("Unit testing passed for test case - " + testCaseNumber);
+        if (testCaseSummary.getTestCaseAssertionList().isEmpty()) {
+            testCaseSummary.setAssertionStatus(Constants.PASSED_KEY);
+            log.info("Unit testing passed for the test case - " + testCaseName);
         } else {
-            testSummary.setAssertionStatus(Constants.FAILED_KEY);
-            log.error("Unit testing failed for test case - " + testCaseNumber);
+            testCaseSummary.setAssertionStatus(Constants.FAILED_KEY);
+            log.error("Unit testing failed for the test case - " + testCaseName);
         }
-
-        return new AbstractMap.SimpleEntry<>(isSequenceAssertComplete, testSummary);
     }
 
     /**
@@ -108,161 +97,142 @@ class Assertor {
      *
      * @param currentTestCase current testcase
      * @param response        response from the service
-     * @param testCaseNumber  asserting test case number
-     * @return true if assertion is success otherwise false
+     * @param testCaseSummary testSummary object for this test case
      */
-    static Map.Entry<Boolean, TestCaseSummary> doAssertionService(TestCase currentTestCase, HttpResponse response,
-                                                         int testCaseNumber, TestCaseSummary testSummary) {
-
-        boolean isServiceAssertComplete = false;
-        boolean isAssertEqualComplete = false;
-        boolean isAssertNotNullComplete = false;
-        String assertMessage = null;
-
+    static void doAssertionService(TestCase currentTestCase, Map.Entry<String, HttpResponse> response,
+                                   TestCaseSummary testCaseSummary) {
         List<AssertEqual> assertEquals = currentTestCase.getAssertEquals();
         List<AssertNotNull> assertNotNulls = currentTestCase.getAssertNotNull();
+        String testCaseName = currentTestCase.getTestCaseName();
 
         try {
-            String responseAsString = EntityUtils.toString(response.getEntity(), "UTF-8");
-            Header[] responseHeaders = response.getAllHeaders();
-
             if (!assertEquals.isEmpty()) {
-                Map.Entry<Boolean, String> assertService
-                        = startAssertEqualsForServices(assertEquals, responseAsString, responseHeaders);
-                isAssertEqualComplete = assertService.getKey();
-                assertMessage = assertService.getValue();
-                testSummary.setTestException(assertMessage);
+                startAssertEqualsForServices(assertEquals, response, testCaseSummary);
             }
 
-            if (!assertNotNulls.isEmpty() && assertMessage == null) {
-                Map.Entry<Boolean, String> assertService
-                        = startAssertNotNullsForServices(assertNotNulls, responseAsString, responseHeaders);
-                isAssertNotNullComplete = assertService.getKey();
-                assertMessage = assertService.getValue();
-                testSummary.setTestException(assertMessage);
+            if (!assertNotNulls.isEmpty()) {
+                startAssertNotNullsForServices(assertNotNulls, response, testCaseSummary);
             }
         } catch (IOException e) {
             log.error("Error while reading response from the service HttpResponse", e);
         }
 
-        if ((isAssertEqualComplete && isAssertNotNullComplete) || (isAssertEqualComplete && assertNotNulls.isEmpty()) ||
-                (isAssertNotNullComplete && assertEquals.isEmpty())) {
-            isServiceAssertComplete = true;
-            testSummary.setAssertionStatus(Constants.PASSED_KEY);
-            log.info("Unit testing passed for test case - " + testCaseNumber);
+        if (testCaseSummary.getTestCaseAssertionList().isEmpty()) {
+            testCaseSummary.setAssertionStatus(Constants.PASSED_KEY);
+            log.info("Unit testing passed for the test case - " + testCaseName);
         } else {
-            testSummary.setAssertionStatus(Constants.FAILED_KEY);
-            log.error("Unit testing failed for test case - " + testCaseNumber);
+            testCaseSummary.setAssertionStatus(Constants.FAILED_KEY);
+            log.error("Unit testing failed for the test case - " + testCaseName);
         }
-
-        return new AbstractMap.SimpleEntry<>(isServiceAssertComplete, testSummary);
     }
-
 
     /**
      * Method of assertionEquals for Sequence test cases.
      *
      * @param assertEquals   array of assertEquals
      * @param messageContext message context
-     * @return Map.Entry<Boolean, String> which has status of assertEquals and message if any error occurred
+     * @param testCaseSummary  testSummary object for this test case
      */
-    private static Map.Entry<Boolean, String> startAssertEqualsForSequence(List<AssertEqual> assertEquals,
-                                                                      MessageContext messageContext) {
+    private static void startAssertEqualsForSequence(
+            List<AssertEqual> assertEquals, MessageContext messageContext, TestCaseSummary testCaseSummary) {
 
         log.info("AssertEquals - assert property for sequences started");
-        boolean isAssertEqualFailed = false;
-        String messageOfAssertEqual = null;
 
         for (AssertEqual assertItem : assertEquals) {
-            if (!isAssertEqualFailed) {
-                String actual = assertItem.getActual();
-                String expected = RequestProcessor.trimStrings(assertItem.getExpected());
-                String message = assertItem.getMessage();
-                boolean isAssert;
-                String[] actualType = actual.split(":");
-                String actualProperty = actualType[0];
-                String mediatedResult;
+            TestCaseAssertionSummary testAssertion = new TestCaseAssertionSummary();
+            Assertor.AssertionPrerequisite.setAssertEqualPrerequisite(assertItem);
+            String mediatedResult = Constants.STRING_NULL;
+            boolean isAssert = false;
 
-                Axis2MessageContext axis2MessageContext = (Axis2MessageContext) messageContext;
-                org.apache.axis2.context.MessageContext axis2MessageCtx =
-                        axis2MessageContext.getAxis2MessageContext();
+            Axis2MessageContext axis2MessageContext = (Axis2MessageContext) messageContext;
+            org.apache.axis2.context.MessageContext axis2MessageCtx =
+                    axis2MessageContext.getAxis2MessageContext();
 
-                switch (actualProperty) {
+            switch (Assertor.AssertionPrerequisite.getExpressionPrefix()) {
 
-                    case INPUT_PROPERTY_BODY:
-                        try {
-                            org.apache.axis2.context.MessageContext axis2MsgContxt =
-                                    ((Axis2MessageContext) messageContext).getAxis2MessageContext();
-                            if (JsonUtil.hasAJsonPayload(axis2MsgContxt)) {
-                                if (JsonUtil.getJsonPayload(axis2MsgContxt) != null) {
-                                    mediatedResult = RequestProcessor.trimStrings(
-                                            IOUtils.toString(JsonUtil.getJsonPayload(axis2MsgContxt)));
-                                } else {
-                                    mediatedResult = EMPTY_VALUE;
-                                }
+                case INPUT_PROPERTY_BODY:
+                    try {
+                        org.apache.axis2.context.MessageContext axis2MsgContxt =
+                                ((Axis2MessageContext) messageContext).getAxis2MessageContext();
+                        if (JsonUtil.hasAJsonPayload(axis2MsgContxt)) {
+                            if (JsonUtil.getJsonPayload(axis2MsgContxt) != null) {
+                                mediatedResult = RequestProcessor.trimStrings(
+                                        IOUtils.toString(JsonUtil.getJsonPayload(axis2MsgContxt)));
                             } else {
-                                String omElement = messageContext.getEnvelope().getBody().getFirstElement().toString();
-                                if (omElement.contains(TEXT_NAMESPACE)) {
-                                    OMElement omElementOfText = AXIOMUtil.stringToOM(omElement);
-                                    mediatedResult = RequestProcessor.trimStrings(omElementOfText.getText());
-                                } else {
-                                    mediatedResult = RequestProcessor.trimStrings(omElement);
-                                }
+                                mediatedResult = EMPTY_VALUE;
                             }
-                        } catch (XMLStreamException e) {
-                            mediatedResult = EMPTY_VALUE;
-                            log.error("Exception while reading the text output from the message context", e);
-                        } catch (IOException e) {
-                            mediatedResult = EMPTY_VALUE;
-                            log.error("Exception while reading the JSON output from the message context", e);
+                        } else {
+                            String omElement = messageContext.getEnvelope().getBody().getFirstElement().toString();
+                            if (omElement.contains(TEXT_NAMESPACE)) {
+                                OMElement omElementOfText = AXIOMUtil.stringToOM(omElement);
+                                mediatedResult = RequestProcessor.trimStrings(omElementOfText.getText());
+                            } else {
+                                mediatedResult = RequestProcessor.trimStrings(omElement);
+                            }
                         }
+                    } catch (XMLStreamException e) {
+                        mediatedResult = EMPTY_VALUE;
+                        log.error("Exception while reading the text output from the message context", e);
+                    } catch (IOException e) {
+                        mediatedResult = EMPTY_VALUE;
+                        log.error("Exception while reading the JSON output from the message context", e);
+                    }
+                    isAssert = Assertor.AssertionPrerequisite.getExpected().equals(mediatedResult);
+                    break;
 
-                        isAssert = expected.equals(mediatedResult);
-                        break;
+                case INPUT_PROPERTY_CONTEXT:
+                    if (messageContext.getProperty(Assertor.AssertionPrerequisite.getExpressionProperty()) != null) {
+                        mediatedResult = RequestProcessor.trimStrings(messageContext.getProperty(
+                                Assertor.AssertionPrerequisite.getExpressionProperty()).toString());
+                        isAssert = Assertor.AssertionPrerequisite.getExpected().equals(mediatedResult);
+                    }
+                    break;
 
-                    case INPUT_PROPERTY_CONTEXT:
-                        mediatedResult =
-                                RequestProcessor.trimStrings(messageContext.getProperty(actualType[1]).toString());
-                        isAssert = expected.equals(mediatedResult);
-                        break;
+                case INPUT_PROPERTY_AXIS2:
+                    if (axis2MessageCtx.getProperty(Assertor.AssertionPrerequisite.getExpressionProperty()) != null) {
+                        mediatedResult = RequestProcessor.trimStrings(axis2MessageCtx.getProperty(
+                                Assertor.AssertionPrerequisite.getExpressionProperty()).toString());
+                        isAssert = Assertor.AssertionPrerequisite.getExpected().equals(mediatedResult);
+                    }
+                    break;
 
-                    case INPUT_PROPERTY_AXIS2:
-                        mediatedResult =
-                                RequestProcessor.trimStrings(axis2MessageCtx.getProperty(actualType[1]).toString());
-                        isAssert = expected.equals(mediatedResult);
-                        break;
+                case INPUT_PROPERTY_TRANSPORT:
+                    Object headers = axis2MessageContext.getProperty(
+                            org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
 
-                    case INPUT_PROPERTY_TRANSPORT:
-                        Object headers = axis2MessageContext.getProperty(
-                                org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> headersMap = (Map) headers;
+                    if (headersMap.get(Assertor.AssertionPrerequisite.getExpressionProperty()) != null) {
+                        mediatedResult = RequestProcessor.trimStrings(
+                                headersMap.get(Assertor.AssertionPrerequisite.getExpressionProperty()).toString());
+                        isAssert = Assertor.AssertionPrerequisite.getExpected().equals(mediatedResult);
+                    }
+                    break;
 
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> headersMap = (Map) headers;
-                        mediatedResult = RequestProcessor.trimStrings(headersMap.get(actualType[1]).toString());
-                        isAssert = expected.equals(mediatedResult);
-                        break;
+                default:
+                    mediatedResult = "Received assert expression: "
+                            + Assertor.AssertionPrerequisite.getAssertExpression()
+                            + " is not a valid operation type for sequences";
+                    log.error(mediatedResult);
+            }
 
-                    default:
-                        isAssert = false;
-                        mediatedResult = message;
-                        message = "Received assert actual value for sequences not defined";
-                }
-
-                log.info("Sequence Assert Actual - " + actual);
-                log.info("Sequence Assert Expected - " + expected);
-                log.info("Sequence mediated result for actual - " + mediatedResult);
-                if (isAssert) {
-                    log.info("Sequence assertEqual for " + actualProperty + " type passed successfully");
-                } else {
-                    isAssertEqualFailed = true;
-                    messageOfAssertEqual = message;
-                    log.error("Sequence assertEqual for " + actualProperty + " type failed - " + message + "\n");
-                }
+            log.info("Sequence Assert Expression - " + Assertor.AssertionPrerequisite.getAssertExpression());
+            log.info("Sequence mediated result for Actual - " + mediatedResult);
+            log.info("Sequence Assert Expected - " + Assertor.AssertionPrerequisite.getExpected());
+            if (isAssert) {
+                log.info("Sequence assertEqual for " + Assertor.AssertionPrerequisite.getAssertExpression()
+                        + " expression passed successfully");
+            } else {
+                testAssertion.setAssertionType(Constants.TEST_CASE_ASSERTION_EQUALS);
+                testAssertion.setAssertionExpression(Assertor.AssertionPrerequisite.getAssertExpression());
+                testAssertion.setAssertionExpectedValue(Assertor.AssertionPrerequisite.getExpected());
+                testAssertion.setAssertionActualValue(mediatedResult);
+                testAssertion.setAssertionErrorMessage(Assertor.AssertionPrerequisite.getMessage());
+                testCaseSummary.addTestCaseAssertion(testAssertion);
+                log.error("Sequence assertEqual for " + Assertor.AssertionPrerequisite.getAssertExpression()
+                        + " expression failed with a message - " + Assertor.AssertionPrerequisite.getMessage());
             }
         }
-
-        log.info("AssertEquals assertion success - " + !isAssertEqualFailed);
-        return new AbstractMap.SimpleEntry<>(!isAssertEqualFailed, messageOfAssertEqual);
     }
 
     /**
@@ -270,216 +240,294 @@ class Assertor {
      *
      * @param assertNotNull  array of assertNotNull
      * @param messageContext message context
-     * @return Map.Entry<Boolean, String> which has status of assertNotNull and message if any error occurred
+     * @param testCaseSummary testSummary object for this test case
      */
-    private static Map.Entry<Boolean, String> startAssertNotNullsForSequence(List<AssertNotNull> assertNotNull,
-                                                                        MessageContext messageContext) {
+    private static void startAssertNotNullsForSequence(
+            List<AssertNotNull> assertNotNull, MessageContext messageContext, TestCaseSummary testCaseSummary) {
 
         log.info("Assert Not Null - assert property for sequences started");
-        boolean isAssertNotNullFailed = false;
-        String messageOfAssertNotNull = null;
 
         for (AssertNotNull assertItem : assertNotNull) {
+            TestCaseAssertionSummary testAssertion = new TestCaseAssertionSummary();
+            Assertor.AssertionPrerequisite.setAssertNotNullPrerequisite(assertItem);
+            boolean isAssertNull = true;
+            String mediatedResult = Constants.STRING_NULL;
 
-            if (!isAssertNotNullFailed) {
+            Axis2MessageContext axis2MessageContext = (Axis2MessageContext) messageContext;
+            org.apache.axis2.context.MessageContext axis2MessageCtx =
+                    axis2MessageContext.getAxis2MessageContext();
 
-                String actual = assertItem.getActual();
-                String message = assertItem.getMessage();
-                boolean isAssertNull;
-                String[] actualType = actual.split(":");
-                String actualProperty = actualType[0];
-                String mediatedResult;
+            switch (Assertor.AssertionPrerequisite.getExpressionPrefix()) {
 
-                Axis2MessageContext axis2MessageContext = (Axis2MessageContext) messageContext;
-                org.apache.axis2.context.MessageContext axis2MessageCtx =
-                        axis2MessageContext.getAxis2MessageContext();
+                case INPUT_PROPERTY_BODY:
+                    isAssertNull = messageContext.getEnvelope().getBody().getFirstElement() == null;
+                    break;
 
-                switch (actualProperty) {
+                case INPUT_PROPERTY_CONTEXT:
+                    isAssertNull =
+                            messageContext.getProperty(Assertor.AssertionPrerequisite.getExpressionProperty()) == null;
+                    break;
 
-                    case INPUT_PROPERTY_BODY:
-                        mediatedResult = RequestProcessor.trimStrings(
-                                messageContext.getEnvelope().getBody().getFirstElement().toString());
-                        isAssertNull = mediatedResult.isEmpty();
-                        break;
+                case INPUT_PROPERTY_AXIS2:
+                    isAssertNull =
+                            axis2MessageCtx.getProperty(Assertor.AssertionPrerequisite.getExpressionProperty()) == null;
+                    break;
 
-                    case INPUT_PROPERTY_CONTEXT:
-                        mediatedResult =
-                                RequestProcessor.trimStrings(messageContext.getProperty(actualType[1]).toString());
-                        isAssertNull = mediatedResult.isEmpty();
-                        break;
+                case INPUT_PROPERTY_TRANSPORT:
+                    Object headers = axis2MessageCtx.getProperty(
+                            org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
 
-                    case INPUT_PROPERTY_AXIS2:
-                        mediatedResult =
-                                RequestProcessor.trimStrings(axis2MessageCtx.getProperty(actualType[1]).toString());
-                        isAssertNull = mediatedResult.isEmpty();
-                        break;
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> headersMap = (Map) headers;
+                    isAssertNull = headersMap.get(Assertor.AssertionPrerequisite.getExpressionProperty()) == null;
+                    break;
 
-                    case INPUT_PROPERTY_TRANSPORT:
-                        Object headers = axis2MessageCtx.getProperty(
-                                org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> headersMap = (Map) headers;
-                        mediatedResult = RequestProcessor.trimStrings(headersMap.get(actualType[1]).toString());
-                        isAssertNull = mediatedResult.isEmpty();
-                        break;
-
-                    default:
-                        isAssertNull = true;
-                        mediatedResult = message;
-                        message = "Received assert actual value for sequences not defined";
-                }
-
-                log.info("Sequence Assert Actual - " + actual);
-                log.info("Sequence mediated result for actual is not null - " + !mediatedResult.isEmpty());
-
-                if (!isAssertNull) {
-                    log.info("Sequence assertNotNull for " + actualProperty + " type passed successfully");
-                } else {
-                    isAssertNotNullFailed = true;
-                    messageOfAssertNotNull = message;
-                    log.error("Sequence assertNotNull for " + actualProperty + " type failed - " + message + "/n");
-                }
+                default:
+                    mediatedResult = "Received assert expression: "
+                            + Assertor.AssertionPrerequisite.getAssertExpression()
+                            + " is not a valid operation type for sequences";
+                    log.error(mediatedResult);
             }
 
-        }
+            log.info("Sequence Assertion Expression - " + Assertor.AssertionPrerequisite.getAssertExpression());
+            log.info("Sequence mediated result for assertNotNull is " + !isAssertNull);
 
-        log.info("AssertNotNull assertion success - " + !isAssertNotNullFailed);
-        return new AbstractMap.SimpleEntry<>(!isAssertNotNullFailed, messageOfAssertNotNull);
+            if (!isAssertNull) {
+                log.info("Sequence assertNotNull for " + Assertor.AssertionPrerequisite.getAssertExpression()
+                        + " expression passed successfully");
+            } else {
+                testAssertion.setAssertionType(Constants.TEST_CASE_ASSERTION_NOTNULL);
+                testAssertion.setAssertionExpression(Assertor.AssertionPrerequisite.getAssertExpression());
+                testAssertion.setAssertionActualValue(mediatedResult);
+                testAssertion.setAssertionErrorMessage(Assertor.AssertionPrerequisite.getMessage());
+                testCaseSummary.addTestCaseAssertion(testAssertion);
+                log.error("Sequence assertNotNull for " + Assertor.AssertionPrerequisite.getAssertExpression()
+                        + " expression failed with a message - " + Assertor.AssertionPrerequisite.getMessage());
+            }
+        }
     }
 
     /**
      * Method of assertionEquals for Service test cases.
      *
      * @param assertEquals array of assertEquals
-     * @param response     service response body
-     * @param headers      service response headers
-     * @return Map.Entry<Boolean, String> which has status of assertEquals and message if any error occurred
+     * @param response     service's http response
+     * @param testCaseSummary testSummary object for this test case
+     * @throws IOException when converting http response into a string
      */
-    private static Map.Entry<Boolean, String> startAssertEqualsForServices(
-            List<AssertEqual> assertEquals, String response, Header[] headers) {
+    private static void startAssertEqualsForServices(List<AssertEqual> assertEquals, Map.Entry<String,
+            HttpResponse> response, TestCaseSummary testCaseSummary) throws IOException {
 
         log.info("Assert Equals - assert property for services started");
-        boolean isAssertEqualFailed = false;
-        String messageOfAssertEqual = null;
 
         for (AssertEqual assertItem : assertEquals) {
-
-            if (isAssertEqualFailed) {
-                break;
-            }
-
-            String actual = assertItem.getActual();
-            String expected = RequestProcessor.trimStrings(assertItem.getExpected());
-            String message = assertItem.getMessage();
+            TestCaseAssertionSummary testAssertion = new TestCaseAssertionSummary();
+            Assertor.AssertionPrerequisite.setAssertEqualPrerequisite(assertItem);
+            String mediatedResult = Constants.STRING_NULL;
+            HttpResponse serviceResponse = response.getValue();
+            HttpEntity responseEntity = serviceResponse.getEntity();
             boolean isAssert = false;
-            String[] actualType = actual.split(":");
-            String actualProperty = actualType[0];
-            String mediatedResult = "null";
 
-            switch (actualProperty) {
+            switch (Assertor.AssertionPrerequisite.getExpressionPrefix()) {
 
                 case INPUT_PROPERTY_BODY:
-                    mediatedResult = RequestProcessor.trimStrings(response);
-                    isAssert = expected.equals(mediatedResult);
+                    if (responseEntity != null) {
+                        mediatedResult = RequestProcessor.trimStrings(
+                                EntityUtils.toString(responseEntity, Constants.STRING_UTF8));
+                        isAssert = Assertor.AssertionPrerequisite.getExpected().equals(mediatedResult);
+                    }
+                    break;
+
+                case RESPONSE_PROPERTY_STATUS_CODE:
+                    if (serviceResponse.getStatusLine() != null) {
+                        mediatedResult = Integer.toString(serviceResponse.getStatusLine().getStatusCode());
+                        isAssert = Assertor.AssertionPrerequisite.getExpected().equals(mediatedResult);
+                    }
+                    break;
+
+                case RESPONSE_PROPERTY_HTTP_VERSION:
+                    if (serviceResponse.getStatusLine().getProtocolVersion() != null) {
+                        mediatedResult = serviceResponse.getStatusLine().getProtocolVersion().toString();
+                        isAssert = Assertor.AssertionPrerequisite.getExpected().equals(mediatedResult);
+                    }
                     break;
 
                 case INPUT_PROPERTY_TRANSPORT:
-
-                    for (Header header : headers) {
-                        if (header.getName().equals(actualType[1])) {
-                            mediatedResult = RequestProcessor.trimStrings(header.getValue());
-                            isAssert = expected.equals(mediatedResult);
+                    Header[] responseHeaders = serviceResponse.getAllHeaders();
+                    if (responseHeaders == null) {
+                        break;
+                    }
+                    for (Header header : responseHeaders) {
+                        if (header.getName() != null &&
+                                header.getName().equals(Assertor.AssertionPrerequisite.getExpressionProperty())) {
+                            if (header.getValue() != null) {
+                                mediatedResult = RequestProcessor.trimStrings(header.getValue());
+                                isAssert = Assertor.AssertionPrerequisite.getExpected().equals(mediatedResult);
+                            }
                             break;
                         }
                     }
                     break;
 
                 default:
-                    message = "Received assert actual value not defined";
-                    mediatedResult = message;
+                    mediatedResult = "Received assert expression: "
+                            + Assertor.AssertionPrerequisite.getAssertExpression()
+                            + " is not a valid operation type for services";
+                    log.error(mediatedResult);
             }
 
-            log.info("Service Assert Actual - " + actual);
-            log.info("Service Assert Expected - " + expected);
-            log.info("Service mediated result for actual - " + mediatedResult);
+            log.info("Service Assert Expression - " + Assertor.AssertionPrerequisite.getAssertExpression());
+            log.info("Service mediated result for Actual - " + mediatedResult);
+            log.info("Service Assert Expected - " + Assertor.AssertionPrerequisite.getExpected());
 
             if (isAssert) {
-                log.info("Service assertEqual for " + actualProperty + " passed successfully");
+                log.info("Service assertEquals for " + Assertor.AssertionPrerequisite.getAssertExpression()
+                        + " expression passed successfully");
             } else {
-                isAssertEqualFailed = true;
-                messageOfAssertEqual = message;
-                log.error("Service assertEqual for " + actualProperty + " failed - " + message + "\n");
+                testAssertion.setAssertionType(Constants.TEST_CASE_ASSERTION_EQUALS);
+                testAssertion.setAssertionExpression(Assertor.AssertionPrerequisite.getAssertExpression());
+                testAssertion.setAssertionExpectedValue(Assertor.AssertionPrerequisite.getExpected());
+                testAssertion.setAssertionActualValue(mediatedResult);
+                if (mediatedResult.equals(Constants.STRING_NULL)) {
+                    testAssertion.setAssertionDescription("Tested service url - " + response.getKey()
+                            + "\nReceived status code - " + (serviceResponse.getStatusLine() != null ?
+                            serviceResponse.getStatusLine().getStatusCode() : "null"));
+                }
+                testAssertion.setAssertionErrorMessage(Assertor.AssertionPrerequisite.getMessage());
+                testCaseSummary.addTestCaseAssertion(testAssertion);
+                log.error("Service assertEquals for " + Assertor.AssertionPrerequisite.getAssertExpression()
+                        + " expression failed with a message - " + Assertor.AssertionPrerequisite.getMessage());
             }
         }
-
-        log.info("AssertEquals assertion success - " + !isAssertEqualFailed);
-        return new AbstractMap.SimpleEntry<>(!isAssertEqualFailed, messageOfAssertEqual);
     }
 
     /**
      * Method of assertNotNull for Service test cases.
      *
      * @param assertNotNull array of assertNotNull
-     * @param response      service response body
-     * @param headers       service response headers
-     * @return Map.Entry<Boolean, String> which has status of assertNotNull and message if any error occurred
+     * @param response     service's http response
+     * @param testCaseSummary testSummary object for this test case
      */
-    private static Map.Entry<Boolean, String> startAssertNotNullsForServices(
-            List<AssertNotNull> assertNotNull, String response, Header[] headers) {
-
+    private static void startAssertNotNullsForServices(List<AssertNotNull> assertNotNull, Map.Entry<String, HttpResponse> response,
+                                                       TestCaseSummary testCaseSummary) {
         log.info("Assert Not Null - assert property for services started");
-        boolean isAssertNotNullFailed = false;
-        String messageOfAssertNotNull = null;
 
         for (AssertNotNull assertItem : assertNotNull) {
+            TestCaseAssertionSummary testAssertion = new TestCaseAssertionSummary();
+            Assertor.AssertionPrerequisite.setAssertNotNullPrerequisite(assertItem);
+            boolean isAssertNull = true;
+            HttpResponse serviceResponse = response.getValue();
+            String mediatedResult = Constants.STRING_NULL;
 
-            if (isAssertNotNullFailed) {
-                break;
-            }
-
-            String actual = assertItem.getActual();
-            String message = assertItem.getMessage();
-            boolean isAssertNull = false;
-            String[] actualType = actual.split(":");
-            String actualProperty = actualType[0];
-            String mediatedResult = "null";
-
-            switch (actualProperty) {
+            switch (Assertor.AssertionPrerequisite.getExpressionPrefix()) {
 
                 case INPUT_PROPERTY_BODY:
-                    mediatedResult = response;
-                    isAssertNull = mediatedResult.isEmpty();
+                    isAssertNull = serviceResponse.getEntity() == null;
+                    break;
+
+                case RESPONSE_PROPERTY_STATUS_CODE:
+                    isAssertNull = serviceResponse.getStatusLine() == null;
+                    break;
+
+                case RESPONSE_PROPERTY_HTTP_VERSION:
+                    if (serviceResponse.getStatusLine() != null) {
+                        isAssertNull = serviceResponse.getStatusLine().getProtocolVersion() == null;
+                    }
                     break;
 
                 case INPUT_PROPERTY_TRANSPORT:
-                    for (Header header : headers) {
-                        if (header.getName().equals(actualType[1])) {
-                            mediatedResult = RequestProcessor.trimStrings(header.getValue());
-                            isAssertNull = mediatedResult.isEmpty();
-                            break;
+                    Header[] responseHeaders = serviceResponse.getAllHeaders();
+                    if (responseHeaders != null) {
+                        for (Header header : responseHeaders) {
+                            if (header.getName().equals(Assertor.AssertionPrerequisite.getExpressionProperty())) {
+                                isAssertNull = header.getValue() == null;
+                                break;
+                            }
                         }
                     }
                     break;
 
                 default:
-                    message = "Received assert actual value for service not defined";
-                    mediatedResult = message;
+                    mediatedResult = "Received assert expression: "
+                            + Assertor.AssertionPrerequisite.getAssertExpression()
+                            + " is not a valid operation type for services";
+                    log.error(mediatedResult);
             }
 
-            log.info("Service Assert Actual - " + actual);
-            log.info("Service mediated result for actual is not null- " + !mediatedResult.isEmpty());
+            log.info("Service Assert Actual - " + Assertor.AssertionPrerequisite.getAssertExpression());
+            log.info("Service mediated result for assertNotNull is - " + !isAssertNull);
 
             if (!isAssertNull) {
-                log.info("Service assertNotNull for " + actualProperty + " passed successfully");
+                log.info("Service assertNotNull for " + Assertor.AssertionPrerequisite.getAssertExpression()
+                        + " expression passed successfully");
             } else {
-                isAssertNotNullFailed = true;
-                messageOfAssertNotNull = message;
-                log.error("Service assertNotNull for " + actualProperty + " failed - " + message + "\n");
+                testAssertion.setAssertionType(Constants.TEST_CASE_ASSERTION_NOTNULL);
+                testAssertion.setAssertionExpression(Assertor.AssertionPrerequisite.getAssertExpression());
+                testAssertion.setAssertionActualValue(mediatedResult);
+                testAssertion.setAssertionDescription("Tested service url - " + response.getKey()
+                        + "\nRecieved status code - " + (serviceResponse.getStatusLine() != null ?
+                        serviceResponse.getStatusLine().getStatusCode() : "null"));
+                testAssertion.setAssertionErrorMessage(Assertor.AssertionPrerequisite.getMessage());
+                testCaseSummary.addTestCaseAssertion(testAssertion);
+                log.error("Service assertNotNull for " + Assertor.AssertionPrerequisite.getAssertExpression()
+                        + " expression failed with a message - " + Assertor.AssertionPrerequisite.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Inner static class for store the Assertion type common data.
+     */
+    static class AssertionPrerequisite {
+
+        private static String assertExpression;
+        private static String message;
+        private static String expected;
+        private static String expressionPrefix;
+        private static String expressionProperty;
+
+        private AssertionPrerequisite(){
+        }
+
+        static void setAssertEqualPrerequisite(AssertEqual assertItem) {
+            assertExpression = assertItem.getActual();
+            message = assertItem.getMessage();
+            expected = RequestProcessor.trimStrings(assertItem.getExpected());
+            String[] expressionType = assertExpression.split(Constants.STRING_COLON, 2);
+            expressionPrefix = expressionType[0];
+            if (expressionType.length == 2) {
+                expressionProperty = expressionType[1];
             }
         }
 
-        log.info("AssertNotNull assertion success - " + !isAssertNotNullFailed);
-        return new AbstractMap.SimpleEntry<>(!isAssertNotNullFailed, messageOfAssertNotNull);
+        static void setAssertNotNullPrerequisite(AssertNotNull assertItem) {
+            assertExpression = assertItem.getActual();
+            message = assertItem.getMessage();
+            String[] expressionType = assertExpression.split(Constants.STRING_COLON, 2);
+            expressionPrefix = expressionType[0];
+            if (expressionType.length == 2) {
+                expressionProperty = expressionType[1];
+            }
+        }
+
+        static String getAssertExpression() {
+            return assertExpression;
+        }
+
+        static String getMessage() {
+            return message;
+        }
+
+        static String getExpressionPrefix() {
+            return expressionPrefix;
+        }
+
+        static String getExpressionProperty() {
+            return expressionProperty;
+        }
+
+        static String getExpected() {
+            return expected;
+        }
     }
 }
