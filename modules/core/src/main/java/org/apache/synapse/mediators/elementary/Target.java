@@ -467,7 +467,7 @@ public class Target {
      */
     private void setEnrichResultToBody(MessageContext synapseContext, SynapseJsonPath synapseJsonPath, Object
             sourceNode) {
-        String expression = synapseJsonPath.getJsonPath().getPath();
+        String expression = synapseJsonPath.getJsonPathExpression();
 
         // Though SynapseJsonPath support "$.", the JSONPath implementation does not support it
         if (expression.endsWith(".")) {
