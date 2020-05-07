@@ -26,4 +26,4 @@ jobs:
         repository: wso2/micro-integrator
         ref: refs/heads/master
     - name: Build MI with Maven
-      run: mvn clean install -Dsynapse.version=$(cat ../SYNAPSE_VERSION_FILE) --file ../micro-integrator/pom.xml
+      run: mvn clean install -Dsynapse.version=$(cat ../SYNAPSE_VERSION_FILE) -fae --file ../micro-integrator/pom.xml
