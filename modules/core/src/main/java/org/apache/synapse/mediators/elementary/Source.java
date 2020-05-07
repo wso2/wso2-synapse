@@ -256,7 +256,7 @@ public class Source {
         JsonParser parser = new JsonParser();
         if (xpath != null) {
             SynapseJsonPath sourceJsonPath = (SynapseJsonPath) this.xpath;
-            jsonPath = sourceJsonPath.getJsonPath().getPath();
+            jsonPath = sourceJsonPath.getJsonPathExpression();
         }
 
         org.apache.axis2.context.MessageContext context = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
