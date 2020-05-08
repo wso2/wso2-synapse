@@ -31,7 +31,6 @@ import org.apache.axis2.addressing.AddressingConstants;
 import org.apache.axis2.addressing.AddressingHelper;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.engine.AxisEngine;
-import org.apache.axis2.transport.base.IgnoreSuspensionBaseTransportException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
@@ -88,10 +87,6 @@ public class Axis2Sender {
                     endpoint,
                     // The Axis2 Message context of the Synapse MC
                     synapseInMessageContext);
-        } catch (IgnoreSuspensionBaseTransportException e) {
-            synapseInMessageContext.setProperty(SynapseConstants.JMS_TRANSPORT_EXCEPTION_TRIGGER_TYPE,
-                    SynapseConstants.JMS_INVALID_MESSAGE_TYPE_EXCEPTION);
-            handleException("Invalid JMS message type received by the JMS transport", e);
         } catch (Exception e) {
             handleException("Unexpected error during sending message out", e);
         }

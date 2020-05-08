@@ -306,9 +306,9 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                             synapseOutMsgCtx.getMessageID() + "]");
                 }
 
-                int errorCode = (Integer)response.getProperty(SynapseConstants.ERROR_CODE);
+                Integer errorCode = (Integer) response.getProperty(SynapseConstants.ERROR_CODE);
                 //If a timeout has occured and the timeout action of the callback is to discard the message
-                if (errorCode == SynapseConstants.NHTTP_CONNECTION_TIMEOUT && callback.getTimeOutAction()
+                if (errorCode != null && errorCode == SynapseConstants.NHTTP_CONNECTION_TIMEOUT && callback.getTimeOutAction()
                         == SynapseConstants.DISCARD) {
                     //Do not execute any fault sequences. Discard message
                         if(log.isWarnEnabled()){
