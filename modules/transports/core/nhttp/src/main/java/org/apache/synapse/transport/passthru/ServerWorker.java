@@ -16,17 +16,6 @@
 
 package org.apache.synapse.transport.passthru;
 
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.xml.parsers.FactoryConfigurationError;
-
-
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAP12Constants;
@@ -46,6 +35,7 @@ import org.apache.axis2.dispatchers.RequestURIBasedDispatcher;
 import org.apache.axis2.engine.AxisEngine;
 import org.apache.axis2.transport.RequestResponseTransport;
 import org.apache.axis2.transport.TransportUtils;
+import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HTTPTransportUtils;
 import org.apache.axis2.util.MessageContextBuilder;
@@ -67,7 +57,6 @@ import org.apache.synapse.commons.util.ext.TenantInfoInitiatorProvider;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.nhttp.HttpCoreRequestResponseTransport;
-import org.apache.synapse.transport.nhttp.NHttpConfiguration;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.nhttp.util.NhttpUtil;
 import org.apache.synapse.transport.nhttp.util.RESTUtil;
@@ -75,6 +64,15 @@ import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
+
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.xml.parsers.FactoryConfigurationError;
 
 /**
  * This is a worker thread for executing an incoming request in to the transport.
@@ -513,7 +511,9 @@ public class ServerWorker implements Runnable {
                 conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID));
         msgContext.setProperty(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY,
                 sourceConfiguration.isCorrelationLoggingEnabled());
-
+        // propagate transaction property
+        msgContext.setProperty(BaseConstants.INTERNAL_TRANSACTION_COUNTED,
+                               conn.getContext().getAttribute(BaseConstants.INTERNAL_TRANSACTION_COUNTED));
         if (sourceConfiguration.getScheme().isSSL()) {
             msgContext.setTransportOut(cfgCtx.getAxisConfiguration()
                 .getTransportOut(Constants.TRANSPORT_HTTPS));
