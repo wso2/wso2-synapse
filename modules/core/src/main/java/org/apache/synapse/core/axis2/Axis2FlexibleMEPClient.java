@@ -37,6 +37,7 @@ import org.apache.axis2.description.AxisServiceGroup;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.axis2.description.WSDL2Constants;
 import org.apache.axis2.engine.AxisConfiguration;
+import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HTTPTransportUtils;
 import org.apache.axis2.wsdl.WSDLConstants;
@@ -56,12 +57,12 @@ import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.MediatorPropertyUtils;
 import org.apache.synapse.util.MessageHelper;
 
-import javax.mail.internet.ContentType;
-import javax.mail.internet.ParseException;
-import javax.xml.namespace.QName;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import javax.mail.internet.ContentType;
+import javax.mail.internet.ParseException;
+import javax.xml.namespace.QName;
 
 /**
  * This is a simple client that handles both in only and in out
@@ -159,6 +160,11 @@ public class Axis2FlexibleMEPClient {
         String preserveAddressingProperty = (String) synapseOutMessageContext.getProperty(
                 SynapseConstants.PRESERVE_WS_ADDRESSING);
         MessageContext axisOutMsgCtx = cloneForSend(originalInMsgCtx, preserveAddressingProperty);
+
+        // set "INTERNAL_TRANSACTION_COUNTED" property in axisOutMsgCtx's message context.
+        axisOutMsgCtx.setProperty(BaseConstants.INTERNAL_TRANSACTION_COUNTED,
+                                  originalInMsgCtx.getProperty(BaseConstants.INTERNAL_TRANSACTION_COUNTED));
+
         Object TRIGGER_NAME;
         if ((TRIGGER_NAME = synapseOutMessageContext.getProperty(SynapseConstants.PROXY_SERVICE)) != null) {
             axisOutMsgCtx.setProperty(PassThroughConstants.INTERNAL_TRIGGER_TYPE, SynapseConstants.PROXY_SERVICE_TYPE);
