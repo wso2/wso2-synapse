@@ -155,6 +155,8 @@ public class SourceHandler implements NHttpServerEventHandler {
             } else {
                 sourceConfiguration.getWorkerPool().execute(new ServerWorker(request, sourceConfiguration, os));
             }
+            //increasing the input request metric
+            metrics.requestReceived();
         } catch (HttpException e) {
             log.error("HttpException occurred when request is processing probably when creating SourceRequest", e);
 
@@ -209,7 +211,6 @@ public class SourceHandler implements NHttpServerEventHandler {
             SourceRequest request = SourceContext.getRequest(conn);
 
             int readBytes = request.read(conn, decoder);
-
             if (isMessageSizeValidationEnabled) {
                 HttpContext httpContext = conn.getContext();
                 //this is introduced as some transports which extends passthrough source handler which have overloaded
@@ -225,6 +226,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                     log.warn("Payload exceeds valid payload size range, hence discontinuing chunk stream at "
                             + messageSizeSum + " bytes to prevent OOM.");
                     dropSourceConnection(conn);
+                    metrics.exceptionOccured();
                     conn.getContext().setAttribute(PassThroughConstants.SOURCE_CONNECTION_DROPPED, true);
                     //stopped http chunk stream from here and mark producer complete
                     request.getPipe().forceProducerComplete(decoder);
@@ -235,7 +237,6 @@ public class SourceHandler implements NHttpServerEventHandler {
             if (readBytes > 0) {
                 metrics.incrementBytesReceived(readBytes);
             }
-
         } catch (IOException e) {
             ProtocolState protocolState = SourceContext.getState(conn);
             Map<String, String> logDetails = getLoggingInfo(conn, protocolState);
@@ -248,6 +249,8 @@ public class SourceHandler implements NHttpServerEventHandler {
             logIOException(conn, e);
 
             informReaderError(conn);
+            //decrementing the request metric
+            metrics.exceptionOccured();
 
             SourceContext.updateState(conn, ProtocolState.CLOSED);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
@@ -331,7 +334,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                     if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                         logCorrelationRoundTrip(context,request);
                     }
-                    updateLatencyView(context);
+                    updateMetricsView(context);
                 }
             }
         } catch (IOException e) {
@@ -358,6 +361,8 @@ public class SourceHandler implements NHttpServerEventHandler {
             
             //special case to handle WSDLs
             if(protocolState == ProtocolState.WSDL_RESPONSE_DONE){
+                //decrement request count for wsdl responses
+                metrics.requestServed();
             	// we need to shut down if the shutdown flag is set
             	 HttpContext context = conn.getContext();
             	 ContentOutputBuffer outBuf = (ContentOutputBuffer) context.getAttribute(
@@ -402,7 +407,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                 if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                     logCorrelationRoundTrip(context, request);
                 }
-                updateLatencyView(context);
+                updateMetricsView(context);
 			}
 			endTransaction(conn);
             metrics.incrementBytesSent(bytesSent);
@@ -469,6 +474,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             }
         } else if (state == ProtocolState.REQUEST_BODY || state == ProtocolState.REQUEST_HEAD) {
             metrics.incrementTimeoutsReceiving();
+            metrics.timeoutOccured();
             informReaderError(conn);
             isTimeoutOccurred = true;
 
@@ -484,6 +490,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         } else if (state == ProtocolState.RESPONSE_BODY || state == ProtocolState.RESPONSE_HEAD) {
             informWriterError(conn);
             isTimeoutOccurred = true;
+            metrics.timeoutOccured();
             log.warn("STATE_DESCRIPTION = Socket Timeout occurred after server writing the response headers to the "
                     + "client" + "but Server is still writing the response body, INTERNAL_STATE = " + state
                     + ", DIRECTION = " + logDetails.get("direction") + ", "
@@ -496,6 +503,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         } else if (state == ProtocolState.REQUEST_DONE) {
             informWriterError(conn);
         	isTimeoutOccurred = true;
+            metrics.timeoutOccured();
             log.warn(
                     "STATE_DESCRIPTION = Socket Timeout occurred after accepting the request headers and the request "
                             + "body, INTERNAL_STATE = "
@@ -752,7 +760,8 @@ public class SourceHandler implements NHttpServerEventHandler {
     }
 
 
-    private void updateLatencyView(HttpContext context) {
+    private void updateMetricsView(HttpContext context) {
+        metrics.requestServed();
         if (context == null) {
             return;
         }

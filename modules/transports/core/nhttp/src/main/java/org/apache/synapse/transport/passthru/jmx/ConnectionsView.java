@@ -61,6 +61,8 @@ public class ConnectionsView implements ConnectionsViewMBean {
     private AtomicInteger shortTermOpenedConnections = new AtomicInteger(0);
     private AtomicInteger longTermOpenedConnections = new AtomicInteger(0);
 
+    private AtomicInteger unservedRequests = new AtomicInteger(0);
+
     // The array length must be equal to the number of buckets
     private AtomicInteger[] requestSizeCounters = new AtomicInteger[6];
     private AtomicInteger[] responseSizeCounters = new AtomicInteger[6];
@@ -131,6 +133,26 @@ public class ConnectionsView implements ConnectionsViewMBean {
 
     protected void disconnected() {
         activeConnections.decrementAndGet();
+    }
+
+    protected void requestReceived() {
+        unservedRequests.incrementAndGet();
+    }
+
+    protected void requestServed() {
+        unservedRequests.decrementAndGet();
+    }
+
+    protected void timeoutOccured() {
+        unservedRequests.decrementAndGet();
+    }
+
+    protected void exceptionOccured() {
+        unservedRequests.decrementAndGet();
+    }
+
+    public int getUnServedRequests() {
+        return unservedRequests.get();
     }
 
     protected void notifyMessageSize(long size, boolean isRequest) {
