@@ -22,6 +22,8 @@ package org.apache.synapse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.util.Iterator;
+import java.util.List;
 import java.util.Stack;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -43,6 +45,8 @@ public abstract class FaultHandler {
 
         boolean traceOn = synCtx.getTracingState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
+
+        executeExtendedSynapseHandlerOnFault(synCtx);
 
         if (traceOrDebugOn) {
             traceOrDebugWarn(traceOn, "FaultHandler executing impl: " + this.getClass().getName());
@@ -70,6 +74,8 @@ public abstract class FaultHandler {
 
         boolean traceOn = synCtx.getTracingState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
+
+        executeExtendedSynapseHandlerOnFault(synCtx);
 
         if (e != null && synCtx.getProperty(SynapseConstants.ERROR_CODE) == null) {
             synCtx.setProperty(SynapseConstants.ERROR_CODE, SynapseConstants.DEFAULT_ERROR);
@@ -134,5 +140,26 @@ public abstract class FaultHandler {
             trace.warn(msg);
         }
         log.warn(msg);
+    }
+
+    /**
+     * Execute the ExtendedSynapseHandler in the error flow.
+     *
+     * @param synCtx Synapse Message Context
+     */
+    protected void executeExtendedSynapseHandlerOnFault(MessageContext synCtx) {
+        List handlers = synCtx.getEnvironment().getSynapseHandlers();
+        Iterator<SynapseHandler> iterator = handlers.iterator();
+        while (iterator.hasNext()) {
+            SynapseHandler handler = iterator.next();
+            if (handler instanceof AbstractExtendedSynapseHandler &&
+                    synCtx.getProperty(SynapseConstants.IS_ERROR_COUNT_ALREADY_PROCESSED) == null) {
+                AbstractExtendedSynapseHandler abstractExtendedSynapseHandler =
+                        (AbstractExtendedSynapseHandler) handler;
+                if (!abstractExtendedSynapseHandler.handleError(synCtx)) {
+                    log.warn("Synapse not executed in the Extended Synapse Handler error flow path");
+                }
+            }
+        }
     }
 }

@@ -22,11 +22,12 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.config.xml.rest.APIFactory;
 import org.apache.synapse.config.xml.rest.APISerializer;
 import org.apache.synapse.rest.API;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 
 import java.io.File;
 import java.util.Properties;
@@ -60,6 +61,10 @@ public class APIDeployer extends AbstractSynapseArtifactDeployer {
                 if (log.isDebugEnabled()) {
                     log.debug("API deployment from file : " + fileName + " : Completed");
                 }
+                String startTime = String.valueOf(System.currentTimeMillis());
+                executeExtendedSynapseHandlerOnArtifactDeployment(api.getName(), SynapseConstants.FAIL_SAFE_MODE_API,
+                        startTime);
+
                 log.info("API named '" + api.getName() +
                         "' has been deployed from file : " + fileName);
                 return api.getName();
@@ -143,6 +148,10 @@ public class APIDeployer extends AbstractSynapseArtifactDeployer {
                     log.debug("Undeployment of the API named : "
                             + artifactName + " : Completed");
                 }
+                String unDeployTime = String.valueOf(System.currentTimeMillis());
+                executeSynapseHandlerOnArtifactUnDeployment(api.getName(), SynapseConstants.FAIL_SAFE_MODE_API,
+                        unDeployTime);
+
                 log.info("API named '" + api.getName() + "' has been undeployed");
             } else if (log.isDebugEnabled()) {
                 log.debug("API " + artifactName + " has already been undeployed");

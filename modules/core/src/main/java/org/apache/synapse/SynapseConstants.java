@@ -581,4 +581,7 @@ public final class SynapseConstants {
     // Common property for all artifacts
     public static final String ARTIFACT_NAME = "ARTIFACT_NAME";
 
+    // Keeps the state whether the error flow was executed previously
+    public static final String IS_ERROR_COUNT_ALREADY_PROCESSED = "IS_ERROR_COUNT_ALREADY_PROCESSED";
+
 }

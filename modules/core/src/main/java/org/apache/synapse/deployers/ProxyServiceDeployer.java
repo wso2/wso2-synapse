@@ -24,14 +24,19 @@ import org.apache.axis2.deployment.DeploymentException;
 import org.apache.axis2.description.AxisService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.config.xml.ProxyServiceFactory;
 import org.apache.synapse.config.xml.ProxyServiceSerializer;
 import org.apache.synapse.core.axis2.ProxyService;
+import org.apache.synapse.AbstractExtendedSynapseHandler;
 
 import java.io.File;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -95,6 +100,10 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                         log.debug("Started the ProxyService : " + proxy.getName());
                         log.debug("ProxyService Deployment from file : " + filePath + " : Completed");
                     }
+
+                    String startTime = String.valueOf(System.currentTimeMillis());
+                    executeExtendedSynapseHandlerOnArtifactDeployment(proxy.getName(),
+                            SynapseConstants.PROXY_SERVICE_TYPE, startTime);
 
                     log.info("ProxyService named '" + proxy.getName()
                              + "' has been deployed from file : " + filePath);
@@ -206,6 +215,9 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                     log.debug("ProxyService Undeployment of the proxy named : "
                             + artifactName + " : Completed");
                 }
+                String unDeployTime = String.valueOf(System.currentTimeMillis());
+                executeSynapseHandlerOnArtifactUnDeployment(proxy.getName(), SynapseConstants.PROXY_SERVICE_TYPE,
+                        unDeployTime);
                 log.info("ProxyService named '" + proxy.getName() + "' has been undeployed");
             } else if (log.isDebugEnabled()) {
                 log.debug("Proxy service " + artifactName + " has already been undeployed");
