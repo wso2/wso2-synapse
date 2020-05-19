@@ -106,6 +106,7 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
     private final Object throttleLock = new Object();
     /* Last version of dynamic policy resource*/
     private long version;
+    private static final String SYMBOL_UNDERSCORE = "_";
 
     public ThrottleMediator() {
     }
@@ -356,6 +357,7 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
         } else {
             uniqueKey = id;
         }
+        uniqueKey = uniqueKey.concat(SYMBOL_UNDERSCORE);
 
         //Using remote caller domain name , If there is a throttle configuration for
         // this domain name ,then throttling will occur according to that configuration
