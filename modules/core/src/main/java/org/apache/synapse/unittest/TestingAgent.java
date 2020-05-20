@@ -63,7 +63,7 @@ class TestingAgent {
 
     private Logger log = Logger.getLogger(TestingAgent.class.getName());
     private SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
-    private String artifactType = null;
+    private String mainTestArtifactType = null;
     private String proxyTransportMethod = null;
     private String key = null;
     private OMElement artifactNode = null;
@@ -78,7 +78,7 @@ class TestingAgent {
      */
     Map.Entry<Boolean, TestSuiteSummary> processTestArtifact(SynapseTestCase synapseTestCase,
                                                              TestSuiteSummary testSuiteSummary) {
-        artifactType = synapseTestCase.getArtifacts().getTestArtifact().getArtifactType();
+        mainTestArtifactType = synapseTestCase.getArtifacts().getTestArtifact().getArtifactType();
         proxyTransportMethod = synapseTestCase.getArtifacts().getTestArtifact().getTransportMethod();
         String artifactNameOrKey = synapseTestCase.getArtifacts().getTestArtifact().getArtifactNameOrKey();
         OMElement artifact = synapseTestCase.getArtifacts().getTestArtifact().getArtifact();
@@ -87,7 +87,7 @@ class TestingAgent {
 
         try {
             //check artifact type and pass the artifact to the relevant deployment
-            switch (artifactType) {
+            switch (mainTestArtifactType) {
 
                 case TYPE_SEQUENCE:
                     Map.Entry<SynapseConfiguration, String> pairOfSequenceDeployment =
@@ -99,7 +99,7 @@ class TestingAgent {
                         isArtifactDeployed = true;
                         deploymentStats.put(key, TYPE_SEQUENCE);
                         testSuiteSummary.setDeploymentStatus(Constants.PASSED_KEY);
-                        log.info("Sequence artifact deployed successfully");
+                        log.info("Primary test Sequence artifact deployed successfully");
                     } else {
                         String errorMessage = "Sequence " + artifactNameOrKey + " deployment failed";
                         log.error(errorMessage);
@@ -118,7 +118,7 @@ class TestingAgent {
                         isArtifactDeployed = true;
                         deploymentStats.put(key, TYPE_PROXY);
                         testSuiteSummary.setDeploymentStatus(Constants.PASSED_KEY);
-                        log.info("Proxy artifact deployed successfully");
+                        log.info("Primary test Proxy artifact deployed successfully");
                     } else {
                         String errorMessage = "Proxy " + artifactNameOrKey + " deployment failed";
                         log.error(errorMessage);
@@ -138,7 +138,7 @@ class TestingAgent {
                         isArtifactDeployed = true;
                         deploymentStats.put(key, TYPE_API);
                         testSuiteSummary.setDeploymentStatus(Constants.PASSED_KEY);
-                        log.info("API artifact deployed successfully");
+                        log.info("Primary test API artifact deployed successfully");
                     } else {
                         String errorMessage = "API " + artifactNameOrKey + " deployment failed";
                         log.error(errorMessage);
@@ -152,7 +152,7 @@ class TestingAgent {
 
             }
         } catch (Exception e) {
-            log.error("Artifact deployment failed", e);
+            log.error("Primary test artifact " + mainTestArtifactType + " deployment failed", e);
             exception = CommonUtils.stackTraceToString(e);
             testSuiteSummary.setDeploymentStatus(Constants.FAILED_KEY);
             testSuiteSummary.setDeploymentException(exception);
@@ -178,14 +178,14 @@ class TestingAgent {
                     isArtifactDeployed = processForArtifactTypes(synapseTestCase, x);
 
                 } catch (Exception e) {
-                    log.error("Artifact deployment failed", e);
+                    log.error("Supportive test artifact deployment failed", e);
                     exception = CommonUtils.stackTraceToString(e);
                     testSuiteSummary.setDeploymentStatus(Constants.FAILED_KEY);
                     testSuiteSummary.setDeploymentException(exception);
                 }
             } else {
                 log.error(synapseTestCase.getArtifacts().getSupportiveArtifact(x).getArtifactType()
-                        + " artifact deployment failed");
+                        + " primary test artifact deployment failed");
                 break;
             }
         }
@@ -254,10 +254,11 @@ class TestingAgent {
         }
 
         if (key.contains(artifactNameOrKey)) {
-            log.info(key + " - " + supportiveArtifactType + " artifact deployed successfully");
+            log.info(key + " - " + supportiveArtifactType + " supportive artifact deployed successfully");
             deploymentStats.put(key, supportiveArtifactType);
             return true;
         } else {
+            log.info(key + " - " + supportiveArtifactType + " supportive artifact deployment failed");
             return false;
         }
     }
@@ -277,11 +278,11 @@ class TestingAgent {
             for (int i = 0; i < testCaseCount; i++) {
                 TestCaseSummary testSummary = new TestCaseSummary();
                 TestCase currentTestCase = synapseTestCase.getTestCases().getTestCase(i);
-                testSummary.setTestCaseName(currentTestCase.getTestCaseName());
-                testSuiteSummary.setRecentTestCaseName(currentTestCaseName);
                 currentTestCaseName = currentTestCase.getTestCaseName();
+                testSummary.setTestCaseName(currentTestCaseName);
+                testSuiteSummary.setRecentTestCaseName(currentTestCaseName);
 
-                switch (artifactType) {
+                switch (mainTestArtifactType) {
                     case TYPE_SEQUENCE:
                         Map.Entry<Boolean, MessageContext> mediateResult =
                                 TestCasesMediator.sequenceMediate(currentTestCase, synapseConfiguration, key);
@@ -292,25 +293,25 @@ class TestingAgent {
 
                         //check whether mediation is success or not
                         checkAssertionWithSequenceMediation
-                                (mediationResult, resultedMessageContext, currentTestCase, i, testSummary);
+                                (mediationResult, resultedMessageContext, currentTestCase, testSummary);
                         break;
 
                     case TYPE_PROXY:
-                        HttpResponse invokedProxyResult = TestCasesMediator
+                        Map.Entry<String, HttpResponse> invokedProxyResult = TestCasesMediator
                                 .proxyServiceExecutor(currentTestCase, proxyTransportMethod, key);
 
                         testSuiteSummary.setMediationStatus(Constants.PASSED_KEY);
-                        checkAssertionWithProxyMediation(invokedProxyResult, currentTestCase, i, testSummary);
+                        checkAssertionWithProxyMediation(invokedProxyResult, currentTestCase, testSummary);
                         break;
 
                     case TYPE_API:
                         String context = artifactNode.getAttributeValue(new QName(API_CONTEXT));
                         String resourceMethod = currentTestCase.getRequestMethod();
-                        HttpResponse invokedApiResult = TestCasesMediator.apiResourceExecutor
+                        Map.Entry<String, HttpResponse> invokedApiResult = TestCasesMediator.apiResourceExecutor
                                 (currentTestCase, context, resourceMethod);
 
                         testSuiteSummary.setMediationStatus(Constants.PASSED_KEY);
-                        checkAssertionWithAPIMediation(invokedApiResult, currentTestCase, i, testSummary);
+                        checkAssertionWithAPIMediation(invokedApiResult, currentTestCase, testSummary);
                         break;
 
                     default:
@@ -334,16 +335,15 @@ class TestingAgent {
      * @param mediationResult        result of mediation of sequence
      * @param resultedMessageContext message context of mediation of sequence
      * @param currentTestCase        current running test case data
+     * @param testSummary            data storing object for test summary
      */
-    private void checkAssertionWithSequenceMediation(
-            boolean mediationResult, MessageContext resultedMessageContext, TestCase currentTestCase,
-            int index, TestCaseSummary testSummary) {
-        String assertMessage;
+    private void checkAssertionWithSequenceMediation(boolean mediationResult, MessageContext resultedMessageContext,
+                                                     TestCase currentTestCase, TestCaseSummary testSummary) {
         if (mediationResult) {
             testSummary.setMediationStatus(Constants.PASSED_KEY);
-            Assertor.doAssertionSequence(currentTestCase, resultedMessageContext, index + 1, testSummary);
+            Assertor.doAssertionSequence(currentTestCase, resultedMessageContext, testSummary);
         } else {
-            assertMessage = "Sequence mediation failed";
+            String assertMessage = "Sequence mediation failed, check the server logs for more details";
             log.error(assertMessage);
             testSummary.setMediationStatus(Constants.FAILED_KEY);
             testSummary.setTestException(assertMessage);
@@ -355,18 +355,18 @@ class TestingAgent {
      *
      * @param invokedProxyResult result of proxy invoke
      * @param currentTestCase    current running test case data
+     * @param testSummary        data storing object for test summary
      */
-    private void checkAssertionWithProxyMediation(HttpResponse invokedProxyResult,
-                                                                        TestCase currentTestCase, int index,
-                                                                        TestCaseSummary testSummary) {
+    private void checkAssertionWithProxyMediation(Map.Entry<String, HttpResponse> invokedProxyResult,
+                                                  TestCase currentTestCase, TestCaseSummary testSummary) {
 
-        String assertMessage;
-        if (invokedProxyResult != null) {
+        if (invokedProxyResult.getValue() != null) {
             testSummary.setMediationStatus(Constants.PASSED_KEY);
-            Assertor.doAssertionService
-                    (currentTestCase, invokedProxyResult, index + 1, testSummary);
+            Assertor.doAssertionService(currentTestCase, invokedProxyResult, testSummary);
         } else {
-            assertMessage = "Proxy service invoke failed";
+            String assertMessage = "Proxy service invoked URL - " + invokedProxyResult.getKey() + "\nProxy service " +
+                    "mediation phase failed due to respond of the proxy service was null, " +
+                    "check the server logs for more details";
             log.error(assertMessage);
             testSummary.setMediationStatus(Constants.FAILED_KEY);
             testSummary.setTestException(assertMessage);
@@ -378,17 +378,16 @@ class TestingAgent {
      *
      * @param invokedApiResult result of API invoke
      * @param currentTestCase  current running test case data
+     * @param testSummary      data storing object for test summary
      */
-    private void checkAssertionWithAPIMediation(HttpResponse invokedApiResult,
-                                                                      TestCase currentTestCase, int index,
-                                                                      TestCaseSummary testSummary) {
-        String assertMessage;
-        if (invokedApiResult != null) {
+    private void checkAssertionWithAPIMediation(Map.Entry<String, HttpResponse> invokedApiResult,
+                                                TestCase currentTestCase, TestCaseSummary testSummary) {
+        if (invokedApiResult.getValue() != null) {
             testSummary.setMediationStatus(Constants.PASSED_KEY);
-            Assertor.doAssertionService
-                    (currentTestCase, invokedApiResult, index + 1, testSummary);
+            Assertor.doAssertionService(currentTestCase, invokedApiResult, testSummary);
         } else {
-            assertMessage = "API resource invoke failed";
+            String assertMessage = "API invoked URL - " + invokedApiResult.getKey() + "\nAPI mediation phase failed " +
+                    "due to respond of the API resource was null, check the server logs for more details";
             log.error(assertMessage);
             testSummary.setMediationStatus(Constants.FAILED_KEY);
             testSummary.setTestException(assertMessage);

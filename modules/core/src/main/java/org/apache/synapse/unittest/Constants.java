@@ -80,6 +80,8 @@ public class Constants {
     static final String INPUT_PROPERTY_CONTEXT = "$ctx";
     static final String INPUT_PROPERTY_AXIS2 = "$axis2";
     static final String INPUT_PROPERTY_TRANSPORT = "$trp";
+    static final String RESPONSE_PROPERTY_STATUS_CODE = "$statusCode";
+    static final String RESPONSE_PROPERTY_HTTP_VERSION = "$httpVersion";
 
     //mock service key word constants
     static final String MOCK_SERVICES = "mock-services";
@@ -126,6 +128,10 @@ public class Constants {
     static final String CURRENT_TESTCASE = "currentTestCase";
     static final String ASSERTION_EXCEPTION = "exception";
     static final String ASSERTION_STATUS = "assertionStatus";
+    static final String ASSERTION_EXPRESSION = "assertionExpression";
+    static final String ASSERTION_TYPE = "assertionType";
+    static final String FAILURE_ASSERTIONS = "failureAssertions";
+    static final String ASSERTION_DESCRIPTION = "assertionDescription";
 
     //parameter constants
     static final String PRAM_TEMP_DIR = "java.io.tmpdir";
@@ -134,6 +140,9 @@ public class Constants {
     static final String NEW_LINE = "\n";
     static final String EMPTY_VALUE = "";
     static final String BACK_SLASH = "/";
+    static final String STRING_NULL = "null";
+    static final String STRING_COLON = ":";
+    static final String STRING_UTF8 = "UTF-8";
 
     //input data formats
     static final String XML_FORMAT = "XML";
