@@ -21,7 +21,6 @@ package org.apache.synapse.mediators;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.mediators.util.SimpleMessageContext;
-import org.apache.synapse.mediators.util.exceptions.SimpleMessageContextException;
 
 /**
  * A simplified version of AbstractMediator. This can be used to create new mediator classes to run in Class mediator
@@ -48,7 +47,7 @@ public abstract class AbstractSimplifiedMediator extends AbstractMediator {
     }
 
     /**
-     * mediate method with more capabilities than the parent method. No need to return boolean feedback when there is
+     * Mediate method with more capabilities than the parent method. No need to return boolean feedback when there is
      * an error. Error tracking is done by an overloaded method.
      * Throw SimpleMessageContextException to stop mediation flow due to an error.
      *

@@ -31,8 +31,10 @@ import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.xpath.AXIOMXPath;
 import org.apache.axis2.AxisFault;
+import org.apache.axis2.Constants;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.util.collectors.CsvCollector;
@@ -50,20 +52,13 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-// todo :: add debug logs
 public class SimpleMessageContext {
 
     private final MessageContext messageContext;
     private final JsonParser jsonParser;
     private final Gson gson;
 
-    public Stream<OMElement> getXmlElementsStream(OMElement baseElement, String xPath) throws JaxenException { //todo
-        // :: check exception
-
-        AXIOMXPath axiomxPath = new AXIOMXPath(xPath);
-        List<OMElement> elementList = axiomxPath.selectNodes(baseElement);
-        return elementList.stream();
-    }
+    private static final Log log = LogFactory.getLog(SimpleMessageContext.class);
 
     public SimpleMessageContext(MessageContext messageContext) {
 
@@ -73,80 +68,33 @@ public class SimpleMessageContext {
     }
 
     /**
-     * If the payload is type XML, then get the child elements of the root XML element as a Stream of OMElement
-     *
-     * @return Stream of OMElement of the child elements of the root xml element
-     */
-    public Stream<OMElement> getXmlChildElementsStream() {
-
-        OMElement rootElement = messageContext.getEnvelope().getBody().getFirstElement();
-        return getXmlChildElementsStream(rootElement);
-    }
-
-    public Stream<OMElement> getXmlChildElementsStream(OMElement xmlElement) {
-
-        Iterable<OMElement> iterable = xmlElement::getChildElements;
-        return StreamSupport.stream(iterable.spliterator(), false);
-    }
-
-    /**
-     * If the payload is a CSV, get the payload as a Stream of Array of String for each line in CSV file
-     *
-     * @param linesToSkip Number of lines to skip from header of CSV
-     * @return Stream of Array of String representing each line of the CSV payload
-     */
-    public Stream<String[]> getCsvArrayStream(int linesToSkip) {
-
-        String csvText = PayloadHelper.getTextPayload(messageContext);
-        CSVReader csvReader = new CSVReaderBuilder(new StringReader(csvText)).withSkipLines(linesToSkip).build();
-        return StreamSupport.stream(csvReader.spliterator(), false);
-    }
-
-    /**
-     * Set the current payload to the given text
-     *
-     * @param text String to set as the current payload
-     */
-    public void setCsvPayload(String text) { //todo:: add message contest type setter
-
-        if (messageContext.getEnvelope() == null) {
-            try {
-                messageContext.setEnvelope(OMAbstractFactory.getSOAP12Factory()
-                        .createSOAPEnvelope());
-            } catch (Exception e) {
-                throw new SynapseException(e);
-            }
-        }
-        org.apache.synapse.util.PayloadHelper.setTextPayload(messageContext.getEnvelope(), text);
-    }
-
-
-
-    /**
-     * Get Stream of IndexedJsonElement from the payload of Json Array
+     * Get Stream of IndexedElement of JsonElement from the payload of Json Array
      * If payload is not a valid Json Array, gives a Stream with empty array
+     *
      * @return Stream of IndexedJsonElement
      */
-    public Stream<IndexedJsonElement> getJsonArrayStreamWithIndex() {
+    public Stream<IndexedElement<JsonElement>> getJsonArrayStreamWithIndex() {
 
         JsonArray jsonArray = getJsonArray();
         return getJsonArrayStreamWithIndex(jsonArray);
     }
 
     /**
-     * Get Stream of IndexedJsonElement from given JsonArray
+     * Get Stream of IndexedElement of JsonElement from given JsonArray
+     *
      * @param jsonArray JsonArray to convert to Stream
      * @return Stream of IndexedJsonElement
      */
-    public Stream<IndexedJsonElement> getJsonArrayStreamWithIndex(JsonArray jsonArray) {
+    public Stream<IndexedElement<JsonElement>> getJsonArrayStreamWithIndex(JsonArray jsonArray) {
 
         return IntStream.range(0, jsonArray.size())
-                .mapToObj(i -> new IndexedJsonElement(i, jsonArray.get(i)));
+                .mapToObj(i -> new IndexedElement<>(i, jsonArray.get(i)));
     }
 
     /**
      * Get Stream of JsonElement if the matching part of payload for given json path is a valid Json Array.
      * If not, gives an Stream of empty array
+     *
      * @param jsonPath Json path String to apply on payload
      * @return JsonElement Stream
      */
@@ -158,6 +106,7 @@ public class SimpleMessageContext {
         if (jsonPathResult.isJsonArray()) {
             jsonArrayToStream = jsonPathResult.getAsJsonArray();
         } else {
+            log.error("Error converting data : not a valid Json Array");
             jsonArrayToStream = new JsonArray();
         }
 
@@ -286,6 +235,7 @@ public class SimpleMessageContext {
         if (jsonElement.isJsonArray()) {
             return jsonElement.getAsJsonArray();
         } else {
+            log.error("Error converting data : not a valid Json Array");
             return new JsonArray();
         }
     }
@@ -302,6 +252,7 @@ public class SimpleMessageContext {
         if (jsonElement.isJsonObject()) {
             return jsonElement.getAsJsonObject();
         } else {
+            log.error("Error converting data : not a valid Json Object");
             return new JsonObject();
         }
     }
@@ -320,6 +271,7 @@ public class SimpleMessageContext {
             Object evaluationResult = synapseJsonPath.evaluate(messageContext);
             return gson.toJsonTree(evaluationResult);
         } catch (JaxenException | PathNotFoundException e) {
+            log.error("Error converting data", e);
             return new JsonObject();
         }
     }
@@ -367,16 +319,133 @@ public class SimpleMessageContext {
      */
     public void setJsonPayload(String payload) {
 
-        org.apache.axis2.context.MessageContext axis2MessageContext =
-                ((Axis2MessageContext) messageContext).getAxis2MessageContext();
-        axis2MessageContext.setProperty("messageType", "application/json");
-        axis2MessageContext.setProperty("ContentType", "application/json");
+        setPayloadType("application/json");
 
         try {
             JsonUtil.getNewJsonPayload(((Axis2MessageContext) messageContext).getAxis2MessageContext(),
                     payload, true, true);
         } catch (AxisFault axisFault) {
             throw new SimpleMessageContextException(axisFault);
+        }
+    }
+
+    /**
+     * Get Stream of OMElement by appliying given xPath to given OMElement as root,
+     * If error occur while applying xPath, an empty Stream would return
+     *
+     * @param baseElement OMElement to consider as root element
+     * @param xPath       xPath string to apply
+     * @return Stream of OMElement
+     */
+    public Stream<OMElement> getXmlElementsStream(OMElement baseElement, String xPath) {
+
+        try {
+            AXIOMXPath axiomxPath = new AXIOMXPath(xPath);
+            List<OMElement> elementList = axiomxPath.selectNodes(baseElement);
+            return elementList.stream();
+        } catch (JaxenException e) {
+            return Stream.empty();
+        }
+    }
+
+    /**
+     * If the payload is type XML, then get the child elements of the root XML element as a Stream of OMElement
+     *
+     * @return Stream of OMElement of the child elements of the root xml element
+     */
+    public Stream<OMElement> getXmlChildElementsStream() {
+
+        OMElement rootElement = messageContext.getEnvelope().getBody().getFirstElement();
+        return getXmlChildElementsStream(rootElement);
+    }
+
+    public Stream<OMElement> getXmlChildElementsStream(OMElement xmlElement) {
+
+        Iterable<OMElement> iterable = xmlElement::getChildElements;
+        return StreamSupport.stream(iterable.spliterator(), false);
+    }
+
+    /**
+     * If the payload is a CSV, get the payload as a Stream of Array of String for each line in CSV file.
+     * If payload is not a valid CSV then, returns an empty Stream
+     *
+     * @param linesToSkip Number of lines to skip from header of CSV
+     * @return Stream of Array of String representing each line of the CSV payload
+     */
+    public Stream<String[]> getCsvArrayStream(int linesToSkip) {
+
+        String payloadText = PayloadHelper.getTextPayload(messageContext);
+
+        String csvText;
+        if (payloadText != null) {
+            csvText = payloadText;
+        } else {
+            log.error("Error converting data : not a valid CSV payload");
+            csvText = "";
+        }
+
+        CSVReader csvReader = new CSVReaderBuilder(new StringReader(csvText)).withSkipLines(linesToSkip).build();
+        return StreamSupport.stream(csvReader.spliterator(), false);
+    }
+
+    /**
+     * Set the current payload to the given text
+     *
+     * @param text String to set as the current payload
+     */
+    public void setCsvPayload(String text) {
+
+        setPayloadType("text/plain");
+
+        if (messageContext.getEnvelope() == null) {
+            try {
+                messageContext.setEnvelope(OMAbstractFactory.getSOAP12Factory()
+                        .createSOAPEnvelope());
+            } catch (Exception e) {
+                throw new SimpleMessageContextException(e);
+            }
+        }
+        org.apache.synapse.util.PayloadHelper.setTextPayload(messageContext.getEnvelope(), text);
+    }
+
+    /**
+     * Get the value of a custom (local) property set on the message instance
+     *
+     * @param key key to look up property
+     * @return value for the given key
+     */
+    public Object getProperty(String key) {
+
+        return messageContext.getProperty(key);
+    }
+
+    /**
+     * Set a custom (local) property with the given name on the message instance
+     *
+     * @param key   key to be used
+     * @param value value to be saved
+     */
+    public void setProperty(String key, Object value) {
+
+        messageContext.setProperty(key, value);
+    }
+
+    /**
+     * Set given key and value as a header
+     *
+     * @param key   header key
+     * @param value header value
+     */
+    public void setHeader(String key, String value) {
+
+        org.apache.axis2.context.MessageContext axis2MessageContext =
+                ((Axis2MessageContext) messageContext).getAxis2MessageContext();
+        Object headerObj = axis2MessageContext.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+
+        if (headerObj != null) {
+            Map headers = (Map) headerObj;
+            headers.remove(key);
+            headers.put(key, value);
         }
     }
 
@@ -410,26 +479,12 @@ public class SimpleMessageContext {
         return new CsvCollector(this);
     }
 
-    /**
-     * Get the value of a custom (local) property set on the message instance
-     *
-     * @param key key to look up property
-     * @return value for the given key
-     */
-    public Object getProperty(String key) {
+    private void setPayloadType(String payloadType) {
 
-        return messageContext.getProperty(key);
-    }
-
-    /**
-     * Set a custom (local) property with the given name on the message instance
-     *
-     * @param key   key to be used
-     * @param value value to be saved
-     */
-    public void setProperty(String key, Object value) {
-
-        messageContext.setProperty(key, value);
+        org.apache.axis2.context.MessageContext axis2MessageContext =
+                ((Axis2MessageContext) messageContext).getAxis2MessageContext();
+        axis2MessageContext.setProperty(Constants.Configuration.MESSAGE_TYPE, payloadType);
+        axis2MessageContext.setProperty(Constants.Configuration.CONTENT_TYPE, payloadType);
     }
 
 }

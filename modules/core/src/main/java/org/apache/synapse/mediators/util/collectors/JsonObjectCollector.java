@@ -62,9 +62,8 @@ public class JsonObjectCollector implements Collector<Map.Entry<String, JsonElem
     public BinaryOperator<JsonObject> combiner() {
 
         return (jsonObject, jsonObject2) -> {
-            jsonObject2.entrySet().forEach(jsonElementEntry -> {
-                jsonObject.add(jsonElementEntry.getKey(), jsonElementEntry.getValue());
-            });
+            jsonObject2.entrySet().forEach(
+                    jsonElementEntry -> jsonObject.add(jsonElementEntry.getKey(), jsonElementEntry.getValue()));
 
             return jsonObject;
         };

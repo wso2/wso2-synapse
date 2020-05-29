@@ -19,17 +19,15 @@
 
 package org.apache.synapse.mediators.util;
 
-import com.google.gson.JsonElement;
-
 /**
- * Represents a JsonElement along with its position in a Json Array.
+ * Represents an element along with its position in an array or list.
  */
-public class IndexedJsonElement {
+public class IndexedElement<E> {
 
     private int index;
-    private JsonElement element;
+    private E element;
 
-    public IndexedJsonElement(int index, JsonElement element) {
+    public IndexedElement(int index, E element) {
 
         this.index = index;
         this.element = element;
@@ -45,12 +43,12 @@ public class IndexedJsonElement {
         this.index = index;
     }
 
-    public JsonElement getElement() {
+    public E getElement() {
 
         return element;
     }
 
-    public void setElement(JsonElement element) {
+    public void setElement(E element) {
 
         this.element = element;
     }
