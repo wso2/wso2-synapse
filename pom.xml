@@ -289,9 +289,9 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.opencsv</groupId>
+                <groupId>au.com.bytecode.opencsv.wso2</groupId>
                 <artifactId>opencsv</artifactId>
-                <version>${opencsv.version}</version>
+                <version>${opencsv.orbit.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.derby</groupId>
@@ -1216,7 +1216,7 @@
         <module>modules/coverage-report</module>
     </modules>
     <properties>
-        <opencsv.version>4.0</opencsv.version>
+        <opencsv.orbit.version>1.8.wso2v1</opencsv.orbit.version>
         <maven.javadoc.plugin.version>2.1</maven.javadoc.plugin.version>
         <wagon.ssh.version>2.1</wagon.ssh.version>
         <orbit.version.hazelcast>3.5.0.wso2v1</orbit.version.hazelcast>

@@ -22,7 +22,7 @@ package org.apache.synapse.mediators.util.collectors;
 import com.google.common.collect.Sets;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import org.apache.synapse.mediators.util.SimpleMessageContext;
+import org.apache.synapse.mediators.SimpleMessageContext;
 
 import java.util.Set;
 import java.util.function.BiConsumer;

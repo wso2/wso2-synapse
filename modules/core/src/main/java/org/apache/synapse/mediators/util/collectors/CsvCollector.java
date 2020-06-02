@@ -19,9 +19,9 @@
 
 package org.apache.synapse.mediators.util.collectors;
 
+import au.com.bytecode.opencsv.CSVWriter;
 import com.google.common.collect.Sets;
-import com.opencsv.CSVWriter;
-import org.apache.synapse.mediators.util.SimpleMessageContext;
+import org.apache.synapse.mediators.SimpleMessageContext;
 import org.apache.synapse.mediators.util.exceptions.SimpleMessageContextException;
 
 import java.io.IOException;
@@ -95,7 +95,6 @@ public class CsvCollector implements Collector<String[], List<String[]>, Boolean
 
         };
     }
-
     @Override
     public Set<Characteristics> characteristics() {
 
