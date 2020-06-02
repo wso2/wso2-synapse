@@ -20,16 +20,16 @@
 package org.apache.synapse.mediators;
 
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.mediators.util.SimpleMessageContext;
+import org.apache.synapse.SynapseLog;
 
 /**
  * A simplified version of AbstractMediator. This can be used to create new mediator classes to run in Class mediator
  * . AbstractExtendedMediator provides an abstract mediate method which provides a SimpleMessageContext object, which
  * can be used to perform data transformation tasks easily
  */
-public abstract class AbstractSimplifiedMediator extends AbstractMediator {
+public abstract class SimpleMediator extends AbstractMediator {
 
-    protected AbstractSimplifiedMediator() {
+    protected SimpleMediator() {
 
         super();
     }
@@ -55,4 +55,15 @@ public abstract class AbstractSimplifiedMediator extends AbstractMediator {
      *                       transformation.
      */
     public abstract void mediate(SimpleMessageContext messageContext);
+
+    /**
+     * Get a SynapseLog instance appropriate for the given context.
+     *
+     * @param simpleMessageContext current SimpleMessageContext
+     * @return MediatorLog instance - an implementation of the SynapseLog
+     */
+    protected SynapseLog getLog(SimpleMessageContext simpleMessageContext) {
+
+        return super.getLog(simpleMessageContext.getMessageContext());
+    }
 }

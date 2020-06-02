@@ -19,9 +19,9 @@
 
 package org.apache.synapse.mediators.util.collectors;
 
+import au.com.bytecode.opencsv.CSVWriter;
 import com.google.common.collect.Sets;
-import com.opencsv.CSVWriter;
-import org.apache.synapse.mediators.util.SimpleMessageContext;
+import org.apache.synapse.mediators.SimpleMessageContext;
 import org.apache.synapse.mediators.util.exceptions.SimpleMessageContextException;
 
 import java.io.IOException;
@@ -43,10 +43,18 @@ import static java.util.stream.Collector.Characteristics.UNORDERED;
 public class CsvCollector implements Collector<String[], List<String[]>, Boolean> {
 
     private final SimpleMessageContext simpleMessageContext;
+    private final String[] header;
 
-    public CsvCollector(SimpleMessageContext simpleMessageContext) {
+    /**
+     * Create new instance with Message context and header
+     *
+     * @param simpleMessageContext SimpleMessageContext to use
+     * @param header               Headers to append to the top of the csv. If this is null, then no headers would be added
+     */
+    public CsvCollector(SimpleMessageContext simpleMessageContext, String[] header) {
 
         this.simpleMessageContext = simpleMessageContext;
+        this.header = header;
     }
 
     @Override
@@ -81,12 +89,16 @@ public class CsvCollector implements Collector<String[], List<String[]>, Boolean
                     CSVWriter.DEFAULT_ESCAPE_CHARACTER,
                     CSVWriter.DEFAULT_LINE_END);
 
+            if (header != null) {
+                rowList.add(0, header);
+            }
+
             csvWriter.writeAll(rowList);
             try {
                 csvWriter.close();
                 stringWriter.flush();
                 String resultPayload = stringWriter.toString();
-                    simpleMessageContext.setCsvPayload(resultPayload);
+                simpleMessageContext.setCsvPayload(resultPayload);
             } catch (IOException e) {
                 throw new SimpleMessageContextException(e);
             }
