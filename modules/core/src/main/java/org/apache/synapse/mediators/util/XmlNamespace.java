@@ -4,7 +4,6 @@ package org.apache.synapse.mediators.util;
  * Represents a namespace in XML schema
  */
 public class XmlNamespace {
-
     private String prefix;
     private String uri;
 

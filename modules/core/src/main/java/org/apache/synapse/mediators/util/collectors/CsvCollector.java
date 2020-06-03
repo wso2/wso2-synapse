@@ -107,6 +107,7 @@ public class CsvCollector implements Collector<String[], List<String[]>, Boolean
 
         };
     }
+
     @Override
     public Set<Characteristics> characteristics() {
 
