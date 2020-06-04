@@ -84,6 +84,18 @@ public final class SimpleMessageContext {
     }
 
     /**
+     * Returns the Json payload as a JsonElement
+     * If payload is null or not the Json content type, then give an empty Json Object as JsonElement
+     *
+     * @return payload body as JsonElement
+     */
+    public JsonElement getJsonElement() {
+
+        String jsonPayloadString = getJsonString();
+        return jsonParser.parse(jsonPayloadString);
+    }
+
+    /**
      * Applies the given jsonPath to the context and returns result as a JsonElement
      * If json path is not valid or payload is invalid, gives an empty json object
      *
@@ -100,18 +112,6 @@ public final class SimpleMessageContext {
             log.error("Error converting data", e);
             return new JsonObject();
         }
-    }
-
-    /**
-     * Returns the Json payload as a JsonElement
-     * If payload is null or not the Json content type, then give an empty Json Object as JsonElement
-     *
-     * @return payload body as JsonElement
-     */
-    public JsonElement getJsonElement() {
-
-        String jsonPayloadString = getJsonString();
-        return jsonParser.parse(jsonPayloadString);
     }
 
     /**
@@ -183,7 +183,7 @@ public final class SimpleMessageContext {
         JsonObject jsonObject;
         if (jsonPathResult.isJsonArray()) {
             jsonObject =
-                    jsonParser.parse(jsonPathResult.getAsJsonArray().get(0).toString()).getAsJsonObject();
+                    jsonParser.parse(jsonPathResult.getAsJsonArray().get(0).getAsString()).getAsJsonObject();
         } else {
             jsonObject = jsonPathResult.getAsJsonObject();
         }
