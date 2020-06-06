@@ -24,12 +24,10 @@ import org.apache.synapse.transport.certificatevalidation.crl.CRLVerifier;
 import org.apache.synapse.transport.certificatevalidation.ocsp.OCSPCache;
 import org.apache.synapse.transport.certificatevalidation.ocsp.OCSPVerifier;
 import org.apache.synapse.transport.certificatevalidation.pathvalidation.CertificatePathValidator;
-import org.junit.Ignore;
 
 import java.security.Security;
 import java.security.cert.X509Certificate;
 
-@Ignore
 public class RevocationVerificationTest extends TestCase {
 
     /**
