@@ -24,6 +24,7 @@ import com.rabbitmq.client.ShutdownSignalException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.commons.util.LookAheadObjectInputStream;
 import org.apache.synapse.message.MessageConsumer;
 
 import org.apache.synapse.message.store.impl.commons.MessageConverter;
@@ -109,7 +110,7 @@ public class RabbitMQConsumer implements MessageConsumer {
     private StorableMessage deserializeMessage(GetResponse delivery) throws IOException, ClassNotFoundException {
         StorableMessage storableMessage;
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(delivery.getBody());
-             ObjectInput objectInput = new ObjectInputStream(inputStream)) {
+             ObjectInput objectInput = new LookAheadObjectInputStream(inputStream, StorableMessage.class)) {
             storableMessage = (StorableMessage) objectInput.readObject();
         }
         return storableMessage;

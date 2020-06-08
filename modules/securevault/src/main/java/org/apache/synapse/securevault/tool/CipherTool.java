@@ -21,6 +21,7 @@ package org.apache.synapse.securevault.tool;
 import org.apache.commons.cli.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.util.LookAheadObjectInputStream;
 import org.apache.synapse.securevault.*;
 import org.apache.synapse.securevault.definition.CipherInformation;
 import org.apache.synapse.securevault.definition.IdentityKeyStoreInformation;
@@ -386,7 +387,7 @@ public final class CipherTool {
 
         ObjectInputStream in = null;
         try {
-            in = new ObjectInputStream(new FileInputStream(keyFile));
+            in = new LookAheadObjectInputStream(new FileInputStream(keyFile), Key.class);
             Object object = in.readObject();
             if (object instanceof Key) {
                 return (Key) object;

@@ -1,5 +1,7 @@
 package org.apache.synapse.transport.http.conn;
 
+import org.apache.synapse.commons.util.LookAheadObjectInputStream;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -143,7 +145,7 @@ public class SynapseWireLogHolder implements Serializable {
             wireLogHolderOutputStream.flush();
             ByteArrayInputStream binaryInputStream =
                     new ByteArrayInputStream(binaryOutputStream.toByteArray());
-            wireLogHolderInputStream = new ObjectInputStream(binaryInputStream);
+            wireLogHolderInputStream = new LookAheadObjectInputStream(binaryInputStream, SynapseWireLogHolder.class);
 
             return (SynapseWireLogHolder) wireLogHolderInputStream.readObject();
         } finally {

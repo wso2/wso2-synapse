@@ -145,6 +145,10 @@
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.synapse</groupId>
+            <artifactId>synapse-commons</artifactId>
+        </dependency>
     </dependencies>
     <properties />
     <pluginRepositories>

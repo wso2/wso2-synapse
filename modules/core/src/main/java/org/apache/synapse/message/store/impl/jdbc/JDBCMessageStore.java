@@ -21,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.commons.util.LookAheadObjectInputStream;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -208,14 +209,11 @@ public class JDBCMessageStore extends AbstractMessageStore {
             ObjectInputStream ios = null;
             try {
                 // Convert back to MessageContext and add to list
-                ios = new ObjectInputStream(new ByteArrayInputStream(msgObj));
-                Object msg = ios.readObject();
-                if (msg instanceof StorableMessage) {
-                    StorableMessage jdbcMsg = (StorableMessage) msg;
-                    org.apache.axis2.context.MessageContext axis2Mc = this.newAxis2Mc();
-                    MessageContext synapseMc = this.newSynapseMc(axis2Mc);
-                    messageContext = MessageConverter.toMessageContext(jdbcMsg, axis2Mc, synapseMc);
-                }
+                ios = new LookAheadObjectInputStream(new ByteArrayInputStream(msgObj), StorableMessage.class);
+                StorableMessage jdbcMsg = (StorableMessage) ios.readObject();
+                org.apache.axis2.context.MessageContext axis2Mc = this.newAxis2Mc();
+                MessageContext synapseMc = this.newSynapseMc(axis2Mc);
+                messageContext = MessageConverter.toMessageContext(jdbcMsg, axis2Mc, synapseMc);
             } catch (IOException e) {
                 throw new SynapseException("Error reading object input stream", e);
             } catch (ClassNotFoundException e) {
