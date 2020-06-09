@@ -197,7 +197,7 @@ class Assertor {
                     break;
 
                 case INPUT_PROPERTY_TRANSPORT:
-                    Object headers = axis2MessageContext.getProperty(
+                    Object headers = axis2MessageCtx.getProperty(
                             org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
 
                     @SuppressWarnings("unchecked")
