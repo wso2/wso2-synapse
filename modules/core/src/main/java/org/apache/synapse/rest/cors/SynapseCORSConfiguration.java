@@ -48,7 +48,9 @@ public class SynapseCORSConfiguration implements CORSConfiguration {
 
     private SynapseCORSConfiguration() {
         enabled = SynapsePropertiesLoader.getBooleanProperty(RESTConstants.CORS_CONFIGURATION_ENABLED, true);
-
+        if (!enabled) {
+            return; // no need to do the rest if cors is not enabled.
+        }
         //Retrieve allowed origin list
         String allowedOriginListStr =
                 SynapsePropertiesLoader.getPropertyValue(RESTConstants.CORS_CONFIGURATION_ACCESS_CTL_ALLOW_ORIGIN, null);
