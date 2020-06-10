@@ -40,6 +40,7 @@ import org.apache.synapse.debug.SynapseDebugManager;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.http.conn.SynapseWireLogHolder;
+import org.apache.synapse.util.logging.LoggingUtils;
 
 import java.util.Iterator;
 import java.util.List;
@@ -290,20 +291,22 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
     }
 
     private void traceOrDebug(boolean traceOn, String msg) {
+
+        String formattedLog = LoggingUtils.getFormattedLog(SynapseConstants.PROXY_SERVICE_TYPE, name, msg);
         if (traceOn) {
-            trace.info(msg);
+            trace.info(formattedLog);
         }
-        if (log.isDebugEnabled()) {
-            log.debug(msg);
-        }
+        log.debug(formattedLog);
     }
 
     private void warn(boolean traceOn, String msg, MessageContext msgContext) {
+
+        String formattedLog = LoggingUtils.getFormattedLog(SynapseConstants.PROXY_SERVICE_TYPE, name, msg);
         if (traceOn) {
-            trace.warn(msg);
+            trace.warn(formattedLog);
         }
         if (log.isDebugEnabled()) {
-            log.warn(msg);
+            log.warn(formattedLog);
         }
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().warn(msg);
@@ -311,12 +314,14 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
     }
 
     private void handleException(String msg, MessageContext msgContext) {
-        log.error(msg);
+
+        String formattedLog = LoggingUtils.getFormattedLog(SynapseConstants.PROXY_SERVICE_TYPE, name, msg);
+        log.error(formattedLog);
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().error(msg);
         }
         if (proxy.getAspectConfiguration().isTracingEnabled()) {
-            trace.error(msg);
+            trace.error(formattedLog);
         }
         throw new SynapseException(msg);
     }

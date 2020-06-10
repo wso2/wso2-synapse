@@ -21,6 +21,7 @@ package org.apache.synapse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.util.logging.LoggingUtils;
 
 import java.util.Stack;
 import java.io.StringWriter;
@@ -49,9 +50,10 @@ public abstract class FaultHandler {
         }
 
         try {
-            synCtx.getServiceLog().info("FaultHandler executing impl: " + this.getClass().getName());
+            String msg = "FaultHandler executing impl: " + this.getClass().getName();
+            // log.info(LoggingUtils.getFormattedLog(synCtx, msg));
+            synCtx.getServiceLog().info(msg);
             onFault(synCtx);
-
         } catch (SynapseException e) {
 
             Stack faultStack = synCtx.getFaultStack();
@@ -90,9 +92,10 @@ public abstract class FaultHandler {
                 synCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
         }
 
-        synCtx.getServiceLog().warn("ERROR_CODE : " +
-            synCtx.getProperty(SynapseConstants.ERROR_CODE) + " ERROR_MESSAGE : " + 
-            synCtx.getProperty(SynapseConstants.ERROR_MESSAGE));
+        String msg = "ERROR_CODE : " + synCtx.getProperty(SynapseConstants.ERROR_CODE) + " ERROR_MESSAGE : " + synCtx
+                .getProperty(SynapseConstants.ERROR_MESSAGE);
+        //log.warn(LoggingUtils.getFormattedLog(synCtx, msg));
+        synCtx.getServiceLog().warn(msg);
 
         try {
             if (traceOrDebugOn) {

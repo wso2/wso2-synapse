@@ -48,6 +48,7 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
+import org.apache.synapse.util.logging.LoggingUtils;
 
 import java.util.*;
 
@@ -543,6 +544,10 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
         }
     }
 
+    private String getFormattedLog(String msg) {
+        return LoggingUtils.getFormattedLog(SynapseConstants.FAIL_SAFE_MODE_API, getName(), msg);
+    }
+
     public void destroy() {
         auditInfo("Destroying API: " + getName());
         for (Resource resource : resources.values()) {
@@ -578,12 +583,14 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
      * @param message the INFO level audit message
      */
     private void auditInfo(String message) {
-        log.info(message);
+
+        String formattedMsg = getFormattedLog(message);
+        log.info(formattedMsg);
         apiLog.info(message);
 
         //TODO - Implement 'trace' attribute support in API configuration.
         if (trace()) {
-            trace.info(message);
+            trace.info(formattedMsg);
         }
     }
 
@@ -592,15 +599,16 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
      * @param message the DEBUG level audit message
      */
     private void auditDebug(String message) {
-        if (log.isDebugEnabled()){
-            log.debug(message);
+
+        if (log.isDebugEnabled()) {
+            String formattedMsg = getFormattedLog(message);
+            log.debug(formattedMsg);
             apiLog.debug(message);
 
             //TODO - Implement 'trace' attribute support in API configuration.
             if (trace()) {
-               trace.debug(message);
+                trace.debug(formattedMsg);
             }
-
         }
 
     }

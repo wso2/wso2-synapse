@@ -327,8 +327,7 @@ public class FailoverEndpoint extends AbstractEndpoint {
         try {
             RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext());
         } catch (IOException | XMLStreamException ex) {
-            handleException("Error while building the message", ex);
-
+            handleException("Error while building the message", ex, synCtx);
         }
     }
 }

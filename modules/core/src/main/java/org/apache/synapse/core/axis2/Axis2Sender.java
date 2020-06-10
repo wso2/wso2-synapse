@@ -46,6 +46,7 @@ import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.MediatorPropertyUtils;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.POXUtils;
+import org.apache.synapse.util.logging.LoggingUtils;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -88,7 +89,7 @@ public class Axis2Sender {
                     // The Axis2 Message context of the Synapse MC
                     synapseInMessageContext);
         } catch (Exception e) {
-            handleException("Unexpected error during sending message out", e);
+            handleException("Unexpected error during sending message out", e, synapseInMessageContext);
         }
     }
 
@@ -220,7 +221,7 @@ public class Axis2Sender {
                 AxisEngine.send(messageContext);
             }
         } catch (AxisFault e) {
-            handleException(getResponseMessage(messageContext), e);
+            handleException(getResponseMessage(messageContext), e, smc);
         }
     }
 
@@ -278,14 +279,17 @@ public class Axis2Sender {
             } else {
                 // This can happen only if the user has used the SynapseConstants.RESPONSE_STATE as a user property
                 handleException("Response State must be of type : " + ResponseState.class + ". "
-                        + SynapseConstants.RESPONSE_STATE + " must not be used as an user property name", null);
+                                        + SynapseConstants.RESPONSE_STATE
+                                        + " must not be used as an user property name", null, messageContext);
             }
         }
         return false;
     }
 
-    private static void handleException(String msg, Exception e) {
-        log.error(msg, e);
+    private static void handleException(String msg, Exception e, org.apache.synapse.MessageContext msgCtx) {
+
+        String formattedLog = LoggingUtils.getFormattedLog(msgCtx, msg);
+        log.error(formattedLog, e);
         throw new SynapseException(msg, e);
     }
 
@@ -380,14 +384,14 @@ public class Axis2Sender {
             try {                   // Message need to be built prior to the conversion
                 RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
             } catch (Exception e) {
-                handleException("Error while building message", e);
+                handleException("Error while building message", e, synCtx);
             }
 
             try {
                 // Message need to be serialized prior to the conversion
                 MediatorPropertyUtils.serializeOMElement(synCtx);
             } catch (Exception e) {
-                handleException("Error while serializing the  message", e);
+                handleException("Error while serializing the  message", e, synCtx);
             }
 
             if (!responseCtx.isSOAP11()) {
@@ -407,7 +411,7 @@ public class Axis2Sender {
             try {                   // Message need to be built prior to the conversion
                 RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
             } catch (Exception e) {
-                handleException("Error while building message", e);
+                handleException("Error while building message", e, synCtx);
             }
 
             if (responseCtx.isSOAP11()) {         // If response is in SOAP11
