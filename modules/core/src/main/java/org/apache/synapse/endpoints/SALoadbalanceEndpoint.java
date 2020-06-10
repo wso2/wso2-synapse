@@ -139,7 +139,7 @@ public class SALoadbalanceEndpoint extends LoadbalanceEndpoint {
             try {
                 RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(),false);
             } catch (Exception e) {
-                handleException("Error while building message", e);
+                handleException("Error while building message", e, synCtx);
             }
         }
 

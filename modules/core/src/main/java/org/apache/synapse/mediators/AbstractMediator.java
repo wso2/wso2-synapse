@@ -35,6 +35,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
+import org.apache.synapse.util.logging.LoggingUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -301,12 +302,14 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      */
     @Deprecated
     protected void auditLog(String msg, MessageContext msgContext) {
-        log.info(msg);
+
+        String formattedMsg = LoggingUtils.getFormattedLog(msgContext, msg);
+        log.info(formattedMsg);
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().info(msg);
         }
         if (shouldTrace(msgContext)) {
-            trace.info(msg);
+            trace.info(formattedMsg);
         }
     }
 
@@ -317,12 +320,14 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      * @param msgContext the message context
      */
     protected void handleException(String msg, MessageContext msgContext) {
-        log.error(msg);
+
+        String formattedLog = LoggingUtils.getFormattedLog(msgContext, msg);
+        log.error(formattedLog);
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().error(msg);
         }
         if (shouldTrace(msgContext)) {
-            trace.error(msg);
+            trace.error(formattedLog);
         }
         throw new SynapseException(msg);
     }
@@ -340,12 +345,14 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      */
     @Deprecated
     protected void auditWarn(String msg, MessageContext msgContext) {
-        log.warn(msg);
+
+        String formattedMsg = LoggingUtils.getFormattedLog(msgContext, msg);
+        log.warn(formattedMsg);
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().warn(msg);
         }
         if (shouldTrace(msgContext)) {
-            trace.warn(msg);
+            trace.warn(formattedMsg);
         }
     }
 
@@ -357,12 +364,14 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      * @param msgContext the message context
      */
     protected void handleException(String msg, Exception e, MessageContext msgContext) {
-        log.error(msg, e);
+
+        String formattedLog = LoggingUtils.getFormattedLog(msgContext, msg);
+        log.error(formattedLog, e);
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().error(msg, e);
         }
         if (shouldTrace(msgContext)) {
-            trace.error(msg, e);
+            trace.error(formattedLog, e);
         }
         throw new SynapseException(msg, e);
     }

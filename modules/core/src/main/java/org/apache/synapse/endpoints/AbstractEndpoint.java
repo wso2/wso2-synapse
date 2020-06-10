@@ -50,6 +50,7 @@ import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.transport.passthru.util.RelayConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
+import org.apache.synapse.util.logging.LoggingUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -387,7 +388,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                     ((Axis2MessageContext) synCtx).getAxis2MessageContext().getEnvelope().build();
                 }
             } catch (Exception e) {
-                handleException("Error while building message", e);
+                handleException("Error while building message", e, synCtx);
             }
         }
 
@@ -671,6 +672,20 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      */
     protected void handleException(String msg, Exception e) {
         log.error(msg, e);
+        throw new SynapseException(msg, e);
+    }
+
+    /**
+     * Helper methods to handle errors.
+     *
+     * @param msg    The error message
+     * @param e      The exception
+     * @param msgCtx The message context
+     */
+    protected void handleException(String msg, Exception e, MessageContext msgCtx) {
+
+        String formattedLog = LoggingUtils.getFormattedLog(msgCtx, msg);
+        log.error(formattedLog, e);
         throw new SynapseException(msg, e);
     }
 
