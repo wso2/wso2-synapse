@@ -581,4 +581,8 @@ public final class SynapseConstants {
     // Common property for all artifacts
     public static final String ARTIFACT_NAME = "ARTIFACT_NAME";
 
+    //This synapse property will be read in the mediation layer to decide whether to save artifacts to a local
+    // directory or not. By default this property is set to true.
+    public static final String STORE_ARTIFACTS_LOCALLY = "synapse.artifacts.file.storage.enabled";
+
 }
