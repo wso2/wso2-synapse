@@ -581,4 +581,6 @@ public final class SynapseConstants {
     // Common property for all artifacts
     public static final String ARTIFACT_NAME = "ARTIFACT_NAME";
 
+    public static final String ARTIFACT_STORAGE_ENABLING_SYNAPSE_PROPERTY = "synapse.artifacts.file.storage.enabled";
+
 }
