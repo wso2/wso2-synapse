@@ -74,6 +74,13 @@ public class InvokeMediatorFactory extends AbstractMediatorFactory {
             throw new SynapseException(msg);
         }
 
+        OMAttribute errorHandlerAttr = elem.getAttribute(ATT_ONERROR);
+        if (errorHandlerAttr != null) {
+            if (StringUtils.isNotEmpty(errorHandlerAttr.getAttributeValue())) {
+                invoker.setErrorHandler(errorHandlerAttr.getAttributeValue());
+            }
+        }
+
         addAllCommentChildrenToList(elem, invoker.getCommentsList());
 
         return invoker;

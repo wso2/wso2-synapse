@@ -23,6 +23,8 @@ import org.apache.axiom.om.OMDocument;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMText;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
@@ -43,15 +45,15 @@ public class TemplateContext {
      */
     private String fName;
     /**
-     * refers to the parameter names of the function
+     * refers to the parameters of the function
      */
-    private Collection<String> parameters;
+    private Collection<TemplateParam> parameters;
     /**
      * contains a map for parameterNames to evaluated values
      */
     private Map mappedValues;
 
-    public TemplateContext(String name, Collection<String> parameters) {
+    public TemplateContext(String name, Collection<TemplateParam> parameters) {
         this.fName = name;
         this.parameters = parameters;
         mappedValues = new HashMap();
@@ -59,17 +61,36 @@ public class TemplateContext {
 
     /**
      * evaluate raw parameters passed from an invoke medaiator and store them in this context
+     *
      * @param synCtxt Synapse MessageContext
      */
     public void setupParams(MessageContext synCtxt) {
-        Iterator<String> paramNames = parameters.iterator();
+        Iterator<TemplateParam> paramNames = parameters.iterator();
         while (paramNames.hasNext()) {
-            String parameter = paramNames.next();
-            String mapping = EIPUtils.getTemplatePropertyMapping(fName, parameter);
+            TemplateParam parameter = paramNames.next();
+            String parameterName = parameter.getName();
+            String mapping = EIPUtils.getTemplatePropertyMapping(fName, parameterName);
             Object propertyValue = synCtxt.getProperty(mapping);
-            Object paramValue = getEvaluatedParamValue(synCtxt, parameter, (Value) propertyValue);
+            Object paramValue = null;
+            if (propertyValue == null) {
+                if (parameter.isMandatory()) {
+                    String errorDetail = "Neither a value nor default "
+                            + "value is provided for mandatory parameter: "
+                            + parameterName + " in seq-template " + fName;
+                    synCtxt.setProperty(SynapseConstants.ERROR_CODE, 500101);
+                    synCtxt.setProperty(SynapseConstants.ERROR_MESSAGE, errorDetail);
+                    throw new SynapseException(errorDetail);
+                } else {
+                    Object defaultValue = parameter.getDefaultValue();
+                    if (defaultValue != null) {
+                        paramValue = defaultValue;
+                    }
+                }
+            } else {
+                paramValue = getEvaluatedParamValue(synCtxt, parameterName, (Value) propertyValue);
+            }
             if (paramValue != null) {
-                mappedValues.put(parameter, paramValue);
+                mappedValues.put(parameterName, paramValue);
             }
             //remove temp property from the context
             removeProperty(synCtxt, mapping);

@@ -21,6 +21,7 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
+import org.apache.synapse.mediators.template.TemplateParam;
 import org.apache.synapse.util.CommentListUtil;
 
 import java.util.Collection;
@@ -61,13 +62,15 @@ public class TemplateMediatorSerializer extends AbstractListMediatorSerializer {
     }
 
     private void serializeParams(OMElement templateElem, TemplateMediator mediator) {
-        Collection<String> params = mediator.getParameters();
-        for (String param : params) {
-            if (param != null && !"".equals(param)) {
-                OMElement paramEl = fac.createOMElement("parameter", synNS);
-                paramEl.addAttribute(fac.createOMAttribute("name", nullNS, param));
-                templateElem.addChild(paramEl);
+        Collection<TemplateParam> params = mediator.getParameters();
+        for (TemplateParam param : params) {
+            OMElement paramEl = fac.createOMElement("parameter", synNS);
+            paramEl.addAttribute(fac.createOMAttribute("name", nullNS, param.getName()));
+            paramEl.addAttribute(fac.createOMAttribute("isMandatory", nullNS, Boolean.toString(param.isMandatory())));
+            if(param.getDefaultValue() != null) {
+                paramEl.addAttribute(fac.createOMAttribute("defaultValue", nullNS, param.getDefaultValue().toString()));
             }
+            templateElem.addChild(paramEl);
         }
     }
 
