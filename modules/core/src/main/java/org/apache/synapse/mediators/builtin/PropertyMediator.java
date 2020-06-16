@@ -208,19 +208,19 @@ public class PropertyMediator extends AbstractMediator {
                 String[] args = name.split("@");
                 String path = "";
                 String propertyName = "";
+                Registry registry = synCtx.getConfiguration().getRegistry();
 
                 // If the name argument consistent with a @ separated property name then an empty resource is added
                 // with the property mentioned and the value as its value
                 if (args.length == 1){
                     path = args[0];
+                    registry.newNonEmptyResource(path, false, CONTENT_TYPE, resultValue.toString(), propertyName);
                 } else if (args.length == 2) {
                     path = args[0];
                     propertyName = args[1];
+                    registry.newNonEmptyResource(path, false, CONTENT_TYPE, resultValue.toString(), propertyName);
+                    registry.updateResource(path, EMPTY_CONTENT);
                 }
-
-                Registry registry = synCtx.getConfiguration().getRegistry();
-                registry.newNonEmptyResource(path, false, CONTENT_TYPE, resultValue.toString(), propertyName);
-                registry.updateResource(path, EMPTY_CONTENT);
             }
 
         } else {

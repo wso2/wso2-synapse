@@ -584,4 +584,8 @@ public final class SynapseConstants {
     // Keeps the state whether the error flow was executed previously
     public static final String IS_ERROR_COUNT_ALREADY_PROCESSED = "IS_ERROR_COUNT_ALREADY_PROCESSED";
 
+    //This synapse property will be read in the mediation layer to decide whether to save artifacts to a local
+    // directory or not. By default this property is set to true.
+    public static final String STORE_ARTIFACTS_LOCALLY = "synapse.artifacts.file.storage.enabled";
+
 }

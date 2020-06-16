@@ -81,8 +81,17 @@ public class ClientConnFactory {
     
     private SSLContext getSSLContext(final IOSession iosession) {
         InetSocketAddress address = (InetSocketAddress) iosession.getRemoteAddress();
-        String host = address.getHostName() + ":" + address.getPort();
-        return  getSSLContextForHost(host);
+        SSLContext customContext = null;
+        if (sslByHostMap != null) {
+            String host = address.getHostName() + ":" + address.getPort();
+            // See if there's a custom SSL profile configured for this server
+            customContext = sslByHostMap.get(host);
+        }
+        if (customContext != null) {
+            return customContext;
+        } else {
+            return ssl != null ? ssl.getContext() : null;
+        }
     }
 
     private SSLContext getSSLContext(final org.apache.http.HttpHost httpHost) {

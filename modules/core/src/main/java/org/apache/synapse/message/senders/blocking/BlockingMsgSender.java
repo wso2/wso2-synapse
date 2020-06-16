@@ -251,6 +251,7 @@ public class BlockingMsgSender {
                 }
 
                 synapseInMsgCtx.setProperty(SynapseConstants.BLOCKING_SENDER_ERROR, "false");
+                this.invokeHandlers(synapseInMsgCtx);
                 return synapseInMsgCtx;
             }
         } catch (Exception ex) {
@@ -405,6 +406,7 @@ public class BlockingMsgSender {
                             result.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
                 }
                 synapseInMsgCtx.setProperty(SynapseConstants.BLOCKING_SENDER_ERROR, "false");
+                this.invokeHandlers(synapseInMsgCtx);
             }
         } catch (Exception ex) {
             /*
@@ -515,7 +517,6 @@ public class BlockingMsgSender {
         returnMsgCtx.setProperty(
                 org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
                 resultMsgCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
-        this.invokeHandlers(synapseInMsgCtx);
         return returnMsgCtx;
     }
 

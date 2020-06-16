@@ -42,6 +42,7 @@ public class AccessRateController {
     private final Object lock = new Object();
 
     private boolean debugOn = false;  //is debug enable
+    private static final String SYMBOL_UNDERSCORE = "_";
 
     public AccessRateController() {
         debugOn = log.isDebugEnabled();
@@ -82,9 +83,9 @@ public class AccessRateController {
             accessInformation.setFaultReason(msg);
             return accessInformation;
         }
-
-        CallerConfiguration configuration =
-                throttleConfigurationBean.getCallerConfiguration(callerID);
+        // The configs are added without unique key hence removing it while retrieving the configuration.
+        String callerAddress = callerID.substring(callerID.lastIndexOf(SYMBOL_UNDERSCORE) + 1);
+        CallerConfiguration configuration = throttleConfigurationBean.getCallerConfiguration(callerAddress);
         if (configuration == null) {
             if (debugOn) {
                 log.debug("Caller configuration couldn't find for " + type + " and for caller " +

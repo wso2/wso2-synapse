@@ -29,6 +29,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.util.logging.LoggingUtils;
 
 /**
  * This message receiver should be configured in the Axis2 configuration as the
@@ -122,11 +123,13 @@ public class SynapseMessageReceiver implements MessageReceiver {
     }
 
     private void warn(boolean traceOn, String msg, MessageContext msgContext) {
+
+        String formattedMsg = LoggingUtils.getFormattedLog(msgContext, msg);
         if (traceOn) {
-            trace.warn(msg);
+            trace.warn(formattedMsg);
         }
         if (log.isDebugEnabled()) {
-            log.warn(msg);
+            log.warn(formattedMsg);
         }
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().warn(msg);

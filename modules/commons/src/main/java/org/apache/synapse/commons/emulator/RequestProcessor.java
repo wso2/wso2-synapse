@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
+import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -91,6 +92,7 @@ public class RequestProcessor {
         try {
             //Create DocumentBuilder with default configuration
             builder = factory.newDocumentBuilder();
+            builder.setErrorHandler(new DefaultHandler());
 
             //Parse the content to Document object
             Document xmlDOM = builder.parse(new InputSource(new StringReader(domString)));

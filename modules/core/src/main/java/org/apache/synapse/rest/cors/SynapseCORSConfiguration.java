@@ -44,10 +44,13 @@ public class SynapseCORSConfiguration implements CORSConfiguration {
     private boolean enabled;
     private Set<String> allowedOrigins = new HashSet<>();
     private String allowedHeaders;
+    private static final String LOCAL_HOST = "localhost";
 
     private SynapseCORSConfiguration() {
         enabled = SynapsePropertiesLoader.getBooleanProperty(RESTConstants.CORS_CONFIGURATION_ENABLED, true);
-
+        if (!enabled) {
+            return; // no need to do the rest if cors is not enabled.
+        }
         //Retrieve allowed origin list
         String allowedOriginListStr =
                 SynapsePropertiesLoader.getPropertyValue(RESTConstants.CORS_CONFIGURATION_ACCESS_CTL_ALLOW_ORIGIN, null);
@@ -56,9 +59,12 @@ public class SynapseCORSConfiguration implements CORSConfiguration {
             for (String origin : originList) {
                 String trimmedOrigin = origin.trim();
                 allowedOrigins.add(trimmedOrigin);
+                if (!trimmedOrigin.contains(LOCAL_HOST)) {
+                    continue;
+                }
                 try {
                     URL url = new URL(trimmedOrigin);
-                    if (url.getHost().equals("localhost")) {
+                    if (url.getHost().equals(LOCAL_HOST)) {
                         // Add localhost IPs as allowed origin
                         Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
                         while (networkInterfaces.hasMoreElements()) {

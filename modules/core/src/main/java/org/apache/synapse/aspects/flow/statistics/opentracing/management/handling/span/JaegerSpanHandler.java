@@ -20,6 +20,10 @@ package org.apache.synapse.aspects.flow.statistics.opentracing.management.handli
 
 import io.jaegertracing.internal.JaegerTracer;
 import io.opentracing.Span;
+import io.opentracing.SpanContext;
+import io.opentracing.propagation.Format;
+import io.opentracing.propagation.TextMapExtractAdapter;
+import io.opentracing.propagation.TextMapInjectAdapter;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SequenceType;
@@ -35,8 +39,11 @@ import org.apache.synapse.aspects.flow.statistics.opentracing.stores.SpanStore;
 import org.apache.synapse.aspects.flow.statistics.opentracing.models.SpanWrapper;
 import org.apache.synapse.aspects.flow.statistics.opentracing.models.ContinuationStateSequenceInfo;
 import org.apache.synapse.continuation.SeqContinuationState;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -133,7 +140,26 @@ public class JaegerSpanHandler implements OpenTracingSpanHandler {
         if (parentSpanWrapper != null) {
             parentSpan = parentSpanWrapper.getSpan();
         }
-        Span span = tracer.buildSpan(statisticDataUnit.getComponentName()).asChildOf(parentSpan).start();
+        Span span;
+        SpanContext spanContext;
+        Map<String, String> tracerSpecificCarrier = new HashMap<>();
+
+        Map headersMap = (Map) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+
+        if (isOuterLevelSpan(statisticDataUnit, spanStore)) {
+            // Extract span context from headers
+            spanContext = tracer.extract(Format.Builtin.HTTP_HEADERS, new TextMapExtractAdapter(headersMap));
+            span = tracer.buildSpan(statisticDataUnit.getComponentName()).asChildOf(spanContext).start();
+        } else {
+            span = tracer.buildSpan(statisticDataUnit.getComponentName()).asChildOf(parentSpan).start();
+            spanContext = span.context();
+        }
+        // Set tracing headers
+        tracer.inject(spanContext, Format.Builtin.HTTP_HEADERS, new TextMapInjectAdapter(tracerSpecificCarrier));
+        // Set text map key value pairs as HTTP headers
+        headersMap.putAll(tracerSpecificCarrier);
+
         String spanId = TracingUtils.extractId(statisticDataUnit);
         SpanWrapper spanWrapper = spanStore.addSpanWrapper(spanId, span, statisticDataUnit, parentSpanWrapper, synCtx);
 
