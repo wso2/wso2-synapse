@@ -22,18 +22,23 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.config.xml.inbound.InboundEndpointFactory;
 import org.apache.synapse.config.xml.inbound.InboundEndpointSerializer;
 import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.AbstractExtendedSynapseHandler;
 
 import java.io.File;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
 
 public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
 
     private static Log log = LogFactory.getLog(InboundEndpointDeployer.class);
+    private static String ARTIFACT_TYPE = "inbound-endpoint";
 
     @Override
     public String deploySynapseArtifact(OMElement artifactConfig, String fileName, Properties properties) {
@@ -62,6 +67,9 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
                 if (log.isDebugEnabled()) {
                     log.debug("Inbound Endpoint deployment from file : " + fileName + " : Completed");
                 }
+                String startTime = String.valueOf(System.currentTimeMillis());
+                executeExtendedSynapseHandlerOnArtifactDeployment(inboundEndpoint.getName(), ARTIFACT_TYPE,
+                        startTime);
                 log.info("Inbound Endpoint named '" + inboundEndpoint.getName() +
                         "' has been deployed from file : " + fileName);
                 return inboundEndpoint.getName();
@@ -135,17 +143,19 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
             log.debug("Undeployment of the Inbound Endpoint named : "
                     + artifactName + " : Started");
         }
-
         try {
             InboundEndpoint inboundEndpoint = getSynapseConfiguration().getInboundEndpoint(artifactName);
             if (inboundEndpoint != null) {
                 CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
             	inboundEndpoint.destroy();
                 getSynapseConfiguration().removeInboundEndpoint(artifactName);
+                String unDeployTime = String.valueOf(System.currentTimeMillis());
+                executeSynapseHandlerOnArtifactUnDeployment(inboundEndpoint.getName(), ARTIFACT_TYPE,
+                        unDeployTime);
                 if (log.isDebugEnabled()) {
                     log.debug("Undeployment of the Inbound Endpoint named : "
                             + artifactName + " : Completed");
-                }                
+                }
                 log.info("Inbound Endpoint named '" + inboundEndpoint.getName() + "' has been undeployed");
             } else if (log.isDebugEnabled()) {
                 log.debug("Inbound Endpoint " + artifactName + " has already been undeployed");
