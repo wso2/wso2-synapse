@@ -39,6 +39,7 @@
         <module>org.apache.synapse.transport.vfs.feature</module>
         <module>org.apache.synapse.transport.vfs.smb.feature</module>
         <module>org.apache.synapse.samples.feature</module>
+        <module>org.apache.synapse.transport.vfs.smb2.feature</module>
     </modules>
 </project>
 
