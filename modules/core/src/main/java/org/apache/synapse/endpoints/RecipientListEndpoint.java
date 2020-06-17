@@ -169,7 +169,7 @@ public class RecipientListEndpoint extends AbstractEndpoint {
         try {
 	        RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(),false);
         } catch (Exception e) {
-        	  handleException("Error while building message", e);
+            handleException("Error while building message", e, synCtx);
         }
 
         for (Endpoint childEndpoint : children) {
@@ -180,7 +180,7 @@ public class RecipientListEndpoint extends AbstractEndpoint {
                 try {
                     newCtx = MessageHelper.cloneMessageContext(synCtx);
                 } catch (AxisFault e) {
-                    handleException("Error cloning the message context", e);
+                    handleException("Error cloning the message context", e, synCtx);
                 }
 
                 //Used when aggregating responses
@@ -281,8 +281,8 @@ public class RecipientListEndpoint extends AbstractEndpoint {
 			try {
 				newCtx = MessageHelper.cloneMessageContext(synCtx);
 			} catch (AxisFault e) {
-				handleException("Error cloning the message context", e);
-			}
+                handleException("Error cloning the message context", e, synCtx);
+            }
 
 			// Used when aggregating responses
 			newCtx.setProperty(

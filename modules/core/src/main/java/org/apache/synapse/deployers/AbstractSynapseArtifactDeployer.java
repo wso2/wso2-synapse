@@ -32,10 +32,12 @@ import org.apache.axis2.util.XMLPrettyPrinter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.AbstractExtendedSynapseHandler;
 import org.apache.synapse.ServerConfigurationInformation;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.ServerState;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 
@@ -44,6 +46,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -583,5 +587,52 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
             return;
         }
         customLogContent = "[ Deployed From Artifact Container: " + artifactContainerName + " ] ";
+    }
+
+    /**
+     * Execute the ExtendedSynapseHandler during the artifact deployment.
+     *
+     * @param artifactName name of the deployed artifact
+     * @param artifactType type of the deployed artifact
+     * @param startTime    time the artifact was deployed
+     */
+    protected void executeExtendedSynapseHandlerOnArtifactDeployment(String artifactName, String artifactType,
+                                                                     String startTime) throws DeploymentException {
+        List handlers = getSynapseEnvironment().getSynapseHandlers();
+        Iterator<SynapseHandler> iterator = handlers.iterator();
+        while (iterator.hasNext()) {
+            SynapseHandler handler = iterator.next();
+            if ((handler instanceof AbstractExtendedSynapseHandler)) {
+                AbstractExtendedSynapseHandler abstractExtendedSynapseHandler =
+                        (AbstractExtendedSynapseHandler) handler;
+                if (!abstractExtendedSynapseHandler.handleArtifactDeployment(artifactName, artifactType, startTime)) {
+                    log.warn("Synapse not executed in the artifact deployment in path");
+                }
+            }
+        }
+    }
+
+    /**
+     * Execute the ExtendedSynapseHandler during the artifact undeployment.
+     *
+     * @param artifactName name of the undeployed artifact
+     * @param artifactType type of the undeployed artifact
+     * @param unDeployTime time the artifact was undeployed
+     */
+    protected void executeSynapseHandlerOnArtifactUnDeployment(String artifactName, String artifactType,
+                                                               String unDeployTime) throws DeploymentException {
+        List handlers = getSynapseEnvironment().getSynapseHandlers();
+        Iterator<SynapseHandler> iterator = handlers.iterator();
+        while (iterator.hasNext()) {
+            SynapseHandler handler = iterator.next();
+            if (handler instanceof AbstractExtendedSynapseHandler) {
+                AbstractExtendedSynapseHandler abstractExtendedSynapseHandler =
+                        (AbstractExtendedSynapseHandler) handler;
+                if (!abstractExtendedSynapseHandler.handleArtifactUnDeployment(artifactName, artifactType,
+                        unDeployTime)) {
+                    log.warn("Synapse not executed in the artifact undeployment in path");
+                }
+            }
+        }
     }
 }

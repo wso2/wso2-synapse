@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.util.logging.LoggingUtils;
 
 /**
  * Concrete implementation of the {@link SynapseLog} interface appropriate
@@ -78,10 +79,12 @@ public class MediatorLog implements SynapseLog {
      * at level INFO if trace is enabled for the mediator.
      */
     public void traceOrDebug(Object msg) {
+
+        String formattedMsg = LoggingUtils.getFormattedLog(synCtx, msg);
+        defaultLog.debug(formattedMsg);
         if (traceOn) {
-            traceLog.info(msg);
+            traceLog.info(formattedMsg);
         }
-        defaultLog.debug(msg);
     }
 
     /**
@@ -89,11 +92,13 @@ public class MediatorLog implements SynapseLog {
      * and to the trace log, if trace is enabled for the mediator.
      */
     public void traceOrDebugWarn(Object msg) {
+
+        String formattedMsg = LoggingUtils.getFormattedLog(synCtx, msg);
         if (traceOn) {
-            traceLog.warn(msg);
+            traceLog.warn(formattedMsg);
         }
         if (defaultLog.isDebugEnabled()) {
-            defaultLog.warn(msg);
+            defaultLog.warn(formattedMsg);
         }
     }
     
@@ -106,7 +111,7 @@ public class MediatorLog implements SynapseLog {
      */
     public void traceTrace(Object msg) {
         if (traceOn) {
-            traceLog.trace(msg);
+            traceLog.trace(LoggingUtils.getFormattedLog(synCtx, msg));
         }
     }
 
@@ -114,12 +119,14 @@ public class MediatorLog implements SynapseLog {
      * Log a message at level INFO to all available/enabled logs.
      */
     public void auditLog(Object msg) {
-        defaultLog.info(msg);
+
+        String formattedMsg = LoggingUtils.getFormattedLog(synCtx, msg);
+        defaultLog.info(formattedMsg);
         if (synCtx.getServiceLog() != null) {
             synCtx.getServiceLog().info(msg);
         }
         if (traceOn) {
-            traceLog.info(msg);
+            traceLog.info(formattedMsg);
         }
     }
 
@@ -127,14 +134,14 @@ public class MediatorLog implements SynapseLog {
      * Log a message at level DEBUG to all available/enabled logs.
      */
     public void auditDebug(Object msg) {
-    	if (defaultLog.isDebugEnabled()) { 
-    		defaultLog.debug(msg);
-    	}
+
+        String formattedMsg = LoggingUtils.getFormattedLog(synCtx, msg);
+        defaultLog.debug(formattedMsg);
         if (synCtx.getServiceLog() != null && synCtx.getServiceLog().isDebugEnabled()) {
             synCtx.getServiceLog().debug(msg);
         }
         if (traceOn) {
-            traceLog.debug(msg);
+            traceLog.debug(formattedMsg);
         }
     }
 
@@ -142,14 +149,16 @@ public class MediatorLog implements SynapseLog {
      * Log a message at level TRACE to all available/enabled logs.
      */
     public void auditTrace(Object msg) {
+
+        String formattedMsg = LoggingUtils.getFormattedLog(synCtx, msg);
         if (defaultLog.isTraceEnabled()) {
-            defaultLog.trace(msg);
+            defaultLog.trace(formattedMsg);
         }
         if (synCtx.getServiceLog() != null && synCtx.getServiceLog().isTraceEnabled()) {
             synCtx.getServiceLog().trace(msg);
         }
         if (traceOn) {
-            traceLog.trace(msg);
+            traceLog.trace(formattedMsg);
         }
     }
 
@@ -157,12 +166,14 @@ public class MediatorLog implements SynapseLog {
      * Log a message at level WARN to all available/enabled logs.
      */
     public void auditWarn(Object msg) {
-        defaultLog.warn(msg);
+
+        String formattedMsg = LoggingUtils.getFormattedLog(synCtx, msg);
+        defaultLog.warn(formattedMsg);
         if (synCtx.getServiceLog() != null) {
             synCtx.getServiceLog().warn(msg);
         }
         if (traceOn) {
-            traceLog.warn(msg);
+            traceLog.warn(formattedMsg);
         }
     }
 
@@ -170,12 +181,14 @@ public class MediatorLog implements SynapseLog {
      * Log a message at level ERROR to all available/enabled logs.
      */
     public void auditError(Object msg) {
-        defaultLog.error(msg);
+
+        String formattedMsg = LoggingUtils.getFormattedLog(synCtx, msg);
+        defaultLog.error(formattedMsg);
         if (synCtx.getServiceLog() != null) {
             synCtx.getServiceLog().error(msg);
         }
         if (traceOn) {
-            traceLog.error(msg);
+            traceLog.error(formattedMsg);
         }
     }
 
@@ -183,12 +196,14 @@ public class MediatorLog implements SynapseLog {
      * Log a message at level FATAL to all available/enabled logs.
      */
     public void auditFatal(Object msg) {
-        defaultLog.fatal(msg);
+
+        String formattedMsg = LoggingUtils.getFormattedLog(synCtx, msg);
+        defaultLog.fatal(formattedMsg);
         if (synCtx.getServiceLog() != null) {
             synCtx.getServiceLog().fatal(msg);
         }
         if (traceOn) {
-            traceLog.fatal(msg);
+            traceLog.fatal(formattedMsg);
         }
     }
 
@@ -196,9 +211,11 @@ public class MediatorLog implements SynapseLog {
      * Log a message at level ERROR to the default log and to the trace, if trace is enabled.
      */
     public void error(Object msg) {
-        defaultLog.error(msg);
+
+        String formattedMsg = LoggingUtils.getFormattedLog(synCtx, msg);
+        defaultLog.error(formattedMsg);
         if (traceOn) {
-            traceLog.error(msg);
+            traceLog.error(formattedMsg);
         }
     }
 
@@ -207,12 +224,14 @@ public class MediatorLog implements SynapseLog {
      * is enabled.
      */
     public void logSynapseException(String msg, Throwable cause) {
-        defaultLog.error(msg, cause);
+
+        String formattedMsg = LoggingUtils.getFormattedLog(synCtx, msg);
+        defaultLog.error(formattedMsg, cause);
         if (synCtx.getServiceLog() != null) {
             synCtx.getServiceLog().error(msg, cause);
         }
         if (traceOn) {
-            traceLog.error(msg, cause);
+            traceLog.error(formattedMsg, cause);
         }
     }
 }

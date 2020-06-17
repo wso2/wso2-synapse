@@ -18,6 +18,8 @@
 
 package org.apache.synapse.mediators.builtin;
 
+import com.github.fge.jackson.JsonLoader;
+import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.axis2.AxisFault;
 import org.apache.synapse.MessageContext;
@@ -32,6 +34,8 @@ import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.mediators.Value;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -89,7 +93,16 @@ public class JSONTransformMediator extends AbstractMediator {
             if (jsonSchemaObj != null) {
                 String schema = "";
                 if (jsonSchemaObj instanceof OMTextImpl) {
-                    schema = ((OMTextImpl) jsonSchemaObj).getText();
+                    try {
+                        //reading the schema with the media-type application/json
+                        schema = JsonLoader.fromReader(
+                                new InputStreamReader(((OMTextImpl) jsonSchemaObj).getInputStream())).toString();
+                    } catch (OMException e) {
+                        //reading the schema with the media type "unknown"
+                        schema = ((OMTextImpl) jsonSchemaObj).getText();
+                    } catch (IOException e) {
+                        handleException("Error while reading schema from registry", e, synCtx);
+                    }
                 } else if (jsonSchemaObj instanceof String) {
                     schema = (String) jsonSchemaObj;
                 } else {

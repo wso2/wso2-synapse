@@ -50,6 +50,8 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
     protected static final QName ATT_NAME    = new QName("name");
     protected static final QName ATT_VALUE   = new QName("value");
     protected static final QName ATT_DESCRIPTION   = new QName("description");
+    protected static final QName ATT_IS_MANDATORY = new QName("isMandatory");
+    protected static final QName ATT_DEFAULT_VALUE = new QName("defaultValue");
     protected static final QName ATT_XPATH   = new QName("xpath");
     protected static final QName ATT_REGEX   = new QName("regex");
     protected static final QName ATT_SEQUENCE = new QName("sequence");

@@ -27,6 +27,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.debug.SynapseDebugManager;
+import org.apache.synapse.util.logging.LoggingUtils;
 
 /**
  * This class will be used as the executer for the injectAsync method for the
@@ -98,7 +99,7 @@ public class MediatorWorker implements Runnable {
 
         } catch (Exception e) {
             String msg = "Unexpected error executing task/async inject";
-            log.error(msg, e);
+            log.error(LoggingUtils.getFormattedLog(synCtx, msg), e);
             if (synCtx.getServiceLog() != null) {
                 synCtx.getServiceLog().error(msg, e);
             }
@@ -112,7 +113,7 @@ public class MediatorWorker implements Runnable {
             }
         } catch (Throwable e) {
             String msg = "Unexpected error executing task/async inject, message dropped";
-            log.error(msg, e);
+            log.error(LoggingUtils.getFormattedLog(synCtx, msg), e);
             if (synCtx.getServiceLog() != null) {
                 synCtx.getServiceLog().error(msg, e);
             }
@@ -131,11 +132,13 @@ public class MediatorWorker implements Runnable {
     }
 
     private void warn(boolean traceOn, String msg, MessageContext msgContext) {
+
+        String formattedLog = LoggingUtils.getFormattedLog(msgContext, msg);
         if (traceOn) {
-            trace.warn(msg);
+            trace.warn(formattedLog);
         }
         if (log.isDebugEnabled()) {
-            log.warn(msg);
+            log.warn(formattedLog);
         }
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().warn(msg);
