@@ -25,10 +25,15 @@ import org.apache.axiom.om.OMText;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 
+import javax.xml.stream.XMLStreamException;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -87,7 +92,12 @@ public class TemplateContext {
                     }
                 }
             } else {
-                paramValue = getEvaluatedParamValue(synCtxt, parameterName, (Value) propertyValue);
+                try {
+                    paramValue = getEvaluatedParamValue(synCtxt, parameterName, (Value) propertyValue);
+                } catch (IOException | XMLStreamException e) {
+                    throw new SynapseException("Error while evaluating parameters"
+                            + " passed to template " + fName, e);
+                }
             }
             if (paramValue != null) {
                 mappedValues.put(parameterName, paramValue);
@@ -103,7 +113,9 @@ public class TemplateContext {
      * ie:- plain values in an expression format  ie:- {expr} .
      * @return evaluated value/expression
      */
-    private Object getEvaluatedParamValue(MessageContext synCtx, String parameter, Value expression) {
+    private Object getEvaluatedParamValue(MessageContext synCtx, String parameter, Value expression)
+            throws IOException, XMLStreamException {
+
         if (expression != null) {
             if (expression.getExpression() != null) {
                 if(expression.hasExprTypeKey()){
@@ -114,6 +126,19 @@ public class TemplateContext {
                 	}
                     return expression.getExpression();
                 } else {
+                    org.apache.axis2.context.MessageContext axis2MessageContext
+                            = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+                    /*
+                     * Need to build message conditionally if not already built
+                     * in order to evaluate XPath and JsonPath expressions
+                     */
+                    if(expression.getExpression().contentAware
+                            && (!Boolean.TRUE.equals(axis2MessageContext.
+                            getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)))) {
+
+                        RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext());
+                    }
+
                     if (expression.getExpression() instanceof SynapseJsonPath) {
                         return expression.evaluateValue(synCtx);
                     } else {
