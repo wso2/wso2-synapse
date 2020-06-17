@@ -32,6 +32,7 @@ import org.apache.synapse.mediators.TestMediator;
 import org.apache.synapse.mediators.TestUtils;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
+import org.apache.synapse.mediators.template.TemplateParam;
 
 import java.util.HashSet;
 
@@ -334,7 +335,7 @@ public class DebugManagerTest extends TestCase {
         temp.addChild(t2);
         temp.addChild(t3);
         temp.setName("test_sequence_template_5");
-        temp.setParameters(new HashSet<String>());
+        temp.setParameters(new HashSet<TemplateParam>());
         synConfig.addSequenceTemplate(temp.getName(), temp);
         String debug_command = "{\"command\":\"set\",\"command-argument\":\"skip\",\"mediation-component\":\"template\"," +
                 "\"template\":{\"template-key\":\"test_sequence_template_5\",\"mediator-position\": \"0\"}}";
@@ -389,7 +390,7 @@ public class DebugManagerTest extends TestCase {
         temp.addChild(t2);
         temp.addChild(t3);
         temp.setName("test_sequence_template_6");
-        temp.setParameters(new HashSet<String>());
+        temp.setParameters(new HashSet<TemplateParam>());
         synConfig.addSequenceTemplate(temp.getName(), temp);
         String debug_command = "{\"command\":\"set\",\"command-argument\":\"breakpoint\",\"mediation-component\":" +
                 "\"template\",\"template\":{\"template-key\":\"test_sequence_template_6\",\"mediator-position\": \"0\"}}";

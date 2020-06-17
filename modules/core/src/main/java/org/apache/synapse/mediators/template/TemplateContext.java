@@ -23,10 +23,17 @@ import org.apache.axiom.om.OMDocument;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMText;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 
+import javax.xml.stream.XMLStreamException;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -43,15 +50,15 @@ public class TemplateContext {
      */
     private String fName;
     /**
-     * refers to the parameter names of the function
+     * refers to the parameters of the function
      */
-    private Collection<String> parameters;
+    private Collection<TemplateParam> parameters;
     /**
      * contains a map for parameterNames to evaluated values
      */
     private Map mappedValues;
 
-    public TemplateContext(String name, Collection<String> parameters) {
+    public TemplateContext(String name, Collection<TemplateParam> parameters) {
         this.fName = name;
         this.parameters = parameters;
         mappedValues = new HashMap();
@@ -59,17 +66,41 @@ public class TemplateContext {
 
     /**
      * evaluate raw parameters passed from an invoke medaiator and store them in this context
+     *
      * @param synCtxt Synapse MessageContext
      */
     public void setupParams(MessageContext synCtxt) {
-        Iterator<String> paramNames = parameters.iterator();
+        Iterator<TemplateParam> paramNames = parameters.iterator();
         while (paramNames.hasNext()) {
-            String parameter = paramNames.next();
-            String mapping = EIPUtils.getTemplatePropertyMapping(fName, parameter);
+            TemplateParam parameter = paramNames.next();
+            String parameterName = parameter.getName();
+            String mapping = EIPUtils.getTemplatePropertyMapping(fName, parameterName);
             Object propertyValue = synCtxt.getProperty(mapping);
-            Object paramValue = getEvaluatedParamValue(synCtxt, parameter, (Value) propertyValue);
+            Object paramValue = null;
+            if (propertyValue == null) {
+                if (parameter.isMandatory()) {
+                    String errorDetail = "Neither a value nor default "
+                            + "value is provided for mandatory parameter: "
+                            + parameterName + " in seq-template " + fName;
+                    synCtxt.setProperty(SynapseConstants.ERROR_CODE, 500101);
+                    synCtxt.setProperty(SynapseConstants.ERROR_MESSAGE, errorDetail);
+                    throw new SynapseException(errorDetail);
+                } else {
+                    Object defaultValue = parameter.getDefaultValue();
+                    if (defaultValue != null) {
+                        paramValue = defaultValue;
+                    }
+                }
+            } else {
+                try {
+                    paramValue = getEvaluatedParamValue(synCtxt, parameterName, (Value) propertyValue);
+                } catch (IOException | XMLStreamException e) {
+                    throw new SynapseException("Error while evaluating parameters"
+                            + " passed to template " + fName, e);
+                }
+            }
             if (paramValue != null) {
-                mappedValues.put(parameter, paramValue);
+                mappedValues.put(parameterName, paramValue);
             }
             //remove temp property from the context
             removeProperty(synCtxt, mapping);
@@ -82,7 +113,9 @@ public class TemplateContext {
      * ie:- plain values in an expression format  ie:- {expr} .
      * @return evaluated value/expression
      */
-    private Object getEvaluatedParamValue(MessageContext synCtx, String parameter, Value expression) {
+    private Object getEvaluatedParamValue(MessageContext synCtx, String parameter, Value expression)
+            throws IOException, XMLStreamException {
+
         if (expression != null) {
             if (expression.getExpression() != null) {
                 if(expression.hasExprTypeKey()){
@@ -93,6 +126,19 @@ public class TemplateContext {
                 	}
                     return expression.getExpression();
                 } else {
+                    org.apache.axis2.context.MessageContext axis2MessageContext
+                            = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+                    /*
+                     * Need to build message conditionally if not already built
+                     * in order to evaluate XPath and JsonPath expressions
+                     */
+                    if(expression.getExpression().contentAware
+                            && (!Boolean.TRUE.equals(axis2MessageContext.
+                            getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)))) {
+
+                        RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext());
+                    }
+
                     if (expression.getExpression() instanceof SynapseJsonPath) {
                         return expression.evaluateValue(synCtx);
                     } else {
