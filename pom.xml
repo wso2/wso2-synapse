@@ -986,17 +986,17 @@
             <version>${fge.json.schema.validator.version}</version>
          </dependency>
          <dependency>
-              <groupId>org.wso2.orbit.com.fasterxml.jackson.core</groupId>
+              <groupId>com.fasterxml.jackson.core</groupId>
               <artifactId>jackson-core</artifactId>
               <version>${fasterxml.jackson.version}</version>
          </dependency>
          <dependency>
-              <groupId>org.wso2.orbit.com.fasterxml.jackson.core</groupId>
+              <groupId>com.fasterxml.jackson.core</groupId>
               <artifactId>jackson-databind</artifactId>
               <version>${fasterxml.jackson.version}</version>
          </dependency>
          <dependency>
-              <groupId>org.wso2.orbit.com.fasterxml.jackson.core</groupId>
+              <groupId>com.fasterxml.jackson.core</groupId>
               <artifactId>jackson-annotations</artifactId>
               <version>${fasterxml.jackson.version}</version>
          </dependency>
@@ -1345,7 +1345,7 @@
       <javax.servlet.version>3.0.1</javax.servlet.version>
       <powermock.version>1.7.1</powermock.version>
       <fge.json.schema.validator.version>2.2.6.wso2v7</fge.json.schema.validator.version>
-      <fasterxml.jackson.version>2.9.8.wso2v1</fasterxml.jackson.version>
+      <fasterxml.jackson.version>2.10.3</fasterxml.jackson.version>
       <google.guava.version>27.0-jre</google.guava.version>
       <joda-time.version>2.9.4.wso2v1</joda-time.version>
       <com.googlecode.libphonenumber.version>7.4.2.wso2v1</com.googlecode.libphonenumber.version>
