@@ -75,10 +75,9 @@ public class InvokeMediatorFactory extends AbstractMediatorFactory {
         }
 
         OMAttribute errorHandlerAttr = elem.getAttribute(ATT_ONERROR);
-        if (errorHandlerAttr != null) {
-            if (StringUtils.isNotEmpty(errorHandlerAttr.getAttributeValue())) {
-                invoker.setErrorHandler(errorHandlerAttr.getAttributeValue());
-            }
+        if ((errorHandlerAttr != null)
+                && (StringUtils.isNotEmpty(errorHandlerAttr.getAttributeValue()))) {
+            invoker.setErrorHandler(errorHandlerAttr.getAttributeValue());
         }
 
         addAllCommentChildrenToList(elem, invoker.getCommentsList());
