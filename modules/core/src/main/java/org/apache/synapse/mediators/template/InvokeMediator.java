@@ -22,6 +22,7 @@ import org.apache.synapse.ContinuationState;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -33,6 +34,7 @@ import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
+import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
@@ -40,6 +42,7 @@ import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Stack;
 
 /**
  * This class handles invocation of a synapse function template. <invoke
@@ -53,6 +56,11 @@ public class InvokeMediator extends AbstractMediator implements
 	 * attribute of the mediator
 	 */
 	private String targetTemplate;
+
+	/** The name of the error handler which is used to
+	 * handle error during the mediation
+	 */
+	private String errorHandler = null;
 
 	/**
 	 * Refers to the parent package qualified reference
@@ -141,13 +149,38 @@ public class InvokeMediator extends AbstractMediator implements
 
 		if (mediator != null && mediator instanceof TemplateMediator) {
 			populateParameters(synCtx, ((TemplateMediator) mediator).getName());
-            if (executePreFetchingSequence) {
-                ContinuationStackManager.addReliantContinuationState(
-                        synCtx, 0, getMediatorPosition());
-            }
-            boolean result = mediator.mediate(synCtx);
+			if (executePreFetchingSequence) {
+				ContinuationStackManager.addReliantContinuationState(synCtx,
+						0, getMediatorPosition());
+			}
+			Mediator errorHandlerMediator = null;
+			if (errorHandler != null) {
+				errorHandlerMediator = synCtx.getSequence(errorHandler);
+				if (errorHandlerMediator != null) {
+					if (synLog.isTraceOrDebugEnabled()) {
+						synLog.traceOrDebug("Setting the onError handler : "
+								+ errorHandler + " when invoking : "
+								+ targetTemplate);
+					}
+					synCtx.pushFaultHandler(new MediatorFaultHandler(errorHandlerMediator));
+				}
+			}
+
+			boolean result = mediator.mediate(synCtx);
+
 			if (result && executePreFetchingSequence) {
 				ContinuationStackManager.removeReliantContinuationState(synCtx);
+			}
+
+			if (errorHandlerMediator != null) {
+				Stack faultStack = synCtx.getFaultStack();
+				if (faultStack != null && !faultStack.isEmpty()) {
+					Object o = faultStack.peek();
+					if (o instanceof MediatorFaultHandler
+							&& errorHandlerMediator.equals(((MediatorFaultHandler) o).getFaultMediator())) {
+						faultStack.pop();
+					}
+				}
 			}
 			return result;
 		}
@@ -241,6 +274,14 @@ public class InvokeMediator extends AbstractMediator implements
 
 	public void setTargetTemplate(String targetTemplate) {
 		this.targetTemplate = targetTemplate;
+	}
+
+	public void setErrorHandler(String errorHandler) {
+		this.errorHandler = errorHandler;
+	}
+
+	public String getErrorHandler() {
+		return errorHandler;
 	}
 
 	public Map<String, Value> getpName2ExpressionMap() {
