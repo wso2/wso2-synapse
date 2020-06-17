@@ -1362,7 +1362,7 @@
        <activemq.broker.version>5.9.1</activemq.broker.version>
        <slf4j.log4j.version>1.5.2</slf4j.log4j.version>
        <system.rules.version>1.17.0</system.rules.version>
-       <io.netty.version>4.0.39.Final</io.netty.version>
+       <io.netty.version>4.1.34.Final</io.netty.version>
        <version.org.wso2.orbit.javax.activation>1.1.1.wso2v3</version.org.wso2.orbit.javax.activation>
        <rabbitmq.version>5.8.0</rabbitmq.version>
        <jaeger-client.version>0.32.0.wso2v2</jaeger-client.version>
