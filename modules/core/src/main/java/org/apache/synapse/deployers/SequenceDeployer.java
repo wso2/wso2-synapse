@@ -23,13 +23,13 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.MediatorFactoryFinder;
 import org.apache.synapse.config.xml.MediatorSerializerFinder;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 
 import java.io.File;
 import java.util.Properties;
@@ -59,6 +59,9 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
                     artifactConfig, properties);
             if (m instanceof SequenceMediator) {
                 SequenceMediator seq = (SequenceMediator) m;
+                if (getSynapseConfiguration().getDefinedSequences().get(seq.getName()) != null) {
+                    handleSynapseArtifactDeploymentError("Sequence named : " + seq.getName() + " already exists.");
+                }
                 seq.setArtifactContainerName(customLogContent);
                 seq.setFileName((new File(fileName)).getName());
                 if (log.isDebugEnabled()) {

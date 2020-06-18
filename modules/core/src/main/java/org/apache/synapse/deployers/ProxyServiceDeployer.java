@@ -26,17 +26,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.SynapseHandler;
-import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.config.xml.ProxyServiceFactory;
 import org.apache.synapse.config.xml.ProxyServiceSerializer;
 import org.apache.synapse.core.axis2.ProxyService;
-import org.apache.synapse.AbstractExtendedSynapseHandler;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 
 import java.io.File;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Properties;
 
 /**
@@ -67,10 +63,8 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
             proxy.setArtifactContainerName(customLogContent);
             if (proxy != null) {
                 if (getSynapseConfiguration().getProxyService(proxy.getName()) != null) {
-                    log.warn("Hot deployment thread picked up an already deployed proxy - Ignoring");
-                    return proxy.getName();
+                    handleSynapseArtifactDeploymentError("ProxyService named : " + proxy.getName() + " already exists");
                 }
-
                 File proxyFile = new File(filePath);
                 proxy.setFileName(proxyFile.getName());
                 proxy.setFilePath(proxyFile.toURI().toURL());
