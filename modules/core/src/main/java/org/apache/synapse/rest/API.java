@@ -33,7 +33,7 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
-import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.dispatch.DispatcherHelper;
@@ -41,7 +41,7 @@ import org.apache.synapse.rest.dispatch.RESTDispatcher;
 import org.apache.synapse.rest.version.DefaultStrategy;
 import org.apache.synapse.rest.version.URLBasedVersionStrategy;
 import org.apache.synapse.rest.version.VersionStrategy;
-import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.http.conn.SynapseWireLogHolder;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
@@ -50,7 +50,12 @@ import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.util.logging.LoggingUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class API extends AbstractRESTProcessor implements ManagedLifecycle, AspectConfigurable, SynapseArtifact {
 
@@ -253,8 +258,8 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
             }
         } else {
             String path = RESTUtils.getFullRequestPath(synCtx);
-            if (!path.startsWith(context + "/") && !path.startsWith(context + "?") &&
-                    !context.equals(path) && !"/".equals(context)) {
+            if (null == synCtx.getProperty(RESTConstants.IS_PROMETHEUS_ENGAGED) &&
+                    (!RESTUtils.matchApiPath(path, context))) {
                 auditDebug("API context: " + context + " does not match request URI: " + path);
                 return false;
             }

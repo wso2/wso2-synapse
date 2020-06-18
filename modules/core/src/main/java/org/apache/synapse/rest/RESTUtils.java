@@ -153,4 +153,20 @@ public class RESTUtils {
         throw new SynapseException(msg, t);
     }
 
+    /**
+     * Identify the API by matching the context of the invoking api
+     * with the path of each api in the api list.
+     *
+     * @param path    request path
+     * @param context API context
+     * @return true if the invoking api context matches with the path
+     * and false if the two values don't match
+     */
+    public static boolean matchApiPath(String path, String context) {
+        if (!path.startsWith(context + "/") && !path.startsWith(context + "?") &&
+                !context.equals(path) && !"/".equals(context)) {
+            return false;
+        }
+        return true;
+    }
 }

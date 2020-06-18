@@ -85,4 +85,10 @@ public class RESTConstants {
                                                                     _SYNAPSE_INTERNAL_+ "Access-Control-Allow-Headers";
     public static final String INTERNAL_CORS_HEADER_ORIGIN = _SYNAPSE_INTERNAL_+ "Origin";
 
+    /**
+     * Constant related to identifying API when Prometheus Observability Handler is present
+     */
+    public static final String IS_PROMETHEUS_ENGAGED = "IS_PROMETHEUS_ENGAGED";
+    public static final String PROCESSED_API = "PROCESSED_API";
+
 }

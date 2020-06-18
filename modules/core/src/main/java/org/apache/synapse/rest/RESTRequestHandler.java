@@ -75,32 +75,24 @@ public class RESTRequestHandler {
         Collection<API> apiSet = synCtx.getEnvironment().getSynapseConfiguration().getAPIs();
         //Since swapping elements are not possible with sets, Collection is converted to a List
         List<API> defaultStrategyApiSet = new ArrayList<API>(apiSet);
-
         API defaultAPI = null;
-        for (API api : apiSet) {
-            api.setLogSetterValue();
-            if ("/".equals(api.getContext())) {
-                defaultAPI = api;
-            } else if (api.getVersionStrategy().getClass().getName().equals(DefaultStrategy.class.getName())) {
-                //APIs whose VersionStrategy is bound to an instance of DefaultStrategy, should be skipped and processed at last.
-                //Otherwise they will be always chosen to process the request without matching the version.
-                defaultStrategyApiSet.add(api);
-            } else if (api.getVersionStrategy().getClass().getName().equals(ContextVersionStrategy.class.getName())
-                    || api.getVersionStrategy().getClass().getName().equals(URLBasedVersionStrategy.class.getName())) {
+        if (null != synCtx.getProperty(RESTConstants.IS_PROMETHEUS_ENGAGED)) {
+            API api = (API) synCtx.getProperty(RESTConstants.PROCESSED_API);
+            identifyAPI(api, synCtx, defaultStrategyApiSet);
+        } else {
+            for (API api : apiSet) {
+                identifyAPI(api, synCtx, defaultStrategyApiSet);
+            }
+
+            for (API api : defaultStrategyApiSet) {
                 api.setLogSetterValue();
                 if (api.canProcess(synCtx)) {
                     if (log.isDebugEnabled()) {
                         log.debug("Located specific API: " + api.getName() + " for processing message");
                     }
-                    apiProcessNonDefaultStrategy(synCtx, api);
+                    apiProcess(synCtx, api);
                     return true;
                 }
-            } else if (api.canProcess(synCtx)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Located specific API: " + api.getName() + " for processing message");
-                }
-                api.process(synCtx);
-                return true;
             }
         }
 
@@ -148,5 +140,34 @@ public class RESTRequestHandler {
         } else {
             api.process(synCtx);
         }
+    }
+
+    private boolean identifyAPI(API api, MessageContext synCtx, List defaultStrategyApiSet) {
+        API defaultAPI = null;
+        api.setLogSetterValue();
+        if ("/".equals(api.getContext())) {
+            defaultAPI = api;
+        } else if (api.getVersionStrategy().getClass().getName().equals(DefaultStrategy.class.getName())) {
+            //APIs whose VersionStrategy is bound to an instance of DefaultStrategy, should be skipped and processed at
+            // last.Otherwise they will be always chosen to process the request without matching the version.
+            defaultStrategyApiSet.add(api);
+        } else if (api.getVersionStrategy().getClass().getName().equals(ContextVersionStrategy.class.getName())
+                || api.getVersionStrategy().getClass().getName().equals(URLBasedVersionStrategy.class.getName())) {
+            api.setLogSetterValue();
+            if (api.canProcess(synCtx)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Located specific API: " + api.getName() + " for processing message");
+                }
+                apiProcessNonDefaultStrategy(synCtx, api);
+                return true;
+            }
+        } else if (api.canProcess(synCtx)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Located specific API: " + api.getName() + " for processing message");
+            }
+            api.process(synCtx);
+            return true;
+        }
+        return false;
     }
 }
