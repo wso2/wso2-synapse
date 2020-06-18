@@ -44,6 +44,7 @@ import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.commons.transaction.TranscationManger;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.core.axis2.Axis2ContextReferenceHolder;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.AddressEndpoint;
@@ -60,6 +61,7 @@ import org.jaxen.JaxenException;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.xml.parsers.ParserConfigurationException;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -415,9 +417,15 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
 
     public void init(SynapseEnvironment synEnv) {
         try {
-            configCtx = ConfigurationContextFactory.createConfigurationContextFromFileSystem(
-                    clientRepository != null ? clientRepository : DEFAULT_CLIENT_REPO,
-                    axis2xml != null ? axis2xml : DEFAULT_AXIS2_XML);
+            if (axis2xml != null || clientRepository != null) {
+                configCtx = getConfigurationContext(axis2xml, clientRepository);
+            } else {
+                configCtx = Axis2ContextReferenceHolder.getInstance().getAxis2ConfigurationContext();
+                if (configCtx == null) {
+                    configCtx = getConfigurationContext(axis2xml, clientRepository);
+                    Axis2ContextReferenceHolder.getInstance().setAxis2ConfigurationContext(configCtx);
+                }
+            }
             if (serviceURL != null) {
                 serviceURL = changeEndPointReference(serviceURL);
             }
@@ -470,6 +478,20 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
         }
     }
 
+    /**
+     * Method to get ConfigurationContext.
+     *
+     * @param axis2xml         path to the axis2xml file
+     * @param clientRepository path to clientRepository
+     * @return ConfigurationContext
+     * @throws AxisFault
+     */
+    public ConfigurationContext getConfigurationContext(String axis2xml, String clientRepository)
+            throws AxisFault {
+        return ConfigurationContextFactory.createConfigurationContextFromFileSystem(
+                clientRepository != null ? clientRepository : DEFAULT_CLIENT_REPO,
+                axis2xml != null ? axis2xml : DEFAULT_AXIS2_XML);
+    }
 
     public void destroy() {
         try {

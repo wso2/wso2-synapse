@@ -32,6 +32,7 @@ import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.core.axis2.Axis2ContextReferenceHolder;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.mediators.AbstractMediator;
@@ -313,9 +314,13 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
         if (blocking) {
             try {
-                configCtx = ConfigurationContextFactory.createConfigurationContextFromFileSystem(
-                        clientRepository != null ? clientRepository : DEFAULT_CLIENT_REPO,
-                        axis2xml != null ? axis2xml : DEFAULT_AXIS2_XML);
+                configCtx = Axis2ContextReferenceHolder.getInstance().getAxis2ConfigurationContext();
+                if (configCtx == null) {
+                    configCtx = ConfigurationContextFactory.createConfigurationContextFromFileSystem(
+                            clientRepository != null ? clientRepository : DEFAULT_CLIENT_REPO,
+                            axis2xml != null ? axis2xml : DEFAULT_AXIS2_XML);
+                    Axis2ContextReferenceHolder.getInstance().setAxis2ConfigurationContext(configCtx);
+                }
                 blockingMsgSender = new BlockingMsgSender();
                 blockingMsgSender.setConfigurationContext(configCtx);
                 blockingMsgSender.init();
