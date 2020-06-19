@@ -221,6 +221,15 @@ public abstract class RuntimeStatisticCollector {
     }
 
     /**
+     * Returns whether mediation flow statistics (Analytics profile) has been enabled.
+     *
+     * @return true if mediation flow statistics has been enabled.
+     */
+    public static boolean isMediationFlowStatisticsEnabled() {
+        return isMediationFlowStatisticsEnabled;
+    }
+
+    /**
      * Return whether collecting payloads is enabled.
      *
      * @return true if need to collect payloads.
