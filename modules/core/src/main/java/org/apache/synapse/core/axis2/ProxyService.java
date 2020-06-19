@@ -1470,4 +1470,22 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     public void setCommentsList(List<String> commentsList) {
         this.commentsList = commentsList;
     }
+
+    /**
+     * This method will destroy sequences
+     */
+    public void destroy() {
+        if (log.isDebugEnabled()) {
+            log.debug("Destroying proxy service with name: " + name);
+        }
+        if (targetInLineInSequence != null && targetInLineInSequence.isInitialized()) {
+            targetInLineInSequence.destroy();
+        }
+        if (targetInLineOutSequence != null && targetInLineOutSequence.isInitialized()) {
+            targetInLineOutSequence.destroy();
+        }
+        if (targetInLineFaultSequence != null && targetInLineFaultSequence.isInitialized()) {
+            targetInLineFaultSequence.destroy();
+        }
+    }
 }
