@@ -59,10 +59,8 @@ public class ContextAwareLogger {
     private static Log getLogger(Object correlationId, Log log, boolean removeFromMDC) {
 
         return correlationId != null ?
-                (removeFromMDC ?
-                        new CorrelationMDCImmediateLogger(correlationId, log)
-                        : new CorrelationMDCAwareLogger(correlationId, log))
-                : log;
+                (removeFromMDC ? new CorrelationMDCImmediateLogger(correlationId, log)
+                        : new CorrelationMDCAwareLogger(correlationId, log)) : log;
     }
 
 }
