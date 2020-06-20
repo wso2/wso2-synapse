@@ -36,6 +36,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -147,9 +148,9 @@ public class MessageHelper {
         org.apache.axis2.context.MessageContext originalAxis2Ctx =
                 ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         if (originalAxis2Ctx.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)
-                && originalAxis2Ctx.getProperty(PassThroughConstants.CORRELATION_ID) != null  && isCloneCorrelationId) {
-            String originalCorrelationId = originalAxis2Ctx.getProperty(PassThroughConstants.CORRELATION_ID).toString();
-            axis2MC.getAxis2MessageContext().setProperty(PassThroughConstants.CORRELATION_ID, originalCorrelationId
+                && originalAxis2Ctx.getProperty(CorrelationConstants.CORRELATION_ID) != null  && isCloneCorrelationId) {
+            String originalCorrelationId = originalAxis2Ctx.getProperty(CorrelationConstants.CORRELATION_ID).toString();
+            axis2MC.getAxis2MessageContext().setProperty(CorrelationConstants.CORRELATION_ID, originalCorrelationId
                     + "_" + UUID.randomUUID().toString());
         }
         //Correlation logging code ends here

@@ -38,7 +38,8 @@ import org.apache.http.nio.NHttpClientEventHandler;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.protocol.HttpContext;
-import org.apache.log4j.MDC;
+import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
@@ -330,11 +331,9 @@ public class TargetHandler implements NHttpClientEventHandler {
             if (targetConfiguration.isCorrelationLoggingEnabled()
                     && TargetContext.isCorrelationIdAvailable(conn)) {
                 long startTime = (long) context.getAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME);
-                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
-                        context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
-                correlationLog.info((System.currentTimeMillis() - startTime) + "|HTTP|" +
-                        TargetContext.getRequest(conn).getUrl().toString()+ "|BACKEND LATENCY");
-                MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+                ContextAwareLogger.getLogger(context, correlationLog, false)
+                        .info((System.currentTimeMillis() - startTime) + "|HTTP|"
+                        + TargetContext.getRequest(conn).getUrl().toString() + "|BACKEND LATENCY");
             }
 
             if (connState != ProtocolState.REQUEST_DONE) {
@@ -706,7 +705,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                         + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
                         .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn) + ", "
                         + "CONNECTION = " + conn + ", SOCKET_TIMEOUT = " + conn.getSocketTimeout() + ", CORRELATION_ID"
-                        + " = " + conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID));
+                        + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
             }
 
             if (state == ProtocolState.RESPONSE_BODY || state == ProtocolState.REQUEST_HEAD) {
@@ -721,7 +720,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                         + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
                         .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn) + ", "
                         + "CONNECTION = " + conn + ", SOCKET_TIMEOUT = " + conn.getSocketTimeout() + ", "
-                        + "CORRELATION_ID = " + conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID));
+                        + "CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
             }
 
             if (state.compareTo(ProtocolState.REQUEST_DONE) <= 0) {
@@ -734,7 +733,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                         + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
                         .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn) + ", "
                         + "CONNECTION = " + conn + ", SOCKET_TIMEOUT = " + conn.getSocketTimeout() + ", CORRELATION_ID"
-                        + " = " + conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID));
+                        + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
 
                 if (targetConfiguration.isCorrelationLoggingEnabled()) {
                     logHttpRequestErrorInCorrelationLog(conn, "Timeout in " + state);
@@ -1055,18 +1054,16 @@ public class TargetHandler implements NHttpClientEventHandler {
                 }
             }
             if ((method.length() != 0) && (url.length() != 0)) {
-                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
-                        conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
                 Object requestStartTime =
                         conn.getContext().getAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME);
                 long startTime = 0;
                 if (requestStartTime != null) {
                     startTime = (long) requestStartTime;
                 }
-                correlationLog.info((System.currentTimeMillis() - startTime) + "|HTTP|"
-                        + conn.getContext().getAttribute("http.connection") + "|" + method + "|" + url
-                        + "|" + state);
-                MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+                ContextAwareLogger.getLogger(conn.getContext(), correlationLog, false)
+                        .info((System.currentTimeMillis() - startTime) + "|HTTP|"
+                                + conn.getContext().getAttribute("http.connection") + "|" + method + "|" + url
+                                + "|" + state);
             }
         }
     }

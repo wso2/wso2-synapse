@@ -24,13 +24,14 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.SOAPHeader;
 import org.apache.axiom.soap.SOAPHeaderBlock;
+import org.apache.log4j.MDC;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
-import org.apache.synapse.transport.passthru.PassThroughConstants;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -80,6 +81,11 @@ public class LogMediator extends AbstractMediator {
      * @return true always
      */
     public boolean mediate(MessageContext synCtx) {
+
+        Object correlationId = getCorrelationId(synCtx);
+        if (correlationId != null) {
+            MDC.put(CorrelationConstants.CORRELATION_MDC_PROPERTY, correlationId);
+        }
 
         if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
@@ -237,7 +243,7 @@ public class LogMediator extends AbstractMediator {
         Object correlationId = null;
         if (synCtx instanceof Axis2MessageContext) {
             Axis2MessageContext axis2Ctx = ((Axis2MessageContext) synCtx);
-            correlationId = axis2Ctx.getAxis2MessageContext().getProperty(PassThroughConstants.CORRELATION_ID);
+            correlationId = axis2Ctx.getAxis2MessageContext().getProperty(CorrelationConstants.CORRELATION_ID);
         }
         return correlationId;
     }

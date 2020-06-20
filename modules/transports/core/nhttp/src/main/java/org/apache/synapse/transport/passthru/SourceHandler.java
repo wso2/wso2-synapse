@@ -33,8 +33,9 @@ import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
-import org.apache.log4j.MDC;
 import org.apache.synapse.commons.jmx.ThreadingView;
+import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.commons.transaction.TranscationManger;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.transport.http.conn.LoggingNHttpServerConnection;
@@ -148,7 +149,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                 conn.getContext().setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_END_TIME, System.currentTimeMillis());
             }
             OutputStream os = getOutputStream(method, request);
-            Object correlationId = conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID);
+            Object correlationId = conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID);
             if (correlationId != null) {
                 sourceConfiguration.getWorkerPool().execute(new ServerWorker(request, sourceConfiguration, os,
                         System.currentTimeMillis(), correlationId.toString()));
@@ -192,7 +193,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             correlationId = UUID.randomUUID().toString();
             conn.getHttpRequest().setHeader(correlationHeaderName, correlationId);
         }
-        httpContext.setAttribute(PassThroughConstants.CORRELATION_ID, correlationId);
+        httpContext.setAttribute(CorrelationConstants.CORRELATION_ID, correlationId);
     }
 
     public void inputReady(NHttpServerConnection conn,
@@ -422,13 +423,11 @@ public class SourceHandler implements NHttpServerEventHandler {
     }
 
     private void logCorrelationRoundTrip(HttpContext context, SourceRequest request) {
-        MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
-                context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+
         long startTime = (long) context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME);
-        correlationLog.info((System.currentTimeMillis() - startTime) + "|HTTP|"
-                + context.getAttribute("http.connection") + "|" + request.getMethod() + "|" + request.getUri()
-                + "|ROUND-TRIP LATENCY ");
-        MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+        ContextAwareLogger.getLogger(context, correlationLog, false)
+                .info((System.currentTimeMillis() - startTime) + "|HTTP|" + context.getAttribute("http.connection")
+                        + "|" + request.getMethod() + "|" + request.getUri() + "|ROUND-TRIP LATENCY ");
     }
 
     public void logIOException(NHttpServerConnection conn, IOException e) {
@@ -881,13 +880,11 @@ public class SourceHandler implements NHttpServerEventHandler {
                 }
             }
             if ((method.length() != 0) && (url.length() != 0)) {
-                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
-                        conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
                 long startTime = (long) conn.getContext().getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME);
-                correlationLog.info((System.currentTimeMillis() - startTime) + "|HTTP|"
-                        + conn.getContext().getAttribute("http.connection") + "|" + method + "|" + url
-                        + "|" + state);
-                MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+                ContextAwareLogger.getLogger(conn.getContext(), correlationLog, false)
+                        .info((System.currentTimeMillis() - startTime) + "|HTTP|"
+                                + conn.getContext().getAttribute("http.connection") + "|" + method + "|" + url
+                                + "|" + state);
             }
         }
     }

@@ -26,6 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHost;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.nio.NHttpClientConnection;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
@@ -250,8 +251,8 @@ public class DeliveryAgent {
     private void tryNextMessage(MessageContext messageContext, HttpRoute route, NHttpClientConnection conn) {
         if (conn != null) {
             try {
-                conn.getContext().setAttribute(PassThroughConstants.CORRELATION_ID,
-                        messageContext.getProperty(PassThroughConstants.CORRELATION_ID));
+                conn.getContext().setAttribute(CorrelationConstants.CORRELATION_ID,
+                        messageContext.getProperty(CorrelationConstants.CORRELATION_ID));
                 TargetContext.updateState(conn, ProtocolState.REQUEST_READY);
                 TargetContext.get(conn).setRequestMsgCtx(messageContext);
                 if (log.isDebugEnabled()) {

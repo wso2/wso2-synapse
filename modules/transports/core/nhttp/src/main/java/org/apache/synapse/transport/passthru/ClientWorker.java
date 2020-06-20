@@ -34,6 +34,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpStatus;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.protocol.HTTP;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiatorProvider;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
@@ -186,8 +187,8 @@ public class ClientWorker implements Runnable {
                 .getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY));
         responseMsgCtx.setProperty(PassThroughConstants.PASS_THROUGH_TARGET_CONNECTION,
                 response.getConnection());
-        responseMsgCtx.setProperty(PassThroughConstants.CORRELATION_ID,
-                outMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID));
+        responseMsgCtx.setProperty(CorrelationConstants.CORRELATION_ID,
+                outMsgCtx.getProperty(CorrelationConstants.CORRELATION_ID));
     }
 
     private void initTenantInfo() {

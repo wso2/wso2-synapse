@@ -42,6 +42,7 @@ import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -200,7 +201,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 if (!PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER
                         .equals(messageCtx.getProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN))) {
                     log.warn("Synapse received a response for the request with message Id : " + messageID
-                            + " and correlation_id : " + messageCtx.getProperty(PassThroughConstants.CORRELATION_ID)
+                            + " and correlation_id : " + messageCtx.getProperty(CorrelationConstants.CORRELATION_ID)
                             + " But a callback is not registered (anymore) to process " + "this response");
                 }
                 messageCtx.removeProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN);
@@ -373,8 +374,8 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
             // set properties on response
             response.setServerSide(true);
-            response.setProperty(PassThroughConstants.CORRELATION_ID,
-                    axisOutMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID));
+            response.setProperty(CorrelationConstants.CORRELATION_ID,
+                    axisOutMsgCtx.getProperty(CorrelationConstants.CORRELATION_ID));
             response.setProperty(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY,
                     axisOutMsgCtx.getProperty(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY));
             response.setProperty(SynapseConstants.ISRESPONSE_PROPERTY, Boolean.TRUE);
