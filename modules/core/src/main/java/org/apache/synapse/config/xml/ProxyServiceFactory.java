@@ -363,7 +363,7 @@ public class ProxyServiceFactory {
                         if (prop.getText().trim() == null) {
                             resolvedParameter = null;
                         } else {
-                            resolvedParameter = ResolverFactory.getInstance().getResolver(prop.getText().trim()).resolve();
+                            resolvedParameter = prop.getText().trim();
                         }
                         proxy.addParameter(pname.getAttributeValue(), resolvedParameter);
                     }
