@@ -25,6 +25,7 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.builtin.PropertyMediator;
+import org.apache.synapse.util.MediatorPropertyUtils;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
@@ -77,7 +78,7 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
 
         //check the property name dynamic or not
         String nameAttributeValue = name.getAttributeValue();
-        if (isDynamicName(nameAttributeValue)) {
+        if (MediatorPropertyUtils.isDynamicName(nameAttributeValue)) {
             try {
                 String nameExpression = nameAttributeValue.substring(1, nameAttributeValue.length() - 1);
                 if(nameExpression.startsWith("json-eval(")) {
@@ -180,25 +181,4 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
         return PROP_Q;
     }
 
-    /**
-     * Validate the given name to identify whether it is static or dynamic key
-     * If the name is in the {} format then it is dynamic key(XPath)
-     * Otherwise just a static name
-     *
-     * @param nameValue string to validate as a name
-     * @return isDynamicName representing name type
-     */
-    private boolean isDynamicName(String nameValue) {
-        if (nameValue.length() < 2) {
-            return false;
-        }
-
-        final char startExpression = '{';
-        final char endExpression = '}';
-
-        char firstChar = nameValue.charAt(0);
-        char lastChar = nameValue.charAt(nameValue.length() - 1);
-
-        return (startExpression == firstChar && endExpression == lastChar);
-    }
 }
