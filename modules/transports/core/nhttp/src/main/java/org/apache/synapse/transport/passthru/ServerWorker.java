@@ -52,6 +52,7 @@ import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.ssl.SSLIOSession;
 import org.apache.http.protocol.HTTP;
 import org.apache.log4j.MDC;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiatorProvider;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
@@ -140,11 +141,11 @@ public class ServerWorker implements Runnable {
         try {
              /* Remove correlation id MDC thread local value that can be persisting from the
                previous usage of this thread */
-            MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+            MDC.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
             /* Subsequent to removing the correlation id MDC thread local value, a new value is put in case
                there is one */
             if (StringUtils.isNotEmpty(correlationId)) {
-                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, correlationId);
+                MDC.put(CorrelationConstants.CORRELATION_MDC_PROPERTY, correlationId);
                 /* Log the time taken to switch from the previous thread to this thread */
                 if (initiationTimestamp != 0) {
                     correlationLog.info((System.currentTimeMillis() - initiationTimestamp) +
@@ -507,8 +508,8 @@ public class ServerWorker implements Runnable {
         
         NHttpServerConnection conn = request.getConnection();
         // propagate correlation logging related properties
-        msgContext.setProperty(PassThroughConstants.CORRELATION_ID,
-                conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID));
+        msgContext.setProperty(CorrelationConstants.CORRELATION_ID,
+                conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
         msgContext.setProperty(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY,
                 sourceConfiguration.isCorrelationLoggingEnabled());
         // propagate transaction property

@@ -46,6 +46,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.endpoints.EndpointDefinition;
@@ -148,11 +149,11 @@ public class Axis2FlexibleMEPClient {
         }
 
         if (originalInMsgCtx.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
-            if (originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID) == null) {
-                originalInMsgCtx.setProperty(PassThroughConstants.CORRELATION_ID, UUID.randomUUID().toString());
+            if (originalInMsgCtx.getProperty(CorrelationConstants.CORRELATION_ID) == null) {
+                originalInMsgCtx.setProperty(CorrelationConstants.CORRELATION_ID, UUID.randomUUID().toString());
             }
             headers.put(PassThroughConfiguration.getInstance().getCorrelationHeaderName(),
-                    originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID).toString());
+                    originalInMsgCtx.getProperty(CorrelationConstants.CORRELATION_ID).toString());
         }
 
         // create a new MessageContext to be sent out as this should not corrupt the original
