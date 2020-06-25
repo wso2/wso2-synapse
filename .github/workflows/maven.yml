@@ -1,4 +1,4 @@
-name: Run integration tests
+name: Micro Integrator Build with Tests
 
 on: [push, pull_request]
 
