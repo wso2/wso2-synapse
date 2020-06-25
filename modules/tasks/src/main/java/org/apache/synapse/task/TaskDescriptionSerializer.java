@@ -75,7 +75,7 @@ public class TaskDescriptionSerializer {
         }
 
         OMElement el = omFactory.createOMElement("trigger", targetNamespace, task);
-        if (taskDescription.getInterval() == 1 && taskDescription.getCount() == 1) {
+        if (taskDescription.getCount() == 1) {
             el.addAttribute("once", "true", NULL_OMNS);
         } else if (taskDescription.getCronExpression() != null) {
             el.addAttribute("cron", taskDescription.getCronExpression(), NULL_OMNS);
