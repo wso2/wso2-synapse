@@ -137,8 +137,8 @@ public class TaskDescriptionFactory {
                 OMAttribute once = trigger.getAttribute(new QName("once"));
                 if (once != null && Boolean.TRUE.toString().equals(once.getAttributeValue())) {
                     taskDescription.setCount(1);
-                    taskDescription.setInterval(1);
-                    taskDescription.setIntervalInMs(false);
+                    taskDescription.setInterval(1000);
+                    taskDescription.setIntervalInMs(true);
                 }
 
                 OMAttribute repeatInterval = trigger.getAttribute(new QName("interval"));
