@@ -124,7 +124,7 @@ public class JmsStore extends AbstractMessageStore {
     /** regex for secure vault expression */
     private static final String SECURE_VAULT_REGEX = "\\{(wso2:vault-lookup\\('(.*?)'\\))\\}";
 
-    private Pattern vaultLookupPattern = Pattern.compile(SECURE_VAULT_REGEX);
+    private Pattern queueLookupPattern = Pattern.compile(SECURE_VAULT_REGEX);
 
     public MessageProducer getProducer() {
         if (cacheLevel == 1 && cachedProducer != null) {
@@ -494,7 +494,7 @@ public class JmsStore extends AbstractMessageStore {
             Object value = e.getValue();
             if (value instanceof String) {
                 if (CONNECTION_STRING.equals(e.getKey())) {
-                    value = resolveQueueName(value);
+                    value = resolveConnectionStringValues(value);
                 }
                 connectionProperties.put(e.getKey(), value);
             }
@@ -724,9 +724,9 @@ public class JmsStore extends AbstractMessageStore {
         this.producer = producer;
     }
 
-    public String resolveQueueName(Object param) {
+    private String resolveConnectionStringValues(Object param) {
         String paramString = param.toString();
-        Matcher lookupMatcher = vaultLookupPattern.matcher(paramString);
+        Matcher lookupMatcher = queueLookupPattern.matcher(paramString);
 
         while (lookupMatcher.find()) {
             for (int i = 0; i < lookupMatcher.groupCount(); i++) {
