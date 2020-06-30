@@ -116,6 +116,7 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                     return proxy.getName();
                 } catch (SynapseException e) {
                     getSynapseConfiguration().removeProxyService(proxy.getName());
+                    proxy.destroy();
                     throw e;
                 }
             } else {

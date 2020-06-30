@@ -153,6 +153,7 @@ public class APIDeployer extends AbstractSynapseArtifactDeployer {
                         unDeployTime);
 
                 log.info("API named '" + api.getName() + "' has been undeployed");
+                api.destroy();
             } else if (log.isDebugEnabled()) {
                 log.debug("API " + artifactName + " has already been undeployed");
             }
