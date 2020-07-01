@@ -110,6 +110,7 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                     return proxy.getName();
                 } catch (SynapseException e) {
                     getSynapseConfiguration().removeProxyService(proxy.getName());
+                    proxy.destroy();
                     throw e;
                 }
             } else {
@@ -153,6 +154,7 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                 }
                 ProxyService currentProxy = getSynapseConfiguration().getProxyService(existingArtifactName);
                 currentProxy.stop(getSynapseConfiguration());
+                currentProxy.destroy();
                 getSynapseConfiguration().removeProxyService(existingArtifactName);
                 if (!existingArtifactName.equals(proxy.getName())) {
                     log.info("ProxyService named " + existingArtifactName + " has been Undeployed");
@@ -204,6 +206,7 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                     log.debug("Stopping the ProxyService named : " + artifactName);
                 }
                 proxy.stop(getSynapseConfiguration());
+                proxy.destroy();
                 getSynapseConfiguration().removeProxyService(artifactName);
                 if (log.isDebugEnabled()) {
                     log.debug("ProxyService Undeployment of the proxy named : "
