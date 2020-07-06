@@ -24,6 +24,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import com.google.gson.JsonParseException;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.GsonJsonProvider;
@@ -36,8 +37,10 @@ import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.JSONObjectExtensionException;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.util.JSONMergeUtils;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
@@ -254,6 +257,60 @@ public class EIPUtils {
                 JsonElement result;
                 String resultString = list.get(0).toString().trim();
                 result = tryParseJsonString(parser, resultString);
+                return result;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Evaluate JSON path and retrieve the result as JsonElement while checking if the evaluated results are
+     * nothing other than JSON objects. Also, whenever there are multiple JSON objects as the result,
+     * merge them together.
+     *
+     * @param messageContext messageContext which contains the JSON payload.
+     * @return JsonArray or a JsonPrimitive depending on the JsonPath response.
+     */
+    public static JsonElement getJSONObjectAsElement(MessageContext messageContext, SynapseJsonPath jsonPath)
+            throws JsonParseException, JSONObjectExtensionException {
+        JsonParser parser = new JsonParser();
+
+        Object objectList = jsonPath.evaluate(messageContext);
+        if (objectList instanceof List) {
+            List list = (List) objectList;
+            if (!list.isEmpty()) {
+                if (list.size() > 1) {
+                    JsonObject resultObject = new JsonObject();
+
+                    for (Object obj : list) {
+                        String objString = obj.toString().trim();
+                        JsonElement element = tryParseJsonString(parser, objString);
+
+                        if (element != null) {
+                            if (element.isJsonObject()) {
+                                try {
+                                    JSONMergeUtils.extendJSONObject(resultObject,
+                                            JSONMergeUtils.ConflictStrategy.MERGE_INTO_ARRAY,
+                                            element.getAsJsonObject());
+                                } catch (JSONObjectExtensionException | UnsupportedOperationException e) {
+                                    throw new JSONObjectExtensionException("Could not extend JSON object.");
+                                }
+                            } else {
+                                throw new JsonParseException("Invalid JSON object. Could not extend.");
+                            }
+                        }
+
+                    }
+                    return resultObject;
+                }
+                JsonElement result;
+                String resultString = list.get(0).toString().trim();
+                result = tryParseJsonString(parser, resultString);
+
+                if (!result.isJsonObject()) {
+                    throw new JsonParseException("Invalid JSON object. Could not extend.");
+                }
+
                 return result;
             }
         }

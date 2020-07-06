@@ -34,4 +34,10 @@ public final class EIPConstants {
 
     /** Delimiter for the message sequence value */
     public static final String MESSAGE_SEQUENCE_DELEMITER = "/";
+
+    /** Constant for the Aggregate Element Type: root */
+    public static final String AGGREGATE_ELEMENT_TYPE_ROOT = "root";
+
+    /** Constant for the Aggregate Element Type: child */
+    public static final String AGGREGATE_ELEMENT_TYPE_CHILD = "child";
 }

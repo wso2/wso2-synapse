@@ -55,6 +55,7 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.eip.SharedDataHolder;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.apache.synapse.util.JSONMergeUtils;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
@@ -96,6 +97,12 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
      * bunch of matching messages into one aggregated message
      */
     private SynapsePath aggregationExpression = null;
+
+    /** A property to choose between Array and Object types of JSON payloads.
+     * Setting this property to 'root' will create a JSON array and, setting it to 'child'
+     * will create a JSON object as the output
+     * Example: <correlateOn expression="json-eval(JSON-Path)" aggregateElementType="root/child"/> */
+    private Value aggregateElementType;
 
     /** This holds the reference sequence name of the */
     private String onCompleteSequenceRef = null;
@@ -534,6 +541,8 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         JsonElement result;
         boolean isJSONAggregation = aggregationExpression instanceof SynapseJsonPath;
 
+        JsonObject resultJSONObject = new JsonObject();
+
         for (MessageContext synCtx : aggregate.getMessages()) {
             
             if (newCtx == null) {
@@ -547,7 +556,25 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                     log.debug("Generating Aggregated message from : " + newCtx.getEnvelope());
                 }
                 if (isJSONAggregation) {
-                    jsonArray.add(EIPUtils.getJSONElement(synCtx, (SynapseJsonPath) aggregationExpression));
+                    // Check for aggregateElementType property
+                    if (getAggregateElementType() != null) {
+                        if (EIPConstants.AGGREGATE_ELEMENT_TYPE_ROOT.equals(getAggregateElementType().getKeyValue())) {
+                            jsonArray.add(EIPUtils.getJSONElement(synCtx, (SynapseJsonPath) aggregationExpression));
+                        } else if (EIPConstants.AGGREGATE_ELEMENT_TYPE_CHILD.equals(
+                                getAggregateElementType().getKeyValue())) {
+                            try {
+                                JSONMergeUtils.extendJSONObject(resultJSONObject,
+                                        JSONMergeUtils.ConflictStrategy.MERGE_INTO_ARRAY ,
+                                        EIPUtils.getJSONObjectAsElement(synCtx,
+                                                (SynapseJsonPath) aggregationExpression).getAsJsonObject());
+                            } catch (Exception e) {
+                                handleException(aggregate, "Error merging aggregation results using JSONPath : " +
+                                        aggregationExpression.toString(), e, synCtx);
+                            }
+                        }
+                    } else {
+                        jsonArray.add(EIPUtils.getJSONElement(synCtx, (SynapseJsonPath) aggregationExpression));
+                    }
                 }
             } else {
                 try {
@@ -556,10 +583,30 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                                 aggregationExpression);
                     }
                     if (isJSONAggregation) {
-                        jsonArray.add(EIPUtils.getJSONElement(synCtx, (SynapseJsonPath) aggregationExpression));
+                        // Check for aggregateElementType property
+                        if (getAggregateElementType() != null) {
+                            if (EIPConstants.AGGREGATE_ELEMENT_TYPE_ROOT.equals(
+                                    getAggregateElementType().getKeyValue())) {
+                                jsonArray.add(EIPUtils.getJSONElement(synCtx,
+                                        (SynapseJsonPath) aggregationExpression));
+                            } else if (EIPConstants.AGGREGATE_ELEMENT_TYPE_CHILD.equals(
+                                    getAggregateElementType().getKeyValue())) {
+                                try {
+                                    JSONMergeUtils.extendJSONObject(resultJSONObject,
+                                            JSONMergeUtils.ConflictStrategy.MERGE_INTO_ARRAY ,
+                                            EIPUtils.getJSONObjectAsElement(synCtx,
+                                                    (SynapseJsonPath) aggregationExpression).getAsJsonObject());
+                                } catch (Exception e) {
+                                    handleException(aggregate, "Error merging aggregation results using JSONPath : " +
+                                            aggregationExpression.toString(), e, synCtx);
+                                }
+                            }
+                        } else {
+                            jsonArray.add(EIPUtils.getJSONElement(synCtx, (SynapseJsonPath) aggregationExpression));
+                        }
                     } else {
                         EIPUtils.enrichEnvelope(newCtx.getEnvelope(), synCtx.getEnvelope(), synCtx, (SynapseXPath)
-                                        aggregationExpression);
+                                aggregationExpression);
                     }
 
                     if (log.isDebugEnabled()) {
@@ -575,8 +622,13 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             }
         }
 
-        // setting json array as the result
-        result = jsonArray;
+        if (getAggregateElementType() != null && EIPConstants.AGGREGATE_ELEMENT_TYPE_CHILD.equals(
+                getAggregateElementType().getKeyValue())) {
+            result = resultJSONObject;
+        } else {
+            // setting json array as the result
+            result = jsonArray;
+        }
 
         // Enclose with a parent element if EnclosingElement is defined
         if (enclosingElementPropertyName != null) {
@@ -596,7 +648,12 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                         JsonObject jsonObject = new JsonObject();
                         // Currently using only the root element
                         String key = enclosingElement.getLocalName();
-                        jsonObject.add(key, jsonArray);
+                        if (getAggregateElementType() != null && EIPConstants.AGGREGATE_ELEMENT_TYPE_CHILD.equals(
+                                getAggregateElementType().getKeyValue())) {
+                            jsonObject.add(key, resultJSONObject);
+                        } else {
+                            jsonObject.add(key, jsonArray);
+                        }
                         result = jsonObject;
                     } else {
                         EIPUtils.encloseWithElement(newCtx.getEnvelope(), enclosingElement);
@@ -703,6 +760,14 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
 
     public void setEnclosingElementPropertyName(String enclosingElementPropertyName) {
         this.enclosingElementPropertyName = enclosingElementPropertyName;
+    }
+
+    public Value getAggregateElementType() {
+        return aggregateElementType;
+    }
+
+    public void setAggregateElementType(Value aggregateElementType) {
+        this.aggregateElementType = aggregateElementType;
     }
 
     @Override
