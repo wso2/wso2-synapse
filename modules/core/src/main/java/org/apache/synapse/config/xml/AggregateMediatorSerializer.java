@@ -51,6 +51,8 @@ public class AggregateMediatorSerializer extends AbstractMediatorSerializer {
             OMElement corelateOn = fac.createOMElement("correlateOn", synNS);
             SynapsePathSerializer.serializePath(
                 mediator.getCorrelateExpression(), corelateOn, "expression");
+            new ValueSerializer().serializeValue(
+                    mediator.getAggregateElementType(), "aggregateElementType", corelateOn);
             aggregator.addChild(corelateOn);
         }
 

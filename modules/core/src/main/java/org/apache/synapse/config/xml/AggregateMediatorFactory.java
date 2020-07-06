@@ -74,6 +74,8 @@ public class AggregateMediatorFactory extends AbstractMediatorFactory {
             = new QName(XMLConfigConstants.NULL_NAMESPACE, "id");
     private static final QName ENCLOSING_ELEMENT_PROPERTY
                 = new QName(XMLConfigConstants.NULL_NAMESPACE, "enclosingElementProperty");
+    private static final QName AGGREGATE_ELEMENT_TYPE
+            = new QName(XMLConfigConstants.NULL_NAMESPACE, "aggregateElementType");
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
@@ -88,12 +90,19 @@ public class AggregateMediatorFactory extends AbstractMediatorFactory {
         OMElement corelateOn = elem.getFirstChildWithName(CORELATE_ON_Q);
         if (corelateOn != null) {
             OMAttribute corelateExpr = corelateOn.getAttribute(EXPRESSION_Q);
+            OMAttribute aggregateElementType = corelateOn.getAttribute(AGGREGATE_ELEMENT_TYPE);
+
             if (corelateExpr != null) {
                 try {
                     mediator.setCorrelateExpression(SynapsePathFactory.getSynapsePath(corelateOn, EXPRESSION_Q));
                 } catch (JaxenException e) {
                     handleException("Unable to load the corelate XPATH expression", e);
                 }
+            }
+
+            if (aggregateElementType != null) {
+                mediator.setAggregateElementType(new ValueFactory().createValue(
+                        "aggregateElementType", corelateOn));
             }
         }
 
