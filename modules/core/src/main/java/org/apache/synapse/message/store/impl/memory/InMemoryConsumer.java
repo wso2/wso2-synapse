@@ -83,6 +83,9 @@ public class InMemoryConsumer implements MessageConsumer {
         return true;
     }
 
+    public void setAlive(boolean isAlive) {
+    }
+
     public void setId(int id) {
         idString = "[" + store.getName() + "-C-" + id + "]";
     }

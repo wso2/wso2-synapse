@@ -155,6 +155,15 @@ public class RabbitMQConsumer implements MessageConsumer {
     }
 
     /**
+     * Set availability of connectivity with the message store
+     *
+     * @param  isAlive connection availability.
+     */
+    @Override
+    public void setAlive(boolean isAlive) {
+    }
+
+    /**
      * Get ID of this RabbitMQ consumer
      *
      * @return the ID

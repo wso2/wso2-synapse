@@ -162,6 +162,9 @@ public class JmsConsumer implements MessageConsumer {
         return true;
     }
 
+    public void setAlive(boolean isAlive) {
+    }
+
     public Connection getConnection() {
         return connection;
     }
