@@ -31,10 +31,10 @@ import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.message.store.impl.memory.InMemoryStore;
 import org.apache.synapse.util.xpath.SynapseXPath;
 
-import javax.xml.namespace.QName;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import javax.xml.namespace.QName;
 
 /**
  * Serialize an instance of the given Message Store, and sets properties on it.
@@ -54,7 +54,16 @@ public class MessageStoreSerializer {
     protected static final OMNamespace nullNS = fac.createOMNamespace(
             XMLConfigConstants.NULL_NAMESPACE, "");
 
+    private static final String PWD_ATTR = "password";
+    private static final String PWD_MASKED_VALUE = "*****";
+
     public static OMElement serializeMessageStore(OMElement parent, MessageStore messageStore) {
+
+        return serializeMessageStore(parent, messageStore, false);
+    }
+
+    public static OMElement serializeMessageStore(OMElement parent, MessageStore messageStore,
+                                                  boolean isUiSerialization) {
 
         OMElement store = fac.createOMElement("messageStore", synNS);
 
@@ -77,7 +86,7 @@ public class MessageStoreSerializer {
             Iterator iter = messageStore.getParameters().keySet().iterator();
             while (iter.hasNext()) {
                 String name = (String) iter.next();
-                OMElement property = getParameter(messageStore, name);
+                OMElement property = getParameter(messageStore, name, isUiSerialization);
                 store.addChild(property);
             }
         }
@@ -96,21 +105,26 @@ public class MessageStoreSerializer {
     /**
      * Will get the parameter OMElement.
      *
-     * @param messageStore the message store definition metadata.
-     * @param name         the parameter key.
-     * @return the parameter OMElement.
+     * @param messageStore      the message store definition metadata.
+     * @param name              the parameter key.
+     * @param isUiSerialization whether this is to display in UI
+     * @return
      */
-    private static OMElement getParameter(MessageStore messageStore, String name) {
+    private static OMElement getParameter(MessageStore messageStore, String name, boolean isUiSerialization) {
         Object paramValue = messageStore.getParameters().get(name);
         OMElement property = null;
         if (paramValue instanceof String) {
-            String value = (String) paramValue;
             property = fac.createOMElement("parameter", synNS);
             property.addAttribute(fac.createOMAttribute("name", nullNS, name));
             if (messageStore.getParameterKey(name) != null) {
                 property.addAttribute(fac.createOMAttribute("key", nullNS, messageStore.getParameterKey(name)));
             } else {
-                property.setText(value.trim());
+                if (isUiSerialization && name.contains(PWD_ATTR)) {
+                    property.setText(PWD_MASKED_VALUE);
+                } else {
+                    String value = (String) paramValue;
+                    property.setText(value.trim());
+                }
             }
         } else if (paramValue instanceof SynapseXPath) {
             SynapseXPath value = (SynapseXPath) paramValue;
