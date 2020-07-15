@@ -38,6 +38,7 @@ import org.apache.synapse.task.TaskManager;
 import org.apache.synapse.task.TaskManagerObserver;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
@@ -350,6 +351,9 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		}
 		if (getMessageConsumer() != null && !messageConsumers.isEmpty()) {
 			cleanupLocalResources();
+			for (MessageConsumer msgConsumer : messageConsumers){
+				msgConsumer.setAlive(false);
+			}
 		} else {
 			logger.warn("[" + getName() + "] Could not find the message consumer to cleanup.");
 		}
