@@ -154,8 +154,13 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
                             element.toString(), axisFault, synCtx);
                 }
             }
-            JsonElement jsonPayloadElement = parsedJsonPayload
-                    .set(((SynapseJsonPath) expression).getJsonPath(), modifiedPayloadArray).json();
+            JsonElement jsonPayloadElement;
+            if (((SynapseJsonPath) expression).isWholeBody()){
+                jsonPayloadElement = modifiedPayloadArray;
+            } else {
+                jsonPayloadElement = parsedJsonPayload.set(((SynapseJsonPath) expression).getJsonPath(),
+                        modifiedPayloadArray).json();
+            }
             try {
                 JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
                         jsonPayloadElement.toString(), true, true);

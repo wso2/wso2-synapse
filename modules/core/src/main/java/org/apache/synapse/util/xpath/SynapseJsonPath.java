@@ -347,6 +347,15 @@ public class SynapseJsonPath extends SynapsePath {
     }
 
     /**
+     * Getter method for isWholeBody
+     *
+     * @return returns true if jsonPath expression is $ or $
+     */
+    public boolean isWholeBody() {
+        return isWholeBody;
+    }
+
+    /**
      * This method will return the boolean value of the jsonpath.
      *
      * @param synCtx message context
