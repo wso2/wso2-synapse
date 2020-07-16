@@ -59,7 +59,7 @@ public class ThrottleServiceComponent {
 	@Reference(
 			name = "hazelcast.instance.service",
 			service = com.hazelcast.core.HazelcastInstance.class,
-			cardinality = ReferenceCardinality.OPTIONAL,
+			cardinality = ReferenceCardinality.MANDATORY,
 			policy = ReferencePolicy.DYNAMIC,
 			unbind = "unsetHazelcastInstance"
 	)
