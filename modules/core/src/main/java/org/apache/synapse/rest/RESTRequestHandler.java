@@ -78,19 +78,12 @@ public class RESTRequestHandler {
         API defaultAPI = null;
         if (null != synCtx.getProperty(RESTConstants.IS_PROMETHEUS_ENGAGED)) {
             API api = (API) synCtx.getProperty(RESTConstants.PROCESSED_API);
-            identifyAPI(api, synCtx, defaultStrategyApiSet);
+            if (identifyAPI(api, synCtx, defaultStrategyApiSet)) {
+                return true;
+            }
         } else {
             for (API api : apiSet) {
-                identifyAPI(api, synCtx, defaultStrategyApiSet);
-            }
-
-            for (API api : defaultStrategyApiSet) {
-                api.setLogSetterValue();
-                if (api.canProcess(synCtx)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Located specific API: " + api.getName() + " for processing message");
-                    }
-                    apiProcess(synCtx, api);
+                if (identifyAPI(api, synCtx, defaultStrategyApiSet)) {
                     return true;
                 }
             }
