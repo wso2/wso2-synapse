@@ -142,8 +142,19 @@ public class EnrichMediator extends AbstractMediator {
                     isSourcePropertyXML = true;
                 }
             } catch (JsonSyntaxException e) {
-                synLog.traceOrDebug("Source string is not a valid json");
-                isSourcePropertyXML = true;
+                try {
+                    // Enclosing using quotes due to the following issue
+                    // https://github.com/google/gson/issues/1286
+                    String enclosedSourceProperty = "\"" + sourceProperty + "\"";
+                    sourcePropertyJson = jsonParser.parse(enclosedSourceProperty);
+                    if (!(sourcePropertyJson instanceof JsonObject || sourcePropertyJson instanceof JsonArray
+                            || sourcePropertyJson instanceof JsonPrimitive)) {
+                        isSourcePropertyXML = true;
+                    }
+                } catch (JsonSyntaxException ex) {
+                    synLog.traceOrDebug("Source string is not a valid json");
+                    isSourcePropertyXML = true;
+                }
             }
         }
 
