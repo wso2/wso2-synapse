@@ -1380,7 +1380,7 @@
        <io.netty.version>4.1.34.Final</io.netty.version>
        <version.org.wso2.orbit.javax.activation>1.1.1.wso2v3</version.org.wso2.orbit.javax.activation>
        <rabbitmq.version>5.8.0</rabbitmq.version>
-       <jaeger-client.version>0.32.0.wso2v3</jaeger-client.version>
+       <jaeger-client.version>0.32.0.wso2v4</jaeger-client.version>
        <apache.felix.scr.ds-annotations.version>1.2.4</apache.felix.scr.ds-annotations.version>
        <com.hierynomus.smbj.version>0.10.0.wso2v2</com.hierynomus.smbj.version>
        <com.hierynomus.asn1.version>0.4.0.wso2v2</com.hierynomus.asn1.version>
