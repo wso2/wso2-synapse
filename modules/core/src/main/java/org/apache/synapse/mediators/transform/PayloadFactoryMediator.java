@@ -26,7 +26,6 @@ import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.om.OMText;
 import org.apache.axiom.om.impl.builder.StAXBuilder;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
-import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAP12Constants;
 import org.apache.axiom.soap.SOAPEnvelope;
@@ -48,8 +47,6 @@ import org.apache.synapse.util.xpath.SynapseXPath;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.XMLReaderFactory;
 
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
@@ -57,7 +54,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -74,6 +70,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private String formatRaw;
     private String mediaType = XML_TYPE;
     private boolean escapeXmlChars = false;
+    private final XMLInputFactory inputFactory = XMLInputFactory.newInstance();
     private final static String JSON_CONTENT_TYPE = "application/json";
     private final static String XML_CONTENT_TYPE  = "application/xml";
     private final static String TEXT_CONTENT_TYPE  = "text/plain";
@@ -101,6 +98,11 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private static Pattern validJsonNumber = Pattern.compile("^-?(0|([1-9]\\d*))(\\.\\d+)?([eE][+-]?\\d+)?$");
 
     private static final Log log = LogFactory.getLog(PayloadFactoryMediator.class);
+
+    public PayloadFactoryMediator() {
+        //ignore DTDs for XML Input
+        inputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
+    }
 
     /**
      * Contains 2 paths - one when JSON Streaming is in use (mediateJsonStreamPayload) and the other for regular
@@ -175,7 +177,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
         if (mediaType.equals(XML_TYPE)) {
             try {
                 JsonUtil.removeJsonPayload(axis2MessageContext);
-                OMElement omXML = AXIOMUtil.stringToOM(out);
+                OMElement omXML = convertStringToOM(out);
                 if (!checkAndReplaceEnvelope(omXML, synCtx)) { // check if the target of the PF 'format' is the entire SOAP envelop, not just the body.
                     axis2MessageContext.getEnvelope().getBody().addChild(omXML.getFirstElement());
                 }
@@ -298,7 +300,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     // XML to JSON conversion here
                     try {
                         replacementValue = "<jsonObject>" + replacementEntry.getKey() + "</jsonObject>";
-                        OMElement omXML = AXIOMUtil.stringToOM(replacementValue);
+                        OMElement omXML = convertStringToOM(replacementValue);
                         replacementValue = JsonUtil.toJsonString(omXML).toString();
                         replacementValue = escapeSpecialCharactersOfJson(replacementValue);
                     } catch (XMLStreamException e) {
@@ -582,12 +584,8 @@ public class PayloadFactoryMediator extends AbstractMediator {
      */
     private boolean isXML(String value) {
         try {
-            // ignore DTDs and validate xml
-            XMLInputFactory inputFactory = XMLInputFactory.newInstance();
-            inputFactory.setProperty(inputFactory.SUPPORT_DTD, Boolean.FALSE);
-            javax.xml.stream.XMLStreamReader xmlReader = inputFactory.createXMLStreamReader(new StringReader(value));
-            StAXBuilder builder = new StAXOMBuilder(xmlReader);
-            builder.getDocumentElement();
+            // validate xml
+            convertStringToOM(value);
 
             value = value.trim();
             if (!value.endsWith(">") || value.length() < 4) {
@@ -729,5 +727,17 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     public void setEscapeXmlChars(boolean escapeXmlChars) {
         this.escapeXmlChars = escapeXmlChars;
+    }
+
+    /**
+     * Converts String to OMElement
+     *
+     * @param value String value to convert
+     * @return parsed OMElement
+     */
+    private OMElement convertStringToOM(String value) throws XMLStreamException, OMException {
+        javax.xml.stream.XMLStreamReader xmlReader = inputFactory.createXMLStreamReader(new StringReader(value));
+        StAXBuilder builder = new StAXOMBuilder(xmlReader);
+        return builder.getDocumentElement();
     }
 }
