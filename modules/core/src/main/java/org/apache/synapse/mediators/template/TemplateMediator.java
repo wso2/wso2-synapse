@@ -38,7 +38,7 @@ import java.util.Stack;
  */
 public class TemplateMediator extends AbstractListMediator {
 
-    private Collection<String> paramNames;
+    private Collection<TemplateParam> templateParams;
 
     private String eipPatternName;
     private String fileName;
@@ -53,12 +53,12 @@ public class TemplateMediator extends AbstractListMediator {
 
     private String errorHandler = null;
 
-    public void setParameters(Collection<String> paramNames) {
-        this.paramNames = paramNames;
+    public void setParameters(Collection<TemplateParam> paramNames) {
+        this.templateParams = paramNames;
     }
 
-    public Collection<String> getParameters() {
-        return paramNames;
+    public Collection<TemplateParam> getParameters() {
+        return templateParams;
     }
 
     public void setName(String name) {
@@ -121,15 +121,16 @@ public class TemplateMediator extends AbstractListMediator {
         }
 
         if (synLog.isTraceOrDebugEnabled()) {
-            synLog.traceOrDebug("Start : EIP Sequence " + "paramNames : " + paramNames);
+            synLog.traceOrDebug("Start : EIP Sequence " + "templateParams : " + templateParams);
 
             if (synLog.isTraceTraceEnabled()) {
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
             }
         }
-        pushFuncContextTo(synCtx);
+
         boolean result = false;
         try {
+            pushFuncContextTo(synCtx);
             result = super.mediate(synCtx);
         } finally {
             if (result) {
@@ -155,7 +156,7 @@ public class TemplateMediator extends AbstractListMediator {
      * @param synCtx  Synapse Message context
      */
     private void pushFuncContextTo(MessageContext synCtx) {
-        TemplateContext funcContext = new TemplateContext(eipPatternName, paramNames);
+        TemplateContext funcContext = new TemplateContext(eipPatternName, templateParams);
         //process the raw parameters parsed in
         funcContext.setupParams(synCtx);
 

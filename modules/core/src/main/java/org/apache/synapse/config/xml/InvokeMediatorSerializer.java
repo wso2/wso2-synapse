@@ -72,6 +72,11 @@ public class InvokeMediatorSerializer extends AbstractMediatorSerializer{
             saveTracingState(invokeElem, mediator);
         }
 
+        if (mediator.getErrorHandler() != null) {
+            invokeElem.addAttribute(fac.createOMAttribute("onError",
+                    nullNS, mediator.getErrorHandler()));
+        }
+
         serializeComments(invokeElem, mediator.getCommentsList());
 
         return invokeElem;

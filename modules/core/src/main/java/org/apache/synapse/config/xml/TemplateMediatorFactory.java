@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.template.TemplateMediator;
+import org.apache.synapse.mediators.template.TemplateParam;
 import org.apache.synapse.util.CommentListUtil;
 
 import javax.xml.namespace.QName;
@@ -76,18 +77,30 @@ public class TemplateMediatorFactory extends AbstractListMediatorFactory {
 
     private void initParameters(OMElement templateElem, TemplateMediator templateMediator) {
         Iterator subElements = templateElem.getChildElements();
-        Collection<String> paramNames = new ArrayList<String>();
+        Collection<TemplateParam> templateParams = new ArrayList<>();
         while (subElements.hasNext()) {
             OMElement child = (OMElement) subElements.next();
             if (child.getQName().equals(PARAMETER_Q)) {
+                String paramName = null;
+                boolean isParamMandatory = false;
+                Object defaultValue = null;
                 OMAttribute paramNameAttr = child.getAttribute(ATT_NAME);
                 if (paramNameAttr != null) {
-                    paramNames.add(paramNameAttr.getAttributeValue());
+                    paramName = paramNameAttr.getAttributeValue();
                 }
+                OMAttribute paramMandatoryAttr = child.getAttribute(ATT_IS_MANDATORY);
+                if (paramMandatoryAttr != null) {
+                    isParamMandatory = Boolean.parseBoolean(paramMandatoryAttr.getAttributeValue());
+                }
+                OMAttribute paramDefaultValueAttr = child.getAttribute(ATT_DEFAULT_VALUE);
+                if (paramDefaultValueAttr != null) {
+                    defaultValue = paramDefaultValueAttr.getAttributeValue();
+                }
+                templateParams.add(new TemplateParam(paramName, isParamMandatory, defaultValue));
 //                child.detach();
             }
         }
-        templateMediator.setParameters(paramNames);
+        templateMediator.setParameters(templateParams);
     }
 
     public QName getTagQName() {
