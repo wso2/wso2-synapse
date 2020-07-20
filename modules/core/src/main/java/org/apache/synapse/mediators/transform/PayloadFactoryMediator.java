@@ -584,13 +584,12 @@ public class PayloadFactoryMediator extends AbstractMediator {
      */
     private boolean isXML(String value) {
         try {
-            // validate xml
-            convertStringToOM(value);
-
             value = value.trim();
             if (!value.endsWith(">") || value.length() < 4) {
                 return false;
             }
+            // validate xml
+            convertStringToOM(value);
             return true;
         } catch (XMLStreamException ignore) {
             // means not a xml
