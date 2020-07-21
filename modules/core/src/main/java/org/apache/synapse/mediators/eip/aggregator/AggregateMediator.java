@@ -101,7 +101,9 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
     /** A property to choose between Array and Object types of JSON payloads.
      * Setting this property to 'root' will create a JSON array and, setting it to 'child'
      * will create a JSON object as the output
-     * Example: <correlateOn expression="json-eval(JSON-Path)" aggregateElementType="root/child"/> */
+     * Example:  <onComplete expression="xpath |  json-eval(JSON-Path)" [sequence="sequence-ref"]
+     * aggregateElementType="root/child"/>
+     */
     private Value aggregateElementType;
 
     /** This holds the reference sequence name of the */
