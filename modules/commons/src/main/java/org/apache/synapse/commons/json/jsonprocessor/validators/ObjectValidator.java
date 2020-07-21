@@ -22,6 +22,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.synapse.commons.json.jsonprocessor.constants.ValidatorConstants;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorException;
@@ -30,6 +31,8 @@ import org.apache.synapse.commons.json.jsonprocessor.utils.GSONDataTypeConverter
 import org.apache.synapse.commons.json.jsonprocessor.utils.JsonProcessorUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -143,11 +146,185 @@ public class ObjectValidator {
                 if (schemaObject.has(keyValue) && schemaObject.get(keyValue).isJsonObject()) {
                     JsonObject schemaObj = schemaObject.getAsJsonObject(keyValue);
                     if (schemaObj.has(ValidatorConstants.TYPE_KEY)) {
-                        String type = JsonProcessorUtils.replaceEnclosingQuotes(
-                                schemaObj.get(ValidatorConstants.TYPE_KEY).toString());
-                        validateAndUpdateEntriesMap(schemaObject, entry, type);
+                        JsonElement typeElement = schemaObj.get(ValidatorConstants.TYPE_KEY);
+                        if (typeElement.isJsonArray()) {
+                            ArrayList<String> types = new ArrayList<>();
+                            // Handling multiple types
+                            JsonArray array = (JsonArray) typeElement;
+                            for (JsonElement element : array) {
+                                types.add(JsonProcessorUtils.replaceEnclosingQuotes(element.toString()));
+                            }
+                            validateAndUpdateEntriesMap(schemaObject, entry, types);
+                        } else {
+                            validateAndUpdateEntriesMap(schemaObject, entry,
+                                    JsonProcessorUtils.replaceEnclosingQuotes(typeElement.toString()));
+                        }
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * This method will validate and update the entries of input object map (multi-type).
+     *
+     * @param schemaObject JSON schema.
+     * @param entry        entry from the map.
+     * @param types        data types (multi-type support).
+     * @throws ParserException    Exception occurred in data type conversions.
+     * @throws ValidatorException Exception occurred in schema validations.
+     */
+    private static void validateAndUpdateEntriesMap(JsonObject schemaObject, Map.Entry<String, JsonElement> entry,
+                                                    ArrayList<String> types) throws ValidatorException,
+            ParserException {
+        if (schemaObject.has(entry.getKey()) && schemaObject.get(entry.getKey()).isJsonObject()) {
+            JsonObject schema = schemaObject.get(entry.getKey()).getAsJsonObject();
+            if (entry.getValue().isJsonObject()) {
+                multiTypeCheckObject(entry, types, schema);
+            } else if (entry.getValue().isJsonArray()) {
+                multiTypeCheckArray(entry, types, schema);
+            } else if (entry.getValue().isJsonNull()) {
+                multiTypeCheckNull(entry, types, schema);
+            } else if (entry.getValue().isJsonPrimitive()) {
+                multiTypeCheckPrimitive(entry, types, schema);
+            }
+        }
+    }
+
+    // Try to correct a JSON object against an schema with multiple types.
+    private static void multiTypeCheckObject(Map.Entry<String, JsonElement> entry, ArrayList<String> types,
+                                             JsonObject schema) throws ParserException, ValidatorException {
+        boolean validated = false;
+        for (String type : types) {
+            if (ValidatorConstants.OBJECT_KEYS.contains(type)) {
+                entry.setValue(ObjectValidator.validateObject(entry.getValue().getAsJsonObject(), schema));
+                validated = true;
+            }
+        }
+        if (!validated) {
+            for (String type : types) {
+                if (ValidatorConstants.ARRAY_KEYS.contains(type)) {
+                    // Single element array correction
+                    JsonArray array = new JsonArray();
+                    array.add(entry.getValue().getAsJsonObject());
+                    entry.setValue(array);
+                    entry.setValue(ArrayValidator.validateArray(GSONDataTypeConverter.getMapFromString(
+                            entry.getValue().toString()), schema));
+                    validated = true;
+                }
+            }
+        }
+        if (!validated) {
+            throw new ValidatorException("JSON object found " + entry.getValue() + " without matching " +
+                    "schema " + schema.toString());
+        }
+    }
+
+    // Try to correct a JSON array against an schema with multiple types.
+    private static void multiTypeCheckArray(Map.Entry<String, JsonElement> entry, ArrayList<String> types,
+                                            JsonObject schema) throws ParserException, ValidatorException {
+        boolean validated = false;
+        for (String type : types) {
+            if (ValidatorConstants.ARRAY_KEYS.contains(type)) {
+                entry.setValue(ArrayValidator.validateArray(GSONDataTypeConverter.getMapFromString(
+                        entry.getValue().toString()), schema));
+                validated = true;
+            }
+        }
+        if (!validated) {
+            throw new ValidatorException("JSON array found " + entry.getValue() + " without matching " +
+                    "schema " + schema.toString());
+        }
+    }
+
+    // Try to correct a JSON null against an schema with multiple types.
+    private static void multiTypeCheckNull(Map.Entry<String, JsonElement> entry, ArrayList<String> types,
+                                           JsonObject schema) throws ParserException, ValidatorException {
+        boolean validated = false;
+        for (String type : types) {
+            if (ValidatorConstants.NULL_KEYS.contains(type)) {
+                entry.setValue(JsonNull.INSTANCE);
+                validated = true;
+            }
+        }
+        if (!validated) {
+            throw new ValidatorException("JSON null found " + entry.getValue() + " without matching " +
+                    "schema " + schema.toString());
+        }
+    }
+
+    // Try to correct a JSON primitive (nominal, numeric, boolean) against an schema with multiple types.
+    private static void multiTypeCheckPrimitive(Map.Entry<String, JsonElement> entry, ArrayList<String> types,
+                                                JsonObject schema) throws ParserException, ValidatorException {
+
+        String value = entry.getValue().getAsString();
+        boolean validated = false;
+        if ("true".equals(value) || "false".equals(value)) {
+            // if boolean check for boolean type if type is nominal convert to string
+            for (String type : types) {
+                if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
+                    entry.setValue(BooleanValidator.validateBoolean(schema, entry.getValue().getAsString()));
+                    validated = true;
+                }
+            }
+            if (!validated) {
+                for (String type : types) {
+                    if (ValidatorConstants.NOMINAL_KEYS.contains(type)) {
+                        entry.setValue(StringValidator.validateNominal(schema, entry.getValue().getAsString()));
+                        validated = true;
+                    }
+                }
+            }
+            if (!validated) {
+                throw new ValidatorException("Boolean found " + entry.getValue() + " without matching " +
+                        "schema " + schema.toString());
+            }
+        } else if (NumberUtils.isParsable(value)) {
+            // if number check for numeric types if type is nominal convert to string
+            for (String type : types) {
+                if (ValidatorConstants.NUMERIC_KEYS.contains(type)) {
+                    entry.setValue(NumericValidator.validateNumeric(schema, entry.getValue().getAsString()));
+                    validated = true;
+                }
+            }
+            if (!validated) {
+                for (String type : types) {
+                    if (ValidatorConstants.NOMINAL_KEYS.contains(type)) {
+                        entry.setValue(StringValidator.validateNominal(schema, entry.getValue().getAsString()));
+                        validated = true;
+                    }
+                }
+            }
+            if (!validated) {
+                throw new ValidatorException("Number found " + entry.getValue() + " without matching " +
+                        "schema " + schema.toString());
+            }
+        } else {
+            // if string check for all types (nominal, boolean, numeric) and try to parse
+            for (String type : types) {
+                if (ValidatorConstants.NOMINAL_KEYS.contains(type)) {
+                    entry.setValue(StringValidator.validateNominal(schema, entry.getValue().getAsString()));
+                    validated = true;
+                }
+            }
+            if (!validated) {
+                for (String type : types) {
+                    if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
+                        entry.setValue(BooleanValidator.validateBoolean(schema, entry.getValue().getAsString()));
+                        validated = true;
+                    }
+                }
+            }
+            if (!validated) {
+                for (String type : types) {
+                    if (ValidatorConstants.NUMERIC_KEYS.contains(type)) {
+                        entry.setValue(NumericValidator.validateNumeric(schema, entry.getValue().getAsString()));
+                        validated = true;
+                    }
+                }
+            }
+            if (!validated) {
+                throw new ValidatorException(entry.getValue() + " not matching with the schema " + schema.toString());
             }
         }
     }
@@ -157,12 +334,13 @@ public class ObjectValidator {
      *
      * @param schemaObject JSON schema.
      * @param entry        entry from the map.
-     * @param type         data type.
+     * @param type        data type.
      * @throws ParserException    Exception occurred in data type conversions.
      * @throws ValidatorException Exception occurred in schema validations.
      */
     private static void validateAndUpdateEntriesMap(JsonObject schemaObject, Map.Entry<String, JsonElement> entry,
-                                                    String type) throws ValidatorException, ParserException {
+                                                    String type) throws ValidatorException,
+            ParserException {
         if (schemaObject.has(entry.getKey()) && schemaObject.get(entry.getKey()).isJsonObject()) {
             JsonObject schema = schemaObject.get(entry.getKey()).getAsJsonObject();
             if (ValidatorConstants.BOOLEAN_KEYS.contains(type)) {
