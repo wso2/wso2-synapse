@@ -25,6 +25,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.PathNotFoundException;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
@@ -36,6 +37,7 @@ import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axiom.soap.impl.llom.SOAPHeaderImpl;
 import org.apache.axis2.AxisFault;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -52,6 +54,7 @@ import org.apache.synapse.util.xpath.SynapseXPath;
 import org.apache.synapse.util.xpath.SynapseXPathConstants;
 import org.jaxen.JaxenException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -83,6 +86,8 @@ public class Target {
     private String property = null;
 
     private int targetType = EnrichMediator.CUSTOM;
+
+    public static final String ACTION_REMOVE = "remove";
 
     public static final String ACTION_REPLACE = "replace";
 
@@ -446,6 +451,39 @@ public class Target {
         }
     }
 
+    /**
+     * This method will remove all the matching elements of the given jsonPath from the JSON payload in the msg
+     * context.
+     *
+     * @param synCtx   message context.
+     * @param jsonPath JSON-path expression to select the removing element.
+     */
+    public void removeJson(MessageContext synCtx, SynapsePath jsonPath) throws IOException, PathNotFoundException {
+        SynapseJsonPath synapseJsonPath = (SynapseJsonPath) jsonPath;
+        Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+        org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+        // handle complete removal of the message body.
+        String jsonPathString = synapseJsonPath.toString();
+        // removing "json-eval(" and extract only the expression
+        jsonPathString = jsonPathString.substring(10, jsonPathString.length() - 1);
+        // multi expression support ( accept comma separated list of JSON-path expressions )
+        String[] jsonPathArray = jsonPathString.split(",");
+        String jsonString = IOUtils.toString(JsonUtil.getJsonPayload(axis2MessageCtx));
+        String result = jsonString;
+        if (jsonPathArray.length > 0) {
+            for (String path : jsonPathArray) {
+                if (path.equals("$") || path.equals("$.")) {
+                    JsonUtil.getNewJsonPayload(axis2MessageCtx, "", true, true);
+                    result = "";
+                } else {
+                    DocumentContext doc = JsonPath.parse(result);
+                    doc.delete(path);
+                    result = doc.jsonString();
+                }
+            }
+            JsonUtil.getNewJsonPayload(axis2MessageCtx, result, true, true);
+        }
+    }
 
     /**
      * Set the enriched JSON result to body.
