@@ -34,16 +34,15 @@ import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.util.xpath.SynapseJsonPath;
-import org.jaxen.JaxenException;
-
-import javax.xml.namespace.QName;
-
 import org.apache.synapse.mediators.elementary.EnrichMediator;
 import org.apache.synapse.mediators.elementary.Source;
 import org.apache.synapse.mediators.elementary.Target;
+import org.apache.synapse.util.InlineExpressionUtil;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
+import org.jaxen.JaxenException;
 
 import java.util.Properties;
+import javax.xml.namespace.QName;
 
 /**
  * Factory for {@link EnrichMediator} instances.
@@ -97,9 +96,10 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
 
         // check whether the inline element of the source is XML
         boolean isInlineSourceXML = false;
+        String inlineString = null;
         if (source.getInlineOMNode() != null) {
             if (source.getInlineOMNode() instanceof OMText) {
-                String inlineString = ((OMTextImpl) source.getInlineOMNode()).getText();
+                inlineString = ((OMTextImpl) source.getInlineOMNode()).getText();
                 JsonParser parser = new JsonParser();
                 try {
                     JsonElement element = parser.parse(inlineString);
@@ -108,11 +108,21 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
                         isInlineSourceXML = true;
                     }
                 } catch (JsonSyntaxException ex) {
-                    // cannot parse with JSON. Going ahead with XML
-                    isInlineSourceXML = true;
+                    // JSON string fails to parse when it contains an inline expression
+                    // such as {"company2": {json-eval($.SamplePayload.name)}}
+                    // Therefore, we will check if it is JSON by checking for {}
+                    if (!(inlineString.trim().startsWith("{") && inlineString.trim().endsWith("}"))) {
+                        // not a JSON. Going ahead with XML
+                        isInlineSourceXML = true;
+                    }
                 }
             } else if (source.getInlineOMNode() instanceof OMElement) {
+                inlineString = ((OMElement) source.getInlineOMNode()).getText();
                 isInlineSourceXML = true;
+            }
+
+            if (!StringUtils.isEmpty(inlineString)) {
+                enrich.setContainsInlineExpressions(InlineExpressionUtil.checkForInlineExpressions(inlineString));
             }
         }
 

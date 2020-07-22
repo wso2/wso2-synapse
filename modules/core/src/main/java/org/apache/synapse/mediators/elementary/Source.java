@@ -72,6 +72,8 @@ public class Source {
 
     private OMNode inlineOMNode = null;
 
+    private OMNode initialInlineOMNode = null;
+
     private String inlineKey = null;
 
     public ArrayList<OMNode> evaluate(MessageContext synCtx, SynapseLog synLog)
@@ -221,6 +223,12 @@ public class Source {
             } else {
                 synLog.error("Inline Source Content is not valid.");
             }
+            // If the initialInlineOMNode is not null, it means that inline OM Node has been overridden with the
+            // inline string containing resolved dynamic values. Therefore, we should set the initial OM Node back
+            // which contains the original inline value
+            if (initialInlineOMNode != null) {
+                this.inlineOMNode = initialInlineOMNode;
+            }
         }
         return sourceNodeList;
     }
@@ -302,6 +310,12 @@ public class Source {
                     synLog.error("Source failed to get inline JSON" + "inlineJSONNode=" + inlineOMNode + ", inlineKey="
                             + inlineKey);
                 }
+                // If the initialInlineOMNode is not null, it means that inline OM Node has been overridden with the
+                // inline string containing resolved dynamic values. Therefore, we should set the initial OM Node back
+                // which contains the original inline value
+                if (initialInlineOMNode != null) {
+                    this.inlineOMNode = initialInlineOMNode;
+                }
                 break;
             }
             case EnrichMediator.PROPERTY: {
@@ -367,6 +381,16 @@ public class Source {
 
     public void setInlineKey(String inlineKey) {
         this.inlineKey = inlineKey;
+    }
+
+    public OMNode getInitialInlineOMNode() {
+
+        return initialInlineOMNode;
+    }
+
+    public void setInitialInlineOMNode(OMNode inlineOMNodeWithExpressions) {
+
+        this.initialInlineOMNode = inlineOMNodeWithExpressions;
     }
 }
 
