@@ -156,7 +156,9 @@ public class JaegerSpanHandler implements OpenTracingSpanHandler {
             spanContext = span.context();
         }
         // Set tracing headers
-        tracer.inject(spanContext, Format.Builtin.HTTP_HEADERS, new TextMapInjectAdapter(tracerSpecificCarrier));
+        if (spanContext != null) {
+            tracer.inject(spanContext, Format.Builtin.HTTP_HEADERS, new TextMapInjectAdapter(tracerSpecificCarrier));
+        }
         // Set text map key value pairs as HTTP headers
         headersMap.putAll(tracerSpecificCarrier);
 
