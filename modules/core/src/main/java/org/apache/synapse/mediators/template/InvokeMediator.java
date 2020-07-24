@@ -156,7 +156,17 @@ public class InvokeMediator extends AbstractMediator implements
 
 	@Override
 	public boolean isContentAware() {
-		//parameters with expression will  be evaluated by relevant mediators in the template
+		//evaluate parameters with expression
+		Iterator<String> parameterNames = pName2ExpressionMap.keySet().iterator();
+		while (parameterNames.hasNext()) {
+			String parameterName = parameterNames.next();
+			if (!"".equals(parameterName)) {
+				Value parameter = pName2ExpressionMap.get(parameterName);
+				if (parameter.getExpression() != null) {
+					return true;
+				}
+			}
+		}
 		return false;
 	}
 
