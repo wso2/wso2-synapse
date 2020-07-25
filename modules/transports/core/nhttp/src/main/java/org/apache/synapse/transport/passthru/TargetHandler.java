@@ -320,13 +320,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                 // Ignore 1xx response
                 return;
             }
-            boolean isError = false;
-        	context.setAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME, System.currentTimeMillis());
+            context.setAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME, System.currentTimeMillis());
             connState = TargetContext.getState(conn);
-            MessageContext requestMsgContext = TargetContext.get(conn).getRequestMsgCtx();
-            NHttpServerConnection sourceConn =
-                    (NHttpServerConnection) requestMsgContext.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
-
             //check correlation logs enabled
             if (targetConfiguration.isCorrelationLoggingEnabled()
                     && TargetContext.isCorrelationIdAvailable(conn)) {
@@ -335,7 +330,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                         .info((System.currentTimeMillis() - startTime) + "|HTTP|"
                         + TargetContext.getRequest(conn).getUrl().toString() + "|BACKEND LATENCY");
             }
-
+            boolean isError = false;
             if (connState != ProtocolState.REQUEST_DONE) {
                 isError = true;
                 // State is not REQUEST_DONE. i.e the request is not completely written. But the response is started
@@ -348,13 +343,25 @@ public class TargetHandler implements NHttpClientEventHandler {
                     if (errorStatus.getStatusCode() >= HttpStatus.SC_BAD_REQUEST) {
                         TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
                         conn.resetOutput();
-                        if (sourceConn != null) {
-                            SourceContext.updateState(sourceConn, ProtocolState.REQUEST_DONE);
-                            SourceContext.get(sourceConn).setShutDown(true);
-                        }
                         if (log.isDebugEnabled()) {
-                            log.debug(conn + ": Received response with status code : " +
-                                    response.getStatusLine().getStatusCode() + " in invalid state : " + connState.name());
+                            log.debug(conn + ": Received response with status code : " + response.getStatusLine()
+                                    .getStatusCode() + " in invalid state : " + connState.name());
+                        }
+                        MessageContext requestMsgContext = TargetContext.get(conn).getRequestMsgCtx();
+                        if (requestMsgContext != null) {
+                            NHttpServerConnection sourceConn = (NHttpServerConnection) requestMsgContext.getProperty(
+                                    PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
+                            if (sourceConn != null) {
+                                SourceContext.updateState(sourceConn, ProtocolState.REQUEST_DONE);
+                                SourceContext.get(sourceConn).setShutDown(true);
+                            }
+                        } else {
+                            if (log.isDebugEnabled()) {
+                                log.debug(conn + ": has not started any request");
+                            }
+                            if (statusCode == HttpStatus.SC_REQUEST_TIMEOUT) {
+                                return; // ignoring the stale connection close
+                            }
                         }
                     }
                 } else {
@@ -367,9 +374,6 @@ public class TargetHandler implements NHttpClientEventHandler {
 
             if (targetRequest != null) {
                 method = targetRequest.getMethod();
-            }
-            if (method == null) {
-                method = "POST";
             }
             boolean canResponseHaveBody =
                     isResponseHaveBodyExpected(method, response);
@@ -385,6 +389,8 @@ public class TargetHandler implements NHttpClientEventHandler {
             TargetContext.setResponse(conn, targetResponse);
             targetResponse.start(conn);
 
+            MessageContext requestMsgContext = TargetContext.get(conn).getRequestMsgCtx();
+
             if (statusCode == HttpStatus.SC_ACCEPTED && handle202(requestMsgContext)) {
                 return;
             }
@@ -394,8 +400,8 @@ public class TargetHandler implements NHttpClientEventHandler {
 
             targetConfiguration.getMetrics().incrementMessagesReceived();
 
-                sourceConn = (NHttpServerConnection) requestMsgContext.getProperty
-                           (PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
+            NHttpServerConnection sourceConn = (NHttpServerConnection) requestMsgContext.getProperty(
+                    PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
             if (sourceConn != null) {
                 sourceConn.getContext().setAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME,
                         conn.getContext()
