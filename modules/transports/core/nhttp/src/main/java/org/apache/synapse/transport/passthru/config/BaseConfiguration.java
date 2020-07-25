@@ -66,6 +66,9 @@ public abstract class BaseConfiguration {
     private static final String PASSTHROUGH_THREAD_GROUP = "Pass-through Message Processing Thread Group";
     private static final String PASSTHROUGH_THREAD_ID ="PassThroughMessageProcessor";
 
+    private Integer socketTimeout = null;
+    private Integer connectionTimeout = null;
+
     public BaseConfiguration(ConfigurationContext configurationContext,
                              ParameterInclude parameters,
                              WorkerPool workerPool,
@@ -143,10 +146,8 @@ public abstract class BaseConfiguration {
     protected HttpParams buildHttpParams() {
         HttpParams params = new BasicHttpParams();
         params.
-                setIntParameter(HttpConnectionParams.SO_TIMEOUT,
-                        conf.getIntProperty(HttpConnectionParams.SO_TIMEOUT, 60000)).
-                setIntParameter(HttpConnectionParams.CONNECTION_TIMEOUT,
-                        conf.getIntProperty(HttpConnectionParams.CONNECTION_TIMEOUT, 0)).
+                setIntParameter(HttpConnectionParams.SO_TIMEOUT, getSocketTimeout()).
+                setIntParameter(HttpConnectionParams.CONNECTION_TIMEOUT, getConnectionTimeout()).
                 setIntParameter(HttpConnectionParams.SOCKET_BUFFER_SIZE,
                         conf.getIntProperty(HttpConnectionParams.SOCKET_BUFFER_SIZE, 8 * 1024)).
                 setParameter(HttpProtocolParams.ORIGIN_SERVER,
@@ -162,8 +163,8 @@ public abstract class BaseConfiguration {
     protected IOReactorConfig buildIOReactorConfig() {
         IOReactorConfig config = new IOReactorConfig();
         config.setIoThreadCount(conf.getIOThreadsPerReactor());
-        config.setSoTimeout(conf.getIntProperty(HttpConnectionParams.SO_TIMEOUT, 60000));
-        config.setConnectTimeout(conf.getIntProperty(HttpConnectionParams.CONNECTION_TIMEOUT, 0));
+        config.setSoTimeout(getSocketTimeout());
+        config.setConnectTimeout(getConnectionTimeout());
         config.setTcpNoDelay(conf.getBooleanProperty(HttpConnectionParams.TCP_NODELAY, true));
         config.setSoLinger(conf.getIntProperty(HttpConnectionParams.SO_LINGER, -1));
         config.setSoReuseAddress(conf.getBooleanProperty(HttpConnectionParams.SO_REUSEADDR, false));
@@ -182,4 +183,19 @@ public abstract class BaseConfiguration {
 
     public Boolean isCorrelationLoggingEnabled() { return correlationLoggingEnabled; }
 
+    private Integer getSocketTimeout() {
+        if (socketTimeout != null) {
+            return socketTimeout;
+        }
+        socketTimeout = conf.getIntProperty(HttpConnectionParams.SO_TIMEOUT, 60000);
+        return socketTimeout;
+    }
+
+    private Integer getConnectionTimeout() {
+        if (connectionTimeout != null) {
+            return connectionTimeout;
+        }
+        connectionTimeout = conf.getIntProperty(HttpConnectionParams.CONNECTION_TIMEOUT, getSocketTimeout() / 2);
+        return connectionTimeout;
+    }
 }
