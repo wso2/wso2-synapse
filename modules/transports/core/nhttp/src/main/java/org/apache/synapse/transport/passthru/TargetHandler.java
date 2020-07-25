@@ -313,11 +313,10 @@ public class TargetHandler implements NHttpClientEventHandler {
             }
 
             int statusCode = response.getStatusLine().getStatusCode();
-            if (statusCode < HttpStatus.SC_OK) {
+            if (!canProceedMsgProcessing(statusCode)) {
                 if (log.isDebugEnabled()) {
-                    log.debug(conn + ": Received a 100 Continue response");
+                    log.debug("Received : " + statusCode + " for " + conn);
                 }
-                // Ignore 1xx response
                 return;
             }
             boolean isError = false;
@@ -435,6 +434,22 @@ public class TargetHandler implements NHttpClientEventHandler {
             TargetContext.updateState(conn, ProtocolState.CLOSED);
             targetConfiguration.getConnections().shutdownConnection(conn, true);
         }
+    }
+
+    /**
+     * Check whether the response can be processed further.
+     *
+     * @param httpStatusCode status code of the response
+     * @return whether to proceed further or not
+     */
+    private boolean canProceedMsgProcessing(int httpStatusCode) {
+
+        /**
+         * When the response status code is 1xx we ignore. Also when the back end responds with 408 also we ignore.
+         * This can happen if we have established a connection to the backend but haven't used it to send some
+         * request with it and the backend closes it since the connection is staled.
+         */
+        return httpStatusCode < HttpStatus.SC_OK || httpStatusCode == HttpStatus.SC_REQUEST_TIMEOUT;
     }
 
     private boolean handle202(MessageContext requestMsgContext) throws AxisFault {
