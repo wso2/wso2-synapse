@@ -30,7 +30,6 @@ import org.apache.synapse.SequenceType;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.opentracing.management.helpers.SpanTagger;
 import org.apache.synapse.aspects.flow.statistics.opentracing.management.helpers.TracingUtils;
 import org.apache.synapse.aspects.flow.statistics.opentracing.management.parentresolving.ParentResolver;
 import org.apache.synapse.aspects.flow.statistics.opentracing.management.scoping.TracingScope;
@@ -155,8 +154,9 @@ public class JaegerSpanHandler implements OpenTracingSpanHandler {
             span = tracer.buildSpan(statisticDataUnit.getComponentName()).asChildOf(parentSpan).start();
             spanContext = span.context();
         }
-        // Set tracing headers
+        //Fix null pointer issue occurs when spanContext become null
         if (spanContext != null) {
+            // Set tracing headers
             tracer.inject(spanContext, Format.Builtin.HTTP_HEADERS, new TextMapInjectAdapter(tracerSpecificCarrier));
         }
         // Set text map key value pairs as HTTP headers
@@ -259,7 +259,10 @@ public class JaegerSpanHandler implements OpenTracingSpanHandler {
                             TracingScope tracingScope) {
         String spanWrapperId = TracingUtils.extractId(basicStatisticDataUnit);
         SpanWrapper spanWrapper = spanStore.getSpanWrapper(spanWrapperId);
-
+        //Set the statistic data unit of the close event into the span wrapper
+        if (spanWrapper != null && (basicStatisticDataUnit instanceof StatisticDataUnit)) {
+            spanWrapper.setCloseEventStatisticDataUnit((StatisticDataUnit) basicStatisticDataUnit);
+        }
         if (!Objects.equals(spanWrapper, spanStore.getOuterLevelSpanWrapper())) {
             // A non-outer level span
             spanStore.finishSpan(spanWrapper);

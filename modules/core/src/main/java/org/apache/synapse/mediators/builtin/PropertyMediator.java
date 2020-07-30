@@ -24,6 +24,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -86,6 +88,9 @@ public class PropertyMediator extends AbstractMediator {
 
     private static final String EMPTY_CONTENT = "";
 
+    /** To keep the Property Value for tracing **/
+    private String propertyValue = null;
+
     /**
      * Sets a property into the current (local) Synapse Context or into the Axis Message Context
      * or into Transports Header and removes above properties from the corresponding locations.
@@ -145,6 +150,15 @@ public class PropertyMediator extends AbstractMediator {
 				
                 synCtx.setProperty(name, resultValue);
 
+            } else if (XMLConfigConstants.SCOPE_TRACE.equals(scope)) {
+                //Setting property value into the propertyValue variable for tracing purposes
+                if (resultValue != null ) {
+                    if (resultValue instanceof OMElement) {
+                        ((OMElement) resultValue).build();
+                    }
+                    //Converted to string since only used to display as a span tag
+                    propertyValue = resultValue.toString();
+                }
             } else if (XMLConfigConstants.SCOPE_AXIS2.equals(scope)
                     && synCtx instanceof Axis2MessageContext) {
                 //Setting property into the  Axis2 Message Context
@@ -334,6 +348,12 @@ public class PropertyMediator extends AbstractMediator {
 
     public void setExpression(SynapsePath expression) {
         setExpression(expression, null);
+    }
+
+    public void reportCloseStatistics(MessageContext messageContext, Integer currentIndex) {
+        CloseEventCollector
+                .closeEntryEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR, currentIndex,
+                        isContentAltering(), propertyValue);
     }
 
     public void setExpression(SynapsePath expression, String type) {

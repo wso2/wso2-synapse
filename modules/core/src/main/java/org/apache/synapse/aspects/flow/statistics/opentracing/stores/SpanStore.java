@@ -120,7 +120,7 @@ public class SpanStore {
     public void finishSpan(SpanWrapper spanWrapper) {
         if (spanWrapper != null && spanWrapper.getSpan() != null) {
             if (spanWrapper.getStatisticDataUnit() != null) {
-                SpanTagger.setSpanTags(spanWrapper, spanWrapper.getStatisticDataUnit());
+                SpanTagger.setSpanTags(spanWrapper);
             }
             spanWrapper.getSpan().finish();
             activeSpanWrappers.remove(spanWrapper);

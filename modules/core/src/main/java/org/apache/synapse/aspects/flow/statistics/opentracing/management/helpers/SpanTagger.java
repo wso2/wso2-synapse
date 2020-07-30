@@ -19,9 +19,6 @@
 package org.apache.synapse.aspects.flow.statistics.opentracing.management.helpers;
 
 import io.opentracing.Span;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
 import org.apache.synapse.aspects.flow.statistics.opentracing.OpenTracingManagerHolder;
 import org.apache.synapse.aspects.flow.statistics.opentracing.models.SpanWrapper;
@@ -40,37 +37,45 @@ public class SpanTagger {
      * Sets tags to the span which is contained in the provided span wrapper, from information acquired from the
      * given basic statistic data unit.
      * @param spanWrapper               Span wrapper that contains the target span.
-     * @param basicStatisticDataUnit    Basic statistic data unit from which, tag data will be acquired.
      */
-    public static void setSpanTags(SpanWrapper spanWrapper, BasicStatisticDataUnit basicStatisticDataUnit) {
-        StatisticsLog statisticsLog = new StatisticsLog(spanWrapper.getStatisticDataUnit());
+    public static void setSpanTags(SpanWrapper spanWrapper) {
+        StatisticsLog openStatisticsLog = new StatisticsLog(spanWrapper.getStatisticDataUnit());
         Span span = spanWrapper.getSpan();
-        if (basicStatisticDataUnit instanceof StatisticDataUnit) {
-            if (OpenTracingManagerHolder.isCollectingPayloads() || OpenTracingManagerHolder.isCollectingProperties()) {
-                StatisticDataUnit endEventDataUnit = (StatisticDataUnit) basicStatisticDataUnit;
-
-                if (OpenTracingManagerHolder.isCollectingPayloads()) {
-                    statisticsLog.setAfterPayload(endEventDataUnit.getPayload());
-                    span.setTag("beforePayload", statisticsLog.getBeforePayload());
-                    span.setTag("afterPayload", statisticsLog.getAfterPayload());
-                }
-
-                if (OpenTracingManagerHolder.isCollectingProperties()) {
-                    if (spanWrapper.getStatisticDataUnit().getContextPropertyMap() != null) {
-                        span.setTag("beforeContextPropertyMap",
-                                spanWrapper.getStatisticDataUnit().getContextPropertyMap().toString());
-                    }
-                    if (statisticsLog.getContextPropertyMap() != null) {
-                        span.setTag("afterContextPropertyMap", statisticsLog.getContextPropertyMap().toString());
-                    }
+        if (OpenTracingManagerHolder.isCollectingPayloads() || OpenTracingManagerHolder.isCollectingProperties()) {
+            if (OpenTracingManagerHolder.isCollectingPayloads()) {
+                span.setTag("beforePayload", openStatisticsLog.getBeforePayload());
+                if (spanWrapper.getCloseEventStatisticDataUnit() != null) {
+                    span.setTag("afterPayload", spanWrapper.getCloseEventStatisticDataUnit().getPayload());
+                } else {
+                    //This means a close event hasn't been triggered so payload is equal to before payload
+                    span.setTag("afterPayload", openStatisticsLog.getBeforePayload());
                 }
             }
 
-            span.setTag("componentName", statisticsLog.getComponentName());
-            span.setTag("componentType", statisticsLog.getComponentTypeToString());
-            span.setTag("threadId", Thread.currentThread().getId());
-            span.setTag("componentId", statisticsLog.getComponentId());
-            span.setTag("hashcode", statisticsLog.getHashCode());
+            if (OpenTracingManagerHolder.isCollectingProperties()) {
+                if (spanWrapper.getStatisticDataUnit().getContextPropertyMap() != null) {
+                    span.setTag("beforeContextPropertyMap",
+                            spanWrapper.getStatisticDataUnit().getContextPropertyMap().toString());
+                }
+                if (spanWrapper.getCloseEventStatisticDataUnit() != null) {
+                    if (spanWrapper.getCloseEventStatisticDataUnit().getContextPropertyMap() != null) {
+                        span.setTag("afterContextPropertyMap",
+                                spanWrapper.getCloseEventStatisticDataUnit().getContextPropertyMap().toString());
+                    }
+                } else if (openStatisticsLog.getContextPropertyMap() != null) {
+                    span.setTag("afterContextPropertyMap", openStatisticsLog.getContextPropertyMap().toString());
+                }
+                if (spanWrapper.getCloseEventStatisticDataUnit() != null &&
+                        spanWrapper.getCloseEventStatisticDataUnit().getPropertyValue() != null) {
+                    span.setTag("propertyMediatorValue",
+                            spanWrapper.getCloseEventStatisticDataUnit().getPropertyValue());
+                }
+            }
         }
+        span.setTag("componentName", openStatisticsLog.getComponentName());
+        span.setTag("componentType", openStatisticsLog.getComponentTypeToString());
+        span.setTag("threadId", Thread.currentThread().getId());
+        span.setTag("componentId", openStatisticsLog.getComponentId());
+        span.setTag("hashcode", openStatisticsLog.getHashCode());
     }
 }
