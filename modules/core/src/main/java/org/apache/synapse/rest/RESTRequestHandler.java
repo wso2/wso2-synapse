@@ -31,7 +31,9 @@ import org.apache.synapse.rest.version.ContextVersionStrategy;
 import org.apache.synapse.rest.version.DefaultStrategy;
 import org.apache.synapse.rest.version.URLBasedVersionStrategy;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * This class is responsible for receiving requests from various sources and dispatching
@@ -82,9 +84,17 @@ public class RESTRequestHandler {
                 return true;
             }
         } else {
-            for (API api : apiSet) {
+            Object apiObject = synCtx.getProperty(RESTConstants.PROCESSED_API);
+            if (apiObject != null) {
+                API api = (API) synCtx.getProperty(RESTConstants.PROCESSED_API);
                 if (identifyAPI(api, synCtx, defaultStrategyApiSet)) {
                     return true;
+                }
+            } else {
+                for (API api : apiSet) {
+                    if (identifyAPI(api, synCtx, defaultStrategyApiSet)) {
+                        return true;
+                    }
                 }
             }
         }
@@ -111,6 +121,7 @@ public class RESTRequestHandler {
 
 	private void apiProcess(MessageContext synCtx, API api) {
         Integer statisticReportingIndex = 0;
+        synCtx.setProperty(RESTConstants.PROCESSED_API, api);
         if (RuntimeStatisticCollector.isStatisticsEnabled()) {
             statisticReportingIndex = OpenEventCollector
                     .reportEntryEvent(synCtx, api.getAPIName(), api.getAspectConfiguration(), ComponentType.API);
@@ -124,6 +135,7 @@ public class RESTRequestHandler {
     //Process APIs which have context or url strategy
     private void apiProcessNonDefaultStrategy(MessageContext synCtx, API api) {
         Integer statisticReportingIndex = 0;
+        synCtx.setProperty(RESTConstants.PROCESSED_API, api);
         if (RuntimeStatisticCollector.isStatisticsEnabled()) {
             statisticReportingIndex = OpenEventCollector
                     .reportEntryEvent(synCtx, api.getAPIName() + "_" + api.getVersion(), api.getAspectConfiguration(),
@@ -158,6 +170,7 @@ public class RESTRequestHandler {
             if (log.isDebugEnabled()) {
                 log.debug("Located specific API: " + api.getName() + " for processing message");
             }
+            synCtx.setProperty(RESTConstants.PROCESSED_API, api);
             api.process(synCtx);
             return true;
         }
