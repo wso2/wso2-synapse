@@ -31,7 +31,9 @@ import org.apache.synapse.rest.version.ContextVersionStrategy;
 import org.apache.synapse.rest.version.DefaultStrategy;
 import org.apache.synapse.rest.version.URLBasedVersionStrategy;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * This class is responsible for receiving requests from various sources and dispatching
@@ -82,9 +84,17 @@ public class RESTRequestHandler {
                 return true;
             }
         } else {
-            for (API api : apiSet) {
+            Object apiObject = synCtx.getProperty(RESTConstants.PROCESSED_API);
+            if (apiObject != null) {
+                API api = (API) synCtx.getProperty(RESTConstants.PROCESSED_API);
                 if (identifyAPI(api, synCtx, defaultStrategyApiSet)) {
                     return true;
+                }
+            } else {
+                for (API api : apiSet) {
+                    if (identifyAPI(api, synCtx, defaultStrategyApiSet)) {
+                        return true;
+                    }
                 }
             }
         }
