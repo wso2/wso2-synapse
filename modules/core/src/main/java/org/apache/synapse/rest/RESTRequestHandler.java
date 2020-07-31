@@ -78,23 +78,16 @@ public class RESTRequestHandler {
         //Since swapping elements are not possible with sets, Collection is converted to a List
         List<API> defaultStrategyApiSet = new ArrayList<API>(apiSet);
         API defaultAPI = null;
-        if (null != synCtx.getProperty(RESTConstants.IS_PROMETHEUS_ENGAGED)) {
-            API api = (API) synCtx.getProperty(RESTConstants.PROCESSED_API);
-            if (identifyAPI(api, synCtx, defaultStrategyApiSet)) {
+
+        Object apiObject = synCtx.getProperty(RESTConstants.PROCESSED_API);
+        if (apiObject != null) {
+            if (identifyAPI((API) apiObject, synCtx, defaultStrategyApiSet)) {
                 return true;
             }
         } else {
-            Object apiObject = synCtx.getProperty(RESTConstants.PROCESSED_API);
-            if (apiObject != null) {
-                API api = (API) synCtx.getProperty(RESTConstants.PROCESSED_API);
+            for (API api : apiSet) {
                 if (identifyAPI(api, synCtx, defaultStrategyApiSet)) {
                     return true;
-                }
-            } else {
-                for (API api : apiSet) {
-                    if (identifyAPI(api, synCtx, defaultStrategyApiSet)) {
-                        return true;
-                    }
                 }
             }
         }
