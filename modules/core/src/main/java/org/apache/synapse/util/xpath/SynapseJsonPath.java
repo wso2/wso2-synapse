@@ -18,24 +18,17 @@
  */
 package org.apache.synapse.util.xpath;
 
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonObject;
-import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.PathNotFoundException;
-import com.jayway.jsonpath.spi.json.GsonJsonProvider;
-import com.jayway.jsonpath.spi.json.JsonProvider;
-import com.jayway.jsonpath.spi.mapper.GsonMappingProvider;
-import com.jayway.jsonpath.spi.mapper.MappingProvider;
+
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -47,6 +40,7 @@ import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.apache.synapse.util.InlineExpressionUtil;
 import org.jaxen.JaxenException;
 
 import java.io.IOException;
@@ -87,6 +81,9 @@ public class SynapseJsonPath extends SynapsePath {
 
     private boolean isWholeBody = false;
 
+    // JSON path has expressions that need to be processed. Ex: json-eval($.store.{$ctx:prop1})
+    private boolean isJSONPathNeedsProcessing = false;
+
     public SynapseJsonPath(String jsonPathExpression)  throws JaxenException {
         super(jsonPathExpression, SynapsePath.JSON_PATH, log);
 
@@ -104,6 +101,10 @@ public class SynapseJsonPath extends SynapsePath {
         if ("$".equals(jsonPath.getPath().trim()) || "$.".equals(jsonPath.getPath().trim())) {
             isWholeBody = true;
         }
+        // Check if the JSON path expression has dynamic values
+        if (InlineExpressionUtil.checkForInlineExpressions(expression)) {
+            isJSONPathNeedsProcessing = true;
+        }
         this.setPathType(SynapsePath.JSON_PATH);
     }
 
@@ -120,6 +121,10 @@ public class SynapseJsonPath extends SynapsePath {
     }
 
     public String stringValueOf(MessageContext synCtx) {
+        if (isJSONPathNeedsProcessing) {
+            // Create new JSON path by replacing dynamic values with content.
+            jsonPath = JsonPath.compile(InlineExpressionUtil.replaceDynamicValues(synCtx, expression));
+        }
         org.apache.axis2.context.MessageContext amc = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         InputStream stream;
         if (!JsonUtil.hasAJsonPayload(amc) || "true".equals(enableStreamingJsonPath)) {
