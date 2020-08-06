@@ -41,7 +41,12 @@ public class SpanWrapper {
     /**
      * Statistic data unit that has been collected during an open event, which carries data related to the span.
      */
-    private StatisticDataUnit statisticDataUnit;
+    private StatisticDataUnit openEventStatisticDataUnit;
+
+    /**
+     * Statistic data unit that has been collected during an closing event, which carries data related to the span.
+     */
+    private StatisticDataUnit closeEventStatisticDataUnit;
 
     /**
      * Parent span wrapper for this span wrapper.
@@ -82,10 +87,10 @@ public class SpanWrapper {
      */
     private Set<String> childStructuredElementIds;
 
-    public SpanWrapper(String id, Span span, StatisticDataUnit statisticDataUnit, SpanWrapper parentSpanWrapper) {
+    public SpanWrapper(String id, Span span, StatisticDataUnit openEventStatisticDataUnit, SpanWrapper parentSpanWrapper) {
         this.id = id;
         this.span = span;
-        this.statisticDataUnit = statisticDataUnit;
+        this.openEventStatisticDataUnit = openEventStatisticDataUnit;
         this.anonymousSequences = new LinkedHashMap<>();
         this.parentSpanWrapper = parentSpanWrapper;
         this.childStructuredElementIds = new HashSet<>();
@@ -97,11 +102,19 @@ public class SpanWrapper {
     }
 
     public StatisticDataUnit getStatisticDataUnit() {
-        return statisticDataUnit;
+        return openEventStatisticDataUnit;
     }
 
     public void setStatisticDataUnit(StatisticDataUnit statisticDataUnit) {
-        this.statisticDataUnit = statisticDataUnit;
+        this.openEventStatisticDataUnit = statisticDataUnit;
+    }
+
+    public StatisticDataUnit getCloseEventStatisticDataUnit() {
+        return closeEventStatisticDataUnit;
+    }
+
+    public void setCloseEventStatisticDataUnit(StatisticDataUnit closeEventStatisticDataUnit) {
+        this.closeEventStatisticDataUnit = closeEventStatisticDataUnit;
     }
 
     public void addAnonymousSequence(String id, SpanWrapper anonymousSequenceSpanWrapper) {

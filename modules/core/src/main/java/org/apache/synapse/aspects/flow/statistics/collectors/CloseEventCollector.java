@@ -27,7 +27,6 @@ import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.templates.EndFlowEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsCloseEvent;
 import org.apache.synapse.aspects.flow.statistics.opentracing.OpenTracingManagerHolder;
-import org.apache.synapse.aspects.flow.statistics.opentracing.management.helpers.TracingUtils;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
@@ -50,11 +49,32 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 	 * @param isContentAltering true if content is altered
 	 */
 	public static void closeEntryEvent(MessageContext messageContext, String componentName, ComponentType componentType,
-	                                   Integer currentIndex, boolean isContentAltering) {
+									   Integer currentIndex, boolean isContentAltering) {
+		closeEntryEvent(messageContext, componentName, componentType, currentIndex, isContentAltering, null);
+	}
+
+	/**
+	 * Enqueue statistics event to the event queue. This method receives statistics events from synapse mediation
+	 * engine for all the component types.
+	 *
+	 * @param messageContext    synapse message context.
+	 * @param componentName     name of the component reporting statistics.
+	 * @param componentType     component type of the reporting component.
+	 * @param currentIndex      component's level in this message flow.
+	 * @param isContentAltering true if content is altered
+	 * @param propertyValue     value of the property
+	 */
+	public static void closeEntryEvent(MessageContext messageContext, String componentName,
+											   ComponentType componentType,
+											   Integer currentIndex, boolean isContentAltering, String propertyValue) {
+
 		if (shouldReportStatistic(messageContext)) {
 			Boolean isCollectingTracing =
 					(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED);
 			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
+			if (propertyValue != null) {
+				statisticDataUnit.setPropertyValue(propertyValue);
+			}
 			statisticDataUnit.setComponentName(componentName);
 			statisticDataUnit.setComponentType(componentType);
 			if (currentIndex == null) {
@@ -69,15 +89,15 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 					.collectData(messageContext, isContentAltering, isCollectingTracing, statisticDataUnit);
 
 			StatisticsCloseEvent closeEvent = new StatisticsCloseEvent(statisticDataUnit);
-			if(currentIndex == null){
+			if (currentIndex == null) {
 				addEvent(messageContext, closeEvent);
-			}else {
+			} else {
 				addEventAndDecrementCount(messageContext, closeEvent);
 			}
 
 			if (isOpenTracingEnabled()) {
 				OpenTracingManagerHolder.getOpenTracingManager().getHandler().
-					handleCloseEntryEvent(statisticDataUnit, messageContext);
+						handleCloseEntryEvent(statisticDataUnit, messageContext);
 			}
 
 		}

@@ -53,6 +53,8 @@ public class XMLConfigConstants {
     public static final String SCOPE_SYSTEM = "system";
     /** The scope name for environment variables */
     public static final String SCOPE_ENVIRONMENT = "env";
+    /** The scope name for properties used for tracing */
+    public static final String SCOPE_TRACE = "trace";
     public static final String KEY = "key";
     public static final String NAME = "name";
     public static final String LOCATION = "location";
