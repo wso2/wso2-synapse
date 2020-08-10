@@ -244,6 +244,11 @@ public abstract class AbstractDBMediator extends AbstractMediator implements Man
             }
         }
 
+        if (name.equals("DBReport") && ((DBReportMediator) this).useTransaction) {
+            long key = Thread.currentThread().getId();
+            closeConnection(key);
+        }
+
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("End : " + name + " mediator");
         }
@@ -257,6 +262,13 @@ public abstract class AbstractDBMediator extends AbstractMediator implements Man
      * @param msgCtx current message
      */
     abstract protected void processStatement(Statement query, MessageContext msgCtx);
+
+    /**
+     * Close the connection of the current thread id
+     *
+     * @param key current thread id
+     */
+    abstract protected void closeConnection(long key);
 
     /**
      * Return the name or (hopefully) unique connection URL specific to the DataSource being used
