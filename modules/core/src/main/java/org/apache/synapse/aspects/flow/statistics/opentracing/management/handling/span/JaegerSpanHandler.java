@@ -146,7 +146,8 @@ public class JaegerSpanHandler implements OpenTracingSpanHandler {
         Map headersMap = (Map) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
                 .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
 
-        if (isOuterLevelSpan(statisticDataUnit, spanStore)) {
+        // We only need to extract span context from headers when there are trp headers available
+        if (isOuterLevelSpan(statisticDataUnit, spanStore) && headersMap != null) {
             // Extract span context from headers
             spanContext = tracer.extract(Format.Builtin.HTTP_HEADERS, new TextMapExtractAdapter(headersMap));
             span = tracer.buildSpan(statisticDataUnit.getComponentName()).asChildOf(spanContext).start();
@@ -160,7 +161,11 @@ public class JaegerSpanHandler implements OpenTracingSpanHandler {
             tracer.inject(spanContext, Format.Builtin.HTTP_HEADERS, new TextMapInjectAdapter(tracerSpecificCarrier));
         }
         // Set text map key value pairs as HTTP headers
-        headersMap.putAll(tracerSpecificCarrier);
+        // Fix possible null pointer issue which can occur when following property is used
+        // <property name="TRANSPORT_HEADERS" action="remove" scope="axis2"/>
+        if (headersMap != null) {
+            headersMap.putAll(tracerSpecificCarrier);
+        }
 
         String spanId = TracingUtils.extractId(statisticDataUnit);
         SpanWrapper spanWrapper = spanStore.addSpanWrapper(spanId, span, statisticDataUnit, parentSpanWrapper, synCtx);
