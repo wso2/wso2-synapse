@@ -111,4 +111,8 @@ public class DBReportMediator extends AbstractDBMediator {
             }
         }
     }
+
+    protected void closeConnection(long key) {
+        TranscationManger.removeConnectionUsed(key);
+    }
 }
