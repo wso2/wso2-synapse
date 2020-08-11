@@ -36,6 +36,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.mediators.MediatorFaultHandler;
@@ -118,6 +119,11 @@ public class MessageInjector implements Task, ManagedLifecycle {
     private String registryKey = null;
 
     /**
+     * Invoke handlers when calling a sequence
+     */
+    private String invokeHandlers = null;
+
+    /**
      * Store additional properties required at the runtime
      */
     private Map<String, Object> runtimeProperties = null;
@@ -161,6 +167,15 @@ public class MessageInjector implements Task, ManagedLifecycle {
      */
     public void setFormat(String format) {
         this.format = format;
+    }
+
+    /**
+     * Enable / Disable invoking the handlers.
+     * Applicable only when injectTo = "sequence" | "main"
+     * @param invokeHandlers should be "true" | "false"
+     */
+    public void setInvokeHandlers(String invokeHandlers) {
+        this.invokeHandlers = invokeHandlers;
     }
 
     /**
@@ -412,6 +427,16 @@ public class MessageInjector implements Task, ManagedLifecycle {
                     if (log.isDebugEnabled()) {
                         log.debug("injecting message to sequence : " + sequenceName);
                     }
+                    if (Boolean.parseBoolean(invokeHandlers)) {
+                        List handlers = mc.getEnvironment().getSynapseHandlers();
+                        Iterator<SynapseHandler> iterator = handlers.iterator();
+                        while (iterator.hasNext()) {
+                            SynapseHandler handler = iterator.next();
+                            if (!handler.handleRequestInFlow(mc)) {
+                                return;
+                            }
+                        }
+                    }
                     mc.pushFaultHandler(new MediatorFaultHandler(mc.getFaultSequence()));
                     synapseEnvironment.injectAsync(mc, seq);
                 } else {
@@ -420,6 +445,16 @@ public class MessageInjector implements Task, ManagedLifecycle {
             } else {
                 if (log.isDebugEnabled()) {
                     log.debug("injecting message to main sequence");
+                }
+                if (Boolean.parseBoolean(invokeHandlers)) {
+                    List handlers = mc.getEnvironment().getSynapseHandlers();
+                    Iterator<SynapseHandler> iterator = handlers.iterator();
+                    while (iterator.hasNext()) {
+                        SynapseHandler handler = iterator.next();
+                        if (!handler.handleRequestInFlow(mc)) {
+                            return;
+                        }
+                    }
                 }
                 synapseEnvironment.injectMessage(mc);
             }
