@@ -383,16 +383,18 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     }
                     out = (OutputStream) msgContext.getProperty(PassThroughConstants.BUILDER_OUTPUT_STREAM);
                     if (out != null) {
+                        //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
+                        //to ignore any entity enclosed methods available.
+                        if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
+                            RelayUtils.isDeleteRequestWithoutPayload(msgContext)) {
+                            pipe.setSerializationCompleteWithoutData(true);
+                            return;
+                        }
                         overflowBlob.writeTo(out);
                         if (pipe.isStale) {
                             throw new IOException("Target Connection is stale..");
                         }
-                        //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
-                        //to ignore any entity enclosed methods available.
-                        if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
-                                RelayUtils.isDeleteRequestWithoutPayload(msgContext)) {
-                            pipe.setSerializationCompleteWithoutData(true);
-                        } else if (messageSize == 0 &&
+                        if (messageSize == 0 &&
                                 (msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
                                         (Boolean) msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY))) {
                             pipe.setSerializationCompleteWithoutData(true);
