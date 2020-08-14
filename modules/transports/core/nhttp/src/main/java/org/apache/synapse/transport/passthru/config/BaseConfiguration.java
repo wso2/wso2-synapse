@@ -32,6 +32,10 @@ import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 import org.apache.synapse.transport.passthru.util.BufferFactory;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * This class has common configurations for both sender and receiver.
  */
@@ -54,6 +58,14 @@ public abstract class BaseConfiguration {
     protected IOReactorConfig ioReactorConfig = null;
 
     protected BufferFactory bufferFactory = null;
+
+    /** Weather User-Agent header coming from client should be preserved */
+    protected boolean preserveUserAgentHeader = false;
+    /** Weather Server header coming from server should be preserved */
+    protected boolean preserveServerHeader = true;
+    /** Http headers which should be preserved */
+    protected List<String> preserveHttpHeaders;
+
 
     private PassThroughTransportMetricsCollector metrics = null;
 
@@ -197,5 +209,47 @@ public abstract class BaseConfiguration {
         }
         connectionTimeout = conf.getIntProperty(HttpConnectionParams.CONNECTION_TIMEOUT, getSocketTimeout() / 2);
         return connectionTimeout;
+    }
+
+    /**
+     * Check preserving status of the given http header name
+     *
+     * @param headerName http header name which need to check preserving status
+     * @return preserving status of the given http header
+     */
+    public boolean isPreserveHttpHeader(String headerName) {
+
+        if (preserveHttpHeaders == null || preserveHttpHeaders.isEmpty() || headerName == null) {
+            return false;
+        }
+        return preserveHttpHeaders.contains(headerName.toUpperCase());
+    }
+
+    public List<String> getPreserveHttpHeaders() {
+        return preserveHttpHeaders;
+    }
+
+    /**
+     * Populate preserve http headers from comma separate string
+     *
+     * @param preserveHeaders Comma separated preserve enable http headers
+     */
+    protected void populatePreserveHttpHeaders(String preserveHeaders) {
+
+        preserveHttpHeaders = new ArrayList<String>();
+        if (preserveHeaders != null && !preserveHeaders.isEmpty()) {
+            String[] presHeaders = preserveHeaders.trim().toUpperCase().split(",");
+            if (presHeaders != null && presHeaders.length > 0) {
+                preserveHttpHeaders.addAll(Arrays.asList(presHeaders));
+            }
+        }
+
+        if (preserveServerHeader && !preserveHttpHeaders.contains(HTTP.SERVER_HEADER.toUpperCase())) {
+            preserveHttpHeaders.add(HTTP.SERVER_HEADER.toUpperCase());
+        }
+
+        if (preserveUserAgentHeader && !preserveHttpHeaders.contains(HTTP.USER_AGENT.toUpperCase())) {
+            preserveHttpHeaders.add(HTTP.USER_AGENT.toUpperCase());
+        }
     }
 }
