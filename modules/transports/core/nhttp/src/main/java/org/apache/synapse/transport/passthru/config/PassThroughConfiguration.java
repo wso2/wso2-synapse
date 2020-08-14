@@ -144,6 +144,10 @@ public class PassThroughConfiguration {
         return getStringProperty(PassThroughConfigPNames.HTTP_HEADERS_PRESERVE, "");
     }
 
+    public String getResponsePreseveHttpHeaders() {
+        return getStringProperty(PassThroughConfigPNames.HTTP_RESPONSE_HEADERS_PRESERVE, "");
+    }
+
     public int getConnectionIdleTime() {
 
         int idleTime;

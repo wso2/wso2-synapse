@@ -136,7 +136,8 @@ public class SourceConfiguration extends BaseConfiguration {
             if (httpGetRequestProcessor == null) {
                 handleException("Cannot create HttpGetRequestProcessor");
             }
-        } 
+        }
+        populatePreserveHttpHeaders(conf.getResponsePreseveHttpHeaders());
     }
 
     public HttpParams getHttpParams() {
