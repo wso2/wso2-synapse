@@ -374,7 +374,9 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 long messageSize = 0;
 
                 try {
-                    OverflowBlob overflowBlob = setStreamAsTempData(formatter, msgContext, format);
+                    boolean hasNoMessageBody = HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(
+                            Constants.Configuration.HTTP_METHOD)) || RelayUtils.isDeleteRequestWithoutPayload(msgContext);
+                    OverflowBlob overflowBlob = setStreamAsTempData(formatter, msgContext, format, hasNoMessageBody);
                     messageSize = overflowBlob.getLength();
                     msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH, messageSize);
                     deliveryAgent.submit(msgContext, epr);
@@ -383,16 +385,20 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     }
                     out = (OutputStream) msgContext.getProperty(PassThroughConstants.BUILDER_OUTPUT_STREAM);
                     if (out != null) {
+                        //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
+                        //to ignore any entity enclosed methods available.
+                        if (hasNoMessageBody) {
+                            if (pipe.isStale) {
+                                throw new IOException("Target Connection is stale..");
+                            }
+                            pipe.setSerializationCompleteWithoutData(true);
+                            return;
+                        }
                         overflowBlob.writeTo(out);
                         if (pipe.isStale) {
                             throw new IOException("Target Connection is stale..");
                         }
-                        //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
-                        //to ignore any entity enclosed methods available.
-                        if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
-                                RelayUtils.isDeleteRequestWithoutPayload(msgContext)) {
-                            pipe.setSerializationCompleteWithoutData(true);
-                        } else if (messageSize == 0 &&
+                        if (messageSize == 0 &&
                                 (msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
                                         (Boolean) msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY))) {
                             pipe.setSerializationCompleteWithoutData(true);
@@ -450,8 +456,12 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
      *
      * @throws IOException if an exception occurred while writing data
      */
-    private OverflowBlob setStreamAsTempData(MessageFormatter messageFormatter,MessageContext msgContext,OMOutputFormat format) throws IOException {
+    private OverflowBlob setStreamAsTempData(MessageFormatter messageFormatter, MessageContext msgContext,
+                                             OMOutputFormat format, boolean hasNoMessageBody) throws IOException {
         OverflowBlob serialized = new OverflowBlob(256, 4096, "http-nio_", ".dat");
+        if (hasNoMessageBody) {
+            return serialized;
+        }
         OutputStream out = serialized.getOutputStream();
         try {
             messageFormatter.writeTo(msgContext, format, out, false);
