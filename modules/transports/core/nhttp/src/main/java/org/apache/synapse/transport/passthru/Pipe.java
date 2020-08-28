@@ -595,11 +595,12 @@ public class Pipe {
         }
 
         private void flushContent() throws IOException {
-            lock.lock();
 
             if(rawSerializationComplete){
                 return;
             }
+
+            lock.lock();
 
             try {
                 try {
