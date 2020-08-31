@@ -21,7 +21,12 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.SynapseException;
+import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.builtin.NTLMMediator;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
+import org.apache.synapse.util.xpath.SynapseXPath;
+import org.jaxen.JaxenException;
 
 import java.util.Properties;
 import javax.xml.namespace.QName;
@@ -36,13 +41,19 @@ import javax.xml.namespace.QName;
  */
 public class NTLMMediatorFactory extends AbstractMediatorFactory {
 
+    private static final String USERNAME_ATTRIBUTE_NAME = "username";
+    private static final String PASSWORD_ATTRIBUTE_NAME = "password";
+    private static final String DOMAIN_ATTRIBUTE_NAME = "domain";
+    private static final String HOST_ATTRIBUTE_NAME = "host";
+    private static final String NTLM_VERSION_ATTRIBUTE_NAME = "ntlmVersion";
+
     private static final QName TAG_NAME
             = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "NTLM");
-    private static final QName ATT_USER_NAME = new QName("username");
-    private static final QName ATT_PASSWORD = new QName("password");
-    private static final QName ATT_DOMAIN = new QName("domain");
-    private static final QName ATT_HOST = new QName("host");
-    private static final QName ATT_NTLM_VERSION = new QName("ntlmVersion");
+    private static final QName ATT_USER_NAME = new QName(USERNAME_ATTRIBUTE_NAME);
+    private static final QName ATT_PASSWORD = new QName(PASSWORD_ATTRIBUTE_NAME);
+    private static final QName ATT_DOMAIN = new QName(DOMAIN_ATTRIBUTE_NAME);
+    private static final QName ATT_HOST = new QName(HOST_ATTRIBUTE_NAME);
+    private static final QName ATT_NTLM_VERSION = new QName(NTLM_VERSION_ATTRIBUTE_NAME);
 
     @Override
     protected Mediator createSpecificMediator(OMElement elem, Properties properties) {
@@ -57,23 +68,48 @@ public class NTLMMediatorFactory extends AbstractMediatorFactory {
         OMAttribute attVersion = elem.getAttribute(ATT_NTLM_VERSION);
 
         if (attUserName != null) {
-            ntlmMediator.setUsername(attUserName.getAttributeValue());
+            String userName = attUserName.getAttributeValue();
+            ntlmMediator.setUsername(userName);
+            //Check the NTLM username dynamic or not
+            if (isDynamicAttribute(userName)) {
+                ntlmMediator.setDynamicUsername(createValueObject(userName, USERNAME_ATTRIBUTE_NAME, elem));
+            }
         }
 
         if (attPassword != null) {
-            ntlmMediator.setPassword(attPassword.getAttributeValue());
+            String password = attPassword.getAttributeValue();
+            ntlmMediator.setPassword(password);
+            //Check the NTLM password dynamic or not
+            if (isDynamicAttribute(password)) {
+                ntlmMediator.setDynamicPassword(createValueObject(password, PASSWORD_ATTRIBUTE_NAME, elem));
+            }
         }
 
         if (attHost != null) {
-            ntlmMediator.setHost(attHost.getAttributeValue());
+            String host = attHost.getAttributeValue();
+            ntlmMediator.setHost(host);
+            //Check the NTLM password dynamic or not
+            if (isDynamicAttribute(host)) {
+                ntlmMediator.setDynamicHost(createValueObject(host, HOST_ATTRIBUTE_NAME, elem));
+            }
         }
 
         if (attDomain != null) {
-            ntlmMediator.setDomain(attDomain.getAttributeValue());
+            String domain = attDomain.getAttributeValue();
+            ntlmMediator.setDomain(domain);
+            //Check the NTLM password dynamic or not
+            if (isDynamicAttribute(domain)) {
+                ntlmMediator.setDynamicDomain(createValueObject(domain, DOMAIN_ATTRIBUTE_NAME, elem));
+            }
         }
 
         if (attVersion != null) {
-            ntlmMediator.setNtlmVersion(attVersion.getAttributeValue());
+            String ntlmVersion = attVersion.getAttributeValue();
+            ntlmMediator.setNtlmVersion(ntlmVersion);
+            //Check the NTLM password dynamic or not
+            if (isDynamicAttribute(ntlmVersion)) {
+                ntlmMediator.setDynamicNtmlVersion(createValueObject(ntlmVersion, NTLM_VERSION_ATTRIBUTE_NAME, elem));
+            }
         }
         return ntlmMediator;
     }
@@ -81,5 +117,53 @@ public class NTLMMediatorFactory extends AbstractMediatorFactory {
     @Override
     public QName getTagQName() {
         return TAG_NAME;
+    }
+
+    /**
+     * Validate the given attribute to identify whether it is static or dynamic key
+     * If the name is in the {} format then it is dynamic key(XPath)
+     * Otherwise just a static name
+     *
+     * @param attributeValue string to validate as the attribute
+     * @return isDynamicAttribute representing the attribute type
+     */
+    private boolean isDynamicAttribute(String attributeValue) {
+        if (attributeValue.length() < 2) {
+            return false;
+        }
+
+        final char startExpression = '{';
+        final char endExpression = '}';
+
+        char firstChar = attributeValue.charAt(0);
+        char lastChar = attributeValue.charAt(attributeValue.length() - 1);
+
+        return (startExpression == firstChar && endExpression == lastChar);
+    }
+
+    /**
+     * Creates a value object for the dynamic expression
+     *
+     * @param attributeValue the string value of the expression
+     * @param attributeName  the name that need to give to the value object
+     * @param element        the OMElement of the configuration
+     */
+    private Value createValueObject(String attributeValue, String attributeName, OMElement element) {
+        try {
+            String nameExpression = attributeValue.substring(1, attributeValue.length() - 1);
+            if (nameExpression.startsWith("json-eval(")) {
+                new SynapseJsonPath(nameExpression.substring(10, nameExpression.length() - 1));
+            } else {
+                new SynapseXPath(nameExpression);
+            }
+        } catch (JaxenException e) {
+            String msg = "Invalid expression for attribute '" + attributeName + "' : " + attributeValue;
+            log.error(msg);
+            throw new SynapseException(msg);
+        }
+        // ValueFactory for creating dynamic Value
+        ValueFactory nameValueFactory = new ValueFactory();
+        // create dynamic Value based on OMElement
+        return nameValueFactory.createValue(attributeName, element);
     }
 }
