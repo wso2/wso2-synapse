@@ -342,9 +342,27 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     // No conversion required, as path evaluates to regular String.
                     replacementValue = replacementEntry.getKey();
                     String trimmedReplacementValue = replacementValue.trim();
-                    // This is to replace " with \" and \\ with \\\\
-                    //replacing other json special characters i.e \b, \f, \n \r, \t
-                    if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE) &&
+                    //If media type is xml and replacement value is json convert it to xml format prior to replacement
+                    if (mediaType.equals(XML_TYPE) && inferReplacementType(replacementEntry).equals(STRING_TYPE)
+                            && isJson(trimmedReplacementValue)) {
+                        try {
+                            replacementValue = escapeSpecialCharactersOfXml(replacementValue);
+                            OMElement omXML = JsonUtil.toXml(IOUtils.toInputStream(replacementValue), false);
+                            if (JsonUtil.isAJsonPayloadElement(omXML)) { // remove <jsonObject/> from result.
+                                Iterator children = omXML.getChildElements();
+                                String childrenStr = "";
+                                while (children.hasNext()) {
+                                    childrenStr += (children.next()).toString().trim();
+                                }
+                                replacementValue = childrenStr;
+                            } else {
+                                replacementValue = omXML.toString();
+                            }
+                        } catch (AxisFault e) {
+                            handleException("Error converting JSON to XML, please check your JSON Path expressions"
+                                    + " return valid JSON: ", synCtx);
+                        }
+                    } else if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE) &&
                             isEscapeXmlChars()) {
                         //checks whether the escapeXmlChars attribute is true when media-type and evaluator is json and
                         //escapes xml chars. otherwise json messages with non escaped xml characters will fail to build
