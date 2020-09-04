@@ -65,12 +65,6 @@
          <distribution>repo</distribution>
       </license>
    </licenses>
-   <scm>
-      <connection>scm:git:https://github.com/wso2/wso2-synapse.git</connection>
-      <developerConnection>scm:git:https://github.com/wso2/wso2-synapse.git</developerConnection>
-      <url>https://github.com/wso2/wso2-synapse.git/</url>
-      <tag>v2.1.7-wso2v183</tag>
-   </scm>
    <organization>
       <name>Apache Software Foundation</name>
       <url>http://www.apache.org/</url>
@@ -266,18 +260,6 @@
                          </manifestEntries>
                      </archive>
                  </configuration>
-             </plugin>
-             <plugin>
-                 <groupId>org.apache.maven.plugins</groupId>
-                 <artifactId>maven-release-plugin</artifactId>
-                 <configuration>
-                     <preparationGoals>clean install</preparationGoals>
-                     <autoVersionSubmodules>true</autoVersionSubmodules>
-                 </configuration>
-             </plugin>
-             <plugin>
-                 <groupId>org.apache.maven.plugins</groupId>
-                 <artifactId>maven-deploy-plugin</artifactId>
              </plugin>
          </plugins>
       </pluginManagement>
@@ -1360,7 +1342,6 @@
       <commons-text.version>1.6</commons-text.version>
       <snmp4j.version>2.0.3</snmp4j.version>
       <snmp4j.agent.version>2.0.5</snmp4j.agent.version>
-      <project.scm.id>wso2-scm-server</project.scm.id>
       <javax.cache.version>0.5</javax.cache.version>
       <javax.servlet.version>3.0.1</javax.servlet.version>
       <powermock.version>1.7.1</powermock.version>
