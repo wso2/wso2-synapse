@@ -586,7 +586,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 
                 MessageFormatter formatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
                 OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
-
+                setContentType(msgContext, sourceResponse, formatter, format, sourceConfiguration);
                 try {
                     formatter.writeTo(msgContext, format, out, false);
                 } catch (RemoteException fault) {
