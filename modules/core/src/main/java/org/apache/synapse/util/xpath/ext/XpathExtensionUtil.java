@@ -120,7 +120,7 @@ public class XpathExtensionUtil {
             Map<String, SynapseXpathFunctionContextProvider> extensions =
                     environment.getXpathFunctionExtensions();
             SynapseXpathFunctionContextProvider functionContextProvider =
-                    getMatchingExtensionContextProvider(extensions, namespaceURI, prefix, localName);
+                    getMatchingExtensionProvider(extensions, prefix, localName);
             if (functionContextProvider != null) {
                 return initAndReturnXpathFunction(functionContextProvider, ctxt);
             }
@@ -191,21 +191,17 @@ public class XpathExtensionUtil {
     }
 
     /**
-     * returns the matching Extension provider for a given QName/namespaceURI+prefix+localName
+     * returns the matching Extension provider for a given prefix+localName
      * combination
      *
      * @param extensionMap registered extension Map for the corresponding extension provider
-     * @param namespaceURI binding namespace in xpath expression
      * @param prefix       binding prefix string in xpath expression
      * @param localName    binding localname string in xpath expression
      * @return matching Extension provider. returns null if no extension is found for the given
-     *         combination
+     * combination
      */
-    private static SynapseXpathFunctionContextProvider getMatchingExtensionContextProvider(
-            Map<String, SynapseXpathFunctionContextProvider> extensionMap,
-            String namespaceURI,
-            String prefix, String localName) {
-
+    private static SynapseXpathFunctionContextProvider getMatchingExtensionProvider(
+            Map<String, SynapseXpathFunctionContextProvider> extensionMap, String prefix, String localName) {
         String subject;
         if (localName != null && prefix != null) {
             subject = prefix + localName;
@@ -215,7 +211,6 @@ public class XpathExtensionUtil {
             //can't resolve xpath extensions - invalid combination
             return null;
         }
-
         Set<String> qNames = extensionMap.keySet();
         for (String qName : qNames) {
             //check for a match for the given combination for QName registered
@@ -225,7 +220,6 @@ public class XpathExtensionUtil {
         }
         //no match found
         return null;
-
     }
 
     /**
