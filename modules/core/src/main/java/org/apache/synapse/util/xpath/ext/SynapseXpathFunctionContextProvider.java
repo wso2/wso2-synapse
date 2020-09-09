@@ -50,8 +50,8 @@ public interface SynapseXpathFunctionContextProvider {
 
     /**
      * Should Implement this API to return supported custom expression
-     * @return This should return the supported QName (localname + prefix + namespace URI combination ) for
+     * @return This should return the supported qualified name (localname + prefix + namespace URI combination ) for
      * this extension
      */
-     public QName getResolvingQName();
+     public String getResolvingQName();
 }

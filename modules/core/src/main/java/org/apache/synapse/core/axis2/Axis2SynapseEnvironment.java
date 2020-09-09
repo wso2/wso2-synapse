@@ -105,8 +105,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     private ServerContextInformation contextInformation;
 
     /** Map containing Xpath Function Context Extensions */
-    Map<QName, SynapseXpathFunctionContextProvider> xpathFunctionExtensions =
-            new HashMap<QName, SynapseXpathFunctionContextProvider>();
+    Map<String, SynapseXpathFunctionContextProvider> xpathFunctionExtensions =
+            new HashMap<String, SynapseXpathFunctionContextProvider>();
 
     /** Map containing Xpath Variable Context Extensions */
     Map<QName, SynapseXpathVariableResolver> xpathVariableExtensions =
@@ -716,7 +716,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      * Returns all declared xpath Function Extensions
      * @return Hash Map Containing Function Extensions with supported QName keys
      */
-    public Map<QName, SynapseXpathFunctionContextProvider> getXpathFunctionExtensions() {
+    public Map<String, SynapseXpathFunctionContextProvider> getXpathFunctionExtensions() {
         return xpathFunctionExtensions;
     }
 
