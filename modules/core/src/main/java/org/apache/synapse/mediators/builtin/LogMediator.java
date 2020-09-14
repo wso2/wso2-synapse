@@ -171,7 +171,7 @@ public class LogMediator extends AbstractMediator {
         if (synCtx.getMessageID() != null)
             sb.append(separator).append("MessageID: ").append(synCtx.getMessageID());
         if (getCorrelationId(synCtx) != null)
-            sb.append(" correlation_id : " + getCorrelationId(synCtx));
+            sb.append(separator).append("correlation_id: ").append(getCorrelationId(synCtx));
         sb.append(separator).append("Direction: ").append(
                 synCtx.isResponse() ? "response" : "request");
         setCustomProperties(sb, synCtx);
