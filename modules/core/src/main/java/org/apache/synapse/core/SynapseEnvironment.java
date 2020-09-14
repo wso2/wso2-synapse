@@ -159,7 +159,7 @@ public interface SynapseEnvironment {
      * Get all Xpath Extension objects for Function contexts
      * @return Map containing xpath extension objects
      */
-    public Map<QName, SynapseXpathFunctionContextProvider> getXpathFunctionExtensions();
+    public Map<String, SynapseXpathFunctionContextProvider> getXpathFunctionExtensions();
 
 
     /**
