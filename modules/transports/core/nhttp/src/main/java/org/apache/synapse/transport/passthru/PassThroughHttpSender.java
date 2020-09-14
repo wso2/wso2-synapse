@@ -586,42 +586,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 
                 MessageFormatter formatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
                 OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
-
-                Object contentTypeInMsgCtx =
-                        msgContext.getProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE);
-                boolean isContentTypeSetFromMsgCtx = false;
-
-                // If ContentType header is set in the axis2 message context, use it.
-                if (contentTypeInMsgCtx != null) {
-                   String contentTypeValueInMsgCtx = contentTypeInMsgCtx.toString();
-                   // Skip multipart/related as it should be taken from formatter.
-                    if (!(contentTypeValueInMsgCtx.contains(
-                            PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED) ||
-                            contentTypeValueInMsgCtx.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_FORM_DATA))) {
-
-                       // adding charset only if charset is not available,
-                       if (format != null && contentTypeValueInMsgCtx.indexOf(HTTPConstants.CHAR_SET_ENCODING) == -1 &&
-                           !"false".equals(msgContext.getProperty(PassThroughConstants.SET_CHARACTER_ENCODING))) {
-							String encoding = format.getCharSetEncoding();
-							if (encoding != null) {
-								sourceResponse.removeHeader(HTTP.CONTENT_TYPE);
-								contentTypeValueInMsgCtx += "; charset=" + encoding;
-							}
-						}
-
-                       sourceResponse.addHeader(HTTP.CONTENT_TYPE, contentTypeValueInMsgCtx);
-                       isContentTypeSetFromMsgCtx = true;
-                   }
-                }
-
-                // If ContentType is not set from msg context, get the formatter ContentType
-                if (!isContentTypeSetFromMsgCtx) {
-                    sourceResponse.removeHeader(HTTP.CONTENT_TYPE);
-                    sourceResponse.addHeader(HTTP.CONTENT_TYPE,
-                                             formatter.getContentType(
-                                                     msgContext, format, msgContext.getSoapAction()));
-                }
-
+                setContentType(msgContext, sourceResponse, formatter, format, sourceConfiguration);
                 try {
                     formatter.writeTo(msgContext, format, out, false);
                 } catch (RemoteException fault) {
@@ -652,6 +617,53 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
             pipe.consumerError();
             SourceContext.updateState(conn, ProtocolState.CLOSED);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
+        }
+    }
+
+    /**
+     * Set content type headers along with the charactor encoding if content type header is not preserved
+     * @param msgContext    message context
+     * @param sourceResponse    source response
+     * @param formatter response formatter
+     * @param format    response format
+     */
+    public void setContentType(MessageContext msgContext, SourceResponse sourceResponse, MessageFormatter formatter,
+                               OMOutputFormat format, SourceConfiguration sourceConfiguration) {
+        if (sourceConfiguration.isPreserveHttpHeader(HTTP.CONTENT_TYPE)) {
+            return;
+        }
+        Object contentTypeInMsgCtx =
+                msgContext.getProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE);
+        boolean isContentTypeSetFromMsgCtx = false;
+
+        // If ContentType header is set in the axis2 message context, use it.
+        if (contentTypeInMsgCtx != null) {
+            String contentTypeValueInMsgCtx = contentTypeInMsgCtx.toString();
+            // Skip multipart/related as it should be taken from formatter.
+            if (!(contentTypeValueInMsgCtx.contains(
+                    PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED) ||
+                    contentTypeValueInMsgCtx.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_FORM_DATA))) {
+
+                // adding charset only if charset is not available,
+                if (format != null && contentTypeValueInMsgCtx.indexOf(HTTPConstants.CHAR_SET_ENCODING) == -1 &&
+                        !"false".equals(msgContext.getProperty(PassThroughConstants.SET_CHARACTER_ENCODING))) {
+                    String encoding = format.getCharSetEncoding();
+                    if (encoding != null) {
+                        contentTypeValueInMsgCtx += "; charset=" + encoding;
+                    }
+                }
+                sourceResponse.removeHeader(HTTP.CONTENT_TYPE);
+                sourceResponse.addHeader(HTTP.CONTENT_TYPE, contentTypeValueInMsgCtx);
+                isContentTypeSetFromMsgCtx = true;
+            }
+        }
+
+        // If ContentType is not set from msg context, get the formatter ContentType
+        if (!isContentTypeSetFromMsgCtx) {
+            sourceResponse.removeHeader(HTTP.CONTENT_TYPE);
+            sourceResponse.addHeader(HTTP.CONTENT_TYPE,
+                    formatter.getContentType(
+                            msgContext, format, msgContext.getSoapAction()));
         }
     }
 

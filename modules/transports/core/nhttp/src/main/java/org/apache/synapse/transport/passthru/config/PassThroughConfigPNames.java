@@ -76,6 +76,11 @@ public interface PassThroughConfigPNames {
     public String HTTP_HEADERS_PRESERVE = "http.headers.preserve";
 
     /**
+     * Defines whether ESB needs to preserve the original Http header.
+     */
+    public String HTTP_RESPONSE_HEADERS_PRESERVE = "http.response.headers.preserve";
+
+    /**
      * Defines whether HTTP keep-alive is disabled
      */
     public String DISABLE_KEEPALIVE = "http.connection.disable.keepalive";

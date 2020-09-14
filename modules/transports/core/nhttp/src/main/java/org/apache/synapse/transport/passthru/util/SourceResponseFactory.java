@@ -66,7 +66,8 @@ public class SourceResponseFactory {
         boolean forceContentLength = msgContext.isPropertyTrue(NhttpConstants.FORCE_HTTP_CONTENT_LENGTH);
 	    boolean forceContentLengthCopy = msgContext.isPropertyTrue(PassThroughConstants.COPY_CONTENT_LENGTH_FROM_INCOMING);
 	    
-	    if (forceContentLength && forceContentLengthCopy && msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH) != null) {
+	    if (forceContentLength && forceContentLengthCopy && msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH) != null
+                && !sourceConfiguration.isPreserveHttpHeader(HTTP.CONTENT_LEN)) {
 	    	 sourceResponse.addHeader(HTTP.CONTENT_LEN, (String)msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH));
 		}
 
@@ -74,18 +75,22 @@ public class SourceResponseFactory {
         // body content length cannot be calculated inside synapse. Hence content length of the backend response is
         // set to sourceResponse.
         if (sourceRequest != null && PassThroughConstants.HTTP_HEAD.equalsIgnoreCase(sourceRequest.getRequest().getRequestLine().getMethod()) &&
-            msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH) != null) {
+            msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH) != null
+                && !sourceConfiguration.isPreserveHttpHeader(PassThroughConstants.ORGINAL_CONTEN_LENGTH)) {
             sourceResponse.addHeader(PassThroughConstants.ORGINAL_CONTEN_LENGTH, (String) msgContext.getProperty
                     (PassThroughConstants.ORGINAL_CONTEN_LENGTH));
         }
 
         if (transportHeaders != null && msgContext.getProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE) != null) {
             if (msgContext.getProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE) != null
-                    && msgContext.getProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE).toString().contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
+                && msgContext.getProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE).toString()
+                .contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)
+                && !sourceConfiguration.isPreserveHttpHeader(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE)) {
                 transportHeaders.put(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE, PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED);
             } else {
                 Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-                if (pipe != null && !Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
+                if (pipe != null && !Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))
+                        && !sourceConfiguration.isPreserveHttpHeader(HTTP.CONTENT_TYPE)) {
                     transportHeaders.put(HTTP.CONTENT_TYPE, msgContext.getProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE));
                 }
             }
@@ -100,7 +105,8 @@ public class SourceResponseFactory {
         		 transportHeaders = new HashMap();
             	 MessageFormatter messageFormatter =
                      MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
-            	 if(msgContext.getProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE) == null){
+            	 if(msgContext.getProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE) == null
+                         && !sourceConfiguration.isPreserveHttpHeader(HTTP.CONTENT_TYPE)){
             	    transportHeaders.put(HTTP.CONTENT_TYPE, messageFormatter.getContentType(msgContext, format, msgContext.getSoapAction()));
             	 }
             	 addResponseHeader(sourceResponse, transportHeaders);
