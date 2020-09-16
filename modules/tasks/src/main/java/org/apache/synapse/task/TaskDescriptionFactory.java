@@ -166,7 +166,8 @@ public class TaskDescriptionFactory {
                     handleException("Trigger syntax error : " +
                             "both cron and simple trigger attributes are present");
                 } else if (expr != null && expr.getAttributeValue() != null) {
-                    taskDescription.setCronExpression(expr.getAttributeValue());
+                    taskDescription.setCronExpression(ResolverFactory.getInstance().
+                            getResolver(expr.getAttributeValue()).resolve());
                 }
 
             } else {
