@@ -210,7 +210,7 @@ public class TargetRequestFactory {
         //Need to avoid this for multipart headers, need to add MIME Boundary property
         if (trpHeaders != null && trpHeaders instanceof Map && ((Map) trpHeaders).
                 get(HTTPConstants.HEADER_CONTENT_TYPE) != null && (isContentTypePreservedHeader ||
-                "false".equals(setEncoding)) && !isMultipartContent
+                PassThroughConstants.VALUE_FALSE.equals(setEncoding)) && !isMultipartContent
                 (((Map) trpHeaders).get(HTTPConstants.HEADER_CONTENT_TYPE).toString())) {
             if (msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE) != null) {
                 return (String) msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE);

@@ -33,6 +33,7 @@ public class PassThroughConstants {
     public static final String CONNECTION_KEEP_ALIVE_TIME_OUT = "CONNECTION_KEEP_ALIVE_TIME_OUT";
 
     public static final String TRUE = "TRUE";
+    public static final String VALUE_FALSE = "false";
 
     public static final String FAULT_MESSAGE = "FAULT_MESSAGE"; // corresponds with BaseConstants
     public static final String FAULTS_AS_HTTP_200 = "FAULTS_AS_HTTP_200";
