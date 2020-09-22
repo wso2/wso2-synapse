@@ -68,8 +68,12 @@ public final class JsonStreamFormatter implements MessageFormatter {
         if (preserve) {
             messageContext.setProperty(JsonUtil.PRESERVE_JSON_STREAM, true);
         }
-        String contentType = getContentType(messageContext, format, messageContext.getSoapAction());
-        String encoding = BuilderUtil.getCharSetEncoding(contentType);
+
+        String encoding = "UTF-8";
+        if (format != null) {
+            encoding = format.getCharSetEncoding();
+        }
+
         JsonUtil.writeAsJson(messageContext, out, encoding);
         if (logger.isDebugEnabled()) {
             logger.debug("#writeTo. Wrote JSON payload to output stream. MessageID: " + messageContext.getMessageID());
