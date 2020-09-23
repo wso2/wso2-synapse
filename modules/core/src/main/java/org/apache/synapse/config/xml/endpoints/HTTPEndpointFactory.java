@@ -29,6 +29,10 @@ import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.HTTPEndpoint;
+import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
+import org.apache.synapse.endpoints.oauth.OAuthException;
+import org.apache.synapse.endpoints.oauth.OAuthHandler;
+import org.apache.synapse.endpoints.oauth.OAuthUtils;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.util.CommentListUtil;
 
@@ -59,16 +63,38 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
 
     @Override
     protected Endpoint createEndpoint(OMElement epConfig, boolean anonymousEndpoint, Properties properties) {
-        HTTPEndpoint httpEndpoint = new HTTPEndpoint();
-        OMAttribute name = epConfig.getAttribute(
+
+        OMAttribute nameAttr = epConfig.getAttribute(
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "name"));
 
-        if (name != null) {
-            httpEndpoint.setName(name.getAttributeValue());
+        String name = null;
+
+        if (nameAttr != null) {
+            name = nameAttr.getAttributeValue();
         }
 
         OMElement httpElement = epConfig.getFirstChildWithName(
                 new QName(SynapseConstants.SYNAPSE_NAMESPACE, "http"));
+
+        OAuthHandler handler = null;
+        try {
+            handler = OAuthUtils.getOAuthHandler(httpElement);
+        } catch (OAuthException e) {
+            handleException("Invalid OAuth configuration for endpoint " + name);
+        }
+
+        HTTPEndpoint httpEndpoint;
+
+        if (handler != null) {
+            httpEndpoint = new OAuthConfiguredHTTPEndpoint();
+            ((OAuthConfiguredHTTPEndpoint) httpEndpoint).setOauthHandler(handler);
+        } else {
+            httpEndpoint = new HTTPEndpoint();
+        }
+
+        if (name != null) {
+            httpEndpoint.setName(name);
+        }
 
         if (httpElement != null) {
             EndpointDefinition definition = createEndpointDefinition(httpElement);
@@ -111,7 +137,6 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
                               "Hence using the http method from incoming message");
                 }
             }
-
         }
 
         processProperties(httpEndpoint, epConfig);
