@@ -181,6 +181,11 @@ public class Source {
                         sourceNodeList.add((OMText)node);
                     }
                 }
+            } else if (o instanceof JsonElement) {
+                // Handling property with JSON type
+                String sourceStr = o.toString();
+                OMFactory fac = OMAbstractFactory.getOMFactory();
+                sourceNodeList.add(fac.createOMText(sourceStr));
             } else {
                 synLog.error("Invalid source property type.");
             }
