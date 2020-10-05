@@ -178,6 +178,8 @@ public final class SynapseConstants {
     public static final String SYNAPSE_VALIDATE_MEDIATOR_REDEPLOYMENT_CACHE_CLEAR =
             "synapse.clear.mediation.cache.on.validate.mediator.deployment";
 
+    // TO be used in JMS producer path to set the service logger name
+    public static final String SERVICE_LOGGER_NAME = "service.logger.name";
 
     // hidden service parameter
     public static final String HIDDEN_SERVICE_PARAM = "hiddenService";

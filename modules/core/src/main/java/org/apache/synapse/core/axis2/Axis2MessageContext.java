@@ -517,6 +517,11 @@ public class Axis2MessageContext implements MessageContext {
             // Added REST API service logger resolver to fix ESBJAVA-5216.
             if (serviceName == null) {
                 serviceName = (String) getProperty(RESTConstants.SYNAPSE_REST_API);
+                // Proxy name and API name has been removed from JMS producer.
+                // hence taking the service name from SERVICE_NAME property
+                if (serviceName == null) {
+                    serviceName = (String) getProperty(SynapseConstants.SERVICE_LOGGER_NAME);
+                }
             }
             if (serviceName != null && synCfg.getProxyService(serviceName) != null) {
                 serviceLoggerName = SynapseConstants.SERVICE_LOGGER_PREFIX + serviceName;
