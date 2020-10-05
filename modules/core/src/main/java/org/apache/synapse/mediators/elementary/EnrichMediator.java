@@ -123,7 +123,11 @@ public class EnrichMediator extends AbstractMediator {
         */
         boolean isSourcePropertyXML = false;
         Object sourceProperty = synCtx.getProperty(source.getProperty());
-        if (sourceProperty instanceof OMElement) {
+        if (sourceProperty instanceof JsonElement) {
+            // Handle JSON type property values
+            sourcePropertyJson = (JsonElement) sourceProperty;
+            isSourcePropertyXML = false;
+        } else if (sourceProperty instanceof OMElement) {
             isSourcePropertyXML = true;
         } else if (sourceProperty instanceof ArrayList) {
             for (Object node : (ArrayList) sourceProperty) {

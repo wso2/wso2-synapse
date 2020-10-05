@@ -19,6 +19,9 @@
 
 package org.apache.synapse.mediators.builtin;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import org.apache.axis2.context.OperationContext;
 import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
@@ -427,6 +430,7 @@ public class PropertyMediator extends AbstractMediator {
                 case LONG       : return Long.parseLong(value);
                 case OM         : return buildOMElement(value);
                 case SHORT      : return Short.parseShort(value);
+                case JSON       : return buildJSONElement(value);
                 default         : return value;
             }
         } catch (IllegalArgumentException e) {
@@ -513,6 +517,16 @@ public class PropertyMediator extends AbstractMediator {
         OMElement result = SynapseConfigUtils.stringToOM(xml);
         result.buildWithAttachments();
         return result;
+    }
+
+    private JsonElement buildJSONElement(String jsonPayload) {
+        JsonParser jsonParser = new JsonParser();
+        try {
+            return jsonParser.parse(jsonPayload);
+        } catch (JsonSyntaxException ex) {
+            log.error("Malformed JSON payload : " + jsonPayload, ex);
+            return null;
+        }
     }
 
     @Override public String getMediatorName() {
