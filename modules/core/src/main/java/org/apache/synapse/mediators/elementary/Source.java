@@ -75,13 +75,13 @@ public class Source {
 
     private OMNode inlineOMNode = null;
 
-    private OMNode initialInlineOMNode = null;
-
     private String inlineKey = null;
 
     private static final Log log = LogFactory.getLog(Source.class);
 
-    public ArrayList<OMNode> evaluate(MessageContext synCtx, SynapseLog synLog)
+    private boolean containsInlineExpressions = false;
+
+    public ArrayList<OMNode> evaluate(MessageContext synCtx, SynapseLog synLog, OMNode inlineOMNodeWithValues)
             throws JaxenException {
 
         ArrayList<OMNode> sourceNodeList = new ArrayList<OMNode>();
@@ -196,7 +196,12 @@ public class Source {
             }
         } else if (sourceType == EnrichMediator.INLINE) {
             if (inlineOMNode instanceof OMElement) {
-                OMElement inlineOMElement = (OMElement) inlineOMNode;
+                OMElement inlineOMElement;
+                if (containsInlineExpressions) {
+                    inlineOMElement = (OMElement) inlineOMNodeWithValues;
+                } else {
+                    inlineOMElement = (OMElement) inlineOMNode;
+                }
                 if (inlineOMElement.getQName().getLocalPart().equals("Envelope")) {
                     SOAPEnvelope soapEnvelope = getSOAPEnvFromOM(inlineOMElement);
                     if (soapEnvelope != null) {
@@ -208,7 +213,11 @@ public class Source {
                     sourceNodeList.add(inlineOMElement.cloneOMElement());
                 }
             } else if (inlineOMNode instanceof OMText) {
-                sourceNodeList.add(inlineOMNode);
+                if (containsInlineExpressions) {
+                    sourceNodeList.add(inlineOMNodeWithValues);
+                } else {
+                    sourceNodeList.add(inlineOMNode);
+                }
             } else if (inlineKey != null) {
                 Object inlineObj = synCtx.getEntry(inlineKey);
                 if (inlineObj instanceof OMElement) {
@@ -232,12 +241,6 @@ public class Source {
                 }
             } else {
                 synLog.error("Inline Source Content is not valid.");
-            }
-            // If the initialInlineOMNode is not null, it means that inline OM Node has been overridden with the
-            // inline string containing resolved dynamic values. Therefore, we should set the initial OM Node back
-            // which contains the original inline value
-            if (initialInlineOMNode != null) {
-                this.inlineOMNode = initialInlineOMNode;
             }
         }
         return sourceNodeList;
@@ -263,12 +266,14 @@ public class Source {
      * @param synCtx - Current Message Context
      * @param synLog - Default Logger for the package
      * @param sourcePropertyJson Parsed Json element
+     * @param inlineOMNodeWithValues Inline OM Node with values if there are dynamic expressions
      * @return A HashMap with the following keys: <br/>
      * [1] "errorsExistInSrcTag" - holds either true or false <br/>
      * [2] "evaluatedSrcJsonElement" - holds the evaluated Json Element as an Object
      */
     public JsonElement evaluateJson(MessageContext synCtx, SynapseLog synLog,
-                                    JsonElement sourcePropertyJson) throws JaxenException {
+                                    JsonElement sourcePropertyJson, OMNode inlineOMNodeWithValues)
+            throws JaxenException{
         JsonElement object = null;
         String jsonPath = null;
         JsonParser parser = new JsonParser();
@@ -322,7 +327,11 @@ public class Source {
                 assert inlineOMNode != null
                         || inlineKey != null : "inlineJSONNode or key shouldn't be null when type is INLINE";
                 if (inlineOMNode instanceof OMText) {
-                    object = JsonPath.parse(((OMTextImpl) inlineOMNode).getText()).json();
+                    if (containsInlineExpressions()) {
+                        object = JsonPath.parse(((OMTextImpl) inlineOMNodeWithValues).getText()).json();
+                    } else {
+                        object = JsonPath.parse(((OMTextImpl) inlineOMNode).getText()).json();
+                    }
                 } else if (inlineKey != null && !inlineKey.trim().equals("")) {
                     Object inlineObj = synCtx.getEntry(inlineKey);
                     if ((inlineObj instanceof String) && !(((String) inlineObj).trim().equals(""))) {
@@ -333,12 +342,6 @@ public class Source {
                 } else {
                     synLog.error("Source failed to get inline JSON" + "inlineJSONNode=" + inlineOMNode + ", inlineKey="
                             + inlineKey);
-                }
-                // If the initialInlineOMNode is not null, it means that inline OM Node has been overridden with the
-                // inline string containing resolved dynamic values. Therefore, we should set the initial OM Node back
-                // which contains the original inline value
-                if (initialInlineOMNode != null) {
-                    this.inlineOMNode = initialInlineOMNode;
                 }
                 break;
             }
@@ -407,14 +410,14 @@ public class Source {
         this.inlineKey = inlineKey;
     }
 
-    public OMNode getInitialInlineOMNode() {
+    public boolean containsInlineExpressions() {
 
-        return initialInlineOMNode;
+        return containsInlineExpressions;
     }
 
-    public void setInitialInlineOMNode(OMNode inlineOMNodeWithExpressions) {
+    public void setContainsInlineExpressions(boolean containsInlineExpressions) {
 
-        this.initialInlineOMNode = inlineOMNodeWithExpressions;
+        this.containsInlineExpressions = containsInlineExpressions;
     }
 }
 
