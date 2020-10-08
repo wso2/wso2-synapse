@@ -524,8 +524,16 @@ public class PropertyMediator extends AbstractMediator {
         try {
             return jsonParser.parse(jsonPayload);
         } catch (JsonSyntaxException ex) {
-            log.error("Malformed JSON payload : " + jsonPayload, ex);
-            return null;
+            // Enclosing using quotes due to the following issue
+            // https://github.com/google/gson/issues/1286
+            String enclosed = "\"" + jsonPayload + "\"";
+            try {
+                return jsonParser.parse(enclosed);
+            } catch (JsonSyntaxException e) {
+                // log the original exception and discard the new exception
+                log.error("Malformed JSON payload : " + jsonPayload, ex);
+                return null;
+            }
         }
     }
 
