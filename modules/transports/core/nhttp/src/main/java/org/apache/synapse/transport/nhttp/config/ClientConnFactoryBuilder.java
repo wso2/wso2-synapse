@@ -451,8 +451,8 @@ public class ClientConnFactoryBuilder {
 
             String location = trustStoreElt.getFirstChildWithName(new QName("Location")).getText();
             String type = trustStoreElt.getFirstChildWithName(new QName("Type")).getText();
-            String storePassword = getSecureVaultValue(secretResolver, trustStoreElt.getFirstChildWithName(new QName
-                    ("Password")));
+            String storePassword = SecureVaultValueReader
+                    .getSecureVaultValue(secretResolver, trustStoreElt.getFirstChildWithName(new QName("Password")));
        
             try (FileInputStream fis = new FileInputStream(location)) {
                 KeyStore trustStore = KeyStore.getInstance(type);
@@ -546,18 +546,5 @@ public class ClientConnFactoryBuilder {
             log.error("Exception - Could not load customSSLProfiles from file path: " + path, ex);
         }
         return null;
-    }
-
-    private String getSecureVaultValue(SecretResolver secretResolver, OMElement paramElement) {
-
-        String value = null;
-        if (paramElement != null) {
-            if (secretResolver == null) {
-                throw new SecureVaultException("Cannot resolve secret password because axis2 secret resolver " +
-                        "is null");
-            }
-            value = MiscellaneousUtil.resolve(paramElement, secretResolver);
-        }
-        return value;
     }
 }
