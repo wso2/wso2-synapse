@@ -96,14 +96,28 @@ public class ServerConnFactoryBuilder {
                final RevocationVerificationManager verificationManager,
                final String sslProtocol) throws AxisFault {
 
+        SecretResolver secretResolver;
+        if (configurationContext != null && configurationContext.getAxisConfiguration() != null) {
+            secretResolver = configurationContext.getAxisConfiguration().getSecretResolver();
+        } else {
+            secretResolver = SecretResolverFactory.create(keyStoreEl, false);
+        }
+
+        return createSSLContext(keyStoreEl, trustStoreEl, cientAuthEl, httpsProtocolsEl, preferredCiphersEl,
+                verificationManager, sslProtocol, secretResolver);
+    }
+
+    protected SSLContextDetails createSSLContext(
+            final OMElement keyStoreEl,
+            final OMElement trustStoreEl,
+            final OMElement cientAuthEl,
+            final OMElement httpsProtocolsEl,
+            final OMElement preferredCiphersEl,
+            final RevocationVerificationManager verificationManager,
+            final String sslProtocol, final SecretResolver secretResolver) throws AxisFault {
+
         KeyManager[] keymanagers  = null;
         TrustManager[] trustManagers = null;
-        SecretResolver resolver;
-        if (configurationContext != null && configurationContext.getAxisConfiguration() != null) {
-            resolver = configurationContext.getAxisConfiguration().getSecretResolver();
-        } else {
-            resolver = SecretResolverFactory.create(keyStoreEl, false);
-        }
 
         if (keyStoreEl != null) {
             String location      = getValueOfElementWithLocalName(keyStoreEl,"Location");
@@ -116,8 +130,8 @@ public class ServerConnFactoryBuilder {
             if (keyPasswordEl == null) {
                 throw new AxisFault("Cannot proceed because KeyPassword element is missing in KeyStore");
             }
-            String storePassword = SecureVaultValueReader.getSecureVaultValue(resolver, storePasswordEl);
-            String keyPassword   = SecureVaultValueReader.getSecureVaultValue(resolver, keyPasswordEl);
+            String storePassword = SecureVaultValueReader.getSecureVaultValue(secretResolver, storePasswordEl);
+            String keyPassword   = SecureVaultValueReader.getSecureVaultValue(secretResolver, keyPasswordEl);
 
             FileInputStream fis = null;
             try {
@@ -173,7 +187,7 @@ public class ServerConnFactoryBuilder {
             if (storePasswordEl == null) {
                 throw new AxisFault("Cannot proceed because Password element is missing in TrustStore");
             }
-            String storePassword = SecureVaultValueReader.getSecureVaultValue(resolver, storePasswordEl);
+            String storePassword = SecureVaultValueReader.getSecureVaultValue(secretResolver, storePasswordEl);
 
             FileInputStream fis = null;
             try {
@@ -250,10 +264,10 @@ public class ServerConnFactoryBuilder {
             SSLContext sslContext = SSLContext.getInstance(sslProtocolValue);
             sslContext.init(keymanagers, trustManagers, null);
 
-            ServerSSLSetupHandler sslSetupHandler =
-                       (clientAuth != null || httpsProtocols != null || preferredCiphers != null) ?
-                       new ServerSSLSetupHandler(clientAuth, httpsProtocols, verificationManager, preferredCiphers) :
-                               null;
+            ServerSSLSetupHandler sslSetupHandler = (clientAuth != null || httpsProtocols != null
+                    || preferredCiphers != null) ?
+                    new ServerSSLSetupHandler(clientAuth, httpsProtocols, verificationManager, preferredCiphers) :
+                    null;
 
             return new SSLContextDetails(sslContext, sslSetupHandler);
         } catch (GeneralSecurityException gse) {
@@ -295,8 +309,7 @@ public class ServerConnFactoryBuilder {
         }
 
         ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl, preferredCiphersEl,
-                revocationVerifier,
-                sslProtocol);
+                revocationVerifier, sslProtocol);
         return this;
     }
 
@@ -308,6 +321,7 @@ public class ServerConnFactoryBuilder {
 
         Parameter profileParam    = transportIn.getParameter("SSLProfiles");
         OMElement profilesEl = profileParam.getParameterElement();
+        SecretResolver secretResolver = SecretResolverFactory.create(profilesEl, true);
         Iterator<?> profiles = profilesEl.getChildrenWithName(new QName("profile"));
         while (profiles.hasNext()) {
             OMElement profileEl = (OMElement) profiles.next();
@@ -327,8 +341,7 @@ public class ServerConnFactoryBuilder {
             final Parameter sslpParameter = transportIn.getParameter("SSLProtocol");
             final String sslProtocol = sslpParameter != null ? sslpParameter.getValue().toString() : "TLS";
             SSLContextDetails ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl,
-                    preferredCiphersEl, null,
-                    sslProtocol);
+                    preferredCiphersEl, null, sslProtocol, secretResolver);
             if (sslByIPMap == null) {
                 sslByIPMap = new HashMap<InetSocketAddress, SSLContextDetails>();
             }
