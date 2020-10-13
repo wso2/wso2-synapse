@@ -71,6 +71,11 @@ public class RequestHandler implements Runnable {
             checkTransportPassThroughPortAvailability();
 
             String receivedData = readData();
+
+            SynapseConfiguration synapseConfiguration = UnitTestingExecutor.getExecuteInstance().
+                    getSynapseConfiguration();
+            synapseConfiguration.setProperty(Constants.IS_RUNNING_AS_UNIT_TEST, "true");
+
             SynapseTestCase synapseTestCases = preProcessingData(receivedData);
 
             if (synapseTestCases != null) {
@@ -145,7 +150,7 @@ public class RequestHandler implements Runnable {
             //configure the artifact if there are mock-services to append
             String exceptionWhileMocking = null;
             if (readMockServiceData.getMockServicesCount() > 0) {
-                exceptionWhileMocking = ConfigModifier.endPointModifier(readArtifactData, readMockServiceData);
+                exceptionWhileMocking = ConfigModifier.mockServiceLoader(readMockServiceData);
             }
 
             //check is there any error occurred while mocking endpoints if yes stop the testing and return the exception
@@ -217,6 +222,9 @@ public class RequestHandler implements Runnable {
 
         //undeploy all the deployed artifacts
         agent.artifactUndeployer();
+        ConfigModifier.unitTestMockEndpointMap.clear();
+        UnitTestingExecutor.getExecuteInstance().getSynapseConfiguration().
+                setProperty(Constants.IS_RUNNING_AS_UNIT_TEST, "false");
     }
 
     /**

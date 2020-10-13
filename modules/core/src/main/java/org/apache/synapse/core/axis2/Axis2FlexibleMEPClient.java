@@ -56,6 +56,7 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.MediatorPropertyUtils;
+import org.apache.synapse.unittest.ConfigModifier;
 import org.apache.synapse.util.MessageHelper;
 
 import java.util.Map;
@@ -71,6 +72,9 @@ import javax.xml.namespace.QName;
 public class Axis2FlexibleMEPClient {
 
     private static final Log log = LogFactory.getLog(Axis2FlexibleMEPClient.class);
+
+    private static final String SYNAPSE_TEST = "synapseTest";
+    private static final String TRUE = "true";
 
     /**
      * Based on the Axis2 client code. Sends the Axis2 Message context out and returns
@@ -426,6 +430,17 @@ public class Axis2FlexibleMEPClient {
                         axisOutMsgCtx.setTo(new EndpointReference(url));
                     }
                 }
+            }
+
+            String endPointName = endpoint.leafEndpoint.getName();
+            if (TRUE.equals(System.getProperty(SYNAPSE_TEST)) && (synapseOutMessageContext.getConfiguration().
+                    getProperty(org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST) != null &&
+                    synapseOutMessageContext.getConfiguration().getProperty
+                            (org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST).equals(TRUE)) &&
+                    (ConfigModifier.unitTestMockEndpointMap.containsKey(endPointName))) {
+                String endpointUrl = ConfigModifier.unitTestMockEndpointMap.get(endPointName).toString();
+
+                axisOutMsgCtx.getTo().setAddress(endpointUrl);
             }
 
             if (endpoint.isUseSeparateListener()) {

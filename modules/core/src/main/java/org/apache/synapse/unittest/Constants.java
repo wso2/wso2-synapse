@@ -149,4 +149,7 @@ public class Constants {
     static final String JSON_FORMAT = "JSON";
     static final String TEXT_FORMAT = "TEXT";
     static final String TEXT_NAMESPACE = "http://ws.apache.org/commons/ns/payload";
+
+    //synapse property constants
+    public static final String IS_RUNNING_AS_UNIT_TEST = "IS_RUNNING_AS_UNIT_TEST";
 }
