@@ -46,15 +46,7 @@ import org.apache.synapse.util.xpath.SynapseXPath;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.XMLReaderFactory;
 
-import javax.xml.namespace.QName;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLStreamException;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -65,11 +57,18 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.xml.namespace.QName;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLStreamException;
+
 public class PayloadFactoryMediator extends AbstractMediator {
     private Value formatKey = null;
     private boolean isFormatDynamic = false;
     private String formatRaw;
     private String mediaType = XML_TYPE;
+    private final static String REGEX_TYPE = "regex";
     private boolean escapeXmlChars = false;
     private final static String JSON_CONTENT_TYPE = "application/json";
     private final static String XML_CONTENT_TYPE  = "application/xml";
@@ -78,6 +77,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private final static String SOAP12_CONTENT_TYPE  = "application/soap+xml";
     private final static String JSON_TYPE = "json";
     private final static String XML_TYPE = "xml";
+    private static final Pattern validJsonNumber = Pattern.compile("^-?(0|([1-9]\\d*))(\\.\\d+)?([eE][+-]?\\d+)?$");
     private final static String TEXT_TYPE = "text";
     private final static String STRING_TYPE = "str";
     private final static QName TEXT_ELEMENT = new QName("http://ws.apache.org/commons/ns/payload", "text");
@@ -92,16 +92,16 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private final static String ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\r";
     private final static String ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\t";
     public static final String QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON = "QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON";
-
-    private List<Argument> pathArgumentList = new ArrayList<Argument>();
-    private Pattern pattern = Pattern.compile("\\$(\\d)+");
-    private static Pattern validJsonNumber = Pattern.compile("^-?(0|([1-9]\\d*))(\\.\\d+)?([eE][+-]?\\d+)?$");
+    private final List<Argument> pathArgumentList = new ArrayList<Argument>();
+    private final Pattern pattern = Pattern.compile("\\$(\\d)+");
+    private String templateType = REGEX_TYPE;
 
     private static final Log log = LogFactory.getLog(PayloadFactoryMediator.class);
 
     /**
      * Contains 2 paths - one when JSON Streaming is in use (mediateJsonStreamPayload) and the other for regular
      * builders (mediatePayload).
+     *
      * @param synCtx the current message for mediation
      * @return
      */
@@ -285,7 +285,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 String matchSeq = matcher.group();
                 int argIndex;
                 try {
-                    argIndex = Integer.parseInt(matchSeq.substring(1, matchSeq.length()));
+                    argIndex = Integer.parseInt(matchSeq.substring(1));
                 } catch (NumberFormatException e) {
                     argIndex = Integer.parseInt(matchSeq.substring(2, matchSeq.length()-1));
                 }
@@ -564,11 +564,23 @@ public class PayloadFactoryMediator extends AbstractMediator {
     }
 
     public void addPathArgument(Argument arg) {
+
         pathArgumentList.add(arg);
     }
 
     public List<Argument> getPathArgumentList() {
+
         return pathArgumentList;
+    }
+
+    public String getTemplateType() {
+
+        return templateType;
+    }
+
+    public void setTemplateType(String templateType) {
+
+        this.templateType = templateType;
     }
 
     /**
@@ -578,13 +590,11 @@ public class PayloadFactoryMediator extends AbstractMediator {
      * @return
      */
     private boolean isXML(String value) {
+
         try {
             AXIOMUtil.stringToOM(value);
             value = value.trim();
-            if (!value.endsWith(">") || value.length() < 4) {
-                return false;
-            }
-            return true;
+            return value.endsWith(">") && value.length() >= 4;
         } catch (XMLStreamException ignore) {
             // means not a xml
             return false;

@@ -29,11 +29,12 @@ import org.apache.synapse.mediators.transform.PayloadFactoryMediator;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
-import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+
+import javax.xml.namespace.QName;
 
 public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
 
@@ -45,12 +46,16 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
     private static final QName ATT_LITERAL = new QName("literal");
 
     private static final QName TYPE_Q = new QName("media-type");// media-type attribute in payloadFactory
-    private static final QName ESCAPE_XML_CHARS_Q = new QName("escapeXmlChars");// escape xml chars attribute in payloadFactory
+    private static final QName TEMPLATE_Q = new QName("template-type");
+    private static final QName ESCAPE_XML_CHARS_Q = new QName("escapeXmlChars");
+// escape xml chars attribute in payloadFactory
 
-    private final String JSON_TYPE="json";
-    private final String XML_TYPE="xml";
-    private final String TEXT_TYPE="text";
+    private final String JSON_TYPE = "json";
+    private final String XML_TYPE = "xml";
+    private final String TEXT_TYPE = "text";
 
+    private final String REGEX_TEMPLATE = "regex";
+    private final String FREEMARKER_TEMPLATE = "freemarker";
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
@@ -58,14 +63,22 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
         processAuditStatus(payloadFactoryMediator, elem);
         String mediaTypeValue = elem.getAttributeValue(TYPE_Q);
         //for the backward compatibility.
-        if(mediaTypeValue != null) {
+        if (mediaTypeValue != null) {
             payloadFactoryMediator.setType(mediaTypeValue); //set the mediaType for the PF
         } else {
             payloadFactoryMediator.setType(XML_TYPE);
         }
 
+        String templateTypeValue = elem.getAttributeValue(TEMPLATE_Q);
+        if (templateTypeValue != null) {
+            payloadFactoryMediator.setTemplateType(templateTypeValue);
+        } else {
+            payloadFactoryMediator.setTemplateType(REGEX_TEMPLATE);
+        }
+
         boolean escapeXmlCharsValue = Boolean.parseBoolean(elem.getAttributeValue(ESCAPE_XML_CHARS_Q));
-        payloadFactoryMediator.setEscapeXmlChars(escapeXmlCharsValue); //set the escape xml chars in json payloads for the PF
+        payloadFactoryMediator
+                .setEscapeXmlChars(escapeXmlCharsValue); //set the escape xml chars in json payloads for the PF
 
         OMElement formatElem = elem.getFirstChildWithName(FORMAT_Q);
         if (formatElem != null) {
