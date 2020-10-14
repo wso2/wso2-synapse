@@ -25,9 +25,10 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.transform.Argument;
 import org.apache.synapse.mediators.transform.PayloadFactoryMediator;
 
+import java.util.List;
+
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
-import java.util.List;
 
 public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer {
 
@@ -107,7 +108,7 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
         }
 
         OMElement argumentsElem = fac.createOMElement(ARGS, synNS);
-        List<Argument> pathArgList = mediator.getPathArgumentList();
+        List<Argument> pathArgList = mediator.getTemplateProcessor().getPathArgumentList();
 
         if (null != pathArgList && pathArgList.size() > 0) {
 
