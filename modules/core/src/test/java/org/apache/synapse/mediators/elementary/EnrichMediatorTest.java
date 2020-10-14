@@ -20,10 +20,11 @@
 package org.apache.synapse.mediators.elementary;
 
 import junit.framework.TestCase;
-
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.mediators.TestUtils;
 import org.apache.synapse.mediators.transform.PayloadFactoryMediator;
+import org.apache.synapse.mediators.transform.pfutils.RegexTemplateProcessor;
+
 import java.util.ArrayList;
 
 public class EnrichMediatorTest extends TestCase {
@@ -49,22 +50,23 @@ public class EnrichMediatorTest extends TestCase {
 		enrichMediator1.mediate(msgCtxt1);
 
 		String expectedPropVal =
-		                         "<?xml version='1.0' encoding='utf-8'?>" +
-		                                 "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
-		                                 "<soapenv:Body>" + xml1 +
-		                                 "</soapenv:Body></soapenv:Envelope>";
+				"<?xml version='1.0' encoding='utf-8'?>" +
+						"<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+						"<soapenv:Body>" + xml1 +
+						"</soapenv:Body></soapenv:Envelope>";
 
 		// assert the property
 		assertEquals(expectedPropVal, ((ArrayList) msgCtxt1.getProperty(key)).get(0).toString());
 
 		PayloadFactoryMediator payloadFacMediator = new PayloadFactoryMediator();
+		payloadFacMediator.setTemplateProcessor(new RegexTemplateProcessor());
 		payloadFacMediator.setType("xml");
 		payloadFacMediator.setFormat(format);
 		payloadFacMediator.mediate(msgCtxt1);
 
 		String expectedPayload =
-		                         "<soapenv:Body xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
-		                                 format + "</soapenv:Body>";
+				"<soapenv:Body xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+						format + "</soapenv:Body>";
 		// assert the new payload
 		assertEquals(expectedPayload, msgCtxt1.getEnvelope().getBody().toString());
 
@@ -95,22 +97,23 @@ public class EnrichMediatorTest extends TestCase {
 		enrichMediator1.mediate(msgCtxt1);
 
 		String expectedPropVal =
-		                         "<?xml version='1.0' encoding='utf-8'?>" +
-		                                 "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
-		                                 "<soapenv:Body>" + xml1 +
-		                                 "</soapenv:Body></soapenv:Envelope>";
+				"<?xml version='1.0' encoding='utf-8'?>" +
+						"<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+						"<soapenv:Body>" + xml1 +
+						"</soapenv:Body></soapenv:Envelope>";
 
 		// assert the property
 		assertEquals(expectedPropVal, ((ArrayList) msgCtxt1.getProperty(key)).get(0).toString());
 
 		PayloadFactoryMediator payloadFacMediator = new PayloadFactoryMediator();
+		payloadFacMediator.setTemplateProcessor(new RegexTemplateProcessor());
 		payloadFacMediator.setType("xml");
 		payloadFacMediator.setFormat(format);
 		payloadFacMediator.mediate(msgCtxt1);
 
 		String expectedPayload =
-		                         "<soapenv:Body xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
-		                                 format + "</soapenv:Body>";
+				"<soapenv:Body xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+						format + "</soapenv:Body>";
 
 		// assert the new payload
 		assertEquals(expectedPayload, msgCtxt1.getEnvelope().getBody().toString());
