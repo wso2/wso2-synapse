@@ -38,6 +38,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 
+import static org.apache.synapse.mediators.transform.pfutils.Constants.FREEMARKER_TEMPLATE_TYPE;
 import static org.apache.synapse.mediators.transform.pfutils.Constants.JSON_TYPE;
 import static org.apache.synapse.mediators.transform.pfutils.Constants.TEXT_TYPE;
 import static org.apache.synapse.mediators.transform.pfutils.Constants.XML_TYPE;
@@ -52,16 +53,18 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
     private static final QName ATT_LITERAL = new QName("literal");
 
     private static final QName TYPE_Q = new QName("media-type");// media-type attribute in payloadFactory
-    private static final QName ESCAPE_XML_CHARS_Q = new QName("escapeXmlChars");// escape xml chars attribute in payloadFactory
+    private static final QName ESCAPE_XML_CHARS_Q = new QName("escapeXmlChars");
+// escape xml chars attribute in payloadFactory
+    private static final QName TEMPLATE_TYPE_Q = new QName("template-type");
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
         PayloadFactoryMediator payloadFactoryMediator = new PayloadFactoryMediator();
-        TemplateProcessor templateProcessor = getTemplateProcessor();
+        TemplateProcessor templateProcessor = getTemplateProcessor(elem);
         processAuditStatus(payloadFactoryMediator, elem);
         String mediaTypeValue = elem.getAttributeValue(TYPE_Q);
         //for the backward compatibility.
-        if(mediaTypeValue != null) {
+        if (mediaTypeValue != null) {
             payloadFactoryMediator.setType(mediaTypeValue); //set the mediaType for the PF
             templateProcessor.setMediaType(mediaTypeValue);
         } else {
@@ -80,7 +83,8 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                 OMElement copy = formatElem.cloneOMElement();
                 removeIndentations(copy);
 
-                if(mediaTypeValue != null && (mediaTypeValue.contains(JSON_TYPE) || mediaTypeValue.contains(TEXT_TYPE)))  {
+                if (mediaTypeValue != null &&
+                        (mediaTypeValue.contains(JSON_TYPE) || mediaTypeValue.contains(TEXT_TYPE))) {
                     String formatText = copy.getText();
                     payloadFactoryMediator.setFormat(formatText);
                     templateProcessor.setFormat(formatText);
@@ -155,7 +159,6 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                         }
                     }
 
-
                 } else {
                     handleException("Unsupported arg type. value or expression attribute required");
                 }
@@ -168,19 +171,16 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
         return payloadFactoryMediator;
     }
 
-    private TemplateProcessor getTemplateProcessor() { //TODO :: implement this after studio fixes
+    private TemplateProcessor getTemplateProcessor(OMElement elem) { 
 
-/*        TemplateProcessor templateProcessor;
-
-        String useFreeMarkerPropertyValue = properties.getProperty(USE_FREEMARKER_TEMPLATE_IN_PAYLOAD_FACTORY);
-        if (useFreeMarkerPropertyValue != null && useFreeMarkerPropertyValue.equalsIgnoreCase("true")) {
+        TemplateProcessor templateProcessor;
+        String templateTypeValue = elem.getAttributeValue(TEMPLATE_TYPE_Q);
+        if (templateTypeValue != null && templateTypeValue.equalsIgnoreCase(FREEMARKER_TEMPLATE_TYPE)) {
             templateProcessor = new FreeMarkerTemplateProcessor();
         } else {
             templateProcessor = new RegexTemplateProcessor();
         }
-        return templateProcessor;*/
-
-        return new RegexTemplateProcessor();
+        return templateProcessor;
     }
 
     public QName getTagQName() {
