@@ -1172,7 +1172,7 @@
               <groupId>javax.annotation</groupId>
               <artifactId>javax.annotation-api</artifactId>
               <version>${javax.annotation.verion}</version>
-          </dependency>
+           </dependency>
           <dependency>
               <groupId>org.freemarker</groupId>
               <artifactId>freemarker</artifactId>

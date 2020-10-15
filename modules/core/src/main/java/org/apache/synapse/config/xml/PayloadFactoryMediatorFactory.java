@@ -31,12 +31,11 @@ import org.apache.synapse.mediators.transform.pfutils.TemplateProcessor;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
+import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
-
-import javax.xml.namespace.QName;
 
 import static org.apache.synapse.mediators.transform.pfutils.Constants.JSON_TYPE;
 import static org.apache.synapse.mediators.transform.pfutils.Constants.TEXT_TYPE;
@@ -52,8 +51,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
     private static final QName ATT_LITERAL = new QName("literal");
 
     private static final QName TYPE_Q = new QName("media-type");// media-type attribute in payloadFactory
-    private static final QName ESCAPE_XML_CHARS_Q = new QName("escapeXmlChars");
-// escape xml chars attribute in payloadFactory
+    private static final QName ESCAPE_XML_CHARS_Q = new QName("escapeXmlChars");// escape xml chars attribute in payloadFactory
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
@@ -62,8 +60,8 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
         processAuditStatus(payloadFactoryMediator, elem);
         String mediaTypeValue = elem.getAttributeValue(TYPE_Q);
         //for the backward compatibility.
-        if (mediaTypeValue != null) {
-            payloadFactoryMediator.setType(mediaTypeValue);
+        if(mediaTypeValue != null) {
+            payloadFactoryMediator.setType(mediaTypeValue); //set the mediaType for the PF
             templateProcessor.setMediaType(mediaTypeValue);
         } else {
             payloadFactoryMediator.setType(XML_TYPE);
@@ -71,7 +69,6 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
         }
 
         boolean escapeXmlCharsValue = Boolean.parseBoolean(elem.getAttributeValue(ESCAPE_XML_CHARS_Q));
-//        payloadFactoryMediator.setEscapeXmlChars(escapeXmlCharsValue); //set the escape xml chars in json payloads for the PF
         templateProcessor.setEscapeXmlChars(escapeXmlCharsValue);
 
         OMElement formatElem = elem.getFirstChildWithName(FORMAT_Q);
@@ -82,8 +79,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                 OMElement copy = formatElem.cloneOMElement();
                 removeIndentations(copy);
 
-                if (mediaTypeValue != null &&
-                        (mediaTypeValue.contains(JSON_TYPE) || mediaTypeValue.contains(TEXT_TYPE))) {
+                if(mediaTypeValue != null && (mediaTypeValue.contains(JSON_TYPE) || mediaTypeValue.contains(TEXT_TYPE)))  {
                     String formatText = copy.getText();
                     payloadFactoryMediator.setFormat(formatText);
                     templateProcessor.setFormat(formatText);
@@ -114,6 +110,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                 Argument arg = new Argument();
                 String value;
 
+
                 boolean isLiteral = false;
                 String isLiteralString = argElem.getAttributeValue(ATT_LITERAL);
                 if (isLiteralString != null) {
@@ -126,7 +123,6 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                 if ((value = argElem.getAttributeValue(ATT_VALUE)) != null) {
                     arg.setValue(value);
                     arg.setExpression(null);
-//                    payloadFactoryMediator.addPathArgument(arg);
                     templateProcessor.addPathArgument(arg);
                 } else if ((value = argElem.getAttributeValue(ATT_EXPRN)) != null) {
                     if (value.trim().length() == 0) {
@@ -135,9 +131,9 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                         try {
                             //set the evaluator
                             String evaluator = argElem.getAttributeValue(ATT_EVAL);
-                            if (evaluator != null && evaluator.equals(JSON_TYPE)) {
-                                if (value.startsWith("json-eval(")) {
-                                    value = value.substring(10, value.length() - 1);
+                            if(evaluator != null && evaluator.equals(JSON_TYPE)){
+                                if(value.startsWith("json-eval(")) {
+                                    value = value.substring(10, value.length()-1);
                                 }
                                 arg.setExpression(SynapseJsonPathFactory.getSynapseJsonPath(value));
                                 // we have to explicitly define the path type since we are not going to mark
@@ -157,6 +153,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                                     value, e);
                         }
                     }
+
 
                 } else {
                     handleException("Unsupported arg type. value or expression attribute required");
@@ -186,12 +183,10 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
     }
 
     public QName getTagQName() {
-
         return PAYLOAD_FACTORY_Q;
     }
 
     private void removeIndentations(OMElement element) {
-
         List<OMText> removables = new ArrayList<OMText>();
         removeIndentations(element, removables);
         for (OMText node : removables) {
@@ -200,7 +195,6 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
     }
 
     private void removeIndentations(OMElement element, List<OMText> removables) {
-
         Iterator children = element.getChildren();
         while (children.hasNext()) {
             Object next = children.next();

@@ -42,17 +42,16 @@ public class PayloadFactoryMediatorTest extends TestCase {
             + " <xs:address xmlns:xs=\"http://ws.wso2.org/dataservice\">$4</xs:address>\n"
             + " </p:addCustomer>";
 
-    private static final String inputPayload =
-            "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n"
-                    + "   <soapenv:Header/>\n"
-                    + "   <soapenv:Body>\n"
-                    + "        <addCustomer>\n"
-                    + "            <name>Smith</name>\n"
-                    + "            <tpNumber>0834558649</tpNumber>\n"
-                    + "            <address>No. 456, Gregory Road, Los Angeles</address>\n"
-                    + "        </addCustomer>\n"
-                    + "   </soapenv:Body>\n"
-                    + "</soapenv:Envelope>  ";
+    private static String inputPayload = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n"
+            + "   <soapenv:Header/>\n"
+            + "   <soapenv:Body>\n"
+            + "        <addCustomer>\n"
+            + "            <name>Smith</name>\n"
+            + "            <tpNumber>0834558649</tpNumber>\n"
+            + "            <address>No. 456, Gregory Road, Los Angeles</address>\n"
+            + "        </addCustomer>\n"
+            + "   </soapenv:Body>\n"
+            + "</soapenv:Envelope>  ";
 
     /**
      * Test payloadFactory Mediator with static arguments set
