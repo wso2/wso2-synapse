@@ -27,6 +27,7 @@ import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.transform.Argument;
 import org.apache.synapse.mediators.transform.PayloadFactoryMediator;
 import org.apache.synapse.mediators.transform.pfutils.FreeMarkerTemplateProcessor;
+import org.apache.synapse.mediators.transform.pfutils.RegexTemplateProcessor;
 import org.apache.synapse.mediators.transform.pfutils.TemplateProcessor;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
@@ -179,7 +180,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
         }
         return templateProcessor;*/
 
-        return new FreeMarkerTemplateProcessor();
+        return new RegexTemplateProcessor();
     }
 
     public QName getTagQName() {
