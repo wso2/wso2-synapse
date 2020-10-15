@@ -20,7 +20,8 @@
 
 <synapseSample>
     <sampleID>19</sampleID>
-    <sampleName>Transforming / Replacing Message Content with PayloadFactory Mediator</sampleName>
+    <sampleName>Transforming / Replacing Message Content with PayloadFactory Mediator FreeMarker Template 
+        Engine</sampleName>
     <synapseConfig>
         <axis2Repo>modules/integration/target/test_repos/synapse</axis2Repo>
         <axis2Xml>modules/integration/target/test_repos/synapse/conf/axis2_def.xml</axis2Xml>
