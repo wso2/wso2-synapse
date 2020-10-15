@@ -22,7 +22,7 @@
     <sequence name="main">
         <in>
             <!-- using payloadFactory mediator FreeMarker templating engine to transform the request message -->
-            <payloadFactory media-type="xml">
+            <payloadFactory media-type="xml" template-type="freemarker">
                 <format>
                     <m:getQuote xmlns:m="http://services.samples">
                         <m:request>
@@ -37,7 +37,7 @@
         </in>
         <out>
             <!-- using payloadFactory mediator FreeMarker templating engine to transform the response message -->
-            <payloadFactory media-type="xml">
+            <payloadFactory media-type="xml" template-type="freemarker">
                 <format>
                     <m:CheckPriceResponse xmlns:m="http://services.samples/xsd">
                         <m:Code>${args.arg1}</m:Code>
