@@ -56,6 +56,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
     private static final QName ATT_TYPE = new QName("type");
     private static final QName ATT_CLONE = new QName("clone");
     private static final QName ATT_ACTION = new QName("action");
+    private static final QName ATT_KEY = new QName("key");
 
     public static final QName SOURCE_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "source");
     public static final QName TARGET_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "target");
@@ -65,6 +66,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
     public static final String ENVELOPE = "envelope";
     public static final String BODY = "body";
     public static final String INLINE = "inline";
+    public static final String KEY = "key";
 
     @Override
     protected Mediator createSpecificMediator(OMElement elem, Properties properties) {
@@ -250,6 +252,20 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
             } else {
                 handleException("xpath attribute is required for CUSTOM type");
             }
+        } else if (target.getTargetType() == EnrichMediator.KEY) {
+            OMAttribute xpathAttr = sourceEle.getAttribute(ATT_XPATH);
+            if (xpathAttr != null && xpathAttr.getAttributeValue() != null) {
+                try {
+                    target.setXpath(SynapsePathFactory.getSynapsePath(sourceEle, ATT_XPATH));
+                } catch (JaxenException e) {
+                    handleException("Invalid XPath expression: " + xpathAttr);
+                }
+                if (!target.getAction().equals(Target.ACTION_REPLACE)) {
+                    handleException("Only the replace action is supported for the target type 'key'.");
+                }
+            } else {
+                handleException("Xpath must be defined for the target type 'key'.");
+            }
         }
     }
 
@@ -264,6 +280,8 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
             return EnrichMediator.CUSTOM;
         } else if (type.equals(INLINE)) {
             return EnrichMediator.INLINE;
+        } else if (type.equals(KEY)) {
+            return EnrichMediator.KEY;
         }
         return -1;
     }

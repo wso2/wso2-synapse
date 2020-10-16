@@ -486,6 +486,25 @@ public class Target {
     }
 
     /**
+     * Renames a json key name at the specified json path with a new key name
+     *
+     * @param synapseContext Current message context
+     * @param jsonPath       The path to locate the key. Should be resolved to a map or an array including map items.
+     * @param keyName        Current name of the key
+     * @param newKeyName     New name of the key
+     * @throws IOException if failed to set the new json payload
+     */
+    public void renameKey(MessageContext synapseContext, String jsonPath, String keyName, String newKeyName)
+            throws IOException {
+
+        org.apache.axis2.context.MessageContext axis2MessageCtx =
+                ((Axis2MessageContext) synapseContext).getAxis2MessageContext();
+        String payload = JsonUtil.jsonPayloadToString(((Axis2MessageContext) synapseContext).getAxis2MessageContext());
+        DocumentContext doc = JsonPath.parse(payload).renameKey(jsonPath, keyName, newKeyName);
+        JsonUtil.getNewJsonPayload(axis2MessageCtx, doc.jsonString(), true, true);
+    }
+
+    /**
      * Set the enriched JSON result to body.
      * @param synapseContext Current message context.
      * @param synapseJsonPath   SynapseJsonPath instance of the target.
