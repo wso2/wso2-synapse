@@ -24,6 +24,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
+import com.jayway.jsonpath.PathNotFoundException;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.OMText;
@@ -35,8 +36,10 @@ import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.jaxen.JaxenException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 /**
@@ -150,18 +153,32 @@ public class EnrichMediator extends AbstractMediator {
 
         boolean hasJSONPayload = JsonUtil.hasAJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext());
         if (isNativeJsonSupportEnabled && hasJSONPayload && !isSourcePropertyXML) {
-            Object sourceNode;
-            try {
-                sourceNode = source.evaluateJson(synCtx, synLog, sourcePropertyJson);
-                if (sourceNode == null) {
-                    handleException("Failed to get the source for Enriching : ", synCtx);
-                } else {
-                    target.insertJson(synCtx, sourceNode, synLog);
+            // handling the remove action separately
+            if (target.getAction().equals("remove")) {
+                try {
+                    if (source.getXpath() != null && source.getXpath() instanceof SynapseJsonPath) {
+                        target.removeJson(synCtx, source.getXpath());
+                    } else {
+                        handleException("source Xpath is mandatory for the Remove action", synCtx);
+                    }
+                } catch (IOException | PathNotFoundException e) {
+                    handleException("Error occurred while executing the action : remove", e, synCtx);
                 }
-            } catch (JaxenException e) {
-                handleException("Failed to get the source for Enriching", e, synCtx);
+            } else {
+                Object sourceNode;
+                try {
+                    sourceNode = source.evaluateJson(synCtx, synLog, sourcePropertyJson);
+                    if (sourceNode == null) {
+                        handleException("Failed to get the source for Enriching : ", synCtx);
+                    } else {
+                        target.insertJson(synCtx, sourceNode, synLog);
+                    }
+                } catch (JaxenException e) {
+                    handleException("Failed to get the source for Enriching", e, synCtx);
+                }
             }
         } else {
+            // TODO implement target action "remove" for XML
             ArrayList<OMNode> sourceNodeList;
             try {
                 sourceNodeList = source.evaluate(synCtx, synLog);
