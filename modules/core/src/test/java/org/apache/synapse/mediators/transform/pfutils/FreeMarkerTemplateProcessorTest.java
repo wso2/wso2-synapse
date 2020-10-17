@@ -31,7 +31,7 @@ import java.util.Calendar;
 /**
  * Unit tests for FreeMarker Template Processor
  */
-public class FreeMarkerTemplateProcessorTest extends TestCase {
+public class FreeMarkerTemplateProcessorTest extends TestCase { //todo :: try to test property injection
 
     private static final String template = "<p:addCustomer xmlns:p=\"http://ws.wso2.org/dataservice\">\n" +
             " <xs:name xmlns:xs=\"http://ws.wso2.org/dataservice\">${args.arg1}</xs:name>\n" +
