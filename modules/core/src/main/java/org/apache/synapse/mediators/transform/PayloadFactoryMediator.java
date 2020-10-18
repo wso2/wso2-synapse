@@ -46,7 +46,15 @@ import org.apache.synapse.util.xpath.SynapseXPath;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLReaderFactory;
 
+import javax.xml.namespace.QName;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLStreamException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -57,18 +65,12 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.xml.namespace.QName;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLStreamException;
-
 public class PayloadFactoryMediator extends AbstractMediator {
     private Value formatKey = null;
     private boolean isFormatDynamic = false;
     private String formatRaw;
     private String mediaType = XML_TYPE;
-    private final static String REGEX_TYPE = "regex";
+    private final static String DEFAULT_TYPE = "default";
     private boolean escapeXmlChars = false;
     private final static String JSON_CONTENT_TYPE = "application/json";
     private final static String XML_CONTENT_TYPE  = "application/xml";
@@ -92,16 +94,16 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private final static String ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\r";
     private final static String ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\t";
     public static final String QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON = "QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON";
-    private final List<Argument> pathArgumentList = new ArrayList<Argument>();
-    private final Pattern pattern = Pattern.compile("\\$(\\d)+");
-    private String templateType = REGEX_TYPE;
+
+    private List<Argument> pathArgumentList = new ArrayList<Argument>();
+    private Pattern pattern = Pattern.compile("\\$(\\d)+");
+    private String templateType = DEFAULT_TYPE;
 
     private static final Log log = LogFactory.getLog(PayloadFactoryMediator.class);
 
     /**
      * Contains 2 paths - one when JSON Streaming is in use (mediateJsonStreamPayload) and the other for regular
      * builders (mediatePayload).
-     *
      * @param synCtx the current message for mediation
      * @return
      */
@@ -285,7 +287,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 String matchSeq = matcher.group();
                 int argIndex;
                 try {
-                    argIndex = Integer.parseInt(matchSeq.substring(1));
+                    argIndex = Integer.parseInt(matchSeq.substring(1, matchSeq.length()));
                 } catch (NumberFormatException e) {
                     argIndex = Integer.parseInt(matchSeq.substring(2, matchSeq.length()-1));
                 }
@@ -564,12 +566,10 @@ public class PayloadFactoryMediator extends AbstractMediator {
     }
 
     public void addPathArgument(Argument arg) {
-
         pathArgumentList.add(arg);
     }
 
     public List<Argument> getPathArgumentList() {
-
         return pathArgumentList;
     }
 
@@ -590,11 +590,13 @@ public class PayloadFactoryMediator extends AbstractMediator {
      * @return
      */
     private boolean isXML(String value) {
-
         try {
             AXIOMUtil.stringToOM(value);
             value = value.trim();
-            return value.endsWith(">") && value.length() >= 4;
+            if (!value.endsWith(">") || value.length() < 4) {
+                return false;
+            }
+            return true;
         } catch (XMLStreamException ignore) {
             // means not a xml
             return false;
