@@ -51,10 +51,16 @@ import org.jaxen.JaxenException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SynapseJsonPath extends SynapsePath {
 
     private static final Log log = LogFactory.getLog(SynapseJsonPath.class);
+
+    private static final String EXTRACT_PROP_REGEX = "^(\\$ctx|\\$trp|\\$axis2):([a-zA-Z0-9]+)";
+
+    private String propertyExpression;
 
     private String enableStreamingJsonPath = SynapsePropertiesLoader.loadSynapseProperties().
     getProperty(SynapseConstants.STREAMING_JSONPATH_PROCESSING);
@@ -94,7 +100,21 @@ public class SynapseJsonPath extends SynapsePath {
         EIPUtils.setJsonPathConfiguration();
 
         this.contentAware = true;
-        this.expression = jsonPathExpression;
+        // supporting evaluation against a property
+        // Ex: json-eval($ctx:prop1.student.name)
+        if (jsonPathExpression.startsWith("$ctx:") || jsonPathExpression.startsWith("$trp:") ||
+                jsonPathExpression.startsWith("$axis2:")) {
+            // pattern to extract the property
+            Pattern extractProp = Pattern.compile(EXTRACT_PROP_REGEX);
+            Matcher extractPropMatcher = extractProp.matcher(jsonPathExpression);
+            if (extractPropMatcher.find()) {
+                propertyExpression = extractPropMatcher.group(0);
+                expression = "$" + jsonPathExpression.substring(propertyExpression.length());
+            }
+        } else {
+            this.expression = jsonPathExpression;
+        }
+
         // Though SynapseJsonPath support "$.", the JSONPath implementation does not support it
         if (expression.endsWith(".")) {
             expression = expression.substring(0, expression.length() - 1);
@@ -120,6 +140,18 @@ public class SynapseJsonPath extends SynapsePath {
     }
 
     public String stringValueOf(MessageContext synCtx) {
+        // evaluating the jsonPath against a property
+        if (propertyExpression != null) {
+            try {
+                SynapseXPath xPath = new SynapseXPath(propertyExpression);
+                String result = xPath.stringValueOf(synCtx);
+                return stringValueOf(result);
+            } catch (JaxenException e) {
+                log.error("Xpath evaluation failed : " + propertyExpression, e);
+                return "";
+            }
+        }
+
         org.apache.axis2.context.MessageContext amc = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         InputStream stream;
         if (!JsonUtil.hasAJsonPayload(amc) || "true".equals(enableStreamingJsonPath)) {

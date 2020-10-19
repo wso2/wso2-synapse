@@ -19,6 +19,7 @@
 
 package org.apache.synapse.util.xpath;
 
+import com.google.gson.JsonElement;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
@@ -453,6 +454,10 @@ public class SynapseXPath extends SynapsePath {
                     } else if (o instanceof SynapseXPath) {
                         textValue.append(
                                 ((SynapseXPath) o).stringValueOf(synCtx));
+                    } else if (o instanceof JsonElement) {
+                        // Xpath evaluation can return a JSON Elements since property mediator
+                        // can store JSON payloads
+                        textValue.append(o.toString());
                     }
                 }
 
