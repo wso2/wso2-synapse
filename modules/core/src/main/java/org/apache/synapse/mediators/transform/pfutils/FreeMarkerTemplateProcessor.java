@@ -105,13 +105,29 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
             Writer out = new StringWriter();
             freeMarkerTemplate.process(data, out);
             return out.toString();
-        } catch (IOException | TemplateException e) {
-            handleException("Error parsing FreeMarking template"); // fixme:: ask for detailed log from e.mgs
+        } catch (IOException e) {
+            handleException("Error parsing FreeMarker template");
+        } catch (TemplateException e) {
+            handleException( generateTemplateErrorMessage(e)); 
         } catch (SAXException | ParserConfigurationException e) {
             handleException("Error reading payload data");
         }
 
         return "";
+    }
+
+    private String generateTemplateErrorMessage(TemplateException e) {
+
+        StringBuilder errorMessage = new StringBuilder();
+        errorMessage.append("Error parsing FreeMarker template \n");
+        errorMessage.append("Syntax error or invalid reference : ");
+        errorMessage.append(e.getBlamedExpressionString());
+        errorMessage.append(" At line: ");
+        errorMessage.append(e.getLineNumber());
+        errorMessage.append(" column: ");
+        errorMessage.append(e.getColumnNumber());
+        return errorMessage.toString();
+        
     }
 
     private void compileFreeMarkerTemplate(String templateString, String mediaType) {
@@ -122,9 +138,9 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
             }
 
             freeMarkerTemplate = new Template("synapse-template", templateString, cfg);
-            findRequiredInjections(templateString);
+//            findRequiredInjections(templateString);
         } catch (IOException e) {
-            handleException("Error parsing FreeMarking template : " + e.getMessage());
+            handleException("Error compiling FreeMarking template : " + e.getMessage());
         }
     }
 
@@ -305,14 +321,16 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
     private void injectCtxProperties(MessageContext synCtx, Map<String, Object> data) {
 
         Map<String, String> properties = new HashMap<>();
-        Set propertyKeys = synCtx.getPropertyKeySet(); // todo :: see next comment
-        for (Object propertyKey : propertyKeys) {
-            String propertyKeyString = propertyKey.toString();
-            Object propertyValue = synCtx.getProperty(propertyKeyString);
+        Map<String, Object> propertyMap = ((Axis2MessageContext) synCtx).getProperties();
+        
+        for (Map.Entry<String, Object> propertyEntry : propertyMap.entrySet()) {
+            String propertyKey = propertyEntry.getKey();
+            Object propertyValue = propertyEntry.getValue();
             if (propertyValue != null) {
-                properties.put(propertyKeyString, propertyValue.toString());
+                properties.put(propertyKey, propertyValue.toString());
             }
         }
+        
         data.put(CTX_PROPERTY_INJECTING_NAME, properties);
     }
 
@@ -321,8 +339,8 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
         Map<String, String> properties = new HashMap<>();
         org.apache.axis2.context.MessageContext axis2MessageContext
                 = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-        Iterator<String> propertyNames = axis2MessageContext.getPropertyNames(); // todo :: debug and see to get map
-        // .enty or something
+        Iterator<String> propertyNames = axis2MessageContext.getPropertyNames(); // note :: getProperties() in axis2 
+        // message context is deprecated 
         while (propertyNames.hasNext()) {
             String propertyName = propertyNames.next();
             Object propertyValue = axis2MessageContext.getProperty(propertyName);
@@ -340,13 +358,19 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
                 = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         Object headers = axis2MessageContext.getProperty(
                 org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        
         if (headers instanceof Map) {
             Map headersMap = (Map) headers;
-            for (Object propertyKey : headersMap.keySet()) {
-                Object propertyValue = headersMap.get(propertyKey);
-                if (propertyValue != null) {
-                    properties.put(propertyKey.toString(), propertyValue.toString());
+            for (Object propertyEntry : headersMap.entrySet()) {
+                if (propertyEntry instanceof Map.Entry) {
+                    Map.Entry entry = (Map.Entry) propertyEntry;
+                    String propertyKey = entry.getKey().toString();
+                    Object propertyValue = entry.getValue();
+                    if (propertyValue != null) {
+                        properties.put(propertyKey, propertyValue.toString());
+                    }
                 }
+
             }
         }
         data.put(TRANSPORT_PROPERTY_INJECTING_NAME, properties);

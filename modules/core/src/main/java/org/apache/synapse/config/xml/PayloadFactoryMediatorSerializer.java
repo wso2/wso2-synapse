@@ -40,6 +40,7 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
     private static final String EVALUATOR = "evaluator";
     private final String JSON_TYPE="json";
     private final String MEDIA_TYPE="media-type";
+    private final String TEMPLATE_TYPE="template-type";
     private final String ESCAPE_XML_CHARS="escapeXmlChars";
 
     private final String XML = "xml";
@@ -47,6 +48,7 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
     private final String TEXT = "text";
     private final String LITERAL = "literal";
 
+    private final String FREEMARKER = "freemarker";
     private String getEvaluator(String pathType) {
         if(pathType == SynapsePath.JSON_PATH) {
             return JSON;
@@ -70,6 +72,9 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
             payloadFactoryElem.addAttribute(fac.createOMAttribute(MEDIA_TYPE,null,mediator.getType()));
         }
 
+        if (mediator.getTemplateType() != null && mediator.getTemplateType().equalsIgnoreCase(FREEMARKER)) {
+            payloadFactoryElem.addAttribute(fac.createOMAttribute(TEMPLATE_TYPE, null, FREEMARKER));
+        }
         if (mediator.isEscapeXmlChars()) {
             payloadFactoryElem.addAttribute(fac.createOMAttribute(ESCAPE_XML_CHARS,null,
                     Boolean.toString(mediator.isEscapeXmlChars())));

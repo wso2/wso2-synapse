@@ -20,6 +20,7 @@ package org.apache.synapse.mediators.transform.pfutils;
 
 import junit.framework.TestCase;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.TestUtils;
 import org.apache.synapse.mediators.transform.Argument;
 import org.apache.synapse.mediators.transform.PayloadFactoryMediator;
@@ -27,11 +28,13 @@ import org.apache.synapse.util.xpath.SynapseXPath;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Unit tests for FreeMarker Template Processor
  */
-public class FreeMarkerTemplateProcessorTest extends TestCase { //todo :: try to test property injection
+public class FreeMarkerTemplateProcessorTest extends TestCase {
 
     private static final String template = "<p:addCustomer xmlns:p=\"http://ws.wso2.org/dataservice\">\n" +
             " <xs:name xmlns:xs=\"http://ws.wso2.org/dataservice\">${args.arg1}</xs:name>\n" +
@@ -328,6 +331,164 @@ public class FreeMarkerTemplateProcessorTest extends TestCase { //todo :: try to
 
         String expectedEnvelope =
                 "<soapenv:Body xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><jsonObject><text>hello</text></jsonObject></soapenv:Body>";
+
+        assertEquals("FreeMarker Template Processor has not "
+                + "set expected format", expectedEnvelope, synCtx.getEnvelope().getBody().toString());
+    }
+
+    /**
+     * Test FreeMarkerTemplateProcessor with ctx property injection
+     *
+     */
+    public void testWithCtxPropertyInjection() throws Exception {
+
+        final String propertyInjectionTemplate = "<p:addCustomer xmlns:p=\"http://ws.wso2.org/dataservice\">\n" +
+                " <xs:name xmlns:xs=\"http://ws.wso2.org/dataservice\">${ctx.name}</xs:name>\n" +
+                " <xs:request_time xmlns:xs=\"http://ws.wso2.org/dataservice\">${ctx" +
+                ".request_time}</xs:request_time>\n" +
+                " <xs:tp_number xmlns:xs=\"http://ws.wso2.org/dataservice\">${ctx.tp_number}</xs:tp_number>\n" +
+                " <xs:address xmlns:xs=\"http://ws.wso2.org/dataservice\">${ctx.address}</xs:address>\n" +
+                " </p:addCustomer>";
+
+        PayloadFactoryMediator payloadFactoryMediator = new PayloadFactoryMediator();
+        TemplateProcessor templateProcessor = new FreeMarkerTemplateProcessor();
+        payloadFactoryMediator.setFormat(propertyInjectionTemplate);
+        templateProcessor.setFormat(propertyInjectionTemplate);
+        templateProcessor.executePreProcessing();
+        payloadFactoryMediator.setTemplateProcessor(templateProcessor);
+
+        //do mediation
+        MessageContext synCtx = TestUtils.getAxis2MessageContext(inputPayload, null);
+        
+        synCtx.setProperty("name","Smith");
+        synCtx.setProperty("request_time",2021);
+        synCtx.setProperty("tp_number","0834558649");
+        synCtx.setProperty("address","No. 456, Gregory Road, Los Angeles");
+        
+        payloadFactoryMediator.mediate(synCtx);
+
+        String expectedEnvelope = "<soapenv:Body xmlns:soapenv=\"http://schemas.xmlsoap"
+                + ".org/soap/envelope/\"><p:addCustomer xmlns:p=\"http://ws.wso2.org/dataservice\">\n"
+                + " <xs:name xmlns:xs=\"http://ws.wso2.org/dataservice\">Smith</xs:name>\n"
+                + " <xs:request_time xmlns:xs=\"http://ws.wso2.org/dataservice\">"
+                + "2021" 
+                + "</xs:request_time>\n"
+                + " <xs:tp_number xmlns:xs=\"http://ws.wso2.org/dataservice\">0834558649</xs:tp_number>\n"
+                + " <xs:address xmlns:xs=\"http://ws.wso2.org/dataservice\">No. 456, Gregory Road, Los "
+                + "Angeles</xs:address>\n"
+                + " </p:addCustomer></soapenv:Body>";
+
+        assertEquals("FreeMarker Template Processor has not "
+                + "set expected format", expectedEnvelope, synCtx.getEnvelope().getBody().toString());
+    }
+    
+    
+    /**
+     * Test FreeMarkerTemplateProcessor with transport header property injection
+     *
+     */
+    public void testWithTransportHeaderPropertyInjection() throws Exception {
+
+        final String propertyInjectionTemplate = "<p:addCustomer xmlns:p=\"http://ws.wso2.org/dataservice\">\n" +
+                " <xs:name xmlns:xs=\"http://ws.wso2.org/dataservice\">${trp.name}</xs:name>\n" +
+                " <xs:request_time xmlns:xs=\"http://ws.wso2.org/dataservice\">${trp" +
+                ".request_time}</xs:request_time>\n" +
+                " <xs:tp_number xmlns:xs=\"http://ws.wso2.org/dataservice\">${trp.tp_number}</xs:tp_number>\n" +
+                " <xs:address xmlns:xs=\"http://ws.wso2.org/dataservice\">${trp.address}</xs:address>\n" +
+                " </p:addCustomer>";
+
+        PayloadFactoryMediator payloadFactoryMediator = new PayloadFactoryMediator();
+        TemplateProcessor templateProcessor = new FreeMarkerTemplateProcessor();
+        payloadFactoryMediator.setFormat(propertyInjectionTemplate);
+        templateProcessor.setFormat(propertyInjectionTemplate);
+        templateProcessor.executePreProcessing();
+        payloadFactoryMediator.setTemplateProcessor(templateProcessor);
+
+        //do mediation
+        MessageContext synCtx = TestUtils.getAxis2MessageContext(inputPayload, null);
+
+
+        Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+        org.apache.axis2.context.MessageContext axis2MessageCtx =
+                axis2smc.getAxis2MessageContext();
+        axis2MessageCtx.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, new HashMap<String
+                , Object>());
+        Object headers = axis2MessageCtx.getProperty(
+                org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+
+        if (headers instanceof Map) {
+            Map headersMap = (Map) headers;
+            headersMap.put("name","Smith");
+            headersMap.put("request_time",2021);
+            headersMap.put("tp_number","0834558649");
+            headersMap.put("address","No. 456, Gregory Road, Los Angeles");
+        }
+
+        
+        payloadFactoryMediator.mediate(synCtx);
+
+        String expectedEnvelope = "<soapenv:Body xmlns:soapenv=\"http://schemas.xmlsoap"
+                + ".org/soap/envelope/\"><p:addCustomer xmlns:p=\"http://ws.wso2.org/dataservice\">\n"
+                + " <xs:name xmlns:xs=\"http://ws.wso2.org/dataservice\">Smith</xs:name>\n"
+                + " <xs:request_time xmlns:xs=\"http://ws.wso2.org/dataservice\">"
+                + "2021" 
+                + "</xs:request_time>\n"
+                + " <xs:tp_number xmlns:xs=\"http://ws.wso2.org/dataservice\">0834558649</xs:tp_number>\n"
+                + " <xs:address xmlns:xs=\"http://ws.wso2.org/dataservice\">No. 456, Gregory Road, Los "
+                + "Angeles</xs:address>\n"
+                + " </p:addCustomer></soapenv:Body>";
+
+        assertEquals("FreeMarker Template Processor has not "
+                + "set expected format", expectedEnvelope, synCtx.getEnvelope().getBody().toString());
+    }  
+    
+    /**
+     * Test FreeMarkerTemplateProcessor with axis 2 property injection
+     *
+     */
+    public void testWithAxis2PropertyInjection() throws Exception {
+
+        final String propertyInjectionTemplate = "<p:addCustomer xmlns:p=\"http://ws.wso2.org/dataservice\">\n" +
+                " <xs:name xmlns:xs=\"http://ws.wso2.org/dataservice\">${axis2.name}</xs:name>\n" +
+                " <xs:request_time xmlns:xs=\"http://ws.wso2.org/dataservice\">${axis2" +
+                ".request_time}</xs:request_time>\n" +
+                " <xs:tp_number xmlns:xs=\"http://ws.wso2.org/dataservice\">${axis2.tp_number}</xs:tp_number>\n" +
+                " <xs:address xmlns:xs=\"http://ws.wso2.org/dataservice\">${axis2.address}</xs:address>\n" +
+                " </p:addCustomer>";
+
+        PayloadFactoryMediator payloadFactoryMediator = new PayloadFactoryMediator();
+        TemplateProcessor templateProcessor = new FreeMarkerTemplateProcessor();
+        payloadFactoryMediator.setFormat(propertyInjectionTemplate);
+        templateProcessor.setFormat(propertyInjectionTemplate);
+        templateProcessor.executePreProcessing();
+        payloadFactoryMediator.setTemplateProcessor(templateProcessor);
+
+        //do mediation
+        MessageContext synCtx = TestUtils.getAxis2MessageContext(inputPayload, null);
+
+
+        Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+        org.apache.axis2.context.MessageContext axis2MessageCtx =
+                axis2smc.getAxis2MessageContext();
+
+            axis2MessageCtx.setProperty("name","Smith");
+            axis2MessageCtx.setProperty("request_time",2021);
+            axis2MessageCtx.setProperty("tp_number","0834558649");
+            axis2MessageCtx.setProperty("address","No. 456, Gregory Road, Los Angeles");
+
+        
+        payloadFactoryMediator.mediate(synCtx);
+
+        String expectedEnvelope = "<soapenv:Body xmlns:soapenv=\"http://schemas.xmlsoap"
+                + ".org/soap/envelope/\"><p:addCustomer xmlns:p=\"http://ws.wso2.org/dataservice\">\n"
+                + " <xs:name xmlns:xs=\"http://ws.wso2.org/dataservice\">Smith</xs:name>\n"
+                + " <xs:request_time xmlns:xs=\"http://ws.wso2.org/dataservice\">"
+                + "2021" 
+                + "</xs:request_time>\n"
+                + " <xs:tp_number xmlns:xs=\"http://ws.wso2.org/dataservice\">0834558649</xs:tp_number>\n"
+                + " <xs:address xmlns:xs=\"http://ws.wso2.org/dataservice\">No. 456, Gregory Road, Los "
+                + "Angeles</xs:address>\n"
+                + " </p:addCustomer></soapenv:Body>";
 
         assertEquals("FreeMarker Template Processor has not "
                 + "set expected format", expectedEnvelope, synCtx.getEnvelope().getBody().toString());
