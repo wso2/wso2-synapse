@@ -122,6 +122,8 @@ public class EnrichMediatorSerializer extends AbstractMediatorSerializer {
             return EnrichMediatorFactory.PROPERTY;
         } else if (type == EnrichMediator.INLINE) {
             return EnrichMediatorFactory.INLINE;
+        }   else if (type == EnrichMediator.KEY) {
+            return EnrichMediatorFactory.KEY;
         }
         return null;
     }

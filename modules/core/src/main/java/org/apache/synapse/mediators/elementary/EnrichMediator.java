@@ -32,9 +32,9 @@ import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.OMText;
 import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.axiom.om.util.AXIOMUtil;
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.commons.json.Constants;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
@@ -92,6 +92,8 @@ public class EnrichMediator extends AbstractMediator {
     private boolean isNativeJsonSupportEnabled = false;
 
     private boolean containsInlineExpressions = false;
+
+    public static final String ACTION_REMOVE = "remove";
 
     public boolean mediate(MessageContext synCtx) {
 
@@ -196,10 +198,17 @@ public class EnrichMediator extends AbstractMediator {
         boolean hasJSONPayload = JsonUtil.hasAJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext());
         if (isNativeJsonSupportEnabled && hasJSONPayload && !isSourcePropertyXML && !isInlineTextXML) {
             // handling the remove action separately
-            if (target.getAction().equals("remove")) {
+            if (target.getAction().equals(ACTION_REMOVE)) {
                 try {
                     if (source.getXpath() != null && source.getXpath() instanceof SynapseJsonPath) {
-                        target.removeJson(synCtx, source.getXpath());
+                        if (target.getTargetType() == BODY) {
+                            target.removeJsonFromBody(synCtx, source.getXpath());
+                        } else if (target.getTargetType() == PROPERTY) {
+                            target.removeJsonFromProperty(synCtx, target.getProperty(), source.getXpath());
+                        } else {
+                            handleException("Target type " + target.getTargetType() + " is invalid for the remove " +
+                                    "action", synCtx);
+                        }
                     } else {
                         handleException("source Xpath is mandatory for the Remove action", synCtx);
                     }
