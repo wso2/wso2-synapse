@@ -138,8 +138,8 @@ public class SourceRequest {
 
                 // Update connection state
                 SourceContext.updateState(conn, ProtocolState.REQUEST_DONE);
-                // Suspend client input
-                conn.suspendInput();
+//                // Suspend client input
+//                conn.suspendInput();
             }
             return bytes;
         } else {
