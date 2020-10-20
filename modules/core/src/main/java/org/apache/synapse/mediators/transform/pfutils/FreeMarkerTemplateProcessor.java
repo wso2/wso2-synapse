@@ -25,6 +25,7 @@ import freemarker.core.InvalidReferenceException;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
+import freemarker.template.TemplateExceptionHandler;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.OMText;
@@ -77,6 +78,9 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
     public FreeMarkerTemplateProcessor() {
 
         cfg = new Configuration(Configuration.VERSION_2_3_30);
+        cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+        cfg.setLogTemplateExceptions(false);
+        
         gson = new Gson();
     }
 
@@ -118,15 +122,13 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
 
     private String generateTemplateErrorMessage(TemplateException e) {
 
-        StringBuilder errorMessage = new StringBuilder();
-        errorMessage.append("Error parsing FreeMarker template \n");
-        errorMessage.append("Syntax error or invalid reference : ");
-        errorMessage.append(e.getBlamedExpressionString());
-        errorMessage.append(" At line: ");
-        errorMessage.append(e.getLineNumber());
-        errorMessage.append(" column: ");
-        errorMessage.append(e.getColumnNumber());
-        return errorMessage.toString();
+        return "Error parsing FreeMarker template, " +
+                "Syntax error or invalid reference : " +
+                e.getBlamedExpressionString() +
+                " At line: " +
+                e.getLineNumber() +
+                " column: " +
+                e.getColumnNumber();
 
     }
 

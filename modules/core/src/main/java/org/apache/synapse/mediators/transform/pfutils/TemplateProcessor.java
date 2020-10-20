@@ -56,20 +56,20 @@ import static org.apache.synapse.mediators.transform.PayloadFactoryMediator.QUOT
 
 public abstract class TemplateProcessor {
 
-    protected final static String JSON_TYPE = "json";
-    protected final static String XML_TYPE = "xml";
-    protected final static String TEXT_TYPE = "text";
-    protected final static String STRING_TYPE = "str";
-    protected final static String ESCAPE_DOUBLE_QUOTE_WITH_FIVE_BACK_SLASHES = "\\\\\"";
-    protected final static String ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES = "\\\\\\\\\"";
-    protected final static String ESCAPE_BACK_SLASH_WITH_SIXTEEN_BACK_SLASHES = "\\\\\\\\\\\\\\\\";
-    protected final static String ESCAPE_DOLLAR_WITH_SIX_BACK_SLASHES = "\\\\\\$";
-    protected final static String ESCAPE_DOLLAR_WITH_TEN_BACK_SLASHES = "\\\\\\\\\\$";
-    protected final static String ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\b";
-    protected final static String ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\f";
-    protected final static String ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\n";
-    protected final static String ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\r";
-    protected final static String ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\t";
+    protected static final String JSON_TYPE = "json";
+    protected static final String XML_TYPE = "xml";
+    protected static final String TEXT_TYPE = "text";
+    protected static final String STRING_TYPE = "str";
+    protected static final String ESCAPE_DOUBLE_QUOTE_WITH_FIVE_BACK_SLASHES = "\\\\\"";
+    protected static final String ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES = "\\\\\\\\\"";
+    protected static final String ESCAPE_BACK_SLASH_WITH_SIXTEEN_BACK_SLASHES = "\\\\\\\\\\\\\\\\";
+    protected static final String ESCAPE_DOLLAR_WITH_SIX_BACK_SLASHES = "\\\\\\$";
+    protected static final String ESCAPE_DOLLAR_WITH_TEN_BACK_SLASHES = "\\\\\\\\\\$";
+    protected static final String ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\b";
+    protected static final String ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\f";
+    protected static final String ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\n";
+    protected static final String ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\r";
+    protected static final String ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\t";
     private static final Pattern validJsonNumber = Pattern.compile("^-?(0|([1-9]\\d*))(\\.\\d+)?([eE][+-]?\\d+)?$");
     private static final Log log = LogFactory.getLog(TemplateProcessor.class);
     protected final XMLInputFactory inputFactory = XMLInputFactory.newInstance();
@@ -99,7 +99,7 @@ public abstract class TemplateProcessor {
      * Goes through SynapsePath argument list, evaluating each by calling stringValueOf and returns a HashMap String, String
      * array where each item will contain a hash map with key "evaluated expression" and value "SynapsePath type".
      *
-     * @param synCtx
+     * @param synCtx MessageContext
      * @return
      */
     protected HashMap<String, ArgumentDetails>[] getArgValues(String mediaType, MessageContext synCtx) {

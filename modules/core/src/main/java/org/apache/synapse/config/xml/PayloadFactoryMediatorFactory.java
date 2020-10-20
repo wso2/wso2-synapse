@@ -188,7 +188,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
     }
 
     private void removeIndentations(OMElement element) {
-        List<OMText> removables = new ArrayList<OMText>();
+        List<OMText> removables = new ArrayList<>();
         removeIndentations(element, removables);
         for (OMText node : removables) {
             node.detach();

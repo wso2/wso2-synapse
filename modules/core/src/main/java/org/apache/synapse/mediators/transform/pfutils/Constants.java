@@ -21,21 +21,22 @@ package org.apache.synapse.mediators.transform.pfutils;
 
 public class Constants {
 
-    public final static int XML_PAYLOAD_TYPE = 0;
-    public final static int JSON_PAYLOAD_TYPE = 1;
-    public final static int TEXT_PAYLOAD_TYPE = 2;
-    public final static int NOT_SUPPORTING_PAYLOAD_TYPE = -1;
+    private Constants() {
 
-    public final static String REGEX_TEMPLATE_TYPE = "REGEX";
-    public final static String FREEMARKER_TEMPLATE_TYPE = "FREEMARKER";
+    }
 
-    public final static String PAYLOAD_INJECTING_NAME = "payload";
-    public final static String ARGS_INJECTING_NAME = "args";
-    public final static String ARGS_INJECTING_PREFIX = "arg";
-    public final static String CTX_PROPERTY_INJECTING_NAME = "ctx";
-    public final static String AXIS2_PROPERTY_INJECTING_NAME = "axis2";
-    public final static String TRANSPORT_PROPERTY_INJECTING_NAME = "trp";
-
+    public static final int XML_PAYLOAD_TYPE = 0;
+    public static final int JSON_PAYLOAD_TYPE = 1;
+    public static final int TEXT_PAYLOAD_TYPE = 2;
+    public static final int NOT_SUPPORTING_PAYLOAD_TYPE = -1;
+    public static final String REGEX_TEMPLATE_TYPE = "REGEX";
+    public static final String FREEMARKER_TEMPLATE_TYPE = "FREEMARKER";
+    public static final String PAYLOAD_INJECTING_NAME = "payload";
+    public static final String ARGS_INJECTING_NAME = "args";
+    public static final String ARGS_INJECTING_PREFIX = "arg";
+    public static final String CTX_PROPERTY_INJECTING_NAME = "ctx";
+    public static final String AXIS2_PROPERTY_INJECTING_NAME = "axis2";
+    public static final String TRANSPORT_PROPERTY_INJECTING_NAME = "trp";
     public static final String JSON_TYPE = "json";
     public static final String XML_TYPE = "xml";
     public static final String TEXT_TYPE = "text";

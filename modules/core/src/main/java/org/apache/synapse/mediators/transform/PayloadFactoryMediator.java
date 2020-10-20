@@ -64,15 +64,15 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private boolean isFormatDynamic = false;
     private String formatRaw;
     private String mediaType = XML_TYPE;
-    private final static String XML_CONTENT_TYPE = "application/xml";
+    private static final String XML_CONTENT_TYPE = "application/xml";
     private boolean escapeXmlChars = false;
     private final XMLInputFactory inputFactory = XMLInputFactory.newInstance();
-    private final static String JSON_CONTENT_TYPE = "application/json";
-    private final static String TEXT_CONTENT_TYPE = "text/plain";
-    private final static String SOAP11_CONTENT_TYPE = "text/xml";
-    private final static String SOAP12_CONTENT_TYPE = "application/soap+xml";
+    private static final String JSON_CONTENT_TYPE = "application/json";
+    private static final String TEXT_CONTENT_TYPE = "text/plain";
+    private static final String SOAP11_CONTENT_TYPE = "text/xml";
+    private static final String SOAP12_CONTENT_TYPE = "application/soap+xml";
     private String templateType = REGEX_TEMPLATE_TYPE;
-    private final static QName TEXT_ELEMENT = new QName("http://ws.apache.org/commons/ns/payload", "text");
+    private static final QName TEXT_ELEMENT = new QName("http://ws.apache.org/commons/ns/payload", "text");
     public static final String QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON = "QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON";
     private TemplateProcessor templateProcessor;
     private static final Log log = LogFactory.getLog(PayloadFactoryMediator.class);
@@ -91,10 +91,8 @@ public class PayloadFactoryMediator extends AbstractMediator {
      */
     public boolean mediate(MessageContext synCtx) {
 
-        if (synCtx.getEnvironment().isDebuggerEnabled()) {
-            if (super.divertMediationRoute(synCtx)) {
-                return true;
-            }
+        if (synCtx.getEnvironment().isDebuggerEnabled() && super.divertMediationRoute(synCtx)) {
+            return true;
         }
 
         String format = formatRaw;
@@ -109,7 +107,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
         }
         org.apache.axis2.context.MessageContext axis2MessageContext =
                 ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         transform(result, synCtx, format);
         String out = result.toString().trim();
         if (log.isDebugEnabled()) {
@@ -150,7 +148,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
      * @param synCtx
      * @param format
      */
-    private void transform(StringBuffer result, MessageContext synCtx, String format) {
+    private void transform(StringBuilder result, MessageContext synCtx, String format) {
 
         if (isFormatDynamic()) {
             String key = formatKey.evaluateValue(synCtx);
@@ -174,7 +172,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
         }
     }
 
-    private void processTemplate(StringBuffer result, MessageContext synCtx, String text, boolean isFormatDynamic) {
+    private void processTemplate(StringBuilder result, MessageContext synCtx, String text, boolean isFormatDynamic) {
 
         try {
             result.append(templateProcessor.processTemplate(text, mediaType, synCtx, isFormatDynamic));
@@ -255,7 +253,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
      */
     private void removeIndentations(OMElement element) {
 
-        List<OMText> removables = new ArrayList<OMText>();
+        List<OMText> removables = new ArrayList<>();
         removeIndentations(element, removables);
         for (OMText node : removables) {
             node.detach();
@@ -294,6 +292,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
         this.formatRaw = format;
     }
 
+    @Override
     public String getType() {
 
         return mediaType;
@@ -344,6 +343,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
         this.isFormatDynamic = formatDynamic;
     }
 
+    @Override
     public String getOutputType() {
 
         return mediaType;
