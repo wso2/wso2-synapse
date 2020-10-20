@@ -21,6 +21,7 @@ package org.apache.synapse.mediators.transform.pfutils;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import freemarker.core.InvalidReferenceException;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -194,9 +195,13 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
                 injectJsonPayload((Axis2MessageContext) messageContext, data);
             } else if (payloadType == TEXT_PAYLOAD_TYPE) {
                 injectTextPayload(messageContext, data);
+            }else{
+                data.put(PAYLOAD_INJECTING_NAME, "");
             }
         }
     }
+
+
 
     /**
      * Inject a JSON payload in the FreeMarker
@@ -385,7 +390,13 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
      */
     private int getPayloadType(MessageContext messageContext) {
 
-        int payloadType = PayloadHelper.getPayloadType(messageContext);
+        int payloadType = 0;
+        try {
+            payloadType = PayloadHelper.getPayloadType(messageContext);
+        } catch (NullPointerException e) {
+            return NOT_SUPPORTING_PAYLOAD_TYPE;
+        }
+        
         if (payloadType == PayloadHelper.XMLPAYLOADTYPE) {
             if (JsonUtil.hasAJsonPayload(((Axis2MessageContext) messageContext).getAxis2MessageContext())) {
                 return JSON_PAYLOAD_TYPE;
@@ -396,9 +407,7 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
             }
         } else if (payloadType == PayloadHelper.TEXTPAYLOADTYPE) {
             return TEXT_PAYLOAD_TYPE;
-        } else {
-            handleException("Invalid payload type. Supports only XML, JSON and TEXT payloads");
-        }
+        } 
 
         return NOT_SUPPORTING_PAYLOAD_TYPE;
     }
