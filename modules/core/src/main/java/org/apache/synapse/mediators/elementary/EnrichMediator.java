@@ -78,6 +78,8 @@ public class EnrichMediator extends AbstractMediator {
 
     public static final int INLINE = 4;
 
+    public static final int KEY = 5;
+
     private Source source = null;
 
     private Target target = null;
@@ -116,7 +118,11 @@ public class EnrichMediator extends AbstractMediator {
         */
         boolean isSourcePropertyXML = false;
         Object sourceProperty = synCtx.getProperty(source.getProperty());
-        if (sourceProperty instanceof OMElement) {
+        if (sourceProperty instanceof JsonElement) {
+            // Handle JSON type property values
+            sourcePropertyJson = (JsonElement) sourceProperty;
+            isSourcePropertyXML = false;
+        } else if (sourceProperty instanceof OMElement) {
             isSourcePropertyXML = true;
         } else if (sourceProperty instanceof ArrayList) {
             for (Object node : (ArrayList) sourceProperty) {
@@ -170,6 +176,26 @@ public class EnrichMediator extends AbstractMediator {
                     sourceNode = source.evaluateJson(synCtx, synLog, sourcePropertyJson);
                     if (sourceNode == null) {
                         handleException("Failed to get the source for Enriching : ", synCtx);
+                    } else if (target.getTargetType() == KEY) {
+                        try {
+                            if (sourceNode instanceof JsonPrimitive) {
+                                String jsonPathString = target.getXpath().toString();
+                                // removing "json-eval(" and extract only the expression
+                                jsonPathString = jsonPathString.substring(10, jsonPathString.length() - 1);
+                                // json-eval expression will contain the key name as the last token in the string
+                                // e.g.: $.user.name where name is the key name
+                                // and $.user is the json path to locate the key.
+                                int lastIndex = jsonPathString.lastIndexOf(".");
+                                String jsonPath = jsonPathString.substring(0, lastIndex);
+                                String keyName = jsonPathString.substring(lastIndex + 1);
+                                target.renameKey(synCtx, jsonPath, keyName, ((JsonPrimitive)sourceNode).getAsString());
+                            } else {
+                                handleException("Failed to get the new key name from source for Enriching. " +
+                                        "Key name must be a string.", synCtx);
+                            }
+                        } catch (IOException e) {
+                            handleException("Failed to rename the key.", e, synCtx);
+                        }
                     } else {
                         target.insertJson(synCtx, sourceNode, synLog);
                     }
