@@ -19,8 +19,10 @@
 package org.apache.synapse.endpoints;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.endpoints.oauth.OAuthException;
 import org.apache.synapse.endpoints.oauth.OAuthHandler;
+import org.apache.synapse.endpoints.oauth.OAuthUtils;
 
 /**
  * This class represents a http endpoint with oauth configured
@@ -33,17 +35,18 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
     @Override
     public void send(MessageContext synCtx) {
 
-        processOAuth(synCtx);
-        super.send(synCtx);
-    }
-
-    private void processOAuth(MessageContext synCtx) {
-
         try {
             oauthHandler.setOAuthHeader(synCtx);
         } catch (OAuthException e) {
             log.warn("Could not generate access token for endpoint " + this.getName() + " : " + e.getMessage());
+            OAuthUtils.sendOAuthFault(synCtx);
+            // If this a blocking call, add a null fault handler to break the mediator sequence
+            if (synCtx.getProperty(SynapseConstants.BLOCKING_MSG_SENDER) != null) {
+                synCtx.pushFaultHandler(null);
+            }
+            return;
         }
+        super.send(synCtx);
     }
 
     @Override
