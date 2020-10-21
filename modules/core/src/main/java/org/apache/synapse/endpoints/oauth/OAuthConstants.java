@@ -48,6 +48,9 @@ public class OAuthConstants {
     public static final String PARAM_CLIENT_SECRET = "&clientSecret=";
     public static final String PARAM_REFRESH_TOKEN = "&refresh_token=";
 
+    public static final String RETRIED_ON_OAUTH_FAILURE = "RETRIED_ON_OAUTH_FAILURE";
+
+    public static final int HTTP_SC_UNAUTHORIZED = 401;
     public static final int HTTP_SC_INTERNAL_SERVER_ERROR = 500;
 
     // Timeout in minutes to invalidate the tokens in the cache

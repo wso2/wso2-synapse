@@ -49,11 +49,12 @@ public class OAuthClient {
      *
      * @param tokenApiUrl The token url of the server
      * @param payload     The payload of the request
-     * @return Token object
-     * @throws OAuthException In the event of an unexpected HTTP status code from the server
+     * @return accessToken String
+     * @throws OAuthException In the event of an unexpected HTTP status code return from the server or access_token
+     *                        key missing in the response payload
      * @throws IOException    In the event of a problem parsing the response from the server
      */
-    public static Token generateToken(String tokenApiUrl, String payload, String credentials)
+    public static String generateToken(String tokenApiUrl, String payload, String credentials)
             throws OAuthException, IOException {
 
         if (log.isDebugEnabled()) {
@@ -76,11 +77,12 @@ public class OAuthClient {
      * Method to retrieve the token response sent from the server
      *
      * @param response CloseableHttpResponse object
-     * @return Token object containing the details retrieved from the server
-     * @throws OAuthException In the event of an unexpected HTTP status code from the server
+     * @return accessToken String
+     * @throws OAuthException In the event of an unexpected HTTP status code return from the server or access_token
+     *                        key missing in the response payload
      * @throws IOException    In the event of a problem parsing the response from the server
      */
-    private static Token extractToken(CloseableHttpResponse response) throws OAuthException, IOException {
+    private static String extractToken(CloseableHttpResponse response) throws OAuthException, IOException {
 
         int responseCode = response.getStatusLine().getStatusCode();
 
@@ -99,30 +101,15 @@ public class OAuthClient {
         }
 
         if (!(responseCode == HttpStatus.SC_OK)) {
-            throw new OAuthException(responseCode, "Error while accessing the Token URL. "
+            throw new OAuthException("Error while accessing the Token URL. "
                     + response.getStatusLine());
         }
 
         JsonParser parser = new JsonParser();
         JsonObject jsonResponse = (JsonObject) parser.parse(stringBuilder.toString());
-        Token token = new Token();
         if (jsonResponse.has(OAuthConstants.ACCESS_TOKEN)) {
-            token.setAccessToken(jsonResponse.get(OAuthConstants.ACCESS_TOKEN).getAsString());
-            if (jsonResponse.has(OAuthConstants.TOKEN_TYPE)) {
-                token.setTokenType(jsonResponse.get(OAuthConstants.TOKEN_TYPE).getAsString());
-            }
-            if (jsonResponse.has(OAuthConstants.EXPIRES_IN)) {
-                String expiresIn = jsonResponse.get(OAuthConstants.EXPIRES_IN).toString();
-                long currentTimeInSeconds = System.currentTimeMillis() / 1000;
-                long expiryTimeInSeconds = currentTimeInSeconds + Long.parseLong(expiresIn);
-                token.setValidTill(expiryTimeInSeconds);
-            }
+            return jsonResponse.get(OAuthConstants.ACCESS_TOKEN).getAsString();
         }
-
-        if (token.getAccessToken() != null) {
-            return token;
-        } else {
-            return null;
-        }
+        throw new OAuthException("Missing key [access_token] in the response from the OAuth server");
     }
 }

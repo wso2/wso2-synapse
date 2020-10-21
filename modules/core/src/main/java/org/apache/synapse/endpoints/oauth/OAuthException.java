@@ -23,26 +23,13 @@ package org.apache.synapse.endpoints.oauth;
  */
 public class OAuthException extends Exception {
 
-    private int errorCode;
-
-    public OAuthException(int errorCode, String message) {
-
-        super(message);
-        this.errorCode = errorCode;
-    }
-
     public OAuthException(String message) {
 
         super(message);
     }
 
-    public int getErrorCode() {
+    public OAuthException(Throwable e) {
 
-        return errorCode;
-    }
-
-    public void setErrorCode(int errorCode) {
-
-        this.errorCode = errorCode;
+        super(e);
     }
 }

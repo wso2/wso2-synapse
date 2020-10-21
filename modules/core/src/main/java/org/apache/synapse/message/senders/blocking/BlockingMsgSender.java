@@ -35,6 +35,7 @@ import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.wsdl.WSDLConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
@@ -48,8 +49,11 @@ import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.IndirectEndpoint;
+import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
 import org.apache.synapse.endpoints.ResolvingEndpoint;
 import org.apache.synapse.endpoints.TemplateEndpoint;
+import org.apache.synapse.endpoints.oauth.MessageCache;
+import org.apache.synapse.endpoints.oauth.OAuthUtils;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
 
@@ -438,6 +442,12 @@ public class BlockingMsgSender {
                 }
             }
         }
+
+        // get the original message context that went through the OAuth Configured HTTP endpoint
+        // this is used to retry the call when there is any oauth related issue
+        org.apache.synapse.MessageContext originalMC =
+                MessageCache.getInstance().removeMessageContext(synapseInMsgCtx.getMessageID());
+
         // Check fault occure when send the request to endpoint
         if ("true".equals(synapseInMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
             // Handle the fault
@@ -445,11 +455,28 @@ public class BlockingMsgSender {
                     (Exception) synapseInMsgCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
         } else {
             // If a message was successfully processed to give it a chance to clear up or reset its state to active
-            Stack faultStack = synapseInMsgCtx.getFaultStack();
+            Stack<FaultHandler> faultStack = synapseInMsgCtx.getFaultStack();
             if (faultStack != null && !faultStack.isEmpty()) {
+
+                AbstractEndpoint successfulEndpoint = null;
+
                 if (faultStack.peek() instanceof AbstractEndpoint) {
-                    ((AbstractEndpoint) synapseInMsgCtx.getFaultStack().pop()).onSuccess();
+                    successfulEndpoint = (AbstractEndpoint) faultStack.pop();
+                    successfulEndpoint.onSuccess();
                 }
+
+                if (successfulEndpoint instanceof OAuthConfiguredHTTPEndpoint) {
+
+                    OAuthConfiguredHTTPEndpoint httpEndpoint = (OAuthConfiguredHTTPEndpoint) successfulEndpoint;
+
+                    if (originalMC != null && OAuthUtils.retryOnOauthFailure(httpEndpoint, synapseInMsgCtx,
+                            synapseInMsgCtx)) {
+                        MessageContext messageContext = httpEndpoint.retryCallWithNewToken(originalMC);
+                        ((Axis2MessageContext) synapseInMsgCtx).setAxis2MessageContext(
+                                ((Axis2MessageContext) messageContext).getAxis2MessageContext());
+                    }
+                }
+
                 // Remove all endpoint related fault handlers if any
                 while (!faultStack.empty() && faultStack.peek() instanceof AbstractEndpoint) {
                     faultStack.pop();
