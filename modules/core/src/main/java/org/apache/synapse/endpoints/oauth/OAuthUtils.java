@@ -20,10 +20,20 @@ package org.apache.synapse.endpoints.oauth;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.util.UIDGenerator;
+import org.apache.axis2.Constants;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpHeaders;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.commons.resolvers.ResolverFactory;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.core.axis2.Axis2Sender;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
+
+import java.util.Map;
 
 import javax.xml.namespace.QName;
 
@@ -177,6 +187,31 @@ public class OAuthUtils {
 
         String uuid = UIDGenerator.generateUID();
         return OAuthConstants.OAUTH_PREFIX + uuid;
+    }
+
+    /**
+     * Send back the error to the client
+     *
+     * @param messageContext MessageContext of the request
+     */
+    public static void sendOAuthFault(MessageContext messageContext) {
+
+        org.apache.axis2.context.MessageContext axis2MC =
+                ((Axis2MessageContext) messageContext).getAxis2MessageContext();
+        JsonUtil.removeJsonPayload(axis2MC);
+
+        axis2MC.setProperty(PassThroughConstants.HTTP_SC, OAuthConstants.HTTP_SC_INTERNAL_SERVER_ERROR);
+
+        Map headers = (Map) axis2MC.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        String acceptType = (String) headers.get(HttpHeaders.ACCEPT);
+        if (!StringUtils.isEmpty(acceptType) && !acceptType.equals("*/*")) {
+            axis2MC.setProperty(Constants.Configuration.MESSAGE_TYPE, acceptType);
+        }
+
+        messageContext.setResponse(true);
+        messageContext.setTo(null);
+
+        Axis2Sender.sendBack(messageContext);
     }
 
 }
