@@ -53,22 +53,19 @@ public abstract class OAuthHandler {
      */
     public void setOAuthHeader(MessageContext messageContext) throws OAuthException {
 
-        Token token;
+        String token;
         try {
-            token = TokenCache.getInstance().getToken(id, new Callable<Token>() {
+            token = TokenCache.getInstance().getToken(id, new Callable<String>() {
                 @Override
-                public Token call() throws OAuthException, IOException {
+                public String call() throws OAuthException, IOException {
 
                     return OAuthClient.generateToken(tokenApiUrl, buildTokenRequestPayload(), getEncodedCredentials());
                 }
             });
         } catch (ExecutionException e) {
-            throw new OAuthException(OAuthConstants.HTTP_SC_INTERNAL_SERVER_ERROR, e.getMessage());
+            throw new OAuthException(e);
         }
-
-        if (token != null) {
-            setAuthorizationHeader(messageContext, token.getAccessToken());
-        }
+        setAuthorizationHeader(messageContext, token);
     }
 
     /**

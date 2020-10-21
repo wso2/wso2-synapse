@@ -50,7 +50,10 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.FailoverEndpoint;
+import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
+import org.apache.synapse.endpoints.oauth.MessageCache;
+import org.apache.synapse.endpoints.oauth.OAuthUtils;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
@@ -254,6 +257,11 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 concurrentAccessReplicator.replicate(throttleKey, true);
             }
         }
+
+        // get the original message context that went through the OAuth Configured HTTP endpoint
+        // this is used to retry the call when there is any oauth related issue
+        org.apache.synapse.MessageContext originalMC =
+                MessageCache.getInstance().removeMessageContext(synapseOutMsgCtx.getMessageID());
 
         Object o = response.getProperty(SynapseConstants.SENDING_FAULT);
         if (o != null && Boolean.TRUE.equals(o)) {
@@ -551,6 +559,17 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             for (Object key : synapseOutMsgCtx.getPropertyKeySet()) {
                 synapseInMessageContext.setProperty(
                         (String) key, synapseOutMsgCtx.getProperty((String) key));
+            }
+
+            if (successfulEndpoint instanceof OAuthConfiguredHTTPEndpoint) {
+
+                OAuthConfiguredHTTPEndpoint httpEndpoint = (OAuthConfiguredHTTPEndpoint) successfulEndpoint;
+
+                if (originalMC != null && OAuthUtils.retryOnOauthFailure(httpEndpoint, synapseInMessageContext,
+                        synapseOutMsgCtx)) {
+                    httpEndpoint.retryCallWithNewToken(originalMC);
+                    return;
+                }
             }
 
             // Copy SequenceCallStack from original MC to the new MC

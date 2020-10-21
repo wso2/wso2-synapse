@@ -31,6 +31,7 @@ import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
+import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 
 import java.util.Map;
@@ -187,6 +188,42 @@ public class OAuthUtils {
 
         String uuid = UIDGenerator.generateUID();
         return OAuthConstants.OAUTH_PREFIX + uuid;
+    }
+
+    /**
+     * Method to check whether retry is needed
+     *
+     * @param httpEndpoint     OAuth Configured HTTP Endpoint related to the message context
+     * @param synapseInMsgCtx  MessageContext that has been received
+     * @param synapseOutMsgCtx Corresponding outgoing Synapse MessageContext for the above received MessageContext
+     * @return true if the call needs to be retried
+     */
+    public static boolean retryOnOauthFailure(OAuthConfiguredHTTPEndpoint httpEndpoint, MessageContext synapseInMsgCtx,
+                                              MessageContext synapseOutMsgCtx) {
+
+        Boolean hasRetried = (Boolean) synapseOutMsgCtx.getProperty(OAuthConstants.RETRIED_ON_OAUTH_FAILURE);
+        if (hasRetried != null && hasRetried) {
+            return false;
+        }
+
+        org.apache.axis2.context.MessageContext axis2MessageContext =
+                ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext();
+
+        Object statusCode = axis2MessageContext.getProperty(PassThroughConstants.HTTP_SC);
+
+        if (statusCode != null) {
+            try {
+                int httpStatus =
+                        Integer.parseInt(axis2MessageContext.getProperty(PassThroughConstants.HTTP_SC).toString());
+                if (httpStatus == OAuthConstants.HTTP_SC_UNAUTHORIZED) {
+                    return true;
+                }
+            } catch (NumberFormatException e) {
+                log.warn("Unable to set the HTTP status code from the property " + PassThroughConstants.HTTP_SC
+                        + " with value: " + statusCode);
+            }
+        }
+        return false;
     }
 
     /**

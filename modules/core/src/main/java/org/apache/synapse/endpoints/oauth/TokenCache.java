@@ -33,7 +33,7 @@ public class TokenCache {
 
     private static final TokenCache instance = new TokenCache();
 
-    private final Cache<String, Token> tokenMap =
+    private final Cache<String, String> tokenMap =
             CacheBuilder.newBuilder().expireAfterWrite(OAuthConstants.TOKEN_CACHE_TIMEOUT, TimeUnit.MINUTES).build();
 
     private TokenCache() {
@@ -57,7 +57,7 @@ public class TokenCache {
      * @param callable to generate a new token by calling oauth server
      * @return Token object
      */
-    public Token getToken(String id, Callable<Token> callable) throws ExecutionException {
+    public String getToken(String id, Callable<String> callable) throws ExecutionException {
 
         return tokenMap.get(id, callable);
     }
