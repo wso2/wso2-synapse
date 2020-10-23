@@ -380,6 +380,9 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
             if (targetAction < 0) {
                 throw new SynapseException("Unexpected target action");
             }
+        } else {
+            // default action
+            targetAction = 0;
         }
 
         // validations for remove action
@@ -387,14 +390,14 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
             if (sourceType != 0) {
                 throw new SynapseException("Wrong combination of source type and target action");
             }
-            if (targetType == 0 || targetType == 1 || targetType == 4) {
+            if (targetType == 0 || targetType == 1) {
                 throw new SynapseException("Wrong combination of target type and target action");
             }
         }
 
         // validations for new "key" type
-        if (targetType == 4) {
-            if (sourceType == 2) {
+        if (targetType == 5) {
+            if (sourceType == 1 || sourceType ==2) {
                 throw new SynapseException("Wrong combination of source type and target type");
             }
             if (targetAction != 0) {

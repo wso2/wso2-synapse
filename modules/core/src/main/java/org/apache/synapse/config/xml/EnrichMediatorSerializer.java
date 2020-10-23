@@ -103,7 +103,7 @@ public class EnrichMediatorSerializer extends AbstractMediatorSerializer {
 
         if (target.getTargetType() == EnrichMediator.PROPERTY) {
             targetEle.addAttribute(fac.createOMAttribute("property", nullNS, target.getProperty()));
-        } else if (target.getTargetType() == EnrichMediator.CUSTOM) {
+        } else if (target.getTargetType() == EnrichMediator.CUSTOM || target.getTargetType() == EnrichMediator.KEY) {
             SynapsePathSerializer.serializePath(target.getXpath(), targetEle, "xpath");
         }
 
@@ -122,6 +122,8 @@ public class EnrichMediatorSerializer extends AbstractMediatorSerializer {
             return EnrichMediatorFactory.PROPERTY;
         } else if (type == EnrichMediator.INLINE) {
             return EnrichMediatorFactory.INLINE;
+        } else if (type == EnrichMediator.KEY) {
+            return EnrichMediatorFactory.KEY;
         }
         return null;
     }

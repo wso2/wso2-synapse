@@ -29,10 +29,9 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.OMText;
 import org.apache.axiom.om.impl.llom.OMTextImpl;
-import org.apache.axiom.om.util.AXIOMUtil;
-import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.commons.json.Constants;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
@@ -86,8 +85,6 @@ public class EnrichMediator extends AbstractMediator {
     private Target target = null;
 
     private boolean isNativeJsonSupportEnabled = false;
-
-    private boolean containsInlineExpressions = false;
 
     public static final String ACTION_REMOVE = "remove";
 
