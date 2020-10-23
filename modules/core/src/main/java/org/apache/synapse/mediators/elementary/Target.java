@@ -470,22 +470,51 @@ public class Target {
      * @param synCtx   message context.
      * @param jsonPath JSON-path expression to select the removing element.
      */
-    public void removeJson(MessageContext synCtx, SynapsePath jsonPath) throws IOException, PathNotFoundException {
-        SynapseJsonPath synapseJsonPath = (SynapseJsonPath) jsonPath;
+    public void removeJsonFromBody(MessageContext synCtx, SynapsePath jsonPath)
+            throws IOException, PathNotFoundException {
         Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
         org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
-        // handle complete removal of the message body.
+        String jsonString = IOUtils.toString(JsonUtil.getJsonPayload(axis2MessageCtx));
+        String result = removeJSONFromString(jsonString, jsonPath);
+        JsonUtil.getNewJsonPayload(axis2MessageCtx, result, true, true);
+    }
+
+    /**
+     * This method will remove all the matching elements of the given jsonPath from the JSON payload in the property
+     * and set the result back to the same property.
+     *
+     * @param synCtx   message context.
+     * @param property name of the property.
+     * @param jsonPath JSON-path expression to select the removing element.
+     */
+    public void removeJsonFromProperty(MessageContext synCtx, String property, SynapsePath jsonPath) {
+        Object propertyObject = synCtx.getProperty(property);
+        String propertyValue = "";
+        if (propertyObject instanceof String) {
+            propertyValue = (String) propertyObject;
+        } else if (propertyObject instanceof JsonElement) {
+            propertyValue = propertyObject.toString();
+        } else {
+            throw new SynapseException(
+                    "Cannot perform the remove operation. Data type of the property " + property + " is not string " +
+                            "| JSON");
+        }
+        String result = removeJSONFromString(propertyValue,jsonPath);
+        synCtx.setProperty(property,result);
+    }
+
+    //Given input sting and jsonPath expression this method will remove all the matching elements from the input string.
+    private String removeJSONFromString(String inputString, SynapsePath jsonPath) {
+        String result = inputString;
+        SynapseJsonPath synapseJsonPath = (SynapseJsonPath) jsonPath;
         String jsonPathString = synapseJsonPath.toString();
         // removing "json-eval(" and extract only the expression
         jsonPathString = jsonPathString.substring(10, jsonPathString.length() - 1);
-        // multi expression support ( accept comma separated list of JSON-path expressions )
         String[] jsonPathArray = jsonPathString.split(",");
-        String jsonString = IOUtils.toString(JsonUtil.getJsonPayload(axis2MessageCtx));
-        String result = jsonString;
         if (jsonPathArray.length > 0) {
             for (String path : jsonPathArray) {
+                // handle complete removal of the message body.
                 if (path.equals("$") || path.equals("$.")) {
-                    JsonUtil.getNewJsonPayload(axis2MessageCtx, "", true, true);
                     result = "";
                 } else {
                     DocumentContext doc = JsonPath.parse(result);
@@ -493,10 +522,9 @@ public class Target {
                     result = doc.jsonString();
                 }
             }
-            JsonUtil.getNewJsonPayload(axis2MessageCtx, result, true, true);
         }
+        return result;
     }
-
     /**
      * Renames a json key name at the specified json path with a new key name
      *
