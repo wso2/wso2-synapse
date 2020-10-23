@@ -84,19 +84,15 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
     }
 
     @Override
-    public void executePreProcessing() {
+    public void init() {
 
         compileFreeMarkerTemplate(getFormat(), getMediaType());
     }
 
     @Override
-    public String processTemplate(String templateString, String mediaType, MessageContext messageContext,
-                                  boolean isFormatDynamic) {
+    public String processTemplate( String template, String mediaType, MessageContext messageContext) {
 
         try {
-            if (isFormatDynamic) {
-                compileFreeMarkerTemplate(templateString, mediaType);
-            }
 
             Map<String, Object> data = new HashMap<>();
             int payloadType = getPayloadType(messageContext);
@@ -243,8 +239,7 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
     private void injectJsonObject(Map<String, Object> data, String jsonPayloadString) {
 
         Map<String, Object> map;
-        Type type = new TypeToken<Map<String, Object>>() {
-        }.getType();
+        Type type = new TypeToken<Map<String, Object>>() {}.getType();
         map = gson.fromJson(jsonPayloadString, type);
         data.put(PAYLOAD_INJECTING_NAME, map);
     }
@@ -409,10 +404,5 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
         }
 
         return NOT_SUPPORTING_PAYLOAD_TYPE;
-    }
-
-    private boolean isTextPayload(MessageContext mc) {
-
-        return PayloadHelper.getTextPayload(mc) != null;
     }
 }

@@ -35,7 +35,7 @@ public class RegexTemplateProcessor extends TemplateProcessor {
     private final Pattern pattern = Pattern.compile("\\$(\\d)+");
 
     @Override
-    public String processTemplate(String template, String mediaType, MessageContext synCtx, boolean isFormatDynamic) {
+    public String processTemplate(String template, String mediaType, MessageContext synCtx) {
 
         StringBuffer result = new StringBuffer();
         replace(template, result, mediaType, synCtx);
@@ -43,7 +43,7 @@ public class RegexTemplateProcessor extends TemplateProcessor {
     }
 
     @Override
-    public void executePreProcessing() {
+    public void init() {
         // nothing to do since no pre processing is needed
     }
 

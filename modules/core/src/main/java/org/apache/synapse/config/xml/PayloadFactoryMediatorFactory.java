@@ -166,7 +166,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
         }
 
         addAllCommentChildrenToList(elem, payloadFactoryMediator.getCommentsList());
-        templateProcessor.executePreProcessing();
+        templateProcessor.init();
         payloadFactoryMediator.setTemplateProcessor(templateProcessor);
         return payloadFactoryMediator;
     }

@@ -66,7 +66,7 @@ public class FreeMarkerTemplateProcessorTest extends TestCase {
         TemplateProcessor templateProcessor = new FreeMarkerTemplateProcessor();
         payloadFactoryMediator.setFormat(template);
         templateProcessor.setFormat(template);
-        templateProcessor.executePreProcessing();
+        templateProcessor.init();
         payloadFactoryMediator.setTemplateProcessor(templateProcessor);
 
         //prepare arguments
@@ -112,7 +112,7 @@ public class FreeMarkerTemplateProcessorTest extends TestCase {
         TemplateProcessor templateProcessor = new FreeMarkerTemplateProcessor();
         payloadFactoryMediator.setFormat(template);
         templateProcessor.setFormat(template);
-        templateProcessor.executePreProcessing();
+        templateProcessor.init();
         payloadFactoryMediator.setTemplateProcessor(templateProcessor);
 
         //prepare arguments
@@ -199,7 +199,7 @@ public class FreeMarkerTemplateProcessorTest extends TestCase {
         TemplateProcessor templateProcessor = new FreeMarkerTemplateProcessor();
         payloadFactoryMediator.setFormat(jsonToXmlTemplate);
         templateProcessor.setFormat(jsonToXmlTemplate);
-        templateProcessor.executePreProcessing();
+        templateProcessor.init();
         payloadFactoryMediator.setTemplateProcessor(templateProcessor);
 
         //do mediation
@@ -287,7 +287,7 @@ public class FreeMarkerTemplateProcessorTest extends TestCase {
         payloadFactoryMediator.setType("json");
         templateProcessor.setMediaType("json");
         templateProcessor.setFormat(xmlToJsonTemplate);
-        templateProcessor.executePreProcessing();
+        templateProcessor.init();
         payloadFactoryMediator.setTemplateProcessor(templateProcessor);
 
         //do mediation
@@ -322,7 +322,7 @@ public class FreeMarkerTemplateProcessorTest extends TestCase {
         payloadFactoryMediator.setType("json");
         templateProcessor.setMediaType("json");
         templateProcessor.setFormat(xmlToJsonTemplate);
-        templateProcessor.executePreProcessing();
+        templateProcessor.init();
         payloadFactoryMediator.setTemplateProcessor(templateProcessor);
 
         //do mediation
@@ -354,7 +354,7 @@ public class FreeMarkerTemplateProcessorTest extends TestCase {
         TemplateProcessor templateProcessor = new FreeMarkerTemplateProcessor();
         payloadFactoryMediator.setFormat(propertyInjectionTemplate);
         templateProcessor.setFormat(propertyInjectionTemplate);
-        templateProcessor.executePreProcessing();
+        templateProcessor.init();
         payloadFactoryMediator.setTemplateProcessor(templateProcessor);
 
         //do mediation
@@ -401,7 +401,7 @@ public class FreeMarkerTemplateProcessorTest extends TestCase {
         TemplateProcessor templateProcessor = new FreeMarkerTemplateProcessor();
         payloadFactoryMediator.setFormat(propertyInjectionTemplate);
         templateProcessor.setFormat(propertyInjectionTemplate);
-        templateProcessor.executePreProcessing();
+        templateProcessor.init();
         payloadFactoryMediator.setTemplateProcessor(templateProcessor);
 
         //do mediation
@@ -460,7 +460,7 @@ public class FreeMarkerTemplateProcessorTest extends TestCase {
         TemplateProcessor templateProcessor = new FreeMarkerTemplateProcessor();
         payloadFactoryMediator.setFormat(propertyInjectionTemplate);
         templateProcessor.setFormat(propertyInjectionTemplate);
-        templateProcessor.executePreProcessing();
+        templateProcessor.init();
         payloadFactoryMediator.setTemplateProcessor(templateProcessor);
 
         //do mediation

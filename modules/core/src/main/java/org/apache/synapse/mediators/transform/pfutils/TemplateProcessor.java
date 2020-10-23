@@ -84,16 +84,14 @@ public abstract class TemplateProcessor {
      * @param template        Template string
      * @param mediaType       Output media type
      * @param synCtx          MessageContext
-     * @param isFormatDynamic Is the template is dynamic
      * @return The processed output
      */
-    public abstract String processTemplate(String template, String mediaType, MessageContext synCtx,
-                                           boolean isFormatDynamic);
+    public abstract String processTemplate(String template, String mediaType, MessageContext synCtx);
 
     /**
      * Execute pre-processing steps if needed
      */
-    public abstract void executePreProcessing();
+    public abstract void init();
 
     /**
      * Goes through SynapsePath argument list, evaluating each by calling stringValueOf and returns a HashMap String, String
