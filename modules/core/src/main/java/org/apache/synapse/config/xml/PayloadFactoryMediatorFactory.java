@@ -52,7 +52,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
     private final String XML_TYPE="xml";
     private final String TEXT_TYPE="text";
 
-    private final String REGEX_TEMPLATE = "regex";
+    private final String REGEX_TEMPLATE = "default";
     private final String FREEMARKER_TEMPLATE = "freemarker";
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
@@ -88,7 +88,12 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                 if(mediaTypeValue != null && (mediaTypeValue.contains(JSON_TYPE) || mediaTypeValue.contains(TEXT_TYPE)))  {
                     payloadFactoryMediator.setFormat(copy.getText());
                 } else {
-                    payloadFactoryMediator.setFormat(copy.getFirstElement().toString());
+                    if (payloadFactoryMediator.getTemplateType().equalsIgnoreCase(FREEMARKER_TEMPLATE)) {
+                        payloadFactoryMediator.setFormat(PayloadFactoryMediatorSerializer.removeCDATAFromPayload(copy.getText()));
+                    }else{
+                        payloadFactoryMediator.setFormat(copy.getFirstElement().toString());
+                    }
+                   
                 }
             } else {
                 ValueFactory keyFac = new ValueFactory();
@@ -194,5 +199,6 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
             }
         }
     }
+
 
 }
