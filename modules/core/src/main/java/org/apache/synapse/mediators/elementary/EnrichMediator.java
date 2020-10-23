@@ -86,6 +86,8 @@ public class EnrichMediator extends AbstractMediator {
 
     private boolean isNativeJsonSupportEnabled = false;
 
+    public static final String ACTION_REMOVE = "remove";
+
     public boolean mediate(MessageContext synCtx) {
 
         if (synCtx.getEnvironment().isDebuggerEnabled()) {
@@ -151,8 +153,19 @@ public class EnrichMediator extends AbstractMediator {
                     isSourcePropertyXML = true;
                 }
             } catch (JsonSyntaxException e) {
-                synLog.traceOrDebug("Source string is not a valid json");
-                isSourcePropertyXML = true;
+                try {
+                    // Enclosing using quotes due to the following issue
+                    // https://github.com/google/gson/issues/1286
+                    String enclosedSourceProperty = "\"" + sourceProperty + "\"";
+                    sourcePropertyJson = jsonParser.parse(enclosedSourceProperty);
+                    if (!(sourcePropertyJson instanceof JsonObject || sourcePropertyJson instanceof JsonArray
+                            || sourcePropertyJson instanceof JsonPrimitive)) {
+                        isSourcePropertyXML = true;
+                    }
+                } catch (JsonSyntaxException ex) {
+                    synLog.traceOrDebug("Source string is not a valid json");
+                    isSourcePropertyXML = true;
+                }
             }
         }
 
@@ -160,10 +173,17 @@ public class EnrichMediator extends AbstractMediator {
         boolean hasJSONPayload = JsonUtil.hasAJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext());
         if (isNativeJsonSupportEnabled && hasJSONPayload && !isSourcePropertyXML) {
             // handling the remove action separately
-            if (target.getAction().equals("remove")) {
+            if (target.getAction().equals(ACTION_REMOVE)) {
                 try {
                     if (source.getXpath() != null && source.getXpath() instanceof SynapseJsonPath) {
-                        target.removeJson(synCtx, source.getXpath());
+                        if (target.getTargetType() == BODY) {
+                            target.removeJsonFromBody(synCtx, source.getXpath());
+                        } else if (target.getTargetType() == PROPERTY) {
+                            target.removeJsonFromProperty(synCtx, target.getProperty(), source.getXpath());
+                        } else {
+                            handleException("Target type " + target.getTargetType() + " is invalid for the remove " +
+                                    "action", synCtx);
+                        }
                     } else {
                         handleException("source Xpath is mandatory for the Remove action", synCtx);
                     }
