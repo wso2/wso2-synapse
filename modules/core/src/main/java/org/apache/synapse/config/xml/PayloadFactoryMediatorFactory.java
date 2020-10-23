@@ -89,9 +89,11 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                     payloadFactoryMediator.setFormat(formatText);
                     templateProcessor.setFormat(formatText);
                 } else {
-                    String formatText = copy.getFirstElement().toString();
-                    payloadFactoryMediator.setFormat(formatText);
-                    templateProcessor.setFormat(formatText);
+                    if (payloadFactoryMediator.getTemplateType().equalsIgnoreCase(FREEMARKER_TEMPLATE)) {
+                        payloadFactoryMediator.setFormat(PayloadFactoryMediatorSerializer.removeCDATAFromPayload(copy.getText()));
+                    }else{
+                        payloadFactoryMediator.setFormat(copy.getFirstElement().toString());
+                    }
                 }
             } else {
                 ValueFactory keyFac = new ValueFactory();

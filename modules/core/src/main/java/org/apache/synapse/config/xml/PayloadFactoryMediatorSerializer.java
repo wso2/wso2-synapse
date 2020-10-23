@@ -72,7 +72,7 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
             payloadFactoryElem.addAttribute(fac.createOMAttribute(MEDIA_TYPE,null,mediator.getType()));
         }
 
-        if (mediator.getTemplateType() != null && mediator.getTemplateType().equalsIgnoreCase(FREEMARKER)) {
+        if (isFreeMarkerTemplate(mediator)) {
             payloadFactoryElem.addAttribute(fac.createOMAttribute(TEMPLATE_TYPE, null, FREEMARKER));
         }
         if (mediator.isEscapeXmlChars()) {
@@ -91,7 +91,15 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
                 if(type!=null && (type.contains(JSON_TYPE) || type.contains(TEXT))) {
                      formatElem.setText(mediator.getFormat());
                 } else{
+                    if (isFreeMarkerTemplate(mediator)) {
+                        String formatString = mediator.getFormat();
+                        formatString = removeCDATAFromPayload(formatString);
+                        OMTextImpl omText = (OMTextImpl) formatElem.getOMFactory().createOMText(formatElem, formatString,
+                                XMLStreamConstants.CDATA);
+                        formatElem.addChild(omText);
+                    } else {    
                     formatElem.addChild(AXIOMUtil.stringToOM(mediator.getFormat()));
+                }
                 }
                     payloadFactoryElem.addChild(formatElem);
                 } catch (XMLStreamException e) {
@@ -153,8 +161,23 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
         return payloadFactoryElem;
     }
 
+    private boolean isFreeMarkerTemplate(PayloadFactoryMediator mediator) {
+
+        return mediator.getTemplateType() != null && mediator.getTemplateType().equalsIgnoreCase(FREEMARKER);
+    }
     public String getMediatorClassName() {
         return PayloadFactoryMediator.class.getName();
     }
 
+    public static String removeCDATAFromPayload(String inputPayload) {
+        if (inputPayload.startsWith("<![CDATA[")) {
+            inputPayload = inputPayload.substring(9);
+            int i = inputPayload.indexOf("]]>");
+            if (i == -1)
+                throw new IllegalStateException("argument starts with <![CDATA[ but cannot find pairing ]]>");
+            inputPayload = inputPayload.substring(0, i);
+        }
+
+        return inputPayload;
+    }
 }
