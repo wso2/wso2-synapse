@@ -102,5 +102,6 @@ public class PayloadFactoryMediatorFactoryTest {
         mediaType = payloadFactoryMediator.getType();
         assertEquals("Media type is not xml", "xml", mediaType);
     }  
-   
+    
+
 }

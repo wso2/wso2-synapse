@@ -91,13 +91,15 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                     payloadFactoryMediator.setFormat(formatText);
                     templateProcessor.setFormat(formatText);
                 } else {
+                    String format;
                     if (payloadFactoryMediator.getTemplateType() != null &&
                             payloadFactoryMediator.getTemplateType().equalsIgnoreCase(FREEMARKER_TEMPLATE_TYPE)) {
-                        payloadFactoryMediator
-                                .setFormat(PayloadFactoryMediatorSerializer.removeCDATAFromPayload(copy.getText()));
+                        format = PayloadFactoryMediatorSerializer.removeCDATAFromPayload(copy.getText());
                     } else {
-                        payloadFactoryMediator.setFormat(copy.getFirstElement().toString());
+                        format = copy.getFirstElement().toString();
                     }
+                    payloadFactoryMediator.setFormat(format);
+                    templateProcessor.setFormat(format);
                 }
             } else {
                 ValueFactory keyFac = new ValueFactory();
@@ -176,7 +178,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
         return payloadFactoryMediator;
     }
 
-    private TemplateProcessor getTemplateProcessor(OMElement elem, PayloadFactoryMediator payloadFactoryMediator ) {
+    private TemplateProcessor getTemplateProcessor(OMElement elem, PayloadFactoryMediator payloadFactoryMediator) {
 
         TemplateProcessor templateProcessor;
         String templateTypeValue = elem.getAttributeValue(TEMPLATE_TYPE_Q);
