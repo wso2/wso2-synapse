@@ -23,8 +23,8 @@
         <in>
             <!-- using payloadFactory mediator FreeMarker templating engine to transform the request message -->
             <payloadFactory media-type="xml" template-type="freemarker">
-                <format><![CDATA[
-                    <m:getQuote xmlns:m="http://services.samples">
+                <format>
+           <![CDATA[<m:getQuote xmlns:m="http://services.samples">
                         <m:request>
                             <m:symbol>${args.arg1}</m:symbol>
                         </m:request>
@@ -38,8 +38,8 @@
         <out>
             <!-- using payloadFactory mediator FreeMarker templating engine to transform the response message -->
             <payloadFactory media-type="xml" template-type="freemarker">
-                <format><![CDATA[
-                    <m:CheckPriceResponse xmlns:m="http://services.samples/xsd">
+                <format>
+           <![CDATA[<m:CheckPriceResponse xmlns:m="http://services.samples/xsd">
                         <m:Code>${args.arg1}</m:Code>
                         <m:Price>${args.arg2}</m:Price>
                     </m:CheckPriceResponse>]]>
