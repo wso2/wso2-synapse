@@ -29,7 +29,7 @@ public class Constants {
     public static final int JSON_PAYLOAD_TYPE = 1;
     public static final int TEXT_PAYLOAD_TYPE = 2;
     public static final int NOT_SUPPORTING_PAYLOAD_TYPE = -1;
-    public static final String REGEX_TEMPLATE_TYPE = "REGEX";
+    public static final String REGEX_TEMPLATE_TYPE = "DEFAULT";
     public static final String FREEMARKER_TEMPLATE_TYPE = "FREEMARKER";
     public static final String PAYLOAD_INJECTING_NAME = "payload";
     public static final String ARGS_INJECTING_NAME = "args";

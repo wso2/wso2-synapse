@@ -41,6 +41,7 @@ import javax.xml.namespace.QName;
 
 import static org.apache.synapse.mediators.transform.pfutils.Constants.FREEMARKER_TEMPLATE_TYPE;
 import static org.apache.synapse.mediators.transform.pfutils.Constants.JSON_TYPE;
+import static org.apache.synapse.mediators.transform.pfutils.Constants.REGEX_TEMPLATE_TYPE;
 import static org.apache.synapse.mediators.transform.pfutils.Constants.TEXT_TYPE;
 import static org.apache.synapse.mediators.transform.pfutils.Constants.XML_TYPE;
 
@@ -61,7 +62,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
         PayloadFactoryMediator payloadFactoryMediator = new PayloadFactoryMediator();
-        TemplateProcessor templateProcessor = getTemplateProcessor(elem);
+        TemplateProcessor templateProcessor = getTemplateProcessor(elem, payloadFactoryMediator);
         processAuditStatus(payloadFactoryMediator, elem);
         String mediaTypeValue = elem.getAttributeValue(TYPE_Q);
         //for the backward compatibility.
@@ -175,13 +176,15 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
         return payloadFactoryMediator;
     }
 
-    private TemplateProcessor getTemplateProcessor(OMElement elem) {
+    private TemplateProcessor getTemplateProcessor(OMElement elem, PayloadFactoryMediator payloadFactoryMediator ) {
 
         TemplateProcessor templateProcessor;
         String templateTypeValue = elem.getAttributeValue(TEMPLATE_TYPE_Q);
         if (templateTypeValue != null && templateTypeValue.equalsIgnoreCase(FREEMARKER_TEMPLATE_TYPE)) {
+            payloadFactoryMediator.setTemplateType(FREEMARKER_TEMPLATE_TYPE);
             templateProcessor = new FreeMarkerTemplateProcessor();
         } else {
+            payloadFactoryMediator.setTemplateType(REGEX_TEMPLATE_TYPE);
             templateProcessor = new RegexTemplateProcessor();
         }
         return templateProcessor;
