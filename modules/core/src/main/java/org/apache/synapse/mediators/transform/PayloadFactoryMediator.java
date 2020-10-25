@@ -166,16 +166,16 @@ public class PayloadFactoryMediator extends AbstractMediator {
             } else if (entry instanceof String) {
                 text = (String) entry;
             }
-            processTemplate(result, synCtx, text, isFormatDynamic());
+            processTemplate(result, synCtx, text);
         } else {
-            processTemplate(result, synCtx, format, isFormatDynamic());
+            processTemplate(result, synCtx, format);
         }
     }
 
-    private void processTemplate(StringBuilder result, MessageContext synCtx, String text, boolean isFormatDynamic) {
+    private void processTemplate(StringBuilder result, MessageContext synCtx, String text) {
 
         try {
-            result.append(templateProcessor.processTemplate(text, mediaType, synCtx, isFormatDynamic));
+            result.append(templateProcessor.processTemplate(text, mediaType, synCtx));
         } catch (TemplateProcessorException e) {
             handleException(e.getMessage(), synCtx);
         }

@@ -32,11 +32,12 @@ import org.apache.synapse.mediators.transform.pfutils.TemplateProcessor;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
-import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+
+import javax.xml.namespace.QName;
 
 import static org.apache.synapse.mediators.transform.pfutils.Constants.FREEMARKER_TEMPLATE_TYPE;
 import static org.apache.synapse.mediators.transform.pfutils.Constants.JSON_TYPE;
@@ -54,7 +55,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
 
     private static final QName TYPE_Q = new QName("media-type");// media-type attribute in payloadFactory
     private static final QName ESCAPE_XML_CHARS_Q = new QName("escapeXmlChars");
-// escape xml chars attribute in payloadFactory
+    // escape xml chars attribute in payloadFactory
     private static final QName TEMPLATE_TYPE_Q = new QName("template-type");
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
@@ -89,9 +90,11 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                     payloadFactoryMediator.setFormat(formatText);
                     templateProcessor.setFormat(formatText);
                 } else {
-                    if (payloadFactoryMediator.getTemplateType().equalsIgnoreCase(FREEMARKER_TEMPLATE)) {
-                        payloadFactoryMediator.setFormat(PayloadFactoryMediatorSerializer.removeCDATAFromPayload(copy.getText()));
-                    }else{
+                    if (payloadFactoryMediator.getTemplateType() != null &&
+                            payloadFactoryMediator.getTemplateType().equalsIgnoreCase(FREEMARKER_TEMPLATE_TYPE)) {
+                        payloadFactoryMediator
+                                .setFormat(PayloadFactoryMediatorSerializer.removeCDATAFromPayload(copy.getText()));
+                    } else {
                         payloadFactoryMediator.setFormat(copy.getFirstElement().toString());
                     }
                 }
@@ -117,7 +120,6 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                 Argument arg = new Argument();
                 String value;
 
-
                 boolean isLiteral = false;
                 String isLiteralString = argElem.getAttributeValue(ATT_LITERAL);
                 if (isLiteralString != null) {
@@ -138,9 +140,9 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                         try {
                             //set the evaluator
                             String evaluator = argElem.getAttributeValue(ATT_EVAL);
-                            if(evaluator != null && evaluator.equals(JSON_TYPE)){
-                                if(value.startsWith("json-eval(")) {
-                                    value = value.substring(10, value.length()-1);
+                            if (evaluator != null && evaluator.equals(JSON_TYPE)) {
+                                if (value.startsWith("json-eval(")) {
+                                    value = value.substring(10, value.length() - 1);
                                 }
                                 arg.setExpression(SynapseJsonPathFactory.getSynapseJsonPath(value));
                                 // we have to explicitly define the path type since we are not going to mark
@@ -173,7 +175,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
         return payloadFactoryMediator;
     }
 
-    private TemplateProcessor getTemplateProcessor(OMElement elem) { 
+    private TemplateProcessor getTemplateProcessor(OMElement elem) {
 
         TemplateProcessor templateProcessor;
         String templateTypeValue = elem.getAttributeValue(TEMPLATE_TYPE_Q);
@@ -186,10 +188,12 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
     }
 
     public QName getTagQName() {
+
         return PAYLOAD_FACTORY_Q;
     }
 
     private void removeIndentations(OMElement element) {
+
         List<OMText> removables = new ArrayList<>();
         removeIndentations(element, removables);
         for (OMText node : removables) {
@@ -198,6 +202,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
     }
 
     private void removeIndentations(OMElement element, List<OMText> removables) {
+
         Iterator children = element.getChildren();
         while (children.hasNext()) {
             Object next = children.next();
