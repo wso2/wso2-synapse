@@ -28,6 +28,8 @@ import freemarker.template.TemplateExceptionHandler;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.OMText;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.commons.json.JsonUtil;
@@ -74,6 +76,8 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
     private boolean usingPropertyTransport;
     private boolean usingArgs;
 
+    private static final Log log = LogFactory.getLog(FreeMarkerTemplateProcessor.class);
+
     public FreeMarkerTemplateProcessor() {
 
         cfg = new Configuration(Configuration.VERSION_2_3_30);
@@ -90,7 +94,7 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
     }
 
     @Override
-    public String processTemplate( String template, String mediaType, MessageContext messageContext) {
+    public String processTemplate(String template, String mediaType, MessageContext messageContext) {
 
         try {
 
@@ -117,13 +121,17 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
 
     private String generateTemplateErrorMessage(TemplateException e) {
 
-        return "Error parsing FreeMarker template, " +
-                "Syntax error or invalid reference : " +
-                e.getBlamedExpressionString() +
-                " At line: " +
-                e.getLineNumber() +
-                " column: " +
-                e.getColumnNumber();
+        if (log.isDebugEnabled()) {
+            return e.getMessageWithoutStackTop();
+        } else {
+            return "Error parsing FreeMarker template, " +
+                    "Syntax error or invalid reference : " +
+                    e.getBlamedExpressionString() +
+                    " At line: " +
+                    e.getLineNumber() +
+                    " column: " +
+                    e.getColumnNumber();
+        }
 
     }
 
@@ -239,7 +247,8 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
     private void injectJsonObject(Map<String, Object> data, String jsonPayloadString) {
 
         Map<String, Object> map;
-        Type type = new TypeToken<Map<String, Object>>() {}.getType();
+        Type type = new TypeToken<Map<String, Object>>() {
+        }.getType();
         map = gson.fromJson(jsonPayloadString, type);
         data.put(PAYLOAD_INJECTING_NAME, map);
     }
