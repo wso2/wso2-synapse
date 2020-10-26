@@ -59,7 +59,6 @@ import static org.apache.synapse.mediators.transform.pfutils.Constants.TEXT_TYPE
 import static org.apache.synapse.mediators.transform.pfutils.Constants.XML_TYPE;
 
 public class PayloadFactoryMediator extends AbstractMediator {
-
     private Value formatKey = null;
     private boolean isFormatDynamic = false;
     private String formatRaw;
@@ -85,7 +84,6 @@ public class PayloadFactoryMediator extends AbstractMediator {
     /**
      * Contains 2 paths - one when JSON Streaming is in use (mediateJsonStreamPayload) and the other for regular
      * builders (mediatePayload).
-     *
      * @param synCtx the current message for mediation
      * @return
      */
@@ -105,8 +103,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
             log.error("#mediate. Could not identify the payload format of the existing payload prior to mediate.");
             return false;
         }
-        org.apache.axis2.context.MessageContext axis2MessageContext =
-                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         StringBuilder result = new StringBuilder();
         transform(result, synCtx, format);
         String out = result.toString().trim();
@@ -117,24 +114,23 @@ public class PayloadFactoryMediator extends AbstractMediator {
             try {
                 JsonUtil.removeJsonPayload(axis2MessageContext);
                 OMElement omXML = convertStringToOM(out);
-                if (!checkAndReplaceEnvelope(omXML,
-                        synCtx)) { // check if the target of the PF 'format' is the entire SOAP envelop, not just the body.
+                if (!checkAndReplaceEnvelope(omXML, synCtx)) { // check if the target of the PF 'format' is the entire SOAP envelop, not just the body.
                     axis2MessageContext.getEnvelope().getBody().addChild(omXML.getFirstElement());
                 }
             } catch (XMLStreamException e) {
                 handleException("Error creating SOAP Envelope from source " + out, synCtx);
             }
-        } else if (mediaType.equals(JSON_TYPE)) {
+        } else if  (mediaType.equals(JSON_TYPE)) {
             try {
                 JsonUtil.getNewJsonPayload(axis2MessageContext, out, true, true);
             } catch (AxisFault axisFault) {
                 handleException("Error creating JSON Payload from source " + out, synCtx);
             }
-        } else if (mediaType.equals(TEXT_TYPE)) {
+        } else if  (mediaType.equals(TEXT_TYPE)) {
             JsonUtil.removeJsonPayload(axis2MessageContext);
             axis2MessageContext.getEnvelope().getBody().addChild(getTextElement(out));
         }
-        //need to honour a content-type of the payload media-type as output from the payload
+        //need to honour a content-type of the payload media-type as output from the payload 
         //{re-merging patch https://wso2.org/jira/browse/ESBJAVA-3014}
         setContentType(synCtx);
         return true;
@@ -149,7 +145,6 @@ public class PayloadFactoryMediator extends AbstractMediator {
      * @param format
      */
     private void transform(StringBuilder result, MessageContext synCtx, String format) {
-
         if (isFormatDynamic()) {
             String key = formatKey.evaluateValue(synCtx);
             Object entry = synCtx.getEntry(key);
@@ -224,7 +219,6 @@ public class PayloadFactoryMediator extends AbstractMediator {
     }
 
     private boolean checkAndReplaceEnvelope(OMElement resultElement, MessageContext synCtx) {
-
         OMElement firstChild = resultElement.getFirstElement();
         QName resultQName = firstChild.getQName();
         if (resultQName.getLocalPart().equals("Envelope") && (
@@ -248,11 +242,9 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     /**
      * Helper function to remove indentations.
-     *
      * @param element
      */
     private void removeIndentations(OMElement element) {
-
         List<OMText> removables = new ArrayList<>();
         removeIndentations(element, removables);
         for (OMText node : removables) {
@@ -262,12 +254,10 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     /**
      * Helper function to remove indentations.
-     *
      * @param element
      * @param removables
      */
     private void removeIndentations(OMElement element, List<OMText> removables) {
-
         Iterator children = element.getChildren();
         while (children.hasNext()) {
             Object next = children.next();
@@ -283,23 +273,19 @@ public class PayloadFactoryMediator extends AbstractMediator {
     }
 
     public String getFormat() {
-
         return formatRaw;
     }
 
     public void setFormat(String format) {
-
         this.formatRaw = format;
     }
 
     @Override
     public String getType() {
-
         return mediaType;
     }
 
     public void setType(String type) {
-
         this.mediaType = type;
     }
 
@@ -319,7 +305,6 @@ public class PayloadFactoryMediator extends AbstractMediator {
      * @return return the key which is used to pick the format definition from the local registry
      */
     public Value getFormatKey() {
-
         return formatKey;
     }
 
@@ -329,7 +314,6 @@ public class PayloadFactoryMediator extends AbstractMediator {
      * @param key the local registry key
      */
     public void setFormatKey(Value key) {
-
         this.formatKey = key;
     }
 
@@ -339,18 +323,16 @@ public class PayloadFactoryMediator extends AbstractMediator {
     }
 
     public void setFormatDynamic(boolean formatDynamic) {
-
         this.isFormatDynamic = formatDynamic;
     }
 
     @Override
     public String getOutputType() {
-
         return mediaType;
     }
 
-    private OMElement getTextElement(String content) {
 
+    private OMElement getTextElement(String content) {
         OMFactory factory = OMAbstractFactory.getOMFactory();
         OMElement textElement = factory.createOMElement(TEXT_ELEMENT);
         if (content == null) {
@@ -362,17 +344,14 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     @Override
     public boolean isContentAltering() {
-
         return true;
     }
 
     public boolean isEscapeXmlChars() {
-
         return escapeXmlChars;
     }
 
     public void setEscapeXmlChars(boolean escapeXmlChars) {
-
         this.escapeXmlChars = escapeXmlChars;
     }
 
@@ -383,7 +362,6 @@ public class PayloadFactoryMediator extends AbstractMediator {
      * @return parsed OMElement
      */
     private OMElement convertStringToOM(String value) throws XMLStreamException, OMException {
-
         javax.xml.stream.XMLStreamReader xmlReader = inputFactory.createXMLStreamReader(new StringReader(value));
         StAXBuilder builder = new StAXOMBuilder(xmlReader);
         return builder.getDocumentElement();

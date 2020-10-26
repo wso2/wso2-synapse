@@ -66,7 +66,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
         processAuditStatus(payloadFactoryMediator, elem);
         String mediaTypeValue = elem.getAttributeValue(TYPE_Q);
         //for the backward compatibility.
-        if (mediaTypeValue != null) {
+        if(mediaTypeValue != null) {
             payloadFactoryMediator.setType(mediaTypeValue); //set the mediaType for the PF
             templateProcessor.setMediaType(mediaTypeValue);
         } else {
@@ -123,6 +123,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                 Argument arg = new Argument();
                 String value;
 
+
                 boolean isLiteral = false;
                 String isLiteralString = argElem.getAttributeValue(ATT_LITERAL);
                 if (isLiteralString != null) {
@@ -143,9 +144,9 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                         try {
                             //set the evaluator
                             String evaluator = argElem.getAttributeValue(ATT_EVAL);
-                            if (evaluator != null && evaluator.equals(JSON_TYPE)) {
-                                if (value.startsWith("json-eval(")) {
-                                    value = value.substring(10, value.length() - 1);
+                            if(evaluator != null && evaluator.equals(JSON_TYPE)){
+                                if(value.startsWith("json-eval(")) {
+                                    value = value.substring(10, value.length()-1);
                                 }
                                 arg.setExpression(SynapseJsonPathFactory.getSynapseJsonPath(value));
                                 // we have to explicitly define the path type since we are not going to mark
@@ -165,6 +166,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                                     value, e);
                         }
                     }
+
 
                 } else {
                     handleException("Unsupported arg type. value or expression attribute required");
@@ -193,12 +195,10 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
     }
 
     public QName getTagQName() {
-
         return PAYLOAD_FACTORY_Q;
     }
 
     private void removeIndentations(OMElement element) {
-
         List<OMText> removables = new ArrayList<>();
         removeIndentations(element, removables);
         for (OMText node : removables) {
@@ -207,7 +207,6 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
     }
 
     private void removeIndentations(OMElement element, List<OMText> removables) {
-
         Iterator children = element.getChildren();
         while (children.hasNext()) {
             Object next = children.next();
