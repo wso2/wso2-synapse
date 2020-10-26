@@ -403,9 +403,7 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
         if (payloadType == PayloadHelper.XMLPAYLOADTYPE) {
             if (JsonUtil.hasAJsonPayload(((Axis2MessageContext) messageContext).getAxis2MessageContext())) {
                 return JSON_PAYLOAD_TYPE;
-            } else if (PayloadHelper.getTextPayload(messageContext) != null) {
-                return TEXT_PAYLOAD_TYPE;
-            } else {
+            }  else {
                 return XML_PAYLOAD_TYPE;
             }
         } else if (payloadType == PayloadHelper.TEXTPAYLOADTYPE) {
