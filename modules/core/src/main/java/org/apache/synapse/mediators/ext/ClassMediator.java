@@ -25,6 +25,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.config.xml.PropertyHelper;
+import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
@@ -51,6 +52,9 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
     private Mediator mediator = null;
     /** The holder for the custom properties */
     private final List<MediatorProperty> properties = new ArrayList<MediatorProperty>();
+
+    /** Contains Dynamic Expressions/not */
+    private boolean hasContentAwareProperties = false;
 
     /**
 	 * Don't use a new instance... do one instance of the object per instance of
@@ -85,13 +89,13 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
         boolean result;
 
         try {
-            for (MediatorProperty property : properties) {
-                if (property.getExpression() != null) {
-                    PropertyHelper.setInstanceProperty(property.getName(), property.getEvaluatedExpression(synCtx),
-                            mediator);
+            if (hasContentAwareProperties) {
+                synchronized (mediator) {
+                    result = updateInstancePropertiesAndMediate(synCtx);
                 }
+            } else {
+                result = updateInstancePropertiesAndMediate(synCtx);
             }
-            result = mediator.mediate(synCtx);
         } catch (Exception e) {
             // throw Synapse Exception for any exception in class meditor
             // so that the fault handler will be invoked
@@ -140,6 +144,14 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
 
     public void addAllProperties(List<MediatorProperty> propertyList) {
 	    properties.addAll(propertyList);
+
+        for (MediatorProperty property : properties) {
+            SynapsePath expression = property.getExpression();
+            if (expression != null && expression.isContentAware()) {
+                hasContentAwareProperties = true;
+                break;
+            }
+        }
     }
 
     public List<MediatorProperty> getProperties() {
@@ -154,5 +166,15 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
     @Override
     public boolean isContentAltering() {
         return true;
+    }
+
+    private boolean updateInstancePropertiesAndMediate(MessageContext synCtx) {
+	    for (MediatorProperty property : properties) {
+            if (property.getExpression() != null) {
+                PropertyHelper.setInstanceProperty(property.getName(), property.getEvaluatedExpression(synCtx),
+                        mediator);
+            }
+        }
+        return mediator.mediate(synCtx);
     }
 }
