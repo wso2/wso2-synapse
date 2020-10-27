@@ -50,6 +50,7 @@ import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.apache.synapse.util.InlineExpressionUtil;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.apache.synapse.util.xpath.SynapseXPathConstants;
@@ -552,6 +553,20 @@ public class Target {
      */
     private void setEnrichResultToBody(MessageContext synapseContext, SynapseJsonPath synapseJsonPath, Object
             sourceNode) {
+
+        if (InlineExpressionUtil.checkForInlineExpressions(synapseJsonPath.toString())) {
+            try {
+                String jsonpath = synapseJsonPath.toString();
+                if (jsonpath.startsWith("json-eval(")) {
+                    jsonpath = jsonpath.substring(10, jsonpath.length() - 1);
+                }
+                synapseJsonPath =
+                        new SynapseJsonPath(InlineExpressionUtil.replaceDynamicValues(synapseContext, jsonpath));
+            } catch (JaxenException e) {
+                log.error("Error occurred while evaluating JSONPath", e);
+            }
+        }
+
         String expression = synapseJsonPath.getJsonPathExpression();
 
         // Though SynapseJsonPath support "$.", the JSONPath implementation does not support it
