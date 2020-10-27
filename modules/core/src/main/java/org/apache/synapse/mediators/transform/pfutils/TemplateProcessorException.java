@@ -19,6 +19,10 @@
 
 package org.apache.synapse.mediators.transform.pfutils;
 
+/**
+ * This will throw when there's an exception occurs in the template processing step in any implementation of the 
+ * TemplateProcessor
+ */
 public class TemplateProcessorException extends RuntimeException {
 
     public TemplateProcessorException(String message) {

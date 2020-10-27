@@ -92,7 +92,7 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
                 String type = mediator.getType();
                 if(type!=null && (type.contains(JSON_TYPE) || type.contains(TEXT))) {
                      formatElem.setText(mediator.getFormat());
-                } else{
+                } else {
                     if (isFreeMarkerTemplate(mediator)) {
                         String formatString = mediator.getFormat();
                         formatString = removeCDATAFromPayload(formatString);
@@ -174,7 +174,7 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
     public static String removeCDATAFromPayload(String inputPayload) {
         if (inputPayload.startsWith("<![CDATA[")) {
             inputPayload = inputPayload.substring(9);
-            int i = inputPayload.indexOf("]]>");
+            int i = inputPayload.lastIndexOf("]]>");
             if (i == -1)
                 throw new IllegalStateException("argument starts with <![CDATA[ but cannot find pairing ]]>");
             inputPayload = inputPayload.substring(0, i);

@@ -54,6 +54,9 @@ import javax.xml.stream.XMLStreamException;
 
 import static org.apache.synapse.mediators.transform.PayloadFactoryMediator.QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON;
 
+/**
+ * Abstract TemplateProcessor. This is the class using by the 
+ */
 public abstract class TemplateProcessor {
 
     protected static final String JSON_TYPE = "json";

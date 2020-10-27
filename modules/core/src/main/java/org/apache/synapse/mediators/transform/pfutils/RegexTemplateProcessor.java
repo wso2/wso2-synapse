@@ -29,6 +29,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * TemplateProcessor implementation for Regex based templates
+ */
 public class RegexTemplateProcessor extends TemplateProcessor {
 
     private static final Log log = LogFactory.getLog(RegexTemplateProcessor.class);

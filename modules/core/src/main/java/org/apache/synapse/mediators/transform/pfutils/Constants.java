@@ -19,6 +19,9 @@
 
 package org.apache.synapse.mediators.transform.pfutils;
 
+/**
+ * Constants to use by the PayloadFactory mediator
+ */
 public class Constants {
 
     private Constants() {

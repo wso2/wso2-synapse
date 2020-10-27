@@ -20,6 +20,10 @@
 package org.apache.synapse.mediators.transform.pfutils;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -64,6 +68,9 @@ import static org.apache.synapse.mediators.transform.pfutils.Constants.XML_PAYLO
 import static org.apache.synapse.util.PayloadHelper.TEXTELT;
 import static org.apache.synapse.util.PayloadHelper.getXMLPayload;
 
+/**
+ * Template Processor implementation for FreeMarker templating language
+ */
 public class FreeMarkerTemplateProcessor extends TemplateProcessor {
 
     private final Configuration cfg;
@@ -216,40 +223,60 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
 
         org.apache.axis2.context.MessageContext axis2MessageContext = messageContext.getAxis2MessageContext();
         String jsonPayloadString = JsonUtil.jsonPayloadToString(axis2MessageContext);
-        if (JsonUtil.hasAJsonObject(axis2MessageContext)) {
-            injectJsonObject(data, jsonPayloadString);
-        } else {
-            injectJsonArray(data, jsonPayloadString);
+        try {
+            JsonElement jsonElement = new JsonParser().parse(jsonPayloadString);
+            if(jsonElement.isJsonObject()){
+                injectJsonObject(data, jsonElement);
+            }else if(jsonElement.isJsonArray()){
+                injectJsonArray(data, jsonElement);
+            }else if(jsonElement.isJsonPrimitive()){
+                injectJsonPrimitive(data, jsonElement);
+            } else if (jsonElement.isJsonNull()) {
+                data.put(PAYLOAD_INJECTING_NAME, "null");
+            }
+        } catch (JsonSyntaxException e) {
+            handleException("Invalid JSON payload");
         }
+       
     }
 
     /**
      * Inject a JSON array in to FreeMarker
      *
      * @param data              FreeMarker data input
-     * @param jsonPayloadString JSON payload string
+     * @param jsonElement JSON element
      */
-    private void injectJsonArray(Map<String, Object> data, String jsonPayloadString) {
+    private void injectJsonArray(Map<String, Object> data, JsonElement jsonElement) {
 
         List<Object> array;
-        Type type = new TypeToken<List<String>>() {
-        }.getType();
-        array = gson.fromJson(jsonPayloadString, type);
+        Type type = new TypeToken<List<String>>() {}.getType();
+        array = gson.fromJson(jsonElement, type);
         data.put(PAYLOAD_INJECTING_NAME, array);
-    }
+    }  
+    
+    /**
+     * Inject a JSON primitive in to FreeMarker
+     *
+     * @param data              FreeMarker data input
+     * @param jsonElement JSON element
+     */
+    private void injectJsonPrimitive(Map<String, Object> data, JsonElement jsonElement) {
 
+        JsonPrimitive jsonPrimitive = jsonElement.getAsJsonPrimitive();
+        data.put(PAYLOAD_INJECTING_NAME, jsonPrimitive.toString());
+    }   
+    
     /**
      * Inject a JSON object in to FreeMarker
      *
      * @param data              FreeMarker data input
-     * @param jsonPayloadString JSON payload string
+     * @param jsonElement JSON element
      */
-    private void injectJsonObject(Map<String, Object> data, String jsonPayloadString) {
+    private void injectJsonObject(Map<String, Object> data, JsonElement jsonElement) {
 
         Map<String, Object> map;
-        Type type = new TypeToken<Map<String, Object>>() {
-        }.getType();
-        map = gson.fromJson(jsonPayloadString, type);
+        Type type = new TypeToken<Map<String, Object>>() {}.getType();
+        map = gson.fromJson(jsonElement, type);
         data.put(PAYLOAD_INJECTING_NAME, map);
     }
 
