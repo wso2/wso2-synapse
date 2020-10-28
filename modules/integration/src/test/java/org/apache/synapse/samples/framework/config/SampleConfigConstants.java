@@ -40,6 +40,7 @@ public class SampleConfigConstants {
     public static final String TAG_BE_SERVER_CONF_JMS_BROKER = "jmsBroker";
     public static final String TAG_BE_SERVER_CONF_DERBY_SERVER = "derbyServer";
     public static final String TAG_BE_SERVER_CONF_ECHO_SERVER = "echoServer";
+    public static final String TAG_BE_SERVER_CONF_REST_SERVER = "httpServer";
     public static final String TAG_BE_SERVER_CONF_QFIX_EXECUTOR = "fixExecutor";
 
     public static final String TAG_BE_SERVER_CONF_AXIS2_REPO = "axis2Repo";
@@ -55,6 +56,10 @@ public class SampleConfigConstants {
 
     public static final String TAG_BE_SERVER_CONF_JMS_PROVIDER_URL = "providerURL";
     public static final String TAG_BE_SERVER_CONF_JMS_INITIAL_NAMING_FACTORY = "initialNamingFactory";
+
+    public static final String TAG_BE_SERVER_CONF_REST_HTTP_PORT = "httpPort";
+    public static final String TAG_BE_SERVER_CONF_REST_HTTPS_PORT = "httpsPort";
+    public static final String TAG_BE_SERVER_CONF_REST_PACKAGE_NAME = "packageName";
 
     public static final String TAG_CLIENT_CONF = "clientConfig";
     public static final String TAG_CLIENT_CONF_REPO = "clientRepo";
