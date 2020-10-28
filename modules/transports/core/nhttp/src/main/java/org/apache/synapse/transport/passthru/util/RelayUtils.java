@@ -40,6 +40,7 @@ import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
+import org.apache.synapse.transport.passthru.ServerWorker;
 import org.apache.synapse.transport.passthru.TargetRequest;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 
@@ -191,12 +192,13 @@ public class RelayUtils {
                             rawData = byteArrayOutputStream.toString();
                             JsonParser jsonParser = new JsonParser();
                             jsonParser.parse(rawData);
+                        } else {
+                            messageContext.getEnvelope().buildWithAttachments();
+                            if (messageContext.getEnvelope().getBody().getFirstElement() != null) {
+                                messageContext.getEnvelope().getBody().getFirstElement().buildNext();
+                            }
                         }
 
-                        messageContext.getEnvelope().buildWithAttachments();
-                        if (messageContext.getEnvelope().getBody().getFirstElement() != null) {
-                            messageContext.getEnvelope().getBody().getFirstElement().buildNext();
-                        }
                     } catch (Exception e) {
                         if (rawData == null) {
                             rawData = byteArrayOutputStream.toString();
@@ -478,7 +480,13 @@ public class RelayUtils {
      * @throws AxisFault AxisFault
      */
     public static void consumeAndDiscardMessage(MessageContext msgContext) throws AxisFault {
-        final Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+        // Get the request message context
+        MessageContext requestContext = msgContext;
+        Object outTransportInfo = msgContext.getProperty(Constants.OUT_TRANSPORT_INFO);
+        if (outTransportInfo instanceof ServerWorker) {
+            requestContext = ((ServerWorker) outTransportInfo).getRequestContext();
+        }
+        final Pipe pipe = (Pipe) requestContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
         if (pipe != null) {
             try {
                 while (!pipe.isProducerCompleted() || pipe.isConsumeRequired()) {

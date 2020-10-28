@@ -31,6 +31,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCo
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.endpoints.dispatch.SALSessions;
+import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.util.ConcurrencyThrottlingUtils;
@@ -92,7 +93,7 @@ public class TimeoutHandler extends TimerTask {
                 log.warn("Exception occurred while processing callbacks", ex);
             } catch (Error ex) {
                 log.warn("Error occurred while processing callbacks", ex);
-            }finally {
+            } finally {
                 alreadyExecuting = false;
             }
         }
@@ -141,6 +142,7 @@ public class TimeoutHandler extends TimerTask {
 
                             // activate the fault sequence of the current sequence mediator
                             MessageContext msgContext = callback.getSynapseOutMsgCtx();
+                            org.apache.axis2.context.MessageContext axis2MessageContext = callback.getAxis2OutMsgCtx();
 
                             /* Clear the pipe to prevent release of the associated writer buffer
                                to the buffer factory.
@@ -173,7 +175,8 @@ public class TimeoutHandler extends TimerTask {
                             try {
                                 msgContext.setEnvelope(soapEnvelope);
                             } catch (Throwable ex) {
-                                log.error("Exception or Error occurred resetting SOAP Envelope", ex);
+                                ContextAwareLogger.getLogger(axis2MessageContext, log, true)
+                                        .error("Exception or Error occurred resetting SOAP Envelope", ex);
                                 continue;
                             }
 
@@ -184,8 +187,9 @@ public class TimeoutHandler extends TimerTask {
                                     try {
                                         faultHandler.handleFault(msgContext);
                                     } catch (Throwable ex) {
-                                        log.warn("Exception or Error occurred while " +
-                                                 "executing the fault handler", ex);
+                                        ContextAwareLogger.getLogger(axis2MessageContext, log, true)
+                                                .warn("Exception or Error occurred while "
+                                                        + "executing the fault handler", ex);
                                         continue;
                                     }
                                 }
@@ -202,13 +206,16 @@ public class TimeoutHandler extends TimerTask {
                         continue;
                     }
 
+                    org.apache.axis2.context.MessageContext axis2MessageContext = callback.getAxis2OutMsgCtx();
+
                     if (!"true".equals(callback.getSynapseOutMsgCtx().getProperty(SynapseConstants.OUT_ONLY))) {
-                        log.warn("Expiring message ID : " + key + "; dropping message after " +
-                                callback.getTimeoutType().toString() +
-                                " of : " + (callback.getTimeoutDuration() / 1000) +
-                                 " seconds for " + getEndpointLogMessage(callback.getSynapseOutMsgCtx(),
-                                                                         callback.getAxis2OutMsgCtx()) +
-                                 ", " + getServiceLogMessage(callback.getSynapseOutMsgCtx())) ;
+                        ContextAwareLogger.getLogger(axis2MessageContext, log, true)
+                                .warn("Expiring message ID : " + key + "; dropping message after "
+                                        + callback.getTimeoutType().toString() + " of : "
+                                        + (callback.getTimeoutDuration() / 1000) + " seconds for "
+                                        + getEndpointLogMessage(callback.getSynapseOutMsgCtx(),
+                                        callback.getAxis2OutMsgCtx()) + ", "
+                                        + getServiceLogMessage(callback.getSynapseOutMsgCtx()));
                     }
                     org.apache.synapse.MessageContext synapseOutMsgCtx = callback.getSynapseOutMsgCtx();
                     ConcurrencyThrottlingUtils.decrementConcurrencyThrottleAccessController(synapseOutMsgCtx);
@@ -254,6 +261,4 @@ public class TimeoutHandler extends TimerTask {
         }
         return "Received through an entry point other than a proxy, an api or an inbound endpoint ";
     }
-
-
 }

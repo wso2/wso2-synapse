@@ -33,7 +33,8 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
-import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.dispatch.DispatcherHelper;
@@ -41,15 +42,20 @@ import org.apache.synapse.rest.dispatch.RESTDispatcher;
 import org.apache.synapse.rest.version.DefaultStrategy;
 import org.apache.synapse.rest.version.URLBasedVersionStrategy;
 import org.apache.synapse.rest.version.VersionStrategy;
-import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.http.conn.SynapseWireLogHolder;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
-import org.apache.synapse.transport.passthru.config.SourceConfiguration;
+import org.apache.synapse.util.logging.LoggingUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class API extends AbstractRESTProcessor implements ManagedLifecycle, AspectConfigurable, SynapseArtifact {
 
@@ -252,8 +258,8 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
             }
         } else {
             String path = RESTUtils.getFullRequestPath(synCtx);
-            if (!path.startsWith(context + "/") && !path.startsWith(context + "?") &&
-                    !context.equals(path) && !"/".equals(context)) {
+            if (null == synCtx.getProperty(RESTConstants.IS_PROMETHEUS_ENGAGED) &&
+                    (!RESTUtils.matchApiPath(path, context))) {
                 auditDebug("API context: " + context + " does not match request URI: " + path);
                 return false;
             }
@@ -315,7 +321,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
 
         auditDebug("Processing message with ID: " + synCtx.getMessageID() + " through the " +
                     "API: " + name);
-
+        synCtx.setProperty(RESTConstants.PROCESSED_API, this);
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API, getName());
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION, versionStrategy.getVersion());
         synCtx.setProperty(RESTConstants.REST_API_CONTEXT, context);
@@ -351,7 +357,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
                 Map headers = (Map) context.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
                 if (headers != null) {
                     headers.put(PassThroughConfiguration.getInstance().getCorrelationHeaderName(),
-                            context.getProperty(PassThroughConstants.CORRELATION_ID));
+                            context.getProperty(CorrelationConstants.CORRELATION_ID));
                 }
             }
         }
@@ -543,6 +549,10 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
         }
     }
 
+    private String getFormattedLog(String msg) {
+        return LoggingUtils.getFormattedLog(SynapseConstants.FAIL_SAFE_MODE_API, getName(), msg);
+    }
+
     public void destroy() {
         auditInfo("Destroying API: " + getName());
         for (Resource resource : resources.values()) {
@@ -578,12 +588,14 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
      * @param message the INFO level audit message
      */
     private void auditInfo(String message) {
-        log.info(message);
+
+        String formattedMsg = getFormattedLog(message);
+        log.info(formattedMsg);
         apiLog.info(message);
 
         //TODO - Implement 'trace' attribute support in API configuration.
         if (trace()) {
-            trace.info(message);
+            trace.info(formattedMsg);
         }
     }
 
@@ -592,15 +604,16 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
      * @param message the DEBUG level audit message
      */
     private void auditDebug(String message) {
-        if (log.isDebugEnabled()){
-            log.debug(message);
+
+        if (log.isDebugEnabled()) {
+            String formattedMsg = getFormattedLog(message);
+            log.debug(formattedMsg);
             apiLog.debug(message);
 
             //TODO - Implement 'trace' attribute support in API configuration.
             if (trace()) {
-               trace.debug(message);
+                trace.debug(formattedMsg);
             }
-
         }
 
     }

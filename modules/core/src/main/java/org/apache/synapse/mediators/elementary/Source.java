@@ -30,11 +30,14 @@ import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.axiom.soap.impl.builder.StAXSOAPModelBuilder;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.util.InlineExpressionUtil;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.jaxen.JaxenException;
@@ -72,7 +75,11 @@ public class Source {
 
     private OMNode inlineOMNode = null;
 
+    private OMNode initialInlineOMNode = null;
+
     private String inlineKey = null;
+
+    private static final Log log = LogFactory.getLog(Source.class);
 
     public ArrayList<OMNode> evaluate(MessageContext synCtx, SynapseLog synLog)
             throws JaxenException {
@@ -226,6 +233,12 @@ public class Source {
             } else {
                 synLog.error("Inline Source Content is not valid.");
             }
+            // If the initialInlineOMNode is not null, it means that inline OM Node has been overridden with the
+            // inline string containing resolved dynamic values. Therefore, we should set the initial OM Node back
+            // which contains the original inline value
+            if (initialInlineOMNode != null) {
+                this.inlineOMNode = initialInlineOMNode;
+            }
         }
         return sourceNodeList;
     }
@@ -261,7 +274,21 @@ public class Source {
         JsonParser parser = new JsonParser();
         if (xpath != null) {
             SynapseJsonPath sourceJsonPath = (SynapseJsonPath) this.xpath;
-            jsonPath = sourceJsonPath.getJsonPath().getPath();
+
+            if (InlineExpressionUtil.checkForInlineExpressions(sourceJsonPath.toString())) {
+                try {
+                    String jsonpath = sourceJsonPath.toString();
+                    if (jsonpath.startsWith("json-eval(")) {
+                        jsonpath = jsonpath.substring(10, jsonpath.length() - 1);
+                    }
+                    sourceJsonPath =
+                            new SynapseJsonPath(InlineExpressionUtil.replaceDynamicValues(synCtx, jsonpath));
+                } catch (JaxenException e) {
+                    log.error("Error occurred while evaluating JSONPath", e);
+                }
+            }
+
+            jsonPath = sourceJsonPath.getJsonPathExpression();
         }
 
         org.apache.axis2.context.MessageContext context = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
@@ -306,6 +333,12 @@ public class Source {
                 } else {
                     synLog.error("Source failed to get inline JSON" + "inlineJSONNode=" + inlineOMNode + ", inlineKey="
                             + inlineKey);
+                }
+                // If the initialInlineOMNode is not null, it means that inline OM Node has been overridden with the
+                // inline string containing resolved dynamic values. Therefore, we should set the initial OM Node back
+                // which contains the original inline value
+                if (initialInlineOMNode != null) {
+                    this.inlineOMNode = initialInlineOMNode;
                 }
                 break;
             }
@@ -372,6 +405,16 @@ public class Source {
 
     public void setInlineKey(String inlineKey) {
         this.inlineKey = inlineKey;
+    }
+
+    public OMNode getInitialInlineOMNode() {
+
+        return initialInlineOMNode;
+    }
+
+    public void setInitialInlineOMNode(OMNode inlineOMNodeWithExpressions) {
+
+        this.initialInlineOMNode = inlineOMNodeWithExpressions;
     }
 }
 

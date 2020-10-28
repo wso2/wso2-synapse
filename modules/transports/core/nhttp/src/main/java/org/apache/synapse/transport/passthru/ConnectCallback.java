@@ -54,7 +54,7 @@ public class ConnectCallback implements SessionRequestCallback {
         pool.pendingConnectionFailed();
 
         deliveryAgent.errorConnecting(pool.getRoute(),
-                ErrorCodes.CONNECTION_FAILED, "Connection Failed");
+                ErrorCodes.CONNECTION_FAILED, "Connection Failed", request.getException());
 
         handleError("Connection refused or failed for : " + request.getRemoteAddress());
     }

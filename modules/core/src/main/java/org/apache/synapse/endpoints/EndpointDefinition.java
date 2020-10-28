@@ -46,7 +46,7 @@ public class EndpointDefinition implements AspectConfigurable {
     public static final String DYNAMIC_URL_VALUE = "DYNAMIC_URL_VALUE";
 
     /** Who is the leaf level Endpoint which uses me? */
-    private Endpoint leafEndpoint = null;
+    public Endpoint leafEndpoint = null;
     /**
      * The simple address this endpoint resolves to - if explicitly specified
      */

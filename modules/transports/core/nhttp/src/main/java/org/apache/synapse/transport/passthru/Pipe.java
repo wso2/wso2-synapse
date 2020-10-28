@@ -40,7 +40,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class Pipe {
 
-    private static final int DEFAULT_TIME_OUT_VALUE = 180000;
+    public static final int DEFAULT_TIME_OUT_VALUE = 180000;
 
     /** IOControl of the reader */
     private IOControl producerIoControl;
@@ -595,11 +595,12 @@ public class Pipe {
         }
 
         private void flushContent() throws IOException {
-            lock.lock();
 
             if(rawSerializationComplete){
                 return;
             }
+
+            lock.lock();
 
             try {
                 try {

@@ -59,6 +59,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.impl.nio.reactor.DefaultListeningIOReactor;
 import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.nio.reactor.IOReactorExceptionHandler;
+import org.apache.http.params.HttpConnectionParams;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.http.conn.ServerConnFactory;
 import org.apache.synapse.transport.nhttp.config.ServerConnFactoryBuilder;
@@ -72,6 +73,7 @@ import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsColl
 import org.apache.synapse.transport.passthru.jmx.TransportView;
 
 import org.apache.synapse.transport.passthru.util.ActiveConnectionMonitor;
+import org.apache.synapse.transport.passthru.util.SessionContextUtil;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -411,7 +413,7 @@ public class PassThroughHttpListener implements TransportListener {
     }
 
     public SessionContext getSessionContext(MessageContext messageContext) {
-        return null;
+        return SessionContextUtil.createSessionContext(messageContext);
     }
 
 
@@ -420,13 +422,22 @@ public class PassThroughHttpListener implements TransportListener {
         log.info("Stopping Pass-through " + namePrefix + " Listener..");
         try {
             int wait = PassThroughConfiguration.getInstance().getListenerShutdownWaitTime();
+            passThroughListeningIOReactorManager.pauseIOReactor(operatingPort);
             if (wait > 0) {
-                passThroughListeningIOReactorManager.pauseIOReactor(operatingPort);
                 log.info("Waiting " + wait/1000 + " seconds to cleanup active connections...");
                 Thread.sleep(wait);
                 passThroughListeningIOReactorManager.shutdownIOReactor(operatingPort, wait);
             } else {
-                passThroughListeningIOReactorManager.shutdownIOReactor(operatingPort);
+                boolean isGracefulShutdownEnabled = Boolean.parseBoolean(
+                        System.getProperty("gracefulShutdown", "true"));
+                if (isGracefulShutdownEnabled) {
+                    long so_timeout = PassThroughConfiguration.getInstance()
+                            .getIntProperty(HttpConnectionParams.SO_TIMEOUT, Pipe.DEFAULT_TIME_OUT_VALUE);
+                    passThroughListeningIOReactorManager.shutdownIOReactor(
+                            operatingPort, sourceConfiguration, so_timeout);
+                } else {
+                    passThroughListeningIOReactorManager.shutdownIOReactor(operatingPort);
+                }
             }
             serviceTracker.stop();
             handler.stop();

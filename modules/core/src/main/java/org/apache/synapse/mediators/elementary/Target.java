@@ -44,11 +44,13 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.commons.json.Constants;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.apache.synapse.util.InlineExpressionUtil;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.apache.synapse.util.xpath.SynapseXPathConstants;
@@ -163,6 +165,7 @@ public class Target {
                     throw new SynapseException("Invalid Target object to be enrich.");
                 }
             }
+            removeOutdatedJsonStream(((Axis2MessageContext) synContext).getAxis2MessageContext());
         } else if (targetType == EnrichMediator.BODY) {
             SOAPEnvelope env = synContext.getEnvelope();
             SOAPBody body = env.getBody();
@@ -182,6 +185,7 @@ public class Target {
                         synLog.error("Invalid Object type to be inserted into message body");
                     }
                 }
+                removeOutdatedJsonStream(((Axis2MessageContext) synContext).getAxis2MessageContext());
             }
         } else if (targetType == EnrichMediator.ENVELOPE) {
             OMNode node = sourceNodeList.get(0);
@@ -196,6 +200,7 @@ public class Target {
                 synLog.error("SOAPEnvelope is expected");
                 throw new SynapseException("A SOAPEnvelope is expected");
             }
+            removeOutdatedJsonStream(((Axis2MessageContext) synContext).getAxis2MessageContext());
         } else if (targetType == EnrichMediator.PROPERTY) {
             assert property != null : "Property cannot be null for PROPERTY type";
 			if (action != null && property != null) {
@@ -287,18 +292,26 @@ public class Target {
                                      MessageContext synCtx) {
         if (action.equals(ACTION_REPLACE) && !sourceNodeList.isEmpty() && sourceNodeList.get(0) instanceof OMText) {
             String sourceString = ((OMText)sourceNodeList.get(0)).getText();
-            JsonElement jsonElement = jsonParser.parse(sourceString);
-            if (jsonElement instanceof JsonObject || jsonElement instanceof JsonArray) {
-                try {
-                    JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
-                            sourceString, true, true);
-                    return;
-                } catch (AxisFault af) {
-                    log.error("Could not add json object to the json stream", af);
+            try {
+                JsonElement jsonElement = jsonParser.parse(sourceString);
+                if (jsonElement instanceof JsonObject || jsonElement instanceof JsonArray) {
+                    try {
+                        JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
+                                sourceString, true, true);
+                        return;
+                    } catch (AxisFault af) {
+                        log.error("Could not add json object to the json stream", af);
+                    }
                 }
+            } catch (JsonSyntaxException ex) {
+                synLog.traceOrDebug("Source property string is not a valid json");
+                //continue treating source as xml
+                insertElement(sourceNodeList, e, synLog);
+                removeOutdatedJsonStream(((Axis2MessageContext) synCtx).getAxis2MessageContext());
             }
         }
         insertElement(sourceNodeList, e, synLog);
+        removeOutdatedJsonStream(((Axis2MessageContext) synCtx).getAxis2MessageContext());
     }
 
     /**
@@ -458,22 +471,51 @@ public class Target {
      * @param synCtx   message context.
      * @param jsonPath JSON-path expression to select the removing element.
      */
-    public void removeJson(MessageContext synCtx, SynapsePath jsonPath) throws IOException, PathNotFoundException {
-        SynapseJsonPath synapseJsonPath = (SynapseJsonPath) jsonPath;
+    public void removeJsonFromBody(MessageContext synCtx, SynapsePath jsonPath)
+            throws IOException, PathNotFoundException {
         Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
         org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
-        // handle complete removal of the message body.
+        String jsonString = IOUtils.toString(JsonUtil.getJsonPayload(axis2MessageCtx));
+        String result = removeJSONFromString(jsonString, jsonPath);
+        JsonUtil.getNewJsonPayload(axis2MessageCtx, result, true, true);
+    }
+
+    /**
+     * This method will remove all the matching elements of the given jsonPath from the JSON payload in the property
+     * and set the result back to the same property.
+     *
+     * @param synCtx   message context.
+     * @param property name of the property.
+     * @param jsonPath JSON-path expression to select the removing element.
+     */
+    public void removeJsonFromProperty(MessageContext synCtx, String property, SynapsePath jsonPath) {
+        Object propertyObject = synCtx.getProperty(property);
+        String propertyValue = "";
+        if (propertyObject instanceof String) {
+            propertyValue = (String) propertyObject;
+        } else if (propertyObject instanceof JsonElement) {
+            propertyValue = propertyObject.toString();
+        } else {
+            throw new SynapseException(
+                    "Cannot perform the remove operation. Data type of the property " + property + " is not string " +
+                            "| JSON");
+        }
+        String result = removeJSONFromString(propertyValue,jsonPath);
+        synCtx.setProperty(property,result);
+    }
+
+    //Given input sting and jsonPath expression this method will remove all the matching elements from the input string.
+    private String removeJSONFromString(String inputString, SynapsePath jsonPath) {
+        String result = inputString;
+        SynapseJsonPath synapseJsonPath = (SynapseJsonPath) jsonPath;
         String jsonPathString = synapseJsonPath.toString();
         // removing "json-eval(" and extract only the expression
         jsonPathString = jsonPathString.substring(10, jsonPathString.length() - 1);
-        // multi expression support ( accept comma separated list of JSON-path expressions )
         String[] jsonPathArray = jsonPathString.split(",");
-        String jsonString = IOUtils.toString(JsonUtil.getJsonPayload(axis2MessageCtx));
-        String result = jsonString;
         if (jsonPathArray.length > 0) {
             for (String path : jsonPathArray) {
+                // handle complete removal of the message body.
                 if (path.equals("$") || path.equals("$.")) {
-                    JsonUtil.getNewJsonPayload(axis2MessageCtx, "", true, true);
                     result = "";
                 } else {
                     DocumentContext doc = JsonPath.parse(result);
@@ -481,10 +523,9 @@ public class Target {
                     result = doc.jsonString();
                 }
             }
-            JsonUtil.getNewJsonPayload(axis2MessageCtx, result, true, true);
         }
+        return result;
     }
-
     /**
      * Renames a json key name at the specified json path with a new key name
      *
@@ -512,7 +553,21 @@ public class Target {
      */
     private void setEnrichResultToBody(MessageContext synapseContext, SynapseJsonPath synapseJsonPath, Object
             sourceNode) {
-        String expression = synapseJsonPath.getJsonPath().getPath();
+
+        if (InlineExpressionUtil.checkForInlineExpressions(synapseJsonPath.toString())) {
+            try {
+                String jsonpath = synapseJsonPath.toString();
+                if (jsonpath.startsWith("json-eval(")) {
+                    jsonpath = jsonpath.substring(10, jsonpath.length() - 1);
+                }
+                synapseJsonPath =
+                        new SynapseJsonPath(InlineExpressionUtil.replaceDynamicValues(synapseContext, jsonpath));
+            } catch (JaxenException e) {
+                log.error("Error occurred while evaluating JSONPath", e);
+            }
+        }
+
+        String expression = synapseJsonPath.getJsonPathExpression();
 
         // Though SynapseJsonPath support "$.", the JSONPath implementation does not support it
         if (expression.endsWith(".")) {
@@ -579,6 +634,18 @@ public class Target {
         }
 
         return newJsonString;
+    }
+
+    /**
+     * Removes outdated jsonstream (if exists) after enriching XML payload.
+     *
+     * @param axis2MsgCtx Axis2MessageContext of whose json stream should be removed.
+     */
+    private void removeOutdatedJsonStream(org.apache.axis2.context.MessageContext axis2MsgCtx) {
+        // Removing the JSON stream since the payload is now updated.
+        // Json-eval and other JsonUtil functions now needs to convert XML -> JSON
+        // related to wso2/product-ei/issues/1771
+        axis2MsgCtx.removeProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
     }
 
     public SynapsePath getXpath() {

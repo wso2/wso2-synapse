@@ -18,11 +18,13 @@
 
 package org.apache.synapse.message.store;
 
+import com.rabbitmq.client.Address;
 import com.rabbitmq.client.ConnectionFactory;
 import junit.framework.Assert;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.engine.AxisConfiguration;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.message.store.impl.rabbitmq.RabbitMQConsumer;
@@ -35,6 +37,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.lang.reflect.Field;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,6 +51,7 @@ public class RabbitMQStoreTest {
 
     private static RabbitMQStore rabbitMQStore;
     private static Field connectionFactory;
+    private static Field addresses;
     private static ConfigurationContext configurationContext;
     private static final String USERNAME = "TestUserName";
     private static final String PASSWORD = "TestPassword";
@@ -62,6 +66,8 @@ public class RabbitMQStoreTest {
         //Accessing private variable using reflection
         connectionFactory = RabbitMQStore.class.getDeclaredField("connectionFactory");
         connectionFactory.setAccessible(true);
+        addresses = RabbitMQStore.class.getDeclaredField("addresses");
+        addresses.setAccessible(true);
         //Setting parameters of the RabbitMQStore
         Map<String, Object> temp = new HashMap<>();
         temp.put(RabbitMQStore.USERNAME, USERNAME);
@@ -70,25 +76,32 @@ public class RabbitMQStoreTest {
         temp.put(RabbitMQStore.HOST_PORT, PORT);
         temp.put(RabbitMQStore.VIRTUAL_HOST, VIRTUAL_HOST);
         temp.put(RabbitMQStore.QUEUE_NAME, QUEUE);
+        temp.put(RabbitMQStore.RETRY_INTERVAL, "0");
+        temp.put(RabbitMQStore.RETRY_COUNT, "0");
         rabbitMQStore.setParameters(temp);
         AxisConfiguration axisConfiguration = new AxisConfiguration();
         configurationContext = new ConfigurationContext(axisConfiguration);
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
         Axis2SynapseEnvironment env = new Axis2SynapseEnvironment(configurationContext, synapseConfiguration);
-        rabbitMQStore.init(env);
+        try {
+            rabbitMQStore.init(env);
+        } catch (Exception ignore) {
+            // org.apache.synapse.SynapseException will throw wrapping the java.net.UnknownHostException because the
+            // init method is trying to create an connection with the broker.
+        }
     }
 
     /**
      * call init method with dummy values and validating connectionFactory object
      *
-     * @throws NoSuchFieldException
      * @throws IllegalAccessException
      */
     @Test
-    public void testInit() throws NoSuchFieldException, IllegalAccessException {
+    public void testInit() throws IllegalAccessException {
         ConnectionFactory factory = (ConnectionFactory) connectionFactory.get(rabbitMQStore);
-        Assert.assertEquals("should return previously stored values", factory.getPort(), Integer.parseInt(PORT));
-        Assert.assertEquals("should return previously stored values", factory.getHost(), HOST);
+        Address[] addresses = (Address[]) RabbitMQStoreTest.addresses.get(rabbitMQStore);
+        Assert.assertEquals("should return previously stored values", addresses[0].getPort(), Integer.parseInt(PORT));
+        Assert.assertEquals("should return previously stored values", addresses[0].getHost(), HOST);
         Assert.assertEquals("should return previously stored values", factory.getPassword(), PASSWORD);
         Assert.assertEquals("should return previously stored values", factory.getUsername(), USERNAME);
         Assert.assertEquals("should return previously stored values", factory.getVirtualHost(), VIRTUAL_HOST);
@@ -97,7 +110,7 @@ public class RabbitMQStoreTest {
     /**
      * Creating a producer and validate initialized
      */
-    @Test
+    @Test(expected = SynapseException.class)
     public void testGetProducer() {
         RabbitMQProducer messageProducer = (RabbitMQProducer) rabbitMQStore.getProducer();
         Assert.assertTrue("MessageProducer should be initialized", messageProducer.isInitialized());
@@ -106,7 +119,7 @@ public class RabbitMQStoreTest {
     /**
      * Creating a consumer and validating consumer id
      */
-    @Test
+    @Test(expected = SynapseException.class)
     public void testGetConsumer() {
         RabbitMQConsumer messageConsumer = (RabbitMQConsumer) rabbitMQStore.getConsumer();
         Assert.assertEquals("Comparing MessageConsumer id", "[null-C-1]", messageConsumer.getId());

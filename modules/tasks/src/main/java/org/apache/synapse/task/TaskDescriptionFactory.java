@@ -128,17 +128,19 @@ public class TaskDescriptionFactory {
                 OMAttribute count = trigger.getAttribute(new QName("count"));
                 if (count != null) {
                     try {
-                        taskDescription.setCount(Integer.parseInt(count.getAttributeValue()));
+                        taskDescription.setCount(Integer.parseInt(ResolverFactory.getInstance().
+                                getResolver(count.getAttributeValue()).resolve()));
                     } catch (Exception e) {
                         handleException("Failed to parse trigger count as an integer", e);
                     }
                 }
 
                 OMAttribute once = trigger.getAttribute(new QName("once"));
-                if (once != null && Boolean.TRUE.toString().equals(once.getAttributeValue())) {
+                if (once != null && Boolean.TRUE.toString().equals(ResolverFactory.getInstance().
+                        getResolver(once.getAttributeValue()).resolve())) {
                     taskDescription.setCount(1);
-                    taskDescription.setInterval(1);
-                    taskDescription.setIntervalInMs(false);
+                    taskDescription.setInterval(1000);
+                    taskDescription.setIntervalInMs(true);
                 }
 
                 OMAttribute repeatInterval = trigger.getAttribute(new QName("interval"));
@@ -148,7 +150,8 @@ public class TaskDescriptionFactory {
                 } else if (repeatInterval != null && repeatInterval.getAttributeValue() != null) {
                     try {
                         long repeatIntervalInSeconds = Long.parseLong(
-                                repeatInterval.getAttributeValue());
+                                ResolverFactory.getInstance().
+                                        getResolver(repeatInterval.getAttributeValue()).resolve());
                         long repeatIntervalInMillis = repeatIntervalInSeconds * 1000;
                         taskDescription.setInterval(repeatIntervalInMillis);
                         taskDescription.setIntervalInMs(true);
@@ -166,7 +169,8 @@ public class TaskDescriptionFactory {
                     handleException("Trigger syntax error : " +
                             "both cron and simple trigger attributes are present");
                 } else if (expr != null && expr.getAttributeValue() != null) {
-                    taskDescription.setCronExpression(expr.getAttributeValue());
+                    taskDescription.setCronExpression(ResolverFactory.getInstance().
+                            getResolver(expr.getAttributeValue()).resolve());
                 }
 
             } else {

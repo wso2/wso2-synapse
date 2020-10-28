@@ -149,8 +149,8 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
 
                 //delete the iterated json object if the attachPath is different from expression.
                 // If both are same, the json object will be replaced eventually, so no need to do it here
-                if (!((SynapseJsonPath) expression).getJsonPath().getPath()
-                        .equals(((SynapseJsonPath) attachPath).getJsonPath().getPath())) {
+                if (!((SynapseJsonPath) expression).getJsonPathExpression()
+                        .equals(((SynapseJsonPath) attachPath).getJsonPathExpression())) {
 
                     //parse the json into gson to delete the iterated json array
                     JsonElement rootJsonElement = parser.parse(rootJSON.toString());

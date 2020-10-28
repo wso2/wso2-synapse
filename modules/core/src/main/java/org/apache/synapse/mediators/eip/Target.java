@@ -31,6 +31,7 @@ import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.util.logging.LoggingUtils;
 
 /**
  * A bean class that holds the target (i.e. sequence or endpoint) information for a message
@@ -255,22 +256,27 @@ public class Target {
             return sequenceMediator.mediate(synCtx);
         } catch (SynapseException syne) {
             if (!synCtx.getFaultStack().isEmpty()) {
-                log.warn("Executing fault handler due to exception encountered", syne);
-                ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, syne);
+                log.warn(LoggingUtils.getFormattedLog(synCtx, "Executing fault handler due to exception encountered"),
+                         syne);
+                (synCtx.getFaultStack().pop()).handleFault(synCtx, syne);
             } else {
-                log.warn("Exception encountered but no fault handler found - message dropped");
+                log.warn(LoggingUtils.getFormattedLog(synCtx,
+                                                      "Exception encountered but no fault handler found - message "
+                                                              + "dropped"));
             }
         } catch (Exception e) {
             String msg = "Unexpected error occurred executing the Target";
-            log.error(msg, e);
+            log.error(LoggingUtils.getFormattedLog(synCtx, msg), e);
             if (synCtx.getServiceLog() != null) {
                 synCtx.getServiceLog().error(msg, e);
             }
             if (!synCtx.getFaultStack().isEmpty()) {
-                log.warn("Executing fault handler due to exception encountered");
-                ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, e);
+                log.warn(LoggingUtils.getFormattedLog(synCtx, "Executing fault handler due to exception encountered"));
+                (synCtx.getFaultStack().pop()).handleFault(synCtx, e);
             } else {
-                log.warn("Exception encountered but no fault handler found - message dropped");
+                log.warn(LoggingUtils.getFormattedLog(synCtx,
+                                                      "Exception encountered but no fault handler found - message "
+                                                              + "dropped"));
             }
         }
         return true;

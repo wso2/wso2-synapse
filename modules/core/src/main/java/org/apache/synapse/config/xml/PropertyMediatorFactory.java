@@ -23,7 +23,11 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.builtin.PropertyMediator;
+import org.apache.synapse.util.MediatorPropertyUtils;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
+import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
@@ -71,7 +75,29 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
             log.error(msg);
             throw new SynapseException(msg);
         }
-        
+
+        //check the property name dynamic or not
+        String nameAttributeValue = name.getAttributeValue();
+        if (MediatorPropertyUtils.isDynamicName(nameAttributeValue)) {
+            try {
+                String nameExpression = nameAttributeValue.substring(1, nameAttributeValue.length() - 1);
+                if(nameExpression.startsWith("json-eval(")) {
+                    new SynapseJsonPath(nameExpression.substring(10, nameExpression.length() - 1));
+                } else {
+                    new SynapseXPath(nameExpression);
+                }
+            } catch (JaxenException e) {
+                String msg = "Invalid expression for attribute 'name' : " + nameAttributeValue;
+                log.error(msg);
+                throw new SynapseException(msg);
+            }
+            // ValueFactory for creating dynamic Value
+            ValueFactory nameValueFactory = new ValueFactory();
+            // create dynamic Value based on OMElement
+            Value generatedNameValue = nameValueFactory.createValue(XMLConfigConstants.NAME, elem);
+            propMediator.setDynamicNameValue(generatedNameValue);
+        }
+
         propMediator.setName(name.getAttributeValue());
         String dataType = null;
         if (type != null) {
@@ -122,11 +148,12 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
         if (scope != null) {
             String valueStr = scope.getAttributeValue();
             if (!XMLConfigConstants.SCOPE_AXIS2.equals(valueStr) &&
-                !XMLConfigConstants.SCOPE_TRANSPORT.equals(valueStr) &&
-                !XMLConfigConstants.SCOPE_OPERATION.equals(valueStr) &&
-                !XMLConfigConstants.SCOPE_DEFAULT.equals(valueStr) &&
-                !XMLConfigConstants.SCOPE_CLIENT.equals(valueStr) &&
-                !XMLConfigConstants.SCOPE_REGISTRY.equals(valueStr)) {
+                    !XMLConfigConstants.SCOPE_TRANSPORT.equals(valueStr) &&
+                    !XMLConfigConstants.SCOPE_OPERATION.equals(valueStr) &&
+                    !XMLConfigConstants.SCOPE_DEFAULT.equals(valueStr) &&
+                    !XMLConfigConstants.SCOPE_CLIENT.equals(valueStr) &&
+                    !XMLConfigConstants.SCOPE_REGISTRY.equals(valueStr) &&
+                    !XMLConfigConstants.SCOPE_TRACE.equals(valueStr)) {
 
                 String msg = "Only '" + XMLConfigConstants.SCOPE_AXIS2 +
                              "' or '" + XMLConfigConstants.SCOPE_TRANSPORT +
@@ -134,6 +161,7 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
                              "' or '" + XMLConfigConstants.SCOPE_DEFAULT +
                              "' or '" + XMLConfigConstants.SCOPE_OPERATION +
                              "' or '" + XMLConfigConstants.SCOPE_REGISTRY +
+                             "' or '" + XMLConfigConstants.SCOPE_TRACE +
                              "' values are allowed for attribute scope for a property mediator" +
                              ", Unsupported scope " + valueStr;
                 log.error(msg);
@@ -154,4 +182,5 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
     public QName getTagQName() {
         return PROP_Q;
     }
+
 }

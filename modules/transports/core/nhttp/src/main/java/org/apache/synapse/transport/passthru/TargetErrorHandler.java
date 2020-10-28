@@ -26,9 +26,15 @@ import org.apache.axis2.util.MessageContextBuilder;
 import org.apache.axis2.wsdl.WSDLConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.MDC;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 
 public class TargetErrorHandler {
     private Log log = LogFactory.getLog(TargetErrorHandler.class);
@@ -72,6 +78,15 @@ public class TargetErrorHandler {
         targetConfiguration.getWorkerPool().execute(new Runnable() {
             public void run() {
                 MessageReceiver mr = mc.getAxisOperation().getMessageReceiver();
+
+                // Remove Correlation-ID MDC thread local value that can be persisting from the previous usage of
+                // this thread and add a new one if there is any
+                MDC.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
+                Object correlationId = mc.getProperty(CorrelationConstants.CORRELATION_ID);
+                if (correlationId != null) {
+                    MDC.put(CorrelationConstants.CORRELATION_MDC_PROPERTY, correlationId);
+                }
+
                 try {
                     AxisFault axisFault = (exceptionToRaise != null ?
                             new AxisFault(errorMessage, exceptionToRaise) :
@@ -123,7 +138,7 @@ public class TargetErrorHandler {
                     }
                     if (exceptionToRaise != null) {
                         faultMessageContext.setProperty(
-                                PassThroughConstants.ERROR_DETAIL, exceptionToRaise.toString());
+                                PassThroughConstants.ERROR_DETAIL, getStackTrace(exceptionToRaise));
                         faultMessageContext.setProperty(
                                 PassThroughConstants.ERROR_EXCEPTION, exceptionToRaise);
                         envelope.getBody().getFault().getDetail().setText(
@@ -135,8 +150,10 @@ public class TargetErrorHandler {
                     }
 
                     faultMessageContext.setProperty(PassThroughConstants.NO_ENTITY_BODY, true);
-                    faultMessageContext.setProperty(PassThroughConstants.CORRELATION_ID,
-                            mc.getProperty(PassThroughConstants.CORRELATION_ID));
+                    faultMessageContext.setProperty(CorrelationConstants.CORRELATION_ID,
+                            mc.getProperty(CorrelationConstants.CORRELATION_ID));
+                    faultMessageContext.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                            mc.getProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN));
                     mr.receive(faultMessageContext);
 
                 } catch (AxisFault af) {
@@ -149,6 +166,14 @@ public class TargetErrorHandler {
     private int getErrorCode(int errorCode, ProtocolState state) {
         return errorCode + state.ordinal();
     }
+
+    private String getStackTrace(Throwable aThrowable) {
+        final Writer result = new StringWriter();
+        final PrintWriter printWriter = new PrintWriter(result);
+        aThrowable.printStackTrace(printWriter);
+        return result.toString();
+    }
+
 
     private void updateFaultInfo(int errorCode, MessageContext mc, PassThroughTransportMetricsCollector metrics) {
         if (mc.getAxisOperation() != null &&

@@ -33,8 +33,9 @@ import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
-import org.apache.log4j.MDC;
 import org.apache.synapse.commons.jmx.ThreadingView;
+import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.commons.transaction.TranscationManger;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.transport.http.conn.LoggingNHttpServerConnection;
@@ -49,6 +50,8 @@ import javax.net.ssl.SSLException;
 import javax.ws.rs.HttpMethod;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -146,13 +149,15 @@ public class SourceHandler implements NHttpServerEventHandler {
                 conn.getContext().setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_END_TIME, System.currentTimeMillis());
             }
             OutputStream os = getOutputStream(method, request);
-            Object correlationId = conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID);
+            Object correlationId = conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID);
             if (correlationId != null) {
                 sourceConfiguration.getWorkerPool().execute(new ServerWorker(request, sourceConfiguration, os,
                         System.currentTimeMillis(), correlationId.toString()));
             } else {
                 sourceConfiguration.getWorkerPool().execute(new ServerWorker(request, sourceConfiguration, os));
             }
+            //increasing the input request metric
+            metrics.requestReceived();
         } catch (HttpException e) {
             log.error("HttpException occurred when request is processing probably when creating SourceRequest", e);
 
@@ -161,6 +166,13 @@ public class SourceHandler implements NHttpServerEventHandler {
             SourceContext.updateState(conn, ProtocolState.CLOSED);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
         } catch (IOException e) {
+            ProtocolState protocolState = SourceContext.getState(conn);
+            Map<String, String> logDetails = getLoggingInfo(conn, protocolState);
+            log.warn("STATE_DESCRIPTION = IO/Exception occurred when submitting response to request with header "
+                    + "Expected: 100-receive, INTERNAL_STATE = " + protocolState + ", DIRECTION = " + logDetails
+                    .get("direction") + ", " + "CAUSE_OF_ERROR = " + e.getMessage() + ", HTTP_URL = " + logDetails
+                    .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = "
+                    + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
             logIOException(conn, e);
 
             informReaderError(conn);
@@ -170,7 +182,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         }
     }
 
-    private void setCorrelationId(NHttpServerConnection conn) {
+    public void setCorrelationId(NHttpServerConnection conn) {
         HttpContext httpContext = conn.getContext();
         String correlationHeaderName = PassThroughConfiguration.getInstance().getCorrelationHeaderName();
         Header[] correlationHeader = conn.getHttpRequest().getHeaders(correlationHeaderName);
@@ -181,7 +193,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             correlationId = UUID.randomUUID().toString();
             conn.getHttpRequest().setHeader(correlationHeaderName, correlationId);
         }
-        httpContext.setAttribute(PassThroughConstants.CORRELATION_ID, correlationId);
+        httpContext.setAttribute(CorrelationConstants.CORRELATION_ID, correlationId);
     }
 
     public void inputReady(NHttpServerConnection conn,
@@ -200,7 +212,6 @@ public class SourceHandler implements NHttpServerEventHandler {
             SourceRequest request = SourceContext.getRequest(conn);
 
             int readBytes = request.read(conn, decoder);
-
             if (isMessageSizeValidationEnabled) {
                 HttpContext httpContext = conn.getContext();
                 //this is introduced as some transports which extends passthrough source handler which have overloaded
@@ -216,6 +227,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                     log.warn("Payload exceeds valid payload size range, hence discontinuing chunk stream at "
                             + messageSizeSum + " bytes to prevent OOM.");
                     dropSourceConnection(conn);
+                    metrics.exceptionOccured();
                     conn.getContext().setAttribute(PassThroughConstants.SOURCE_CONNECTION_DROPPED, true);
                     //stopped http chunk stream from here and mark producer complete
                     request.getPipe().forceProducerComplete(decoder);
@@ -226,11 +238,20 @@ public class SourceHandler implements NHttpServerEventHandler {
             if (readBytes > 0) {
                 metrics.incrementBytesReceived(readBytes);
             }
-
         } catch (IOException e) {
+            ProtocolState protocolState = SourceContext.getState(conn);
+            Map<String, String> logDetails = getLoggingInfo(conn, protocolState);
+            log.warn("STATE_DESCRIPTION = IO/Exception when reading bytes of request body from the underlying stream, "
+                    + "INTERNAL_STATE" + " = " + protocolState + ", DIRECTION = " + logDetails.get("direction") + ", "
+                    + "CAUSE_OF_ERROR = " + e.getMessage() + ", HTTP_URL = " + logDetails.get("url") + ", "
+                    + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = " + getClientConnectionInfo(
+                    conn) + ", CONNECTION " + conn);
+
             logIOException(conn, e);
 
             informReaderError(conn);
+            //decrementing the request metric
+            metrics.exceptionOccured();
 
             SourceContext.updateState(conn, ProtocolState.CLOSED);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
@@ -314,7 +335,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                     if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                         logCorrelationRoundTrip(context,request);
                     }
-                    updateLatencyView(context);
+                    updateMetricsView(context);
                 }
             }
         } catch (IOException e) {
@@ -341,6 +362,8 @@ public class SourceHandler implements NHttpServerEventHandler {
             
             //special case to handle WSDLs
             if(protocolState == ProtocolState.WSDL_RESPONSE_DONE){
+                //decrement request count for wsdl responses
+                metrics.requestServed();
             	// we need to shut down if the shutdown flag is set
             	 HttpContext context = conn.getContext();
             	 ContentOutputBuffer outBuf = (ContentOutputBuffer) context.getAttribute(
@@ -385,7 +408,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                 if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                     logCorrelationRoundTrip(context, request);
                 }
-                updateLatencyView(context);
+                updateMetricsView(context);
 			}
 			endTransaction(conn);
             metrics.incrementBytesSent(bytesSent);
@@ -400,13 +423,11 @@ public class SourceHandler implements NHttpServerEventHandler {
     }
 
     private void logCorrelationRoundTrip(HttpContext context, SourceRequest request) {
-        MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
-                context.getAttribute(PassThroughConstants.CORRELATION_ID).toString());
+
         long startTime = (long) context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME);
-        correlationLog.info((System.currentTimeMillis() - startTime) + "|HTTP|"
-                + context.getAttribute("http.connection") + "|" + request.getMethod() + "|" + request.getUri()
-                + "|ROUND-TRIP LATENCY ");
-        MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+        ContextAwareLogger.getLogger(context, correlationLog, false)
+                .info((System.currentTimeMillis() - startTime) + "|HTTP|" + context.getAttribute("http.connection")
+                        + "|" + request.getMethod() + "|" + request.getUri() + "|ROUND-TRIP LATENCY ");
     }
 
     public void logIOException(NHttpServerConnection conn, IOException e) {
@@ -444,41 +465,52 @@ public class SourceHandler implements NHttpServerEventHandler {
     public void timeout(NHttpServerConnection conn) {
     	boolean isTimeoutOccurred = false;
         ProtocolState state = SourceContext.getState(conn);
+        Map<String, String> logDetails = getLoggingInfo(conn, state);
 
         if (state == ProtocolState.REQUEST_READY || state == ProtocolState.RESPONSE_DONE) {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": Keep-Alive connection was time out: ");
             }
-        } else if (state == ProtocolState.REQUEST_BODY ||
-                state == ProtocolState.REQUEST_HEAD) {
-
+        } else if (state == ProtocolState.REQUEST_BODY || state == ProtocolState.REQUEST_HEAD) {
             metrics.incrementTimeoutsReceiving();
-
+            metrics.timeoutOccured();
             informReaderError(conn);
             isTimeoutOccurred = true;
 
-            log.warn("Connection time out while reading the request: " + conn +
-                     " Socket Timeout : " + conn.getSocketTimeout() +
-                     getConnectionLoggingInfo(conn));
+            log.warn("STATE_DESCRIPTION = Socket Timeout occurred after reading the request headers but Server is "
+                    + "still reading the request body, INTERNAL_STATE = " + state + ", DIRECTION = " + logDetails
+                    .get("direction") + ", "
+                    + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = " + logDetails
+                    .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = " + conn
+                    .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
             if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
-        } else if (state == ProtocolState.RESPONSE_BODY ||
-                state == ProtocolState.RESPONSE_HEAD) {
+        } else if (state == ProtocolState.RESPONSE_BODY || state == ProtocolState.RESPONSE_HEAD) {
             informWriterError(conn);
             isTimeoutOccurred = true;
-            log.warn("Connection time out while writing the response: " + conn +
-                     " Socket Timeout : " + conn.getSocketTimeout() +
-                     getConnectionLoggingInfo(conn));
+            metrics.timeoutOccured();
+            log.warn("STATE_DESCRIPTION = Socket Timeout occurred after server writing the response headers to the "
+                    + "client" + "but Server is still writing the response body, INTERNAL_STATE = " + state
+                    + ", DIRECTION = " + logDetails.get("direction") + ", "
+                    + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = " + logDetails
+                    .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = " + conn
+                    .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
             if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
         } else if (state == ProtocolState.REQUEST_DONE) {
             informWriterError(conn);
         	isTimeoutOccurred = true;
-            log.warn("Connection time out after request is read: " + conn +
-                     " Socket Timeout : " + conn.getSocketTimeout() +
-                     getConnectionLoggingInfo(conn));
+            metrics.timeoutOccured();
+            log.warn(
+                    "STATE_DESCRIPTION = Socket Timeout occurred after accepting the request headers and the request "
+                            + "body, INTERNAL_STATE = "
+                            + state + ", DIRECTION = " + logDetails.get("direction") + ", "
+                            + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = "
+                            + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
+                            + ", SOCKET_TIMEOUT = " + conn.getSocketTimeout() + ", CLIENT_ADDRESS = "
+                            + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
             if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
@@ -494,32 +526,45 @@ public class SourceHandler implements NHttpServerEventHandler {
 
     public void closed(NHttpServerConnection conn) {
         ProtocolState state = SourceContext.getState(conn);
+        Map<String, String> logDetails = getLoggingInfo(conn, state);
         boolean isFault = false;
         if (state == ProtocolState.REQUEST_READY || state == ProtocolState.RESPONSE_DONE) {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": Keep-Alive connection was closed: " +
                           getConnectionLoggingInfo(conn));
             }
-        } else if (state == ProtocolState.REQUEST_BODY ||
-                state == ProtocolState.REQUEST_HEAD) {
+        } else if (state == ProtocolState.REQUEST_BODY || state == ProtocolState.REQUEST_HEAD) {
         	isFault = true;
             informReaderError(conn);
-            log.warn("Connection closed while reading the request: " + conn + getConnectionLoggingInfo(conn));
+            log.warn("STATE_DESCRIPTION = Connection closed while server accepting request headers but prior to "
+                    + "finish reading the request body, INTERNAL_STATE = " + state + ", DIRECTION = " + logDetails
+                    .get("direction") + ", "
+                    + "CAUSE_OF_ERROR = Connection between EI and the Client has been closed, HTTP_URL = " + logDetails
+                    .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = "
+                    + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
+
             if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                 logHttpRequestErrorInCorrelationLog(conn, "Connection Closed in " + state.name());
             }
-        } else if (state == ProtocolState.RESPONSE_BODY ||
-                state == ProtocolState.RESPONSE_HEAD) {
+        } else if (state == ProtocolState.RESPONSE_BODY || state == ProtocolState.RESPONSE_HEAD) {
         	isFault = true;
             informWriterError(conn);
-            log.warn("Connection closed while writing the response: " + conn + getConnectionLoggingInfo(conn));
+            log.warn("STATE_DESCRIPTION = Connection closed while server writing the response headers or body, "
+                    + "INTERNAL_STATE = " + state + ", DIRECTION = " + logDetails.get("direction") + ", "
+                    + "CAUSE_OF_ERROR = Connection between EI and the Client has been closed, HTTP_URL = " + logDetails
+                    .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = "
+                    + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
             if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                 logHttpRequestErrorInCorrelationLog(conn, "Connection Closed in " + state.name());
             }
         } else if (state == ProtocolState.REQUEST_DONE) {
         	isFault = true;
             informWriterError(conn);
-            log.warn("Connection closed by the client after request is read: " + conn + getConnectionLoggingInfo(conn));
+            log.warn("STATE_DESCRIPTION = Connection closed after server accepting the request headers and the "
+                    + "request body, INTERNAL_STATE = " + state + ", DIRECTION = " + logDetails.get("direction") + ", "
+                    + "CAUSE_OF_ERROR = Connection between EI and the Client has been closed, HTTP_URL = " + logDetails
+                    .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = "
+                    + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
             if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                 logHttpRequestErrorInCorrelationLog(conn, "Connection Closed in " + state.name());
             }
@@ -610,6 +655,34 @@ public class SourceHandler implements NHttpServerEventHandler {
 		}     
     }
 
+    private Map<String, String> getLoggingInfo(NHttpServerConnection conn, ProtocolState state) {
+        HashMap<String, String> logDetails = new HashMap<>();
+        SourceContext sourceContext = SourceContext.get(conn);
+        if (sourceContext != null) {
+            String url = "", method = "";
+            if (sourceContext.getRequest() != null) {
+                url = sourceContext.getRequest().getUri();
+                method = sourceContext.getRequest().getMethod();
+            } else {
+                HttpRequest httpRequest = conn.getHttpRequest();
+                if (httpRequest != null) {
+                    url = httpRequest.getRequestLine().getUri();
+                    method = httpRequest.getRequestLine().getMethod();
+                }
+            }
+            logDetails.put("url", url);
+            logDetails.put("method", method);
+        }
+        if (state != null) {
+            if (state.compareTo(ProtocolState.REQUEST_DONE) <= 0) {
+                logDetails.put("direction", "REQUEST");
+            } else {
+                logDetails.put("direction", "RESPONSE");
+            }
+        }
+        return logDetails;
+    }
+
     private void handleInvalidState(NHttpServerConnection conn, String action) {
         log.warn(action + " while the handler is in an inconsistent state " +
                 SourceContext.getState(conn));
@@ -686,7 +759,8 @@ public class SourceHandler implements NHttpServerEventHandler {
     }
 
 
-    private void updateLatencyView(HttpContext context) {
+    private void updateMetricsView(HttpContext context) {
+        metrics.requestServed();
         if (context == null) {
             return;
         }
@@ -780,6 +854,16 @@ public class SourceHandler implements NHttpServerEventHandler {
 	    return "";
     }
 
+    private String getClientConnectionInfo(NHttpServerConnection conn) {
+        if (conn instanceof LoggingNHttpServerConnection) {
+            IOSession session = ((LoggingNHttpServerConnection) conn).getIOSession();
+            if (session != null) {
+                return session.getRemoteAddress().toString();
+            }
+        }
+        return "";
+    }
+
     private void logHttpRequestErrorInCorrelationLog(NHttpServerConnection conn, String state) {
 
         SourceContext sourceContext = SourceContext.get(conn);
@@ -796,13 +880,11 @@ public class SourceHandler implements NHttpServerEventHandler {
                 }
             }
             if ((method.length() != 0) && (url.length() != 0)) {
-                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
-                        conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
                 long startTime = (long) conn.getContext().getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME);
-                correlationLog.info((System.currentTimeMillis() - startTime) + "|HTTP|"
-                        + conn.getContext().getAttribute("http.connection") + "|" + method + "|" + url
-                        + "|" + state);
-                MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+                ContextAwareLogger.getLogger(conn.getContext(), correlationLog, false)
+                        .info((System.currentTimeMillis() - startTime) + "|HTTP|"
+                                + conn.getContext().getAttribute("http.connection") + "|" + method + "|" + url
+                                + "|" + state);
             }
         }
     }

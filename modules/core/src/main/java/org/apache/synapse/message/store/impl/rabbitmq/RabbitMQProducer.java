@@ -1,13 +1,13 @@
 /**
- *  Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
- *
- *  WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
+ * Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * <p>
+ * WSO2 Inc. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,7 +21,7 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.impl.AMQBasicProperties;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -36,147 +36,202 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * The message producer responsible to store message into RabbitMQ queue
+ */
 public class RabbitMQProducer implements MessageProducer {
 
-	private static final Log logger = LogFactory.getLog(RabbitMQProducer.class.getName());
+    private static final Log log = LogFactory.getLog(RabbitMQProducer.class.getName());
 
-	private static final int DEFAULT_PRIORITY = 0;
-	/**
-	 * Connection to the RabbitMQ broker. Passed reference from Store *
-	 */
-	private Connection connection;
-	/**
-	 * Reference of the store *
-	 */
-	private RabbitMQStore store;
-	/**
-	 * Message storing queue name *
-	 */
-	private String queueName;
-	/**
-	 * Message exchange *
-	 */
-	private String exchangeName;
+    private static final int DEFAULT_PRIORITY = 0;
+    private Connection connection;
+    private RabbitMQStore store;
+    private String routingKey;
+    private String exchangeName;
+    private boolean isInitialized = false;
+    private String idString; // ID of the MessageProducer
+    private boolean publisherConfirmsEnabled;
 
-	private boolean isInitialized = false;
+    /**
+     * The RabbitMQ producer
+     *
+     * @param store the {@link RabbitMQStore} object
+     */
+    public RabbitMQProducer(RabbitMQStore store) {
+        if (store == null) {
+            log.error("Cannot initialize producer: " + getId());
+            return;
+        }
+        this.store = store;
+        isInitialized = true;
+    }
 
-	private boolean isConnectionError = false;
-	/**
-	 * ID of the MessageProducer *
-	 */
-	private String idString;
+    /**
+     * Store the given message into the queue and return whether the operation success or not
+     *
+     * @param synCtx Message to be saved.
+     * @return {@code true} if storing of the message is successful, {@code false} otherwise.
+     */
+    @Override
+    public boolean storeMessage(MessageContext synCtx) {
+        if (synCtx == null) {
+            return false;
+        }
+        if (connection == null) {
+            log.error(getId() + " cannot proceed. RabbitMQ Connection is null. Ignored MessageId: " +
+                    synCtx.getMessageID());
+            return false;
+        }
+        boolean result = false;
+        try (Channel channel = connection.createChannel()) {
+            if (publisherConfirmsEnabled) {
+                channel.confirmSelect();
+            }
+            StorableMessage storableMessage = MessageConverter.toStorableMessage(synCtx);
+            final byte[] message = serializeMessage(storableMessage);
+            final AMQP.BasicProperties basicProperties = getBasicProperties(synCtx, storableMessage);
+            publishMessage(channel, exchangeName, routingKey, basicProperties, message);
+            if (publisherConfirmsEnabled) {
+                result = channel.waitForConfirms();
+            } else {
+                result = true;
+            }
+            if (log.isDebugEnabled()) {
+                log.debug(getId() + ". Stored MessageId: " + synCtx.getMessageID());
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (TimeoutException | IOException e) {
+            String errorMsg = getId() + ". Ignored MessageId: " + synCtx.getMessageID() + ". " +
+                    "Could not store message to store [" + store.getName() + "]. " +
+                    "Error:" + e.getLocalizedMessage();
+            log.error(errorMsg, e);
+        }
+        store.enqueued();
+        return result;
+    }
 
-	public RabbitMQProducer(RabbitMQStore store) {
-		if (store == null) {
-			logger.error("Cannot initialize.");
-			return;
-		}
-		this.store = store;
-		isInitialized = true;
-	}
+    /**
+     * Serialize the message to store in the queue
+     *
+     * @param storableMessage the {@link StorableMessage} object
+     * @return serialize message as byte array
+     * @throws IOException
+     */
+    private byte[] serializeMessage(StorableMessage storableMessage) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        ObjectOutput objectOutput = new ObjectOutputStream(outputStream);
+        objectOutput.writeObject(storableMessage);
+        return outputStream.toByteArray();
+    }
 
-	public void setQueueName(String queueName) {
-		this.queueName = queueName;
-	}
+    /**
+     * Build AMQP basic properties from the message context
+     *
+     * @param synCtx          the {@link MessageContext} object
+     * @param storableMessage the {@link StorableMessage} object
+     * @return AMQP basic properties
+     */
+    private AMQP.BasicProperties getBasicProperties(MessageContext synCtx, StorableMessage storableMessage) {
+        AMQP.BasicProperties.Builder builder = new AMQP.BasicProperties().builder();
+        builder.messageId(synCtx.getMessageID());
+        builder.deliveryMode(MessageProperties.MINIMAL_PERSISTENT_BASIC.getDeliveryMode());
+        builder.priority(storableMessage.getPriority(DEFAULT_PRIORITY));
+        return builder.build();
+    }
 
-	public void setExchangeName(String exchangeName) {
-		this.exchangeName = exchangeName;
-	}
+    /**
+     * Perform basic publish
+     *
+     * @param channel         the channel
+     * @param exchangeName    the exchange to publish the message to
+     * @param routingKey      the routing key
+     * @param basicProperties other properties for the message
+     * @param messageBody     the message body
+     * @throws IOException
+     */
+    private void publishMessage(Channel channel, String exchangeName, String routingKey,
+                                AMQP.BasicProperties basicProperties, byte[] messageBody) throws IOException {
+        if (StringUtils.isNotEmpty(exchangeName)) {
+            channel.basicPublish(exchangeName, routingKey, basicProperties, messageBody);
+        } else {
+            channel.basicPublish("", routingKey, basicProperties, messageBody);
+        }
+    }
 
-	public void setConnection(Connection connection) {
-		this.connection = connection;
-	}
+    /**
+     * Used to close the channel opened in this object instance.
+     * This should be called after the end of each call on storeMessage method
+     * But instead of this, try with resources will close the channel
+     */
+    @Override
+    public boolean cleanup() {
+        return true;
+    }
 
-	public void setId(int id) {
-		idString = "[" + store.getName() + "-P-" + id + "]";
-	}
+    /**
+     * Get ID of this RabbitMQ producer
+     *
+     * @return the ID
+     */
+    @Override
+    public String getId() {
+        return idString;
+    }
 
-	public boolean storeMessage(MessageContext synCtx) {
-		if (synCtx == null) {
-			return false;
-		}
-		if (connection == null) {
-			if (logger.isDebugEnabled()) {
-				logger.error(getId() + " cannot proceed. RabbitMQ Connection is null.");
-			}
-			logger.warn(getId() + ". Ignored MessageID : " + synCtx.getMessageID());
-			return false;
-		}
-		StorableMessage message = MessageConverter.toStorableMessage(synCtx);
-		boolean error = false;
-		Throwable throwable = null;
-		Channel channel = null;
-		try {
-			//Serializing message
-			ByteArrayOutputStream os = new ByteArrayOutputStream();
-			ObjectOutput objOut = new ObjectOutputStream(os);
-			objOut.writeObject(message);
-			byte[] byteForm = os.toByteArray();
-			objOut.close();
-			os.close();
-			//building AMQP message
-			AMQP.BasicProperties.Builder builder = new AMQP.BasicProperties().builder();
-			builder.messageId(synCtx.getMessageID());
-			builder.deliveryMode(MessageProperties.MINIMAL_PERSISTENT_BASIC.getDeliveryMode());
-			builder.priority(message.getPriority(DEFAULT_PRIORITY));
-			channel = connection.createChannel();
-			if (exchangeName == null) {
-				channel.basicPublish("", queueName, builder.build(), byteForm);
-			} else {
-				channel.basicPublish(exchangeName, queueName, builder.build(), byteForm);
-			}
-		} catch (IOException e) {
-			throwable = e;
-			error = true;
-			isConnectionError = true;
-		} catch (Throwable t) {
-			throwable = t;
-			error = true;
-		} finally {
-			if (channel != null && channel.isOpen())
-				try {
-					channel.close();
-				} catch (TimeoutException e) {
-					logger.error("Error when closing connection,TimeoutException" + synCtx.getMessageID() + ". " , e);
-				} catch (IOException e) {
-					logger.error(
-							"Error when closing connection" + synCtx.getMessageID() + ". " + e);
-				}
-		}
-		if (error) {
-			String errorMsg = getId() + ". Ignored MessageID : " + synCtx.getMessageID()
-			                  + ". Could not store message to store ["
-			                  + store.getName() + "]. Error:" + throwable.getLocalizedMessage();
-			logger.error(errorMsg, throwable);
-			store.closeProducerConnection();
-			connection = null;
-			if (logger.isDebugEnabled()) {
-				logger.debug(getId() + ". Ignored MessageID : " + synCtx.getMessageID());
-			}
-			return false;
-		}
-		if (logger.isDebugEnabled()) {
-			logger.debug(getId() + ". Stored MessageID : " + synCtx.getMessageID());
-		}
-		store.enqueued();
-		return true;
-	}
+    /**
+     * Set ID of this RabbitMQ producer
+     *
+     * @param id ID
+     */
+    @Override
+    public void setId(int id) {
+        idString = "[" + store.getName() + "-P-" + id + "]";
+    }
 
-	/**
-	 * Used to close the channel opened in this object instance.
-	 * This should be called after the end of each call on storeMessage method
-	 * But instead of this, finally block is used in storeMethod to close the channels
-	 */
-	public boolean cleanup() {
-		return store.cleanup(null, false);
-	}
+    /**
+     * Set the routing key bind with the exchange
+     *
+     * @param routingKey the message routing key
+     */
+    public void setRoutingKey(String routingKey) {
+        this.routingKey = routingKey;
+    }
 
-	public boolean isInitialized() {
-		return isInitialized;
-	}
+    /**
+     * Set the exchange name to publish the message
+     *
+     * @param exchangeName the exchange to publish the message to
+     */
+    public void setExchangeName(String exchangeName) {
+        this.exchangeName = exchangeName;
+    }
 
-	public String getId() {
-		return idString;
-	}
+    /**
+     * Set the {@link Connection} object
+     *
+     * @param connection a {@link Connection} object
+     */
+    public void setConnection(Connection connection) {
+        this.connection = connection;
+    }
+
+    /**
+     * Set the publisher confirm enabled or not
+     *
+     * @param publisherConfirmsEnabled publsher confirm enabled or not
+     */
+    public void setPublisherConfirmsEnabled(boolean publisherConfirmsEnabled) {
+        this.publisherConfirmsEnabled = publisherConfirmsEnabled;
+    }
+
+    /**
+     * Verify to whether producer was initialized
+     *
+     * @return is initialized
+     */
+    public boolean isInitialized() {
+        return isInitialized;
+    }
 
 }

@@ -19,6 +19,8 @@
 package org.apache.synapse.commons.emulator.http.dsl.dto.consumer;
 
 import io.netty.handler.codec.http.HttpMethod;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.emulator.http.dsl.dto.Header;
 import org.apache.synapse.commons.emulator.http.consumer.HttpRequestContext;
 import org.apache.synapse.commons.emulator.http.dsl.dto.QueryParameter;
@@ -28,6 +30,8 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 public class IncomingMessage {
+
+    private static final Log logger = LogFactory.getLog(IncomingMessage.class.getName());
 
     private static IncomingMessage incoming;
     private HttpMethod method;
@@ -102,6 +106,10 @@ public class IncomingMessage {
         if (method.equals(requestContext.getHttpMethod())) {
             return true;
         }
+
+        logger.error("Incoming request's service method '" + requestContext.getHttpMethod()
+                + "' is not matched with the expected service method '" + method + "' for the mock service path "
+                + context.substring(0, context.length() - 1) + path);
         return false;
     }
 
@@ -113,6 +121,13 @@ public class IncomingMessage {
         if (body.equalsIgnoreCase(requestContext.getRequestBody())) {
             return true;
         }
+
+        String servicePath = context.substring(0, context.length() - 1) + path;
+        logger.error("Incoming request and expected request payloads are not matched");
+        logger.error("Incoming request payload for the mock service path "
+                + servicePath + " is - " + requestContext.getRequestBody());
+        logger.error("Expected request payload for the mock service path " + servicePath + " is - " + body);
+
         return false;
     }
 
@@ -133,6 +148,10 @@ public class IncomingMessage {
                 return true;
             }
         }
+
+        logger.error("Could not find expected request header "  + header.getName() + ":" + header.getValue() +
+                " in incoming header list for the mock service path "
+                + context.substring(0, context.length() - 1) + path);
         return false;
     }
 

@@ -32,7 +32,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.synapse.ContinuationState;
-import org.apache.synapse.FaultHandler;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
@@ -67,6 +66,7 @@ import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.unittest.UnitTestingExecutor;
 import org.apache.synapse.util.concurrent.InboundThreadPool;
 import org.apache.synapse.util.concurrent.SynapseThreadPool;
+import org.apache.synapse.util.logging.LoggingUtils;
 import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
 import org.apache.synapse.util.xpath.ext.SynapseXpathVariableResolver;
 
@@ -105,8 +105,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     private ServerContextInformation contextInformation;
 
     /** Map containing Xpath Function Context Extensions */
-    Map<QName, SynapseXpathFunctionContextProvider> xpathFunctionExtensions =
-            new HashMap<QName, SynapseXpathFunctionContextProvider>();
+    Map<String, SynapseXpathFunctionContextProvider> xpathFunctionExtensions =
+            new HashMap<String, SynapseXpathFunctionContextProvider>();
 
     /** Map containing Xpath Variable Context Extensions */
     Map<QName, SynapseXpathVariableResolver> xpathVariableExtensions =
@@ -132,6 +132,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     /** Unit test mode is enabled/disabled*/
     private boolean isUnitTestEnabled = false;
+
+    private static final String NO_FAULT_HANDLER_ERROR =
+            "Exception encountered but no fault handler found - message dropped";
+    private static final String EXECUTING_FAULT_HANDLER_ERROR = "Executing fault handler due to exception encountered";
 
     public Axis2SynapseEnvironment(SynapseConfiguration synCfg) {
 
@@ -470,32 +474,30 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             return true;
         } catch (SynapseException syne) {
             if (!synCtx.getFaultStack().isEmpty()) {
-                log.warn("Executing fault handler due to exception encountered");
-                ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, syne);
+                log.warn(LoggingUtils.getFormattedLog(synCtx, EXECUTING_FAULT_HANDLER_ERROR));
+                (synCtx.getFaultStack().pop()).handleFault(synCtx, syne);
                 return true;
             } else {
-                log.warn("Exception encountered but no fault handler found - message dropped");
+                log.warn(LoggingUtils.getFormattedLog(synCtx, NO_FAULT_HANDLER_ERROR));
                 throw syne;
             }
         } catch (Exception e) {
             String msg = "Unexpected error executing task/async inject";
-            log.error(msg, e);
+            log.error(LoggingUtils.getFormattedLog(synCtx, msg), e);
             if (synCtx.getServiceLog() != null) {
                 synCtx.getServiceLog().error(msg, e);
             }
             if (!synCtx.getFaultStack().isEmpty()) {
-                log.warn("Executing fault handler due to exception encountered");
-                ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, e);
+                log.warn(LoggingUtils.getFormattedLog(synCtx, EXECUTING_FAULT_HANDLER_ERROR));
+                (synCtx.getFaultStack().pop()).handleFault(synCtx, e);
                 return true;
             } else {
-                log.warn("Exception encountered but no fault handler found - message dropped");
-                throw new SynapseException(
-                                           "Exception encountered but no fault handler found - message dropped",
-                                           e);
+                log.warn(LoggingUtils.getFormattedLog(synCtx, NO_FAULT_HANDLER_ERROR));
+                throw new SynapseException(NO_FAULT_HANDLER_ERROR, e);
             }
         } catch (Throwable e) {
             String msg = "Unexpected error executing inbound/async inject, message dropped";
-            log.error(msg, e);
+            log.error(LoggingUtils.getFormattedLog(synCtx, msg), e);
             if (synCtx.getServiceLog() != null) {
                 synCtx.getServiceLog().error(msg, e);
             }
@@ -714,7 +716,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      * Returns all declared xpath Function Extensions
      * @return Hash Map Containing Function Extensions with supported QName keys
      */
-    public Map<QName, SynapseXpathFunctionContextProvider> getXpathFunctionExtensions() {
+    public Map<String, SynapseXpathFunctionContextProvider> getXpathFunctionExtensions() {
         return xpathFunctionExtensions;
     }
 
@@ -1042,32 +1044,28 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             return true;
         } catch (SynapseException syne) {
             if (!smc.getFaultStack().isEmpty()) {
-                warn(false, "Executing fault handler due to exception encountered", smc);
+                warn(false, EXECUTING_FAULT_HANDLER_ERROR, smc);
                 smc.getFaultStack().pop().handleFault(smc, syne);
-
             } else {
-                warn(false, "Exception encountered but no fault handler found - " +
-                        "message dropped", smc);
+                warn(false, NO_FAULT_HANDLER_ERROR, smc);
             }
             return false;
         } catch (Exception e) {
             String msg = "Unexpected error executing  injecting message to sequence ," + seq;
-            log.error(msg, e);
+            log.error(LoggingUtils.getFormattedLog(smc, msg), e);
             if (smc.getServiceLog() != null) {
                 smc.getServiceLog().error(msg, e);
             }
             if (!smc.getFaultStack().isEmpty()) {
-                warn(false, "Executing fault handler due to exception encountered", smc);
+                warn(false, EXECUTING_FAULT_HANDLER_ERROR, smc);
                 smc.getFaultStack().pop().handleFault(smc, e);
-
             } else {
-                warn(false, "Exception encountered but no fault handler found - " +
-                        "message dropped", smc);
+                warn(false, NO_FAULT_HANDLER_ERROR, smc);
             }
             return false;
         } catch (Throwable e) {
             String msg = "Unexpected error executing  injecting message to sequence ," + seq + " message dropped";
-            log.error(msg, e);
+            log.error(LoggingUtils.getFormattedLog(smc, msg), e);
             if (smc.getServiceLog() != null) {
                 smc.getServiceLog().error(msg, e);
             }
@@ -1081,10 +1079,12 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     }
 
     private void warn(boolean traceOn, String msg, MessageContext msgContext) {
+
+        String formattedLog = LoggingUtils.getFormattedLog(msgContext, msg);
         if (traceOn) {
-            trace.warn(msg);
+            trace.warn(formattedLog);
         }
-        log.warn(msg);
+        log.warn(formattedLog);
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().warn(msg);
         }

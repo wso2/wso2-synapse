@@ -49,12 +49,18 @@ public class JDBCConsumer implements MessageConsumer {
     private String currentMessageId;
 
     /**
+     * Boolean to store if the message processor is alive
+     */
+    private boolean isAlive;
+
+    /**
      * Initialize consumer
      *
      * @param store - JDBC message store
      */
     public JDBCConsumer(JDBCMessageStore store) {
         this.store = store;
+        isAlive = true;
     }
 
     /**
@@ -64,17 +70,24 @@ public class JDBCConsumer implements MessageConsumer {
      */
     @Override
     public MessageContext receive() {
-        // Message will get peeked from the table
-        MessageContext msg = null;
-        try {
-            msg = store.peek();
-            if (msg != null) {
-                currentMessageId = msg.getMessageID();
+        if (isAlive()) {
+            // Message will get peeked from the table
+            MessageContext msg = null;
+            try {
+                msg = store.peek();
+                if (msg != null) {
+                    currentMessageId = msg.getMessageID();
+                }
+            } catch (SynapseException e) {
+                logger.error("Can't receive message ", e);
             }
-        } catch (SynapseException e) {
-            logger.error("Can't receive message ", e);
+            return msg;
+        } else {
+            if (logger.isDebugEnabled()){
+                logger.debug("Trying to receive messages from a consumer that is not alive.");
+            }
+            return null;
         }
-        return msg;
     }
 
     /**
@@ -112,7 +125,16 @@ public class JDBCConsumer implements MessageConsumer {
      * @return consumer status
      */
     public boolean isAlive() {
-        return true; //TODO need to implement proper way to check availability
+        return isAlive;
+    }
+
+    /**
+     * Set isAlive flag in JDBC consumer
+     *
+     * @param  isAlive status
+     */
+    public void setAlive(boolean isAlive) {
+        this.isAlive = isAlive;
     }
 
     /**

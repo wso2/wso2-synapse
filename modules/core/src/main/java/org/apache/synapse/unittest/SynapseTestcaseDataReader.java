@@ -198,7 +198,7 @@ class SynapseTestcaseDataReader {
 
             //Read artifact name from descriptor data
             String supportiveArtifactNameOrKey;
-            if (testArtifactType.equals(TYPE_LOCAL_ENTRY)) {
+            if (supportiveArtifactType.equals(TYPE_LOCAL_ENTRY)) {
                 supportiveArtifactNameOrKey
                         = artifact.getFirstElement().getAttributeValue(new QName(ARTIFACT_KEY_ATTRIBUTE));
             } else {
@@ -252,7 +252,7 @@ class SynapseTestcaseDataReader {
             registryResource.setRegistryPath(resourcePath);
             registryResource.setMediaType(resourceMediaType);
 
-            String registryKey = resourcePath + File.separator + resourceName;
+            String registryKey = resourcePath + Constants.BACK_SLASH + resourceName;
             artifactDataHolder.addRegistryResource(registryKey, registryResource);
         }
 

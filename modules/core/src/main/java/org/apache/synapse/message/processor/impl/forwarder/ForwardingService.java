@@ -24,8 +24,10 @@ import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.util.ElementHelper;
 import org.apache.axiom.soap.SOAP11Constants;
+import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axiom.soap.SOAPHeaderBlock;
+import org.apache.axis2.AxisFault;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -508,10 +510,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
 				//we only validate response for certain protocols (i.e HTTP/HTTPS)
 				isResponseValidationNotRequired = !isResponseValidationRequiredEndpoint(endpointReferenceValue);
 			}
+			SOAPEnvelope originalEnvelop = messageContext.getEnvelope();
 			try {
 				// Send message to the client
 				while (!isSuccessful && !isTerminated) {
-					tryToDispatchToEndpoint(messageContext, endpoint);
+					tryToDispatchToEndpoint(messageContext, endpoint, originalEnvelop);
 
 					isTerminated = messageProcessor.isDeactivated();
 					if (!isTerminated && (messageProcessor instanceof ScheduledMessageProcessor)) {
@@ -519,7 +522,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 					}
 
 					if (!isSuccessful) {
-						prepareToRetry(messageContext);
+						prepareToRetry(messageContext, originalEnvelop);
 					}
 				}
 			} catch (Exception e) {
@@ -542,21 +545,35 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	}
 
 	/**
+	 * Get a fresh copy of the original message
+	 *
+	 * @param messageToDispatch MessageContext containing current message
+	 * @param originalEnvelop MessageContext containing message to forward (original message)
+	 */
+	private void getFreshCopyOfOriginalMessage(MessageContext messageToDispatch, SOAPEnvelope originalEnvelop)
+			throws AxisFault {
+		// For each retry we need to have a fresh copy of the original message
+		messageToDispatch.setEnvelope(MessageHelper.cloneSOAPEnvelope(originalEnvelop));
+		setSoapHeaderBlock(messageToDispatch);
+		updateAxis2MessageContext(messageToDispatch);
+	}
+
+	/**
 	 * Try to dispatch message to the given endpoint
 	 *
 	 * @param messageToDispatch MessageContext containing message to forward
 	 * @param endpoint                endpoint to forward message to
+	 * @param originalEnvelop   SoapEnvelope of original message to be forwarded
 	 */
-	private void tryToDispatchToEndpoint(MessageContext messageToDispatch, Endpoint endpoint) {
+	private void tryToDispatchToEndpoint(MessageContext messageToDispatch, Endpoint endpoint,
+										 SOAPEnvelope originalEnvelop) {
 
 		isSuccessful = false;
 		MessageContext outCtx = null;
 
 		try {
 			// For each retry we need to have a fresh copy of the original message
-			messageToDispatch.setEnvelope(MessageHelper.cloneSOAPEnvelope(messageToDispatch.getEnvelope()));
-			setSoapHeaderBlock(messageToDispatch);
-			updateAxis2MessageContext(messageToDispatch);
+			getFreshCopyOfOriginalMessage(messageToDispatch, originalEnvelop);
 
 			if (messageConsumer != null && messageConsumer.isAlive()) {
 				messageToDispatch.setProperty(SynapseConstants.BLOCKING_MSG_SENDER, sender);
@@ -592,64 +609,47 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			if (isResponseValidationNotRequired) {
 				isSuccessful = true;
 				onForwardSuccess(endpoint);
-			}
-
-			//there is no response
-			if (!isResponseValidationNotRequired && outCtx == null) {
-				isSuccessful = true;
-				onForwardSuccess(endpoint);
-			}
-
-			//there is a response (In message context) but failed to send with no exception thrown
-			if (!isResponseValidationNotRequired && outCtx != null
-					&& "true".equals(outCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
-				log.error("Blocking Sender Error " + outCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
-				isSuccessful = false;
-				onForwardFailure();
-				//invoke fault sequence of MP
-				sendThroughFaultSeq(outCtx);
 				return;
 			}
 
-			//there is a response so check on status codes
-			if (!isResponseValidationNotRequired && outCtx != null && validateResponse(outCtx)) {
+			//there is no response
+			if (outCtx == null) {
 				isSuccessful = true;
-				sendThroughReplySeq(outCtx);
 				onForwardSuccess(endpoint);
+			} else {
+				//there is a response (In message context) but failed to send with no exception thrown
+				if ("true".equals(outCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
+					log.error("Blocking Sender Error " + outCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
+					isSuccessful = false;
+					handleFailedInvocations(outCtx);
+					return;
+				} else if (validateResponse(outCtx)) {
+					isSuccessful = true;
+					sendThroughReplySeq(outCtx);
+					onForwardSuccess(endpoint);
+				} else {
+					isSuccessful = false;
+					handleFailedInvocations(outCtx);
+				}
 			}
 
 		} catch (Exception e) {
 
 			log.error("[ " + messageProcessor.getName() + " ] Error while forwarding message to endpoint "
 					+ targetEndpoint + ".", e);
-
-			/*
-			 * TODO: need to validate the requirement for below checks. Ideally on any error forwarding should
-			 * be considered as a failure. Keeping them for backward compatibility
-			 */
-
-			if (!isResponseValidationNotRequired && outCtx != null && e instanceof SynapseException &&
-					validateResponse(outCtx)) {
-				isSuccessful = true;
-				onForwardSuccess(endpoint);
-			}
-
-			if (!isResponseValidationNotRequired && outCtx != null && "true".equals(outCtx.getProperty(
-					ForwardingProcessorConstants.BLOCKING_SENDER_ERROR))) {
-				log.error("Blocking Sender Error " + outCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
-				isSuccessful = false;
-				onForwardFailure();
-				//invoke fault sequence of MP
-				sendThroughFaultSeq(outCtx);
-			}
-
-			if (!isResponseValidationNotRequired && outCtx != null && validateResponse(outCtx)) {
-				isSuccessful = false;
-				onForwardFailure();
-				//invoke fault sequence of MP
-				sendThroughFaultSeq(outCtx);
-			}
+			handleFailedInvocations(outCtx);
 		}
+	}
+
+	/**
+	 * Handles invocations failed at the backend
+	 *
+	 * @param outCtx
+	 */
+	private void handleFailedInvocations(MessageContext outCtx) {
+		isSuccessful = false;
+		onForwardFailure();
+		sendThroughFaultSeq(outCtx);
 	}
 
 	/**
@@ -684,11 +684,14 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	 * @return true if it is a successful invocation
 	 */
 	private boolean validateResponse(MessageContext responseMessage) {
-		boolean isSuccessful;
-		String responseSc = ((Axis2MessageContext) responseMessage).
-				getAxis2MessageContext().getProperty(SynapseConstants.HTTP_SC).toString();
+		String responseSc = "";
+		Object httpSc = ((Axis2MessageContext) responseMessage).
+				getAxis2MessageContext().getProperty(SynapseConstants.HTTP_SC);
 		// Some events where response code is null (i.e. sender socket timeout
 		// when there is no response from endpoint)
+		if (httpSc != null) {
+			responseSc = httpSc.toString();
+		}
 		int sc = 0;
 		try {
 			sc = Integer.parseInt(responseSc.trim());
@@ -832,7 +835,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	 * processor. If the MaxDeliveryAttemptDrop is Enabled, then the message is
 	 * dropped and the message processor continues.
 	 */
-	private void checkAndDeactivateProcessor(MessageContext msgCtx) {
+	private void checkAndDeactivateProcessor(MessageContext msgCtx, SOAPEnvelope originalEnvelop) throws AxisFault {
 		if (maxDeliverAttempts > 0) {
 			this.attemptCount++;
 			if (attemptCount >= maxDeliverAttempts) {
@@ -843,6 +846,8 @@ public class ForwardingService implements Task, ManagedLifecycle {
 							+ "] failed to forward message " + maxDeliverAttempts + " times. Drop message and "
 							+ "continue.");
 				} else if (null != failMessageStore) {
+					// We need to store the original message in the failover store
+					getFreshCopyOfOriginalMessage(msgCtx, originalEnvelop);
 					storeMessageToBackupStoreAndContinue(msgCtx, failMessageStore);
 				} else {
 					terminate();
@@ -860,9 +865,9 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	/*
 	 * Prepares the message processor for the next retry of delivery.
 	 */
-	private void prepareToRetry(MessageContext msgCtx) {
+	private void prepareToRetry(MessageContext msgCtx, SOAPEnvelope originalEnvelop) throws AxisFault {
 		if (!isTerminated) {
-			checkAndDeactivateProcessor(msgCtx);
+			checkAndDeactivateProcessor(msgCtx, originalEnvelop);
 
 			if (log.isDebugEnabled()) {
 				log.debug("Failed to send to client retrying after " + retryInterval +

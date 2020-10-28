@@ -131,4 +131,7 @@ public class DBLookupMediator extends AbstractDBMediator {
         return true;
     }
 
+    @Override
+    protected void closeConnection(long key) { }
+
 }

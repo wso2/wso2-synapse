@@ -40,6 +40,8 @@ public final class SynapseConstants {
     /** An OMNamespace object for the Empty Namespace */
     public static final OMNamespace NULL_NAMESPACE = 
     	OMAbstractFactory.getOMFactory().createOMNamespace("", "");
+    /** The associated xml file of registry */
+    public static final String REGISTRY_FILE = "registry.xml";
     /** The name of the main sequence for message mediation */
     public static final String MAIN_SEQUENCE_KEY  = "main";
     /** The associated xml file of the default main sequence */
@@ -578,5 +580,12 @@ public final class SynapseConstants {
 
     // Common property for all artifacts
     public static final String ARTIFACT_NAME = "ARTIFACT_NAME";
+
+    // Keeps the state whether the error flow was executed previously
+    public static final String IS_ERROR_COUNT_ALREADY_PROCESSED = "IS_ERROR_COUNT_ALREADY_PROCESSED";
+
+    //This synapse property will be read in the mediation layer to decide whether to save artifacts to a local
+    // directory or not. By default this property is set to true.
+    public static final String STORE_ARTIFACTS_LOCALLY = "synapse.artifacts.file.storage.enabled";
 
 }

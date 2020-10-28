@@ -374,7 +374,9 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 long messageSize = 0;
 
                 try {
-                    OverflowBlob overflowBlob = setStreamAsTempData(formatter, msgContext, format);
+                    boolean hasNoMessageBody = HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(
+                            Constants.Configuration.HTTP_METHOD)) || RelayUtils.isDeleteRequestWithoutPayload(msgContext);
+                    OverflowBlob overflowBlob = setStreamAsTempData(formatter, msgContext, format, hasNoMessageBody);
                     messageSize = overflowBlob.getLength();
                     msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH, messageSize);
                     deliveryAgent.submit(msgContext, epr);
@@ -383,16 +385,20 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     }
                     out = (OutputStream) msgContext.getProperty(PassThroughConstants.BUILDER_OUTPUT_STREAM);
                     if (out != null) {
+                        //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
+                        //to ignore any entity enclosed methods available.
+                        if (hasNoMessageBody) {
+                            if (pipe.isStale) {
+                                throw new IOException("Target Connection is stale..");
+                            }
+                            pipe.setSerializationCompleteWithoutData(true);
+                            return;
+                        }
                         overflowBlob.writeTo(out);
                         if (pipe.isStale) {
                             throw new IOException("Target Connection is stale..");
                         }
-                        //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
-                        //to ignore any entity enclosed methods available.
-                        if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
-                                RelayUtils.isDeleteRequestWithoutPayload(msgContext)) {
-                            pipe.setSerializationCompleteWithoutData(true);
-                        } else if (messageSize == 0 &&
+                        if (messageSize == 0 &&
                                 (msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
                                         (Boolean) msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY))) {
                             pipe.setSerializationCompleteWithoutData(true);
@@ -450,8 +456,12 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
      *
      * @throws IOException if an exception occurred while writing data
      */
-    private OverflowBlob setStreamAsTempData(MessageFormatter messageFormatter,MessageContext msgContext,OMOutputFormat format) throws IOException {
+    private OverflowBlob setStreamAsTempData(MessageFormatter messageFormatter, MessageContext msgContext,
+                                             OMOutputFormat format, boolean hasNoMessageBody) throws IOException {
         OverflowBlob serialized = new OverflowBlob(256, 4096, "http-nio_", ".dat");
+        if (hasNoMessageBody) {
+            return serialized;
+        }
         OutputStream out = serialized.getOutputStream();
         try {
             messageFormatter.writeTo(msgContext, format, out, false);
@@ -586,42 +596,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 
                 MessageFormatter formatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
                 OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
-
-                Object contentTypeInMsgCtx =
-                        msgContext.getProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE);
-                boolean isContentTypeSetFromMsgCtx = false;
-
-                // If ContentType header is set in the axis2 message context, use it.
-                if (contentTypeInMsgCtx != null) {
-                   String contentTypeValueInMsgCtx = contentTypeInMsgCtx.toString();
-                   // Skip multipart/related as it should be taken from formatter.
-                    if (!(contentTypeValueInMsgCtx.contains(
-                            PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED) ||
-                            contentTypeValueInMsgCtx.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_FORM_DATA))) {
-
-                       // adding charset only if charset is not available,
-                       if (format != null && contentTypeValueInMsgCtx.indexOf(HTTPConstants.CHAR_SET_ENCODING) == -1 &&
-                           !"false".equals(msgContext.getProperty(PassThroughConstants.SET_CHARACTER_ENCODING))) {
-							String encoding = format.getCharSetEncoding();
-							if (encoding != null) {
-								sourceResponse.removeHeader(HTTP.CONTENT_TYPE);
-								contentTypeValueInMsgCtx += "; charset=" + encoding;
-							}
-						}
-
-                       sourceResponse.addHeader(HTTP.CONTENT_TYPE, contentTypeValueInMsgCtx);
-                       isContentTypeSetFromMsgCtx = true;
-                   }
-                }
-
-                // If ContentType is not set from msg context, get the formatter ContentType
-                if (!isContentTypeSetFromMsgCtx) {
-                    sourceResponse.removeHeader(HTTP.CONTENT_TYPE);
-                    sourceResponse.addHeader(HTTP.CONTENT_TYPE,
-                                             formatter.getContentType(
-                                                     msgContext, format, msgContext.getSoapAction()));
-                }
-
+                setContentType(msgContext, sourceResponse, formatter, format, sourceConfiguration);
                 try {
                     formatter.writeTo(msgContext, format, out, false);
                 } catch (RemoteException fault) {
@@ -719,5 +694,50 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         }
     }
 
+    /**
+     * Set content type headers along with the charactor encoding if content type header is not preserved
+     * @param msgContext    message context
+     * @param sourceResponse    source response
+     * @param formatter response formatter
+     * @param format    response format
+     */
+    public void setContentType(MessageContext msgContext, SourceResponse sourceResponse, MessageFormatter formatter,
+                               OMOutputFormat format, SourceConfiguration sourceConfiguration) {
+        if (sourceConfiguration.isPreserveHttpHeader(HTTP.CONTENT_TYPE)) {
+            return;
+        }
+        Object contentTypeInMsgCtx =
+                msgContext.getProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE);
+        boolean isContentTypeSetFromMsgCtx = false;
 
+        // If ContentType header is set in the axis2 message context, use it.
+        if (contentTypeInMsgCtx != null) {
+            String contentTypeValueInMsgCtx = contentTypeInMsgCtx.toString();
+            // Skip multipart/related as it should be taken from formatter.
+            if (!(contentTypeValueInMsgCtx.contains(
+                    PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED) ||
+                  contentTypeValueInMsgCtx.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_FORM_DATA))) {
+
+                // adding charset only if charset is not available,
+                if (format != null && contentTypeValueInMsgCtx.indexOf(HTTPConstants.CHAR_SET_ENCODING) == -1 &&
+                    !"false".equals(msgContext.getProperty(PassThroughConstants.SET_CHARACTER_ENCODING))) {
+                    String encoding = format.getCharSetEncoding();
+                    if (encoding != null) {
+                        contentTypeValueInMsgCtx += "; charset=" + encoding;
+                    }
+                }
+                sourceResponse.removeHeader(HTTP.CONTENT_TYPE);
+                sourceResponse.addHeader(HTTP.CONTENT_TYPE, contentTypeValueInMsgCtx);
+                isContentTypeSetFromMsgCtx = true;
+            }
+        }
+
+        // If ContentType is not set from msg context, get the formatter ContentType
+        if (!isContentTypeSetFromMsgCtx) {
+            sourceResponse.removeHeader(HTTP.CONTENT_TYPE);
+            sourceResponse.addHeader(HTTP.CONTENT_TYPE,
+                                     formatter.getContentType(
+                                             msgContext, format, msgContext.getSoapAction()));
+        }
+    }
 }

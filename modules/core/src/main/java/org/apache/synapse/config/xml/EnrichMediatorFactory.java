@@ -34,16 +34,15 @@ import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.util.xpath.SynapseJsonPath;
-import org.jaxen.JaxenException;
-
-import javax.xml.namespace.QName;
-
 import org.apache.synapse.mediators.elementary.EnrichMediator;
 import org.apache.synapse.mediators.elementary.Source;
 import org.apache.synapse.mediators.elementary.Target;
+import org.apache.synapse.util.InlineExpressionUtil;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
+import org.jaxen.JaxenException;
 
 import java.util.Properties;
+import javax.xml.namespace.QName;
 
 /**
  * Factory for {@link EnrichMediator} instances.
@@ -99,9 +98,10 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
 
         // check whether the inline element of the source is XML
         boolean isInlineSourceXML = false;
+        String inlineString = null;
         if (source.getInlineOMNode() != null) {
             if (source.getInlineOMNode() instanceof OMText) {
-                String inlineString = ((OMTextImpl) source.getInlineOMNode()).getText();
+                inlineString = ((OMTextImpl) source.getInlineOMNode()).getText();
                 JsonParser parser = new JsonParser();
                 try {
                     JsonElement element = parser.parse(inlineString);
@@ -110,11 +110,21 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
                         isInlineSourceXML = true;
                     }
                 } catch (JsonSyntaxException ex) {
-                    // cannot parse with JSON. Going ahead with XML
-                    isInlineSourceXML = true;
+                    // JSON string fails to parse when it contains an inline expression
+                    // such as {"company2": {json-eval($.SamplePayload.name)}}
+                    // Therefore, we will check if it is JSON by checking for {}
+                    if (!(inlineString.trim().startsWith("{") && inlineString.trim().endsWith("}"))) {
+                        // not a JSON. Going ahead with XML
+                        isInlineSourceXML = true;
+                    }
                 }
             } else if (source.getInlineOMNode() instanceof OMElement) {
+                inlineString = ((OMElement) source.getInlineOMNode()).getText();
                 isInlineSourceXML = true;
+            }
+
+            if (!StringUtils.isEmpty(inlineString)) {
+                enrich.setContainsInlineExpressions(InlineExpressionUtil.checkForInlineExpressions(inlineString));
             }
         }
 
@@ -286,6 +296,26 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         return -1;
     }
 
+    // Adding this method to be consistent with convertTypeToInt
+    private int convertActionToInt(String action) {
+        switch (action) {
+            case Target.ACTION_REPLACE: {
+                return 0;
+            }
+            case Target.ACTION_ADD_CHILD: {
+                return 1;
+            }
+            case Target.ACTION_ADD_SIBLING: {
+                return 2;
+            }
+            case Target.ACTION_REMOVE: {
+                return 3;
+            }
+            default:
+                return -1;
+        }
+    }
+
     public QName getTagQName() {
         return XML_Q;
     }
@@ -301,6 +331,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
     private void validateTypeCombination(OMElement sourceElement, OMElement targetElement) {
         int sourceType = -1;
         int targetType = -1;
+        int targetAction = -1;
 
         // source type attribute
         OMAttribute sourceTypeAttr = sourceElement.getAttribute(ATT_TYPE);
@@ -311,6 +342,9 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
             if (sourceType < 0) {
                 throw new SynapseException("Unexpected source type");
             }
+        } else {
+            // when type = custom we don't need to specify that in configs
+            sourceType = 0;
         }
         // target type attribute
         OMAttribute targetTypeAttr = targetElement.getAttribute(ATT_TYPE);
@@ -346,6 +380,37 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
             }
         } else if (sourceType == 0 && targetType == 1) {
             throw new SynapseException("Wrong combination of source and target type");
+        }
+
+        // target action attribute
+        // 0 - replace 1 - child 2 - sibling 3 - remove
+        OMAttribute targetActionAttr = targetElement.getAttribute(ATT_ACTION);
+        if (targetActionAttr != null && targetActionAttr.getAttributeValue() != null) {
+            targetAction = convertActionToInt(targetActionAttr.getAttributeValue());
+            // check if source type is different form the existing
+            if (targetAction < 0) {
+                throw new SynapseException("Unexpected target action");
+            }
+        }
+
+        // validations for remove action
+        if (targetAction == 3) {
+            if (sourceType != 0) {
+                throw new SynapseException("Wrong combination of source type and target action");
+            }
+            if (targetType == 0 || targetType == 1 || targetType == 4) {
+                throw new SynapseException("Wrong combination of target type and target action");
+            }
+        }
+
+        // validations for new "key" type
+        if (targetType == 5) {
+            if (sourceType == 2) {
+                throw new SynapseException("Wrong combination of source type and target type");
+            }
+            if (targetAction != 0) {
+                throw new SynapseException("Wrong combination of target type and target action");
+            }
         }
     }
 }

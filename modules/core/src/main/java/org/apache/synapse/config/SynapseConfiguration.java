@@ -504,7 +504,13 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
         if (entry.getType() == Entry.REMOTE_ENTRY) {
             if (registry != null) {
-                o = registry.getResource(entry, getProperties());
+                try {
+                    o = registry.getResource(entry, getProperties());
+                } catch (SynapseException synEx) {
+                    o = null;
+                    log.warn("Encountered an error while retrieving resources from registry : " + synEx.getMessage()
+                             + "\nTherefore fetching template from registry will be skipped.");
+                }
                 if (o != null && o instanceof TemplateMediator) {
                     localRegistry.put(key, entry);
                     return (TemplateMediator) o;
@@ -1490,21 +1496,21 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             pe.destroy();
         }
 
-        // destroy the Message Stores
-        for (MessageStore ms : messageStores.values()) {
-            if (ms instanceof AbstractMessageProcessor) {
-                ((AbstractMessageProcessor) ms).destroy(preserverState);
-            } else {
-                ms.destroy();
-            }
-        }
-
         // destroy the Message processors
         for (MessageProcessor mp : messageProcessors.values()) {
             if (mp instanceof AbstractMessageProcessor) {
                 ((AbstractMessageProcessor) mp).destroy(preserverState);
             } else {
                 mp.destroy();
+            }
+        }
+
+        // destroy the Message Stores
+        for (MessageStore ms : messageStores.values()) {
+            if (ms instanceof AbstractMessageProcessor) {
+                ((AbstractMessageProcessor) ms).destroy(preserverState);
+            } else {
+                ms.destroy();
             }
         }
 

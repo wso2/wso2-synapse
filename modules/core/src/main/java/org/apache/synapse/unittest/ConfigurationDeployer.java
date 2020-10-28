@@ -31,6 +31,7 @@ import org.apache.synapse.deployers.EndpointDeployer;
 import org.apache.synapse.deployers.LocalEntryDeployer;
 import org.apache.synapse.deployers.ProxyServiceDeployer;
 import org.apache.synapse.deployers.SequenceDeployer;
+import org.apache.synapse.deployers.TemplateDeployer;
 
 import java.util.AbstractMap;
 import java.util.Map;
@@ -161,6 +162,31 @@ class ConfigurationDeployer {
 
         //deploy synapse artifact
         String deployedArtifact = localEntryDeployer.deploySynapseArtifact(inputElement, fileName, null);
+
+        return new AbstractMap.SimpleEntry<>(synapseConfiguration, deployedArtifact);
+    }
+
+    /**
+     * Method of deploying template artifact in synapse.
+     *
+     * @param inputElement synapse configuration artifact as OMElement type
+     * @param fileName     name of the file
+     * @return response of the artifact deployment and the synapse configuration as a Map.Entry
+     */
+    Map.Entry<SynapseConfiguration, String> deployTemplateArtifact(OMElement inputElement, String fileName)
+            throws AxisFault {
+
+        //create new sequence deployer object
+        TemplateDeployer templateDeployer = new TemplateDeployer();
+
+        //create a synapse configuration and set all axis2 configuration to it
+        SynapseConfiguration synapseConfiguration = UnitTestingExecutor.getExecuteInstance().getSynapseConfiguration();
+
+        //initialize sequence deployer using created configuration context
+        templateDeployer.init(createConfigurationContext(synapseConfiguration));
+
+        //deploy synapse artifact
+        String deployedArtifact = templateDeployer.deploySynapseArtifact(inputElement, fileName, null);
 
         return new AbstractMap.SimpleEntry<>(synapseConfiguration, deployedArtifact);
     }

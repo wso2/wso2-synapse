@@ -18,11 +18,6 @@
  */
 package org.apache.synapse.message.processor.impl;
 
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.Callable;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
@@ -41,6 +36,12 @@ import org.apache.synapse.task.Task;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskManager;
 import org.apache.synapse.task.TaskManagerObserver;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.Callable;
 
 
 /**
@@ -310,10 +311,21 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
 	@Override
 	public void destroy(boolean preserveState) {
+		destroy(preserveState, false);
+	}
+
+	@Override
+	public void destroy(boolean preserveState , boolean isArtifactUpdate) {
 
 		if (!preserveState) {
-			stop();
 			deleteMessageProcessorState();
+		}
+		if (isArtifactUpdate || !preserveState) {
+			/*
+			 * All the tasks need to be stopped during artifact update and re deployed so that the changes in member
+			 * count is captured.
+			 */
+			stop();
 		}
 		/*
 		 * If the Task is scheduled with an interval value < 1000 ms, it is
@@ -339,6 +351,9 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		}
 		if (getMessageConsumer() != null && !messageConsumers.isEmpty()) {
 			cleanupLocalResources();
+			for (MessageConsumer msgConsumer : messageConsumers){
+				msgConsumer.setAlive(false);
+			}
 		} else {
 			logger.warn("[" + getName() + "] Could not find the message consumer to cleanup.");
 		}
@@ -501,18 +516,21 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
     @Override
     public void update() {
-	    String[] tasksInRegistry = taskManager.getTaskNames();
-	    int taskCountInRegistry = 0;
-	    for (String taskName : tasksInRegistry) {
-	    	String task = taskName.substring(0, taskName.lastIndexOf(SYMBOL_UNDERSCORE));
-		    if (task.equals(TASK_PREFIX + name)) {
-			    taskCountInRegistry++;
-		    }
-	    }
-	    if (taskCountInRegistry > memberCount) {
-		    this.stopTasks(taskCountInRegistry);
-	    }
-	    start();
+        String[] tasksInRegistry = taskManager.getTaskNames();
+        int taskCountInRegistry = 0;
+        for (String taskName : tasksInRegistry) {
+            //filters only the message processor tasks since the member count is not relevant for others
+            if (taskName.startsWith(TASK_PREFIX)) {
+                String task = taskName.substring(0, taskName.lastIndexOf(SYMBOL_UNDERSCORE));
+                if (task.equals(TASK_PREFIX + name)) {
+                    taskCountInRegistry++;
+                }
+            }
+        }
+        if (taskCountInRegistry > memberCount) {
+            this.stopTasks(taskCountInRegistry);
+        }
+        start();
     }
 
     @Override

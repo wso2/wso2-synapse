@@ -48,6 +48,28 @@ public class MediatorPropertyUtils {
     }
 
     /**
+     * Validate the given name to identify whether it is static or dynamic key
+     * If the name is in the {} format then it is dynamic key(XPath)
+     * Otherwise just a static name
+     *
+     * @param nameValue string to validate as a name
+     * @return isDynamicName representing name type
+     */
+    public static boolean isDynamicName(String nameValue) {
+        if (nameValue.length() < 2) {
+            return false;
+        }
+
+        final char startExpression = '{';
+        final char endExpression = '}';
+
+        char firstChar = nameValue.charAt(0);
+        char lastChar = nameValue.charAt(nameValue.length() - 1);
+
+        return (startExpression == firstChar && endExpression == lastChar);
+    }
+
+    /**
      * This method just serializes the OMElement, when setting a message type, we need to serialize to access the
      * inner element.
      *

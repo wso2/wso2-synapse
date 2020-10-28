@@ -1,6 +1,6 @@
-name: Run integration tests
+name: Micro Integrator Build with Tests
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -26,4 +26,4 @@ jobs:
         repository: wso2/micro-integrator
         ref: refs/heads/master
     - name: Build MI with Maven
-      run: mvn clean install -Dsynapse.version=$(cat ../SYNAPSE_VERSION_FILE) --file ../micro-integrator/pom.xml
+      run: mvn clean install -Dsynapse.version=$(cat ../SYNAPSE_VERSION_FILE) -fae --file ../micro-integrator/pom.xml

@@ -31,7 +31,9 @@ import org.apache.synapse.rest.version.ContextVersionStrategy;
 import org.apache.synapse.rest.version.DefaultStrategy;
 import org.apache.synapse.rest.version.URLBasedVersionStrategy;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * This class is responsible for receiving requests from various sources and dispatching
@@ -75,32 +77,18 @@ public class RESTRequestHandler {
         Collection<API> apiSet = synCtx.getEnvironment().getSynapseConfiguration().getAPIs();
         //Since swapping elements are not possible with sets, Collection is converted to a List
         List<API> defaultStrategyApiSet = new ArrayList<API>(apiSet);
-
         API defaultAPI = null;
-        for (API api : apiSet) {
-            api.setLogSetterValue();
-            if ("/".equals(api.getContext())) {
-                defaultAPI = api;
-            } else if (api.getVersionStrategy().getClass().getName().equals(DefaultStrategy.class.getName())) {
-                //APIs whose VersionStrategy is bound to an instance of DefaultStrategy, should be skipped and processed at last.
-                //Otherwise they will be always chosen to process the request without matching the version.
-                defaultStrategyApiSet.add(api);
-            } else if (api.getVersionStrategy().getClass().getName().equals(ContextVersionStrategy.class.getName())
-                    || api.getVersionStrategy().getClass().getName().equals(URLBasedVersionStrategy.class.getName())) {
-                api.setLogSetterValue();
-                if (api.canProcess(synCtx)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Located specific API: " + api.getName() + " for processing message");
-                    }
-                    apiProcessNonDefaultStrategy(synCtx, api);
+
+        Object apiObject = synCtx.getProperty(RESTConstants.PROCESSED_API);
+        if (apiObject != null) {
+            if (identifyAPI((API) apiObject, synCtx, defaultStrategyApiSet)) {
+                return true;
+            }
+        } else {
+            for (API api : apiSet) {
+                if (identifyAPI(api, synCtx, defaultStrategyApiSet)) {
                     return true;
                 }
-            } else if (api.canProcess(synCtx)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Located specific API: " + api.getName() + " for processing message");
-                }
-                api.process(synCtx);
-                return true;
             }
         }
 
@@ -148,5 +136,34 @@ public class RESTRequestHandler {
         } else {
             api.process(synCtx);
         }
+    }
+
+    private boolean identifyAPI(API api, MessageContext synCtx, List defaultStrategyApiSet) {
+        API defaultAPI = null;
+        api.setLogSetterValue();
+        if ("/".equals(api.getContext())) {
+            defaultAPI = api;
+        } else if (api.getVersionStrategy().getClass().getName().equals(DefaultStrategy.class.getName())) {
+            //APIs whose VersionStrategy is bound to an instance of DefaultStrategy, should be skipped and processed at
+            // last.Otherwise they will be always chosen to process the request without matching the version.
+            defaultStrategyApiSet.add(api);
+        } else if (api.getVersionStrategy().getClass().getName().equals(ContextVersionStrategy.class.getName())
+                || api.getVersionStrategy().getClass().getName().equals(URLBasedVersionStrategy.class.getName())) {
+            api.setLogSetterValue();
+            if (api.canProcess(synCtx)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Located specific API: " + api.getName() + " for processing message");
+                }
+                apiProcessNonDefaultStrategy(synCtx, api);
+                return true;
+            }
+        } else if (api.canProcess(synCtx)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Located specific API: " + api.getName() + " for processing message");
+            }
+            api.process(synCtx);
+            return true;
+        }
+        return false;
     }
 }

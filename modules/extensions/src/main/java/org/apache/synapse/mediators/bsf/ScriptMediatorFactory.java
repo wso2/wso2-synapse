@@ -71,7 +71,11 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
         ScriptMediator mediator;
-        ClassLoader  classLoader = (ClassLoader) properties.get(SynapseConstants.SYNAPSE_LIB_LOADER);
+        ClassLoader  classLoader = null;
+        if (properties != null) {
+            classLoader = (ClassLoader) properties.get(SynapseConstants.SYNAPSE_LIB_LOADER);
+        }
+
         OMAttribute keyAtt = elem.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE,
                 "key"));
         OMAttribute langAtt = elem.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE,

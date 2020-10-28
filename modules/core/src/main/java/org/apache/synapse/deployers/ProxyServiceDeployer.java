@@ -24,12 +24,13 @@ import org.apache.axis2.deployment.DeploymentException;
 import org.apache.axis2.description.AxisService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.config.xml.ProxyServiceFactory;
 import org.apache.synapse.config.xml.ProxyServiceSerializer;
 import org.apache.synapse.core.axis2.ProxyService;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 
 import java.io.File;
 import java.util.Properties;
@@ -62,10 +63,8 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
             proxy.setArtifactContainerName(customLogContent);
             if (proxy != null) {
                 if (getSynapseConfiguration().getProxyService(proxy.getName()) != null) {
-                    log.warn("Hot deployment thread picked up an already deployed proxy - Ignoring");
-                    return proxy.getName();
+                    handleSynapseArtifactDeploymentError("ProxyService named : " + proxy.getName() + " already exists");
                 }
-
                 File proxyFile = new File(filePath);
                 proxy.setFileName(proxyFile.getName());
                 proxy.setFilePath(proxyFile.toURI().toURL());
@@ -96,6 +95,10 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                         log.debug("ProxyService Deployment from file : " + filePath + " : Completed");
                     }
 
+                    String startTime = String.valueOf(System.currentTimeMillis());
+                    executeExtendedSynapseHandlerOnArtifactDeployment(proxy.getName(),
+                            SynapseConstants.PROXY_SERVICE_TYPE, startTime);
+
                     log.info("ProxyService named '" + proxy.getName()
                              + "' has been deployed from file : " + filePath);
 
@@ -107,6 +110,7 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                     return proxy.getName();
                 } catch (SynapseException e) {
                     getSynapseConfiguration().removeProxyService(proxy.getName());
+                    proxy.destroy();
                     throw e;
                 }
             } else {
@@ -150,6 +154,7 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                 }
                 ProxyService currentProxy = getSynapseConfiguration().getProxyService(existingArtifactName);
                 currentProxy.stop(getSynapseConfiguration());
+                currentProxy.destroy();
                 getSynapseConfiguration().removeProxyService(existingArtifactName);
                 if (!existingArtifactName.equals(proxy.getName())) {
                     log.info("ProxyService named " + existingArtifactName + " has been Undeployed");
@@ -201,11 +206,15 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                     log.debug("Stopping the ProxyService named : " + artifactName);
                 }
                 proxy.stop(getSynapseConfiguration());
+                proxy.destroy();
                 getSynapseConfiguration().removeProxyService(artifactName);
                 if (log.isDebugEnabled()) {
                     log.debug("ProxyService Undeployment of the proxy named : "
                             + artifactName + " : Completed");
                 }
+                String unDeployTime = String.valueOf(System.currentTimeMillis());
+                executeSynapseHandlerOnArtifactUnDeployment(proxy.getName(), SynapseConstants.PROXY_SERVICE_TYPE,
+                        unDeployTime);
                 log.info("ProxyService named '" + proxy.getName() + "' has been undeployed");
             } else if (log.isDebugEnabled()) {
                 log.debug("Proxy service " + artifactName + " has already been undeployed");

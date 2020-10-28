@@ -25,9 +25,15 @@ public class PassThroughConstants {
     public static final String CONNECTION_POOL = "CONNECTION_POOL";
     public static final String TUNNEL_HANDLER = "TUNNEL_HANDLER";
     public static final String CONNECTION_INIT_TIME = "CONNECTION_INIT_TIME";
-    public static final String CONNECTION_RELEASE_TIME = "CONNECTION_RELEASE_TIME";
+    // The time at which the connection is removed from the connection pool.
+    // This is calculated using the keep alive timeout or connection idle time.
+    public static final String CONNECTION_EXPIRY_TIME = "CONNECTION_EXPIRY_TIME";
+    // The time after which the connection will be closed by the backend.
+    // This time is mentioned as an HTTP header in the response from the backend.
+    public static final String CONNECTION_KEEP_ALIVE_TIME_OUT = "CONNECTION_KEEP_ALIVE_TIME_OUT";
 
     public static final String TRUE = "TRUE";
+    public static final String VALUE_FALSE = "false";
 
     public static final String FAULT_MESSAGE = "FAULT_MESSAGE"; // corresponds with BaseConstants
     public static final String FAULTS_AS_HTTP_200 = "FAULTS_AS_HTTP_200";
@@ -217,7 +223,10 @@ public class PassThroughConstants {
 
     public static final String ORIGINAL_HTTP_SC = "ORIGINAL_STATUS_CODE";
     public static final String ORIGINAL_HTTP_REASON_PHRASE = "HTTP_REASON_PHRASE";
-
+    public static final String INTERNAL_EXCEPTION_ORIGIN = "_INTERNAL_EXCEPTION_ORIGIN";
+    public static final String INTERNAL_ORIGIN_ERROR_HANDLER = "TARGET_ERROR_HANDLER";
+    public static final String INTERNAL_TRIGGER_TYPE = "_INTERNAL_TRIGGER_TYPE";
+    public static final String INTERNAL_TRIGGER_NAME = "_INTERNAL_TRIGGER_NAME";
 
     public static final String MESSAGE_SIZE_VALIDATION_SUM = "MESSAGE_SIZE_VALIDATION_SUM";
     public static final String SOURCE_CONNECTION_DROPPED = "SOURCE_CONNECTION_DROPPED";
@@ -243,12 +252,8 @@ public class PassThroughConstants {
      */
     //correlation enable/disable state property in axis2 message context
     public static final String CORRELATION_LOG_STATE_PROPERTY = "correlationLogState";
-    //property to set the correlation id value in message context and http context
-    public static final String CORRELATION_ID = "correlation_id";
     //system property to enable/disable correlation logging
     public static final String CORRELATION_LOGS_SYS_PROPERTY = "enableCorrelationLogs";
-    //property to set the correlation ID as a MDC property in log4J
-    public static final String CORRELATION_MDC_PROPERTY = "Correlation-ID";
     //correlation logger name in log4J properties
     public static final String CORRELATION_LOGGER = "correlation";
     //default header that carries the correlation ID. Header name is configurable at passthru-http.properties

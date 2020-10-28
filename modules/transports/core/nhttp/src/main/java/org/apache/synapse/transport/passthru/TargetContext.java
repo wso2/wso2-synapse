@@ -21,7 +21,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpRequest;
 import org.apache.http.nio.NHttpConnection;
-import org.apache.log4j.MDC;
+import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.util.ControlledByteBuffer;
 
@@ -168,14 +169,11 @@ public class TargetContext {
                     }
                 }
                 if ((method.length() != 0) && (url.length() != 0)) {
-                    MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY,
-                            conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID).toString());
-                    correlationLog.info((targetContext.updateLastStateUpdatedTime() - lastStateUpdateTime)
-                            + "|HTTP State Transition|"
-                            + conn.getContext().getAttribute("http.connection") + "|"
-                            + method + "|" + url + "|"
-                            + state.name());
-                    MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+                    ContextAwareLogger.getLogger(conn.getContext(), correlationLog, false)
+                            .info((targetContext.updateLastStateUpdatedTime() - lastStateUpdateTime)
+                                    + "|HTTP State Transition|"
+                                    + conn.getContext().getAttribute("http.connection") + "|" + method + "|" + url
+                                    + "|" + state.name());
                 }
             }
         } else {
@@ -248,7 +246,7 @@ public class TargetContext {
     }
 
     public static Boolean isCorrelationIdAvailable(NHttpConnection connection) {
-        if (connection.getContext().getAttribute(PassThroughConstants.CORRELATION_ID) != null) {
+        if (connection.getContext().getAttribute(CorrelationConstants.CORRELATION_ID) != null) {
             return true;
         }
         return false;

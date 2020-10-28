@@ -19,6 +19,7 @@
 package org.apache.synapse.commons.json.jsonprocessor.validators;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import org.apache.synapse.commons.json.jsonprocessor.constants.ValidatorConstants;
@@ -62,10 +63,16 @@ public class NumericValidator {
         //replacing enclosing quotes
         value = JsonProcessorUtils.replaceEnclosingQuotes(value);
         if (isNumeric(value)) {
-            String type = null;
+            String type = "";
             if (inputObject.has(ValidatorConstants.TYPE_KEY)) {
-                type = JsonProcessorUtils.replaceEnclosingQuotes(
-                        inputObject.get(ValidatorConstants.TYPE_KEY).getAsString());
+                if (inputObject.get(ValidatorConstants.TYPE_KEY).isJsonArray()) {
+                    for (JsonElement typeValue : inputObject.get(ValidatorConstants.TYPE_KEY).getAsJsonArray()) {
+                        type += JsonProcessorUtils.replaceEnclosingQuotes(typeValue.getAsString());
+                    }
+                } else {
+                    type = JsonProcessorUtils.replaceEnclosingQuotes(
+                            inputObject.get(ValidatorConstants.TYPE_KEY).getAsString());
+                }
             }
             // handling multiples of condition
             Double doubleValue = DataTypeConverter.convertToDouble(value);
@@ -132,7 +139,7 @@ public class NumericValidator {
                         "const value input " + value + " not contains the const defined in " + inputObject.toString());
             }
             // convert to integer of give value is a float
-            if (INTEGER_STRING.equals(type)) {
+            if (type.contains(INTEGER_STRING)) {
                 return new JsonPrimitive(DataTypeConverter.convertToInt(value));
             } else {
                 // this condition address both type number and empty json schemas

@@ -16,17 +16,6 @@
 
 package org.apache.synapse.transport.passthru;
 
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.xml.parsers.FactoryConfigurationError;
-
-
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAP12Constants;
@@ -46,6 +35,7 @@ import org.apache.axis2.dispatchers.RequestURIBasedDispatcher;
 import org.apache.axis2.engine.AxisEngine;
 import org.apache.axis2.transport.RequestResponseTransport;
 import org.apache.axis2.transport.TransportUtils;
+import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HTTPTransportUtils;
 import org.apache.axis2.util.MessageContextBuilder;
@@ -62,12 +52,12 @@ import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.ssl.SSLIOSession;
 import org.apache.http.protocol.HTTP;
 import org.apache.log4j.MDC;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiatorProvider;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.nhttp.HttpCoreRequestResponseTransport;
-import org.apache.synapse.transport.nhttp.NHttpConfiguration;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.nhttp.util.NhttpUtil;
 import org.apache.synapse.transport.nhttp.util.RESTUtil;
@@ -75,6 +65,15 @@ import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
+
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.xml.parsers.FactoryConfigurationError;
 
 /**
  * This is a worker thread for executing an incoming request in to the transport.
@@ -142,11 +141,11 @@ public class ServerWorker implements Runnable {
         try {
              /* Remove correlation id MDC thread local value that can be persisting from the
                previous usage of this thread */
-            MDC.remove(PassThroughConstants.CORRELATION_MDC_PROPERTY);
+            MDC.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
             /* Subsequent to removing the correlation id MDC thread local value, a new value is put in case
                there is one */
             if (StringUtils.isNotEmpty(correlationId)) {
-                MDC.put(PassThroughConstants.CORRELATION_MDC_PROPERTY, correlationId);
+                MDC.put(CorrelationConstants.CORRELATION_MDC_PROPERTY, correlationId);
                 /* Log the time taken to switch from the previous thread to this thread */
                 if (initiationTimestamp != 0) {
                     correlationLog.info((System.currentTimeMillis() - initiationTimestamp) +
@@ -509,11 +508,13 @@ public class ServerWorker implements Runnable {
         
         NHttpServerConnection conn = request.getConnection();
         // propagate correlation logging related properties
-        msgContext.setProperty(PassThroughConstants.CORRELATION_ID,
-                conn.getContext().getAttribute(PassThroughConstants.CORRELATION_ID));
+        msgContext.setProperty(CorrelationConstants.CORRELATION_ID,
+                conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
         msgContext.setProperty(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY,
                 sourceConfiguration.isCorrelationLoggingEnabled());
-
+        // propagate transaction property
+        msgContext.setProperty(BaseConstants.INTERNAL_TRANSACTION_COUNTED,
+                               conn.getContext().getAttribute(BaseConstants.INTERNAL_TRANSACTION_COUNTED));
         if (sourceConfiguration.getScheme().isSSL()) {
             msgContext.setTransportOut(cfgCtx.getAxisConfiguration()
                 .getTransportOut(Constants.TRANSPORT_HTTPS));
@@ -676,7 +677,7 @@ public class ServerWorker implements Runnable {
         return null;
     }
 
-    protected MessageContext getRequestContext() {
+    public MessageContext getRequestContext() {
         return msgContext;
     }
 

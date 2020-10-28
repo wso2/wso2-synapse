@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.unittest.testcase.data.classes.RegistryResource;
 import org.apache.synapse.unittest.testcase.data.classes.SynapseTestCase;
+import org.apache.synapse.unittest.testcase.data.classes.TestCaseAssertionSummary;
 import org.apache.synapse.unittest.testcase.data.classes.TestCaseSummary;
 import org.apache.synapse.unittest.testcase.data.classes.TestSuiteSummary;
 import org.apache.synapse.unittest.testcase.data.holders.ArtifactData;
@@ -66,10 +67,15 @@ public class RequestHandler implements Runnable {
     @Override
     public void run() {
         try {
-            log.info("Start processing test-case handler\n");
+            log.info("Start processing test-case handler");
             checkTransportPassThroughPortAvailability();
 
             String receivedData = readData();
+
+            SynapseConfiguration synapseConfiguration = UnitTestingExecutor.getExecuteInstance().
+                    getSynapseConfiguration();
+            synapseConfiguration.setProperty(Constants.IS_RUNNING_AS_UNIT_TEST, "true");
+
             SynapseTestCase synapseTestCases = preProcessingData(receivedData);
 
             if (synapseTestCases != null) {
@@ -84,7 +90,7 @@ public class RequestHandler implements Runnable {
 
             writeData(testSuiteSummary);
             MockServiceCreator.stopServices();
-            log.info("End processing test-case handler\n");
+            log.info("End processing test-case handler");
         } catch (Exception e) {
             log.error("Error while running client request in test agent", e);
         } finally {
@@ -144,7 +150,7 @@ public class RequestHandler implements Runnable {
             //configure the artifact if there are mock-services to append
             String exceptionWhileMocking = null;
             if (readMockServiceData.getMockServicesCount() > 0) {
-                exceptionWhileMocking = ConfigModifier.endPointModifier(readArtifactData, readMockServiceData);
+                exceptionWhileMocking = ConfigModifier.mockServiceLoader(readMockServiceData);
             }
 
             //check is there any error occurred while mocking endpoints if yes stop the testing and return the exception
@@ -187,7 +193,7 @@ public class RequestHandler implements Runnable {
 
         //check supportive-artifact deployment is success or not
         if (supportiveArtifactDeployment.getKey() || synapseTestCase.getArtifacts().getSupportiveArtifactCount() == 0) {
-            log.info("Test artifact deployment started");
+            log.info("Main test artifact deployment started");
             testSuiteSummary.setDeploymentStatus(Constants.PASSED_KEY);
             testArtifactDeployment = agent.processTestArtifact(synapseTestCase, testSuiteSummary);
 
@@ -197,7 +203,7 @@ public class RequestHandler implements Runnable {
 
         } else {
             testSuiteSummary.setDeploymentStatus(Constants.FAILED_KEY);
-            testSuiteSummary.setDescription("supportive artifact deployment failed");
+            testSuiteSummary.setDescription("Supportive artifact deployment failed");
         }
 
         //check test-artifact deployment is success or not
@@ -207,7 +213,7 @@ public class RequestHandler implements Runnable {
             //performs test cases through the deployed synapse configuration
             agent.processTestCases(synapseTestCase, testSuiteSummary);
 
-        } else if (!testArtifactDeployment.getKey() && testArtifactDeployment.getValue() != null) {
+        } else if (testArtifactDeployment.getValue() != null) {
             testSuiteSummary.setDeploymentStatus(Constants.FAILED_KEY);
         } else {
             testSuiteSummary.setDeploymentStatus(Constants.FAILED_KEY);
@@ -216,6 +222,9 @@ public class RequestHandler implements Runnable {
 
         //undeploy all the deployed artifacts
         agent.artifactUndeployer();
+        ConfigModifier.unitTestMockEndpointMap.clear();
+        UnitTestingExecutor.getExecuteInstance().getSynapseConfiguration().
+                setProperty(Constants.IS_RUNNING_AS_UNIT_TEST, "false");
     }
 
     /**
@@ -251,6 +260,28 @@ public class RequestHandler implements Runnable {
             testObject.addProperty(Constants.ASSERTION_STATUS, summary.getAssertionStatus());
             testObject.addProperty(Constants.ASSERTION_EXCEPTION, summary.getTestException());
 
+            JsonArray jsonFailedAssertionArray = new JsonArray();
+            for (TestCaseAssertionSummary assertionFailure : summary.getTestCaseAssertionList()) {
+                JsonObject failedAssertionObject = new JsonObject();
+                failedAssertionObject.addProperty(Constants.ASSERTION_TYPE,
+                        assertionFailure.getAssertionType());
+                failedAssertionObject.addProperty(Constants.ASSERTION_EXPRESSION,
+                        assertionFailure.getAssertionExpression());
+                failedAssertionObject.addProperty(Constants.ASSERTION_ACTUAL,
+                        assertionFailure.getAssertionActualValue());
+                failedAssertionObject.addProperty(Constants.ASSERTION_EXPECTED,
+                        assertionFailure.getAssertionExpectedValue());
+                failedAssertionObject.addProperty(Constants.ASSERTION_DESCRIPTION,
+                        assertionFailure.getAssertionDescription());
+                failedAssertionObject.addProperty(Constants.ASSERTION_MESSAGE,
+                        assertionFailure.getAssertionErrorMessage());
+
+                jsonFailedAssertionArray.add(failedAssertionObject);
+            }
+
+            if (jsonFailedAssertionArray.size() > 0) {
+                testObject.add(Constants.FAILURE_ASSERTIONS, jsonFailedAssertionArray);
+            }
             jsonArray.add(testObject);
         }
 

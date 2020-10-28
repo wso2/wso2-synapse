@@ -83,6 +83,8 @@ public class StatisticDataUnit extends BasicStatisticDataUnit {
 	 */
 	private String componentId;
 
+	private String propertyValue;
+
 	/**
 	 * HashCode of the reporting component.
 	 */
@@ -221,5 +223,13 @@ public class StatisticDataUnit extends BasicStatisticDataUnit {
 
 	public void setContinuationCall(boolean continuationCall) {
 		this.continuationCall = continuationCall;
+	}
+
+	public String getPropertyValue() {
+		return propertyValue;
+	}
+
+	public void setPropertyValue(String propertyValue) {
+		this.propertyValue = propertyValue;
 	}
 }

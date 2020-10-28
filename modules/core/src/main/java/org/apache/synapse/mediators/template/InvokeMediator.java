@@ -29,6 +29,7 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -189,7 +190,18 @@ public class InvokeMediator extends AbstractMediator implements
 
 	@Override
 	public boolean isContentAware() {
-		//parameters with expression will  be evaluated by relevant mediators in the template
+		//evaluate parameters with expression
+		Iterator<String> parameterNames = pName2ExpressionMap.keySet().iterator();
+		while (parameterNames.hasNext()) {
+			String parameterName = parameterNames.next();
+			if (!"".equals(parameterName)) {
+				Value parameter = pName2ExpressionMap.get(parameterName);
+				SynapsePath expression = parameter.getExpression();
+				if (expression != null && expression.isContentAware()) {
+					return true;
+				}
+			}
+		}
 		return false;
 	}
 

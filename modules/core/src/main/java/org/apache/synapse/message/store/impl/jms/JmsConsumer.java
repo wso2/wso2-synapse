@@ -143,7 +143,8 @@ public class JmsConsumer implements MessageConsumer {
             return true;
         } catch (JMSException e) {
             throw new SynapseException("Error while connecting to store to close created connections. JMS provider "
-                    + "might not be accessible" + store.getName(), e);
+                    + "might not be accessible " + store.getName() + " "
+                    + MessageProcessorConstants.STORE_CONNECTION_ERROR, e);
         } finally {
             connection = null;
             session = null;
@@ -159,6 +160,9 @@ public class JmsConsumer implements MessageConsumer {
         }
 
         return true;
+    }
+
+    public void setAlive(boolean isAlive) {
     }
 
     public Connection getConnection() {

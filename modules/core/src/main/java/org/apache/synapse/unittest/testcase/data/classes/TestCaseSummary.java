@@ -18,6 +18,9 @@
 
 package org.apache.synapse.unittest.testcase.data.classes;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class TestCaseSummary {
 
     private static final String SKIPPED_STATE = "SKIPPED";
@@ -26,6 +29,7 @@ public class TestCaseSummary {
     private String exception;
     private String mediationStatus = SKIPPED_STATE;
     private String assertionStatus = SKIPPED_STATE;
+    private List<TestCaseAssertionSummary> testCaseAssertions = new ArrayList<>();
 
     /**
      * Get failure exception.
@@ -114,5 +118,23 @@ public class TestCaseSummary {
         }
 
         return true;
+    }
+
+    /**
+     * Add test case assertion summary object.
+     *
+     * @param assertSummary test cases assertion summary object
+     */
+    public void addTestCaseAssertion(TestCaseAssertionSummary assertSummary) {
+        testCaseAssertions.add(assertSummary);
+    }
+
+    /**
+     * Get test case assertion summary object list.
+     *
+     * @return test case assertion summary object list
+     */
+    public List<TestCaseAssertionSummary> getTestCaseAssertionList() {
+        return testCaseAssertions;
     }
 }

@@ -41,6 +41,7 @@ import org.apache.axis2.description.AxisOperation;
 import org.apache.axis2.description.AxisService;
 import org.apache.axis2.description.InOutAxisOperation;
 import org.apache.axis2.engine.AxisConfiguration;
+import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -285,6 +286,10 @@ public final class MessageConverter {
                 }
             }
             axis2msg.addProperty(ABSTRACT_MC_PROPERTIES, copy);
+            if (msgCtx.getProperties().containsKey(BaseConstants.INTERNAL_TRANSACTION_COUNTED)) {
+                axis2msg.addProperty(BaseConstants.INTERNAL_TRANSACTION_COUNTED,
+                                     msgCtx.getProperty(BaseConstants.INTERNAL_TRANSACTION_COUNTED));
+            }
             Map<String, String> transportHeaders = getTransportHeaders(msgCtx);
             axis2msg.addProperty(
                     org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, transportHeaders);

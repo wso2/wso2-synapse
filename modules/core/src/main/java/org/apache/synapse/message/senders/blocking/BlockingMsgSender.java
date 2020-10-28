@@ -251,6 +251,7 @@ public class BlockingMsgSender {
                 }
 
                 synapseInMsgCtx.setProperty(SynapseConstants.BLOCKING_SENDER_ERROR, "false");
+                this.invokeHandlers(synapseInMsgCtx);
                 return synapseInMsgCtx;
             }
         } catch (Exception ex) {
@@ -342,6 +343,10 @@ public class BlockingMsgSender {
                 axisInMsgCtx.getProperty(HTTPConstants.ERROR_HTTP_STATUS_CODES));
         axisOutMsgCtx.setProperty(SynapseConstants.DISABLE_CHUNKING,
                 axisInMsgCtx.getProperty(SynapseConstants.DISABLE_CHUNKING));
+        axisOutMsgCtx.setProperty(SynapseConstants.NO_KEEPALIVE,
+                axisInMsgCtx.getProperty(SynapseConstants.NO_KEEPALIVE));
+        axisOutMsgCtx.setProperty(SynapseConstants.NO_DEFAULT_CONTENT_TYPE,
+                axisInMsgCtx.getProperty(SynapseConstants.NO_DEFAULT_CONTENT_TYPE));
         // Fill MessageContext
         BlockingMsgSenderUtils.fillMessageContext(endpointDefinition, axisOutMsgCtx, synapseInMsgCtx);
         if (JsonUtil.hasAJsonPayload(axisInMsgCtx)) {
@@ -401,6 +406,7 @@ public class BlockingMsgSender {
                             result.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
                 }
                 synapseInMsgCtx.setProperty(SynapseConstants.BLOCKING_SENDER_ERROR, "false");
+                this.invokeHandlers(synapseInMsgCtx);
             }
         } catch (Exception ex) {
             /*
@@ -461,7 +467,6 @@ public class BlockingMsgSender {
     private void sendRobust(org.apache.axis2.context.MessageContext axisOutMsgCtx,
                             Options clientOptions, AxisService anonymousService,
                             ServiceContext serviceCtx, MessageContext synapseInMsgCtx) throws AxisFault {
-        this.invokeHandlers(synapseInMsgCtx, false);
         AxisOperation axisAnonymousOperation =
                 anonymousService.getOperation(new QName(AnonymousServiceFactory.OUT_ONLY_OPERATION));
         OperationClient operationClient =
@@ -488,7 +493,6 @@ public class BlockingMsgSender {
         operationClient.addMessageContext(axisOutMsgCtx);
         axisOutMsgCtx.setAxisMessage(
                 axisAnonymousOperation.getMessage(WSDLConstants.MESSAGE_LABEL_OUT_VALUE));
-        this.invokeHandlers(synapseInMsgCtx, false);
         operationClient.execute(true);
         org.apache.axis2.context.MessageContext resultMsgCtx =
                 operationClient.getMessageContext(WSDLConstants.MESSAGE_LABEL_IN_VALUE);
@@ -513,7 +517,6 @@ public class BlockingMsgSender {
         returnMsgCtx.setProperty(
                 org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
                 resultMsgCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
-        this.invokeHandlers(synapseInMsgCtx, true);
         return returnMsgCtx;
     }
 
@@ -566,30 +569,18 @@ public class BlockingMsgSender {
      * Invoke Synapse Handlers
      *
      * @param synCtx synapse message context
-     * @param isResponse whether message is response path or not
      */
-    private void invokeHandlers(MessageContext synCtx, boolean isResponse) {
+    private void invokeHandlers(MessageContext synCtx) {
 
-        Iterator<SynapseHandler> iterator =
-                synCtx.getEnvironment().getSynapseHandlers().iterator();
+        Iterator<SynapseHandler> iterator = synCtx.getEnvironment().getSynapseHandlers().iterator();
 
         if (iterator.hasNext()) {
-
-            if (isResponse) {
-                do {
-                    SynapseHandler handler = iterator.next();
-                    if (!handler.handleResponseInFlow(synCtx)) {
-                        log.warn("Synapse not executed in the response in path");
-                    }
-                } while (iterator.hasNext());
-            } else {
-                do {
-                    SynapseHandler handler = iterator.next();
-                    if (!handler.handleRequestOutFlow(synCtx)) {
-                        log.warn("Synapse not executed in the request out path");
-                    }
-                } while (iterator.hasNext());
-            }
+            do {
+                SynapseHandler handler = iterator.next();
+                if (!handler.handleResponseInFlow(synCtx)) {
+                    log.warn("Synapse not executed in the response in path");
+                }
+            } while (iterator.hasNext());
         }
     }
 

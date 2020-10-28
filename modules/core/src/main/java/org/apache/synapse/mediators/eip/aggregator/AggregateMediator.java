@@ -42,6 +42,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
+import org.apache.synapse.commons.json.Constants;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -678,6 +679,11 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             } catch (AxisFault axisFault) {
                 log.error("Error occurred while setting the new JSON payload to the msg context", axisFault);
             }
+        } else {
+            // Removing the JSON stream after aggregated using XML path.
+            // This will fix inconsistent behaviour in logging the payload.
+            ((Axis2MessageContext) newCtx).getAxis2MessageContext()
+                                          .removeProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
         }
         return newCtx;
     }

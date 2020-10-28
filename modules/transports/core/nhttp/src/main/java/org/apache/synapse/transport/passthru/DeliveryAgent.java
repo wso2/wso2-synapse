@@ -26,6 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHost;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.nio.NHttpClientConnection;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
@@ -146,7 +147,8 @@ public class DeliveryAgent {
                 }
                 if (queue.size() == maxWaitingMessages) {
                     MessageContext msgCtx = queue.poll();
-
+                    msgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                            PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
                     targetErrorHandler.handleError(msgCtx,
                             ErrorCodes.CONNECTION_TIMEOUT,
                             "Error connecting to the back end",
@@ -179,24 +181,30 @@ public class DeliveryAgent {
         }
     }
 
-	public void errorConnecting(HttpRoute route, int errorCode, String message) {
-		Queue<MessageContext> queue = waitingMessages.get(route);
-		if (queue != null) {
-			MessageContext msgCtx = queue.poll();
+    public void errorConnecting(HttpRoute route, int errorCode, String message, Exception exceptionToRaise) {
+        Queue<MessageContext> queue = waitingMessages.get(route);
+        if (queue != null) {
+            MessageContext msgCtx = queue.poll();
 
-			if (msgCtx != null) {
-				targetErrorHandler.handleError(msgCtx, errorCode,
-				                               "Error connecting to the back end", null,
-				                               ProtocolState.REQUEST_READY);
-				synchronized (msgCtx) {
-					msgCtx.setProperty(PassThroughConstants.WAIT_BUILDER_IN_STREAM_COMPLETE,
-					                   Boolean.TRUE);
-					msgCtx.notifyAll();
-				}
-			}
-		} else {
-			throw new IllegalStateException("Queue cannot be null for: " + route);
-		}
+            if (msgCtx != null) {
+                msgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                        PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
+                targetErrorHandler.handleError(msgCtx, errorCode,
+                        "Error connecting to the back end", exceptionToRaise,
+                        ProtocolState.REQUEST_READY);
+                synchronized (msgCtx) {
+                    msgCtx.setProperty(PassThroughConstants.WAIT_BUILDER_IN_STREAM_COMPLETE,
+                            Boolean.TRUE);
+                    msgCtx.notifyAll();
+                }
+            }
+        } else {
+            throw new IllegalStateException("Queue cannot be null for: " + route);
+        }
+    }
+
+	public void errorConnecting(HttpRoute route, int errorCode, String message) {
+		errorConnecting(route, errorCode, message, null);
 	}
 
     /**
@@ -243,8 +251,8 @@ public class DeliveryAgent {
     private void tryNextMessage(MessageContext messageContext, HttpRoute route, NHttpClientConnection conn) {
         if (conn != null) {
             try {
-                conn.getContext().setAttribute(PassThroughConstants.CORRELATION_ID,
-                        messageContext.getProperty(PassThroughConstants.CORRELATION_ID));
+                conn.getContext().setAttribute(CorrelationConstants.CORRELATION_ID,
+                        messageContext.getProperty(CorrelationConstants.CORRELATION_ID));
                 TargetContext.updateState(conn, ProtocolState.REQUEST_READY);
                 TargetContext.get(conn).setRequestMsgCtx(messageContext);
                 if (log.isDebugEnabled()) {

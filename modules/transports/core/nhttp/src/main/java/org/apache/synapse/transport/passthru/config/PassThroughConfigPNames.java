@@ -73,6 +73,11 @@ public interface PassThroughConfigPNames {
     /**
      * Defines whether ESB needs to preserve the original Http header.
      */
+    public String HTTP_RESPONSE_HEADERS_PRESERVE = "http.response.headers.preserve";
+
+    /**
+     * Defines whether ESB needs to preserve the original Http header.
+     */
     public String HTTP_HEADERS_PRESERVE = "http.headers.preserve";
 
     /**
@@ -84,6 +89,12 @@ public interface PassThroughConfigPNames {
      * Defines the time interval for idle connection removal.
      */
     public String CONNECTION_IDLE_TIME = "transport.sender.connection.idle.time";
+
+    /**
+     * Defines the time allocated to avoid a connection being used
+     * at the moment it is being closed or timed out in milliseconds
+     */
+    public String CONNECTION_GRACE_TIME = "transport.sender.connection.grace.time";
 
     /**
      * Defines the time interval for maximum connection lifespan.

@@ -54,6 +54,7 @@ import org.apache.synapse.endpoints.WSDLEndpoint;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.util.PolicyInfo;
+import org.apache.synapse.util.logging.LoggingUtils;
 import org.apache.synapse.util.resolver.CustomWSDLLocator;
 import org.apache.synapse.util.resolver.CustomXmlSchemaURIResolver;
 import org.apache.synapse.util.resolver.ResourceMap;
@@ -619,7 +620,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             }
         } else if (wsdlFound) {
             handleException("Couldn't build the proxy service : " + name
-                    + ". Unable to locate the specified WSDL to build the service");
+                                    + ". Unable to locate the specified WSDL to build the service");
         }
 
         // Set the name and description. Currently Axis2 uses the name as the
@@ -858,7 +859,6 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
                 }
             }
         }
-
         auditInfo("Successfully created the Axis2 service for Proxy service : " + name);
         return axisService;
     }
@@ -930,8 +930,8 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
                     targetInLineFaultSequence.init(env);
                 }
             } else {
-                auditWarn("Unable to find the SynapseEnvironment. " +
-                        "Components of the proxy service may not be initialized");
+                auditWarn(
+                        "Unable to find the SynapseEnvironment. Components of the proxy service may not be initialized");
             }
 
             AxisService as = axisConfig.getServiceForActivation(this.getName());
@@ -963,22 +963,29 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             this.setRunning(false);
             auditInfo("Stopped the proxy service : " + name);
         } else {
-            auditWarn("Unable to stop proxy service : " + name +
-                    ". Couldn't access Axis configuration");
+            auditWarn("Unable to stop proxy service : " + name + ". Couldn't access Axis configuration");
         }
     }
 
     private void handleException(String msg) {
+
+        String formattedMSg = getFormattedLog(msg);
         serviceLog.error(msg);
-        log.error(msg);
-        if (trace()) trace.error(msg);
+        log.error(formattedMSg);
+        if (trace()) {
+            trace.error(formattedMSg);
+        }
         throw new SynapseException(msg);
     }
 
     private void handleException(String msg, Exception e) {
+
+        String formattedMSg = getFormattedLog(msg);
         serviceLog.error(msg);
-        log.error(msg, e);
-        if (trace()) trace.error(msg + " :: " + e.getMessage());
+        log.error(formattedMSg, e);
+        if (trace()) {
+            trace.error(formattedMSg + " :: " + e.getMessage());
+        }
         throw new SynapseException(msg, e);
     }
 
@@ -987,11 +994,17 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
      * @param message the INFO level audit message
      */
     private void auditInfo(String message) {
-        log.info(message);
+
+        String formattedMSg = getFormattedLog(message);
+        log.info(formattedMSg);
         serviceLog.info(message);
         if (trace()) {
-            trace.info(message);
+            trace.info(formattedMSg);
         }
+    }
+
+    private String getFormattedLog(String msg) {
+        return LoggingUtils.getFormattedLog(SynapseConstants.PROXY_SERVICE_TYPE, getName(), msg);
     }
 
     /**
@@ -999,10 +1012,12 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
      * @param message the WARN level audit message
      */
     private void auditWarn(String message) {
-        log.warn(message);
+
+        String formattedMsg = getFormattedLog(message);
+        log.warn(formattedMsg);
         serviceLog.warn(message);
         if (trace()) {
-            trace.warn(message);
+            trace.warn(formattedMsg);
         }
     }
 
@@ -1454,5 +1469,23 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     public void setCommentsList(List<String> commentsList) {
         this.commentsList = commentsList;
+    }
+
+    /**
+     * This method will destroy sequences
+     */
+    public void destroy() {
+        if (log.isDebugEnabled()) {
+            log.debug("Destroying proxy service with name: " + name);
+        }
+        if (targetInLineInSequence != null && targetInLineInSequence.isInitialized()) {
+            targetInLineInSequence.destroy();
+        }
+        if (targetInLineOutSequence != null && targetInLineOutSequence.isInitialized()) {
+            targetInLineOutSequence.destroy();
+        }
+        if (targetInLineFaultSequence != null && targetInLineFaultSequence.isInitialized()) {
+            targetInLineFaultSequence.destroy();
+        }
     }
 }

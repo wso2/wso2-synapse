@@ -37,6 +37,7 @@ import org.apache.axis2.description.AxisServiceGroup;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.axis2.description.WSDL2Constants;
 import org.apache.axis2.engine.AxisConfiguration;
+import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HTTPTransportUtils;
 import org.apache.axis2.wsdl.WSDLConstants;
@@ -45,6 +46,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.endpoints.EndpointDefinition;
@@ -54,14 +56,16 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.MediatorPropertyUtils;
+import org.apache.synapse.unittest.ConfigModifier;
 import org.apache.synapse.util.MessageHelper;
 
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.UUID;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
 import javax.xml.namespace.QName;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 
 /**
  * This is a simple client that handles both in only and in out
@@ -69,6 +73,9 @@ import java.util.UUID;
 public class Axis2FlexibleMEPClient {
 
     private static final Log log = LogFactory.getLog(Axis2FlexibleMEPClient.class);
+
+    private static final String SYNAPSE_TEST = "synapseTest";
+    private static final String TRUE = "true";
 
     /**
      * Based on the Axis2 client code. Sends the Axis2 Message context out and returns
@@ -147,11 +154,15 @@ public class Axis2FlexibleMEPClient {
         }
 
         if (originalInMsgCtx.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
-            if (originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID) == null) {
-                originalInMsgCtx.setProperty(PassThroughConstants.CORRELATION_ID, UUID.randomUUID().toString());
+            if (originalInMsgCtx.getProperty(CorrelationConstants.CORRELATION_ID) == null) {
+                originalInMsgCtx.setProperty(CorrelationConstants.CORRELATION_ID, UUID.randomUUID().toString());
+            }
+            if (headers == null) {
+                headers = new HashMap();
+                originalInMsgCtx.setProperty(MessageContext.TRANSPORT_HEADERS, headers);
             }
             headers.put(PassThroughConfiguration.getInstance().getCorrelationHeaderName(),
-                    originalInMsgCtx.getProperty(PassThroughConstants.CORRELATION_ID).toString());
+                    originalInMsgCtx.getProperty(CorrelationConstants.CORRELATION_ID).toString());
         }
 
         // create a new MessageContext to be sent out as this should not corrupt the original
@@ -160,6 +171,26 @@ public class Axis2FlexibleMEPClient {
                 SynapseConstants.PRESERVE_WS_ADDRESSING);
         MessageContext axisOutMsgCtx = cloneForSend(originalInMsgCtx, preserveAddressingProperty);
 
+        // set "INTERNAL_TRANSACTION_COUNTED" property in axisOutMsgCtx's message context.
+        axisOutMsgCtx.setProperty(BaseConstants.INTERNAL_TRANSACTION_COUNTED,
+                                  originalInMsgCtx.getProperty(BaseConstants.INTERNAL_TRANSACTION_COUNTED));
+
+        Object TRIGGER_NAME;
+        if ((TRIGGER_NAME = synapseOutMessageContext.getProperty(SynapseConstants.PROXY_SERVICE)) != null) {
+            axisOutMsgCtx.setProperty(PassThroughConstants.INTERNAL_TRIGGER_TYPE, SynapseConstants.PROXY_SERVICE_TYPE);
+            axisOutMsgCtx.setProperty(PassThroughConstants.INTERNAL_TRIGGER_NAME, TRIGGER_NAME.toString());
+        } else if ((TRIGGER_NAME = synapseOutMessageContext.getProperty(RESTConstants.SYNAPSE_REST_API)) != null) {
+            axisOutMsgCtx.setProperty(PassThroughConstants.INTERNAL_TRIGGER_TYPE, SynapseConstants.FAIL_SAFE_MODE_API);
+            axisOutMsgCtx.setProperty(PassThroughConstants.INTERNAL_TRIGGER_NAME, TRIGGER_NAME.toString());
+        } else if ((TRIGGER_NAME = synapseOutMessageContext.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME))
+                != null) {
+            axisOutMsgCtx.setProperty(PassThroughConstants.INTERNAL_TRIGGER_TYPE,
+                    SynapseConstants.FAIL_SAFE_MODE_INBOUND_ENDPOINT);
+            axisOutMsgCtx.setProperty(PassThroughConstants.INTERNAL_TRIGGER_NAME, TRIGGER_NAME.toString());
+        } else {
+            axisOutMsgCtx.setProperty(PassThroughConstants.INTERNAL_TRIGGER_TYPE, "anonymous");
+            axisOutMsgCtx.setProperty(PassThroughConstants.INTERNAL_TRIGGER_NAME, "anonymous");
+        }
 
         if (log.isDebugEnabled()) {
             log.debug("Message [Original Request Message ID : "
@@ -404,6 +435,17 @@ public class Axis2FlexibleMEPClient {
                         axisOutMsgCtx.setTo(new EndpointReference(url));
                     }
                 }
+            }
+
+            String endPointName = endpoint.leafEndpoint.getName();
+            if (TRUE.equals(System.getProperty(SYNAPSE_TEST)) && (synapseOutMessageContext.getConfiguration().
+                    getProperty(org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST) != null &&
+                    synapseOutMessageContext.getConfiguration().getProperty
+                            (org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST).equals(TRUE)) &&
+                    (ConfigModifier.unitTestMockEndpointMap.containsKey(endPointName))) {
+                String endpointUrl = ConfigModifier.unitTestMockEndpointMap.get(endPointName).toString();
+
+                axisOutMsgCtx.getTo().setAddress(endpointUrl);
             }
 
             if (endpoint.isUseSeparateListener()) {
@@ -715,7 +757,8 @@ public class Axis2FlexibleMEPClient {
                     || Constants.Configuration.HTTP_METHOD_PUT.equals(httpMethod)
                     || Constants.Configuration.HTTP_METHOD_PATCH.equals(httpMethod)
                     || RESTConstants.METHOD_OPTIONS.equals(httpMethod)
-                    || Constants.Configuration.HTTP_METHOD_HEAD.equals(httpMethod);
+                    || Constants.Configuration.HTTP_METHOD_HEAD.equals(httpMethod)
+                    || Constants.Configuration.HTTP_METHOD_PATCH.equals(httpMethod);
 
             if (!isRestRequest) {
 

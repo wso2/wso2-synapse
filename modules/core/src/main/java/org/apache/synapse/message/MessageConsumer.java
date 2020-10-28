@@ -46,6 +46,12 @@ public interface MessageConsumer {
     boolean isAlive();
 
     /**
+     * Set the connectivity state with the message store
+     * @param  isAlive if connection available.
+     */
+    void setAlive(boolean isAlive);
+
+    /**
      * Sets the ID of this message consumer.
      * @param i ID
      */

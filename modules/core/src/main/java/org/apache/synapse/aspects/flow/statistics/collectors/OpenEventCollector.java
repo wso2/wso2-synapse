@@ -25,10 +25,11 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 import org.apache.synapse.aspects.flow.statistics.log.templates.AsynchronousExecutionEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.ParentReopenEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsOpenEvent;
+import org.apache.synapse.aspects.flow.statistics.opentracing.OpenTracingManagerHolder;
+import org.apache.synapse.aspects.flow.statistics.opentracing.stores.ArtifactHolderStore;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
@@ -106,8 +107,15 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 
 			StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
             addEventAndIncrementCount(messageContext, openEvent);
+
+            if (isOpenTracingEnabled()) {
+            	OpenTracingManagerHolder.getOpenTracingManager().getHandler()
+		            .handleOpenEntryEvent(statisticDataUnit, messageContext);
+			}
+
 			return statisticDataUnit.getCurrentIndex();
 		}
+
 		return null;
 	}
 
@@ -131,8 +139,15 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
+
+			if (isOpenTracingEnabled()) {
+				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
+						.handleOpenChildEntryEvent(statisticDataUnit, messageContext);
+			}
+
 			return statisticDataUnit.getCurrentIndex();
 		}
+
 		return null;
 	}
 
@@ -158,8 +173,15 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			statisticDataUnit.setFlowContinuableMediator(true);
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
+
+			if (isOpenTracingEnabled()) {
+				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
+						.handleOpenFlowContinuableEvent(statisticDataUnit, messageContext);
+			}
+
 			return statisticDataUnit.getCurrentIndex();
 		}
+
 		return null;
 
 	}
@@ -186,6 +208,12 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			statisticDataUnit.setFlowSplittingMediator(true);
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
+
+			if (isOpenTracingEnabled()) {
+				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
+						.handleOpenFlowSplittingEvent(statisticDataUnit, messageContext);
+			}
+
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -214,6 +242,12 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			statisticDataUnit.setFlowAggregateMediator(true);
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
+
+			if (isOpenTracingEnabled()) {
+				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
+						.handleOpenFlowAggregateEvent(statisticDataUnit, messageContext);
+			}
+
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -231,6 +265,12 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 			AsynchronousExecutionEvent asynchronousExecutionEvent = new AsynchronousExecutionEvent(dataUnit);
+
+			if (isOpenTracingEnabled()) {
+				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
+						.handleOpenFlowAsynchronousEvent(dataUnit, messageContext);
+			}
+
             addEventAndIncrementCount(messageContext, asynchronousExecutionEvent);
 		}
 	}
@@ -271,7 +311,12 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
             basicStatisticDataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(synCtx));
 
             ParentReopenEvent parentReopenEvent = new ParentReopenEvent(basicStatisticDataUnit);
-            addEvent(synCtx, parentReopenEvent);
-        }
+			addEvent(synCtx, parentReopenEvent);
+
+			if (isOpenTracingEnabled()) {
+				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
+						.handleOpenContinuationEvents(basicStatisticDataUnit, synCtx);
+			}
+		}
     }
 }

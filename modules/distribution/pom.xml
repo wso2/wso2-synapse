@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache.synapse</groupId>
         <artifactId>Apache-Synapse</artifactId>
-        <version>2.1.7-wso2v142</version>
+        <version>2.1.7-wso2v188-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -140,7 +140,7 @@
         <repository>
             <id>atlassian-developer-site</id>
             <name>Atlassian Maven 2 Contributor Repository</name>
-            <url>http://maven.atlassian.com/repository/public</url>
+            <url>https://maven.atlassian.com/repository/public</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
