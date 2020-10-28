@@ -1173,6 +1173,36 @@
               <artifactId>javax.annotation-api</artifactId>
               <version>${javax.annotation.verion}</version>
            </dependency>
+          <dependency>
+              <groupId>javax.ws.rs</groupId>
+              <artifactId>javax.ws.rs-api</artifactId>
+              <version>${javax.api.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>javax.inject</groupId>
+              <artifactId>javax.inject</artifactId>
+              <version>${javax.inject.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.glassfish.jersey.media</groupId>
+              <artifactId>jersey-media-json-jackson</artifactId>
+              <version>${glassfish.jersey.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.glassfish.jersey.containers</groupId>
+              <artifactId>jersey-container-grizzly2-servlet</artifactId>
+              <version>${glassfish.jersey.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.glassfish.jersey.core</groupId>
+              <artifactId>jersey-client</artifactId>
+              <version>${glassfish.jersey.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.glassfish.jersey.inject</groupId>
+              <artifactId>jersey-hk2</artifactId>
+              <version>${glassfish.jersey.version}</version>
+          </dependency>
       </dependencies>
    </dependencyManagement>
     <reporting>
@@ -1391,6 +1421,12 @@
        <com.hierynomus.smbj.version>0.10.0.wso2v2</com.hierynomus.smbj.version>
        <com.hierynomus.asn1.version>0.4.0.wso2v2</com.hierynomus.asn1.version>
        <net.engio.mbassador.version>1.3.2.wso2v2</net.engio.mbassador.version>
+
+       <javax.api.version>2.1.1</javax.api.version>
+       <javax.inject.version>1</javax.inject.version>
+
+       <glassfish.jersey.version>2.32</glassfish.jersey.version>
+
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->
