@@ -85,22 +85,24 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                 OMElement copy = formatElem.cloneOMElement();
                 removeIndentations(copy);
 
+                String format;
                 if (mediaTypeValue != null &&
                         (mediaTypeValue.contains(JSON_TYPE) || mediaTypeValue.contains(TEXT_TYPE))) {
-                    String formatText = copy.getText();
-                    payloadFactoryMediator.setFormat(formatText);
-                    templateProcessor.setFormat(formatText);
+                    if (isFreeMarkerTemplate(payloadFactoryMediator)) {
+                        format = PayloadFactoryMediatorSerializer.removeCDATAFromPayload(copy.getText());
+                    }else {
+                        format = copy.getText();
+                    }
+
                 } else {
-                    String format;
-                    if (payloadFactoryMediator.getTemplateType() != null &&
-                            payloadFactoryMediator.getTemplateType().equalsIgnoreCase(FREEMARKER_TEMPLATE_TYPE)) {
+                    if (isFreeMarkerTemplate(payloadFactoryMediator)) {
                         format = PayloadFactoryMediatorSerializer.removeCDATAFromPayload(copy.getText());
                     } else {
                         format = copy.getFirstElement().toString();
                     }
-                    payloadFactoryMediator.setFormat(format);
-                    templateProcessor.setFormat(format);
                 }
+                payloadFactoryMediator.setFormat(format);
+                templateProcessor.setFormat(format);
             } else {
                 ValueFactory keyFac = new ValueFactory();
                 Value generatedKey = keyFac.createValue(XMLConfigConstants.KEY, formatElem);
@@ -178,6 +180,12 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
         templateProcessor.init();
         payloadFactoryMediator.setTemplateProcessor(templateProcessor);
         return payloadFactoryMediator;
+    }
+
+    private boolean isFreeMarkerTemplate(PayloadFactoryMediator payloadFactoryMediator) {
+
+        return payloadFactoryMediator.getTemplateType() != null &&
+                payloadFactoryMediator.getTemplateType().equalsIgnoreCase(FREEMARKER_TEMPLATE_TYPE);
     }
 
     private TemplateProcessor getTemplateProcessor(OMElement elem, PayloadFactoryMediator payloadFactoryMediator) {
