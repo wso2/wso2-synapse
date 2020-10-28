@@ -85,16 +85,23 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                 OMElement copy = formatElem.cloneOMElement();
                 removeIndentations(copy);
 
-                if(mediaTypeValue != null && (mediaTypeValue.contains(JSON_TYPE) || mediaTypeValue.contains(TEXT_TYPE)))  {
-                    payloadFactoryMediator.setFormat(copy.getText());
-                } else {
-                    if (payloadFactoryMediator.getTemplateType().equalsIgnoreCase(FREEMARKER_TEMPLATE)) {
-                        payloadFactoryMediator.setFormat(PayloadFactoryMediatorSerializer.removeCDATAFromPayload(copy.getText()));
-                    }else{
-                        payloadFactoryMediator.setFormat(copy.getFirstElement().toString());
+                String format;
+                if (mediaTypeValue != null &&
+                        (mediaTypeValue.contains(JSON_TYPE) || mediaTypeValue.contains(TEXT_TYPE))) {
+                    if (isFreeMarkerTemplate(payloadFactoryMediator)) {
+                        format = PayloadFactoryMediatorSerializer.removeCDATAFromPayload(copy.getText());
+                    }else {
+                        format = copy.getText();
                     }
-                   
+
+                } else {
+                    if (isFreeMarkerTemplate(payloadFactoryMediator)) {
+                        format = PayloadFactoryMediatorSerializer.removeCDATAFromPayload(copy.getText());
+                    } else {
+                        format = copy.getFirstElement().toString();
+                    }
                 }
+                payloadFactoryMediator.setFormat(format);
             } else {
                 ValueFactory keyFac = new ValueFactory();
                 Value generatedKey = keyFac.createValue(XMLConfigConstants.KEY, formatElem);
@@ -183,6 +190,12 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
         for (OMText node : removables) {
             node.detach();
         }
+    }
+
+    private boolean isFreeMarkerTemplate(PayloadFactoryMediator payloadFactoryMediator) {
+
+        return payloadFactoryMediator.getTemplateType() != null &&
+                payloadFactoryMediator.getTemplateType().equalsIgnoreCase(FREEMARKER_TEMPLATE);
     }
 
     private void removeIndentations(OMElement element, List<OMText> removables) {

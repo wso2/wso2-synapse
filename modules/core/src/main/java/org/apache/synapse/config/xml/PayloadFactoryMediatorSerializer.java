@@ -90,27 +90,22 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
 
         if(!mediator.isFormatDynamic()){
             if (mediator.getFormat() != null) {
-
                 try {
                     OMElement formatElem = fac.createOMElement(FORMAT, synNS);
-                String type = mediator.getType();
-                if(type!=null && (type.contains(JSON_TYPE) || type.contains(TEXT))) {
-                     formatElem.setText(mediator.getFormat());
-                } else{
-                    if (isFreeMarkerTemplate(mediator)) {
-                        String formatString = mediator.getFormat();
-                        formatString = removeCDATAFromPayload(formatString);
-//                        formatString = addCDATATagToPayloads(formatString);
-//                        formatString = "<![CDATA[" + formatString + "]]>";
-//                        formatElem.addChild(AXIOMUtil.stringToOM(formatString));
-                        OMTextImpl omText = (OMTextImpl) formatElem.getOMFactory().createOMText(formatElem, formatString,
-                                XMLStreamConstants.CDATA);
-                        formatElem.addChild(omText);
-//                        formatElem.setText(formatString);
-                    } else {    
-                        formatElem.addChild(AXIOMUtil.stringToOM(mediator.getFormat()));
-                    } 
-                }
+                    String type = mediator.getType();
+                    if(type!=null && (type.contains(JSON_TYPE) || type.contains(TEXT))) {
+                        if (isFreeMarkerTemplate(mediator)) {
+                            createCdataTag(mediator,formatElem);
+                        }else{
+                            formatElem.setText(mediator.getFormat());
+                        }
+                    } else {
+                        if (isFreeMarkerTemplate(mediator)) {
+                            createCdataTag(mediator, formatElem);
+                        } else {
+                            formatElem.addChild(AXIOMUtil.stringToOM(mediator.getFormat()));
+                        }
+                    }
                     payloadFactoryElem.addChild(formatElem);
                 } catch (XMLStreamException e) {
                     handleException("Error while serializing payloadFactory mediator", e);
@@ -169,6 +164,15 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
         serializeComments(payloadFactoryElem, mediator.getCommentsList());
 
         return payloadFactoryElem;
+    }
+
+    private void createCdataTag(PayloadFactoryMediator mediator, OMElement formatElem) {
+
+        String formatString = mediator.getFormat();
+        formatString = removeCDATAFromPayload(formatString);
+        OMTextImpl omText = (OMTextImpl) formatElem.getOMFactory().createOMText(formatElem, formatString,
+                XMLStreamConstants.CDATA);
+        formatElem.addChild(omText);
     }
 
     private boolean isFreeMarkerTemplate(PayloadFactoryMediator mediator) {
