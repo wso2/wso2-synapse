@@ -23,6 +23,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.transform.Argument;
 import org.apache.synapse.mediators.transform.PayloadFactoryMediator;
+import org.apache.synapse.mediators.transform.pfutils.RegexTemplateProcessor;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 import org.junit.Assert;
@@ -60,6 +61,7 @@ public class PayloadFactoryMediatorSerializerTest {
     public void testSerializeSpecificMediator2() {
         PayloadFactoryMediatorSerializer serializer = new PayloadFactoryMediatorSerializer();
         PayloadFactoryMediator payloadFactoryMediator = new PayloadFactoryMediator();
+        payloadFactoryMediator.setTemplateProcessor(new RegexTemplateProcessor());
         payloadFactoryMediator.setFormat(format);
         OMElement element = serializer.serializeSpecificMediator(payloadFactoryMediator);
         Assert.assertNotNull(element);
@@ -76,6 +78,7 @@ public class PayloadFactoryMediatorSerializerTest {
     public void testSerializeSpecificMediator3() {
         PayloadFactoryMediatorSerializer serializer = new PayloadFactoryMediatorSerializer();
         PayloadFactoryMediator payloadFactoryMediator = new PayloadFactoryMediator();
+        payloadFactoryMediator.setTemplateProcessor(new RegexTemplateProcessor());
         payloadFactoryMediator.setFormat(format);
         payloadFactoryMediator.setFormatDynamic(true);
         payloadFactoryMediator.setFormatKey(new Value("testKey"));
@@ -95,16 +98,17 @@ public class PayloadFactoryMediatorSerializerTest {
     public void testSerializeSpecificMediator4() throws JaxenException {
         PayloadFactoryMediatorSerializer serializer = new PayloadFactoryMediatorSerializer();
         PayloadFactoryMediator payloadFactoryMediator = new PayloadFactoryMediator();
+        payloadFactoryMediator.setTemplateProcessor(new RegexTemplateProcessor());
         Argument argument = new Argument();
         argument.setValue("TestArgument1");
-        payloadFactoryMediator.addPathArgument(argument);
+        payloadFactoryMediator.getTemplateProcessor().addPathArgument(argument);
         payloadFactoryMediator.setFormat(format);
         OMElement element = serializer.serializeSpecificMediator(payloadFactoryMediator);
         MediatorFactory mediatorFactory = new PayloadFactoryMediatorFactory();
         Mediator mediator = mediatorFactory.createMediator(element, null);
         Assert.assertNotNull(element);
         Assert.assertEquals("Path argument added is not serialized", "TestArgument1",
-                ((PayloadFactoryMediator) mediator).getPathArgumentList().get(0).getValue());
+                ((PayloadFactoryMediator) mediator).getTemplateProcessor().getPathArgumentList().get(0).getValue());
     }
 
     /**
@@ -115,16 +119,18 @@ public class PayloadFactoryMediatorSerializerTest {
     public void testSerializeSpecificMediator5() throws JaxenException {
         PayloadFactoryMediatorSerializer serializer = new PayloadFactoryMediatorSerializer();
         PayloadFactoryMediator payloadFactoryMediator = new PayloadFactoryMediator();
+        payloadFactoryMediator.setTemplateProcessor(new RegexTemplateProcessor());
         Argument argument = new Argument();
         argument.setExpression(new SynapseXPath("//name"));
-        payloadFactoryMediator.addPathArgument(argument);
+        payloadFactoryMediator.getTemplateProcessor().addPathArgument(argument);
         payloadFactoryMediator.setFormat(format);
         OMElement element = serializer.serializeSpecificMediator(payloadFactoryMediator);
         MediatorFactory mediatorFactory = new PayloadFactoryMediatorFactory();
         Mediator mediator = mediatorFactory.createMediator(element, null);
         Assert.assertNotNull(element);
         Assert.assertEquals("Expression added for path argument is not serialized", "//name",
-                ((PayloadFactoryMediator) mediator).getPathArgumentList().get(0).getExpression().toString()
+                ((PayloadFactoryMediator) mediator).getTemplateProcessor().getPathArgumentList().get(0).getExpression()
+                        .toString()
         );
     }
 
