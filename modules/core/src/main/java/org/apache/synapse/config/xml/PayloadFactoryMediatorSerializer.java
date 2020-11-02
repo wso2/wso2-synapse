@@ -53,7 +53,6 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
     private final String LITERAL = "literal";
 
     private final String FREEMARKER = "freemarker";
-
     private String getEvaluator(String pathType) {
         if(pathType == SynapsePath.JSON_PATH) {
             return JSON;
@@ -80,7 +79,6 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
         if (isFreeMarkerTemplate(mediator)) {
             payloadFactoryElem.addAttribute(fac.createOMAttribute(TEMPLATE_TYPE, null, FREEMARKER));
         }
-
         if (mediator.isEscapeXmlChars()) {
             payloadFactoryElem.addAttribute(fac.createOMAttribute(ESCAPE_XML_CHARS,null,
                     Boolean.toString(mediator.isEscapeXmlChars())));
@@ -92,20 +90,20 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
             if (mediator.getFormat() != null) {
                 try {
                     OMElement formatElem = fac.createOMElement(FORMAT, synNS);
-                    String type = mediator.getType();
-                    if(type!=null && (type.contains(JSON_TYPE) || type.contains(TEXT))) {
-                        if (isFreeMarkerTemplate(mediator)) {
-                            createCdataTag(mediator,formatElem);
-                        }else{
-                            formatElem.setText(mediator.getFormat());
-                        }
-                    } else {
-                        if (isFreeMarkerTemplate(mediator)) {
-                            createCdataTag(mediator, formatElem);
-                        } else {
-                            formatElem.addChild(AXIOMUtil.stringToOM(mediator.getFormat()));
-                        }
+                String type = mediator.getType();
+                if(type!=null && (type.contains(JSON_TYPE) || type.contains(TEXT))) {
+                    if (isFreeMarkerTemplate(mediator)) {
+                        createCdataTag(mediator,formatElem);
+                    }else{
+                        formatElem.setText(mediator.getFormat());
                     }
+                } else {
+                    if (isFreeMarkerTemplate(mediator)) {
+                        createCdataTag(mediator, formatElem);
+                    } else {    
+                    formatElem.addChild(AXIOMUtil.stringToOM(mediator.getFormat()));
+                }
+                }
                     payloadFactoryElem.addChild(formatElem);
                 } catch (XMLStreamException e) {
                     handleException("Error while serializing payloadFactory mediator", e);
@@ -125,7 +123,7 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
         }
 
         OMElement argumentsElem = fac.createOMElement(ARGS, synNS);
-        List<Argument> pathArgList = mediator.getPathArgumentList();
+        List<Argument> pathArgList = mediator.getTemplateProcessor().getPathArgumentList();
 
         if (null != pathArgList && pathArgList.size() > 0) {
 
@@ -179,16 +177,14 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
 
         return mediator.getTemplateType() != null && mediator.getTemplateType().equalsIgnoreCase(FREEMARKER);
     }
-
     public String getMediatorClassName() {
         return PayloadFactoryMediator.class.getName();
     }
 
-
     public static String removeCDATAFromPayload(String inputPayload) {
         if (inputPayload.startsWith("<![CDATA[")) {
             inputPayload = inputPayload.substring(9);
-            int i = inputPayload.indexOf("]]>");
+            int i = inputPayload.lastIndexOf("]]>");
             if (i == -1)
                 throw new IllegalStateException("argument starts with <![CDATA[ but cannot find pairing ]]>");
             inputPayload = inputPayload.substring(0, i);
@@ -196,5 +192,4 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
 
         return inputPayload;
     }
-
 }

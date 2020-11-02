@@ -26,14 +26,24 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.transform.Argument;
 import org.apache.synapse.mediators.transform.PayloadFactoryMediator;
+import org.apache.synapse.mediators.transform.pfutils.FreeMarkerTemplateProcessor;
+import org.apache.synapse.mediators.transform.pfutils.RegexTemplateProcessor;
+import org.apache.synapse.mediators.transform.pfutils.TemplateProcessor;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
-import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+
+import javax.xml.namespace.QName;
+
+import static org.apache.synapse.mediators.transform.pfutils.Constants.FREEMARKER_TEMPLATE_TYPE;
+import static org.apache.synapse.mediators.transform.pfutils.Constants.JSON_TYPE;
+import static org.apache.synapse.mediators.transform.pfutils.Constants.REGEX_TEMPLATE_TYPE;
+import static org.apache.synapse.mediators.transform.pfutils.Constants.TEXT_TYPE;
+import static org.apache.synapse.mediators.transform.pfutils.Constants.XML_TYPE;
 
 public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
 
@@ -45,26 +55,23 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
     private static final QName ATT_LITERAL = new QName("literal");
 
     private static final QName TYPE_Q = new QName("media-type");// media-type attribute in payloadFactory
-    private static final QName TEMPLATE_Q = new QName("template-type");
-    private static final QName ESCAPE_XML_CHARS_Q = new QName("escapeXmlChars");// escape xml chars attribute in payloadFactory
-
-    private final String JSON_TYPE="json";
-    private final String XML_TYPE="xml";
-    private final String TEXT_TYPE="text";
-
-    private final String REGEX_TEMPLATE = "default";
-    private final String FREEMARKER_TEMPLATE = "freemarker";
+    private static final QName ESCAPE_XML_CHARS_Q = new QName("escapeXmlChars");
+    // escape xml chars attribute in payloadFactory
+    private static final QName TEMPLATE_TYPE_Q = new QName("template-type");
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
         PayloadFactoryMediator payloadFactoryMediator = new PayloadFactoryMediator();
+        TemplateProcessor templateProcessor = getTemplateProcessor(elem, payloadFactoryMediator);
         processAuditStatus(payloadFactoryMediator, elem);
         String mediaTypeValue = elem.getAttributeValue(TYPE_Q);
         //for the backward compatibility.
         if(mediaTypeValue != null) {
             payloadFactoryMediator.setType(mediaTypeValue); //set the mediaType for the PF
+            templateProcessor.setMediaType(mediaTypeValue);
         } else {
             payloadFactoryMediator.setType(XML_TYPE);
+            templateProcessor.setMediaType(XML_TYPE);
         }
 
         String templateTypeValue = elem.getAttributeValue(TEMPLATE_Q);
@@ -75,7 +82,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
         }
 
         boolean escapeXmlCharsValue = Boolean.parseBoolean(elem.getAttributeValue(ESCAPE_XML_CHARS_Q));
-        payloadFactoryMediator.setEscapeXmlChars(escapeXmlCharsValue); //set the escape xml chars in json payloads for the PF
+        templateProcessor.setEscapeXmlChars(escapeXmlCharsValue);
 
         OMElement formatElem = elem.getFirstChildWithName(FORMAT_Q);
         if (formatElem != null) {
@@ -102,6 +109,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                     }
                 }
                 payloadFactoryMediator.setFormat(format);
+                templateProcessor.setFormat(format);
             } else {
                 ValueFactory keyFac = new ValueFactory();
                 Value generatedKey = keyFac.createValue(XMLConfigConstants.KEY, formatElem);
@@ -137,7 +145,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                 if ((value = argElem.getAttributeValue(ATT_VALUE)) != null) {
                     arg.setValue(value);
                     arg.setExpression(null);
-                    payloadFactoryMediator.addPathArgument(arg);
+                    templateProcessor.addPathArgument(arg);
                 } else if ((value = argElem.getAttributeValue(ATT_EXPRN)) != null) {
                     if (value.trim().length() == 0) {
                         handleException("Attribute value for xpath cannot be empty");
@@ -153,14 +161,14 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                                 // we have to explicitly define the path type since we are not going to mark
                                 // JSON Path's with prefix "json-eval(".
                                 arg.getExpression().setPathType(SynapsePath.JSON_PATH);
-                                payloadFactoryMediator.addPathArgument(arg);
+                                templateProcessor.addPathArgument(arg);
                             } else {
                                 SynapseXPath sxp = SynapseXPathFactory.getSynapseXPath(argElem, ATT_EXPRN);
                                 //we need to disable stream Xpath forcefully
                                 sxp.setForceDisableStreamXpath(Boolean.TRUE);
                                 arg.setExpression(sxp);
                                 arg.getExpression().setPathType(SynapsePath.X_PATH);
-                                payloadFactoryMediator.addPathArgument(arg);
+                                templateProcessor.addPathArgument(arg);
                             }
                         } catch (JaxenException e) {
                             handleException("Invalid XPath expression for attribute expression : " +
@@ -176,8 +184,29 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
         }
 
         addAllCommentChildrenToList(elem, payloadFactoryMediator.getCommentsList());
-
+        templateProcessor.init();
+        payloadFactoryMediator.setTemplateProcessor(templateProcessor);
         return payloadFactoryMediator;
+    }
+
+    private boolean isFreeMarkerTemplate(PayloadFactoryMediator payloadFactoryMediator) {
+
+        return payloadFactoryMediator.getTemplateType() != null &&
+                payloadFactoryMediator.getTemplateType().equalsIgnoreCase(FREEMARKER_TEMPLATE_TYPE);
+    }
+
+    private TemplateProcessor getTemplateProcessor(OMElement elem, PayloadFactoryMediator payloadFactoryMediator) {
+
+        TemplateProcessor templateProcessor;
+        String templateTypeValue = elem.getAttributeValue(TEMPLATE_TYPE_Q);
+        if (templateTypeValue != null && templateTypeValue.equalsIgnoreCase(FREEMARKER_TEMPLATE_TYPE)) {
+            payloadFactoryMediator.setTemplateType(FREEMARKER_TEMPLATE_TYPE);
+            templateProcessor = new FreeMarkerTemplateProcessor();
+        } else {
+            payloadFactoryMediator.setTemplateType(REGEX_TEMPLATE_TYPE);
+            templateProcessor = new RegexTemplateProcessor();
+        }
+        return templateProcessor;
     }
 
     public QName getTagQName() {
@@ -185,7 +214,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
     }
 
     private void removeIndentations(OMElement element) {
-        List<OMText> removables = new ArrayList<OMText>();
+        List<OMText> removables = new ArrayList<>();
         removeIndentations(element, removables);
         for (OMText node : removables) {
             node.detach();
