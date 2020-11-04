@@ -249,7 +249,7 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
     private void injectJsonArray(Map<String, Object> data, JsonElement jsonElement) {
 
         List<Object> array;
-        Type type = new TypeToken<List<String>>() {}.getType();
+        Type type = new TypeToken<List<Object>>() {}.getType();
         array = gson.fromJson(jsonElement, type);
         data.put(PAYLOAD_INJECTING_NAME, array);
     }  
