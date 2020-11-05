@@ -233,6 +233,64 @@ public class FreeMarkerTemplateProcessorTest extends TestCase {
         assertEquals("FreeMarker Template Processor has not "
                 + "set expected format", expectedEnvelope, synCtx.getEnvelope().getBody().toString());
     }
+    
+    /**
+     * Test FreeMarkerTemplateProcessor with a JSON array payload
+     */
+    public void testWithJSONArrayPayload() throws Exception {
+
+        final String jsonInputPayload = "[{\n" +
+                "  \"id\": 1,\n" +
+                "  \"first_name\": \"Veronika\",\n" +
+                "  \"last_name\": \"Lacroux\"\n" +
+                "}, {\n" +
+                "  \"id\": 2,\n" +
+                "  \"first_name\": \"Trescha\",\n" +
+                "  \"last_name\": \"Campaigne\"\n" +
+                "}, {\n" +
+                "  \"id\": 3,\n" +
+                "  \"first_name\": \"Mayor\",\n" +
+                "  \"last_name\": \"Moscrop\"\n" +
+                "}]";
+
+        final String jsonToXmlTemplate = "<people>\n" +
+                "<#list payload as person>\n" +
+                "  <person>\n" +
+                "    <index>${person.id}</index>\n" +
+                "    <name>${person.first_name} ${person.last_name}</name>\n" +
+                "  </person>\n" +
+                "</#list>\n" +
+                "</people>";
+
+        PayloadFactoryMediator payloadFactoryMediator = new PayloadFactoryMediator();
+        TemplateProcessor templateProcessor = new FreeMarkerTemplateProcessor();
+        payloadFactoryMediator.setFormat(jsonToXmlTemplate);
+        templateProcessor.setFormat(jsonToXmlTemplate);
+        templateProcessor.init();
+        payloadFactoryMediator.setTemplateProcessor(templateProcessor);
+
+        //do mediation
+        MessageContext synCtx = TestUtils.getTestContextJson(jsonInputPayload, null);
+        payloadFactoryMediator.mediate(synCtx);
+
+        String expectedEnvelope = "<soapenv:Body xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><people>\n" +
+                "  <person>\n" +
+                "    <index>1</index>\n" +
+                "    <name>Veronika Lacroux</name>\n" +
+                "  </person>\n" +
+                "  <person>\n" +
+                "    <index>2</index>\n" +
+                "    <name>Trescha Campaigne</name>\n" +
+                "  </person>\n" +
+                "  <person>\n" +
+                "    <index>3</index>\n" +
+                "    <name>Mayor Moscrop</name>\n" +
+                "  </person>\n" +
+                "</people></soapenv:Body>";
+
+        assertEquals("FreeMarker Template Processor has not "
+                + "set expected format", expectedEnvelope, synCtx.getEnvelope().getBody().toString());
+    }
 
     /**
      * Test FreeMarkerTemplateProcessor with XML payload
