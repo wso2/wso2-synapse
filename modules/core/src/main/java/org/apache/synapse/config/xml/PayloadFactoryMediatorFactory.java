@@ -45,12 +45,15 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
     private static final QName ATT_LITERAL = new QName("literal");
 
     private static final QName TYPE_Q = new QName("media-type");// media-type attribute in payloadFactory
+    private static final QName TEMPLATE_Q = new QName("template-type");
     private static final QName ESCAPE_XML_CHARS_Q = new QName("escapeXmlChars");// escape xml chars attribute in payloadFactory
 
     private final String JSON_TYPE="json";
     private final String XML_TYPE="xml";
     private final String TEXT_TYPE="text";
 
+    private final String REGEX_TEMPLATE = "default";
+    private final String FREEMARKER_TEMPLATE = "freemarker";
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
@@ -64,6 +67,13 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
             payloadFactoryMediator.setType(XML_TYPE);
         }
 
+        String templateTypeValue = elem.getAttributeValue(TEMPLATE_Q);
+        if (templateTypeValue != null) {
+            payloadFactoryMediator.setTemplateType(templateTypeValue);
+        } else {
+            payloadFactoryMediator.setTemplateType(REGEX_TEMPLATE);
+        }
+
         boolean escapeXmlCharsValue = Boolean.parseBoolean(elem.getAttributeValue(ESCAPE_XML_CHARS_Q));
         payloadFactoryMediator.setEscapeXmlChars(escapeXmlCharsValue); //set the escape xml chars in json payloads for the PF
 
@@ -75,11 +85,23 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                 OMElement copy = formatElem.cloneOMElement();
                 removeIndentations(copy);
 
-                if(mediaTypeValue != null && (mediaTypeValue.contains(JSON_TYPE) || mediaTypeValue.contains(TEXT_TYPE)))  {
-                    payloadFactoryMediator.setFormat(copy.getText());
+                String format;
+                if (mediaTypeValue != null &&
+                        (mediaTypeValue.contains(JSON_TYPE) || mediaTypeValue.contains(TEXT_TYPE))) {
+                    if (isFreeMarkerTemplate(payloadFactoryMediator)) {
+                        format = PayloadFactoryMediatorSerializer.removeCDATAFromPayload(copy.getText());
+                    }else {
+                        format = copy.getText();
+                    }
+
                 } else {
-                    payloadFactoryMediator.setFormat(copy.getFirstElement().toString());
+                    if (isFreeMarkerTemplate(payloadFactoryMediator)) {
+                        format = PayloadFactoryMediatorSerializer.removeCDATAFromPayload(copy.getText());
+                    } else {
+                        format = copy.getFirstElement().toString();
+                    }
                 }
+                payloadFactoryMediator.setFormat(format);
             } else {
                 ValueFactory keyFac = new ValueFactory();
                 Value generatedKey = keyFac.createValue(XMLConfigConstants.KEY, formatElem);
@@ -170,6 +192,12 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
         }
     }
 
+    private boolean isFreeMarkerTemplate(PayloadFactoryMediator payloadFactoryMediator) {
+
+        return payloadFactoryMediator.getTemplateType() != null &&
+                payloadFactoryMediator.getTemplateType().equalsIgnoreCase(FREEMARKER_TEMPLATE);
+    }
+
     private void removeIndentations(OMElement element, List<OMText> removables) {
         Iterator children = element.getChildren();
         while (children.hasNext()) {
@@ -184,5 +212,6 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
             }
         }
     }
+
 
 }

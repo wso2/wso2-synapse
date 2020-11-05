@@ -70,6 +70,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private boolean isFormatDynamic = false;
     private String formatRaw;
     private String mediaType = XML_TYPE;
+    private final static String DEFAULT_TYPE = "default";
     private boolean escapeXmlChars = false;
     private final static String JSON_CONTENT_TYPE = "application/json";
     private final static String XML_CONTENT_TYPE  = "application/xml";
@@ -78,6 +79,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private final static String SOAP12_CONTENT_TYPE  = "application/soap+xml";
     private final static String JSON_TYPE = "json";
     private final static String XML_TYPE = "xml";
+    private static final Pattern validJsonNumber = Pattern.compile("^-?(0|([1-9]\\d*))(\\.\\d+)?([eE][+-]?\\d+)?$");
     private final static String TEXT_TYPE = "text";
     private final static String STRING_TYPE = "str";
     private final static QName TEXT_ELEMENT = new QName("http://ws.apache.org/commons/ns/payload", "text");
@@ -95,7 +97,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     private List<Argument> pathArgumentList = new ArrayList<Argument>();
     private Pattern pattern = Pattern.compile("\\$(\\d)+");
-    private static Pattern validJsonNumber = Pattern.compile("^-?(0|([1-9]\\d*))(\\.\\d+)?([eE][+-]?\\d+)?$");
+    private String templateType = DEFAULT_TYPE;
 
     private static final Log log = LogFactory.getLog(PayloadFactoryMediator.class);
 
@@ -569,6 +571,16 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     public List<Argument> getPathArgumentList() {
         return pathArgumentList;
+    }
+
+    public String getTemplateType() {
+
+        return templateType;
+    }
+
+    public void setTemplateType(String templateType) {
+
+        this.templateType = templateType;
     }
 
     /**
