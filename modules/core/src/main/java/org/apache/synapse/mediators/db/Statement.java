@@ -20,7 +20,7 @@
 package org.apache.synapse.mediators.db;
 
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.util.xpath.SynapseXPath;
+import org.apache.synapse.config.xml.SynapsePath;
 
 import java.sql.Types;
 import java.util.ArrayList;
@@ -46,8 +46,8 @@ public class Statement {
         return rawStatement;
     }
 
-    public void addParameter(String propertyName, SynapseXPath xpath, String type){
-        parameters.add(new Parameter(propertyName, xpath, type));
+    public void addParameter(String propertyName, SynapsePath path, String type){
+        parameters.add(new Parameter(propertyName, path, type));
     }
 
     public void addResult(String propertyName, String column) {
@@ -64,13 +64,13 @@ public class Statement {
 
     public static class Parameter {
         String propertyName = null;
-        SynapseXPath xpath = null;
+        SynapsePath path = null;
         int type = 0;
 
-        Parameter(String value, SynapseXPath xpath, String type) {
+        Parameter(String value, SynapsePath path, String type) {
 
             this.propertyName = value;
-            this.xpath = xpath; 
+            this.path = path;
             if ("CHAR".equals(type)) {
                 this.type = Types.CHAR;
             } else if ("VARCHAR".equals(type)) {
@@ -112,8 +112,8 @@ public class Statement {
             return propertyName;
         }
 
-        public SynapseXPath getXpath() {
-            return xpath;
+        public SynapsePath getPath() {
+            return path;
         }
 
         public int getType() {
