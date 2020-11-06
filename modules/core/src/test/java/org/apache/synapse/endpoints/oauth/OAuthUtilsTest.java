@@ -37,137 +37,181 @@ import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.runners.Enclosed;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-import javax.xml.stream.XMLStreamException;
+import java.util.Arrays;
+import java.util.Collection;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test for OAuthUtils which contains helper functions used to generate OAuth handlers
  * from synapse configurations
  */
 
+@RunWith(Enclosed.class)
 public class OAuthUtilsTest {
 
-    String clientId = "clientId";
-    String clientSecret = "clientSecret";
-    String refreshToken = "refreshToken";
-    String tokenUrl = "tokenUrl";
+    private final static String clientId = "clientId";
+    private final static String clientSecret = "clientSecret";
+    private final static String refreshToken = "refreshToken";
+    private final static String tokenUrl = "tokenUrl";
 
     /**
-     * Tests if the getOAuthHandler method generate an AuthorizationCodeHandler instance
-     *
-     * @throws XMLStreamException if error occurs when building the sample OMElement
+     * Tests if the getOAuthHandler method generate the proper OAuthHandler instance
      */
-    @Test
-    public void testAuthorizationCodeHandler() throws Exception {
+    @RunWith(Parameterized.class)
+    public static class OAuthHandlerGeneration {
 
-        String input =
-                "<http xmlns=\"http://ws.apache.org/ns/synapse\"><authentication><oauth><authorizationCode>" +
-                        "<" + clientId + ">client_id</" + clientId + ">" +
-                        "<" + clientSecret + ">client_secret</" + clientSecret + ">" +
-                        "<" + refreshToken + ">refresh_token</" + refreshToken + ">" +
-                        "<" + tokenUrl + ">oauth_server_url</" + tokenUrl +
-                        "></authorizationCode></oauth></authentication></http>";
+        private final String configs;
+        private final Class handler;
 
-        OMElement oauthElement = AXIOMUtil.stringToOM(input);
+        public OAuthHandlerGeneration(String configs, Class handler) {
 
-        OAuthHandler oAuthHandler = OAuthUtils.getOAuthHandler(oauthElement);
+            this.configs = configs;
+            this.handler = handler;
+        }
 
-        assertTrue(oAuthHandler instanceof AuthorizationCodeHandler);
-    }
+        @Parameterized.Parameters
+        public static Collection provideConfigsForOAuthHandlerTests() {
 
-    /**
-     * Tests if the getOAuthHandler method generate an ClientCredentialsHandler instance
-     *
-     * @throws XMLStreamException if error occurs when building the sample OMElement
-     */
-    @Test
-    public void testClientCredentialsHandler() throws Exception {
+            String authorizationCodeConfig =
+                    "<http xmlns=\"http://ws.apache.org/ns/synapse\"><authentication><oauth><authorizationCode>" +
+                            "<" + clientId + ">client_id</" + clientId + ">" +
+                            "<" + clientSecret + ">client_secret</" + clientSecret + ">" +
+                            "<" + refreshToken + ">refresh_token</" + refreshToken + ">" +
+                            "<" + tokenUrl + ">oauth_server_url</" + tokenUrl +
+                            "></authorizationCode></oauth></authentication></http>";
 
-        String input =
-                "<http xmlns=\"http://ws.apache.org/ns/synapse\"><authentication><oauth><clientCredentials>" +
-                        "<" + clientId + ">client_id</" + clientId + ">" +
-                        "<" + clientSecret + ">client_secret</" + clientSecret + ">" +
-                        "<" + tokenUrl + ">oauth_server_url</" + tokenUrl +
-                        "></clientCredentials></oauth></authentication></http>";
+            String clientCredentialsConfig =
+                    "<http xmlns=\"http://ws.apache.org/ns/synapse\"><authentication><oauth><clientCredentials>" +
+                            "<" + clientId + ">client_id</" + clientId + ">" +
+                            "<" + clientSecret + ">client_secret</" + clientSecret + ">" +
+                            "<" + tokenUrl + ">oauth_server_url</" + tokenUrl +
+                            "></clientCredentials></oauth></authentication></http>";
+            return Arrays.asList(new Object[][]{
+                    {authorizationCodeConfig, AuthorizationCodeHandler.class},
+                    {clientCredentialsConfig, ClientCredentialsHandler.class}
+            });
+        }
 
-        OMElement oauthElement = AXIOMUtil.stringToOM(input);
+        @Test
+        public void testOAuthHandlerGeneration() throws Exception {
 
-        OAuthHandler oAuthHandler = OAuthUtils.getOAuthHandler(oauthElement);
+            OMElement oauthElement = AXIOMUtil.stringToOM(configs);
 
-        assertTrue(oAuthHandler instanceof ClientCredentialsHandler);
-    }
-
-    /**
-     * Tests if the getOAuthHandler method generate an ClientCredentialsHandler instance
-     *
-     * @throws XMLStreamException if error occurs when building the sample OMElement
-     */
-    @Test
-    public void testClientCredentialsHandlerException() throws XMLStreamException {
-
-        String input =
-                "<http xmlns=\"http://ws.apache.org/ns/synapse\"><authentication><oauth><clientCredentials>" +
-                        "<" + clientId + ">client_id</" + clientId + ">" +
-                        "<" + tokenUrl + ">oauth_server_url</" + tokenUrl +
-                        "></clientCredentials></oauth></authentication></http>";
-
-        OMElement oauthElement = AXIOMUtil.stringToOM(input);
-
-        try {
             OAuthHandler oAuthHandler = OAuthUtils.getOAuthHandler(oauthElement);
-            Assert.fail("This method must throw an OAuthException");
-        } catch (OAuthException e) {
-            Assert.assertEquals("Invalid OAuth configuration", e.getMessage());
+
+            assertThat(oAuthHandler, instanceOf(handler));
         }
     }
 
     /**
-     * Tests retryOnOauthFailure when 401 HTTP status received
-     *
-     * @throws AxisFault on an error creating a context
+     * Tests if the getOAuthHandler method throw OAuthException exceptions
      */
-    @Test
-    public void testRetryOnOauthFailureWithUnauthorizedStatus() throws AxisFault {
+    @RunWith(Parameterized.class)
+    public static class OAuthHandlerGenerationException {
 
-        OAuthHandler oAuthHandler = new AuthorizationCodeHandler("oauth_server_url", "client_id", "client_secret",
-                "refresh_token");
+        private final String configs;
 
-        OAuthConfiguredHTTPEndpoint httpEndpoint = new OAuthConfiguredHTTPEndpoint(oAuthHandler);
+        public OAuthHandlerGenerationException(String configs) {
 
-        MessageContext messageContextIn = createMessageContext();
-        org.apache.axis2.context.MessageContext axis2MessageContext =
-                ((Axis2MessageContext) messageContextIn).getAxis2MessageContext();
-        axis2MessageContext.setProperty(PassThroughConstants.HTTP_SC, 401);
-        MessageContext messageContextOut = createMessageContext();
+            this.configs = configs;
+        }
 
-        assertTrue(OAuthUtils.retryOnOAuthFailure(httpEndpoint, messageContextIn, messageContextOut));
+        @Parameterized.Parameters
+        public static Collection provideConfigsForOAuthHandlerExceptionTests() {
+
+            String authorizationCodeConfig =
+                    "<http xmlns=\"http://ws.apache.org/ns/synapse\"><authentication><oauth><authorizationCode>" +
+                            "<" + clientId + ">client_id</" + clientId + ">" +
+                            "<" + clientSecret + ">client_secret</" + clientSecret + ">" +
+                            "<refreshTok>refresh_token</refreshTok>" +
+                            "<" + tokenUrl + ">oauth_server_url</" + tokenUrl +
+                            "></authorizationCode></oauth></authentication></http>";
+
+            String clientCredentialsConfig =
+                    "<http xmlns=\"http://ws.apache.org/ns/synapse\"><authentication><oauth><clientCredentials>" +
+                            "<" + clientId + ">client_id</" + clientId + ">" +
+                            "<" + tokenUrl + ">oauth_server_url</" + tokenUrl +
+                            "></clientCredentials></oauth></authentication></http>";
+
+            return Arrays.asList(new Object[][]{
+                    {authorizationCodeConfig},
+                    {clientCredentialsConfig}
+            });
+        }
+
+        @Test
+        public void testOAuthHandlerGenerationException() throws Exception {
+
+            OMElement oauthElement = AXIOMUtil.stringToOM(configs);
+
+            try {
+                OAuthHandler oAuthHandler = OAuthUtils.getOAuthHandler(oauthElement);
+                Assert.fail("This method must throw an OAuthException");
+            } catch (OAuthException e) {
+                Assert.assertEquals("Invalid OAuth configuration", e.getMessage());
+            }
+        }
     }
 
     /**
-     * Tests retryOnOauthFailure when a retry is already done
-     *
-     * @throws AxisFault on an error creating a context
+     * Tests retryOnOauthFailure method
      */
-    @Test
-    public void testRetryOnOauthFailureOnAlreadyRetriedCall() throws AxisFault {
+    @RunWith(Parameterized.class)
+    public static class RetryOnOAuthFailure {
 
-        OAuthHandler oAuthHandler = new AuthorizationCodeHandler("oauth_server_url", "client_id", "client_secret",
-                "refresh_token");
+        private final OAuthConfiguredHTTPEndpoint httpEndpoint;
+        private final MessageContext messageContextIn;
+        private final MessageContext messageContextOut;
+        private final boolean expected;
 
-        OAuthConfiguredHTTPEndpoint httpEndpoint = new OAuthConfiguredHTTPEndpoint(oAuthHandler);
+        public RetryOnOAuthFailure(OAuthConfiguredHTTPEndpoint httpEndpoint, MessageContext messageContextIn,
+                                   MessageContext messageContextOut,
+                                   boolean expected) {
 
-        MessageContext messageContextIn = createMessageContext();
-        org.apache.axis2.context.MessageContext axis2MessageContext =
-                ((Axis2MessageContext) messageContextIn).getAxis2MessageContext();
-        axis2MessageContext.setProperty(PassThroughConstants.HTTP_SC, 401);
+            this.httpEndpoint = httpEndpoint;
+            this.messageContextIn = messageContextIn;
+            this.messageContextOut = messageContextOut;
+            this.expected = expected;
+        }
 
-        MessageContext messageContextOut = createMessageContext();
-        messageContextOut.setProperty(OAuthConstants.RETRIED_ON_OAUTH_FAILURE, true);
+        @Parameterized.Parameters
+        public static Collection provideDataForRetryOnOauthFailureTests() throws AxisFault {
 
-        assertFalse(OAuthUtils.retryOnOAuthFailure(httpEndpoint, messageContextIn, messageContextOut));
+            OAuthHandler oAuthHandler =
+                    new AuthorizationCodeHandler("oauth_server_url", "client_id", "client_secret",
+                            "refresh_token");
+
+            OAuthConfiguredHTTPEndpoint httpEndpoint = new OAuthConfiguredHTTPEndpoint(oAuthHandler);
+
+            MessageContext messageContextIn = createMessageContext();
+            org.apache.axis2.context.MessageContext axis2MessageContext =
+                    ((Axis2MessageContext) messageContextIn).getAxis2MessageContext();
+            axis2MessageContext.setProperty(PassThroughConstants.HTTP_SC, 401);
+            MessageContext messageContextOut1 = createMessageContext();
+            MessageContext messageContextOut2 = createMessageContext();
+
+            messageContextOut2.setProperty(OAuthConstants.RETRIED_ON_OAUTH_FAILURE, true);
+
+            return Arrays.asList(new Object[][]{
+                    {httpEndpoint, messageContextIn, messageContextOut1, true},
+                    {httpEndpoint, messageContextIn, messageContextOut2, false}
+            });
+        }
+
+        @Test
+        public void testRetryOnOAuthFailure() {
+
+            assertEquals(expected,
+                    OAuthUtils.retryOnOAuthFailure(httpEndpoint, messageContextIn, messageContextOut));
+
+        }
     }
 
     /**
@@ -176,7 +220,7 @@ public class OAuthUtilsTest {
      * @return A context with empty message
      * @throws AxisFault on an error creating a context
      */
-    private MessageContext createMessageContext() throws AxisFault {
+    private static MessageContext createMessageContext() throws AxisFault {
 
         Axis2SynapseEnvironment synapseEnvironment = new Axis2SynapseEnvironment(new SynapseConfiguration());
         org.apache.axis2.context.MessageContext axis2MC
