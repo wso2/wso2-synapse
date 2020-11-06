@@ -617,6 +617,7 @@ public class EndpointContext {
      */
     public void onFailoverRetryLimit() {
 
+        recordStatistics(ST_SUSPENDED);
         long nextRetryTime = System.currentTimeMillis() + suspendDurationOnMaximumFailover;
         if (isClustered) {
             Replicator.setAndReplicateState(STATE_KEY, ST_SUSPENDED, cfgCtx);
