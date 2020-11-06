@@ -130,7 +130,7 @@ public class OAuthUtils {
             return null;
         }
 
-        return new AuthorizationCodeHandler(getRandomOAuthHandlerID(), tokenApiUrl, clientId,
+        return new AuthorizationCodeHandler(tokenApiUrl, clientId,
                 clientSecret,
                 refreshToken);
 
@@ -156,7 +156,7 @@ public class OAuthUtils {
             return null;
         }
 
-        return new ClientCredentialsHandler(getRandomOAuthHandlerID(), tokenApiUrl, clientId,
+        return new ClientCredentialsHandler(tokenApiUrl, clientId,
                 clientSecret);
 
     }
@@ -170,13 +170,24 @@ public class OAuthUtils {
      */
     private static String getChildValue(OMElement parentElement, String childName) {
 
-        OMElement clientIdElement = parentElement.getFirstChildWithName(new QName(
+        OMElement childElement = parentElement.getFirstChildWithName(new QName(
                 SynapseConstants.SYNAPSE_NAMESPACE, childName));
 
-        if (clientIdElement != null && clientIdElement.getText() != null) {
-            return ResolverFactory.getInstance().getResolver(clientIdElement.getText().trim()).resolve();
+        if (hasANonEmptyValue(childElement)) {
+            return ResolverFactory.getInstance().getResolver(childElement.getText().trim()).resolve();
         }
         return null;
+    }
+
+    /**
+     * Method to check whether a non empty value is present inside an OMelement
+     *
+     * @param childElement OMElement
+     * @return true if there is a non empty value inside the element
+     */
+    private static boolean hasANonEmptyValue(OMElement childElement) {
+
+        return childElement != null && StringUtils.isNotBlank(childElement.getText());
     }
 
     /**
@@ -184,7 +195,7 @@ public class OAuthUtils {
      *
      * @return String containing random id
      */
-    private static String getRandomOAuthHandlerID() {
+    public static String getRandomOAuthHandlerID() {
 
         String uuid = UIDGenerator.generateUID();
         return OAuthConstants.OAUTH_PREFIX + uuid;
@@ -198,7 +209,7 @@ public class OAuthUtils {
      * @param synapseOutMsgCtx Corresponding outgoing Synapse MessageContext for the above received MessageContext
      * @return true if the call needs to be retried
      */
-    public static boolean retryOnOauthFailure(OAuthConfiguredHTTPEndpoint httpEndpoint, MessageContext synapseInMsgCtx,
+    public static boolean retryOnOAuthFailure(OAuthConfiguredHTTPEndpoint httpEndpoint, MessageContext synapseInMsgCtx,
                                               MessageContext synapseOutMsgCtx) {
 
         Boolean hasRetried = (Boolean) synapseOutMsgCtx.getProperty(OAuthConstants.RETRIED_ON_OAUTH_FAILURE);
@@ -241,7 +252,7 @@ public class OAuthUtils {
 
         Map headers = (Map) axis2MC.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
         String acceptType = (String) headers.get(HttpHeaders.ACCEPT);
-        if (!StringUtils.isEmpty(acceptType) && !acceptType.equals("*/*")) {
+        if (acceptHeaderIsAvailable(acceptType)) {
             axis2MC.setProperty(Constants.Configuration.MESSAGE_TYPE, acceptType);
         }
 
@@ -251,4 +262,14 @@ public class OAuthUtils {
         Axis2Sender.sendBack(messageContext);
     }
 
+    /**
+     * Method to check whether accept header is present
+     *
+     * @param acceptType Accept header string of the request
+     * @return true if the accept header is present
+     */
+    private static boolean acceptHeaderIsAvailable(String acceptType) {
+
+        return StringUtils.isNotBlank(acceptType) && !acceptType.equals("*/*");
+    }
 }

@@ -39,6 +39,8 @@ public class RESTHttpServerController extends AbstractBackEndServerController {
 
     private static final Log log = LogFactory.getLog(RESTHttpServerController.class);
 
+    private static final String DEFAULT_PORT = "9000";
+
     private HttpServer webServer = null;
 
     private String packageName;
@@ -53,7 +55,7 @@ public class RESTHttpServerController extends AbstractBackEndServerController {
                 SampleConfigConstants.TAG_BE_SERVER_CONF_REST_PACKAGE_NAME, null);
 
         port = Integer.parseInt(SynapseTestUtils.getParameter(element,
-                SampleConfigConstants.TAG_BE_SERVER_CONF_REST_HTTP_PORT, "9000"));
+                SampleConfigConstants.TAG_BE_SERVER_CONF_REST_HTTP_PORT, DEFAULT_PORT));
 
         ResourceConfig rc = new ResourceConfig().packages(packageName);
         try {

@@ -23,8 +23,10 @@ import com.google.gson.JsonParser;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -32,6 +34,7 @@ import org.apache.http.impl.client.HttpClients;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -49,6 +52,7 @@ public class OAuthClient {
      *
      * @param tokenApiUrl The token url of the server
      * @param payload     The payload of the request
+     * @param credentials The encoded credentials
      * @return accessToken String
      * @throws OAuthException In the event of an unexpected HTTP status code return from the server or access_token
      *                        key missing in the response payload
@@ -86,8 +90,13 @@ public class OAuthClient {
 
         int responseCode = response.getStatusLine().getStatusCode();
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(response
-                .getEntity().getContent(), StandardCharsets.UTF_8));
+        HttpEntity entity = response.getEntity();
+        Charset charset = ContentType.getOrDefault(entity).getCharset();
+        if (charset == null) {
+            charset = StandardCharsets.UTF_8;
+        }
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(entity.getContent(), charset));
         String inputLine;
         StringBuilder stringBuilder = new StringBuilder();
 
@@ -100,7 +109,7 @@ public class OAuthClient {
                     + stringBuilder.toString());
         }
 
-        if (!(responseCode == HttpStatus.SC_OK)) {
+        if (responseCode != HttpStatus.SC_OK) {
             throw new OAuthException("Error while accessing the Token URL. "
                     + response.getStatusLine());
         }

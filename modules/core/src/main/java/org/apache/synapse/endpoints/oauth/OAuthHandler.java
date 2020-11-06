@@ -34,13 +34,13 @@ import java.util.concurrent.ExecutionException;
 
 public abstract class OAuthHandler {
 
-    private String id;
+    private final String id;
 
-    private String tokenApiUrl;
+    private final String tokenApiUrl;
 
-    protected OAuthHandler(String id, String tokenApiUrl) {
+    protected OAuthHandler(String tokenApiUrl) {
 
-        this.id = id;
+        this.id = OAuthUtils.getRandomOAuthHandlerID();
         this.tokenApiUrl = tokenApiUrl;
     }
 
@@ -53,9 +53,19 @@ public abstract class OAuthHandler {
      */
     public void setOAuthHeader(MessageContext messageContext) throws OAuthException {
 
-        String token;
+        setAuthorizationHeader(messageContext, getToken());
+    }
+
+    /**
+     * This method returns a token string
+     *
+     * @return token String
+     * @throws OAuthException In the event of errors when generating new token
+     */
+    private String getToken() throws OAuthException {
+
         try {
-            token = TokenCache.getInstance().getToken(id, new Callable<String>() {
+            return TokenCache.getInstance().getToken(id, new Callable<String>() {
                 @Override
                 public String call() throws OAuthException, IOException {
 
@@ -65,7 +75,6 @@ public abstract class OAuthHandler {
         } catch (ExecutionException e) {
             throw new OAuthException(e);
         }
-        setAuthorizationHeader(messageContext, token);
     }
 
     /**

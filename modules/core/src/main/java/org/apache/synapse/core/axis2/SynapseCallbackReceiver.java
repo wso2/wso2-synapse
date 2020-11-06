@@ -560,7 +560,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
                 OAuthConfiguredHTTPEndpoint httpEndpoint = (OAuthConfiguredHTTPEndpoint) successfulEndpoint;
 
-                if (originalMC != null && OAuthUtils.retryOnOauthFailure(httpEndpoint, synapseInMessageContext,
+                if (originalMC != null && OAuthUtils.retryOnOAuthFailure(httpEndpoint, synapseInMessageContext,
                         synapseOutMsgCtx)) {
                     httpEndpoint.retryCallWithNewToken(originalMC);
                     return;

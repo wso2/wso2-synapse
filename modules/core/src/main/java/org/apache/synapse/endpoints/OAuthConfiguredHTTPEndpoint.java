@@ -36,33 +36,41 @@ import org.apache.synapse.util.MessageHelper;
  */
 public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
 
-    private OAuthHandler oauthHandler;
+    private final OAuthHandler oAuthHandler;
+
+    public OAuthConfiguredHTTPEndpoint(OAuthHandler oAuthHandler) {
+
+        this.oAuthHandler = oAuthHandler;
+    }
 
     @Override
     public void send(MessageContext synCtx) {
 
         try {
-            oauthHandler.setOAuthHeader(synCtx);
+            oAuthHandler.setOAuthHeader(synCtx);
+
+            // If this a blocking call, add 401 as a non error http status code
+            if (synCtx.getProperty(SynapseConstants.BLOCKING_MSG_SENDER) != null) {
+                org.apache.axis2.context.MessageContext axis2Ctx =
+                        ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+                axis2Ctx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES,
+                        String.valueOf(OAuthConstants.HTTP_SC_UNAUTHORIZED));
+            }
+
+            // Clone the original MessageContext and save it to do a retry after a token refresh
+            MessageContext cloneMessageContext = MessageHelper.cloneMessageContext(synCtx);
+            MessageCache.getInstance().addMessageContext(synCtx.getMessageID(), cloneMessageContext);
+
+            super.send(synCtx);
+
         } catch (OAuthException e) {
             handleError(synCtx,
                     "Could not generate access token for oauth configured http endpoint " + this.getName(), e);
-        }
-        // If this a blocking call, add 401 as a non error http status code
-        if (synCtx.getProperty(SynapseConstants.BLOCKING_MSG_SENDER) != null) {
-            org.apache.axis2.context.MessageContext axis2Ctx = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-            axis2Ctx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES,
-                    String.valueOf(OAuthConstants.HTTP_SC_UNAUTHORIZED));
-        }
-        // Clone the original MessageContext and save it to do a retry after a token refresh
-        try {
-            MessageContext cloneMessageContext = MessageHelper.cloneMessageContext(synCtx);
-            MessageCache.getInstance().addMessageContext(synCtx.getMessageID(), cloneMessageContext);
         } catch (AxisFault axisFault) {
             handleError(synCtx,
                     "Error cloning the message context for oauth configured http endpoint " + this.getName(),
                     axisFault);
         }
-        super.send(synCtx);
     }
 
     /**
@@ -73,7 +81,7 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
      */
     public MessageContext retryCallWithNewToken(MessageContext synCtx) {
         // remove the existing token from the cache so that a new token is generated
-        oauthHandler.removeTokenFromCache();
+        oAuthHandler.removeTokenFromCache();
         // set RETRIED_ON_OAUTH_FAILURE property to true
         synCtx.setProperty(OAuthConstants.RETRIED_ON_OAUTH_FAILURE, true);
         send(synCtx);
@@ -83,18 +91,13 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
     @Override
     public void destroy() {
 
-        oauthHandler.removeTokenFromCache();
+        oAuthHandler.removeTokenFromCache();
         super.destroy();
     }
 
     public OAuthHandler getOauthHandler() {
 
-        return oauthHandler;
-    }
-
-    public void setOauthHandler(OAuthHandler oauthHandler) {
-
-        this.oauthHandler = oauthHandler;
+        return oAuthHandler;
     }
 
     /**
