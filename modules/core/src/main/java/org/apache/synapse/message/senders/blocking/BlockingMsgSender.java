@@ -41,8 +41,6 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.commons.json.JsonUtil;
-import org.apache.synapse.continuation.ContinuationStackManager;
-import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.axis2.AnonymousServiceFactory;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.AbstractEndpoint;
@@ -475,7 +473,7 @@ public class BlockingMsgSender {
 
                     OAuthConfiguredHTTPEndpoint httpEndpoint = (OAuthConfiguredHTTPEndpoint) successfulEndpoint;
 
-                    if (originalMC != null && OAuthUtils.retryOnOauthFailure(httpEndpoint, synapseInMsgCtx,
+                    if (originalMC != null && OAuthUtils.retryOnOAuthFailure(httpEndpoint, synapseInMsgCtx,
                             synapseInMsgCtx)) {
                         MessageContext messageContext = httpEndpoint.retryCallWithNewToken(originalMC);
                         ((Axis2MessageContext) synapseInMsgCtx).setAxis2MessageContext(

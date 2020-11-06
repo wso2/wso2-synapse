@@ -25,14 +25,14 @@ import org.apache.axiom.util.base64.Base64Utils;
  */
 public class AuthorizationCodeHandler extends OAuthHandler {
 
-    private String clientId;
-    private String clientSecret;
-    private String refreshToken;
+    private final String clientId;
+    private final String clientSecret;
+    private final String refreshToken;
 
-    public AuthorizationCodeHandler(String id, String tokenApiUrl, String clientId, String clientSecret,
+    public AuthorizationCodeHandler(String tokenApiUrl, String clientId, String clientSecret,
                                     String refreshToken) {
 
-        super(id, tokenApiUrl);
+        super(tokenApiUrl);
         this.clientId = clientId;
         this.clientSecret = clientSecret;
         this.refreshToken = refreshToken;

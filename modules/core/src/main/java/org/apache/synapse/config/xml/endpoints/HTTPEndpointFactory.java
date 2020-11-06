@@ -76,18 +76,12 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
         OMElement httpElement = epConfig.getFirstChildWithName(
                 new QName(SynapseConstants.SYNAPSE_NAMESPACE, "http"));
 
-        OAuthHandler handler = null;
-        try {
-            handler = OAuthUtils.getOAuthHandler(httpElement);
-        } catch (OAuthException e) {
-            handleException("Invalid OAuth configuration for endpoint " + name);
-        }
-
         HTTPEndpoint httpEndpoint;
 
-        if (handler != null) {
-            httpEndpoint = new OAuthConfiguredHTTPEndpoint();
-            ((OAuthConfiguredHTTPEndpoint) httpEndpoint).setOauthHandler(handler);
+        OAuthHandler oAuthhandler = createOAuthHandler(httpElement, name);
+
+        if (oAuthhandler != null) {
+            httpEndpoint = new OAuthConfiguredHTTPEndpoint(oAuthhandler);
         } else {
             httpEndpoint = new HTTPEndpoint();
         }
@@ -167,6 +161,26 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
                 }
             }
         }
+    }
+
+    /**
+     * This method will return an OAuthHandler instance depending on the oauth configs or throw a synapse exception
+     *
+     * @param httpElement Element containing http configs
+     * @param endpointName Name of the http endpoint
+     * @return OAuthHandler instance if valid oauth configuration is found
+     */
+    private OAuthHandler createOAuthHandler(OMElement httpElement, String endpointName) {
+        OAuthHandler handler = null;
+        try {
+            handler = OAuthUtils.getOAuthHandler(httpElement);
+        } catch (OAuthException e) {
+            if (endpointName == null) {
+                endpointName = "";
+            }
+            handleException("Invalid OAuth configuration for endpoint " + endpointName);
+        }
+        return handler;
     }
 
 }

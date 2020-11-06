@@ -132,11 +132,10 @@ public class OAuthUtilsTest {
     @Test
     public void testRetryOnOauthFailureWithUnauthorizedStatus() throws AxisFault {
 
-        OAuthHandler oAuthHandler = new AuthorizationCodeHandler("1", "oauth_server_url", "client_id", "client_secret",
+        OAuthHandler oAuthHandler = new AuthorizationCodeHandler("oauth_server_url", "client_id", "client_secret",
                 "refresh_token");
 
-        OAuthConfiguredHTTPEndpoint httpEndpoint = new OAuthConfiguredHTTPEndpoint();
-        httpEndpoint.setOauthHandler(oAuthHandler);
+        OAuthConfiguredHTTPEndpoint httpEndpoint = new OAuthConfiguredHTTPEndpoint(oAuthHandler);
 
         MessageContext messageContextIn = createMessageContext();
         org.apache.axis2.context.MessageContext axis2MessageContext =
@@ -144,7 +143,7 @@ public class OAuthUtilsTest {
         axis2MessageContext.setProperty(PassThroughConstants.HTTP_SC, 401);
         MessageContext messageContextOut = createMessageContext();
 
-        assertTrue(OAuthUtils.retryOnOauthFailure(httpEndpoint, messageContextIn, messageContextOut));
+        assertTrue(OAuthUtils.retryOnOAuthFailure(httpEndpoint, messageContextIn, messageContextOut));
     }
 
     /**
@@ -155,11 +154,10 @@ public class OAuthUtilsTest {
     @Test
     public void testRetryOnOauthFailureOnAlreadyRetriedCall() throws AxisFault {
 
-        OAuthHandler oAuthHandler = new AuthorizationCodeHandler("1", "oauth_server_url", "client_id", "client_secret",
+        OAuthHandler oAuthHandler = new AuthorizationCodeHandler("oauth_server_url", "client_id", "client_secret",
                 "refresh_token");
 
-        OAuthConfiguredHTTPEndpoint httpEndpoint = new OAuthConfiguredHTTPEndpoint();
-        httpEndpoint.setOauthHandler(oAuthHandler);
+        OAuthConfiguredHTTPEndpoint httpEndpoint = new OAuthConfiguredHTTPEndpoint(oAuthHandler);
 
         MessageContext messageContextIn = createMessageContext();
         org.apache.axis2.context.MessageContext axis2MessageContext =
@@ -169,7 +167,7 @@ public class OAuthUtilsTest {
         MessageContext messageContextOut = createMessageContext();
         messageContextOut.setProperty(OAuthConstants.RETRIED_ON_OAUTH_FAILURE, true);
 
-        assertFalse(OAuthUtils.retryOnOauthFailure(httpEndpoint, messageContextIn, messageContextOut));
+        assertFalse(OAuthUtils.retryOnOAuthFailure(httpEndpoint, messageContextIn, messageContextOut));
     }
 
     /**
