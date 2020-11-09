@@ -56,11 +56,11 @@ public class OAuthUtils {
 
         if (httpElement != null) {
             OMElement authElement = httpElement.getFirstChildWithName(
-                    new QName(SynapseConstants.SYNAPSE_NAMESPACE, "authentication"));
+                    new QName(SynapseConstants.SYNAPSE_NAMESPACE, OAuthConstants.AUTHENTICATION));
 
             if (authElement != null) {
                 OMElement oauthElement = authElement.getFirstChildWithName(
-                        new QName(SynapseConstants.SYNAPSE_NAMESPACE, "oauth"));
+                        new QName(SynapseConstants.SYNAPSE_NAMESPACE, OAuthConstants.OAUTH));
 
                 if (oauthElement != null) {
 
@@ -87,10 +87,10 @@ public class OAuthUtils {
         OAuthHandler oAuthHandler = null;
 
         OMElement authCodeElement = oauthElement.getFirstChildWithName(new QName(
-                SynapseConstants.SYNAPSE_NAMESPACE, "authorizationCode"));
+                SynapseConstants.SYNAPSE_NAMESPACE, OAuthConstants.AUTHORIZATION_CODE));
 
         OMElement clientCredentialsElement = oauthElement.getFirstChildWithName(new QName(
-                SynapseConstants.SYNAPSE_NAMESPACE, "clientCredentials"));
+                SynapseConstants.SYNAPSE_NAMESPACE, OAuthConstants.CLIENT_CREDENTIALS));
 
         if (authCodeElement != null && clientCredentialsElement != null) {
             if (log.isDebugEnabled()) {

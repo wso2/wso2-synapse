@@ -52,4 +52,24 @@ public class ClientCredentialsHandler extends OAuthHandler {
 
         return Base64Utils.encode((clientId + ":" + clientSecret).getBytes());
     }
+
+    /**
+     * Return the client id relevant to the Client Credentials Handler
+     *
+     * @return String client id
+     */
+    public String getClientId() {
+
+        return clientId;
+    }
+
+    /**
+     * Return the client secret relevant to the Client Credentials Handler
+     *
+     * @return String client secret
+     */
+    public String getClientSecret() {
+
+        return clientSecret;
+    }
 }
