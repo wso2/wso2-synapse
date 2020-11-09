@@ -99,6 +99,16 @@ public abstract class OAuthHandler {
     }
 
     /**
+     * Return the token server url relevant to the OAuth handler.
+     *
+     * @return String Token server url
+     */
+    public String getTokenUrl() {
+
+        return tokenApiUrl;
+    }
+
+    /**
      * Return the request payload relevant to the OAuth handler.
      *
      * @return String payload

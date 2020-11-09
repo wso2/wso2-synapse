@@ -23,6 +23,10 @@ public class OAuthConstants {
     public static final String OAUTH_PREFIX = "oauth_";
 
     // elements in the oauth synapse configuration
+    public static final String AUTHENTICATION = "authentication";
+    public static final String OAUTH = "oauth";
+    public static final String CLIENT_CREDENTIALS = "clientCredentials";
+    public static final String AUTHORIZATION_CODE = "authorizationCode";
     public static final String TOKEN_API_URL = "tokenUrl";
     public static final String OAUTH_CLIENT_ID = "clientId";
     public static final String OAUTH_CLIENT_SECRET = "clientSecret";

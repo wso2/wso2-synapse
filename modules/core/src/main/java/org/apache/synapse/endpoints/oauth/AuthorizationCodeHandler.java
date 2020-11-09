@@ -56,4 +56,34 @@ public class AuthorizationCodeHandler extends OAuthHandler {
 
         return Base64Utils.encode((clientId + ":" + clientSecret).getBytes());
     }
+
+    /**
+     * Return the client id relevant to the Authorization Code Handler
+     *
+     * @return String client id
+     */
+    public String getClientId() {
+
+        return clientId;
+    }
+
+    /**
+     * Return the client secret relevant to the Authorization Code Handler
+     *
+     * @return String client secret
+     */
+    public String getClientSecret() {
+
+        return clientSecret;
+    }
+
+    /**
+     * Return the refresh token secret relevant to the Authorization Code Handler
+     *
+     * @return String refresh token
+     */
+    public String getRefreshToken() {
+
+        return refreshToken;
+    }
 }
