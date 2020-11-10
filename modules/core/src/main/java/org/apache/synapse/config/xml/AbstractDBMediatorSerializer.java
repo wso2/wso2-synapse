@@ -233,8 +233,8 @@ public abstract class AbstractDBMediatorSerializer extends AbstractMediatorSeria
             paramElt.addAttribute(
                 fac.createOMAttribute("value", nullNS, param.getPropertyName()));
         }
-        if (param.getXpath() != null) {
-            SynapseXPathSerializer.serializeXPath(param.getXpath(), paramElt, "expression");
+        if (param.getPath() != null) {
+            SynapsePathSerializer.serializePath(param.getPath(), paramElt, "expression");
         }
 
         switch (param.getType()) {
