@@ -27,6 +27,7 @@ import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.Startup;
 import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.rest.API;
 import org.apache.synapse.startup.quartz.StartUpController;
@@ -46,6 +47,7 @@ public class SynapseObserverTest extends TestCase {
     private static final int EVENT_SRC  = 5;
     private static final int EXECUTOR   = 6;
     private static final int SEQUENCE_TEMPLATE   = 7;
+    private static final int LIBRARY = 8;
 
     SimpleSynapseObserver observer = new SimpleSynapseObserver();
 
@@ -218,6 +220,16 @@ public class SynapseObserverTest extends TestCase {
 
         public void priorityExecutorRemoved(PriorityExecutor exec) {
             tracker.get(EXECUTOR).remove(exec.getName());
+        }
+
+        @Override
+        public void synapseLibraryAdded(Library library) {
+            tracker.get(LIBRARY).add(library.getFileName());
+        }
+
+        @Override
+        public void synapseLibraryRemoved(Library library) {
+            tracker.get(LIBRARY).remove(library.getFileName());
         }
     }
 }

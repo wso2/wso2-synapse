@@ -333,6 +333,9 @@ public class InvokeMediator extends AbstractMediator implements
 
         TemplateMediator templateMediator =
                 se.getSynapseConfiguration().getSequenceTemplate(targetTemplate);
+        if (templateMediator != null) {
+            templateMediator.init(se);
+        }
         if (templateMediator == null || templateMediator.isDynamic()) {
             // undefined or dynamic templates are treated as unavailable
             // in the environment.
@@ -344,6 +347,9 @@ public class InvokeMediator extends AbstractMediator implements
     public void destroy() {
         TemplateMediator templateMediator =
                 synapseEnv.getSynapseConfiguration().getSequenceTemplate(targetTemplate);
+        if (templateMediator != null) {
+            templateMediator.destroy();
+        }
         if (templateMediator == null || templateMediator.isDynamic()) {
             synapseEnv.removeUnavailableArtifactRef(targetTemplate);
         }

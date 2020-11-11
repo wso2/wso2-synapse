@@ -23,6 +23,7 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.Startup;
 import org.apache.synapse.commons.executors.PriorityExecutor;
 import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.core.axis2.ProxyService;
@@ -241,5 +242,17 @@ public abstract class AbstractSynapseObserver implements SynapseObserver {
             log.info("Inbound Endpoint : " + inboundEndpoint.getName() +
                     " was updated from the Synapse configuration successfully");
         }
+    }
+
+    @Override
+    public void synapseLibraryAdded(Library library) {
+        log.info("Synapse Library : " + library.getFileName() +
+                " was added to the Synapse configuration successfully");
+    }
+
+    @Override
+    public void synapseLibraryRemoved(Library library) {
+        log.info("Inbound Endpoint : " + library.getFileName() +
+                " was removed from the Synapse configuration successfully");
     }
 }
