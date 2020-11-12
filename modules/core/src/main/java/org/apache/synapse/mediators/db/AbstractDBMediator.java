@@ -23,7 +23,6 @@ import org.apache.axiom.om.OMText;
 import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbcp.datasources.PerUserPoolDataSource;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
@@ -37,10 +36,7 @@ import org.apache.synapse.commons.datasource.DatasourceMBeanRepository;
 import org.apache.synapse.commons.datasource.RepositoryBasedDataSourceFinder;
 import org.apache.synapse.commons.datasource.factory.DataSourceFactory;
 import org.apache.synapse.commons.jmx.MBeanRepository;
-import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.resolver.SecureVaultResolver;
-import org.apache.synapse.util.xpath.SynapseXPath;
-import org.jaxen.JaxenException;
 import org.wso2.securevault.secret.SecretManager;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -62,8 +58,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * This abstract DB mediator will perform common DB connection pooling etc. for all DB mediators
@@ -392,7 +386,7 @@ public abstract class AbstractDBMediator extends AbstractMediator implements Man
                 continue;
             }
             String value = (param.getPropertyName() != null ?
-                    param.getPropertyName() : param.getXpath().stringValueOf(msgCtx));
+                    param.getPropertyName() : param.getPath().stringValueOf(msgCtx));
 
             if (synLog.isTraceOrDebugEnabled()) {
                 synLog.traceOrDebug("Setting as parameter : " + column + " value : " + value +

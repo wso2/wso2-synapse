@@ -32,9 +32,9 @@ import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.OMText;
 import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.axiom.om.util.AXIOMUtil;
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.commons.json.Constants;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
@@ -83,6 +83,8 @@ public class EnrichMediator extends AbstractMediator {
 
     public static final int INLINE = 4;
 
+    public static final int KEY = 5;
+
     private Source source = null;
 
     private Target target = null;
@@ -90,6 +92,8 @@ public class EnrichMediator extends AbstractMediator {
     private boolean isNativeJsonSupportEnabled = false;
 
     private boolean containsInlineExpressions = false;
+
+    public static final String ACTION_REMOVE = "remove";
 
     public boolean mediate(MessageContext synCtx) {
 
@@ -123,7 +127,11 @@ public class EnrichMediator extends AbstractMediator {
         */
         boolean isSourcePropertyXML = false;
         Object sourceProperty = synCtx.getProperty(source.getProperty());
-        if (sourceProperty instanceof OMElement) {
+        if (sourceProperty instanceof JsonElement) {
+            // Handle JSON type property values
+            sourcePropertyJson = (JsonElement) sourceProperty;
+            isSourcePropertyXML = false;
+        } else if (sourceProperty instanceof OMElement) {
             isSourcePropertyXML = true;
         } else if (sourceProperty instanceof ArrayList) {
             for (Object node : (ArrayList) sourceProperty) {
@@ -190,10 +198,17 @@ public class EnrichMediator extends AbstractMediator {
         boolean hasJSONPayload = JsonUtil.hasAJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext());
         if (isNativeJsonSupportEnabled && hasJSONPayload && !isSourcePropertyXML && !isInlineTextXML) {
             // handling the remove action separately
-            if (target.getAction().equals("remove")) {
+            if (target.getAction().equals(ACTION_REMOVE)) {
                 try {
                     if (source.getXpath() != null && source.getXpath() instanceof SynapseJsonPath) {
-                        target.removeJson(synCtx, source.getXpath());
+                        if (target.getTargetType() == BODY) {
+                            target.removeJsonFromBody(synCtx, source.getXpath());
+                        } else if (target.getTargetType() == PROPERTY) {
+                            target.removeJsonFromProperty(synCtx, target.getProperty(), source.getXpath());
+                        } else {
+                            handleException("Target type " + target.getTargetType() + " is invalid for the remove " +
+                                    "action", synCtx);
+                        }
                     } else {
                         handleException("source Xpath is mandatory for the Remove action", synCtx);
                     }
@@ -206,6 +221,26 @@ public class EnrichMediator extends AbstractMediator {
                     sourceNode = source.evaluateJson(synCtx, synLog, sourcePropertyJson);
                     if (sourceNode == null) {
                         handleException("Failed to get the source for Enriching : ", synCtx);
+                    } else if (target.getTargetType() == KEY) {
+                        try {
+                            if (sourceNode instanceof JsonPrimitive) {
+                                String jsonPathString = target.getXpath().toString();
+                                // removing "json-eval(" and extract only the expression
+                                jsonPathString = jsonPathString.substring(10, jsonPathString.length() - 1);
+                                // json-eval expression will contain the key name as the last token in the string
+                                // e.g.: $.user.name where name is the key name
+                                // and $.user is the json path to locate the key.
+                                int lastIndex = jsonPathString.lastIndexOf(".");
+                                String jsonPath = jsonPathString.substring(0, lastIndex);
+                                String keyName = jsonPathString.substring(lastIndex + 1);
+                                target.renameKey(synCtx, jsonPath, keyName, ((JsonPrimitive)sourceNode).getAsString());
+                            } else {
+                                handleException("Failed to get the new key name from source for Enriching. " +
+                                        "Key name must be a string.", synCtx);
+                            }
+                        } catch (IOException e) {
+                            handleException("Failed to rename the key.", e, synCtx);
+                        }
                     } else {
                         target.insertJson(synCtx, sourceNode, synLog);
                     }

@@ -55,6 +55,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
     private static final QName ATT_TYPE = new QName("type");
     private static final QName ATT_CLONE = new QName("clone");
     private static final QName ATT_ACTION = new QName("action");
+    private static final QName ATT_KEY = new QName("key");
 
     public static final QName SOURCE_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "source");
     public static final QName TARGET_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "target");
@@ -64,6 +65,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
     public static final String ENVELOPE = "envelope";
     public static final String BODY = "body";
     public static final String INLINE = "inline";
+    public static final String KEY = "key";
 
     @Override
     protected Mediator createSpecificMediator(OMElement elem, Properties properties) {
@@ -260,6 +262,20 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
             } else {
                 handleException("xpath attribute is required for CUSTOM type");
             }
+        } else if (target.getTargetType() == EnrichMediator.KEY) {
+            OMAttribute xpathAttr = sourceEle.getAttribute(ATT_XPATH);
+            if (xpathAttr != null && xpathAttr.getAttributeValue() != null) {
+                try {
+                    target.setXpath(SynapsePathFactory.getSynapsePath(sourceEle, ATT_XPATH));
+                } catch (JaxenException e) {
+                    handleException("Invalid XPath expression: " + xpathAttr);
+                }
+                if (!target.getAction().equals(Target.ACTION_REPLACE)) {
+                    handleException("Only the replace action is supported for the target type 'key'.");
+                }
+            } else {
+                handleException("Xpath must be defined for the target type 'key'.");
+            }
         }
     }
 
@@ -274,8 +290,30 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
             return EnrichMediator.CUSTOM;
         } else if (type.equals(INLINE)) {
             return EnrichMediator.INLINE;
+        } else if (type.equals(KEY)) {
+            return EnrichMediator.KEY;
         }
         return -1;
+    }
+
+    // Adding this method to be consistent with convertTypeToInt
+    private int convertActionToInt(String action) {
+        switch (action) {
+            case Target.ACTION_REPLACE: {
+                return 0;
+            }
+            case Target.ACTION_ADD_CHILD: {
+                return 1;
+            }
+            case Target.ACTION_ADD_SIBLING: {
+                return 2;
+            }
+            case Target.ACTION_REMOVE: {
+                return 3;
+            }
+            default:
+                return -1;
+        }
     }
 
     public QName getTagQName() {
@@ -293,6 +331,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
     private void validateTypeCombination(OMElement sourceElement, OMElement targetElement) {
         int sourceType = -1;
         int targetType = -1;
+        int targetAction = -1;
 
         // source type attribute
         OMAttribute sourceTypeAttr = sourceElement.getAttribute(ATT_TYPE);
@@ -303,6 +342,9 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
             if (sourceType < 0) {
                 throw new SynapseException("Unexpected source type");
             }
+        } else {
+            // when type = custom we don't need to specify that in configs
+            sourceType = 0;
         }
         // target type attribute
         OMAttribute targetTypeAttr = targetElement.getAttribute(ATT_TYPE);
@@ -338,6 +380,37 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
             }
         } else if (sourceType == 0 && targetType == 1) {
             throw new SynapseException("Wrong combination of source and target type");
+        }
+
+        // target action attribute
+        // 0 - replace 1 - child 2 - sibling 3 - remove
+        OMAttribute targetActionAttr = targetElement.getAttribute(ATT_ACTION);
+        if (targetActionAttr != null && targetActionAttr.getAttributeValue() != null) {
+            targetAction = convertActionToInt(targetActionAttr.getAttributeValue());
+            // check if source type is different form the existing
+            if (targetAction < 0) {
+                throw new SynapseException("Unexpected target action");
+            }
+        }
+
+        // validations for remove action
+        if (targetAction == 3) {
+            if (sourceType != 0) {
+                throw new SynapseException("Wrong combination of source type and target action");
+            }
+            if (targetType == 0 || targetType == 1 || targetType == 4) {
+                throw new SynapseException("Wrong combination of target type and target action");
+            }
+        }
+
+        // validations for new "key" type
+        if (targetType == 5) {
+            if (sourceType == 2) {
+                throw new SynapseException("Wrong combination of source type and target type");
+            }
+            if (targetAction != 0) {
+                throw new SynapseException("Wrong combination of target type and target action");
+            }
         }
     }
 }

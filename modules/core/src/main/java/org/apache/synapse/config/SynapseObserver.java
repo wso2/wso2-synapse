@@ -26,6 +26,7 @@ import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.rest.API;
 
 /**
@@ -167,4 +168,15 @@ public interface SynapseObserver {
      */
     public void priorityExecutorRemoved(PriorityExecutor exec);
 
+    /** Event fired when a library is added to the configuration
+     *
+     * @param library the library added to the configuration
+     */
+    void synapseLibraryAdded(Library library);
+
+    /** Event fired when a library is removed from the configuration
+     *
+     * @param library the library removed from the configuration
+     */
+    void synapseLibraryRemoved(Library library);
 }

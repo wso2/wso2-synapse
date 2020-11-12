@@ -50,6 +50,7 @@ import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.apache.synapse.util.InlineExpressionUtil;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.apache.synapse.util.xpath.SynapseXPathConstants;
@@ -432,7 +433,7 @@ public class Target {
                 JsonElement jsonElement = jsonParser.parse(sourceJsonElement.toString());
                 if (action.equalsIgnoreCase(ACTION_REPLACE)) {
                     // replacing the property with new value
-                    synCtx.setProperty(property, sourceJsonElement.toString());
+                    synCtx.setProperty(property, sourceJsonElement);
                 } else if (action.equalsIgnoreCase(ACTION_ADD_CHILD)) {
                     Object propertyObj = synCtx.getProperty(property);
                     if (propertyObj != null) {
@@ -441,7 +442,7 @@ public class Target {
                             // Add as a new element if the value contains in the property is an array.
                             if (sourceElement.isJsonArray()) {
                                 sourceElement.getAsJsonArray().add(jsonElement);
-                                synCtx.setProperty(property, sourceElement.toString());
+                                synCtx.setProperty(property, sourceElement);
                             } else {
                                 synLog.error("Cannot add child, since the target " + sourceElement.toString() + " is " +
                                         "not an JSON array");
@@ -470,22 +471,51 @@ public class Target {
      * @param synCtx   message context.
      * @param jsonPath JSON-path expression to select the removing element.
      */
-    public void removeJson(MessageContext synCtx, SynapsePath jsonPath) throws IOException, PathNotFoundException {
-        SynapseJsonPath synapseJsonPath = (SynapseJsonPath) jsonPath;
+    public void removeJsonFromBody(MessageContext synCtx, SynapsePath jsonPath)
+            throws IOException, PathNotFoundException {
         Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
         org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
-        // handle complete removal of the message body.
+        String jsonString = IOUtils.toString(JsonUtil.getJsonPayload(axis2MessageCtx));
+        String result = removeJSONFromString(jsonString, jsonPath);
+        JsonUtil.getNewJsonPayload(axis2MessageCtx, result, true, true);
+    }
+
+    /**
+     * This method will remove all the matching elements of the given jsonPath from the JSON payload in the property
+     * and set the result back to the same property.
+     *
+     * @param synCtx   message context.
+     * @param property name of the property.
+     * @param jsonPath JSON-path expression to select the removing element.
+     */
+    public void removeJsonFromProperty(MessageContext synCtx, String property, SynapsePath jsonPath) {
+        Object propertyObject = synCtx.getProperty(property);
+        String propertyValue = "";
+        if (propertyObject instanceof String) {
+            propertyValue = (String) propertyObject;
+        } else if (propertyObject instanceof JsonElement) {
+            propertyValue = propertyObject.toString();
+        } else {
+            throw new SynapseException(
+                    "Cannot perform the remove operation. Data type of the property " + property + " is not string " +
+                            "| JSON");
+        }
+        String result = removeJSONFromString(propertyValue,jsonPath);
+        synCtx.setProperty(property,result);
+    }
+
+    //Given input sting and jsonPath expression this method will remove all the matching elements from the input string.
+    private String removeJSONFromString(String inputString, SynapsePath jsonPath) {
+        String result = inputString;
+        SynapseJsonPath synapseJsonPath = (SynapseJsonPath) jsonPath;
         String jsonPathString = synapseJsonPath.toString();
         // removing "json-eval(" and extract only the expression
         jsonPathString = jsonPathString.substring(10, jsonPathString.length() - 1);
-        // multi expression support ( accept comma separated list of JSON-path expressions )
         String[] jsonPathArray = jsonPathString.split(",");
-        String jsonString = IOUtils.toString(JsonUtil.getJsonPayload(axis2MessageCtx));
-        String result = jsonString;
         if (jsonPathArray.length > 0) {
             for (String path : jsonPathArray) {
+                // handle complete removal of the message body.
                 if (path.equals("$") || path.equals("$.")) {
-                    JsonUtil.getNewJsonPayload(axis2MessageCtx, "", true, true);
                     result = "";
                 } else {
                     DocumentContext doc = JsonPath.parse(result);
@@ -493,8 +523,26 @@ public class Target {
                     result = doc.jsonString();
                 }
             }
-            JsonUtil.getNewJsonPayload(axis2MessageCtx, result, true, true);
         }
+        return result;
+    }
+    /**
+     * Renames a json key name at the specified json path with a new key name
+     *
+     * @param synapseContext Current message context
+     * @param jsonPath       The path to locate the key. Should be resolved to a map or an array including map items.
+     * @param keyName        Current name of the key
+     * @param newKeyName     New name of the key
+     * @throws IOException if failed to set the new json payload
+     */
+    public void renameKey(MessageContext synapseContext, String jsonPath, String keyName, String newKeyName)
+            throws IOException {
+
+        org.apache.axis2.context.MessageContext axis2MessageCtx =
+                ((Axis2MessageContext) synapseContext).getAxis2MessageContext();
+        String payload = JsonUtil.jsonPayloadToString(((Axis2MessageContext) synapseContext).getAxis2MessageContext());
+        DocumentContext doc = JsonPath.parse(payload).renameKey(jsonPath, keyName, newKeyName);
+        JsonUtil.getNewJsonPayload(axis2MessageCtx, doc.jsonString(), true, true);
     }
 
     /**
@@ -505,6 +553,20 @@ public class Target {
      */
     private void setEnrichResultToBody(MessageContext synapseContext, SynapseJsonPath synapseJsonPath, Object
             sourceNode) {
+
+        if (InlineExpressionUtil.checkForInlineExpressions(synapseJsonPath.toString())) {
+            try {
+                String jsonpath = synapseJsonPath.toString();
+                if (jsonpath.startsWith("json-eval(")) {
+                    jsonpath = jsonpath.substring(10, jsonpath.length() - 1);
+                }
+                synapseJsonPath =
+                        new SynapseJsonPath(InlineExpressionUtil.replaceDynamicValues(synapseContext, jsonpath));
+            } catch (JaxenException e) {
+                log.error("Error occurred while evaluating JSONPath", e);
+            }
+        }
+
         String expression = synapseJsonPath.getJsonPathExpression();
 
         // Though SynapseJsonPath support "$.", the JSONPath implementation does not support it

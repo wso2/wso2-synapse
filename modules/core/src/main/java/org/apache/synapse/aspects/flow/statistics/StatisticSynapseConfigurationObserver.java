@@ -30,6 +30,7 @@ import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.API;
 
@@ -162,6 +163,16 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 
 	@Override
 	public void priorityExecutorRemoved(PriorityExecutor exec) {
+
+	}
+
+	@Override
+	public void synapseLibraryAdded(Library library) {
+
+	}
+
+	@Override
+	public void synapseLibraryRemoved(Library library) {
 
 	}
 }

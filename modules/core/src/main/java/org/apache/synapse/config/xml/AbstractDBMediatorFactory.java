@@ -323,24 +323,24 @@ public abstract class AbstractDBMediatorFactory extends AbstractMediatorFactory 
             while (paramIter.hasNext()) {
 
                 OMElement paramElt = (OMElement) paramIter.next();
-                String xpath = getAttribute(paramElt, ATT_EXPRN);
+                String strPath = getAttribute(paramElt, ATT_EXPRN);
                 String value = getAttribute(paramElt, ATT_VALUE);
 
-                if (xpath != null || value != null) {
+                if (strPath != null || value != null) {
 
-                    SynapseXPath xp = null;
-                    if (xpath != null) {
+                    SynapsePath path = null;
+                    if (strPath != null) {
                         try {
-                            xp = SynapseXPathFactory.getSynapseXPath(paramElt, ATT_EXPRN);
+                            path = SynapsePathFactory.getSynapsePath(paramElt, ATT_EXPRN);
 
                         } catch (JaxenException e) {
-                            handleException("Invalid XPath specified for the source attribute : " +
-                                    xpath);
+                            handleException("Invalid XPath/JsonPath specified for the source attribute : " +
+                                    strPath);
                         }
                     }
                     statement.addParameter(
                             value,
-                            xp,
+                            path,
                             getAttribute(paramElt, ATT_TYPE));
                 }
             }

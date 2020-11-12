@@ -192,12 +192,13 @@ public class RelayUtils {
                             rawData = byteArrayOutputStream.toString();
                             JsonParser jsonParser = new JsonParser();
                             jsonParser.parse(rawData);
+                        } else {
+                            messageContext.getEnvelope().buildWithAttachments();
+                            if (messageContext.getEnvelope().getBody().getFirstElement() != null) {
+                                messageContext.getEnvelope().getBody().getFirstElement().buildNext();
+                            }
                         }
 
-                        messageContext.getEnvelope().buildWithAttachments();
-                        if (messageContext.getEnvelope().getBody().getFirstElement() != null) {
-                            messageContext.getEnvelope().getBody().getFirstElement().buildNext();
-                        }
                     } catch (Exception e) {
                         if (rawData == null) {
                             rawData = byteArrayOutputStream.toString();

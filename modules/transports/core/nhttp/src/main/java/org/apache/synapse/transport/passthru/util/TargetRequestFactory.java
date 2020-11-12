@@ -203,12 +203,14 @@ public class TargetRequestFactory {
     private static String getContentType(MessageContext msgCtx, boolean isContentTypePreservedHeader) throws AxisFault {
 
         Object trpHeaders = msgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
+        String setEncoding = (String) msgCtx.getProperty(PassThroughConstants.SET_CHARACTER_ENCODING);
 
         //If incoming transport isn't HTTP, transport headers can be null. Therefore null check is required
         // and if headers not null check whether request comes with Content-Type header before preserving Content-Type
         //Need to avoid this for multipart headers, need to add MIME Boundary property
         if (trpHeaders != null && trpHeaders instanceof Map && ((Map) trpHeaders).
-                get(HTTPConstants.HEADER_CONTENT_TYPE) != null && isContentTypePreservedHeader && !isMultipartContent
+                get(HTTPConstants.HEADER_CONTENT_TYPE) != null && (isContentTypePreservedHeader ||
+                PassThroughConstants.VALUE_FALSE.equals(setEncoding)) && !isMultipartContent
                 (((Map) trpHeaders).get(HTTPConstants.HEADER_CONTENT_TYPE).toString())) {
             if (msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE) != null) {
                 return (String) msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE);

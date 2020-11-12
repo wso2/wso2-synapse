@@ -26,7 +26,7 @@
    </parent>
    <groupId>org.apache.synapse</groupId>
    <artifactId>Apache-Synapse</artifactId>
-   <version>2.1.7-wso2v186-SNAPSHOT</version>
+   <version>2.1.7-wso2v188-SNAPSHOT</version>
    <name>Apache Synapse</name>
    <description>Apache Synapse</description>
    <packaging>pom</packaging>
@@ -1203,6 +1203,11 @@
               <artifactId>jersey-hk2</artifactId>
               <version>${glassfish.jersey.version}</version>
           </dependency>
+          <dependency>
+              <groupId>org.freemarker</groupId>
+              <artifactId>freemarker</artifactId>
+              <version>${freemarker.version}</version>
+          </dependency>
       </dependencies>
    </dependencyManagement>
     <reporting>
@@ -1427,6 +1432,7 @@
 
        <glassfish.jersey.version>2.32</glassfish.jersey.version>
 
+       <freemarker.version>2.3.30</freemarker.version>
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->

@@ -173,6 +173,11 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     private List<SynapseObserver> observers = new ArrayList<SynapseObserver>();
 
     /**
+     * The list of observers marked to be removed
+     */
+    private List<SynapseObserver> removableObservers = new ArrayList<>(1);
+
+    /**
      * Executors for executing sequences with priorities
      */
     private Map<String, PriorityExecutor> executors = new ConcurrentHashMap<String, PriorityExecutor>();
@@ -1743,6 +1748,10 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         return Collections.unmodifiableList(observers);
     }
 
+    public void unregisterObserver(SynapseObserver observer) {
+        removableObservers.add(observer);
+    }
+
     /**
      * Add an executor
      *
@@ -1885,6 +1894,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     public void addSynapseLibrary(String name, Library library) {
         if (!(synapseLibraries.containsKey(name))) {
             synapseLibraries.put(name, library);
+            for (SynapseObserver o : observers) {
+                o.synapseLibraryAdded(library);
+            }
         } else {
             handleException("Duplicate Synapse Library " + name);
         }
@@ -1906,7 +1918,15 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      * @return Removed Synapse library instance
      */
     public Library removeSynapseLibrary(String name) {
-        return synapseLibraries.remove(name);
+        Library removedLib = synapseLibraries.remove(name);
+        if (removedLib != null) {
+            for (SynapseObserver o : observers) {
+                o.synapseLibraryRemoved(removedLib);
+            }
+            observers.removeAll(removableObservers);
+            removableObservers.clear();
+        }
+        return removedLib;
     }
 
 

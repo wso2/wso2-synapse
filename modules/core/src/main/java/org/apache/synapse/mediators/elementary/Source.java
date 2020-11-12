@@ -30,11 +30,14 @@ import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.axiom.soap.impl.builder.StAXSOAPModelBuilder;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.util.InlineExpressionUtil;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.jaxen.JaxenException;
@@ -75,6 +78,8 @@ public class Source {
     private OMNode initialInlineOMNode = null;
 
     private String inlineKey = null;
+
+    private static final Log log = LogFactory.getLog(Source.class);
 
     public ArrayList<OMNode> evaluate(MessageContext synCtx, SynapseLog synLog)
             throws JaxenException {
@@ -181,6 +186,11 @@ public class Source {
                         sourceNodeList.add((OMText)node);
                     }
                 }
+            } else if (o instanceof JsonElement) {
+                // Handling property with JSON type
+                String sourceStr = o.toString();
+                OMFactory fac = OMAbstractFactory.getOMFactory();
+                sourceNodeList.add(fac.createOMText(sourceStr));
             } else {
                 synLog.error("Invalid source property type.");
             }
@@ -264,6 +274,20 @@ public class Source {
         JsonParser parser = new JsonParser();
         if (xpath != null) {
             SynapseJsonPath sourceJsonPath = (SynapseJsonPath) this.xpath;
+
+            if (InlineExpressionUtil.checkForInlineExpressions(sourceJsonPath.toString())) {
+                try {
+                    String jsonpath = sourceJsonPath.toString();
+                    if (jsonpath.startsWith("json-eval(")) {
+                        jsonpath = jsonpath.substring(10, jsonpath.length() - 1);
+                    }
+                    sourceJsonPath =
+                            new SynapseJsonPath(InlineExpressionUtil.replaceDynamicValues(synCtx, jsonpath));
+                } catch (JaxenException e) {
+                    log.error("Error occurred while evaluating JSONPath", e);
+                }
+            }
+
             jsonPath = sourceJsonPath.getJsonPathExpression();
         }
 
