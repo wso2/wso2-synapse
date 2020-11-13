@@ -20,29 +20,36 @@
 package org.apache.synapse.mediators.builtin;
 
 import org.apache.axis2.AxisFault;
+import org.apache.axis2.Constants;
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.context.ConfigurationContextFactory;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.mediators.AbstractMediator;
-import org.apache.synapse.util.MessageHelper;
-import org.apache.axis2.context.ConfigurationContext;
-import org.apache.axis2.context.ConfigurationContextFactory;
+import org.apache.synapse.mediators.elementary.Source;
+import org.apache.synapse.mediators.elementary.Target;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
-import org.apache.synapse.SynapseException;
+import org.apache.synapse.util.CallMediatorEnrichUtil;
+import org.apache.synapse.util.MessageHelper;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -96,6 +103,25 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
     private String axis2xml = null;
 
+    private boolean isSourceAvailable = false;
+    private boolean isTargetAvailable = false;
+    private String sourceMessageType = null;
+
+    private Source sourceForOutboundPayload;
+    private Target targetForInboundPayload;
+
+    public static final String INTERMEDIATE_ORIGINAL_BODY = "_INTERMEDIATE_ORIGINAL_BODY";
+    public static final String TARGET_FOR_INBOUND_PAYLOAD = "_TARGET_FOR_INBOUND_PAYLOAD";
+    public static final String ORIGINAL_MESSAGE_TYPE = "_ORIGINAL_MESSAGE_TYPE";
+    public static final String SOURCE_MESSAGE_TYPE = "_SOURCE_MESSAGE_TYPE";
+    public static final String IS_SOURCE_AVAILABLE = "_IS_SOURCE_AVAILABLE";
+    public static final String IS_TARGET_AVAILABLE = "IS_TARGET_AVAILABLE";
+    public static final String ORIGINAL_TRANSPORT_HEADERS = "_ORIGINAL_TRANSPORT_HEADERS";
+    public static final String ORIGINAL_CONTENT_TYPE = "_ORIGINAL_CONTENT_TYPE";
+
+    public static final String JSON_TYPE = "application/json";
+
+
     //State whether actual endpoint(when null) is wrapped by a default endpoint
     private boolean isWrappingEndpointCreated;
 
@@ -115,9 +141,58 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
                 return true;
             }
         }
+        org.apache.axis2.context.MessageContext axis2MessageContext =
+                ((Axis2MessageContext) synInCtx).getAxis2MessageContext();
+        Object messageType = axis2MessageContext.getProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE);
+        Object contentType = axis2MessageContext.getProperty(Constants.Configuration.CONTENT_TYPE);
+        Object headers = axis2MessageContext.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        Map originalTransportHeaders = (Map) headers;
+        String originalMessageType = (String) messageType;
+        String originalContentType = (String) contentType;
+
+        if (sourceMessageType == null) {
+            sourceMessageType = originalMessageType;
+        }
+        if (isSourceAvailable) {
+            CallMediatorEnrichUtil.buildMessage(synInCtx);
+        }
+        if (isSourceAvailable && isTargetAvailable) {
+            Source sourceForInboundPayload = CallMediatorEnrichUtil.createSourceWithBody();
+            Target targetForOriginalPayload =
+                    CallMediatorEnrichUtil.createTargetWithProperty(INTERMEDIATE_ORIGINAL_BODY);
+            Target targetForOutboundPayload = CallMediatorEnrichUtil.createTargetWithBody();
+            sourceForInboundPayload.setClone(true);
+            CallMediatorEnrichUtil
+                    .doEnrich(synInCtx, sourceForInboundPayload, targetForOriginalPayload, originalMessageType);
+            CallMediatorEnrichUtil
+                    .doEnrich(synInCtx, sourceForOutboundPayload, targetForOutboundPayload, getSourceMessageType());
+            if (!sourceMessageType.equalsIgnoreCase(originalMessageType)) {
+                CallMediatorEnrichUtil.setContentType(synInCtx, sourceMessageType, sourceMessageType);
+                if (originalMessageType.equalsIgnoreCase(JSON_TYPE)) {
+                    JsonUtil.removeJsonStream(axis2MessageContext);
+                }
+            }
+        } else if (isSourceAvailable) {
+            Target targetForOutboundPayload = CallMediatorEnrichUtil.createTargetWithBody();
+            CallMediatorEnrichUtil
+                    .doEnrich(synInCtx, sourceForOutboundPayload, targetForOutboundPayload, getSourceMessageType());
+            if (!sourceMessageType.equalsIgnoreCase(originalMessageType)) {
+                CallMediatorEnrichUtil.setContentType(synInCtx, sourceMessageType, sourceMessageType);
+                if (originalMessageType.equalsIgnoreCase(JSON_TYPE)) {
+                    JsonUtil.removeJsonStream(axis2MessageContext);
+                }
+            }
+        }
+        synInCtx.setProperty(TARGET_FOR_INBOUND_PAYLOAD, targetForInboundPayload);
+        synInCtx.setProperty(SOURCE_MESSAGE_TYPE, sourceMessageType);
+        synInCtx.setProperty(ORIGINAL_MESSAGE_TYPE, originalMessageType);
+        synInCtx.setProperty(IS_SOURCE_AVAILABLE, isSourceAvailable);
+        synInCtx.setProperty(IS_TARGET_AVAILABLE, isTargetAvailable);
+        synInCtx.setProperty(ORIGINAL_CONTENT_TYPE, originalContentType);
+        synInCtx.setProperty(ORIGINAL_TRANSPORT_HEADERS, originalTransportHeaders);
 
         if (blocking) {
-            return handleBlockingCall(synInCtx);
+            return handleBlockingCall(synInCtx, originalMessageType, originalContentType, originalTransportHeaders);
         } else {
             return handleNonBlockingCall(synInCtx);
         }
@@ -129,7 +204,8 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
      * @param synInCtx message context
      * @return  continue the mediation flow or not
      */
-    private boolean handleBlockingCall(MessageContext synInCtx) {
+    private boolean handleBlockingCall(MessageContext synInCtx, String originalMessageType, String originalContentType,
+                                       Map originalTransportHeaders) {
 
         SynapseLog synLog = getLog(synInCtx);
 
@@ -190,7 +266,36 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             log.error("Error while performing the call operation in blocking mode");
             return false;
         }
+        postMediate(synInCtx, originalMessageType, originalContentType, originalTransportHeaders);
         return true;
+    }
+
+    public void postMediate(MessageContext response, String originalMessageType, String originalContentType,
+                            Map originalTransportHeaders) {
+        if (isTargetAvailable()) {
+            CallMediatorEnrichUtil.buildMessage(response);
+        }
+        if (isTargetAvailable && isSourceAvailable) {
+            Source sourceForResponsePayload = CallMediatorEnrichUtil.createSourceWithBody();
+            Source sourceForOriginalPayload =
+                    CallMediatorEnrichUtil.createSourceWithProperty(INTERMEDIATE_ORIGINAL_BODY);
+            Target targetForResponsePayload = CallMediatorEnrichUtil.createTargetWithBody();
+            CallMediatorEnrichUtil.doEnrich(response, sourceForResponsePayload, targetForInboundPayload,
+                    getSourceMessageType());
+            CallMediatorEnrichUtil.doEnrich(response, sourceForOriginalPayload, targetForResponsePayload,
+                    originalMessageType);
+            CallMediatorEnrichUtil.preservetransportHeaders(response, originalTransportHeaders);
+            if (!sourceMessageType.equalsIgnoreCase(originalMessageType)) {
+                CallMediatorEnrichUtil.setContentType(response, originalMessageType, originalContentType);
+                if (sourceMessageType.equalsIgnoreCase(JSON_TYPE)) {
+                    JsonUtil.removeJsonStream(((Axis2MessageContext) response).getAxis2MessageContext());
+                }
+            }
+        } else if (isTargetAvailable) {
+            Source sourceForResponsePayload = CallMediatorEnrichUtil.createSourceWithBody();
+            CallMediatorEnrichUtil.doEnrich(response, sourceForResponsePayload, targetForInboundPayload,
+                    getSourceMessageType());
+        }
     }
 
     /**
@@ -444,6 +549,46 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             endpoint.setComponentStatisticsId(holder);
         }
         StatisticIdentityGenerator.reportingEndEvent(cloneId, ComponentType.MEDIATOR, holder);
+    }
+
+    public boolean isSourceAvailable() {
+        return isSourceAvailable;
+    }
+
+    public void setSourceAvailable(boolean sourceAvailable) {
+        isSourceAvailable = sourceAvailable;
+    }
+
+    public boolean isTargetAvailable() {
+        return isTargetAvailable;
+    }
+
+    public void setTargetAvailable(boolean targetAvailable) {
+        isTargetAvailable = targetAvailable;
+    }
+
+    public Source getSourceForOutboundPayload() {
+        return sourceForOutboundPayload;
+    }
+
+    public void setSourceForOutboundPayload(Source sourceForOutboundPayload) {
+        this.sourceForOutboundPayload = sourceForOutboundPayload;
+    }
+
+    public Target getTargetForInboundPayload() {
+        return targetForInboundPayload;
+    }
+
+    public void setTargetForInboundPayload(Target targetForInboundPayload) {
+        this.targetForInboundPayload = targetForInboundPayload;
+    }
+
+    public String getSourceMessageType() {
+        return sourceMessageType;
+    }
+
+    public void setSourceMessageType(String sourceMessageType) {
+        this.sourceMessageType = sourceMessageType;
     }
 
 }

@@ -79,6 +79,39 @@ public class SynapsePathFactory {
         return path;
     }
 
+    public static SynapsePath getSynapsePathfromExpression(OMElement elem, String expression) throws JaxenException {
+        SynapsePath path = null;
+        if (expression != null) {
+            if (expression.startsWith("json-eval(")) {
+                path = new SynapseJsonPath(expression.substring(10, expression.length() - 1));
+            } else {
+                try {
+                    path = new SynapseXPath(expression);
+                } catch (org.jaxen.XPathSyntaxException ex) {
+                    /* Try and see whether the expression can be compiled with XPath 2.0
+                     * This will only be done if the failover DOM XPath 2.0 is enabled */
+                    if (Boolean.parseBoolean(SynapsePropertiesLoader.loadSynapseProperties().
+                            getProperty(SynapseConstants.FAIL_OVER_DOM_XPATH_PROCESSING))) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Trying to compile the expression in XPath 2.0: " + expression);
+                        }
+                        path = new SynapseXPath(expression, elem);
+                    } else {
+                        throw ex;
+                    }
+                }
+            }
+
+            OMElementUtils.addNameSpaces(path, elem, log);
+            path.addNamespacesForFallbackProcessing(elem);
+
+        } else {
+            handleException("Couldn't find the XPath expression");
+        }
+
+        return path;
+    }
+
     public static SynapsePath getSynapsePath(OMElement elem, String expression)
         throws JaxenException {
 
