@@ -338,16 +338,9 @@ public class Pipe {
     public synchronized void setSerializationComplete(boolean serializationComplete) {
         if (!this.serializationComplete) {
             this.serializationComplete = serializationComplete;
-            if (consumerIoControl != null && hasData(outputBuffer)) {
+            if (consumerIoControl != null) {
                 consumerIoControl.requestOutput();
             }
-        }
-    }
-
-    public synchronized void setSerializationCompleteWithoutData(boolean serializationComplete) {
-        if (!this.serializationComplete) {
-            this.serializationComplete = serializationComplete;
-            consumerIoControl.requestOutput();
         }
     }
 
