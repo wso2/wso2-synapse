@@ -20,10 +20,14 @@
 package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMText;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.config.xml.endpoints.EndpointSerializer;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.builtin.CallMediator;
+import org.apache.synapse.mediators.elementary.EnrichMediator;
+import org.apache.synapse.mediators.elementary.Source;
+import org.apache.synapse.mediators.elementary.Target;
 
 /**
  * Serializer for {@link org.apache.synapse.mediators.builtin.CallMediator} instances.
@@ -58,10 +62,69 @@ public class CallMediatorSerializer extends AbstractMediatorSerializer {
                 call.addAttribute(fac.createOMAttribute("axis2xml", nullNS, mediator.getAxis2xml()));
             }
         }
+        if (mediator.isSourceAvailable()) {
+            OMElement sourceEle = serializeSource(mediator);
+            call.addChild(sourceEle);
+        }
+
+        if (mediator.isTargetAvailable()) {
+            OMElement targetEle = serializeTarget(mediator.getTargetForInboundPayload());
+            call.addChild(targetEle);
+        }
 
         serializeComments(call, mediator.getCommentsList());
 
         return call;
+    }
+
+    private OMElement serializeSource(CallMediator mediator) {
+        Source source = mediator.getSourceForOutboundPayload();
+        String sourceContentType = mediator.getSourceMessageType();
+
+        OMElement sourceEle = fac.createOMElement("source", synNS);
+        sourceEle.addAttribute(fac.createOMAttribute("type", nullNS,
+                intTypeToString(source.getSourceType())));
+
+        if (sourceContentType != null) {
+            sourceEle.addAttribute(fac.createOMAttribute("contentType", nullNS, sourceContentType));
+        }
+
+        if (source.getSourceType() == EnrichMediator.PROPERTY) {
+            sourceEle.setText(source.getProperty());
+        } else if (source.getSourceType() == EnrichMediator.CUSTOM) {
+            sourceEle.setText(source.getXpath().toString());
+        } else if (source.getSourceType() == EnrichMediator.INLINE) {
+            if (source.getInlineOMNode() instanceof OMElement) {
+                sourceEle.addChild(((OMElement) source.getInlineOMNode()).cloneOMElement());
+            } else if (source.getInlineOMNode() instanceof OMText) {
+                sourceEle.setText(((OMText) source.getInlineOMNode()).getText());
+            }
+        }
+        return sourceEle;
+    }
+
+    private OMElement serializeTarget(Target target) {
+        OMElement targetEle = fac.createOMElement("target", synNS);
+        targetEle.addAttribute(fac.createOMAttribute("type", nullNS,
+                intTypeToString(target.getTargetType())));
+        if (target.getTargetType() == EnrichMediator.PROPERTY) {
+            targetEle.setText(target.getProperty());
+        }
+
+        return targetEle;
+    }
+
+    private String intTypeToString(int type) {
+        if (type == EnrichMediator.CUSTOM) {
+            return EnrichMediatorFactory.CUSTOM;
+        } else if (type == EnrichMediator.BODY) {
+            return EnrichMediatorFactory.BODY;
+        } else if (type == EnrichMediator.PROPERTY) {
+            return EnrichMediatorFactory.PROPERTY;
+        } else if (type == EnrichMediator.INLINE) {
+            return EnrichMediatorFactory.INLINE;
+        }
+        return null;
     }
 
     public String getMediatorClassName() {

@@ -30,24 +30,23 @@ import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.FaultHandler;
-import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
-import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
-import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
+import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.SynapseHandlersLoader;
@@ -61,10 +60,14 @@ import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.MediatorWorker;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.elementary.Source;
+import org.apache.synapse.mediators.elementary.Target;
 import org.apache.synapse.rest.RESTRequestHandler;
 import org.apache.synapse.task.SynapseTaskManager;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.unittest.UnitTestingExecutor;
+import org.apache.synapse.util.CallMediatorEnrichUtil;
 import org.apache.synapse.util.concurrent.InboundThreadPool;
 import org.apache.synapse.util.concurrent.SynapseThreadPool;
 import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
@@ -132,6 +135,16 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     /** Unit test mode is enabled/disabled*/
     private boolean isUnitTestEnabled = false;
+
+    public static final String INTERMEDIATE_ORIGINAL_BODY = "_INTERMEDIATE_ORIGINAL_BODY";
+    public static final String TARGET_FOR_INBOUND_PAYLOAD = "_TARGET_FOR_INBOUND_PAYLOAD";
+    public static final String ORIGINAL_MESSAGE_TYPE = "_ORIGINAL_MESSAGE_TYPE";
+    public static final String SOURCE_MESSAGE_TYPE = "_SOURCE_MESSAGE_TYPE";
+    public static final String IS_SOURCE_AVAILABLE = "_IS_SOURCE_AVAILABLE";
+    public static final String IS_TARGET_AVAILABLE = "IS_TARGET_AVAILABLE";
+    public static final String ORIGINAL_TRANSPORT_HEADERS = "_ORIGINAL_TRANSPORT_HEADERS";
+    public static final String ORIGINAL_CONTENT_TYPE = "_ORIGINAL_CONTENT_TYPE";
+    public static final String JSON_TYPE = "application/json";
 
     public Axis2SynapseEnvironment(SynapseConfiguration synCfg) {
 
@@ -797,7 +810,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         } else {
             return false;
         }
-
+        callMediatorPostMediate(synCtx);
         boolean result = false;
         do {
             seqContinuationState = (SeqContinuationState) ContinuationStackManager.peakContinuationStateStack(synCtx);
@@ -814,6 +827,46 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             //for any result close the sequence as it will be handled by the callback method in statistics
         } while (result && !synCtx.getContinuationStateStack().isEmpty());
         return result;
+    }
+
+    private void callMediatorPostMediate(MessageContext response) {
+        Target targetForInboundPayload = (Target) response.getProperty(TARGET_FOR_INBOUND_PAYLOAD);
+        String sourceMessageType = (String) response.getProperty(SOURCE_MESSAGE_TYPE);
+        String originalMessageType = (String) response.getProperty(ORIGINAL_MESSAGE_TYPE);
+        boolean isSourceAvailable = (boolean) response.getProperty(IS_SOURCE_AVAILABLE);
+        boolean isTargetAvailable = (boolean) response.getProperty(IS_TARGET_AVAILABLE);
+        String originalContentType = (String) response.getProperty(ORIGINAL_CONTENT_TYPE);
+        Map originalTransportHeaders = (Map) response.getProperty(ORIGINAL_TRANSPORT_HEADERS);
+        Source sourceForResponsePayload;
+        Source sourceForOriginalPayload;
+        Target targetForResponsePayload;
+
+        if (isTargetAvailable) {
+            CallMediatorEnrichUtil.buildMessage(response);
+        }
+        if (isTargetAvailable && isSourceAvailable) {
+            sourceForResponsePayload = CallMediatorEnrichUtil.createSourceWithBody();
+            sourceForOriginalPayload = CallMediatorEnrichUtil.createSourceWithProperty(INTERMEDIATE_ORIGINAL_BODY);
+            targetForResponsePayload = CallMediatorEnrichUtil.createTargetWithBody();
+            CallMediatorEnrichUtil
+                    .doEnrich(response, sourceForResponsePayload, targetForInboundPayload, sourceMessageType);
+            CallMediatorEnrichUtil
+                    .doEnrich(response, sourceForOriginalPayload, targetForResponsePayload, originalMessageType);
+            CallMediatorEnrichUtil.preservetransportHeaders(response, originalTransportHeaders);
+            if (!sourceMessageType.equalsIgnoreCase(originalMessageType)) {
+                CallMediatorEnrichUtil.setContentType(response, originalMessageType, originalContentType);
+                if (sourceMessageType.equalsIgnoreCase(JSON_TYPE)) {
+                    JsonUtil.removeJsonStream(((Axis2MessageContext) response).getAxis2MessageContext());
+                }
+            }
+        } else if (isTargetAvailable) {
+            sourceForResponsePayload = CallMediatorEnrichUtil.createSourceWithBody();
+            CallMediatorEnrichUtil
+                    .doEnrich(response, sourceForResponsePayload, targetForInboundPayload, sourceMessageType);
+        }
+        response.setProperty(IS_SOURCE_AVAILABLE, false);
+        response.setProperty(IS_TARGET_AVAILABLE, false);
+
     }
 
     private boolean isTransportSwitching(MessageContext synCtx, EndpointDefinition endpoint) {
