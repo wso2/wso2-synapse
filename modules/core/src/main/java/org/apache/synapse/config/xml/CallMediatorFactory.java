@@ -19,12 +19,19 @@
 
 package org.apache.synapse.config.xml;
 
+import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.config.xml.endpoints.EndpointFactory;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.builtin.CallMediator;
+import org.apache.synapse.mediators.elementary.EnrichMediator;
+import org.apache.synapse.mediators.elementary.Source;
+import org.apache.synapse.mediators.elementary.Target;
+import org.apache.synapse.util.CallMediatorEnrichUtil;
+import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
 import java.io.File;
@@ -81,6 +88,11 @@ public class CallMediatorFactory extends AbstractMediatorFactory {
     private static final QName ATT_AXIS2XML = new QName("axis2xml");
     private static final QName ATT_REPOSITORY = new QName("repository");
 
+    public static final QName SOURCE_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "source");
+    public static final QName TARGET_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "target");
+    private static final QName ATT_TYPE = new QName("type");
+    private static final QName CONTENT_TYPE = new QName("contentType");
+
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
         CallMediator callMediator = new CallMediator();
@@ -88,6 +100,20 @@ public class CallMediatorFactory extends AbstractMediatorFactory {
         // after successfully creating the mediator
         // set its common attributes such as tracing etc
         processAuditStatus(callMediator, elem);
+
+        OMElement sourceEle = elem.getFirstChildWithName(SOURCE_Q);
+        if (sourceEle != null) {
+            Source source = new Source();
+            populateSource(callMediator, source, sourceEle);
+            callMediator.setSourceForOutboundPayload(source);
+        }
+
+        OMElement targetEle = elem.getFirstChildWithName(TARGET_Q);
+        if (targetEle != null) {
+            Target target = new Target();
+            populateTarget(callMediator, target, targetEle);
+            callMediator.setTargetForInboundPayload(target);
+        }
 
         OMElement epElement = elem.getFirstChildWithName(ENDPOINT_Q);
         if (epElement != null) {
@@ -132,6 +158,82 @@ public class CallMediatorFactory extends AbstractMediatorFactory {
         addAllCommentChildrenToList(elem, callMediator.getCommentsList());
 
         return callMediator;
+
+    }
+
+    private void populateSource(CallMediator callMediator, Source source, OMElement sourceEle) {
+        OMAttribute typeAttr = sourceEle.getAttribute(ATT_TYPE);
+        if (typeAttr != null && typeAttr.getAttributeValue() != null) {
+            source.setSourceType(CallMediatorEnrichUtil.convertTypeToInt(typeAttr.getAttributeValue()));
+        }
+
+        OMAttribute contentTypeAtt = sourceEle.getAttribute(CONTENT_TYPE);
+        if (contentTypeAtt != null && contentTypeAtt.getAttributeValue() != null) {
+            callMediator.setSourceMessageType(contentTypeAtt.getAttributeValue());
+        }
+
+        source.setClone(false);
+        if (source.getSourceType() == EnrichMediator.CUSTOM) {
+            String xpathExpressionElement = sourceEle.getText();
+            if (xpathExpressionElement != null) {
+                try {
+                    source.setXpath(SynapsePathFactory.getSynapsePathfromExpression(sourceEle, xpathExpressionElement));
+                    callMediator.setSourceAvailable(true);
+                } catch (JaxenException e) {
+                    handleException("Invalid XPath expression: " + xpathExpressionElement);
+                }
+            } else {
+                handleException("Xpath attribute is required for CUSTOM type");
+            }
+        } else if (source.getSourceType() == EnrichMediator.PROPERTY) {
+            String propertyValue = sourceEle.getText();
+            if (propertyValue != null) {
+                source.setProperty(propertyValue);
+                callMediator.setSourceAvailable(true);
+            } else {
+                handleException("Property value is required for PROPERTY type");
+            }
+        } else if (source.getSourceType() == EnrichMediator.INLINE) {
+            OMElement inlineElem = null;
+            if (sourceEle.getFirstElement() != null) {
+                inlineElem = sourceEle.getFirstElement().cloneOMElement();
+            }
+
+            if (inlineElem != null) {
+                source.setInlineOMNode(inlineElem);
+            } else if (!StringUtils.isBlank(sourceEle.getText())) {
+                source.setInlineOMNode(OMAbstractFactory.getOMFactory().createOMText(sourceEle.getText()));
+            } else {
+                handleException("XML element is required for INLINE type");
+            }
+            callMediator.setSourceAvailable(true);
+        } else if (source.getSourceType() == EnrichMediator.BODY) {
+            callMediator.setSourceAvailable(false);
+        }
+    }
+
+    private void populateTarget(CallMediator callMediator, Target target, OMElement sourceEle) {
+        OMAttribute typeAttr = sourceEle.getAttribute(ATT_TYPE);
+        target.setAction("replace");
+        if (typeAttr != null && typeAttr.getAttributeValue() != null) {
+            int type = CallMediatorEnrichUtil.convertTypeToInt(typeAttr.getAttributeValue());
+            if (type >= 0) {
+                target.setTargetType(type);
+            } else {
+                handleException("Un-expected type : " + typeAttr.getAttributeValue());
+            }
+        }
+        if (target.getTargetType() == EnrichMediator.PROPERTY) {
+            String propertyName = sourceEle.getText();
+            if (propertyName != null) {
+                target.setProperty(propertyName);
+                callMediator.setTargetAvailable(true);
+            } else {
+                handleException("Property name is required for PROPERTY type");
+            }
+        } else if (target.getTargetType() == EnrichMediator.BODY) {
+            callMediator.setTargetAvailable(false);
+        }
 
     }
 
