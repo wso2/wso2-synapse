@@ -577,6 +577,13 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                     } else {
                         jsonArray.add(EIPUtils.getJSONElement(synCtx, (SynapseJsonPath) aggregationExpression));
                     }
+                } else {
+                    try {
+                        EIPUtils.enrichEnvelope(newCtx.getEnvelope(), synCtx, (SynapseXPath) aggregationExpression);
+                    } catch (JaxenException e) {
+                        handleException(aggregate, "Error merging aggregation results using XPath : " +
+                                aggregationExpression.toString(), e, synCtx);
+                    }
                 }
             } else {
                 try {
