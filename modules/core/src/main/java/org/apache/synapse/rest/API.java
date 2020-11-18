@@ -37,6 +37,7 @@ import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.rest.dispatch.DispatcherHelper;
 import org.apache.synapse.rest.dispatch.RESTDispatcher;
 import org.apache.synapse.rest.version.DefaultStrategy;
@@ -92,6 +93,12 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
      * Comment Texts List associated with the API
      */
     private List<String> commentsList = new ArrayList<String>();
+
+    /**
+     * The global list of prefix of Api resources which are need to be invoked from an inbound
+     * endpoint only and not directly.
+     */
+    private List<String> internalResourcePrefixList = new ArrayList<String>();
 
     public API(String name, String context) {
         super(name);
@@ -420,11 +427,15 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
             }
         }
 
-        boolean processed = false;
         if (!acceptableResources.isEmpty()) {
             for (RESTDispatcher dispatcher : RESTUtils.getDispatchers()) {
                 Resource resource = dispatcher.findResource(synCtx, acceptableResources);
                 if (resource != null) {
+                    if (!isValidRequest(subPath, synCtx)) {
+                        log.warn("Internal resource with sub path, '" + subPath + "' cannot be called directly "
+                                         + "without fronting with an inbound endpoint");
+                        break;
+                    }
                     if (synCtx.getEnvironment().isDebuggerEnabled()) {
                         if (!synCtx.isResponse()) {
                             SynapseWireLogHolder wireLogHolder = (SynapseWireLogHolder) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
@@ -475,6 +486,28 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
                 msgCtx.setProperty("NIO-ACK-Requested", true);
             }
         }
+    }
+
+    /**
+     * Checks whether the resource is an internal one, and if so validates whether it is called fronted via an inbound
+     * endpoint and not directly.
+     *
+     * @param subPath sub path of the resource.
+     * @param synCtx  synapse message context.
+     * @return result of validation.
+     */
+    private boolean isValidRequest(String subPath, MessageContext synCtx) {
+
+        for (String resourcePrefix : internalResourcePrefixList) {
+            if (subPath.startsWith(resourcePrefix)) {
+                Object internalInboundProperty = synCtx.getProperty(SynapseConstants.IS_INBOUND);
+                if (internalInboundProperty != null) {
+                    return (Boolean) internalInboundProperty;
+                }
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -547,6 +580,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
                 ((ManagedLifecycle) handler).init(se);
             }
         }
+        this.internalResourcePrefixList = ((Axis2SynapseEnvironment) se).getInternalResourcePrefixList();
     }
 
     private String getFormattedLog(String msg) {

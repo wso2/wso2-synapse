@@ -21,8 +21,9 @@ package org.apache.synapse;
 
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMNamespace;
-import javax.xml.namespace.QName;
+
 import java.util.regex.Pattern;
+import javax.xml.namespace.QName;
 
 /**
  * Global constants for the Apache Synapse project
@@ -587,5 +588,12 @@ public final class SynapseConstants {
     //This synapse property will be read in the mediation layer to decide whether to save artifacts to a local
     // directory or not. By default this property is set to true.
     public static final String STORE_ARTIFACTS_LOCALLY = "synapse.artifacts.file.storage.enabled";
+
+    /**
+     * Comma separated list of prefixes of api resources which can be accessed fronting with an inbound endpoint only.
+     */
+    public static final String API_INTERNAL_RESOURCE_LIST = "synapse.api.internal.resource.prefixes";
+    public static final String DEFAULT_API_INTERNAL_RESOURCE_LIST = "/wso2_internal_web_hook_receiver/";
+    public static final String STRING_SEPARATOR = ",";
 
 }

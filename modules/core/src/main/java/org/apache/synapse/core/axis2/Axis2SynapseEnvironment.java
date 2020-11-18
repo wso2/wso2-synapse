@@ -30,26 +30,25 @@ import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.synapse.ContinuationState;
-import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
-import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
-import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
+import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.SynapseHandlersLoader;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -62,6 +61,7 @@ import org.apache.synapse.mediators.MediatorWorker;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.RESTRequestHandler;
 import org.apache.synapse.task.SynapseTaskManager;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.unittest.UnitTestingExecutor;
 import org.apache.synapse.util.concurrent.InboundThreadPool;
@@ -70,8 +70,8 @@ import org.apache.synapse.util.logging.LoggingUtils;
 import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
 import org.apache.synapse.util.xpath.ext.SynapseXpathVariableResolver;
 
-import javax.xml.namespace.QName;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -79,6 +79,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
+import javax.xml.namespace.QName;
 
 /**
  * This is the Axis2 implementation of the SynapseEnvironment
@@ -136,6 +137,12 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     private static final String NO_FAULT_HANDLER_ERROR =
             "Exception encountered but no fault handler found - message dropped";
     private static final String EXECUTING_FAULT_HANDLER_ERROR = "Executing fault handler due to exception encountered";
+
+    /**
+     * The global list of prefix of Api resources which are need to be invoked from an inbound
+     * endpoint only and not directly.
+     */
+    private List<String> internalApiResourcePrefixList = null;
 
     public Axis2SynapseEnvironment(SynapseConfiguration synCfg) {
 
@@ -195,6 +202,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         this.globalTimeout = SynapseConfigUtils.getGlobalTimeoutInterval();
 
+        loadInternalResourcePrefixList();
     }
 
     public Axis2SynapseEnvironment(ConfigurationContext cfgCtx,
@@ -210,6 +218,19 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         this.contextInformation = contextInformation;
         setSeverDebugMode(contextInformation);
         setSeverUnitTestMode(contextInformation);
+    }
+
+    private void loadInternalResourcePrefixList() {
+
+        if (internalApiResourcePrefixList == null) {
+            String internalResources = SynapsePropertiesLoader.getPropertyValue(
+                    SynapseConstants.API_INTERNAL_RESOURCE_LIST, SynapseConstants.DEFAULT_API_INTERNAL_RESOURCE_LIST);
+            String[] resourcePrefixList = internalResources.trim().split(SynapseConstants.STRING_SEPARATOR);
+            internalApiResourcePrefixList = new ArrayList<>();
+            for (String resourcePrefix : resourcePrefixList) {
+                internalApiResourcePrefixList.add(resourcePrefix.trim());
+            }
+        }
     }
 
     /**
@@ -1178,5 +1199,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      */
     public void setUnitTestEnabled(boolean isUnitTestEnabled) {
         this.isUnitTestEnabled = isUnitTestEnabled;
+    }
+
+    public List<String> getInternalResourcePrefixList() {
+        return Collections.unmodifiableList(internalApiResourcePrefixList);
     }
 }
