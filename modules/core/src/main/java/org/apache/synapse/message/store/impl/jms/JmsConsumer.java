@@ -58,6 +58,11 @@ public class JmsConsumer implements MessageConsumer {
     private boolean isReceiveError;
 
     /**
+     * Boolean to store if the message processor is alive
+     */
+    private boolean isAlive;
+
+    /**
      * Constructor for JMS consumer
      *
      * @param store JMSStore associated to this JMS consumer
@@ -71,58 +76,67 @@ public class JmsConsumer implements MessageConsumer {
         cachedMessage = new CachedMessage();
         isReceiveError = false;
         isInitialized = true;
+        isAlive = true;
     }
 
     public MessageContext receive() {
 
-        boolean connectionSuccess = checkAndTryConnect();
+        if (isAlive()) {
+            boolean connectionSuccess = checkAndTryConnect();
 
-        if (!connectionSuccess) {
-            throw new SynapseException(idString + "Error while connecting to JMS provider. "
-                    + MessageProcessorConstants.STORE_CONNECTION_ERROR);
-        }
-
-        try {
-            Message message = consumer.receive(1000);
-            if (message == null) {
-                return null;
-            }
-            if (!(message instanceof ObjectMessage)) {
-                logger.warn("JMS Consumer " + getId() + " did not receive a javax.jms.ObjectMessage");
-                //we just discard this message as we only store Object messages via JMS Message store
-                message.acknowledge();
-                return null;
-            }
-            ObjectMessage msg = (ObjectMessage) message;
-            String messageId = msg.getStringProperty(Constants.OriginalMessageID);
-            if (!(msg.getObject() instanceof StorableMessage)) {
-                logger.warn("JMS Consumer " + getId() + " did not receive a valid message.");
-                message.acknowledge();
-                return null;
+            if (!connectionSuccess) {
+                throw new SynapseException(idString + "Error while connecting to JMS provider. "
+                        + MessageProcessorConstants.STORE_CONNECTION_ERROR);
             }
 
-            //create a ,essage context back from the stored message
-            StorableMessage storableMessage = (StorableMessage) msg.getObject();
-            org.apache.axis2.context.MessageContext axis2Mc = store.newAxis2Mc();
-            MessageContext synapseMc = store.newSynapseMc(axis2Mc);
-            synapseMc = MessageConverter.toMessageContext(storableMessage, axis2Mc, synapseMc);
+            try {
+                Message message = consumer.receive(1000);
+                if (message == null) {
+                    return null;
+                }
+                if (!(message instanceof ObjectMessage)) {
+                    logger.warn("JMS Consumer " + getId() + " did not receive a javax.jms.ObjectMessage");
+                    //we just discard this message as we only store Object messages via JMS Message store
+                    message.acknowledge();
+                    return null;
+                }
+                ObjectMessage msg = (ObjectMessage) message;
+                String messageId = msg.getStringProperty(Constants.OriginalMessageID);
+                if (!(msg.getObject() instanceof StorableMessage)) {
+                    logger.warn("JMS Consumer " + getId() + " did not receive a valid message.");
+                    message.acknowledge();
+                    return null;
+                }
 
-            //cache the message
-            updateCache(message, synapseMc, messageId, false);
+                //create a ,essage context back from the stored message
+                StorableMessage storableMessage = (StorableMessage) msg.getObject();
+                org.apache.axis2.context.MessageContext axis2Mc = store.newAxis2Mc();
+                MessageContext synapseMc = store.newSynapseMc(axis2Mc);
+                synapseMc = MessageConverter.toMessageContext(storableMessage, axis2Mc, synapseMc);
 
-            if (logger.isDebugEnabled()) {
-                logger.debug(getId() + " Received MessageId:" + messageId + " priority:" + message.getJMSPriority());
-            }
+                //cache the message
+                updateCache(message, synapseMc, messageId, false);
 
-            return synapseMc;
+                if (logger.isDebugEnabled()) {
+                    logger.debug(getId() + " Received MessageId:" + messageId + " priority:" + message.getJMSPriority());
+                }
 
-        } catch (JMSException e) {
-            logger.error("Cannot fetch messages from Store " + store.getName());
-            updateCache(null, null, "", true);
-            cleanup();
+                return synapseMc;
+
+            } catch (JMSException e) {
+                logger.error("Cannot fetch messages from Store " + store.getName());
+                updateCache(null, null, "", true);
+                cleanup();
             /* try connecting and receiving again. Try to connect will happen configured number of times
             and give up with a SynapseException */
-            return receive();
+                return receive();
+            }
+        } else {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Trying to receive messages from a consumer that is not alive. Id: " + getId()
+                        + ", store: " + store.getName());
+            }
+            return null;
         }
     }
 
@@ -135,6 +149,7 @@ public class JmsConsumer implements MessageConsumer {
     }
 
     public boolean cleanup() throws SynapseException {
+        isAlive = false;
         if (logger.isDebugEnabled()) {
             logger.debug(getId() + " cleaning up...");
         }
@@ -153,12 +168,16 @@ public class JmsConsumer implements MessageConsumer {
     }
 
     public boolean isAlive() {
-        try {
-            session.getAcknowledgeMode(); /** No straight forward way to check session availability */
-        } catch (JMSException e) {
+
+        if (isAlive) {
+            try {
+                session.getAcknowledgeMode(); /** No straight forward way to check session availability */
+            } catch (JMSException e) {
+                return false;
+            }
+        } else {
             return false;
         }
-
         return true;
     }
 
