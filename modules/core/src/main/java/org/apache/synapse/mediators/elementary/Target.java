@@ -433,7 +433,7 @@ public class Target {
                 JsonElement jsonElement = jsonParser.parse(sourceJsonElement.toString());
                 if (action.equalsIgnoreCase(ACTION_REPLACE)) {
                     // replacing the property with new value
-                    synCtx.setProperty(property, sourceJsonElement);
+                    synCtx.setProperty(property, sourceJsonElement.toString());
                 } else if (action.equalsIgnoreCase(ACTION_ADD_CHILD)) {
                     Object propertyObj = synCtx.getProperty(property);
                     if (propertyObj != null) {
@@ -442,7 +442,7 @@ public class Target {
                             // Add as a new element if the value contains in the property is an array.
                             if (sourceElement.isJsonArray()) {
                                 sourceElement.getAsJsonArray().add(jsonElement);
-                                synCtx.setProperty(property, sourceElement);
+                                synCtx.setProperty(property, sourceElement.toString());
                             } else {
                                 synLog.error("Cannot add child, since the target " + sourceElement.toString() + " is " +
                                         "not an JSON array");
