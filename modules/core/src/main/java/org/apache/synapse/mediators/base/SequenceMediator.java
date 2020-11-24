@@ -164,7 +164,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
                 // if we pushed an error handler, pop it from the fault stack
                 // before we exit normally without an exception
-                if (errorHandlerMediator != null) {
+                if (result && errorHandlerMediator != null) {
                     Stack faultStack = synCtx.getFaultStack();
                     if (faultStack != null && !faultStack.isEmpty()) {
                         Object o = faultStack.peek();
@@ -237,24 +237,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                                 ((SeqContinuationState) continuationState).getSeqName());
         }
 
-        Mediator errorHandlerMediator = null;
-        // push the errorHandler sequence into the current message as the fault handler
-        if (errorHandler != null) {
-            errorHandlerMediator = synCtx.getSequence(errorHandler);
-
-            if (errorHandlerMediator != null) {
-                if (synLog.isTraceOrDebugEnabled()) {
-                    synLog.traceOrDebug("Setting the onError handler : " +
-                                        errorHandler + " for the sequence : " + name);
-                }
-                synCtx.pushFaultHandler(
-                        new MediatorFaultHandler(errorHandlerMediator));
-            } else {
-                synLog.auditWarn("onError handler : " + errorHandler + " for sequence : " +
-                                 name + " cannot be found");
-            }
-        }
-
         boolean result;
         if (!continuationState.hasChild()) {
             result = super.mediate(synCtx, continuationState.getPosition() + 1);
@@ -283,24 +265,23 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         }
 
         if (result) {
+            //pop the Error handler belonging to current mediator
+            Stack faultStack = synCtx.getFaultStack();
+            if (faultStack != null && !faultStack.isEmpty()) {
+                Object o = faultStack.peek();
+                if (errorHandler != null) {
+                    Mediator errorHandlerMediator = synCtx.getSequence(errorHandler);
+                    if (o instanceof MediatorFaultHandler &&
+                            errorHandlerMediator.equals(
+                                    ((MediatorFaultHandler) o).getFaultMediator())) {
+                        faultStack.pop();
+                    }
+                }
+            }
             // if flow completed, remove top ContinuationState from stack
             ContinuationStackManager.popContinuationStateStack(synCtx);
         }
 
-        // if we pushed an error handler, pop it from the fault stack
-        // before we exit normally without an exception
-        if (errorHandlerMediator != null) {
-            Stack faultStack = synCtx.getFaultStack();
-            if (faultStack != null && !faultStack.isEmpty()) {
-                Object o = faultStack.peek();
-
-                if (o instanceof MediatorFaultHandler &&
-                    errorHandlerMediator.equals(
-                            ((MediatorFaultHandler) o).getFaultMediator())) {
-                    faultStack.pop();
-                }
-            }
-        }
         return result;
     }
 
