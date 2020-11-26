@@ -807,9 +807,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         //First push fault handlers for first continuation state.
         SeqContinuationState seqContinuationState = (SeqContinuationState) ContinuationStackManager.peakContinuationStateStack(synCtx);
-        if (seqContinuationState != null) {
-            ContinuationStackManager.pushFaultHandler(synCtx, seqContinuationState);
-        } else {
+        if (seqContinuationState == null) {
             return false;
         }
         callMediatorPostMediate(synCtx);

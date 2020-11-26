@@ -473,6 +473,8 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             Object obj = synapseOutMsgCtx.getProperty(SynapseConstants.FORCE_ERROR_PROPERTY);
             String errorOnSOAPFault = (String) obj;
 
+            boolean failOver = isChildOfFailOverEP(successfulEndpoint);
+
             if (Constants.VALUE_TRUE.equals(errorOnSOAPFault) && successfulEndpoint != null) {
 
                 if(log.isDebugEnabled()){
@@ -506,14 +508,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     synapseOutMsgCtx.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
                     synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_CODE, SynapseConstants.ENDPOINT_CUSTOM_ERROR);
                     
-                    boolean failOver =false;
-                    if(successfulEndpoint instanceof AbstractEndpoint){
-                    	Endpoint endpoint =((AbstractEndpoint)successfulEndpoint).getParentEndpoint();
-                    	if(endpoint != null && (endpoint instanceof FailoverEndpoint)){
-                    		failOver =true;
-                    	}
-                    }
-                    
                  // set the properties of the original MC to the new MC
 
                     for (Object key : synapseOutMsgCtx.getPropertyKeySet()) {
@@ -536,10 +530,16 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     return;
                 } else {
                     successfulEndpoint.onSuccess();
+                    if(failOver) {
+                        popFailOverEPFromFaultStack(synapseOutMsgCtx);
+                    }
                 }
 
             } else if(successfulEndpoint != null) {
                 successfulEndpoint.onSuccess();
+                if(failOver) {
+                    popFailOverEPFromFaultStack(synapseOutMsgCtx);
+                }
             }
 
             synapseInMessageContext.setTo(
@@ -567,6 +567,11 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                         synapseOutMsgCtx.getContinuationStateStack();
                 for (int i = 0; i < seqContinuationStates.size(); i++) {
                     synapseInMessageContext.pushContinuationState(seqContinuationStates.get(i));
+                }
+
+                faultStack = synapseOutMsgCtx.getFaultStack();
+                if (faultStack != null) {
+                    synapseInMessageContext.getFaultStack().addAll(faultStack);
                 }
             }
 
@@ -599,9 +604,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 axis2MessageCtx.setProperty(PassThroughConstants.HTTP_SC, HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 axis2MessageCtx.setAttachmentMap(null);
                 Stack stack = synapseInMessageContext.getFaultStack();
-                if (stack != null && stack.isEmpty()) {
-                    registerFaultHandler(synapseInMessageContext);
-                }
                 if (stack != null &&
                         !stack.isEmpty()) {
                     ((FaultHandler) stack.pop()).handleFault(synapseInMessageContext, syne);
@@ -698,5 +700,32 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             }
         }
         return true;
+    }
+
+    /**
+     * Checks if endpoint is a child of failOver EP
+     *
+     * @param endpoint Endpoint to check
+     * @return true if endpoint is a child of a failOver EP
+     */
+    private boolean isChildOfFailOverEP(Endpoint endpoint) {
+        boolean failOver = false;
+        if (endpoint instanceof AbstractEndpoint) {
+            Endpoint parentEndpoint = ((AbstractEndpoint) endpoint).getParentEndpoint();
+            if (parentEndpoint != null && (parentEndpoint instanceof FailoverEndpoint)) {
+                failOver = true;
+            }
+        }
+        return failOver;
+    }
+
+    private void popFailOverEPFromFaultStack(org.apache.synapse.MessageContext synCtx) {
+        Stack faultStack = synCtx.getFaultStack();
+        if (faultStack != null && !faultStack.isEmpty()) {
+            Object o = faultStack.peek();
+            if (o instanceof FailoverEndpoint) {
+                faultStack.pop();
+            }
+        }
     }
 }
