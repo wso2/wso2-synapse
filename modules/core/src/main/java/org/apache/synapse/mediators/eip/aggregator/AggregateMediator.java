@@ -22,6 +22,7 @@ package org.apache.synapse.mediators.eip.aggregator;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import java.io.ByteArrayInputStream;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAP11Constants;
@@ -620,6 +621,8 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                             aggregationExpression.toString(), e, synCtx);
                 } catch (SynapseException e) {
                     handleException(aggregate, "Error evaluating expression: " + aggregationExpression.toString() , e, synCtx);
+                } catch (JsonSyntaxException e) {
+                    handleException(aggregate, "Error reading JSON element: " + aggregationExpression.toString() , e, synCtx);
                 }
             }
         }
@@ -804,6 +807,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
     
     private void handleException(Aggregate aggregate, String msg, Exception exception, MessageContext msgContext) {
         aggregate.clear();
+        activeAggregates.clear();
         if (exception != null) {
             super.handleException(msg, exception, msgContext);
         } else {
