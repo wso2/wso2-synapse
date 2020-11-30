@@ -276,7 +276,7 @@ public class AccessLogger {
                     }
                 }
                 pathname = dir.getAbsolutePath() + File.separator + AccessConstants.getPrefix()
-                        +"_"+dateStamp+ AccessConstants.getSuffix();
+                        + "_" + dateStamp + AccessConstants.getSuffix();
             }
             writer = new PrintWriter(new BufferedWriter(new FileWriter(
                     pathname, true), 128000), true);
