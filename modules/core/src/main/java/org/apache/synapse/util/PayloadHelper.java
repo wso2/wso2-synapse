@@ -325,7 +325,10 @@ public class PayloadHelper {
 	}
 
 	/**
-	 * Create DocumentBuilder for parsing XML payloads to check version
+	 * Creates DocumentBuilder for parsing XML payloads to check version.
+	 *
+	 * @return pre-configured Simple DocumentBuilder
+	 * @throws ParserConfigurationException Error creating Simple Document Builder
 	 */
 	public static DocumentBuilder createSimpleDocumentBuilder() throws ParserConfigurationException {
 		DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
