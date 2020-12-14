@@ -40,8 +40,6 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.commons.json.JsonUtil;
-import org.apache.synapse.continuation.ContinuationStackManager;
-import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.axis2.AnonymousServiceFactory;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.AbstractEndpoint;
@@ -50,6 +48,7 @@ import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.IndirectEndpoint;
 import org.apache.synapse.endpoints.ResolvingEndpoint;
 import org.apache.synapse.endpoints.TemplateEndpoint;
+import org.apache.synapse.util.MediatorPropertyUtils;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
 
@@ -510,6 +509,13 @@ public class BlockingMsgSender {
             } else {
                 returnMsgCtx.setEnvelope(OMAbstractFactory.getSOAP12Factory().getDefaultEnvelope());
             }
+        }
+        try {
+            // Message need to be serialized since if not the stream given in data handler can be closed prior to
+            // writing the response
+            MediatorPropertyUtils.serializeOMElement(resultMsgCtx);
+        } catch (Exception e) {
+            handleException("Error while serializing the  message", e);
         }
         returnMsgCtx.setProperty(SynapseConstants.HTTP_SENDER_STATUSCODE,
                                  resultMsgCtx.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE));
