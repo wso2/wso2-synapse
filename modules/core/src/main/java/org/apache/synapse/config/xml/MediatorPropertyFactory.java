@@ -73,9 +73,9 @@ public class MediatorPropertyFactory {
 
             // if a value is specified, use it, else look for an expression
             if (attValue != null) {
-
-                if (attValue.getAttributeValue() == null ||
-                    attValue.getAttributeValue().trim().length() == 0) {
+                // class mediator can have empty values for value attribute
+                if (mediator == null && (attValue.getAttributeValue() == null ||
+                    attValue.getAttributeValue().trim().isEmpty())) {
                     
                     String msg = "Entry attribute value (if specified) " +
                         "is required for a Log property";
