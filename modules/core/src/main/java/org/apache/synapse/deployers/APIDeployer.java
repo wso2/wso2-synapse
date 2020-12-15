@@ -139,6 +139,8 @@ public class APIDeployer extends AbstractSynapseArtifactDeployer {
             if (api != null) {
                 api.setLogSetterValue();
                 getSynapseConfiguration().removeAPI(artifactName);
+                // Remove swagger of the API
+                getSynapseConfiguration().removeSwaggerFromTheAPI(artifactName);
                 if (log.isDebugEnabled()) {
                     log.debug("Undeployment of the API named : "
                             + artifactName + " : Completed");
