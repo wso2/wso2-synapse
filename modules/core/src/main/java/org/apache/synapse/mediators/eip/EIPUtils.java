@@ -124,11 +124,45 @@ public class EIPUtils {
     }
 
     /**
+     * Modifies the envelope based on the provided XPath expression
+     * element that enriches the first envelope from the second
+     *
+     * @param envelope   SOAPEnvelope to be enriched with the content
+     * @param expression SynapseXPath describing the enriching element
+     * @throws JaxenException on failing of processing the xpath
+     */
+    public static void enrichEnvelope(SOAPEnvelope envelope, MessageContext synCtxt,
+                                         SynapseXPath expression) throws JaxenException {
+
+        OMElement enrichingElement;
+        List elementList = getMatchingElements(envelope, synCtxt, expression);
+        if (checkNotEmpty(elementList)) {
+            // attach at parent of the first result from the XPath, or to the SOAPBody
+            Object o = elementList.get(0);
+
+            if (o instanceof OMElement &&
+                    ((OMElement) o).getParent() != null &&
+                    ((OMElement) o).getParent() instanceof OMElement) {
+                enrichingElement = (OMElement) ((OMElement) o).getParent();
+                OMElement body = envelope.getBody();
+                if (!isBody(body, enrichingElement)) {
+                    OMElement nonBodyElem = enrichingElement;
+                    enrichingElement = envelope.getBody();
+                    addChildren(elementList, enrichingElement);
+                    while (!isBody(body, (OMElement) nonBodyElem.getParent())) {
+                        nonBodyElem = (OMElement) nonBodyElem.getParent();
+                    }
+                    nonBodyElem.detach();
+                }
+            }
+        }
+    }
+
+    /**
      * Merge two SOAP envelopes using the given XPath expression that specifies the
      * element that enriches the first envelope from the second
      *
      * @param envelope   SOAPEnvelope to be enriched with the content
-     * @param enricher   SOAPEnvelope from which the enriching element will be extracted
      * @param expression SynapseXPath describing the enriching element
      * @throws JaxenException on failing of processing the xpath
      */
@@ -138,30 +172,8 @@ public class EIPUtils {
 
         OMElement enrichingElement;
         enricher.toString();
-        List elementList = getMatchingElements(envelope, synCtxt, expression);
         List list = getMatchingElements(enricher, synCtxt, expression);
-        if ((checkNotEmpty(elementList) && checkNotEmpty(list))
-            || (!checkNotEmpty(elementList) && checkNotEmpty(list))) {
-            if (checkNotEmpty(elementList)) {
-                // attach at parent of the first result from the XPath, or to the SOAPBody
-                Object o = elementList.get(0);
-
-                if (o instanceof OMElement &&
-                    ((OMElement) o).getParent() != null &&
-                    ((OMElement) o).getParent() instanceof OMElement) {
-                    enrichingElement = (OMElement) ((OMElement) o).getParent();
-                    OMElement body = envelope.getBody();
-                    if (!isBody(body, enrichingElement)) {
-                        OMElement nonBodyElem = enrichingElement;
-                        enrichingElement = envelope.getBody();
-                        addChildren(elementList, enrichingElement);
-                        while (!isBody(body, (OMElement) nonBodyElem.getParent())) {
-                            nonBodyElem = (OMElement) nonBodyElem.getParent();
-                        }
-                        nonBodyElem.detach();
-                    }
-                }
-            }
+        if (checkNotEmpty(list)) {
             enrichingElement = envelope.getBody();
             //This has to introduce because if on complete expression written to extract SOAPEnvelop ex: "."
             // then StAXOMBuilder end up in while loop that never exit. This cause to OOM the ESB. Hence the fix is to
