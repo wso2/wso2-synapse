@@ -545,7 +545,12 @@ public class Pipe {
             try {
                 setInputMode(outputBuffer);
                 int remaining = len;
-
+                // if there is a consumer error or a stale connection, there is no point of trying to write.
+                // ex: when client connection is closed while writing back the response
+                if (consumerError || isStale) {
+                    buffer.clear();
+                    throw new IOException("Consumer error or stale connection has occurred.");
+                }
                 if (consumerIoControl instanceof NHttpServerConnection) {
                     if (((NHttpServerConnection) consumerIoControl).isStale()) {
                         isStale = true;
