@@ -29,6 +29,8 @@ import org.apache.http.nio.NHttpClientConnection;
 import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
+import org.apache.synapse.transport.passthru.config.PassThroughConfigPNames;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.TargetConnections;
 import org.apache.synapse.transport.passthru.util.TargetRequestFactory;
@@ -72,7 +74,7 @@ public class DeliveryAgent {
     private ProxyConfig proxyConfig;
     
     /** The maximum number of messages that can wait for a connection */
-    private int maxWaitingMessages = Integer.MAX_VALUE;
+    private int maxWaitingMessages;
 
     private TargetErrorHandler targetErrorHandler;
 
@@ -92,6 +94,9 @@ public class DeliveryAgent {
         this.targetConnections = targetConnections;
         this.proxyConfig = proxyConfig;
         this.targetErrorHandler = new TargetErrorHandler(targetConfiguration);
+        PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
+        this.maxWaitingMessages = conf.getIntProperty(PassThroughConfigPNames.MAX_MESSAGES_PER_HOST_PORT,
+                Integer.MAX_VALUE);
     }
 
 
@@ -145,15 +150,13 @@ public class DeliveryAgent {
                     queue = new ConcurrentLinkedQueue<MessageContext>();
                     waitingMessages.put(route, queue);
                 }
-                if (queue.size() == maxWaitingMessages) {
+                if (queue.size() >= maxWaitingMessages) {
                     MessageContext msgCtx = queue.poll();
                     msgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
                             PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
-                    targetErrorHandler.handleError(msgCtx,
-                            ErrorCodes.CONNECTION_TIMEOUT,
-                            "Error connecting to the back end",
-                            null,
-                            ProtocolState.REQUEST_READY);
+                    targetErrorHandler.handleError(msgCtx, ErrorCodes.CONNECTION_TIMEOUT,
+                            "Number of queued messages exceeds the limit",
+                            null, ProtocolState.REQUEST_READY);
                 }
 
                 queue.add(msgContext);

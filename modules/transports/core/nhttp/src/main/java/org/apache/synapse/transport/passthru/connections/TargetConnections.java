@@ -100,7 +100,7 @@ public class TargetConnections {
         // trying to get an existing connection
         NHttpClientConnection connection = pool.getConnection();
         if (connection == null) {
-            if (pool.canHaveMoreConnections()) {
+            if (pool.checkAndIncrementPendingConnections()) {
                 HttpHost host = route.getProxyHost() != null ? route.getProxyHost() : route.getTargetHost();
                 ioReactor.connect(new InetSocketAddress(host.getHostName(), host.getPort()), null, pool, callback);
             } else {

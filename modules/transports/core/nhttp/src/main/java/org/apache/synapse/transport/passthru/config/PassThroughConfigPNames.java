@@ -107,6 +107,11 @@ public interface PassThroughConfigPNames {
      */
     public String MAX_CONNECTION_PER_HOST_PORT = "http.max.connection.per.host.port";
 
+    /**
+     * Defines the maximum number of waiting messages per host port
+     */
+    public String MAX_MESSAGES_PER_HOST_PORT = "http.max.messages.per.host.port";
+
     public String TRANSPORT_LISTENER_SHUTDOWN_WAIT_TIME_SEC = "transport.listener.shutdown.wait.sec";
 
     /**
