@@ -199,6 +199,7 @@ public class HostConnections {
         }
         lock.lock();
         try {
+            pendingConnections--;
             conn.getContext().setAttribute(PassThroughConstants.CONNECTION_INIT_TIME, System.currentTimeMillis());
             busyConnections.add(conn);
         } finally {
@@ -236,7 +237,17 @@ public class HostConnections {
         return route;
     }
 
-    public boolean canHaveMoreConnections() {
-        return busyConnections.size() + pendingConnections < maxSize;
+    public boolean checkAndIncrementPendingConnections() {
+        lock.lock();
+        int totalConnections = busyConnections.size() + pendingConnections;
+        try {
+            if (totalConnections < maxSize) {
+                //We are expecting that this check is made if and only if in the state where new connection is added
+                pendingConnections++;
+            }
+            return totalConnections < maxSize;
+        } finally {
+            lock.unlock();
+        }
     }
 }
