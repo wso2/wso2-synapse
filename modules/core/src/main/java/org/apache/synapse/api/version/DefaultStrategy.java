@@ -15,11 +15,24 @@
 * specific language governing permissions and limitations
 * under the License.
 */
+package org.apache.synapse.api.version;
 
-package org.apache.synapse.rest.dispatch;
+import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
+import org.apache.synapse.api.API;
 
-public interface DispatcherHelper {
+public class DefaultStrategy extends  AbstractVersionStrategy{
 
-    public String getString();
+    public DefaultStrategy(API api) {
+        super(api, "", VersionStrategyFactory.TYPE_NULL);
+    }
+
+    public boolean isMatchingVersion(Object versionInfoObj) {
+        return true;
+    }
+
+    public String getVersionParam() {
+        return "";
+    }
+
 
 }

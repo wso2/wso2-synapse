@@ -21,13 +21,13 @@ package org.apache.synapse.config.xml.rest;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.synapse.config.xml.AbstractTestCase;
-import org.apache.synapse.rest.API;
+import org.apache.synapse.api.API;
 
 public class APISerializationTest extends AbstractTestCase {
 
     public void testAPISerialization1() throws Exception {
-        String xml = "<api name=\"test\" context=\"/dictionary\" transports=\"https\" xmlns=\"http://ws.apache.org/ns/synapse\">" +
-                "<resource url-mapping=\"/admin/view\" inSequence=\"in\" outSequence=\"out\"/></api>";
+        String xml = "<api name=\"test\" context=\"/dictionary\" binds-to=\"\" transports=\"https\" xmlns=\"http://ws.apache.org/ns/synapse\">" +
+                "<resource binds-to=\"\" url-mapping=\"/admin/view\" inSequence=\"in\" outSequence=\"out\"/></api>";
         OMElement om = AXIOMUtil.stringToOM(xml);
         API api = APIFactory.createAPI(om);
         OMElement out = APISerializer.serializeAPI(api);
@@ -35,8 +35,8 @@ public class APISerializationTest extends AbstractTestCase {
     }
 
     public void testAPISerialization2() throws Exception {
-        String xml = "<api name=\"test\" context=\"/dictionary\" transports=\"https\" hostname=\"apache.org\" port=\"8243\"" +
-                " xmlns=\"http://ws.apache.org/ns/synapse\"><resource url-mapping=\"/admin/view\" " +
+        String xml = "<api name=\"test\" context=\"/dictionary\" binds-to=\"\" transports=\"https\" hostname=\"apache.org\" port=\"8243\"" +
+                " xmlns=\"http://ws.apache.org/ns/synapse\"><resource binds-to=\"\" url-mapping=\"/admin/view\" " +
                 "inSequence=\"in\" outSequence=\"out\"/></api>";
         OMElement om = AXIOMUtil.stringToOM(xml);
         API api = APIFactory.createAPI(om);
@@ -45,8 +45,8 @@ public class APISerializationTest extends AbstractTestCase {
     }
 
     public void testAPISerialization3() throws Exception {
-        String xml = "<api name=\"test\" context=\"/dictionary\" transports=\"https\" hostname=\"apache.org\" port=\"8243\"" +
-                " xmlns=\"http://ws.apache.org/ns/synapse\"><resource url-mapping=\"/admin/view\" " +
+        String xml = "<api name=\"test\" context=\"/dictionary\" binds-to=\"\" transports=\"https\" hostname=\"apache.org\" port=\"8243\"" +
+                " xmlns=\"http://ws.apache.org/ns/synapse\"><resource binds-to=\"\" url-mapping=\"/admin/view\" " +
                 "inSequence=\"in\"><outSequence><log/><send/></outSequence></resource></api>";
         OMElement om = AXIOMUtil.stringToOM(xml);
         API api = APIFactory.createAPI(om);
@@ -55,8 +55,8 @@ public class APISerializationTest extends AbstractTestCase {
     }
 
     public void testAPISerialization4() throws Exception {
-        String xml = "<api name=\"test\" context=\"/dictionary\" transports=\"https\" hostname=\"apache.org\" port=\"8243\"" +
-                " xmlns=\"http://ws.apache.org/ns/synapse\"><resource url-mapping=\"/admin/view\" " +
+        String xml = "<api name=\"test\" context=\"/dictionary\" binds-to=\"\" transports=\"https\" hostname=\"apache.org\" port=\"8243\"" +
+                " xmlns=\"http://ws.apache.org/ns/synapse\"><resource binds-to=\"\" url-mapping=\"/admin/view\" " +
                 "outSequence=\"out\"><inSequence><log/><send/></inSequence></resource></api>";
         OMElement om = AXIOMUtil.stringToOM(xml);
         API api = APIFactory.createAPI(om);
@@ -65,11 +65,12 @@ public class APISerializationTest extends AbstractTestCase {
     }
 
     public void testAPISerialization5() throws Exception {
-        String xml = "<api name=\"test\" context=\"/dictionary\" transports=\"https\" hostname=\"apache.org\" port=\"8243\"" +
-                " xmlns=\"http://ws.apache.org/ns/synapse\"><resource url-mapping=\"/admin/view/*\" " +
+        String xml = "<api xmlns=\"http://ws.apache.org/ns/synapse\" name=\"test\" context=\"/dictionary\" " +
+                "hostname=\"apache.org\" port=\"8243\" binds-to=\"\" transports=\"https\">" +
+                "<resource binds-to=\"\" url-mapping=\"/admin/view/*\" " +
                 "><inSequence><log/><send/></inSequence><outSequence><log/><send/></outSequence></resource>" +
-                "<resource url-mapping=\"/admin/*\"><inSequence><log/><send/></inSequence><outSequence>" +
-                "<log/><send/></outSequence></resource><resource uri-template=\"/{char}/{word}\">" +
+                "<resource binds-to=\"\" url-mapping=\"/admin/*\"><inSequence><log/><send/></inSequence><outSequence>" +
+                "<log/><send/></outSequence></resource><resource binds-to=\"\" uri-template=\"/{char}/{word}\">" +
                 "<inSequence><send/></inSequence><faultSequence><log level=\"full\"/></faultSequence>" +
                 "</resource></api>";
         OMElement om = AXIOMUtil.stringToOM(xml);

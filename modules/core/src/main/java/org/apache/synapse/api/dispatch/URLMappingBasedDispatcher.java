@@ -16,14 +16,17 @@
 * under the License.
 */
 
-package org.apache.synapse.rest.dispatch;
+package org.apache.synapse.api.dispatch;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.rest.*;
+import org.apache.synapse.api.ApiUtils;
+import org.apache.synapse.api.Resource;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public class URLMappingBasedDispatcher implements RESTDispatcher {
 
@@ -46,7 +49,7 @@ public class URLMappingBasedDispatcher implements RESTDispatcher {
             return null;
         }
 
-        String url = RESTUtils.getSubRequestPath(synCtx);
+        String url = ApiUtils.getSubRequestPath(synCtx);
         for (int i = 0; i < count; i++) {
             if (mappings.get(i).isExactMatch(url)) {
                 if (log.isDebugEnabled()) {

@@ -15,17 +15,22 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-package org.apache.synapse.rest.version;
 
-public interface VersionStrategy {
+package org.apache.synapse.api.dispatch;
 
-    public boolean isMatchingVersion(Object versionInfoObj);
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.api.Resource;
 
-    public String getVersion();
+import java.util.Collection;
 
-    public String getVersionType();
+public class DefaultDispatcher implements RESTDispatcher {
 
-    public String getVersionParam();
-
-
+    public Resource findResource(MessageContext synCtx, Collection<Resource> resources) {
+        for (Resource resource : resources) {
+            if (resource.getDispatcherHelper() == null) {
+                return resource;
+            }
+        }
+        return null;
+    }
 }

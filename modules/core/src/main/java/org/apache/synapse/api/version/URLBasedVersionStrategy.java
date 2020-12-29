@@ -15,12 +15,12 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-package org.apache.synapse.rest.version;
+package org.apache.synapse.api.version;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.api.ApiUtils;
 import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
-import org.apache.synapse.rest.API;
-import org.apache.synapse.rest.RESTUtils;
+import org.apache.synapse.api.API;
 
 public class URLBasedVersionStrategy extends AbstractVersionStrategy {
     String versionParam;
@@ -32,7 +32,7 @@ public class URLBasedVersionStrategy extends AbstractVersionStrategy {
 
     public boolean isMatchingVersion(Object versionInfoObj) {
         MessageContext msgContext = (MessageContext) versionInfoObj;
-        String path = RESTUtils.getFullRequestPath(msgContext);
+        String path = ApiUtils.getFullRequestPath(msgContext);
 
         String context = getAPI().getContext();
         String pathStringAfterContext = path.substring(context.length());

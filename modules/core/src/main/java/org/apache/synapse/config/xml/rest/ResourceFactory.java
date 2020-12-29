@@ -25,13 +25,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.api.inbound.InboundApiUtils;
 import org.apache.synapse.config.xml.SequenceMediatorFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.RESTConstants;
-import org.apache.synapse.rest.Resource;
-import org.apache.synapse.rest.dispatch.URITemplateHelper;
-import org.apache.synapse.rest.dispatch.URLMappingHelper;
+import org.apache.synapse.api.Resource;
+import org.apache.synapse.api.dispatch.URITemplateHelper;
+import org.apache.synapse.api.dispatch.URLMappingHelper;
 
 import javax.xml.namespace.QName;
 import java.util.Properties;
@@ -49,6 +50,7 @@ public class ResourceFactory {
         configureURLMappings(resource, resourceElt);
         configureSequences(resource, resourceElt, properties);
         configureFilters(resource, resourceElt);
+        InboundApiUtils.addBindsTo(resource, resourceElt);
         return resource;
     }
 

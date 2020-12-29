@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.apache.synapse.rest.cors;
+package org.apache.synapse.api.cors;
 
 import java.util.Set;
 

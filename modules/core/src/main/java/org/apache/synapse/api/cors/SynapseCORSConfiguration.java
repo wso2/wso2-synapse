@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.apache.synapse.rest.cors;
+package org.apache.synapse.api.cors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

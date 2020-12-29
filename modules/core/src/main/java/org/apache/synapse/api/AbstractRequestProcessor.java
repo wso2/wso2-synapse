@@ -16,7 +16,7 @@
 * under the License.
 */
 
-package org.apache.synapse.rest;
+package org.apache.synapse.api;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -28,13 +28,13 @@ import org.apache.synapse.SynapseException;
  * first invoke the canProcess method of the processor to validate whether this processor
  * can process the given request or not.
  */
-public abstract class AbstractRESTProcessor {
+public abstract class AbstractRequestProcessor {
 
     protected Log log = LogFactory.getLog(getClass());
 
     protected String name;
 
-    public AbstractRESTProcessor(String name) {
+    public AbstractRequestProcessor(String name) {
         this.name = name;
     }
 

@@ -16,10 +16,10 @@
 * under the License.
 */
 
-package org.apache.synapse.rest.dispatch;
+package org.apache.synapse.api.dispatch;
 
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.rest.Resource;
+import org.apache.synapse.api.Resource;
 
 import java.util.Collection;
 

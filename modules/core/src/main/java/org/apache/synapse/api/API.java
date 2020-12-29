@@ -16,7 +16,7 @@
 * under the License.
 */
 
-package org.apache.synapse.rest;
+package org.apache.synapse.api;
 
 import org.apache.axis2.Constants;
 import org.apache.commons.logging.Log;
@@ -37,11 +37,13 @@ import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.rest.dispatch.DispatcherHelper;
-import org.apache.synapse.rest.dispatch.RESTDispatcher;
-import org.apache.synapse.rest.version.DefaultStrategy;
-import org.apache.synapse.rest.version.URLBasedVersionStrategy;
-import org.apache.synapse.rest.version.VersionStrategy;
+import org.apache.synapse.api.dispatch.DispatcherHelper;
+import org.apache.synapse.api.dispatch.RESTDispatcher;
+import org.apache.synapse.api.version.DefaultStrategy;
+import org.apache.synapse.api.version.URLBasedVersionStrategy;
+import org.apache.synapse.api.version.VersionStrategy;
+import org.apache.synapse.rest.Handler;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.http.conn.SynapseWireLogHolder;
@@ -51,13 +53,15 @@ import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.logging.LoggingUtils;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class API extends AbstractRESTProcessor implements ManagedLifecycle, AspectConfigurable, SynapseArtifact {
+public class API extends AbstractRequestProcessor implements ManagedLifecycle, AspectConfigurable, SynapseArtifact {
 
     private String host;
     private int port = -1;
@@ -76,6 +80,8 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
     private VersionStrategy versionStrategy = new DefaultStrategy(this);
 
     private String fileName;
+
+    private Set<String> bindsTo = new HashSet<>();
 
     private  Log apiLog;
     private static final Log trace = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
@@ -102,7 +108,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
         if (!context.startsWith("/")) {
             handleException("API context must begin with '/' character");
         }
-        this.context = RESTUtils.trimTrailingSlashes(context);
+        this.context = ApiUtils.trimTrailingSlashes(context);
         apiLog = LogFactory.getLog(SynapseConstants.API_LOGGER_PREFIX + name);
 
     }
@@ -247,7 +253,19 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
         return handlers.toArray(new Handler[handlers.size()]);
     }
 
-    boolean canProcess(MessageContext synCtx) {
+    public Set<String> getBindsTo() {
+        return bindsTo;
+    }
+
+    public void addBindsTo(String inboundEndpointName) {
+        bindsTo.add(inboundEndpointName);
+    }
+
+    public void addAllBindsTo(Set<String> inboundEndpointBindings) {
+        this.bindsTo.addAll(inboundEndpointBindings);
+    }
+
+    public boolean canProcess(MessageContext synCtx) {
         if (synCtx.isResponse()) {
             String apiName = (String) synCtx.getProperty(RESTConstants.SYNAPSE_REST_API);
             String version = synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION) == null ?
@@ -257,9 +275,9 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
                 return false;
             }
         } else {
-            String path = RESTUtils.getFullRequestPath(synCtx);
+            String path = ApiUtils.getFullRequestPath(synCtx);
             if (null == synCtx.getProperty(RESTConstants.IS_PROMETHEUS_ENGAGED) &&
-                    (!RESTUtils.matchApiPath(path, context))) {
+                    (!ApiUtils.matchApiPath(path, context))) {
                 auditDebug("API context: " + context + " does not match request URI: " + path);
                 return false;
             }
@@ -317,7 +335,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
         return true;
     }
 
-    void process(MessageContext synCtx) {
+    public void process(MessageContext synCtx) {
 
         auditDebug("Processing message with ID: " + synCtx.getMessageID() + " through the " +
                     "API: " + name);
@@ -391,7 +409,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
             return;
         }
 
-        String path = RESTUtils.getFullRequestPath(synCtx);
+        String path = ApiUtils.getFullRequestPath(synCtx);
         String subPath;
         if (versionStrategy.getVersionType().equals(VersionStrategyFactory.TYPE_URL)) {
             //for URL based
@@ -415,14 +433,14 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
 
         Set<Resource> acceptableResources = new LinkedHashSet<Resource>();
         for (Resource r : resources.values()) {
-            if (r.canProcess(synCtx)) {
+            if (isBound(r, synCtx) && r.canProcess(synCtx)) {
                 acceptableResources.add(r);
             }
         }
 
         boolean processed = false;
         if (!acceptableResources.isEmpty()) {
-            for (RESTDispatcher dispatcher : RESTUtils.getDispatchers()) {
+            for (RESTDispatcher dispatcher : ApiUtils.getDispatchers()) {
                 Resource resource = dispatcher.findResource(synCtx, acceptableResources);
                 if (resource != null) {
                     if (synCtx.getEnvironment().isDebuggerEnabled()) {
@@ -453,7 +471,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
             //This will get executed only in unhappy path. So ok to have the iterator.
             boolean resourceFound = false;
             boolean matchingMethodFound = false;
-            for (RESTDispatcher dispatcher : RESTUtils.getDispatchers()) {
+            for (RESTDispatcher dispatcher : ApiUtils.getDispatchers()) {
                 Resource resource = dispatcher.findResource(synCtx, resources.values());
                 if (resource != null) {
                     resourceFound = true;
@@ -475,6 +493,24 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
                 msgCtx.setProperty("NIO-ACK-Requested", true);
             }
         }
+    }
+
+    /**
+     * Checks whether the provided resource is capable of processing the message from the provided message context.
+     * The resource becomes capable to do this when the it contains either the name of the api caller,
+     * or {@value ApiConstants#DEFAULT_BINDING_ENDPOINT_NAME}, in its binds-to.
+     *
+     * @param resource  Resource object
+     * @param synCtx    MessageContext object
+     * @return          Whether the provided resource is bound to the provided message context
+     */
+    private boolean isBound(Resource resource, MessageContext synCtx) {
+        Collection<String> bindings = resource.getBindsTo();
+        Object apiCaller = synCtx.getProperty(ApiConstants.API_CALLER);
+        if (apiCaller != null) {
+            return bindings.contains(apiCaller.toString());
+        }
+        return bindings.contains(ApiConstants.DEFAULT_BINDING_ENDPOINT_NAME);
     }
 
     /**

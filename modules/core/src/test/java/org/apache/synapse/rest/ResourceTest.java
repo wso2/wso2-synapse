@@ -19,6 +19,8 @@
 package org.apache.synapse.rest;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.api.API;
+import org.apache.synapse.api.Resource;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
@@ -28,7 +30,7 @@ import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.builtin.PropertyMediator;
 import org.apache.synapse.mediators.transform.XSLTMediator;
-import org.apache.synapse.rest.dispatch.URITemplateHelper;
+import org.apache.synapse.api.dispatch.URITemplateHelper;
 
 public class ResourceTest extends RESTMediationTestCase {
 

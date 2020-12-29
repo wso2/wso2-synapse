@@ -15,9 +15,9 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-package org.apache.synapse.rest.version;
+package org.apache.synapse.api.version;
 
-import org.apache.synapse.rest.API;
+import org.apache.synapse.api.API;
 
 public abstract class AbstractVersionStrategy implements VersionStrategy {
     protected API api;

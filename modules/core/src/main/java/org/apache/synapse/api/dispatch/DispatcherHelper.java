@@ -16,22 +16,10 @@
 * under the License.
 */
 
-package org.apache.synapse.rest.dispatch;
+package org.apache.synapse.api.dispatch;
 
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.rest.dispatch.RESTDispatcher;
-import org.apache.synapse.rest.Resource;
+public interface DispatcherHelper {
 
-import java.util.Collection;
+    public String getString();
 
-public class DefaultDispatcher implements RESTDispatcher {
-
-    public Resource findResource(MessageContext synCtx, Collection<Resource> resources) {
-        for (Resource resource : resources) {
-            if (resource.getDispatcherHelper() == null) {
-                return resource;
-            }
-        }
-        return null;
-    }
 }

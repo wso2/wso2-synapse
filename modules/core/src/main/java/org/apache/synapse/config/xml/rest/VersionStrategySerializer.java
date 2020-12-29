@@ -17,19 +17,12 @@
 */
 package org.apache.synapse.config.xml.rest;
 
-import org.apache.axiom.om.OMAbstractFactory;
-import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.SynapseException;
-import org.apache.synapse.rest.API;
-import org.apache.synapse.rest.version.DefaultStrategy;
-import org.apache.synapse.rest.version.URLBasedVersionStrategy;
-import org.apache.synapse.rest.version.VersionStrategy;
-
-import javax.xml.namespace.QName;
+import org.apache.synapse.api.version.DefaultStrategy;
+import org.apache.synapse.api.version.URLBasedVersionStrategy;
+import org.apache.synapse.api.version.VersionStrategy;
 
 public class VersionStrategySerializer {
     private static final Log log = LogFactory.getLog(VersionStrategySerializer.class);

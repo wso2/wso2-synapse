@@ -32,7 +32,7 @@ import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.rest.API;
+import org.apache.synapse.api.API;
 
 public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 	@Override
