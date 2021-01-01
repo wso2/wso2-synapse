@@ -43,6 +43,7 @@ import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -281,6 +282,24 @@ public class SourceResponse {
             encoder.complete();
         }
         // Update connection state
+        writeHelper(conn, encoder);
+        return bytes;
+    }
+
+    ByteBuffer copyAndWrite(NHttpServerConnection conn, ContentEncoder encoder) throws IOException {
+
+        ByteBuffer bytes = null;
+        if (pipe != null) {
+            bytes = pipe.copyAndConsume(encoder);
+        } else {
+            encoder.complete();
+        }
+        writeHelper(conn, encoder);
+        return bytes;
+    }
+
+    private void writeHelper(NHttpServerConnection conn, ContentEncoder encoder) {
+
         if (encoder.isCompleted()) {
             SourceContext.updateState(conn, ProtocolState.RESPONSE_DONE);
 
@@ -303,7 +322,6 @@ public class SourceResponse {
                 conn.requestInput();
             }
         }
-        return bytes;
     }
 
     public void addHeader(String name, String value) {

@@ -189,6 +189,8 @@ public class ClientWorker implements Runnable {
                 response.getConnection());
         responseMsgCtx.setProperty(CorrelationConstants.CORRELATION_ID,
                 outMsgCtx.getProperty(CorrelationConstants.CORRELATION_ID));
+        log.info("Setting : " + PassThroughConstants.RESPONSE_MESSAGE_CONTEXT);
+        response.getConnection().getContext().setAttribute(PassThroughConstants.RESPONSE_MESSAGE_CONTEXT, responseMsgCtx);
     }
 
     private void initTenantInfo() {

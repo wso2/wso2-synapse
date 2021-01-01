@@ -46,4 +46,10 @@ public final class RelayConstants {
             new QName("http://ws.apache.org/commons/ns/payload", "binary");
 
     public static final String FORCE_RESPONSE_EARLY_BUILD = "FORCE_RESPONSE_EARLY_BUILD";
+
+    /** The name of the stream intercpetor file */
+    public static final String STREAM_INTERCEPTOR_FILE = "stream-interceptors.xml";
+
+    public static final String STREAM_CONTROL = "STREAM_CONTROL";
+    public static final String STREAM_CONTROL_PROPERTIES = "STREAM_CONTROL_PROPERTIES";
 }

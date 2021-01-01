@@ -29,6 +29,7 @@ import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -141,6 +142,51 @@ public class TargetResponse {
                 targetConfiguration.getConnections().releaseConnection(conn);
             }
         }
+    }
+
+    public void completeBuffer() throws IOException {
+      pipe.completeBuffer();
+    }
+
+    public void setProducerCompleted(boolean value ){
+        pipe.setProducerCompleted(value);
+    }
+
+    /**
+     * Read the data from the wire and read in to the pipe so that other end of
+     * the pipe can write.
+     * @param conn the target connection
+     * @param decoder content decoder
+     * @throws java.io.IOException if an error occurs
+     * @return number of bites read
+     */
+    public ByteBuffer copyAndRead(NHttpClientConnection conn, ContentDecoder decoder) throws IOException {
+
+        ByteBuffer bytes = null;
+
+        if(pipe != null){
+            bytes = pipe.copAndProduce(decoder);
+        }
+
+        // Update connection state
+        if (decoder.isCompleted()) {
+            conn.getContext().setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME,System.currentTimeMillis());
+            conn.getContext().setAttribute(PassThroughConstants.RES_ARRIVAL_TIME,System.currentTimeMillis());
+            TargetContext.updateState(conn, ProtocolState.RESPONSE_DONE);
+            targetConfiguration.getMetrics().notifyReceivedMessageSize(
+                    conn.getMetrics().getReceivedBytesCount());
+
+            if (!this.connStrategy.keepAlive(response, conn.getContext())  || forceShutdownConnectionOnComplete) {
+                TargetContext.updateState(conn, ProtocolState.CLOSED);
+
+                targetConfiguration.getConnections().shutdownConnection(conn);
+            } else {
+                if (conn instanceof LoggingNHttpClientConnection) {
+                    ((LoggingNHttpClientConnection) conn).setReleaseConn(true);
+                }
+            }
+        }
+        return bytes;
     }
 
     /**

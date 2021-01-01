@@ -17,13 +17,21 @@
 package org.apache.synapse.transport.passthru;
 
 import org.apache.commons.collections.map.MultiValueMap;
-import org.apache.http.*;
+import org.apache.http.Header;
+import org.apache.http.HttpEntityEnclosingRequest;
+import org.apache.http.HttpException;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.HttpVersion;
+import org.apache.http.ProtocolVersion;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -112,6 +120,39 @@ public class SourceRequest {
             SourceContext.updateState(conn, ProtocolState.REQUEST_DONE);
             // No httpRequest content expected. Suspend client input
             conn.suspendInput();
+        }
+    }
+
+    /**
+     * Produce the content in to the pipe.
+     *
+     * @param conn    the connection
+     * @param decoder content decoder
+     * @return number of bytes read
+     * @throws java.io.IOException if an error occurs
+     */
+    public ByteBuffer copyAndRead(NHttpServerConnection conn, ContentDecoder decoder) throws IOException {
+        if (pipe == null) {
+            throw new IllegalStateException("A Pipe must be connected before calling read");
+        }
+
+        if (entityEnclosing) {
+            ByteBuffer bytes = pipe.copAndProduce(decoder);
+
+            if (decoder.isCompleted()) {
+                conn.getContext().setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_END_TIME,
+                                               System.currentTimeMillis());
+                sourceConfiguration.getMetrics().
+                        notifyReceivedMessageSize(conn.getMetrics().getReceivedBytesCount());
+
+                // Update connection state
+                SourceContext.updateState(conn, ProtocolState.REQUEST_DONE);
+                // Suspend client input
+                conn.suspendInput();
+            }
+            return bytes;
+        } else {
+            throw new IllegalStateException("Only Entity Enclosing Requests " + "can read content in to the pipe");
         }
     }
 

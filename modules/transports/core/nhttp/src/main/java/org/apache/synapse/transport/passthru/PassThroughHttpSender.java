@@ -62,14 +62,17 @@ import org.apache.synapse.transport.passthru.jmx.MBeanRegistrar;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 import org.apache.synapse.transport.passthru.jmx.TransportView;
 import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
+import org.apache.synapse.transport.passthru.util.RelayConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
+import org.apache.synapse.transport.passthru.util.StreamInterceptorsLoader;
 import org.wso2.caching.CachingConstants;
 import org.wso2.caching.digest.DigestGenerator;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.rmi.RemoteException;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -113,6 +116,8 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
     private DigestGenerator digestGenerator  = CachingConstants.DEFAULT_XML_IDENTIFIER;
 
     private ConfigurationContext configurationContext;
+
+    private List<StreamInterceptor> interceptors;
 
     public PassThroughHttpSender() {
         log = LogFactory.getLog(this.getClass().getName());
@@ -202,9 +207,11 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         // create the delivery agent to hand over messages
         deliveryAgent = new DeliveryAgent(targetConfiguration, targetConnections, proxyConfig);
         // we need to set the delivery agent
-        connectCallback.setDeliveryAgent(deliveryAgent);        
+        connectCallback.setDeliveryAgent(deliveryAgent);
 
-        handler = new TargetHandler(deliveryAgent, connFactory, targetConfiguration);
+        interceptors = StreamInterceptorsLoader.getInterceptors();
+
+        handler = new TargetHandler(deliveryAgent, connFactory, targetConfiguration , interceptors);
         ioEventDispatch = new ClientIODispatch(handler, connFactory);
         
         // start the sender in a separate thread
@@ -535,6 +542,15 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         SourceResponse sourceResponse = SourceResponseFactory.create(msgContext,
                 sourceRequest, sourceConfiguration);
         sourceResponse.checkResponseChunkDisable(msgContext);
+
+        Object sourceResponseControl = msgContext.getProperty(RelayConstants.STREAM_CONTROL);
+        if (sourceResponseControl != null) {
+            conn.getContext().setAttribute(RelayConstants.STREAM_CONTROL, sourceResponseControl);
+            conn.getContext().setAttribute(RelayConstants.STREAM_CONTROL_PROPERTIES,
+                                           msgContext.getProperty(RelayConstants.STREAM_CONTROL_PROPERTIES));
+        }
+        log.info("Setting : " + PassThroughConstants.RESPONSE_MESSAGE_CONTEXT);
+        conn.getContext().setAttribute(PassThroughConstants.RESPONSE_MESSAGE_CONTEXT, msgContext);
 
         SourceContext.setResponse(conn, sourceResponse);
 

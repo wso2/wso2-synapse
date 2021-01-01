@@ -25,6 +25,7 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.transport.http.conn.SynapseHTTPRequestFactory;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.config.ConnectionTimeoutConfiguration;
+import org.apache.synapse.transport.passthru.util.RelayConstants;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -152,6 +153,7 @@ public class HostConnections {
         ctx.removeAttribute(ExecutionContext.HTTP_RESPONSE);
         ctx.setAttribute(PassThroughConstants.CONNECTION_EXPIRY_TIME, getExpiryTime(conn));
         ctx.removeAttribute(SynapseHTTPRequestFactory.ENDPOINT_URL);
+        ctx.removeAttribute(RelayConstants.STREAM_CONTROL);
         lock.lock();
         try {
             if (busyConnections.remove(conn)) {

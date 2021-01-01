@@ -22,6 +22,7 @@ public class PassThroughConstants {
     public static final int DEFAULT_MAX_CONN_PER_HOST_PORT = Integer.MAX_VALUE;
     
     public static final String REQUEST_MESSAGE_CONTEXT = "REQUEST_MESSAGE_CONTEXT";
+    public static final String RESPONSE_MESSAGE_CONTEXT = "RESPONSE_MESSAGE_CONTEXT";
     public static final String CONNECTION_POOL = "CONNECTION_POOL";
     public static final String TUNNEL_HANDLER = "TUNNEL_HANDLER";
     public static final String CONNECTION_INIT_TIME = "CONNECTION_INIT_TIME";

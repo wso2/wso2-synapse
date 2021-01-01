@@ -16,9 +16,17 @@
 
 package org.apache.synapse.transport.passthru;
 
+import org.apache.axis2.context.MessageContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.*;
+import org.apache.http.ConnectionClosedException;
+import org.apache.http.Header;
+import org.apache.http.HttpException;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.HttpVersion;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.ContentEncoder;
@@ -33,8 +41,8 @@ import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
-import org.apache.synapse.commons.jmx.ThreadingView;
 import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.commons.jmx.ThreadingView;
 import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.commons.transaction.TranscationManger;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
@@ -46,14 +54,16 @@ import org.apache.synapse.transport.passthru.jmx.LatencyCollector;
 import org.apache.synapse.transport.passthru.jmx.LatencyView;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 
-import javax.net.ssl.SSLException;
-import javax.ws.rs.HttpMethod;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
+import javax.net.ssl.SSLException;
+import javax.ws.rs.HttpMethod;
 
 /**
  * This is the class where transport interacts with the client. This class
@@ -82,9 +92,14 @@ public class SourceHandler implements NHttpServerEventHandler {
     public static final String MESSAGE_SIZE_VALIDATION = "message.size.validation.enabled";
     public static final String VALID_MAX_MESSAGE_SIZE = "valid.max.message.size.in.bytes";
 
-    public SourceHandler(SourceConfiguration sourceConfiguration) {
+    private List<StreamInterceptor> interceptors;
+    private boolean interceptStream;
+
+    public SourceHandler(SourceConfiguration sourceConfiguration, List<StreamInterceptor> streamInterceptors) {
         this.sourceConfiguration = sourceConfiguration;
         this.metrics = sourceConfiguration.getMetrics();
+        this.interceptors = streamInterceptors;
+        this.interceptStream = !streamInterceptors.isEmpty();
 
         String strNamePostfix = "";
         if (sourceConfiguration.getInDescription() != null &&
@@ -125,6 +140,7 @@ public class SourceHandler implements NHttpServerEventHandler {
     }
 
     public void requestReceived(NHttpServerConnection conn) {
+        log.info("requestReceived");
         try {
             HttpContext httpContext = conn.getContext();
             if (sourceConfiguration.isCorrelationLoggingEnabled()) {
@@ -198,6 +214,8 @@ public class SourceHandler implements NHttpServerEventHandler {
 
     public void inputReady(NHttpServerConnection conn,
                            ContentDecoder decoder) {
+
+        log.info("input ready");
         try {
             ProtocolState protocolState = SourceContext.getState(conn);
 
@@ -211,7 +229,20 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             SourceRequest request = SourceContext.getRequest(conn);
 
-            int readBytes = request.read(conn, decoder);
+            int readBytes = -1;
+            if (interceptStream) {
+                ByteBuffer bytesSentDuplicate = request.copyAndRead(conn, decoder);
+                if (bytesSentDuplicate != null) {
+                    readBytes = bytesSentDuplicate.position();
+                    for (StreamInterceptor interceptor : interceptors) {
+                        interceptor.interceptSourceRequest(bytesSentDuplicate.duplicate(),
+                                                           (MessageContext) conn.getContext().getAttribute(
+                                                                   PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
+                    }
+                }
+            } else {
+                readBytes = request.read(conn, decoder);
+            }
             if (isMessageSizeValidationEnabled) {
                 HttpContext httpContext = conn.getContext();
                 //this is introduced as some transports which extends passthrough source handler which have overloaded
@@ -324,7 +355,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                         }
                     }
                 }
-            
+
                 response.start(conn);
                 conn.getContext().setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_START_TIME,
                         System.currentTimeMillis());
@@ -396,9 +427,19 @@ public class SourceHandler implements NHttpServerEventHandler {
             SourceContext.updateState(conn, ProtocolState.RESPONSE_BODY);
 
             SourceResponse response = SourceContext.getResponse(conn);
-
-            int bytesSent = response.write(conn, encoder);
-            
+            int bytesSent = -1;
+            if (interceptStream) {
+                ByteBuffer bytesSentDuplicate = response.copyAndWrite(conn, encoder);
+                if (bytesSentDuplicate != null) {
+                    bytesSent = bytesSentDuplicate.position();
+                    for (StreamInterceptor interceptor : interceptors) {
+                        interceptor.interceptSourceResponse(bytesSentDuplicate.duplicate(),
+                                                            (MessageContext) conn.getContext().getAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT) );
+                    }
+                }
+            } else {
+                bytesSent = response.write(conn, encoder);
+            }
 			if (encoder.isCompleted()) {
                 HttpContext context = conn.getContext();
                 long departure = System.currentTimeMillis();

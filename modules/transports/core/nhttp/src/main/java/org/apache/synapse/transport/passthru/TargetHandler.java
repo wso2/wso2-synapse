@@ -48,10 +48,13 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.HostConnections;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
+import org.apache.synapse.transport.passthru.util.RelayConstants;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -86,14 +89,25 @@ public class TargetHandler implements NHttpClientEventHandler {
     public static final String MESSAGE_SIZE_VALIDATION = "message.size.validation.enabled";
     public static final String VALID_MAX_MESSAGE_SIZE = "valid.max.message.size.in.bytes";
 
+    private List<StreamInterceptor> streamInterceptors;
+    private boolean interceptStream ;
+
+    public TargetHandler(DeliveryAgent deliveryAgent, ClientConnFactory connFactory,
+                         TargetConfiguration configuration) {
+        this(deliveryAgent, connFactory, configuration, null);
+    }
+
     public TargetHandler(DeliveryAgent deliveryAgent,
                          ClientConnFactory connFactory,
-                         TargetConfiguration configuration) {
+                         TargetConfiguration configuration,
+                         List<StreamInterceptor> interceptors) {
         this.deliveryAgent = deliveryAgent;
         this.connFactory = connFactory;
         this.targetConfiguration = configuration;
         this.targetErrorHandler = new TargetErrorHandler(targetConfiguration);
         this.metrics = targetConfiguration.getMetrics();
+        this.streamInterceptors = interceptors;
+        this.interceptStream = !streamInterceptors.isEmpty();
 
         Properties props = MiscellaneousUtil.loadProperties(PROPERTY_FILE);
         String validationProperty = MiscellaneousUtil.getProperty(props, MESSAGE_SIZE_VALIDATION, "false");
@@ -111,6 +125,7 @@ public class TargetHandler implements NHttpClientEventHandler {
     }
 
     public void connected(NHttpClientConnection conn, Object o) {
+       log.info("connected");
         assert o instanceof HostConnections : "Attachment should be a HostConnections";
         HostConnections pool = (HostConnections) o;
         conn.getContext().setAttribute(PassThroughConstants.CONNECTION_POOL, pool);
@@ -139,6 +154,7 @@ public class TargetHandler implements NHttpClientEventHandler {
     public void requestReady(NHttpClientConnection conn) {
         HttpContext context = conn.getContext();
         ProtocolState connState = null;
+        log.info("Request ready");
         try {
             
             connState = TargetContext.getState(conn);
@@ -225,7 +241,20 @@ public class TargetHandler implements NHttpClientEventHandler {
 
             TargetRequest request = TargetContext.getRequest(conn);
             if (request.hasEntityBody()) {
-                int bytesWritten = request.write(conn, encoder);
+                int bytesWritten = -1;
+                if (interceptStream) {
+                    ByteBuffer bytesSentDuplicate = request.copyAndWrite(conn, encoder);
+                    if (bytesSentDuplicate != null) {
+                        bytesWritten = bytesSentDuplicate.position();
+                        for (StreamInterceptor interceptor : streamInterceptors) {
+                            interceptor.interceptTargetRequest(bytesSentDuplicate.duplicate(),
+                                                               (MessageContext) conn.getContext().getAttribute(
+                                                                       PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
+                        }
+                    }
+                } else {
+                    bytesWritten = request.write(conn, encoder);
+                }
                 if (bytesWritten > 0) {
                     if (metrics.getLevel() == MetricsCollector.LEVEL_FULL) {
                         metrics.incrementBytesSent(requestMsgCtx, bytesWritten);
@@ -278,6 +307,7 @@ public class TargetHandler implements NHttpClientEventHandler {
     }
 
     public void responseReceived(NHttpClientConnection conn) {
+        log.info("response received");
         HttpContext context = conn.getContext();
         if (isMessageSizeValidationEnabled) {
             context.setAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
@@ -500,7 +530,33 @@ public class TargetHandler implements NHttpClientEventHandler {
 
 			if (response != null) {
                 statusCode = conn.getHttpResponse().getStatusLine().getStatusCode();
-				int responseRead = response.read(conn, decoder);
+                int responseRead = -1;
+                Object sourceResponseControl = conn.getContext().getAttribute(RelayConstants.STREAM_CONTROL);
+                log.info("input ready : " + sourceResponseControl);
+                if (sourceResponseControl != null || interceptStream) {
+                    ByteBuffer bytesSentDuplicate = response.copyAndRead(conn, decoder);
+                    if (bytesSentDuplicate != null) {
+                        responseRead = bytesSentDuplicate.position();
+                        for (StreamInterceptor interceptor : streamInterceptors) {
+                            interceptor.interceptTargetResponse(bytesSentDuplicate.duplicate(),
+                                                                (MessageContext) conn.getContext().getAttribute(
+                                                                        PassThroughConstants.RESPONSE_MESSAGE_CONTEXT));
+                        }
+                        if (sourceResponseControl != null) {
+                            Map<String, Object> properties = (Map<String, Object>) conn.getContext().getAttribute(
+                                    RelayConstants.STREAM_CONTROL_PROPERTIES);
+                            ResponseStreamInterceptor responseControl =
+                                    (ResponseStreamInterceptor) sourceResponseControl;
+                            boolean result = responseControl.interceptTargetResponse(bytesSentDuplicate, properties);
+                            if (!result) {
+                                dropTargetConnection(conn);
+                                response.getPipe().forceProducerComplete(decoder);
+                            }
+                        }
+                    }
+                } else {
+                    responseRead = response.read(conn, decoder);
+                }
           if (isMessageSizeValidationEnabled) {
               HttpContext httpContext = conn.getContext();
               //this is introduced as some transports which extends passthrough target handler which have overloaded

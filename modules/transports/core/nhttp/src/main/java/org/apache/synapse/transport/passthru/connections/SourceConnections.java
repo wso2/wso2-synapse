@@ -19,6 +19,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.synapse.transport.passthru.SourceContext;
+import org.apache.synapse.transport.passthru.util.RelayConstants;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -87,6 +88,8 @@ public class SourceConnections {
      * @param conn the connection being used
      */
     public void releaseConnection(NHttpServerConnection conn) {
+
+        removeAttributes(conn);
         lock.lock();
         try {
             SourceContext.get(conn).reset();
@@ -103,6 +106,12 @@ public class SourceConnections {
             lock.unlock();
         }
     }
+
+    private void removeAttributes(NHttpServerConnection connection) {
+
+        connection.getContext().removeAttribute(RelayConstants.STREAM_CONTROL);
+    }
+
 
 	/**
 	 * Shutdown a connection
@@ -152,6 +161,7 @@ public class SourceConnections {
      * @param conn the connection that needs to be closed.
      */
     public void closeConnection(NHttpServerConnection conn) {
+        log.info("Shutting down connection forcefully " + conn);
         if (log.isDebugEnabled()) {
             log.debug("Shutting down connection forcefully " + conn);
         }

@@ -36,7 +36,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
@@ -44,15 +43,16 @@ import org.apache.synapse.transport.passthru.ServerWorker;
 import org.apache.synapse.transport.passthru.TargetRequest;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 
-import javax.xml.stream.XMLStreamException;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import javax.xml.stream.XMLStreamException;
 
 public class RelayUtils {
 
@@ -498,6 +498,16 @@ public class RelayUtils {
                 handleException("Error when consuming the input stream to discard", exception);
             }
         }
+    }
+
+    public static ByteBuffer cloneBuffer(ByteBuffer original) {
+
+        ByteBuffer clone = ByteBuffer.allocate(original.capacity());
+        original.rewind(); //copy from the beginning
+        clone.put(original);
+        original.rewind();
+        clone.flip();
+        return clone;
     }
 
     /**
