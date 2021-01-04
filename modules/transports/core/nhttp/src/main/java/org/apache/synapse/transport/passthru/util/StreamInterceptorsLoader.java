@@ -34,10 +34,13 @@ import javax.xml.namespace.QName;
 
 public class StreamInterceptorsLoader {
 
+    StreamInterceptorsLoader() {
+    }
+
     private static Log log = LogFactory.getLog(StreamInterceptorsLoader.class);
 
-    private static final QName ROOT_Q = new QName("handlers");
-    private static final QName HANDLER_Q = new QName("handler");
+    private static final QName ROOT_Q = new QName("interceptors");
+    private static final QName INTERCEPTOR_Q = new QName("interceptor");
     private static final QName CLASS_Q = new QName("class");
     private static final QName NAME_ATT = new QName("name");
     private static final QName PARAM_Q = new QName("parameter");
@@ -48,9 +51,9 @@ public class StreamInterceptorsLoader {
     private static boolean isLoadedAlready = false;
 
     /**
-     * Load and get all synapse handlers
+     * Load and get all synapse interceptors
      *
-     * @return List of loaded synapse handlers
+     * @return List of loaded synapse interceptors
      */
     public static List<StreamInterceptor> getInterceptors() {
 
@@ -61,59 +64,52 @@ public class StreamInterceptorsLoader {
         return Collections.unmodifiableList(interceptors);
     }
 
-    /**
-     * Load and get all synapse handlers
-     *
-     * @return List of loaded synapse handlers
-     */
-    private static List<StreamInterceptor> loadInterceptors() {
+    private static void loadInterceptors() {
 
         OMElement interceptorsConfig = MiscellaneousUtil.loadXMLConfig(RelayConstants.STREAM_INTERCEPTOR_FILE);
         if (interceptorsConfig != null) {
 
             if (!ROOT_Q.equals(interceptorsConfig.getQName())) {
-                handleException("Invalid handler configuration file");
+                handleException("Invalid interceptor configuration file");
             }
 
-            Iterator iterator = interceptorsConfig.getChildrenWithName(HANDLER_Q);
+            Iterator iterator = interceptorsConfig.getChildrenWithName(INTERCEPTOR_Q);
             while (iterator.hasNext()) {
-                OMElement handlerElem = (OMElement) iterator.next();
+                OMElement interceptrorElem = (OMElement) iterator.next();
 
                 String name = null;
-                if (handlerElem.getAttribute(NAME_ATT) != null) {
-                    name = handlerElem.getAttributeValue(NAME_ATT);
+                if (interceptrorElem.getAttribute(NAME_ATT) != null) {
+                    name = interceptrorElem.getAttributeValue(NAME_ATT);
                 } else {
-                    handleException("Name not defined in one or more handlers");
+                    handleException("Name not defined in one or more interceptor");
                 }
 
-                if (handlerElem.getAttribute(CLASS_Q) != null) {
-                    String className = handlerElem.getAttributeValue(CLASS_Q);
+                if (interceptrorElem.getAttribute(CLASS_Q) != null) {
+                    String className = interceptrorElem.getAttributeValue(CLASS_Q);
                     if (!"".equals(className)) {
-                        StreamInterceptor interceptor = createHandler(className);
+                        StreamInterceptor interceptor = createInterceptor(className);
                         interceptors.add(interceptor);
                         interceptor.setName(name);
-                        populateParameters(handlerElem, interceptor);
+                        populateParameters(interceptrorElem, interceptor);
                     } else {
-                        handleException("Class name is null for handle name : " + name);
+                        handleException("Class name is null for interceptor name : " + name);
                     }
                 } else {
-                    handleException("Class name not defined for handler named : " + name);
+                    handleException("Class name not defined for interceptor named : " + name);
                 }
 
             }
         }
-        return interceptors;
     }
 
-    private static StreamInterceptor createHandler(String classFQName) {
+    private static StreamInterceptor createInterceptor(String classFQName) {
 
         Object obj = null;
         try {
             obj = Class.forName(classFQName).newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            handleException("Error creating Handler for class name : " + classFQName, e);
+            handleException("Error creating Interceptor for class name : " + classFQName, e);
         }
-
         if (obj instanceof StreamInterceptor) {
             return (StreamInterceptor) obj;
         } else {

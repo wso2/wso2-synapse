@@ -92,13 +92,13 @@ public class SourceHandler implements NHttpServerEventHandler {
     public static final String MESSAGE_SIZE_VALIDATION = "message.size.validation.enabled";
     public static final String VALID_MAX_MESSAGE_SIZE = "valid.max.message.size.in.bytes";
 
-    private List<StreamInterceptor> interceptors;
+    private List<StreamInterceptor> streamInterceptors;
     private boolean interceptStream;
 
     public SourceHandler(SourceConfiguration sourceConfiguration, List<StreamInterceptor> streamInterceptors) {
         this.sourceConfiguration = sourceConfiguration;
         this.metrics = sourceConfiguration.getMetrics();
-        this.interceptors = streamInterceptors;
+        this.streamInterceptors = streamInterceptors;
         this.interceptStream = !streamInterceptors.isEmpty();
 
         String strNamePostfix = "";
@@ -230,14 +230,30 @@ public class SourceHandler implements NHttpServerEventHandler {
             SourceRequest request = SourceContext.getRequest(conn);
 
             int readBytes = -1;
-            if (interceptStream) {
+
+            boolean interceptionEnabled = interceptStream;
+            if (interceptionEnabled) {
+                for (StreamInterceptor interceptor : streamInterceptors) {
+                    interceptionEnabled = interceptor.interceptSourceRequest((MessageContext) conn.getContext()
+                            .getAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
+                    if (interceptionEnabled) {
+                        break;
+                    }
+                }
+            }
+            if (interceptionEnabled) {
                 ByteBuffer bytesSentDuplicate = request.copyAndRead(conn, decoder);
                 if (bytesSentDuplicate != null) {
                     readBytes = bytesSentDuplicate.position();
-                    for (StreamInterceptor interceptor : interceptors) {
-                        interceptor.interceptSourceRequest(bytesSentDuplicate.duplicate(),
-                                                           (MessageContext) conn.getContext().getAttribute(
+                    for (StreamInterceptor interceptor : streamInterceptors) {
+                      boolean proceed =   interceptor.sourceRequest(bytesSentDuplicate.duplicate(),
+                                                  (MessageContext) conn.getContext().getAttribute(
                                                                    PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
+                      if(!proceed){
+                          dropSourceConnection(conn);
+                          conn.getContext().setAttribute(PassThroughConstants.SOURCE_CONNECTION_DROPPED, true);
+                          request.getPipe().forceProducerComplete(decoder);
+                      }
                     }
                 }
             } else {
@@ -428,13 +444,24 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             SourceResponse response = SourceContext.getResponse(conn);
             int bytesSent = -1;
-            if (interceptStream) {
+
+            boolean interceptionEnabled = interceptStream;
+            if (interceptionEnabled) {
+                for (StreamInterceptor interceptor : streamInterceptors) {
+                    interceptionEnabled = interceptor.interceptSourceResponse((MessageContext) conn.getContext()
+                            .getAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
+                    if (interceptionEnabled) {
+                        break;
+                    }
+                }
+            }
+            if (interceptionEnabled) {
                 ByteBuffer bytesSentDuplicate = response.copyAndWrite(conn, encoder);
                 if (bytesSentDuplicate != null) {
                     bytesSent = bytesSentDuplicate.position();
-                    for (StreamInterceptor interceptor : interceptors) {
-                        interceptor.interceptSourceResponse(bytesSentDuplicate.duplicate(),
-                                                            (MessageContext) conn.getContext().getAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT) );
+                    for (StreamInterceptor interceptor : streamInterceptors) {
+                        interceptor.sourceResponse(bytesSentDuplicate.duplicate(),
+                                                   (MessageContext) conn.getContext().getAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT) );
                     }
                 }
             } else {

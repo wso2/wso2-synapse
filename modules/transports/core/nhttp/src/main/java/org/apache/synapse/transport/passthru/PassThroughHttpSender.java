@@ -210,7 +210,6 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         connectCallback.setDeliveryAgent(deliveryAgent);
 
         interceptors = StreamInterceptorsLoader.getInterceptors();
-
         handler = new TargetHandler(deliveryAgent, connFactory, targetConfiguration , interceptors);
         ioEventDispatch = new ClientIODispatch(handler, connFactory);
         

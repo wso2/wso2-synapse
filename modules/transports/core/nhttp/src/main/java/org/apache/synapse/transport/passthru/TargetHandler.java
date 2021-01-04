@@ -48,7 +48,6 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.HostConnections;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
-import org.apache.synapse.transport.passthru.util.RelayConstants;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -242,13 +241,24 @@ public class TargetHandler implements NHttpClientEventHandler {
             TargetRequest request = TargetContext.getRequest(conn);
             if (request.hasEntityBody()) {
                 int bytesWritten = -1;
-                if (interceptStream) {
+
+                boolean interceptionEnabled = interceptStream;
+                if (interceptionEnabled) {
+                    for (StreamInterceptor interceptor : streamInterceptors) {
+                        interceptionEnabled = interceptor.interceptTargetRequest((MessageContext) conn.getContext()
+                                .getAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
+                        if (interceptionEnabled) {
+                            break;
+                        }
+                    }
+                }
+                if (interceptionEnabled) {
                     ByteBuffer bytesSentDuplicate = request.copyAndWrite(conn, encoder);
                     if (bytesSentDuplicate != null) {
                         bytesWritten = bytesSentDuplicate.position();
                         for (StreamInterceptor interceptor : streamInterceptors) {
-                            interceptor.interceptTargetRequest(bytesSentDuplicate.duplicate(),
-                                                               (MessageContext) conn.getContext().getAttribute(
+                            interceptor.targetRequest(bytesSentDuplicate.duplicate(),
+                                                      (MessageContext) conn.getContext().getAttribute(
                                                                        PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
                         }
                     }
@@ -531,26 +541,29 @@ public class TargetHandler implements NHttpClientEventHandler {
 			if (response != null) {
                 statusCode = conn.getHttpResponse().getStatusLine().getStatusCode();
                 int responseRead = -1;
-                Object sourceResponseControl = conn.getContext().getAttribute(RelayConstants.STREAM_CONTROL);
-                log.info("input ready : " + sourceResponseControl);
-                if (sourceResponseControl != null || interceptStream) {
+                boolean interceptionEnabled = interceptStream;
+                if (interceptionEnabled) {
+                    for (StreamInterceptor interceptor : streamInterceptors) {
+                        interceptionEnabled = interceptor.interceptTargetResponse((MessageContext) conn.getContext()
+                                .getAttribute(PassThroughConstants.RESPONSE_MESSAGE_CONTEXT));
+                        if (interceptionEnabled) {
+                            break;
+                        }
+                    }
+                }
+                if (interceptionEnabled) {
                     ByteBuffer bytesSentDuplicate = response.copyAndRead(conn, decoder);
                     if (bytesSentDuplicate != null) {
                         responseRead = bytesSentDuplicate.position();
+                        boolean proceed;
                         for (StreamInterceptor interceptor : streamInterceptors) {
-                            interceptor.interceptTargetResponse(bytesSentDuplicate.duplicate(),
-                                                                (MessageContext) conn.getContext().getAttribute(
-                                                                        PassThroughConstants.RESPONSE_MESSAGE_CONTEXT));
-                        }
-                        if (sourceResponseControl != null) {
-                            Map<String, Object> properties = (Map<String, Object>) conn.getContext().getAttribute(
-                                    RelayConstants.STREAM_CONTROL_PROPERTIES);
-                            ResponseStreamInterceptor responseControl =
-                                    (ResponseStreamInterceptor) sourceResponseControl;
-                            boolean result = responseControl.interceptTargetResponse(bytesSentDuplicate, properties);
-                            if (!result) {
+                            proceed = interceptor.targetResponse(bytesSentDuplicate.duplicate(),
+                                                                 (MessageContext) conn.getContext().getAttribute(
+                                                                         PassThroughConstants.RESPONSE_MESSAGE_CONTEXT));
+                            if (!proceed) {
                                 dropTargetConnection(conn);
                                 response.getPipe().forceProducerComplete(decoder);
+                                break;
                             }
                         }
                     }

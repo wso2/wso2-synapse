@@ -29,22 +29,50 @@ public abstract class AbstractStreamInterceptor implements StreamInterceptor {
     private String name;
     private Map<String, Object> properties = new HashMap<String, Object>();
 
-    @Override
+    public boolean interceptSourceRequest(MessageContext axisCtx) {
+        return false;
+    }
+
+    public boolean sourceRequest(ByteBuffer buffer, MessageContext axisCtx) {
+        return true;
+    }
+
+    public boolean interceptTargetRequest(MessageContext axisCtx) {
+        return false;
+    }
+
+    public void targetRequest(ByteBuffer buffer, MessageContext axisCtx) {
+
+    }
+
+    public boolean interceptTargetResponse(MessageContext axisCtx) {
+        return false;
+    }
+
+    public boolean targetResponse(ByteBuffer buffer, MessageContext axisCtx) {
+        return true;
+    }
+
+    public boolean interceptSourceResponse(MessageContext axisCtx) {
+        return false;
+    }
+
+    public void sourceResponse(ByteBuffer buffer, MessageContext axisCtx) {
+
+    }
+
     public void addProperty(String name, Object value) {
         properties.put(name, value);
     }
 
-    @Override
     public Map getProperties() {
         return properties;
     }
 
-    @Override
     public String getName() {
         return name;
     }
 
-    @Override
     public void setName(String name) {
         this.name = name;
     }

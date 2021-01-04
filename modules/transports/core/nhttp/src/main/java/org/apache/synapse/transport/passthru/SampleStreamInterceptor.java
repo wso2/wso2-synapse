@@ -24,66 +24,75 @@ import org.apache.commons.logging.LogFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class SampleStreamInterceptor extends AbstractStreamInterceptor {
 
     private static final Log log = LogFactory.getLog(SampleStreamInterceptor.class);
 
-    private Map<String, Integer> limit = new ConcurrentHashMap<>();
+    private static final String INPUT = ">>>";
+    private static final String OUTPUT = "<<<";
 
-    private static final String SSE_DELIMITER = "\n\n";
-    private static final String EVENT_COUNT_HEADER = "Event-Count";
+    private String charset = Charset.defaultCharset().toString();
+    private boolean enableInterception = false;
 
     @Override
-    public void interceptSourceRequest(ByteBuffer buffer, MessageContext ctx) {
-        getEventCount(buffer, "interceptSourceRequest");
+    public boolean interceptSourceRequest(MessageContext axisCtx) {
+        return enableInterception;
     }
 
     @Override
-    public void interceptTargetRequest(ByteBuffer buffer, MessageContext ctx) {
-        getEventCount(buffer, "interceptTargetRequest");
+    public boolean sourceRequest(ByteBuffer buffer, MessageContext ctx) {
+        printStream(buffer, INPUT);
+        return true;
     }
 
     @Override
-    public void interceptTargetResponse(ByteBuffer buffer, MessageContext ctx) {
-        getEventCount(buffer, "interceptTargetResponse");
+    public boolean interceptTargetRequest(MessageContext axisCtx) {
+        return enableInterception;
     }
 
     @Override
-    public void interceptSourceResponse(ByteBuffer buffer, MessageContext ctx) {
-        getEventCount(buffer, "interceptSourceResponse");
+    public void targetRequest(ByteBuffer buffer, MessageContext ctx) {
+        printStream(buffer, OUTPUT);
     }
 
-    private int getEventCount(ByteBuffer stream, String caller) {
+    @Override
+    public boolean interceptTargetResponse(MessageContext axisCtx) {
+        return enableInterception;
+    }
 
-        int count;
-        Charset charset = StandardCharsets.UTF_8; //Charset.forName("ISO-8859-1");
-        String text = charset.decode(stream).toString();
-        count = countMatches(text, SSE_DELIMITER);
-        log.info("[ " + caller + " ]" + " Count :: " + count);
-        if (count == 0) {
-            log.info("Event :: " + text);
-        } else if (text.contains(SSE_DELIMITER)) {
-            String[] events = text.split(SSE_DELIMITER);
-            for (String event : events) {
-                log.info(caller + " Event : " + event);
-            }
+    @Override
+    public boolean targetResponse(ByteBuffer buffer, MessageContext ctx) {
+        printStream(buffer, INPUT);
+        return true;
+    }
+
+    @Override
+    public boolean interceptSourceResponse(MessageContext axisCtx) {
+        return enableInterception;
+    }
+
+    @Override
+    public void sourceResponse(ByteBuffer buffer, MessageContext ctx) {
+        printStream(buffer, OUTPUT);
+    }
+
+    private void printStream(ByteBuffer stream, String direction) {
+
+        Charset charsetValue = Charset.forName(this.charset);
+        String text = charsetValue.decode(stream).toString();
+        log.info(direction + " " + text);
+    }
+
+    public void setCharset(String charset) {
+
+        this.charset = charset;
+        if (log.isDebugEnabled()) {
+            log.debug("Charset : " + charset);
         }
-        return count;
     }
 
-    public static int countMatches(String text, String str) {
-        if (isEmpty(text) || isEmpty(str)) {
-            return 0;
-        }
-        return text.split(str, -1).length - 1;
+    public void setEnableInterception(boolean enableInterception) {
+        this.enableInterception = enableInterception;
     }
-
-    public static boolean isEmpty(String s) {
-        return s == null || s.length() == 0;
-    }
-
 }
