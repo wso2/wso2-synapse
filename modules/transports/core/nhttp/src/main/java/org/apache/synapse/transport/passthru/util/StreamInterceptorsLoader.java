@@ -75,22 +75,22 @@ public class StreamInterceptorsLoader {
 
             Iterator iterator = interceptorsConfig.getChildrenWithName(INTERCEPTOR_Q);
             while (iterator.hasNext()) {
-                OMElement interceptrorElem = (OMElement) iterator.next();
+                OMElement interceptorElem = (OMElement) iterator.next();
 
                 String name = null;
-                if (interceptrorElem.getAttribute(NAME_ATT) != null) {
-                    name = interceptrorElem.getAttributeValue(NAME_ATT);
+                if (interceptorElem.getAttribute(NAME_ATT) != null) {
+                    name = interceptorElem.getAttributeValue(NAME_ATT);
                 } else {
                     handleException("Name not defined in one or more interceptor");
                 }
 
-                if (interceptrorElem.getAttribute(CLASS_Q) != null) {
-                    String className = interceptrorElem.getAttributeValue(CLASS_Q);
+                if (interceptorElem.getAttribute(CLASS_Q) != null) {
+                    String className = interceptorElem.getAttributeValue(CLASS_Q);
                     if (!"".equals(className)) {
                         StreamInterceptor interceptor = createInterceptor(className);
                         interceptors.add(interceptor);
                         interceptor.setName(name);
-                        populateParameters(interceptrorElem, interceptor);
+                        populateParameters(interceptorElem, interceptor);
                     } else {
                         handleException("Class name is null for interceptor name : " + name);
                     }
