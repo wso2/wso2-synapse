@@ -25,6 +25,9 @@ import org.apache.commons.logging.LogFactory;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
+/**
+ * Sample stream interceptor, which intercepts source and target request to print the stream passing via the engine.
+ */
 public class SampleStreamInterceptor extends AbstractStreamInterceptor {
 
     private static final Log log = LogFactory.getLog(SampleStreamInterceptor.class);
