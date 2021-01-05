@@ -27,6 +27,16 @@ import java.nio.charset.Charset;
 
 /**
  * Sample stream interceptor, which intercepts source and target request to print the stream passing via the engine.
+ * <pre>
+ * {@code
+ * <interceptors xmlns:svns="http://org.wso2.securevault/configuration">
+ *     <interceptor name="SampleStreamInterceptor" class="org.apache.synapse.transport.passthru.SampleStreamInterceptor">
+ *         <parameter name="charset" value="ISO-8859-1"/>
+ *         <parameter name="enableInterception" value="true"/>
+ *     </interceptor>
+ * </interceptors>
+ * }
+ * </pre>
  */
 public class SampleStreamInterceptor extends AbstractStreamInterceptor {
 

@@ -18,8 +18,9 @@ package org.apache.synapse.transport.passthru.connections;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.nio.NHttpServerConnection;
+import org.apache.http.protocol.HttpContext;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.SourceContext;
-import org.apache.synapse.transport.passthru.util.RelayConstants;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -109,7 +110,9 @@ public class SourceConnections {
 
     private void removeAttributes(NHttpServerConnection connection) {
 
-        connection.getContext().removeAttribute(RelayConstants.STREAM_CONTROL);
+        HttpContext ctx = connection.getContext();
+        ctx.removeAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT);
+        ctx.removeAttribute(PassThroughConstants.RESPONSE_MESSAGE_CONTEXT);
     }
 
 
@@ -161,7 +164,6 @@ public class SourceConnections {
      * @param conn the connection that needs to be closed.
      */
     public void closeConnection(NHttpServerConnection conn) {
-        log.info("Shutting down connection forcefully " + conn);
         if (log.isDebugEnabled()) {
             log.debug("Shutting down connection forcefully " + conn);
         }

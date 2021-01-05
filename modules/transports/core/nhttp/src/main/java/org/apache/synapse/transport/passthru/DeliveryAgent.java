@@ -31,7 +31,6 @@ import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.TargetConnections;
-import org.apache.synapse.transport.passthru.util.RelayConstants;
 import org.apache.synapse.transport.passthru.util.TargetRequestFactory;
 
 import java.io.OutputStream;
@@ -254,16 +253,7 @@ public class DeliveryAgent {
             try {
                 conn.getContext().setAttribute(CorrelationConstants.CORRELATION_ID,
                         messageContext.getProperty(CorrelationConstants.CORRELATION_ID));
-
-                Object sourceResponseControl = messageContext.getProperty(RelayConstants.STREAM_CONTROL);
-                if (sourceResponseControl != null) {
-                    conn.getContext().setAttribute(RelayConstants.STREAM_CONTROL, sourceResponseControl);
-                    conn.getContext().setAttribute(RelayConstants.STREAM_CONTROL_PROPERTIES, messageContext
-                            .getProperty(RelayConstants.STREAM_CONTROL_PROPERTIES));
-                }
-                log.info("Setting : " + PassThroughConstants.REQUEST_MESSAGE_CONTEXT);
                 conn.getContext().setAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT, messageContext);
-
                 TargetContext.updateState(conn, ProtocolState.REQUEST_READY);
                 TargetContext.get(conn).setRequestMsgCtx(messageContext);
                 if (log.isDebugEnabled()) {

@@ -127,7 +127,6 @@ public class ServerWorker implements Runnable {
                                request.getConnection().getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY));
         request.getConnection().getContext().setAttribute(NhttpConstants.SERVER_WORKER_INIT_TIME,
                 System.currentTimeMillis());
-        log.info("Setting : " + PassThroughConstants.REQUEST_MESSAGE_CONTEXT);
         request.getConnection().getContext().setAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT, msgContext);
     }
 

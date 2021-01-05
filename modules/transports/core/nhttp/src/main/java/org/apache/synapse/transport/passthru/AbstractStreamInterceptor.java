@@ -24,6 +24,11 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Abstract class implementing the methods of {@link StreamInterceptor}. This class can be extended and the
+ * necessary methods can be overridden to implement the necessary functionalities.
+ * For an example see{@link SampleStreamInterceptor}
+ */
 public abstract class AbstractStreamInterceptor implements StreamInterceptor {
 
     private String name;

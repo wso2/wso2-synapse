@@ -124,7 +124,6 @@ public class TargetHandler implements NHttpClientEventHandler {
     }
 
     public void connected(NHttpClientConnection conn, Object o) {
-       log.info("connected");
         assert o instanceof HostConnections : "Attachment should be a HostConnections";
         HostConnections pool = (HostConnections) o;
         conn.getContext().setAttribute(PassThroughConstants.CONNECTION_POOL, pool);
@@ -153,7 +152,6 @@ public class TargetHandler implements NHttpClientEventHandler {
     public void requestReady(NHttpClientConnection conn) {
         HttpContext context = conn.getContext();
         ProtocolState connState = null;
-        log.info("Request ready");
         try {
             
             connState = TargetContext.getState(conn);
@@ -241,7 +239,6 @@ public class TargetHandler implements NHttpClientEventHandler {
             TargetRequest request = TargetContext.getRequest(conn);
             if (request.hasEntityBody()) {
                 int bytesWritten = -1;
-
                 boolean interceptionEnabled = interceptStream;
                 if (interceptionEnabled) {
                     for (StreamInterceptor interceptor : streamInterceptors) {
@@ -257,9 +254,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                     if (bytesSentDuplicate != null) {
                         bytesWritten = bytesSentDuplicate.position();
                         for (StreamInterceptor interceptor : streamInterceptors) {
-                            interceptor.targetRequest(bytesSentDuplicate.duplicate(),
-                                                      (MessageContext) conn.getContext().getAttribute(
-                                                                       PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
+                            interceptor.targetRequest(bytesSentDuplicate.duplicate(), (MessageContext) conn.getContext()
+                                    .getAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
                         }
                     }
                 } else {
@@ -317,7 +313,6 @@ public class TargetHandler implements NHttpClientEventHandler {
     }
 
     public void responseReceived(NHttpClientConnection conn) {
-        log.info("response received");
         HttpContext context = conn.getContext();
         if (isMessageSizeValidationEnabled) {
             context.setAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);

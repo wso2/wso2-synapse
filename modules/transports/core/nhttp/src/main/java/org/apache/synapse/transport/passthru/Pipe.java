@@ -34,8 +34,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -291,10 +289,9 @@ public class Pipe {
                 // replicate positions of original buffer in duplicated buffer
                 int position = originalBuffer.position();
                 duplicate.limit(position);
-                duplicate.position(position - bytesRead);
-
-
-
+                if (bytesRead > 0) {
+                    duplicate.position(position - bytesRead);
+                }
             } catch(MalformedChunkCodingException ignore) {
                 // we assume that this is a truncated chunk, hence simply ignore the exception
                 // https://issues.apache.org/jira/browse/HTTPCORE-195

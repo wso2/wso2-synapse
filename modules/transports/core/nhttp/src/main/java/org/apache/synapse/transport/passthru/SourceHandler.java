@@ -140,7 +140,6 @@ public class SourceHandler implements NHttpServerEventHandler {
     }
 
     public void requestReceived(NHttpServerConnection conn) {
-        log.info("requestReceived");
         try {
             HttpContext httpContext = conn.getContext();
             if (sourceConfiguration.isCorrelationLoggingEnabled()) {
@@ -214,8 +213,6 @@ public class SourceHandler implements NHttpServerEventHandler {
 
     public void inputReady(NHttpServerConnection conn,
                            ContentDecoder decoder) {
-
-        log.info("input ready");
         try {
             ProtocolState protocolState = SourceContext.getState(conn);
 
@@ -230,7 +227,6 @@ public class SourceHandler implements NHttpServerEventHandler {
             SourceRequest request = SourceContext.getRequest(conn);
 
             int readBytes = -1;
-
             boolean interceptionEnabled = interceptStream;
             if (interceptionEnabled) {
                 for (StreamInterceptor interceptor : streamInterceptors) {
@@ -246,14 +242,14 @@ public class SourceHandler implements NHttpServerEventHandler {
                 if (bytesSentDuplicate != null) {
                     readBytes = bytesSentDuplicate.position();
                     for (StreamInterceptor interceptor : streamInterceptors) {
-                      boolean proceed =   interceptor.sourceRequest(bytesSentDuplicate.duplicate(),
-                                                  (MessageContext) conn.getContext().getAttribute(
-                                                                   PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
-                      if(!proceed){
-                          dropSourceConnection(conn);
-                          conn.getContext().setAttribute(PassThroughConstants.SOURCE_CONNECTION_DROPPED, true);
-                          request.getPipe().forceProducerComplete(decoder);
-                      }
+                        boolean proceed = interceptor.sourceRequest(bytesSentDuplicate.duplicate(),
+                                                                    (MessageContext) conn.getContext().getAttribute(
+                                                                            PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
+                        if (!proceed) {
+                            dropSourceConnection(conn);
+                            conn.getContext().setAttribute(PassThroughConstants.SOURCE_CONNECTION_DROPPED, true);
+                            request.getPipe().forceProducerComplete(decoder);
+                        }
                     }
                 }
             } else {
@@ -443,8 +439,8 @@ public class SourceHandler implements NHttpServerEventHandler {
             SourceContext.updateState(conn, ProtocolState.RESPONSE_BODY);
 
             SourceResponse response = SourceContext.getResponse(conn);
-            int bytesSent = -1;
 
+            int bytesSent = -1;
             boolean interceptionEnabled = interceptStream;
             if (interceptionEnabled) {
                 for (StreamInterceptor interceptor : streamInterceptors) {
@@ -460,8 +456,8 @@ public class SourceHandler implements NHttpServerEventHandler {
                 if (bytesSentDuplicate != null) {
                     bytesSent = bytesSentDuplicate.position();
                     for (StreamInterceptor interceptor : streamInterceptors) {
-                        interceptor.sourceResponse(bytesSentDuplicate.duplicate(),
-                                                   (MessageContext) conn.getContext().getAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT) );
+                        interceptor.sourceResponse(bytesSentDuplicate.duplicate(), (MessageContext) conn.getContext()
+                                .getAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
                     }
                 }
             } else {

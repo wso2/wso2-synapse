@@ -542,17 +542,9 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 sourceRequest, sourceConfiguration);
         sourceResponse.checkResponseChunkDisable(msgContext);
 
-        Object sourceResponseControl = msgContext.getProperty(RelayConstants.STREAM_CONTROL);
-        if (sourceResponseControl != null) {
-            conn.getContext().setAttribute(RelayConstants.STREAM_CONTROL, sourceResponseControl);
-            conn.getContext().setAttribute(RelayConstants.STREAM_CONTROL_PROPERTIES,
-                                           msgContext.getProperty(RelayConstants.STREAM_CONTROL_PROPERTIES));
-        }
-        log.info("Setting : " + PassThroughConstants.RESPONSE_MESSAGE_CONTEXT);
         conn.getContext().setAttribute(PassThroughConstants.RESPONSE_MESSAGE_CONTEXT, msgContext);
 
         SourceContext.setResponse(conn, sourceResponse);
-
         Boolean noEntityBody = (Boolean) msgContext.getProperty(PassThroughConstants.NO_ENTITY_BODY);
         Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
         if ((noEntityBody == null || !noEntityBody) || pipe != null) {

@@ -16,7 +16,9 @@
   ~ under the License.
   -->
 <!--resides in conf folder-->
-<handlers>
-    <handler name="SampleStreamInterceptor" class="org.apache.synapse.transport.passthru.SampleStreamInterceptor"/>
-</handlers>
-
+<interceptors>
+    <interceptor name="SampleStreamInterceptor" class="org.apache.synapse.transport.passthru.SampleStreamInterceptor">
+        <parameter name="charset" value="ISO-8859-1"/>
+        <parameter name="enableInterception" value="true"/>
+    </interceptor>
+</interceptors>
