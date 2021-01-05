@@ -52,6 +52,7 @@ import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsColl
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,7 +94,7 @@ public class TargetHandler implements NHttpClientEventHandler {
 
     public TargetHandler(DeliveryAgent deliveryAgent, ClientConnFactory connFactory,
                          TargetConfiguration configuration) {
-        this(deliveryAgent, connFactory, configuration, null);
+        this(deliveryAgent, connFactory, configuration, new ArrayList<StreamInterceptor>());
     }
 
     public TargetHandler(DeliveryAgent deliveryAgent,

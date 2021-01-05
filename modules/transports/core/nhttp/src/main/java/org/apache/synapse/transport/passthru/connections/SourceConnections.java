@@ -108,13 +108,17 @@ public class SourceConnections {
         }
     }
 
+    /**
+     * Removes the attributes from the http context of the connection
+     *
+     * @param connection connection object
+     */
     private void removeAttributes(NHttpServerConnection connection) {
 
         HttpContext ctx = connection.getContext();
         ctx.removeAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT);
         ctx.removeAttribute(PassThroughConstants.RESPONSE_MESSAGE_CONTEXT);
     }
-
 
 	/**
 	 * Shutdown a connection

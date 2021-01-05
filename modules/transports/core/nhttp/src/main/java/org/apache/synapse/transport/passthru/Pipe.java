@@ -182,18 +182,16 @@ public class Pipe {
                 return null;
             }
             setOutputMode(consumerBuffer);
-
             // clone original buffer
             ByteBuffer originalBuffer = consumerBuffer.getByteBuffer();
             ByteBuffer duplicate = RelayUtils.cloneBuffer(originalBuffer);
-
-            int bytesWritten = encoder.write(consumerBuffer.getByteBuffer());
-
+            int bytesWritten = encoder.write(originalBuffer);
             // replicate positions of original buffer in duplicated buffer
             int position = originalBuffer.position();
             duplicate.limit(position);
-            duplicate.position(position - bytesWritten);
-
+            if (position - bytesWritten > 0) {
+                duplicate.position(position - bytesWritten);
+            }
             consumeHelper(consumerBuffer, encoder, bytesWritten);
             return duplicate;
         } finally {
@@ -256,34 +254,35 @@ public class Pipe {
                 // https://issues.apache.org/jira/browse/HTTPCORE-195
                 // we should add the EoF character
                 buffer.putInt(-1);
-                // now the buffer's position should give us the bytes read.
-                bytesRead = buffer.position();
-
+                duplicate.putInt(-1);
             }
-            // if consumer is at error we have to let the producer complete
-            if (consumerError) {
-                buffer.clear();
-            }
-
-            if (!buffer.hasRemaining()) {
-                // Input buffer is full. Suspend client input
-                // until the origin handler frees up some space in the buffer
-                producerIoControl.suspendInput();
-            }
-            // If there is some content in the input buffer make sure consumer output is active
-            if (buffer.position() > 0 || decoder.isCompleted()) {
-                if (consumerIoControl != null) {
-                    consumerIoControl.requestOutput();
-                }
-                readCondition.signalAll();
-            }
-
-            if (decoder.isCompleted()) {
-                producerCompleted = true;
-            }
+            producerHelper(decoder);
             return duplicate;
         } finally {
             lock.unlock();
+        }
+    }
+
+    private void producerHelper(final ContentDecoder decoder) {
+
+        // if consumer is at error we have to let the producer complete
+        if (consumerError) {
+            buffer.clear();
+        }
+        if (!buffer.hasRemaining()) {
+            // Input buffer is full. Suspend client input
+            // until the origin handler frees up some space in the buffer
+            producerIoControl.suspendInput();
+        }
+        // If there is some content in the input buffer make sure consumer output is active
+        if (buffer.position() > 0 || decoder.isCompleted()) {
+            if (consumerIoControl != null) {
+                consumerIoControl.requestOutput();
+            }
+            readCondition.signalAll();
+        }
+        if (decoder.isCompleted()) {
+            producerCompleted = true;
         }
     }
 
@@ -302,7 +301,7 @@ public class Pipe {
         lock.lock();
         try {
             setInputMode(buffer);
-            int bytesRead=0;
+            int bytesRead;
             try{
                 bytesRead = decoder.read(buffer.getByteBuffer());
             } catch(MalformedChunkCodingException ignore) {
@@ -312,31 +311,8 @@ public class Pipe {
                 buffer.putInt(-1);
                 // now the buffer's position should give us the bytes read.
                 bytesRead = buffer.position();
-
             }
-
-            // if consumer is at error we have to let the producer complete
-            if (consumerError) {
-                buffer.clear();
-            }
-
-            if (!buffer.hasRemaining()) {
-                // Input buffer is full. Suspend client input
-                // until the origin handler frees up some space in the buffer
-                producerIoControl.suspendInput();
-            }
-
-            // If there is some content in the input buffer make sure consumer output is active
-            if (buffer.position() > 0 || decoder.isCompleted()) {
-                if (consumerIoControl != null) {
-                    consumerIoControl.requestOutput();
-                }
-                readCondition.signalAll();
-            }
-
-            if (decoder.isCompleted()) {
-                producerCompleted = true;
-            }
+            producerHelper(decoder);
             return bytesRead;
         } finally {
             lock.unlock();
@@ -628,7 +604,7 @@ public class Pipe {
                     // return from here.
                     if (consumerError || isStale) {
                         buffer.clear();
-                        throw  new IOException("////");
+                        return;
                     }
 
                     // check whether await time out exceeded and throw an IOException
