@@ -161,7 +161,6 @@ public class Pipe {
     }
 
     private ControlledByteBuffer getConsumerBuffer() {
-
         return (outputBuffer != null ? outputBuffer : buffer);
     }
 

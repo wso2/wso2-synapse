@@ -367,28 +367,32 @@ public class TargetRequest {
     /**
      * Consume the data from the pipe and write it to the wire.
      *
-     * @param conn the connection to the target
+     * @param conn    the connection to the target
      * @param encoder encoder for writing the message through
-     * @throws java.io.IOException if an error occurs
      * @return number of bytes written
+     * @throws java.io.IOException if an error occurs
      */
     public ByteBuffer copyAndWrite(NHttpClientConnection conn, ContentEncoder encoder) throws IOException {
-        ByteBuffer bytes = null;
+
+        ByteBuffer bufferCopy = null;
         if (pipe != null) {
-            bytes = pipe.copyAndConsume(encoder);
+            bufferCopy = pipe.copyAndConsume(encoder);
         }
+        writeHelper(conn, encoder);
+        return bufferCopy;
+    }
+
+    private void writeHelper(NHttpClientConnection conn, ContentEncoder encoder) {
 
         if (encoder.isCompleted()) {
             conn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
-            conn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,System.currentTimeMillis());
+            conn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,
+                                           System.currentTimeMillis());
             targetConfiguration.getMetrics().
                     notifySentMessageSize(conn.getMetrics().getSentBytesCount());
 
             TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
         }
-
-        return bytes;
-
     }
 
     /**
@@ -404,18 +408,8 @@ public class TargetRequest {
         if (pipe != null) {
             bytes = pipe.consume(encoder);
         }
-
-        if (encoder.isCompleted()) {
-          conn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
-          conn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,System.currentTimeMillis());
-            targetConfiguration.getMetrics().
-                    notifySentMessageSize(conn.getMetrics().getSentBytesCount());
-
-            TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
-        }
-
+        writeHelper(conn, encoder);
         return bytes;
-
     }
 
     public boolean hasEntityBody() {

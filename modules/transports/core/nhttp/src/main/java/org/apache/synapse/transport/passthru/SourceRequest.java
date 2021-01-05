@@ -128,31 +128,34 @@ public class SourceRequest {
      *
      * @param conn    the connection
      * @param decoder content decoder
-     * @return number of bytes read
+     * @return the copy of data produced to the pipe
      * @throws java.io.IOException if an error occurs
      */
     public ByteBuffer copyAndRead(NHttpServerConnection conn, ContentDecoder decoder) throws IOException {
+
         if (pipe == null) {
             throw new IllegalStateException("A Pipe must be connected before calling read");
         }
-
         if (entityEnclosing) {
-            ByteBuffer bytes = pipe.copAndProduce(decoder);
-
-            if (decoder.isCompleted()) {
-                conn.getContext().setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_END_TIME,
-                                               System.currentTimeMillis());
-                sourceConfiguration.getMetrics().
-                        notifyReceivedMessageSize(conn.getMetrics().getReceivedBytesCount());
-
-                // Update connection state
-                SourceContext.updateState(conn, ProtocolState.REQUEST_DONE);
-                // Suspend client input
-                conn.suspendInput();
-            }
-            return bytes;
+            ByteBuffer bufferCopy = pipe.copAndProduce(decoder);
+            readHelper(conn, decoder);
+            return bufferCopy;
         } else {
-            throw new IllegalStateException("Only Entity Enclosing Requests " + "can read content in to the pipe");
+            throw new IllegalStateException("Only Entity Enclosing Requests can read content in to the pipe");
+        }
+    }
+
+    private void readHelper(NHttpServerConnection conn, ContentDecoder decoder) {
+
+        if (decoder.isCompleted()) {
+            conn.getContext().setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_END_TIME,
+                                           System.currentTimeMillis());
+            sourceConfiguration.getMetrics().
+                    notifyReceivedMessageSize(conn.getMetrics().getReceivedBytesCount());
+            // Update connection state
+            SourceContext.updateState(conn, ProtocolState.REQUEST_DONE);
+            // Suspend client input
+            conn.suspendInput();
         }
     }
 
@@ -168,24 +171,12 @@ public class SourceRequest {
         if (pipe == null) {
             throw new IllegalStateException("A Pipe must be connected before calling read");
         }
-
         if (entityEnclosing) {
             int bytes = pipe.produce(decoder);
-
-            if (decoder.isCompleted()) {
-                conn.getContext().setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_END_TIME,System.currentTimeMillis());
-                sourceConfiguration.getMetrics().
-                        notifyReceivedMessageSize(conn.getMetrics().getReceivedBytesCount());
-
-                // Update connection state
-                SourceContext.updateState(conn, ProtocolState.REQUEST_DONE);
-                // Suspend client input
-                conn.suspendInput();
-            }
+            readHelper(conn, decoder);
             return bytes;
         } else {
-            throw new IllegalStateException("Only Entity Enclosing Requests " +
-                    "can read content in to the pipe");
+            throw new IllegalStateException("Only Entity Enclosing Requests can read content in to the pipe");
         }
     }
 

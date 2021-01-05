@@ -19,12 +19,16 @@ package org.apache.synapse.transport.passthru;
 import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.*;
+import org.apache.http.ConnectionReuseStrategy;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.HttpVersion;
+import org.apache.http.ProtocolVersion;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.NHttpClientConnection;
-import org.apache.log4j.MDC;
 import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
@@ -154,21 +158,25 @@ public class TargetResponse {
      */
     public ByteBuffer copyAndRead(NHttpClientConnection conn, ContentDecoder decoder) throws IOException {
 
-        ByteBuffer bytes = null;
-
+        ByteBuffer bufferCopy = null;
         if(pipe != null){
-            bytes = pipe.copAndProduce(decoder);
+            bufferCopy = pipe.copAndProduce(decoder);
         }
-
         // Update connection state
-        if (decoder.isCompleted()) {
-            conn.getContext().setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME,System.currentTimeMillis());
-            conn.getContext().setAttribute(PassThroughConstants.RES_ARRIVAL_TIME,System.currentTimeMillis());
-            TargetContext.updateState(conn, ProtocolState.RESPONSE_DONE);
-            targetConfiguration.getMetrics().notifyReceivedMessageSize(
-                    conn.getMetrics().getReceivedBytesCount());
+        readHelper(conn, decoder);
+        return bufferCopy;
+    }
 
-            if (!this.connStrategy.keepAlive(response, conn.getContext())  || forceShutdownConnectionOnComplete) {
+    private void readHelper(NHttpClientConnection conn, ContentDecoder decoder) {
+
+        if (decoder.isCompleted()) {
+            conn.getContext().setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME,
+                                           System.currentTimeMillis());
+            conn.getContext().setAttribute(PassThroughConstants.RES_ARRIVAL_TIME, System.currentTimeMillis());
+            TargetContext.updateState(conn, ProtocolState.RESPONSE_DONE);
+            targetConfiguration.getMetrics().notifyReceivedMessageSize(conn.getMetrics().getReceivedBytesCount());
+
+            if (!this.connStrategy.keepAlive(response, conn.getContext()) || forceShutdownConnectionOnComplete) {
                 TargetContext.updateState(conn, ProtocolState.CLOSED);
 
                 targetConfiguration.getConnections().shutdownConnection(conn);
@@ -178,7 +186,6 @@ public class TargetResponse {
                 }
             }
         }
-        return bytes;
     }
 
     /**
@@ -196,25 +203,8 @@ public class TargetResponse {
     	if(pipe != null){
     		bytes = pipe.produce(decoder);
     	}
-
         // Update connection state
-        if (decoder.isCompleted()) {
-            conn.getContext().setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME,System.currentTimeMillis());
-            conn.getContext().setAttribute(PassThroughConstants.RES_ARRIVAL_TIME,System.currentTimeMillis());
-            TargetContext.updateState(conn, ProtocolState.RESPONSE_DONE);
-            targetConfiguration.getMetrics().notifyReceivedMessageSize(
-                    conn.getMetrics().getReceivedBytesCount());
-
-            if (!this.connStrategy.keepAlive(response, conn.getContext())  || forceShutdownConnectionOnComplete) {
-                TargetContext.updateState(conn, ProtocolState.CLOSED);
-
-                targetConfiguration.getConnections().shutdownConnection(conn);
-            } else {
-                if (conn instanceof LoggingNHttpClientConnection) {
-                    ((LoggingNHttpClientConnection) conn).setReleaseConn(true);
-                }
-            }
-        }
+        readHelper(conn, decoder);
         return bytes;
     }
 

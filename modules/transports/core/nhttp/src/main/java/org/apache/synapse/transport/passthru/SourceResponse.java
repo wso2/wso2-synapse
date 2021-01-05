@@ -286,7 +286,7 @@ public class SourceResponse {
         return bytes;
     }
 
-    ByteBuffer copyAndWrite(NHttpServerConnection conn, ContentEncoder encoder) throws IOException {
+    public ByteBuffer copyAndWrite(NHttpServerConnection conn, ContentEncoder encoder) throws IOException {
 
         ByteBuffer bytes = null;
         if (pipe != null) {
@@ -308,12 +308,10 @@ public class SourceResponse {
 
             if (response != null && !this.connStrategy.keepAlive(response, conn.getContext())) {
                 SourceContext.updateState(conn, ProtocolState.CLOSING);
-
                 sourceConfiguration.getSourceConnections().closeConnection(conn);
             } else if (SourceContext.get(conn).isShutDown()) {
                 // we need to shut down if the shutdown flag is set
                 SourceContext.updateState(conn, ProtocolState.CLOSING);
-
                 sourceConfiguration.getSourceConnections().closeConnection(conn);
             } else {
                 // Reset connection state
