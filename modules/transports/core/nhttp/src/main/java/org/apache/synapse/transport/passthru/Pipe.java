@@ -16,8 +16,6 @@
 
 package org.apache.synapse.transport.passthru;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.http.MalformedChunkCodingException;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.ContentEncoder;
@@ -43,9 +41,6 @@ import java.util.concurrent.locks.ReentrantLock;
  * This is a buffer shared by both producers and consumers.
  */
 public class Pipe {
-
-    private static Log log = LogFactory.getLog(Pipe.class);
-
 
     public static final int DEFAULT_TIME_OUT_VALUE = 180000;
 
@@ -165,15 +160,9 @@ public class Pipe {
         }
     }
 
-    private ControlledByteBuffer getConsumerBuffer(){
+    private ControlledByteBuffer getConsumerBuffer() {
 
-        ControlledByteBuffer consumerBuffer;
-        if (outputBuffer != null) {
-            consumerBuffer = outputBuffer;
-        } else {
-            consumerBuffer = buffer;
-        }
-        return consumerBuffer;
+        return (outputBuffer != null ? outputBuffer : buffer);
     }
 
     public ByteBuffer copyAndConsume(final ContentEncoder encoder) throws IOException {
@@ -234,27 +223,6 @@ public class Pipe {
         writeCondition.signalAll();
     }
 
-
-    public void completeBuffer() throws IOException {
-
-        if (producerIoControl == null) {
-            throw new IllegalStateException("Producer cannot be null when calling produce");
-        }
-
-        lock.lock();
-        try {
-            setInputMode(buffer);
-
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    public void setProducerCompleted(boolean value ){
-        this.producerCompleted = true;
-        this.producerError = true;
-    }
-
     /**
      * Produce data in to the buffer.
      *
@@ -267,32 +235,23 @@ public class Pipe {
         if (producerIoControl == null) {
             throw new IllegalStateException("Producer cannot be null when calling produce");
         }
-
         lock.lock();
         try {
             ByteBuffer duplicate = null;
             setInputMode(buffer);
-            int bytesRead=0;
-            try{
-
+            int bytesRead;
+            try {
                 // clone original buffer
                 ByteBuffer originalBuffer = buffer.getByteBuffer();
-
                 bytesRead = decoder.read(originalBuffer);
-
                 duplicate = originalBuffer.duplicate(); //RelayUtils.cloneBuffer(originalBuffer);
-
-               // Charset charset = StandardCharsets.UTF_8; //Charset.forName("ISO-8859-1");
-                //String text = charset.decode(duplicate).toString();
-               // log.info("Data : " + text);
-
                 // replicate positions of original buffer in duplicated buffer
                 int position = originalBuffer.position();
                 duplicate.limit(position);
                 if (bytesRead > 0) {
                     duplicate.position(position - bytesRead);
                 }
-            } catch(MalformedChunkCodingException ignore) {
+            } catch (MalformedChunkCodingException ignore) {
                 // we assume that this is a truncated chunk, hence simply ignore the exception
                 // https://issues.apache.org/jira/browse/HTTPCORE-195
                 // we should add the EoF character
@@ -301,7 +260,6 @@ public class Pipe {
                 bytesRead = buffer.position();
 
             }
-
             // if consumer is at error we have to let the producer complete
             if (consumerError) {
                 buffer.clear();
@@ -312,7 +270,6 @@ public class Pipe {
                 // until the origin handler frees up some space in the buffer
                 producerIoControl.suspendInput();
             }
-
             // If there is some content in the input buffer make sure consumer output is active
             if (buffer.position() > 0 || decoder.isCompleted()) {
                 if (consumerIoControl != null) {
@@ -696,11 +653,6 @@ public class Pipe {
             try {
                 setInputMode(outputBuffer);
                 int remaining = len;
-
-                if (consumerError || isStale) {
-                    buffer.clear();
-                    throw  new IOException("////");
-                }
 
                 if (consumerIoControl instanceof NHttpServerConnection) {
                     if (((NHttpServerConnection) consumerIoControl).isStale()) {

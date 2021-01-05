@@ -144,14 +144,6 @@ public class TargetResponse {
         }
     }
 
-    public void completeBuffer() throws IOException {
-      pipe.completeBuffer();
-    }
-
-    public void setProducerCompleted(boolean value ){
-        pipe.setProducerCompleted(value);
-    }
-
     /**
      * Read the data from the wire and read in to the pipe so that other end of
      * the pipe can write.
