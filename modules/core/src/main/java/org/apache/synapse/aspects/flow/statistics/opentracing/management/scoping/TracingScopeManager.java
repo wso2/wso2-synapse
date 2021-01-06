@@ -41,8 +41,9 @@ public class TracingScopeManager {
      * Returns a tracing scope object for the provided message context.
      * Returns the reference to the existing object when the tracing scope is known (has been already created).
      * Otherwise creates a new scope, stores it, and returns its reference.
-     * @param synCtx    Message context.
-     * @return          Tracing scope object.
+     *
+     * @param synCtx Message context.
+     * @return Tracing scope object.
      */
     public TracingScope getTracingScope(MessageContext synCtx) {
         synchronized (tracingScopes) {
@@ -62,8 +63,9 @@ public class TracingScopeManager {
 
     /**
      * Gets the tracing scope id for the provided message context.
-     * @param synCtx    Message context.
-     * @return          Tracing scope id.
+     *
+     * @param synCtx Message context.
+     * @return Tracing scope id.
      */
     private String extractTracingScopeId(MessageContext synCtx) {
         return (String) synCtx.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
@@ -71,17 +73,22 @@ public class TracingScopeManager {
 
     /**
      * Gets the latest tracing scope object.
-     * @return  Latest tracing scope object.
+     *
+     * @return Latest tracing scope object.
      */
     private TracingScope getLatestTracingScope() {
-        if (!tracingScopes.isEmpty()) {
-            String[] keys = tracingScopes.keySet().toArray(new String[0]);
-            return tracingScopes.get(keys[keys.length - 1]);
+        synchronized (tracingScopes){
+            if (!tracingScopes.isEmpty()) {
+                String[] keys = tracingScopes.keySet().toArray(new String[0]);
+                return tracingScopes.get(keys[keys.length - 1]);
+            }
+            return null;
         }
-        return null;
     }
 
     public void cleanupTracingScope(String tracingScopeId) {
-        tracingScopes.remove(tracingScopeId);
+        synchronized (tracingScopes){
+            tracingScopes.remove(tracingScopeId);
+        }
     }
 }

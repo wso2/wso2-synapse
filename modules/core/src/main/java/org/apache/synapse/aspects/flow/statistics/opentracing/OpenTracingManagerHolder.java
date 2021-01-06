@@ -22,6 +22,7 @@ import io.jaegertracing.Configuration;
 import io.jaegertracing.internal.samplers.ConstSampler;
 import org.apache.synapse.aspects.flow.statistics.opentracing.management.JaegerTracingManager;
 import org.apache.synapse.aspects.flow.statistics.opentracing.management.OpenTracingManager;
+import org.apache.synapse.aspects.flow.statistics.opentracing.management.helpers.zipkin.ZipkinV2ReporterFactory;
 
 /**
  * Holds the OpenTracing Manager, and configurations related to it.
@@ -65,6 +66,16 @@ public class OpenTracingManagerHolder {
                 .withMaxQueueSize(reporterMaxQueueSize)
                 .withFlushInterval(reporterFlushInterval);
         openTracingManager = new JaegerTracingManager(sampler, reporter);
+    }
+
+    /**
+     * Loads Zipkin configurations required for the OpenTracingManager.
+     *
+     * @param zipkinBackendURL
+     */
+    public static void loadZipkinConfigurations(String zipkinBackendURL) {
+        ZipkinV2ReporterFactory factory = new ZipkinV2ReporterFactory(zipkinBackendURL);
+        openTracingManager = new JaegerTracingManager(factory.getReporter());
     }
 
     /**
