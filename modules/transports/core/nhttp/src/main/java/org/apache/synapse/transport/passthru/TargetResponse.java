@@ -151,23 +151,45 @@ public class TargetResponse {
     /**
      * Read the data from the wire and read in to the pipe so that other end of
      * the pipe can write.
-     * @param conn the target connection
+     *
+     * @param conn    the target connection
      * @param decoder content decoder
-     * @throws java.io.IOException if an error occurs
      * @return number of bites read
+     * @throws java.io.IOException if an error occurs
+     */
+    public int read(NHttpClientConnection conn, ContentDecoder decoder) throws IOException {
+
+        int bytes = 0;
+        if (pipe != null) {
+            bytes = pipe.produce(decoder);
+        }
+        // Update connection state
+        readPostActions(conn, decoder);
+        return bytes;
+    }
+
+    /**
+     * Same as
+     * {@link TargetResponse#read(org.apache.http.nio.NHttpClientConnection, org.apache.http.nio.ContentDecoder)} but
+     * gives out the data read from the wire in to the pipe.
+     *
+     * @param conn    the target connection
+     * @param decoder content decoder
+     * @return data read
+     * @throws java.io.IOException if an error occurs
      */
     public ByteBuffer copyAndRead(NHttpClientConnection conn, ContentDecoder decoder) throws IOException {
 
         ByteBuffer bufferCopy = null;
-        if(pipe != null){
+        if (pipe != null) {
             bufferCopy = pipe.copyAndProduce(decoder);
         }
         // Update connection state
-        readHelper(conn, decoder);
+        readPostActions(conn, decoder);
         return bufferCopy;
     }
 
-    private void readHelper(NHttpClientConnection conn, ContentDecoder decoder) {
+    private void readPostActions(NHttpClientConnection conn, ContentDecoder decoder) {
 
         if (decoder.isCompleted()) {
             conn.getContext().setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME,
@@ -186,26 +208,6 @@ public class TargetResponse {
                 }
             }
         }
-    }
-
-    /**
-     * Read the data from the wire and read in to the pipe so that other end of
-     * the pipe can write.
-     * @param conn the target connection
-     * @param decoder content decoder
-     * @throws java.io.IOException if an error occurs
-     * @return number of bites read
-     */
-    public int read(NHttpClientConnection conn, ContentDecoder decoder) throws IOException {
-
-    	int bytes=0;
-
-    	if(pipe != null){
-    		bytes = pipe.produce(decoder);
-    	}
-        // Update connection state
-        readHelper(conn, decoder);
-        return bytes;
     }
 
     public String getHeader(String name) {
