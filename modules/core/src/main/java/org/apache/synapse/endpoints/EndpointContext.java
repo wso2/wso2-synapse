@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.Replicator;
 
@@ -42,6 +43,7 @@ public class EndpointContext {
     private static final String NEXT_RETRY_TIME = ".next_retry_time";
     private static final String REMAINING_RETRIES = ".remaining_retries";
     private static final String LAST_SUSPEND_DURATION = ".last_suspend_duration";
+    private static final String MAXIMUM_REMAINING_RETRIES = ".maximum_remaining_retries";
 
     // The different states an endpoint could exist at any point in time
     /** And active endpoint known to be functioning properly */
@@ -67,6 +69,16 @@ public class EndpointContext {
     private int  localRemainingRetries = -1;
     /** The duration in ms for the last suspension */
     private long localLastSuspendDuration = -1;
+    /** The maximum number of failover attempts allowed for the endpoint */
+    private int maximumRetryLimit =
+            Integer.parseInt(SynapsePropertiesLoader.getPropertyValue(SynapseConstants.MAX_FAILOVER_RETRIES_CONFIG,
+                    String.valueOf(SynapseConstants.DEFAULT_MAX_FAILOVER_RETRIES)));
+    /** The number of attempts left for endpoint failures, until they make the endpoint suspended */
+    private int maximumRemainingRetries = maximumRetryLimit;
+    /** The endpoint suspension duration in ms if the maximum retry attempts exceeded */
+    private long suspendDurationOnMaximumFailover = Long.parseLong(SynapsePropertiesLoader
+            .getPropertyValue(SynapseConstants.SUSPEND_DURATION_ON_MAX_FAILOVER_CONFIG,
+                    String.valueOf(SynapseConstants.DEFAULT_ENDPOINT_SUSPEND_TIME)));
 
     /** Is the environment clustered ? */
     private boolean isClustered = false;
@@ -85,6 +97,7 @@ public class EndpointContext {
     private final String NEXT_RETRY_TIME_KEY;
     private final String REMAINING_RETRIES_KEY;
     private final String LAST_SUSPEND_DURATION_KEY;
+    private final String MAXIMUM_REMAINING_RETRIES_KEY;
 
     /**
      * Create an EndpointContext to hold runtime state of an Endpoint
@@ -122,6 +135,7 @@ public class EndpointContext {
         NEXT_RETRY_TIME_KEY = KEY_PREFIX + endpointName + NEXT_RETRY_TIME;
         REMAINING_RETRIES_KEY = KEY_PREFIX + endpointName + REMAINING_RETRIES;
         LAST_SUSPEND_DURATION_KEY = KEY_PREFIX + endpointName + LAST_SUSPEND_DURATION;
+        MAXIMUM_REMAINING_RETRIES_KEY = KEY_PREFIX + endpointName + MAXIMUM_REMAINING_RETRIES;
 
         if (isClustered && (endpointDefinition == null ||
                 !endpointDefinition.isReplicationDisabled())) {
@@ -180,6 +194,7 @@ public class EndpointContext {
                     Replicator.setAndReplicateState(REMAINING_RETRIES_KEY,
                             definition.getRetriesOnTimeoutBeforeSuspend(), cfgCtx);
                     Replicator.setAndReplicateState(LAST_SUSPEND_DURATION_KEY, null, cfgCtx);
+                    Replicator.setAndReplicateState(REMAINING_RETRIES_KEY, maximumRetryLimit, cfgCtx);
                     break;
                 }
                 case ST_TIMEOUT: {
@@ -220,6 +235,7 @@ public class EndpointContext {
                             definition == null ? -1 :
                                     definition.getRetriesOnTimeoutBeforeSuspend(), cfgCtx);
                     Replicator.setAndReplicateState(LAST_SUSPEND_DURATION_KEY, null, cfgCtx);
+                    Replicator.setAndReplicateState(REMAINING_RETRIES_KEY, maximumRetryLimit, cfgCtx);
                     break;
                 }
             }
@@ -232,6 +248,7 @@ public class EndpointContext {
                 case ST_ACTIVE: {
                     localRemainingRetries = definition.getRetriesOnTimeoutBeforeSuspend();
                     localLastSuspendDuration = -1;
+                    maximumRemainingRetries = maximumRetryLimit;
                     break;
                 }
                 case ST_TIMEOUT: {
@@ -269,6 +286,7 @@ public class EndpointContext {
                     localRemainingRetries = definition == null ?
                             -1 : definition.getRetriesOnTimeoutBeforeSuspend();
                     localLastSuspendDuration = -1;
+                    maximumRemainingRetries = maximumRetryLimit;
                     break;
                 }
             }
@@ -546,5 +564,74 @@ public class EndpointContext {
         } else {
             return " ";
         }
+    }
+
+    /**
+     * Check whether the endpoint has exceed the maximum retry limit on failover
+     */
+    public boolean isMaxRetryLimitReached() {
+
+        if (isClustered) {
+            Integer remainingMaxRetries = (Integer) cfgCtx.getPropertyNonReplicable(MAXIMUM_REMAINING_RETRIES_KEY);
+            if (remainingMaxRetries == null) {
+                remainingMaxRetries = maximumRetryLimit;
+            }
+
+            if (remainingMaxRetries == -1) {
+                //disable endpoint suspension
+                return false;
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("Endpoint : " + endpointName + printEndpointAddress()
+                        + " has " + remainingMaxRetries + " maximum retries before suspension");
+            }
+
+            if (remainingMaxRetries <= 0) {
+                return true;
+            } else {
+                Replicator.setAndReplicateState(MAXIMUM_REMAINING_RETRIES_KEY, (remainingMaxRetries - 1), cfgCtx);
+                return false;
+            }
+        } else {
+            if (maximumRemainingRetries == -1) {
+                //disable endpoint suspension
+                return false;
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug("Endpoint : " + endpointName + printEndpointAddress()
+                        + " has " + maximumRemainingRetries + " maximum retries before suspension");
+            }
+
+            if (maximumRemainingRetries <= 0) {
+                return true;
+            } else {
+                maximumRemainingRetries -= 1;
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Endpoint has exceeded the maximum retry attempts on failover
+     */
+    public void onFailoverRetryLimit() {
+
+        recordStatistics(ST_SUSPENDED);
+        long nextRetryTime = System.currentTimeMillis() + suspendDurationOnMaximumFailover;
+        if (isClustered) {
+            Replicator.setAndReplicateState(STATE_KEY, ST_SUSPENDED, cfgCtx);
+            Replicator.setAndReplicateState(LAST_SUSPEND_DURATION_KEY, suspendDurationOnMaximumFailover, cfgCtx);
+            Replicator.setAndReplicateState(NEXT_RETRY_TIME_KEY, nextRetryTime, cfgCtx);
+        } else {
+            localState = ST_SUSPENDED;
+            localLastSuspendDuration = suspendDurationOnMaximumFailover;
+            localNextRetryTime = nextRetryTime;
+        }
+
+        log.warn("Endpoint : " + endpointName + printEndpointAddress() +
+                " will be marked SUSPENDED as it failed until the maximum failover retry limit. Current suspend " +
+                "duration is : " +
+                suspendDurationOnMaximumFailover + "ms - Next retry after : " + new Date(nextRetryTime));
     }
 }
