@@ -24,13 +24,11 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.eip.splitter.CloneMediator;
 import org.apache.synapse.mediators.eip.Target;
 
-import java.util.Iterator;
-
 /**
  * This will serialize the CloneMediator to the xml configuration as specified bellow
  *
  * <pre>
- *  &lt;clone [continueParent=(true | false)]&gt;
+ *  &lt;clone [continueParent=(true | false)] [iterations="number"] &gt;
  *   &lt;target [to="uri"] [soapAction="qname"] [sequence="sequence_ref"]
  *          [endpoint="endpoint_ref"]&gt;
  *     &lt;sequence&gt;
@@ -60,6 +58,10 @@ public class CloneMediatorSerializer extends AbstractMediatorSerializer {
         CloneMediator clone = (CloneMediator) m;
         if (clone.isContinueParent()) {
             cloneElem.addAttribute("continueParent", Boolean.toString(true), nullNS);
+        }
+
+        if (clone.getIterations() != null) {
+            cloneElem.addAttribute("iterations", clone.getIterations(), nullNS);
         }
 
         if (clone.getId() != null) {

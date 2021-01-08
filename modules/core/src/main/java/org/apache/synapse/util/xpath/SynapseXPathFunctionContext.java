@@ -90,6 +90,18 @@ public class SynapseXPathFunctionContext implements FunctionContext {
                    SynapseXPathConstants.URL_ENCODE_FUNCTION.equals(localName)) {
             // create a url-encode function and set it to the XPath
             return new URLEncodeFunction();
+        } else if (localName != null &&
+                SynapseXPathConstants.HMAC_GENERATE_FUNCTION.equals(localName)) {
+            // create a hmac generate function and set it to the XPath
+            return new HMACGenerateFunction();
+        } else if (localName != null &&
+                SynapseXPathConstants.ENCRYPT_FUNCTION.equals(localName)) {
+            // create a encrypt function and set it to the XPath
+            return new EncryptFunction();
+        } else if (localName != null &&
+                SynapseXPathConstants.DECRYPT_FUNCTION.equals(localName)) {
+            // create a decrypt function and set it to the XPath
+            return new DecryptFunction();
         }
         //We check if custom Xpath extensions are available
         Function extensionFunction = XpathExtensionUtil.getFunctionContext(

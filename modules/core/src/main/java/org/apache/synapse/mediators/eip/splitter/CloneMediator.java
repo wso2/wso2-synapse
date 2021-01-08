@@ -22,6 +22,7 @@ package org.apache.synapse.mediators.eip.splitter;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.context.OperationContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
@@ -40,11 +41,11 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
+import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.eip.SharedDataHolder;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.Target;
-import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.util.MessageHelper;
 
 import java.util.ArrayList;
@@ -76,6 +77,12 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
     /** Reference to the synapse environment */
     private SynapseEnvironment synapseEnv;
 
+    private String iterations;
+
+    private Value dynamicIterationsValue;
+
+    private static final String ITERATION_INDEX_PROPERTY_NAME = "CLONED_ITERATION_INDEX";
+
     /**
      * This will implement the mediate method of the Mediator interface and will provide the
      * functionality of cloning message into the specified targets and mediation
@@ -103,20 +110,27 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
 
         synCtx.setProperty(id != null ? EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id :
                            EIPConstants.EIP_SHARED_DATA_HOLDER, new SharedDataHolder());
+        if (!StringUtils.isEmpty(iterations)) {
+            // get the first target, clone the message for the number of iterations and then
+            // mediate the cloned messages in the target for the number of iterations
+            executeTargetIterations(synCtx);
+        } else {
 
-        // get the targets list, clone the message for the number of targets and then
-        // mediate the cloned messages using the targets
-        Iterator<Target> iter = targets.iterator();
-        int i = 0;
-        while (iter.hasNext()) {
-            if (synLog.isTraceOrDebugEnabled()) {
-                synLog.traceOrDebug("Submitting " + (i + 1) + " of " + targets.size() +
-                        " messages for " + (isSequential() ? "sequential processing" : "parallel processing"));
+            // get the targets list, clone the message for the number of targets and then
+            // mediate the cloned messages using the targets
+            Iterator<Target> iter = targets.iterator();
+            int i = 0;
+            while (iter.hasNext()) {
+                if (synLog.isTraceOrDebugEnabled()) {
+                    synLog.traceOrDebug("Submitting " + (i + 1) + " of " + targets.size() +
+                            " messages for " + (isSequential() ? "sequential processing" : "parallel processing"));
+                }
+
+                MessageContext clonedMsgCtx = getClonedMessageContext(synCtx, i++, targets.size());
+                ContinuationStackManager.addReliantContinuationState(clonedMsgCtx, i - 1,
+                        getMediatorPosition());
+                iter.next().mediate(clonedMsgCtx);
             }
-
-            MessageContext clonedMsgCtx = getClonedMessageContext(synCtx, i++, targets.size());
-            ContinuationStackManager.addReliantContinuationState(clonedMsgCtx, i - 1, getMediatorPosition());
-            iter.next().mediate(clonedMsgCtx);
         }
 
         // if the continuation of the parent message is stopped from here set the RESPONSE_WRITTEN
@@ -133,6 +147,32 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         // if continue parent is true mediators after the clone will be called for the further
         // mediation of the message which is subjected for clonning (parent message)
         return continueParent;
+    }
+
+    private void executeTargetIterations(MessageContext synCtx) {
+        int noOfIterations = resolveIterationsCount(synCtx);
+        SynapseLog synLog = getLog(synCtx);
+        Target target = targets.get(0);
+        for (int i = 0; i < noOfIterations; ++i) {
+            if (synLog.isTraceOrDebugEnabled()) {
+                synLog.traceOrDebug("Submitting " + i + " of " + noOfIterations +
+                        " messages for " + (isSequential() ? "sequential processing" : "parallel processing"));
+            }
+            synCtx.setProperty(ITERATION_INDEX_PROPERTY_NAME, i);
+            MessageContext clonedMsgCtx = getClonedMessageContext(synCtx, i, noOfIterations);
+            ContinuationStackManager.addReliantContinuationState(clonedMsgCtx, i, getMediatorPosition());
+            target.mediate(clonedMsgCtx);
+        }
+    }
+
+    private int resolveIterationsCount(MessageContext synCtx) {
+        String countStr = "";
+        if (getDynamicIterationsValue() != null) {
+            countStr = getDynamicIterationsValue().evaluateValue(synCtx);
+        } else if (getIterations() != null) {
+            countStr = getIterations();
+        }
+        return Integer.parseInt(countStr);
     }
 
     public boolean mediate(MessageContext synCtx,
@@ -219,6 +259,22 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
 
     public void setContinueParent(boolean continueParent) {
         this.continueParent = continueParent;
+    }
+
+    public String getIterations() {
+        return iterations;
+    }
+
+    public void setIterations(String iterations) {
+        this.iterations = iterations;
+    }
+
+    public Value getDynamicIterationsValue() {
+        return dynamicIterationsValue;
+    }
+
+    public void setDynamicIterationsValue(Value dynamicIterationsValue) {
+        this.dynamicIterationsValue = dynamicIterationsValue;
     }
 
     public List<Target> getTargets() {

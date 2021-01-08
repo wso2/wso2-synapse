@@ -36,6 +36,15 @@ public final class SynapseXPathConstants {
     /** URL-Encode XPath extension function name */
     public static final String URL_ENCODE_FUNCTION = "url-encode";
 
+    /** hmac-generate XPath extension function name */
+    public static final String HMAC_GENERATE_FUNCTION = "hmac-generate";
+
+    /** encrypt XPath extension function name */
+    public static final String ENCRYPT_FUNCTION = "encrypt";
+
+    /** decrypt XPath extension function name */
+    public static final String DECRYPT_FUNCTION = "decrypt";
+
     /** Body relative XPath variale name for the SOAPBody */
     public static final String SOAP_BODY_VARIABLE = "body";
 
