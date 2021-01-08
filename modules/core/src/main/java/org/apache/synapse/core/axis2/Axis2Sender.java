@@ -104,15 +104,7 @@ public class Axis2Sender {
         }
 
         MessageContext messageContext = ((Axis2MessageContext) smc).getAxis2MessageContext();
-
-        // if this is a dummy 202 Accepted message meant only for the http/s transports
-        // prevent it from going into any other transport sender
-        if (messageContext.isPropertyTrue(NhttpConstants.SC_ACCEPTED) &&
-                messageContext.getTransportOut() != null &&
-                !messageContext.getTransportOut().getName().startsWith(Constants.TRANSPORT_HTTP)) {
-            return;
-        }
-
+        
         // fault processing code
         if (messageContext.isDoingREST() && messageContext.isFault() &&
             isMessagePayloadHasASOAPFault(messageContext)) {
