@@ -228,11 +228,10 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             SourceRequest request = SourceContext.getRequest(conn);
 
-            int readBytes = -1;
-            boolean interceptionEnabled = interceptStream;
+            int readBytes = 0;
+            boolean interceptionEnabled = false;
             Boolean[] interceptorResults = new Boolean[noOfInterceptors];
-            if (interceptionEnabled) {
-                interceptionEnabled = false;
+            if (interceptStream) {
                 int index = 0;
                 for (StreamInterceptor interceptor : streamInterceptors) {
                     interceptorResults[index] = interceptor.interceptSourceRequest((MessageContext) conn.getContext()
@@ -254,6 +253,10 @@ public class SourceHandler implements NHttpServerEventHandler {
                                                                         (MessageContext) conn.getContext().getAttribute(
                                                                                 PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
                             if (!proceed) {
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Dropping source connection since request is blocked by : " + interceptor
+                                            .getName());
+                                }
                                 dropSourceConnection(conn);
                                 conn.getContext().setAttribute(PassThroughConstants.SOURCE_CONNECTION_DROPPED, true);
                                 request.getPipe().forceProducerComplete(decoder);
@@ -452,11 +455,10 @@ public class SourceHandler implements NHttpServerEventHandler {
             SourceResponse response = SourceContext.getResponse(conn);
 
             int bytesSent = -1;
-            boolean interceptionEnabled = interceptStream;
+            boolean interceptionEnabled = false;
             Boolean[] interceptorResults = new Boolean[noOfInterceptors];
-            if (interceptionEnabled) {
+            if (interceptStream) {
                 int index = 0;
-                interceptionEnabled = false;
                 for (StreamInterceptor interceptor : streamInterceptors) {
                     interceptorResults[index] = interceptor.interceptSourceResponse((MessageContext) conn.getContext()
                             .getAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT));

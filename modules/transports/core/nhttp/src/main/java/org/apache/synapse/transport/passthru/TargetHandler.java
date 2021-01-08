@@ -242,14 +242,14 @@ public class TargetHandler implements NHttpClientEventHandler {
             TargetRequest request = TargetContext.getRequest(conn);
             if (request.hasEntityBody()) {
                 int bytesWritten = -1;
-                boolean interceptionEnabled = interceptStream;
-                Boolean[] interceptorResults =  new Boolean[noOfInterceptors];
-                if (interceptionEnabled) {
-                    interceptionEnabled = false;
+                boolean interceptionEnabled = false;
+                Boolean[] interceptorResults = new Boolean[noOfInterceptors];
+                if (interceptStream) {
                     int index = 0;
                     for (StreamInterceptor interceptor : streamInterceptors) {
-                        interceptorResults[index] = interceptor.interceptTargetRequest((MessageContext) conn.getContext()
-                                .getAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
+                        interceptorResults[index] = interceptor.interceptTargetRequest(
+                                (MessageContext) conn.getContext()
+                                        .getAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
                         if (!interceptionEnabled && interceptorResults[index]) {
                             interceptionEnabled = true;
                         }
@@ -548,10 +548,9 @@ public class TargetHandler implements NHttpClientEventHandler {
 			if (response != null) {
                 statusCode = conn.getHttpResponse().getStatusLine().getStatusCode();
                 int responseRead = -1;
-                boolean interceptionEnabled = interceptStream;
+                boolean interceptionEnabled = false;
                 Boolean[] interceptorResults = new Boolean[noOfInterceptors];
-                if (interceptionEnabled) {
-                    interceptionEnabled = false;
+                if (interceptStream) {
                     int index = 0;
                     for (StreamInterceptor interceptor : streamInterceptors) {
                         interceptorResults[index] = interceptor.interceptTargetResponse(
@@ -575,6 +574,10 @@ public class TargetHandler implements NHttpClientEventHandler {
                                                                      (MessageContext) conn.getContext().getAttribute(
                                                                              PassThroughConstants.RESPONSE_MESSAGE_CONTEXT));
                                 if (!proceed) {
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("Dropping target connection since request is blocked by : "
+                                                          + interceptor.getName());
+                                    }
                                     dropTargetConnection(conn);
                                     response.getPipe().forceProducerComplete(decoder);
                                     break;
