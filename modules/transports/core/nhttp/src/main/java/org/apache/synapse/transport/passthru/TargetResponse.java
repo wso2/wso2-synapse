@@ -160,7 +160,7 @@ public class TargetResponse {
 
         ByteBuffer bufferCopy = null;
         if(pipe != null){
-            bufferCopy = pipe.copAndProduce(decoder);
+            bufferCopy = pipe.copyAndProduce(decoder);
         }
         // Update connection state
         readHelper(conn, decoder);

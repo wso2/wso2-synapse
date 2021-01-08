@@ -137,7 +137,7 @@ public class SourceRequest {
             throw new IllegalStateException("A Pipe must be connected before calling read");
         }
         if (entityEnclosing) {
-            ByteBuffer bufferCopy = pipe.copAndProduce(decoder);
+            ByteBuffer bufferCopy = pipe.copyAndProduce(decoder);
             readHelper(conn, decoder);
             return bufferCopy;
         } else {

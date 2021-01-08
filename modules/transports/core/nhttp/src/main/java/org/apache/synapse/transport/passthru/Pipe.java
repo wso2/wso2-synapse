@@ -125,12 +125,16 @@ public class Pipe {
         this.consumerIoControl = consumerIoControl;
     }
 
+    private ControlledByteBuffer getConsumerBuffer() {
+        return (outputBuffer != null ? outputBuffer : buffer);
+    }
+
     /**
      * Consume the data from the buffer. Before calling this method attachConsumer
      * method must be called with a valid IOControl.
      *
      * @param encoder encoder used to write the data means there will not be any data
-     * written in to this buffer
+     *                written in to this buffer
      * @return number of bytes written (consumed)
      * @throws IOException if an error occurred while consuming data
      */
@@ -153,17 +157,21 @@ public class Pipe {
             }
             setOutputMode(consumerBuffer);
             int bytesWritten = encoder.write(consumerBuffer.getByteBuffer());
-            consumeHelper(consumerBuffer, encoder, bytesWritten);
+            consumePostActions(consumerBuffer, encoder, bytesWritten);
             return bytesWritten;
         } finally {
             lock.unlock();
         }
     }
 
-    private ControlledByteBuffer getConsumerBuffer() {
-        return (outputBuffer != null ? outputBuffer : buffer);
-    }
-
+    /**
+     * Same as {@link Pipe#consume(org.apache.http.nio.ContentEncoder)} but this gives a copy of data which has been
+     * consumed.
+     *
+     * @param encoder encoder used to write
+     * @return a buffer with data written (consumed)
+     * @throws IOException if an error occurred while consuming data
+     */
     public ByteBuffer copyAndConsume(final ContentEncoder encoder) throws IOException {
 
         if (consumerIoControl == null) {
@@ -191,14 +199,14 @@ public class Pipe {
             if (position - bytesWritten > 0) {
                 duplicate.position(position - bytesWritten);
             }
-            consumeHelper(consumerBuffer, encoder, bytesWritten);
+            consumePostActions(consumerBuffer, encoder, bytesWritten);
             return duplicate;
         } finally {
             lock.unlock();
         }
     }
 
-    private void consumeHelper(ControlledByteBuffer consumerBuffer, ContentEncoder encoder, int bytesWritten)
+    private void consumePostActions(ControlledByteBuffer consumerBuffer, ContentEncoder encoder, int bytesWritten)
             throws IOException {
 
         setInputMode(consumerBuffer);
@@ -227,7 +235,40 @@ public class Pipe {
      * @return bytes read (consumed)
      * @throws IOException if an error occurs while reading data
      */
-    public ByteBuffer copAndProduce(final ContentDecoder decoder) throws IOException {
+    public int produce(final ContentDecoder decoder) throws IOException {
+        if (producerIoControl == null) {
+            throw new IllegalStateException("Producer cannot be null when calling produce");
+        }
+
+        lock.lock();
+        try {
+            setInputMode(buffer);
+            int bytesRead;
+            try {
+                bytesRead = decoder.read(buffer.getByteBuffer());
+            } catch (MalformedChunkCodingException ignore) {
+                // we assume that this is a truncated chunk, hence simply ignore the exception
+                // https://issues.apache.org/jira/browse/HTTPCORE-195
+                // we should add the EoF character
+                buffer.putInt(-1);
+                // now the buffer's position should give us the bytes read.
+                bytesRead = buffer.position();
+            }
+            producePostActions(decoder);
+            return bytesRead;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Same as {@link Pipe#produce(org.apache.http.nio.ContentDecoder)} and gives a copy of data produced
+     *
+     * @param decoder decoder to read bytes from the underlying stream
+     * @return bytes of data read (consumed)
+     * @throws IOException if an error occurs while reading data
+     */
+    public ByteBuffer copyAndProduce(final ContentDecoder decoder) throws IOException {
 
         if (producerIoControl == null) {
             throw new IllegalStateException("Producer cannot be null when calling produce");
@@ -255,14 +296,14 @@ public class Pipe {
                 buffer.putInt(-1);
                 duplicate.putInt(-1);
             }
-            producerHelper(decoder);
+            producePostActions(decoder);
             return duplicate;
         } finally {
             lock.unlock();
         }
     }
 
-    private void producerHelper(final ContentDecoder decoder) {
+    private void producePostActions(final ContentDecoder decoder) {
 
         // if consumer is at error we have to let the producer complete
         if (consumerError) {
@@ -282,39 +323,6 @@ public class Pipe {
         }
         if (decoder.isCompleted()) {
             producerCompleted = true;
-        }
-    }
-
-    /**
-     * Produce data in to the buffer.
-     *
-     * @param decoder decoder to read bytes from the underlying stream
-     * @return bytes read (consumed)
-     * @throws IOException if an error occurs while reading data
-     */
-    public int produce(final ContentDecoder decoder) throws IOException {
-        if (producerIoControl == null) {
-            throw new IllegalStateException("Producer cannot be null when calling produce");
-        }
-
-        lock.lock();
-        try {
-            setInputMode(buffer);
-            int bytesRead;
-            try{
-                bytesRead = decoder.read(buffer.getByteBuffer());
-            } catch(MalformedChunkCodingException ignore) {
-                // we assume that this is a truncated chunk, hence simply ignore the exception
-                // https://issues.apache.org/jira/browse/HTTPCORE-195
-                // we should add the EoF character
-                buffer.putInt(-1);
-                // now the buffer's position should give us the bytes read.
-                bytesRead = buffer.position();
-            }
-            producerHelper(decoder);
-            return bytesRead;
-        } finally {
-            lock.unlock();
         }
     }
 
