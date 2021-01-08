@@ -25,8 +25,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Abstract class implementing the methods of {@link StreamInterceptor}. A stream intercpetor can be written by
- * extending and overding the necessarry emthods of this class.
+ * Abstract class implementing the methods of {@link StreamInterceptor}. A stream interceptor can be written by
+ * extending and overding the necessary methods of this class.
  * For an example see{@link SampleStreamInterceptor}
  */
 public abstract class AbstractStreamInterceptor implements StreamInterceptor {

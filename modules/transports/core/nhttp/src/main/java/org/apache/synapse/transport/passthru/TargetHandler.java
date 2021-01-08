@@ -90,7 +90,8 @@ public class TargetHandler implements NHttpClientEventHandler {
     public static final String VALID_MAX_MESSAGE_SIZE = "valid.max.message.size.in.bytes";
 
     private List<StreamInterceptor> streamInterceptors;
-    private boolean interceptStream ;
+    private boolean interceptStream;
+    private int noOfInterceptors;
 
     public TargetHandler(DeliveryAgent deliveryAgent, ClientConnFactory connFactory,
                          TargetConfiguration configuration) {
@@ -108,6 +109,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         this.metrics = targetConfiguration.getMetrics();
         this.streamInterceptors = interceptors;
         this.interceptStream = !streamInterceptors.isEmpty();
+        this.noOfInterceptors = streamInterceptors.size();
 
         Properties props = MiscellaneousUtil.loadProperties(PROPERTY_FILE);
         String validationProperty = MiscellaneousUtil.getProperty(props, MESSAGE_SIZE_VALIDATION, "false");
@@ -241,22 +243,31 @@ public class TargetHandler implements NHttpClientEventHandler {
             if (request.hasEntityBody()) {
                 int bytesWritten = -1;
                 boolean interceptionEnabled = interceptStream;
+                Boolean[] interceptorResults =  new Boolean[noOfInterceptors];
                 if (interceptionEnabled) {
+                    interceptionEnabled = false;
+                    int index = 0;
                     for (StreamInterceptor interceptor : streamInterceptors) {
-                        interceptionEnabled = interceptor.interceptTargetRequest((MessageContext) conn.getContext()
+                        interceptorResults[index] = interceptor.interceptTargetRequest((MessageContext) conn.getContext()
                                 .getAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
-                        if (interceptionEnabled) {
-                            break;
+                        if (!interceptionEnabled && interceptorResults[index]) {
+                            interceptionEnabled = true;
                         }
+                        index++;
                     }
                 }
                 if (interceptionEnabled) {
                     ByteBuffer bytesSentDuplicate = request.copyAndWrite(conn, encoder);
                     if (bytesSentDuplicate != null) {
                         bytesWritten = bytesSentDuplicate.position();
+                        int index = 0;
                         for (StreamInterceptor interceptor : streamInterceptors) {
-                            interceptor.targetRequest(bytesSentDuplicate.duplicate(), (MessageContext) conn.getContext()
-                                    .getAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
+                            if (interceptorResults[index]) {
+                                interceptor.targetRequest(bytesSentDuplicate.duplicate(),
+                                                          (MessageContext) conn.getContext().getAttribute(
+                                                                  PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
+                            }
+                            index++;
                         }
                     }
                 } else {
@@ -538,13 +549,18 @@ public class TargetHandler implements NHttpClientEventHandler {
                 statusCode = conn.getHttpResponse().getStatusLine().getStatusCode();
                 int responseRead = -1;
                 boolean interceptionEnabled = interceptStream;
+                Boolean[] interceptorResults = new Boolean[noOfInterceptors];
                 if (interceptionEnabled) {
+                    interceptionEnabled = false;
+                    int index = 0;
                     for (StreamInterceptor interceptor : streamInterceptors) {
-                        interceptionEnabled = interceptor.interceptTargetResponse((MessageContext) conn.getContext()
-                                .getAttribute(PassThroughConstants.RESPONSE_MESSAGE_CONTEXT));
-                        if (interceptionEnabled) {
-                            break;
+                        interceptorResults[index] = interceptor.interceptTargetResponse(
+                                (MessageContext) conn.getContext()
+                                        .getAttribute(PassThroughConstants.RESPONSE_MESSAGE_CONTEXT));
+                        if (!interceptionEnabled && interceptorResults[index]) {
+                            interceptionEnabled = true;
                         }
+                        index++;
                     }
                 }
                 if (interceptionEnabled) {
@@ -552,15 +568,19 @@ public class TargetHandler implements NHttpClientEventHandler {
                     if (bytesSentDuplicate != null) {
                         responseRead = bytesSentDuplicate.position();
                         boolean proceed;
+                        int index = 0;
                         for (StreamInterceptor interceptor : streamInterceptors) {
-                            proceed = interceptor.targetResponse(bytesSentDuplicate.duplicate(),
-                                                                 (MessageContext) conn.getContext().getAttribute(
-                                                                         PassThroughConstants.RESPONSE_MESSAGE_CONTEXT));
-                            if (!proceed) {
-                                dropTargetConnection(conn);
-                                response.getPipe().forceProducerComplete(decoder);
-                                break;
+                            if (interceptorResults[index]) {
+                                proceed = interceptor.targetResponse(bytesSentDuplicate.duplicate(),
+                                                                     (MessageContext) conn.getContext().getAttribute(
+                                                                             PassThroughConstants.RESPONSE_MESSAGE_CONTEXT));
+                                if (!proceed) {
+                                    dropTargetConnection(conn);
+                                    response.getPipe().forceProducerComplete(decoder);
+                                    break;
+                                }
                             }
+                            index++;
                         }
                     }
                 } else {
