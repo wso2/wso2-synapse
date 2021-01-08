@@ -128,7 +128,30 @@ public class SourceRequest {
      *
      * @param conn    the connection
      * @param decoder content decoder
-     * @return the copy of data produced to the pipe
+     * @return number of bytes read
+     * @throws java.io.IOException if an error occurs
+     */
+    public int read(NHttpServerConnection conn, ContentDecoder decoder) throws IOException {
+        if (pipe == null) {
+            throw new IllegalStateException("A Pipe must be connected before calling read");
+        }
+        if (entityEnclosing) {
+            int bytes = pipe.produce(decoder);
+            readPostActions(conn, decoder);
+            return bytes;
+        } else {
+            throw new IllegalStateException("Only Entity Enclosing Requests can read content in to the pipe");
+        }
+    }
+
+    /**
+     * Same as
+     * {@link SourceRequest#read(org.apache.http.nio.NHttpServerConnection, org.apache.http.nio.ContentDecoder)}
+     * but gives the copy of content produced in to the pipe.
+     *
+     * @param conn    the connection
+     * @param decoder content decoder
+     * @return copy of data produced to the pipe
      * @throws java.io.IOException if an error occurs
      */
     public ByteBuffer copyAndRead(NHttpServerConnection conn, ContentDecoder decoder) throws IOException {
@@ -138,14 +161,14 @@ public class SourceRequest {
         }
         if (entityEnclosing) {
             ByteBuffer bufferCopy = pipe.copyAndProduce(decoder);
-            readHelper(conn, decoder);
+            readPostActions(conn, decoder);
             return bufferCopy;
         } else {
             throw new IllegalStateException("Only Entity Enclosing Requests can read content in to the pipe");
         }
     }
 
-    private void readHelper(NHttpServerConnection conn, ContentDecoder decoder) {
+    private void readPostActions(NHttpServerConnection conn, ContentDecoder decoder) {
 
         if (decoder.isCompleted()) {
             conn.getContext().setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_END_TIME,
@@ -156,27 +179,6 @@ public class SourceRequest {
             SourceContext.updateState(conn, ProtocolState.REQUEST_DONE);
             // Suspend client input
             conn.suspendInput();
-        }
-    }
-
-    /**
-     * Produce the content in to the pipe.
-     * @param conn the connection
-     * @param decoder content decoder
-     *
-     * @throws java.io.IOException if an error occurs
-     * @return number of bytes read
-     */
-    public int read(NHttpServerConnection conn, ContentDecoder decoder) throws IOException {
-        if (pipe == null) {
-            throw new IllegalStateException("A Pipe must be connected before calling read");
-        }
-        if (entityEnclosing) {
-            int bytes = pipe.produce(decoder);
-            readHelper(conn, decoder);
-            return bytes;
-        } else {
-            throw new IllegalStateException("Only Entity Enclosing Requests can read content in to the pipe");
         }
     }
 
