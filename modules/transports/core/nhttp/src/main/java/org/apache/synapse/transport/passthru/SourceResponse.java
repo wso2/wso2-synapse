@@ -269,10 +269,11 @@ public class SourceResponse {
 
     /**
      * Consume the content through the Pipe and write them to the wire
-     * @param conn connection
+     *
+     * @param conn    connection
      * @param encoder encoder
-     * @throws java.io.IOException if an error occurs
      * @return number of bytes written
+     * @throws java.io.IOException if an error occurs
      */
     public int write(NHttpServerConnection conn, ContentEncoder encoder) throws IOException {
         int bytes = 0;
@@ -282,10 +283,20 @@ public class SourceResponse {
             encoder.complete();
         }
         // Update connection state
-        writeHelper(conn, encoder);
+        writePostActions(conn, encoder);
         return bytes;
     }
 
+    /**
+     * Same as
+     * {@link SourceResponse#write(org.apache.http.nio.NHttpServerConnection, org.apache.http.nio.ContentEncoder)}
+     * but gives out the data consumed through the Pipe
+     *
+     * @param conn    connection
+     * @param encoder encoder
+     * @return data consumed
+     * @throws java.io.IOException if an error occurs
+     */
     public ByteBuffer copyAndWrite(NHttpServerConnection conn, ContentEncoder encoder) throws IOException {
 
         ByteBuffer bytes = null;
@@ -294,11 +305,11 @@ public class SourceResponse {
         } else {
             encoder.complete();
         }
-        writeHelper(conn, encoder);
+        writePostActions(conn, encoder);
         return bytes;
     }
 
-    private void writeHelper(NHttpServerConnection conn, ContentEncoder encoder) {
+    private void writePostActions(NHttpServerConnection conn, ContentEncoder encoder) {
 
         if (encoder.isCompleted()) {
             SourceContext.updateState(conn, ProtocolState.RESPONSE_DONE);
