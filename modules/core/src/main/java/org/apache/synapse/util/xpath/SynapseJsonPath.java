@@ -294,8 +294,7 @@ public class SynapseJsonPath extends SynapsePath {
         }
         List result = new ArrayList();
         try {
-            Object object = jsonPath.read(jsonStream);
-            object = formatJsonPathResponse(jsonPath.read(jsonStream));
+            Object object = formatJsonPathResponse(jsonPath.read(jsonStream));
             if (object != null) {
                 if (object instanceof List && !jsonPath.isDefinite()) {
                     result = (List) object;
