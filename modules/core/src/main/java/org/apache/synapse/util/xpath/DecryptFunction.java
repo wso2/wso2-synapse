@@ -47,6 +47,12 @@ public class DecryptFunction implements Function {
     public Object call(Context context, List args) throws FunctionCallException {
         boolean debugOn = log.isDebugEnabled();
 
+        if (args == null) {
+            if (debugOn) {
+                log.debug("Missing arguments in the function call");
+            }
+            return SynapseXPathConstants.NULL_STRING;
+        }
         int size = args.size();
         if (size == 4) {
             String encryptedText = StringFunction.evaluate(args.get(0), context.getNavigator());
@@ -76,7 +82,7 @@ public class DecryptFunction implements Function {
                     algorithm);
         }
         if (debugOn) {
-            log.debug("Property key value for lookup is not specified");
+            log.debug("Missing arguments in the function call");
         }
         // return empty string if the arguments are wrong
         return SynapseXPathConstants.NULL_STRING;

@@ -45,9 +45,9 @@ public class EncryptFunction implements Function {
     @Override
     public Object call(Context context, List args) throws FunctionCallException {
         boolean debugOn = log.isDebugEnabled();
-        if (args == null || args.size() == 0 || args.size() == 1 || args.size() == 2 || args.size() == 3) {
+        if (args == null) {
             if (debugOn) {
-                log.debug("Property key value for lookup is not specified");
+                log.debug("Missing arguments in the function call");
             }
             return SynapseXPathConstants.NULL_STRING;
         }
@@ -81,6 +81,9 @@ public class EncryptFunction implements Function {
                         algorithm);
         }
         // return empty string if the arguments are wrong
+        if (debugOn) {
+            log.debug("Missing arguments in the function call");
+        }
         return SynapseXPathConstants.NULL_STRING;
 
     }

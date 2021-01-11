@@ -41,6 +41,13 @@ public class HMACGenerateFunction implements Function {
     @Override
     public Object call(Context context, List args) throws FunctionCallException {
         boolean debugOn = log.isDebugEnabled();
+        if (args == null) {
+            if (debugOn) {
+                log.debug("Missing arguments in the function call");
+            }
+            return SynapseXPathConstants.NULL_STRING;
+        }
+
         int size = args.size();
         if (size == 2) {
             String payload = StringFunction.evaluate(args.get(0), context.getNavigator());
@@ -54,7 +61,7 @@ public class HMACGenerateFunction implements Function {
             return generateSignature(payload, secret, algorithm);
         }
         if (debugOn) {
-            log.debug("Property key value for lookup is not specified");
+            log.debug("Missing arguments in the function call");
         }
         return SynapseXPathConstants.NULL_STRING;
     }
