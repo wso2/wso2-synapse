@@ -152,6 +152,8 @@ public class HostConnections {
         ctx.removeAttribute(ExecutionContext.HTTP_RESPONSE);
         ctx.setAttribute(PassThroughConstants.CONNECTION_EXPIRY_TIME, getExpiryTime(conn));
         ctx.removeAttribute(SynapseHTTPRequestFactory.ENDPOINT_URL);
+        ctx.removeAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT);
+        ctx.removeAttribute(PassThroughConstants.RESPONSE_MESSAGE_CONTEXT);
         lock.lock();
         try {
             if (busyConnections.remove(conn)) {

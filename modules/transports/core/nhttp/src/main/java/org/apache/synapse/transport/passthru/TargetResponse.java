@@ -19,16 +19,21 @@ package org.apache.synapse.transport.passthru;
 import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.*;
+import org.apache.http.ConnectionReuseStrategy;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.HttpVersion;
+import org.apache.http.ProtocolVersion;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.NHttpClientConnection;
-import org.apache.log4j.MDC;
 import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -146,28 +151,54 @@ public class TargetResponse {
     /**
      * Read the data from the wire and read in to the pipe so that other end of
      * the pipe can write.
-     * @param conn the target connection
+     *
+     * @param conn    the target connection
      * @param decoder content decoder
-     * @throws java.io.IOException if an error occurs
      * @return number of bites read
+     * @throws java.io.IOException if an error occurs
      */
     public int read(NHttpClientConnection conn, ContentDecoder decoder) throws IOException {
 
-    	int bytes=0;
-
-    	if(pipe != null){
-    		bytes = pipe.produce(decoder);
-    	}
-
+        int bytes = 0;
+        if (pipe != null) {
+            bytes = pipe.produce(decoder);
+        }
         // Update connection state
-        if (decoder.isCompleted()) {
-            conn.getContext().setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME,System.currentTimeMillis());
-            conn.getContext().setAttribute(PassThroughConstants.RES_ARRIVAL_TIME,System.currentTimeMillis());
-            TargetContext.updateState(conn, ProtocolState.RESPONSE_DONE);
-            targetConfiguration.getMetrics().notifyReceivedMessageSize(
-                    conn.getMetrics().getReceivedBytesCount());
+        readPostActions(conn, decoder);
+        return bytes;
+    }
 
-            if (!this.connStrategy.keepAlive(response, conn.getContext())  || forceShutdownConnectionOnComplete) {
+    /**
+     * Same as
+     * {@link TargetResponse#read(org.apache.http.nio.NHttpClientConnection, org.apache.http.nio.ContentDecoder)} but
+     * gives out the data read from the wire in to the pipe.
+     *
+     * @param conn    the target connection
+     * @param decoder content decoder
+     * @return data read
+     * @throws java.io.IOException if an error occurs
+     */
+    public ByteBuffer copyAndRead(NHttpClientConnection conn, ContentDecoder decoder) throws IOException {
+
+        ByteBuffer bufferCopy = null;
+        if (pipe != null) {
+            bufferCopy = pipe.copyAndProduce(decoder);
+        }
+        // Update connection state
+        readPostActions(conn, decoder);
+        return bufferCopy;
+    }
+
+    private void readPostActions(NHttpClientConnection conn, ContentDecoder decoder) {
+
+        if (decoder.isCompleted()) {
+            conn.getContext().setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME,
+                                           System.currentTimeMillis());
+            conn.getContext().setAttribute(PassThroughConstants.RES_ARRIVAL_TIME, System.currentTimeMillis());
+            TargetContext.updateState(conn, ProtocolState.RESPONSE_DONE);
+            targetConfiguration.getMetrics().notifyReceivedMessageSize(conn.getMetrics().getReceivedBytesCount());
+
+            if (!this.connStrategy.keepAlive(response, conn.getContext()) || forceShutdownConnectionOnComplete) {
                 TargetContext.updateState(conn, ProtocolState.CLOSED);
 
                 targetConfiguration.getConnections().shutdownConnection(conn);
@@ -177,7 +208,6 @@ public class TargetResponse {
                 }
             }
         }
-        return bytes;
     }
 
     public String getHeader(String name) {

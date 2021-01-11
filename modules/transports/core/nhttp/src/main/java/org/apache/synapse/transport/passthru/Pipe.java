@@ -20,16 +20,18 @@ import org.apache.http.MalformedChunkCodingException;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.IOControl;
-import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.nio.NHttpServerConnection;
+import org.apache.http.params.HttpConnectionParams;
 import org.apache.synapse.transport.passthru.config.BaseConfiguration;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.util.ControlledByteBuffer;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -123,12 +125,16 @@ public class Pipe {
         this.consumerIoControl = consumerIoControl;
     }
 
+    private ControlledByteBuffer getConsumerBuffer() {
+        return (outputBuffer != null ? outputBuffer : buffer);
+    }
+
     /**
      * Consume the data from the buffer. Before calling this method attachConsumer
      * method must be called with a valid IOControl.
      *
      * @param encoder encoder used to write the data means there will not be any data
-     * written in to this buffer
+     *                written in to this buffer
      * @return number of bytes written (consumed)
      * @throws IOException if an error occurred while consuming data
      */
@@ -142,48 +148,84 @@ public class Pipe {
         }
 
         lock.lock();
-        ControlledByteBuffer consumerBuffer;
-        if (outputBuffer != null) {
-            consumerBuffer = outputBuffer;
-        } else {
-            consumerBuffer = buffer;
-        }
+        ControlledByteBuffer consumerBuffer = getConsumerBuffer();
         try {
             // if producer at error we have to stop the encoding and return immediately
             if (producerError) {
                 encoder.complete();
                 return -1;
             }
-
             setOutputMode(consumerBuffer);
             int bytesWritten = encoder.write(consumerBuffer.getByteBuffer());
-            setInputMode(consumerBuffer);
-
-            if (consumerBuffer.position() == 0) {
-                if (outputBuffer == null) {
-                    if (producerCompleted) {
-                        encoder.complete();
-                    } else {
-                        // buffer is empty. Wait until the producer fills up
-                        // the buffer
-                        consumerIoControl.suspendOutput();
-                    }
-                } else if (serializationComplete || rawSerializationComplete) {
-                    encoder.complete();
-                }
-            }
-
-            if (bytesWritten > 0) {
-                if (!encoder.isCompleted() && !producerCompleted && hasHttpProducer) {
-                    producerIoControl.requestInput();
-                }
-            }
-
-            writeCondition.signalAll();
+            consumePostActions(consumerBuffer, encoder, bytesWritten);
             return bytesWritten;
         } finally {
             lock.unlock();
         }
+    }
+
+    /**
+     * Same as {@link Pipe#consume(org.apache.http.nio.ContentEncoder)} but this gives a copy of data which has been
+     * consumed.
+     *
+     * @param encoder encoder used to write
+     * @return a buffer with data written (consumed)
+     * @throws IOException if an error occurred while consuming data
+     */
+    public ByteBuffer copyAndConsume(final ContentEncoder encoder) throws IOException {
+
+        if (consumerIoControl == null) {
+            throw new IllegalStateException("Consumer cannot be null when calling consume");
+        }
+        if (hasHttpProducer && producerIoControl == null) {
+            throw new IllegalStateException("Producer cannot be null when calling consume");
+        }
+        lock.lock();
+        ControlledByteBuffer consumerBuffer = getConsumerBuffer();
+        try {
+            // if producer at error we have to stop the encoding and return immediately
+            if (producerError) {
+                encoder.complete();
+                return null;
+            }
+            setOutputMode(consumerBuffer);
+            // clone original buffer
+            ByteBuffer originalBuffer = consumerBuffer.getByteBuffer();
+            ByteBuffer duplicate = RelayUtils.cloneBuffer(originalBuffer);
+            int bytesWritten = encoder.write(originalBuffer);
+            // replicate positions of original buffer in duplicated buffer
+            int position = originalBuffer.position();
+            duplicate.limit(position);
+            if (position - bytesWritten > 0) {
+                duplicate.position(position - bytesWritten);
+            }
+            consumePostActions(consumerBuffer, encoder, bytesWritten);
+            return duplicate;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void consumePostActions(ControlledByteBuffer consumerBuffer, ContentEncoder encoder, int bytesWritten)
+            throws IOException {
+
+        setInputMode(consumerBuffer);
+        if (consumerBuffer.position() == 0) {
+            if (outputBuffer == null) {
+                if (producerCompleted) {
+                    encoder.complete();
+                } else {
+                    // buffer is empty. Wait until the producer fills up the buffer
+                    consumerIoControl.suspendOutput();
+                }
+            } else if (serializationComplete || rawSerializationComplete) {
+                encoder.complete();
+            }
+        }
+        if (bytesWritten > 0 && !encoder.isCompleted() && !producerCompleted && hasHttpProducer) {
+            producerIoControl.requestInput();
+        }
+        writeCondition.signalAll();
     }
 
     /**
@@ -201,44 +243,86 @@ public class Pipe {
         lock.lock();
         try {
             setInputMode(buffer);
-            int bytesRead=0;
-            try{
+            int bytesRead;
+            try {
                 bytesRead = decoder.read(buffer.getByteBuffer());
-            } catch(MalformedChunkCodingException ignore) {
+            } catch (MalformedChunkCodingException ignore) {
                 // we assume that this is a truncated chunk, hence simply ignore the exception
                 // https://issues.apache.org/jira/browse/HTTPCORE-195
                 // we should add the EoF character
                 buffer.putInt(-1);
                 // now the buffer's position should give us the bytes read.
                 bytesRead = buffer.position();
-
             }
-
-            // if consumer is at error we have to let the producer complete
-            if (consumerError) {
-                buffer.clear();
-            }
-
-            if (!buffer.hasRemaining()) {
-                // Input buffer is full. Suspend client input
-                // until the origin handler frees up some space in the buffer
-                producerIoControl.suspendInput();
-            }
-
-            // If there is some content in the input buffer make sure consumer output is active
-            if (buffer.position() > 0 || decoder.isCompleted()) {
-                if (consumerIoControl != null) {
-                    consumerIoControl.requestOutput();
-                }
-                readCondition.signalAll();
-            }
-
-            if (decoder.isCompleted()) {
-                producerCompleted = true;
-            }
+            producePostActions(decoder);
             return bytesRead;
         } finally {
             lock.unlock();
+        }
+    }
+
+    /**
+     * Same as {@link Pipe#produce(org.apache.http.nio.ContentDecoder)} and gives a copy of data produced
+     *
+     * @param decoder decoder to read bytes from the underlying stream
+     * @return bytes of data read (consumed)
+     * @throws IOException if an error occurs while reading data
+     */
+    public ByteBuffer copyAndProduce(final ContentDecoder decoder) throws IOException {
+
+        if (producerIoControl == null) {
+            throw new IllegalStateException("Producer cannot be null when calling produce");
+        }
+        lock.lock();
+        try {
+            ByteBuffer duplicate = null;
+            setInputMode(buffer);
+            int bytesRead;
+            try {
+                // clone original buffer
+                ByteBuffer originalBuffer = buffer.getByteBuffer();
+                bytesRead = decoder.read(originalBuffer);
+                duplicate = originalBuffer.duplicate(); //RelayUtils.cloneBuffer(originalBuffer);
+                // replicate positions of original buffer in duplicated buffer
+                int position = originalBuffer.position();
+                duplicate.limit(position);
+                if (bytesRead > 0) {
+                    duplicate.position(position - bytesRead);
+                }
+            } catch (MalformedChunkCodingException ignore) {
+                // we assume that this is a truncated chunk, hence simply ignore the exception
+                // https://issues.apache.org/jira/browse/HTTPCORE-195
+                // we should add the EoF character
+                buffer.putInt(-1);
+                duplicate.putInt(-1);
+            }
+            producePostActions(decoder);
+            return duplicate;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void producePostActions(final ContentDecoder decoder) {
+
+        // if consumer is at error we have to let the producer complete
+        if (consumerError) {
+            buffer.clear();
+        }
+        if (!buffer.hasRemaining()) {
+            // Input buffer is full. Suspend client input
+            // until the origin handler frees up some space in the buffer
+            producerIoControl.suspendInput();
+        }
+        // If there is some content in the input buffer make sure consumer output is active
+        if (buffer.position() > 0 || decoder.isCompleted()) {
+            if (consumerIoControl != null) {
+                consumerIoControl.requestOutput();
+            }
+            readCondition.signalAll();
+        }
+        if (decoder.isCompleted()) {
+            producerCompleted = true;
         }
     }
 

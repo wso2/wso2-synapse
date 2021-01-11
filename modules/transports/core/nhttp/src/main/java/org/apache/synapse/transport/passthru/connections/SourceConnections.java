@@ -18,6 +18,8 @@ package org.apache.synapse.transport.passthru.connections;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.nio.NHttpServerConnection;
+import org.apache.http.protocol.HttpContext;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.SourceContext;
 
 import java.io.IOException;
@@ -87,6 +89,8 @@ public class SourceConnections {
      * @param conn the connection being used
      */
     public void releaseConnection(NHttpServerConnection conn) {
+
+        removeAttributes(conn);
         lock.lock();
         try {
             SourceContext.get(conn).reset();
@@ -102,6 +106,18 @@ public class SourceConnections {
         } finally {
             lock.unlock();
         }
+    }
+
+    /**
+     * Removes the attributes from the http context of the connection
+     *
+     * @param connection connection object
+     */
+    private void removeAttributes(NHttpServerConnection connection) {
+
+        HttpContext ctx = connection.getContext();
+        ctx.removeAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT);
+        ctx.removeAttribute(PassThroughConstants.RESPONSE_MESSAGE_CONTEXT);
     }
 
 	/**
