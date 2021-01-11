@@ -67,6 +67,7 @@ public class CloneMediatorFactory extends AbstractMediatorFactory {
     private static final QName ID_Q
             = new QName(XMLConfigConstants.NULL_NAMESPACE, "id");
     private static final QName SEQUENTIAL_Q = new QName("sequential");
+    private static final String ITERATIONS = "iterations";
 
     /**
      * This method implements the createMediator method of the MediatorFactory interface
@@ -104,7 +105,6 @@ public class CloneMediatorFactory extends AbstractMediatorFactory {
             }
             mediator.setIterations(iterationsAttributeStr);
         }
-
 
         OMAttribute synchronousExeAttr= elem.getAttribute(SEQUENTIAL_Q);
         if (synchronousExeAttr != null && synchronousExeAttr.getAttributeValue().equals("true")) {
@@ -151,7 +151,7 @@ public class CloneMediatorFactory extends AbstractMediatorFactory {
         // ValueFactory for creating dynamic Value
         ValueFactory nameValueFactory = new ValueFactory();
         // create dynamic Value based on OMElement
-        return nameValueFactory.createValue("iterations", elem);
+        return nameValueFactory.createValue(ITERATIONS, elem);
     }
 
     /**

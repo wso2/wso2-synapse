@@ -169,7 +169,7 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         String countStr = "";
         if (getDynamicIterationsValue() != null) {
             countStr = getDynamicIterationsValue().evaluateValue(synCtx);
-        } else if (getIterations() != null) {
+        } else {
             countStr = getIterations();
         }
         return Integer.parseInt(countStr);

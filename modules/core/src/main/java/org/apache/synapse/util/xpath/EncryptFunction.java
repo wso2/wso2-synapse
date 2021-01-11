@@ -114,7 +114,6 @@ public class EncryptFunction implements Function {
                 log.debug(String.format("Successfully encrypted data using the algorithm '%s'", algorithm));
             }
             return Base64.getEncoder().encodeToString(cipherText);
-
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | KeyStoreException | InvalidKeyException
                 | IllegalBlockSizeException | BadPaddingException e) {
             throw new FunctionCallException("An error occurred while encrypting data.", e);

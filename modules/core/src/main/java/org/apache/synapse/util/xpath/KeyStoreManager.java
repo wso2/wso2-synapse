@@ -34,7 +34,6 @@ import java.security.cert.CertificateException;
 /*
 This is a util class for managing keystore
  */
-
 public class KeyStoreManager {
 
     private static final Log log = LogFactory.getLog(EncryptFunction.class);
