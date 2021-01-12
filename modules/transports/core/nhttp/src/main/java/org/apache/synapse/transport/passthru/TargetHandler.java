@@ -256,13 +256,13 @@ public class TargetHandler implements NHttpClientEventHandler {
                         index++;
                     }
                     if (interceptionEnabled) {
-                        ByteBuffer bytesSentDuplicate = request.copyAndWrite(conn, encoder);
-                        if (bytesSentDuplicate != null) {
-                            bytesWritten = bytesSentDuplicate.position();
+                        ByteBuffer bytesSent = request.copyAndWrite(conn, encoder);
+                        if (bytesSent != null) {
+                            bytesWritten = bytesSent.remaining();
                             index = 0;
                             for (StreamInterceptor interceptor : streamInterceptors) {
                                 if (interceptorResults[index]) {
-                                    interceptor.targetRequest(bytesSentDuplicate.duplicate(),
+                                    interceptor.targetRequest(bytesSent.duplicate().asReadOnlyBuffer(),
                                                               (MessageContext) conn.getContext().getAttribute(
                                                                       PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
                                 }
@@ -564,20 +564,20 @@ public class TargetHandler implements NHttpClientEventHandler {
                         index++;
                     }
                     if (interceptionEnabled) {
-                        ByteBuffer bytesSentDuplicate = response.copyAndRead(conn, decoder);
-                        if (bytesSentDuplicate != null) {
-                            responseRead = bytesSentDuplicate.position();
+                        ByteBuffer bytesRead = response.copyAndRead(conn, decoder);
+                        if (bytesRead != null) {
+                            responseRead = bytesRead.remaining();
                             boolean proceed;
                             index = 0;
                             for (StreamInterceptor interceptor : streamInterceptors) {
                                 if (interceptorResults[index]) {
-                                    proceed = interceptor.targetResponse(bytesSentDuplicate.duplicate(),
+                                    proceed = interceptor.targetResponse(bytesRead.duplicate().asReadOnlyBuffer(),
                                                                          (MessageContext) conn.getContext()
                                                                                  .getAttribute(
                                                                                          PassThroughConstants.RESPONSE_MESSAGE_CONTEXT));
                                     if (!proceed) {
                                         log.info("Dropping target connection since request is blocked by : "
-                                                         + interceptor.getName());
+                                                         + interceptor.getClass().getName());
                                         dropTargetConnection(conn);
                                         response.getPipe().forceProducerComplete(decoder);
                                         break;

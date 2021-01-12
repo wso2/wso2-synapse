@@ -21,8 +21,8 @@ package org.apache.synapse.transport.passthru;
 import org.apache.axis2.context.MessageContext;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Default class implementing the methods of {@link StreamInterceptor}. A stream interceptor can be written by
@@ -31,8 +31,7 @@ import java.util.Map;
  */
 public abstract class DefaultStreamInterceptor implements StreamInterceptor {
 
-    private String name;
-    private Map<String, Object> properties = new HashMap<String, Object>();
+    private Properties properties = new Properties();
 
     public boolean interceptSourceRequest(MessageContext axisCtx) {
         return false;
@@ -74,11 +73,4 @@ public abstract class DefaultStreamInterceptor implements StreamInterceptor {
         return properties;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 }

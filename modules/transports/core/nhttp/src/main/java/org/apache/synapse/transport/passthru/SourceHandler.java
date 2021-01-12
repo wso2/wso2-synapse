@@ -57,6 +57,7 @@ import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsColl
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,6 +96,10 @@ public class SourceHandler implements NHttpServerEventHandler {
     private List<StreamInterceptor> streamInterceptors;
     private boolean interceptStream;
     private int noOfInterceptors;
+
+    public SourceHandler(SourceConfiguration sourceConfiguration) {
+        this(sourceConfiguration, new ArrayList<StreamInterceptor>());
+    }
 
     public SourceHandler(SourceConfiguration sourceConfiguration, List<StreamInterceptor> streamInterceptors) {
         this.sourceConfiguration = sourceConfiguration;
@@ -242,19 +247,19 @@ public class SourceHandler implements NHttpServerEventHandler {
                     index++;
                 }
                 if (interceptionEnabled) {
-                    ByteBuffer bytesSentDuplicate = request.copyAndRead(conn, decoder);
-                    if (bytesSentDuplicate != null) {
-                        readBytes = bytesSentDuplicate.position();
+                    ByteBuffer bytesSent = request.copyAndRead(conn, decoder);
+                    if (bytesSent != null) {
+                        readBytes = bytesSent.remaining();
                         index = 0;
                         for (StreamInterceptor interceptor : streamInterceptors) {
                             if (interceptorResults[index]) {
-                                boolean proceed = interceptor.sourceRequest(bytesSentDuplicate.duplicate(),
+                                boolean proceed = interceptor.sourceRequest(bytesSent.duplicate().asReadOnlyBuffer(),
                                                                             (MessageContext) conn.getContext()
                                                                                     .getAttribute(
                                                                                             PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
                                 if (!proceed) {
                                     log.info("Dropping source connection since request is blocked by : " + interceptor
-                                            .getName());
+                                            .getClass().getName());
                                     dropSourceConnection(conn);
                                     conn.getContext().setAttribute(PassThroughConstants.SOURCE_CONNECTION_DROPPED,
                                                                    true);
@@ -470,13 +475,13 @@ public class SourceHandler implements NHttpServerEventHandler {
                     index++;
                 }
                 if (interceptionEnabled) {
-                    ByteBuffer bytesSentDuplicate = response.copyAndWrite(conn, encoder);
-                    if (bytesSentDuplicate != null) {
-                        bytesSent = bytesSentDuplicate.position();
+                    ByteBuffer bytesWritten = response.copyAndWrite(conn, encoder);
+                    if (bytesWritten != null) {
+                        bytesSent = bytesWritten.remaining();
                         index = 0;
                         for (StreamInterceptor interceptor : streamInterceptors) {
                             if (interceptorResults[index]) {
-                                interceptor.sourceResponse(bytesSentDuplicate.duplicate(),
+                                interceptor.sourceResponse(bytesWritten.duplicate().asReadOnlyBuffer(),
                                                            (MessageContext) conn.getContext().getAttribute(
                                                                    PassThroughConstants.RESPONSE_MESSAGE_CONTEXT));
                             }

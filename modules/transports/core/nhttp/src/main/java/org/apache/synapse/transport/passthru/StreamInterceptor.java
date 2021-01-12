@@ -116,18 +116,4 @@ public interface StreamInterceptor {
      */
     Map getProperties();
 
-    /**
-     * Get the name of the interceptor
-     *
-     * @return handler name
-     */
-    String getName();
-
-    /**
-     * Set the interceptor name
-     *
-     * @param name handler name
-     */
-    void setName(String name);
-
 }

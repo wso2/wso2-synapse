@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.xml.namespace.QName;
 
 public class StreamInterceptorsLoader {
@@ -50,6 +52,8 @@ public class StreamInterceptorsLoader {
 
     private static boolean isLoadedAlready = false;
 
+    private static Lock lock = new ReentrantLock();
+
     /**
      * Load and get all synapse interceptors
      *
@@ -58,8 +62,15 @@ public class StreamInterceptorsLoader {
     public static List<StreamInterceptor> getInterceptors() {
 
         if (!isLoadedAlready) {
-            loadInterceptors();
-            isLoadedAlready = true;
+            try {
+                lock.lock();
+                if (!isLoadedAlready) {
+                    loadInterceptors();
+                    isLoadedAlready = true;
+                }
+            } finally {
+                lock.unlock();
+            }
         }
         return Collections.unmodifiableList(interceptors);
     }
@@ -76,28 +87,18 @@ public class StreamInterceptorsLoader {
             Iterator iterator = interceptorsConfig.getChildrenWithName(INTERCEPTOR_Q);
             while (iterator.hasNext()) {
                 OMElement interceptorElem = (OMElement) iterator.next();
-
-                String name = null;
-                if (interceptorElem.getAttribute(NAME_ATT) != null) {
-                    name = interceptorElem.getAttributeValue(NAME_ATT);
-                } else {
-                    handleException("Name not defined in one or more interceptor");
-                }
-
                 if (interceptorElem.getAttribute(CLASS_Q) != null) {
                     String className = interceptorElem.getAttributeValue(CLASS_Q);
                     if (!"".equals(className)) {
                         StreamInterceptor interceptor = createInterceptor(className);
                         interceptors.add(interceptor);
-                        interceptor.setName(name);
                         populateParameters(interceptorElem, interceptor);
                     } else {
-                        handleException("Class name is null for interceptor name : " + name);
+                        handleException("Class name is one or more interceptor");
                     }
                 } else {
-                    handleException("Class name not defined for interceptor named : " + name);
+                    handleException("Class name is one or more interceptor");
                 }
-
             }
         }
     }

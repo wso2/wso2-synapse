@@ -26,7 +26,6 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.synapse.transport.passthru.config.BaseConfiguration;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.util.ControlledByteBuffer;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -165,8 +164,8 @@ public class Pipe {
     }
 
     /**
-     * Same as {@link Pipe#consume(org.apache.http.nio.ContentEncoder)} but this gives a copy of data which has been
-     * consumed.
+     * Consume the data from the buffer. Same as {@link Pipe#consume(org.apache.http.nio.ContentEncoder)} but this gives
+     * a copy of data which has been consumed.
      *
      * @param encoder encoder used to write
      * @return a buffer with data written (consumed)
@@ -191,12 +190,12 @@ public class Pipe {
             setOutputMode(consumerBuffer);
             // clone original buffer
             ByteBuffer originalBuffer = consumerBuffer.getByteBuffer();
-            ByteBuffer duplicate = RelayUtils.cloneBuffer(originalBuffer);
             int bytesWritten = encoder.write(originalBuffer);
+            ByteBuffer duplicate = originalBuffer.duplicate();
             // replicate positions of original buffer in duplicated buffer
             int position = originalBuffer.position();
             duplicate.limit(position);
-            if (position - bytesWritten > 0) {
+            if (bytesWritten > 0) {
                 duplicate.position(position - bytesWritten);
             }
             consumePostActions(consumerBuffer, encoder, bytesWritten);
@@ -282,7 +281,7 @@ public class Pipe {
                 // clone original buffer
                 ByteBuffer originalBuffer = buffer.getByteBuffer();
                 bytesRead = decoder.read(originalBuffer);
-                duplicate = originalBuffer.duplicate(); //RelayUtils.cloneBuffer(originalBuffer);
+                duplicate = originalBuffer.duplicate();
                 // replicate positions of original buffer in duplicated buffer
                 int position = originalBuffer.position();
                 duplicate.limit(position);

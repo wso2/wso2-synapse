@@ -30,7 +30,7 @@ import java.nio.charset.Charset;
  * <pre>
  * {@code
  * <interceptors xmlns:svns="http://org.wso2.securevault/configuration">
- *     <interceptor name="SampleStreamInterceptor" class="org.apache.synapse.transport.passthru.SampleStreamInterceptor">
+ *     <interceptor class="org.apache.synapse.transport.passthru.SampleStreamInterceptor">
  *         <parameter name="charset" value="ISO-8859-1"/>
  *         <parameter name="enableInterception" value="true"/>
  *     </interceptor>
