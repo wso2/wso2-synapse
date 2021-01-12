@@ -160,7 +160,7 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
             }
             synCtx.setProperty(ITERATION_INDEX_PROPERTY_NAME, i);
             MessageContext clonedMsgCtx = getClonedMessageContext(synCtx, i, noOfIterations);
-            ContinuationStackManager.addReliantContinuationState(clonedMsgCtx, i, getMediatorPosition());
+            ContinuationStackManager.addReliantContinuationState(clonedMsgCtx, i - 1, getMediatorPosition());
             target.mediate(clonedMsgCtx);
         }
     }
