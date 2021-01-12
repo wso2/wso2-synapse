@@ -28,9 +28,9 @@ import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Formatter;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /*
 Xpath function to generate HMAC signature
@@ -39,7 +39,7 @@ public class HMACGenerateFunction implements Function {
 
     private static final Log log = LogFactory.getLog(HMACGenerateFunction.class);
     private static final String DEFAULT_HMAC_SIGNATURE = "HmacSHA1";
-    private static Map<String, Mac> macInstancesMap = new HashMap<>();
+    private static Map<String, Mac> macInstancesMap = new ConcurrentHashMap<>();
 
     @Override
     public Object call(Context context, List args) throws FunctionCallException {

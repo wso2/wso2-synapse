@@ -33,9 +33,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /*
 Xpath function to decrypt based on keystore on Asymmetric keys
@@ -44,7 +44,7 @@ public class DecryptFunction implements Function {
     private static final Log log = LogFactory.getLog(DecryptFunction.class);
     private static final String DEFAULT_ALGORITHM = "RSA";
     private static final String DEFAULT_KEYSTORE_TYPE = "JKS";
-    private static Map<String, Cipher> cipherInstancesMap = new HashMap<>();
+    private static Map<String, Cipher> cipherInstancesMap = new ConcurrentHashMap<>();
 
     @Override
     public Object call(Context context, List args) throws FunctionCallException {
