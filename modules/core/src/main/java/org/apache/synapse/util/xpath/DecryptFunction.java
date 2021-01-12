@@ -33,7 +33,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /*
 Xpath function to decrypt based on keystore on Asymmetric keys
@@ -42,6 +44,7 @@ public class DecryptFunction implements Function {
     private static final Log log = LogFactory.getLog(DecryptFunction.class);
     private static final String DEFAULT_ALGORITHM = "RSA";
     private static final String DEFAULT_KEYSTORE_TYPE = "JKS";
+    private static Map<String, Cipher> cipherInstancesMap = new HashMap<>();
 
     @Override
     public Object call(Context context, List args) throws FunctionCallException {
@@ -102,7 +105,7 @@ public class DecryptFunction implements Function {
             throw new FunctionCallException("Encrypted text can't be null.");
         }
         try {
-            Cipher cipher = Cipher.getInstance(algorithm);
+            Cipher cipher = getCipherInstance(algorithm);
             KeyStore keyStore = KeyStoreManager.getKeyStore(keyStorePath, keyStorePassword, keyStoreType);
             Certificate certificate = KeyStoreManager.getCertificateFromStore(keyStore, alias);
             if (log.isDebugEnabled()) {
@@ -119,5 +122,14 @@ public class DecryptFunction implements Function {
                 | IllegalBlockSizeException | BadPaddingException | UnrecoverableKeyException e) {
             throw new FunctionCallException("An error occurred while encrypting data.", e);
         }
+    }
+
+    private Cipher getCipherInstance(String algorithm) throws NoSuchPaddingException, NoSuchAlgorithmException {
+        Cipher cipherInstance = cipherInstancesMap.get(algorithm);
+        if (cipherInstance == null) {
+            cipherInstance = Cipher.getInstance(algorithm);
+            cipherInstancesMap.put(algorithm, cipherInstance);
+        }
+        return cipherInstance;
     }
 }

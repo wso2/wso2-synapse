@@ -28,7 +28,9 @@ import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Formatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /*
 Xpath function to generate HMAC signature
@@ -37,6 +39,7 @@ public class HMACGenerateFunction implements Function {
 
     private static final Log log = LogFactory.getLog(HMACGenerateFunction.class);
     private static final String DEFAULT_HMAC_SIGNATURE = "HmacSHA1";
+    private static Map<String, Mac> macInstancesMap = new HashMap<>();
 
     @Override
     public Object call(Context context, List args) throws FunctionCallException {
@@ -78,7 +81,7 @@ public class HMACGenerateFunction implements Function {
     private String generateSignature(String payload, String secret, String algorithm) throws FunctionCallException {
 
         try {
-            Mac mac = Mac.getInstance(algorithm);
+            Mac mac = getMacInstance(algorithm);
             final SecretKeySpec signingKey = new SecretKeySpec(secret.getBytes(), algorithm);
             mac.init(signingKey);
             return toHexString(mac.doFinal(payload.getBytes()));
@@ -95,5 +98,14 @@ public class HMACGenerateFunction implements Function {
             formatter.format("%02x", b);
         }
         return formatter.toString();
+    }
+
+    private Mac getMacInstance(String algorithm) throws NoSuchAlgorithmException {
+        Mac macInstance = macInstancesMap.get(algorithm);
+        if (macInstance == null) {
+            macInstance = Mac.getInstance(algorithm);
+            macInstancesMap.put(algorithm, macInstance);
+        }
+        return macInstance;
     }
 }
