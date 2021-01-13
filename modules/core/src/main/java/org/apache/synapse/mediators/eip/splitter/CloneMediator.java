@@ -155,10 +155,10 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         Target target = targets.get(0);
         for (int i = 0; i < noOfIterations; ++i) {
             if (synLog.isTraceOrDebugEnabled()) {
-                synLog.traceOrDebug("Submitting " + i + " of " + noOfIterations +
+                synLog.traceOrDebug("Submitting " + (i + 1) + " of " + noOfIterations +
                         " messages for " + (isSequential() ? "sequential processing" : "parallel processing"));
             }
-            synCtx.setProperty(ITERATION_INDEX_PROPERTY_NAME, i);
+            synCtx.setProperty(ITERATION_INDEX_PROPERTY_NAME, i + 1);
             MessageContext clonedMsgCtx = getClonedMessageContext(synCtx, i, noOfIterations);
             ContinuationStackManager.addReliantContinuationState(clonedMsgCtx, i - 1, getMediatorPosition());
             target.mediate(clonedMsgCtx);
@@ -172,7 +172,12 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         } else {
             countStr = getIterations();
         }
-        return Integer.parseInt(countStr);
+        try {
+            return Integer.parseInt(countStr.trim());
+        } catch (NumberFormatException e) {
+            handleException("Error while parsing iterations number in clone mediator", synCtx);
+        }
+        return 0;
     }
 
     public boolean mediate(MessageContext synCtx,

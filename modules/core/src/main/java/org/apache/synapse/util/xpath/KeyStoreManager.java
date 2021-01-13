@@ -50,10 +50,8 @@ public class KeyStoreManager {
     public static KeyStore getKeyStore(String keyStoreFilePath, String keyStorePassword, String keyStoreType)
             throws KeyStoreException {
 
-        FileInputStream keyStoreFileInputStream = null;
-        try {
-            String file = new File(keyStoreFilePath).getAbsolutePath();
-            keyStoreFileInputStream = new FileInputStream(file);
+        String file = new File(keyStoreFilePath).getAbsolutePath();
+        try (FileInputStream keyStoreFileInputStream =  new FileInputStream(file)) {
             KeyStore keyStore = KeyStore.getInstance(keyStoreType);
             keyStore.load(keyStoreFileInputStream, keyStorePassword.toCharArray());
             return keyStore;
@@ -61,14 +59,6 @@ public class KeyStoreManager {
             String errorMessage = String.format("Keystore file does not exist in the path as configured " +
                     "in '%s' property.", keyStoreFilePath);
             throw new KeyStoreException(errorMessage);
-        } finally {
-            if (keyStoreFileInputStream != null) {
-                try {
-                    keyStoreFileInputStream.close();
-                } catch (IOException e) {
-                    log.error("Error while closing the file input stream of " + keyStoreFilePath, e);
-                }
-            }
         }
     }
 
