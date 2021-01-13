@@ -63,11 +63,15 @@ public class WSDLEndpoint extends AbstractEndpoint {
 
         // is this an actual leaf endpoint
         if (getParentEndpoint() != null) {
-            // is this really a fault or a timeout/connection close etc?
-            if (isTimeout(synCtx)) {
-                getContext().onTimeout();
-            } else if (isSuspendFault(synCtx)) {
-                getContext().onFault();
+            if (getContext().isMaxRetryLimitReached()) {
+                getContext().onFailoverRetryLimit();
+            } else {
+                // is this really a fault or a timeout/connection close etc?
+                if (isTimeout(synCtx)) {
+                    getContext().onTimeout();
+                } else if (isSuspendFault(synCtx)) {
+                    getContext().onFault();
+                }
             }
         }
         

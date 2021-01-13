@@ -43,7 +43,9 @@ public class SpanTagger {
         Span span = spanWrapper.getSpan();
         if (OpenTracingManagerHolder.isCollectingPayloads() || OpenTracingManagerHolder.isCollectingProperties()) {
             if (OpenTracingManagerHolder.isCollectingPayloads()) {
-                span.setTag("beforePayload", openStatisticsLog.getBeforePayload());
+                if(openStatisticsLog.getBeforePayload() != null) {
+                    span.setTag("beforePayload", openStatisticsLog.getBeforePayload());
+                }
                 if (spanWrapper.getCloseEventStatisticDataUnit() != null) {
                     span.setTag("afterPayload", spanWrapper.getCloseEventStatisticDataUnit().getPayload());
                 } else {
@@ -72,10 +74,18 @@ public class SpanTagger {
                 }
             }
         }
-        span.setTag("componentName", openStatisticsLog.getComponentName());
-        span.setTag("componentType", openStatisticsLog.getComponentTypeToString());
+        if (openStatisticsLog.getComponentName() != null) {
+            span.setTag("componentName", openStatisticsLog.getComponentName());
+        }
+        if(openStatisticsLog.getComponentTypeToString() != null){
+            span.setTag("componentType", openStatisticsLog.getComponentTypeToString());
+        }
         span.setTag("threadId", Thread.currentThread().getId());
-        span.setTag("componentId", openStatisticsLog.getComponentId());
-        span.setTag("hashcode", openStatisticsLog.getHashCode());
+        if(openStatisticsLog.getComponentId() != null){
+            span.setTag("componentId", openStatisticsLog.getComponentId());
+        }
+        if(openStatisticsLog.getHashCode() != null){
+            span.setTag("hashcode", openStatisticsLog.getHashCode());
+        }
     }
 }

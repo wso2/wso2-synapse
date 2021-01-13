@@ -36,6 +36,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.config.Entry;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
@@ -53,6 +54,7 @@ import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 
+import static org.apache.synapse.mediators.transform.pfutils.Constants.FREEMARKER_TEMPLATE_TYPE;
 import static org.apache.synapse.mediators.transform.pfutils.Constants.JSON_TYPE;
 import static org.apache.synapse.mediators.transform.pfutils.Constants.REGEX_TEMPLATE_TYPE;
 import static org.apache.synapse.mediators.transform.pfutils.Constants.TEXT_TYPE;
@@ -65,6 +67,9 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private String mediaType = XML_TYPE;
     private static final String XML_CONTENT_TYPE = "application/xml";
     private boolean escapeXmlChars = false;
+    /* Latest version of dynamic registry resource.
+    Default is set to -1 as the initial version will be 0 */
+    private long version = -1;
     private final XMLInputFactory inputFactory = XMLInputFactory.newInstance();
     private static final String JSON_CONTENT_TYPE = "application/json";
     private static final String TEXT_CONTENT_TYPE = "text/plain";
@@ -145,7 +150,15 @@ public class PayloadFactoryMediator extends AbstractMediator {
      * @param format
      */
     private void transform(StringBuilder result, MessageContext synCtx, String format) {
+        boolean reCreate = false;
         if (isFormatDynamic()) {
+            if (templateType.equals(FREEMARKER_TEMPLATE_TYPE)) {
+                Entry template = synCtx.getConfiguration().getEntryDefinition(formatKey.getKeyValue());
+                if ((!template.isCached() || template.isExpired()) && version != template.getVersion()) {
+                    reCreate = true;
+                    version = template.getVersion();
+                }
+            }
             String key = formatKey.evaluateValue(synCtx);
             Object entry = synCtx.getEntry(key);
             if (entry == null) {
@@ -160,6 +173,10 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 text = ((OMText) entry).getText();
             } else if (entry instanceof String) {
                 text = (String) entry;
+            }
+            if (reCreate) {
+                templateProcessor.setFormat(text);
+                templateProcessor.init();
             }
             processTemplate(result, synCtx, text);
         } else {

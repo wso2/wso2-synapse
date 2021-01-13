@@ -79,4 +79,13 @@ public class MediatorPropertyUtils {
 
         msgCtx.getEnvelope().toString(); // This is an implemented method in OMElement
     }
+
+    /**
+     * This method just serializes the OMElement
+     *
+     * @param msgCtx Synapse MessageContext
+     */
+    public static void serializeOMElement(org.apache.axis2.context.MessageContext  msgCtx) throws XMLStreamException {
+        msgCtx.getEnvelope().toString(); // This is an implemented method in OMElement
+    }
 }

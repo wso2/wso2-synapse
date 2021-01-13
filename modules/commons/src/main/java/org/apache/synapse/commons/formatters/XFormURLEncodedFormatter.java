@@ -91,7 +91,10 @@ public class XFormURLEncodedFormatter implements MessageFormatter {
         String encoding = format.getCharSetEncoding();
         String contentType = HTTPConstants.MEDIA_TYPE_X_WWW_FORM;
 
-        if (encoding != null) {
+        String setEncoding = (String) messageContext.getProperty(
+                Constants.Configuration.SET_CONTENT_TYPE_CHARACTER_ENCODING);
+
+        if (encoding != null && !"false".equals(setEncoding)) {
             contentType += "; charset=" + encoding;
         }
 

@@ -129,7 +129,7 @@ public final class InlineExpressionUtil {
         try {
             JsonElement element = parser.parse(stringToValidate);
             if (!(element instanceof JsonObject || element instanceof JsonArray ||
-                    element instanceof JsonPrimitive || element instanceof JsonNull)) {
+                    element instanceof JsonPrimitive || "null".equalsIgnoreCase(stringToValidate))) {
                 isValidJson = false;
             }
         } catch (JsonSyntaxException ex) {

@@ -142,7 +142,7 @@ public class DeferredMessageBuilder {
             builder = MessageProcessorSelector.getMessageBuilder(_contentType, msgCtx);
             if (builder != null) {
                 try {
-                    if (contentLength != null && "0".equals(contentLength)) {
+                    if (contentLength != null && "0".equals(contentLength) && !msgCtx.isDoingREST()) {
                         element = new org.apache.axiom.soap.impl.llom.soap11.SOAP11Factory().getDefaultEnvelope();
                         //since we are setting an empty envelop to achieve the empty body, we have to set a different
                         //content-type other than text/xml, application/soap+xml or any other content-type which will

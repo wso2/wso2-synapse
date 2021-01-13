@@ -243,7 +243,7 @@ public abstract class AbstractListMediator extends AbstractMediator
      */
     private void consumeInputOnOmException(MessageContext synCtx) {
         try {
-            RelayUtils.consumeAndDiscardMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext());
+            RelayUtils.discardRequestMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext());
         } catch (AxisFault axisFault) {
             log.error("Exception while consuming the input stream on Om Exception", axisFault);
         }

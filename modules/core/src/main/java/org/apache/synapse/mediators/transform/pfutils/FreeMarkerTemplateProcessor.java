@@ -97,7 +97,10 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
     @Override
     public void init() {
 
-        compileFreeMarkerTemplate(getFormat(), getMediaType());
+        String format = getFormat();
+        if (format != null) {
+            compileFreeMarkerTemplate(format, getMediaType());
+        }
     }
 
     @Override

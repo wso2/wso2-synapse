@@ -37,8 +37,6 @@ public class ConnectCallback implements SessionRequestCallback {
     }
 
     public void completed(SessionRequest request) {
-        HostConnections pool = (HostConnections) request.getAttachment();
-        pool.pendingConnectionSucceeded();
         if (log.isDebugEnabled()) {
             if (request.getSession() != null &&
                     request.getSession().getLocalAddress() != null) {

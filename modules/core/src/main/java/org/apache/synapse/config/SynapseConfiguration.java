@@ -79,6 +79,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +87,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Timer;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toMap;
 
 /**
  * The SynapseConfiguration holds the global configuration for a Synapse
@@ -198,6 +202,11 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     private Map<String, Template> endpointTemplates = new ConcurrentHashMap<String, Template>();
 
     private Map<String, API> apiTable = Collections.synchronizedMap(new LinkedHashMap<String, API>());
+
+    /**
+     * Swagger definitions of deployed APIs.
+     */
+    private Map<String, String> swaggerTable = Collections.synchronizedMap(new LinkedHashMap<String, String>());
 
     private Map<String, InboundEndpoint> inboundEndpointMap = new ConcurrentHashMap<String, InboundEndpoint>();
     
@@ -439,6 +448,45 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         }
     }
 
+    /**
+     * Add swagger definition of an API.
+     *
+     * @param apiName           name of the API.
+     * @param swaggerDefinition Swagger definition as string.
+     */
+    public synchronized void addSwaggerDefinition(String apiName, String swaggerDefinition) {
+
+        if (!swaggerTable.containsKey(apiName)) {
+            swaggerTable.put(apiName, swaggerDefinition);
+        } else {
+            handleException("Duplicate swagger definition by the name: " + apiName);
+        }
+    }
+
+    /**
+     * Remove swagger contents without corresponding API.
+     * This discrepancy can happen by a faulty CAPP.
+     */
+    public synchronized void validateSwaggerTable() {
+        Iterator<String> swaggerIterator = swaggerTable.keySet().iterator();
+        while (swaggerIterator.hasNext()) {
+            String name = swaggerIterator.next();
+            if (!apiTable.containsKey(name)) {
+                swaggerTable.remove(name);
+            }
+        }
+    }
+
+    /**
+     * Get swagger definition of a given API.
+     *
+     * @param apiName deployed name of the API.
+     * @return Swagger definition on the API, else null.
+     */
+    public String getSwaggerOfTheAPI(String apiName) {
+        return swaggerTable.get(apiName);
+    }
+
     public synchronized void updateAPI(String name, API api) {
         if (!apiTable.containsKey(name)) {
             handleException("No API exists by the name: " + name);
@@ -474,6 +522,17 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             }
         } else {
             handleException("No API exists by the name: " + name);
+        }
+    }
+
+    /**
+     * Remove the swagger definition from Synapse Context if it exists.
+     *
+     * @param name artifact name of the API.
+     */
+    public synchronized void removeSwaggerFromTheAPI(String name) {
+        if (swaggerTable.containsKey(name)) {
+            swaggerTable.remove(name);
         }
     }
 
@@ -2262,29 +2321,11 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         if (log.isDebugEnabled()) {
             log.debug("Start re-constructing the API Table...");
         }
-
-        Map<String, API> duplicateAPITable = new LinkedHashMap<String, API>();
-        String[] contextValues = new String[apiTable.size()];
-        int i = 0;
-        for (API api : apiTable.values()) {
-            contextValues[i] = api.getContext();
-            i++;
-        }
-        Arrays.sort(contextValues, new java.util.Comparator<String>() {
-            public int compare(String context1, String context2) {
-                return context1.length() - context2.length();
-            }
-        });
-        ArrayUtils.reverse(contextValues);
-        for (String context : contextValues) {
-            for (String mapKeys : apiTable.keySet()) {
-                if (context.equals(apiTable.get(mapKeys).getContext())) {
-                    duplicateAPITable.put(mapKeys, apiTable.get(mapKeys));
-                    break;
-                }
-            }
-        }
-        apiTable = duplicateAPITable;
+        Stream<Map.Entry<String, API>> sorted = apiTable.entrySet().stream()
+                .sorted(Map.Entry
+                        .comparingByValue((api1, api2) -> api2.getContext().length() - api1.getContext().length()));
+        apiTable = sorted.collect(toMap(Map.Entry::getKey,
+                Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
     }
 
 }

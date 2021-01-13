@@ -52,6 +52,7 @@ import org.apache.synapse.endpoints.ResolvingEndpoint;
 import org.apache.synapse.endpoints.TemplateEndpoint;
 import org.apache.synapse.endpoints.oauth.MessageCache;
 import org.apache.synapse.endpoints.oauth.OAuthUtils;
+import org.apache.synapse.util.MediatorPropertyUtils;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
 
@@ -535,6 +536,13 @@ public class BlockingMsgSender {
             } else {
                 returnMsgCtx.setEnvelope(OMAbstractFactory.getSOAP12Factory().getDefaultEnvelope());
             }
+        }
+        try {
+            // Message need to be serialized since if not the stream given in data handler can be closed prior to
+            // writing the response
+            MediatorPropertyUtils.serializeOMElement(resultMsgCtx);
+        } catch (Exception e) {
+            handleException("Error while serializing the  message", e);
         }
         returnMsgCtx.setProperty(SynapseConstants.HTTP_SENDER_STATUSCODE,
                                  resultMsgCtx.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE));

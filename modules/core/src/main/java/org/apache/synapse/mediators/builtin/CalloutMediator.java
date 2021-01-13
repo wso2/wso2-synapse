@@ -32,6 +32,7 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.ConfigurationContextFactory;
+import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
@@ -192,7 +193,9 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
 
             MessageContext synapseOutMsgCtx = MessageHelper.cloneMessageContext(synCtx);
             // Send the SOAP Header Blocks to support WS-Addressing
-            setSoapHeaderBlock(synapseOutMsgCtx);            
+            setSoapHeaderBlock(synapseOutMsgCtx);
+            //Set NTLM options from parent message context to cloned message context
+            setNTLMOptions(synCtx, synapseOutMsgCtx);
             if (!useEnvelopeAsSource
             		// if the payload is JSON, we do not consider the request (ie. source) path. Instead, we use the complete payload.
             		&& !JsonUtil.hasAJsonPayload(((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext())) {
@@ -729,5 +732,22 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
         } catch (NamingException e) {
             handleException("Cloud not create initial context", e, synCtx);
         }
+    }
+
+    /**
+     * This sets NTLM specific options from original message context to the cloned message context.
+     * @param synCtx Original message context
+     * @param clonedSynCtx Cloned message context
+     */
+    private void setNTLMOptions(MessageContext synCtx, MessageContext clonedSynCtx) {
+        org.apache.axis2.context.MessageContext axis2MsgCtx =
+                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        org.apache.axis2.context.MessageContext clonedAxis2MsgCtx =
+                ((Axis2MessageContext) clonedSynCtx).getAxis2MessageContext();
+        clonedAxis2MsgCtx.getOptions().setProperty(
+                HTTPConstants.AUTHENTICATE, axis2MsgCtx.getOptions().getProperty(HTTPConstants.AUTHENTICATE));
+        clonedAxis2MsgCtx.getOptions().setProperty(
+                HTTPConstants.MULTITHREAD_HTTP_CONNECTION_MANAGER,
+                axis2MsgCtx.getOptions().getProperty(HTTPConstants.MULTITHREAD_HTTP_CONNECTION_MANAGER));
     }
 }

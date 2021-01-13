@@ -310,8 +310,16 @@ public final class MessageConverter {
             while (properties.hasNext()) {
                 String key = properties.next();
                 if (isExcludedMessageStoreProperty(key)) {
+                    // Adding the proxy or api name to be used in the service loggers
+                    if (SynapseConstants.PROXY_SERVICE.equals(key) || RESTConstants.SYNAPSE_REST_API.equals(key)) {
+                        Object value = synCtx.getProperty(key);
+                        if (value instanceof String) {
+                            synMsg.addProperty(SynapseConstants.SERVICE_LOGGER_NAME, (String) value);
+                        }
+                    }
                     continue;
                 }
+
                 Object value = synCtx.getProperty(key);
                 if (value instanceof String) {
                     synMsg.addProperty(key, (String) value);

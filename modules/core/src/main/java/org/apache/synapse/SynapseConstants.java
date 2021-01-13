@@ -178,6 +178,8 @@ public final class SynapseConstants {
     public static final String SYNAPSE_VALIDATE_MEDIATOR_REDEPLOYMENT_CACHE_CLEAR =
             "synapse.clear.mediation.cache.on.validate.mediator.deployment";
 
+    // TO be used in JMS producer path to set the service logger name
+    public static final String SERVICE_LOGGER_NAME = "service.logger.name";
 
     // hidden service parameter
     public static final String HIDDEN_SERVICE_PARAM = "hiddenService";
@@ -587,5 +589,9 @@ public final class SynapseConstants {
     //This synapse property will be read in the mediation layer to decide whether to save artifacts to a local
     // directory or not. By default this property is set to true.
     public static final String STORE_ARTIFACTS_LOCALLY = "synapse.artifacts.file.storage.enabled";
+
+    public static final int DEFAULT_MAX_FAILOVER_RETRIES = -1; //Default set to unlimited retries
+    public static final String MAX_FAILOVER_RETRIES_CONFIG = "maximum.failover.retries";
+    public static final String SUSPEND_DURATION_ON_MAX_FAILOVER_CONFIG = "suspend.duration.on.maximum.failover";
 
 }

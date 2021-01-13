@@ -38,12 +38,15 @@ public class DefaultEndpoint extends AbstractEndpoint {
 
         // For setting Car name (still for Proxy)
         logSetter();
-
-        // is this really a fault or a timeout/connection close etc?
-        if (isTimeout(synCtx)) {
-            getContext().onTimeout();
-        } else if (isSuspendFault(synCtx)) {
-            getContext().onFault();
+        if (getContext().isMaxRetryLimitReached()) {
+            getContext().onFailoverRetryLimit();
+        } else {
+            // is this really a fault or a timeout/connection close etc?
+            if (isTimeout(synCtx)) {
+                getContext().onTimeout();
+            } else if (isSuspendFault(synCtx)) {
+                getContext().onFault();
+            }
         }
 
         // this should be an ignored error if we get here

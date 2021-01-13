@@ -333,7 +333,9 @@ public class InvokeMediator extends AbstractMediator implements
 
         TemplateMediator templateMediator =
                 se.getSynapseConfiguration().getSequenceTemplate(targetTemplate);
-        if (templateMediator != null) {
+        // TemplateMediator is initializing only if it's not in the initializing status to overcome  
+        // recursive initialisation issue when a template is used in a recursive manner
+        if (templateMediator != null && !templateMediator.isInitializing()) {
             templateMediator.init(se);
         }
         if (templateMediator == null || templateMediator.isDynamic()) {

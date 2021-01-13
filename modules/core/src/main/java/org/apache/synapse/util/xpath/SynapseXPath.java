@@ -69,8 +69,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * <p>XPath that has been used inside Synapse xpath processing. This has a extension function named
@@ -215,22 +215,25 @@ public class SynapseXPath extends SynapsePath {
     }
 
     private String getPropertyScope(String xPathString) {
-       String[] args;
-       String xpath = null;
-       String scope = "";
-       if (xPathString.contains("get-property")) {
+        String xpath = null;
+        String scope = "";
+        if (xPathString.contains("get-property")) {
             // extract property args
-            xpath = xPathString.substring(xPathString.indexOf("(") + 1, xPathString.indexOf(")"));
-	    args = xpath.split(",");
-	    if (args != null && args.length == 2) {
-		// remove white space
-		scope = args[0].trim();
-		// remove opening and ending quotes
-		scope = scope.substring(1, scope.length() - 1);
+            Matcher matcher = Pattern.compile("get-property\\(([^)]+)\\)").matcher(xPathString);
+            if (matcher.find()) {
+                xpath = matcher.group(1);
+            }
+            if (xpath != null) {
+                String[] args = xpath.split(",");
+                if (args.length == 2) {
+                    // remove leading and trailing quotes
+                    scope = args[0].trim().replaceAll("^\'|\'$", "").trim();
                 }
-	   }
-       return scope;
+            }
+        }
+        return scope;
     }
+
     /**
      * Evaluate if the expression is compilable in XPath 2.0 format. This will only be used when its failing to
      * compile in Jaxen

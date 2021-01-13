@@ -66,14 +66,14 @@ import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.xml.parsers.FactoryConfigurationError;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.xml.parsers.FactoryConfigurationError;
 
 /**
  * This is a worker thread for executing an incoming request in to the transport.
@@ -221,7 +221,8 @@ public class ServerWorker implements Runnable {
         if (contentType == null || contentType.isEmpty()) {
             contentType = PassThroughConstants.APPLICATION_OCTET_STREAM;
             // Temp fix for https://github.com/wso2/product-ei/issues/2001
-            if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(HTTP_METHOD))) {
+            if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(HTTP_METHOD)) || "DELETE"
+                    .equals(msgContext.getProperty(HTTP_METHOD))) {
                 contentType = HTTPConstants.MEDIA_TYPE_X_WWW_FORM;
             }
         }
@@ -383,7 +384,7 @@ public class ServerWorker implements Runnable {
      */
     private void consumeInputOnException(MessageContext msgContext) {
         try {
-            RelayUtils.consumeAndDiscardMessage(msgContext);
+            RelayUtils.discardRequestMessage(msgContext);
         } catch (AxisFault axisFault) {
             log.error("Exception while consuming the input stream on Axis Fault", axisFault);
         }
@@ -646,7 +647,7 @@ public class ServerWorker implements Runnable {
             } catch (Exception ignore) {
             }
 
-            pipe.setSerializationCompleteWithoutData(true);
+            pipe.setSerializationComplete(true);
 
             SourceContext.setResponse(conn, sourceResponse);
             ProtocolState state = SourceContext.getState(conn);
