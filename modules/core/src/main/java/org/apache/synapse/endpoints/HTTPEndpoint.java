@@ -311,4 +311,5 @@ public class HTTPEndpoint extends AbstractEndpoint {
     public void setLegacySupport(boolean legacySupport) {
         this.legacySupport = legacySupport;
     }
+
 }

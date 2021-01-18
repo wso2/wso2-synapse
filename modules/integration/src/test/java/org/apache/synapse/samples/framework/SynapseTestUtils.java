@@ -120,6 +120,8 @@ public class SynapseTestUtils {
             return new ActiveMQController(root);
         } else if (SampleConfigConstants.TAG_BE_SERVER_CONF_ECHO_SERVER.equals(root.getLocalName())) {
             return new EchoHttpServerController(root);
+        } else if (SampleConfigConstants.TAG_BE_SERVER_CONF_REST_SERVER.equals(root.getLocalName())) {
+            return new RESTHttpServerController(root);
         }
         return null;
     }
