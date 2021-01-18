@@ -23,8 +23,12 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.util.JavaUtils;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.Target;
 import org.apache.synapse.mediators.eip.splitter.CloneMediator;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
+import org.apache.synapse.util.xpath.SynapseXPath;
+import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
 import java.util.Iterator;
@@ -35,7 +39,7 @@ import java.util.Properties;
  * different message contexts and mediated using the specified targets
  *
  * <pre>
- * &lt;clone [continueParent=(true | false)]&gt;
+ * &lt;clone [continueParent=(true | false)] [iterations="number"]&gt;
  *   &lt;target [to="uri"] [soapAction="qname"] [sequence="sequence_ref"]
  *          [endpoint="endpoint_ref"]&gt;
  *     &lt;sequence&gt;
@@ -56,12 +60,14 @@ public class CloneMediatorFactory extends AbstractMediatorFactory {
     private static final QName CLONE_Q
             = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "clone");
     private static final QName ATT_CONTINUE_PARENT = new QName("continueParent");
+    private static final QName ATT_ITERATIONS = new QName("iterations");
     private static final QName TARGET_Q
             = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "target");
 
     private static final QName ID_Q
             = new QName(XMLConfigConstants.NULL_NAMESPACE, "id");
     private static final QName SEQUENTIAL_Q = new QName("sequential");
+    private static final String ITERATIONS = "iterations";
 
     /**
      * This method implements the createMediator method of the MediatorFactory interface
@@ -90,6 +96,16 @@ public class CloneMediatorFactory extends AbstractMediatorFactory {
                     continueParent.getAttributeValue()));
         }
 
+        OMAttribute iterations = elem.getAttribute(ATT_ITERATIONS);
+        if (iterations != null) {
+            String iterationsAttributeStr = iterations.getAttributeValue();
+            if (isDynamicValue(iterationsAttributeStr)) {
+                Value iterationsAttributeValue = resolveDynamicAttribute(iterationsAttributeStr, elem);
+                mediator.setDynamicIterationsValue(iterationsAttributeValue);
+            }
+            mediator.setIterations(iterationsAttributeStr);
+        }
+
         OMAttribute synchronousExeAttr= elem.getAttribute(SEQUENTIAL_Q);
         if (synchronousExeAttr != null && synchronousExeAttr.getAttributeValue().equals("true")) {
         	asynchronousExe = false;
@@ -98,15 +114,66 @@ public class CloneMediatorFactory extends AbstractMediatorFactory {
         mediator.setSequential(!asynchronousExe);
         
         Iterator targetElements = elem.getChildrenWithName(TARGET_Q);
+        int noOfTargets = 0;
         while (targetElements.hasNext()) {
         	Target target = TargetFactory.createTarget((OMElement)targetElements.next(), properties);
         	target.setAsynchronous(asynchronousExe);
             mediator.addTarget(target);
+            noOfTargets++;
+        }
+
+        if (iterations != null && noOfTargets > 1) {
+            handleException("When iterations attribute is defined only one target is allowed.");
         }
 
         addAllCommentChildrenToList(elem, mediator.getCommentsList());
 
         return mediator;
+    }
+
+    /**
+     * This is a utility method to resolve dynamic attribute
+     * @param attributeValue the attribute value
+     * @param elem the OMElement
+     * @return QName of the clone element in xml configuration
+     */
+    private Value resolveDynamicAttribute(String attributeValue, OMElement elem) {
+        try {
+            String valueExpression = attributeValue.substring(1, attributeValue.length() - 1);
+            if (valueExpression.startsWith("json-eval(")) {
+                new SynapseJsonPath(valueExpression.substring(10, valueExpression.length() - 1));
+            } else {
+                new SynapseXPath(valueExpression);
+            }
+        } catch (JaxenException e) {
+            handleException("Invalid expression for attribute 'name' : " + attributeValue);
+        }
+        // ValueFactory for creating dynamic Value
+        ValueFactory nameValueFactory = new ValueFactory();
+        // create dynamic Value based on OMElement
+        return nameValueFactory.createValue(ITERATIONS, elem);
+    }
+
+    /**
+     * Validate the given value to identify whether it is static or dynamic key
+     * If the value is in the {} format then it is dynamic key(XPath)
+     * Otherwise just a static value
+     *
+     * @param nameValue string to validate as a name
+     * @return isDynamicValue representing name type
+     */
+    private boolean isDynamicValue(String nameValue) {
+        if (nameValue.length() < 2) {
+            return false;
+        }
+
+        final char startExpression = '{';
+        final char endExpression = '}';
+
+        char firstChar = nameValue.charAt(0);
+        char lastChar = nameValue.charAt(nameValue.length() - 1);
+
+        return (startExpression == firstChar && endExpression == lastChar);
     }
 
     /**

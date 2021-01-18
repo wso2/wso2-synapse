@@ -72,24 +72,30 @@ public class SynapseXPathFunctionContext implements FunctionContext {
     public Function getFunction(String namespaceURI, String prefix, String localName)
         throws UnresolvableException {
 
-        if (localName != null && SynapseXPathConstants.GET_PROPERTY_FUNCTION.equals(localName)) {
+        if (SynapseXPathConstants.GET_PROPERTY_FUNCTION.equals(localName)) {
 
             // create an instance of a synapse:get-property()
             // function and set it to the xpath
             return new GetPropertyFunction(synCtx);
 
-        } else if (localName != null &&
-                   SynapseXPathConstants.BASE64_ENCODE_FUNCTION.equals(localName)) {
+        } else if (SynapseXPathConstants.BASE64_ENCODE_FUNCTION.equals(localName)) {
             // create a base64Encode function and set it to the XPath
             return new Base64EncodeFunction();
-        } else if (localName != null &&
-                   SynapseXPathConstants.BASE64_DECODE_FUNCTION.equals(localName)) {
+        } else if (SynapseXPathConstants.BASE64_DECODE_FUNCTION.equals(localName)) {
             // create a base64Decode function and set it to the XPath
             return new Base64DecodeFunction();
-        } else if (localName != null &&
-                   SynapseXPathConstants.URL_ENCODE_FUNCTION.equals(localName)) {
+        } else if (SynapseXPathConstants.URL_ENCODE_FUNCTION.equals(localName)) {
             // create a url-encode function and set it to the XPath
             return new URLEncodeFunction();
+        } else if (SynapseXPathConstants.HMAC_GENERATE_FUNCTION.equals(localName)) {
+            // create a hmac generate function and set it to the XPath
+            return new HMACGenerateFunction();
+        } else if (SynapseXPathConstants.ENCRYPT_FUNCTION.equals(localName)) {
+            // create a encrypt function and set it to the XPath
+            return new EncryptFunction();
+        } else if (SynapseXPathConstants.DECRYPT_FUNCTION.equals(localName)) {
+            // create a decrypt function and set it to the XPath
+            return new DecryptFunction();
         }
         //We check if custom Xpath extensions are available
         Function extensionFunction = XpathExtensionUtil.getFunctionContext(
