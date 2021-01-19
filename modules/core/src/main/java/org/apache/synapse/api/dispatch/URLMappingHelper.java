@@ -16,9 +16,9 @@
 * under the License.
 */
 
-package org.apache.synapse.rest.dispatch;
+package org.apache.synapse.api.dispatch;
 
-import org.apache.synapse.rest.RESTUtils;
+import org.apache.synapse.api.ApiUtils;
 
 public class URLMappingHelper implements DispatcherHelper {
 
@@ -45,7 +45,7 @@ public class URLMappingHelper implements DispatcherHelper {
 
     public boolean isExactMatch(String url) {
         if (!"/".equals(url)) {
-            url = RESTUtils.trimTrailingSlashes(url);
+            url = ApiUtils.trimTrailingSlashes(url);
         }
         int index = url.indexOf('?');
         if (index > 0) {
@@ -70,7 +70,7 @@ public class URLMappingHelper implements DispatcherHelper {
                 return 1;
             }
 
-            url = RESTUtils.trimSlashes(url);
+            url = ApiUtils.trimSlashes(url);
             int index = url.indexOf('?');
             if (index != -1) {
                 url = url.substring(0, index);

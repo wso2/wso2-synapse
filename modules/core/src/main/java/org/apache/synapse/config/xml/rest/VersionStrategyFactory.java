@@ -22,11 +22,11 @@ import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.rest.API;
-import org.apache.synapse.rest.version.ContextVersionStrategy;
-import org.apache.synapse.rest.version.DefaultStrategy;
-import org.apache.synapse.rest.version.URLBasedVersionStrategy;
-import org.apache.synapse.rest.version.VersionStrategy;
+import org.apache.synapse.api.API;
+import org.apache.synapse.api.version.ContextVersionStrategy;
+import org.apache.synapse.api.version.DefaultStrategy;
+import org.apache.synapse.api.version.URLBasedVersionStrategy;
+import org.apache.synapse.api.version.VersionStrategy;
 
 import javax.xml.namespace.QName;
 

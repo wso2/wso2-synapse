@@ -26,13 +26,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.api.inbound.InboundApiUtils;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.commons.util.PropertyHelper;
 import org.apache.synapse.config.xml.XMLConfigConstants;
-import org.apache.synapse.rest.API;
+import org.apache.synapse.api.API;
 import org.apache.synapse.rest.Handler;
 import org.apache.synapse.rest.RESTConstants;
-import org.apache.synapse.rest.version.VersionStrategy;
+import org.apache.synapse.api.Resource;
+import org.apache.synapse.api.version.VersionStrategy;
 import org.apache.synapse.util.CommentListUtil;
 
 import javax.xml.namespace.QName;
@@ -85,6 +87,8 @@ public class APIFactory {
         if (publishSwagger != null) {
             api.setSwaggerResourcePath(publishSwagger.getAttributeValue());
         }
+
+        InboundApiUtils.addBindsTo(api, apiElt);
 
         Iterator resources = apiElt.getChildrenWithName(new QName(
                 XMLConfigConstants.SYNAPSE_NAMESPACE, "resource"));

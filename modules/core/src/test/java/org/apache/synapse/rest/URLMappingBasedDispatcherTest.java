@@ -20,8 +20,10 @@ package org.apache.synapse.rest;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.api.API;
+import org.apache.synapse.api.Resource;
 import org.apache.synapse.config.SynapseConfiguration;
-import org.apache.synapse.rest.dispatch.URLMappingHelper;
+import org.apache.synapse.api.dispatch.URLMappingHelper;
 
 public class URLMappingBasedDispatcherTest extends RESTMediationTestCase {
 

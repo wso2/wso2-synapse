@@ -18,6 +18,7 @@ package org.apache.synapse.rest;
 
 import junit.framework.Assert;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.api.ApiUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 
 /**
@@ -30,7 +31,7 @@ public class RestUtilsTest extends RESTMediationTestCase {
         MessageContext msgCtx = getMessageContext(synapseConfig, false,
                 "http://localhos:9443/test/admin?PARAM1=1&PARAM2=2", "GET");
 
-        String url = RESTUtils.getFullRequestPath(msgCtx);
+        String url = ApiUtils.getFullRequestPath(msgCtx);
         Assert.assertTrue(url.contains("PARAM1=1&PARAM2=2"));
     }
 

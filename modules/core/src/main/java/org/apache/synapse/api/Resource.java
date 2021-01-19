@@ -16,7 +16,7 @@
 * under the License.
 */
 
-package org.apache.synapse.rest;
+package org.apache.synapse.api;
 
 import org.apache.axiom.util.UIDGenerator;
 import org.apache.axis2.Constants;
@@ -39,16 +39,17 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.rest.cors.SynapseCORSConfiguration;
-import org.apache.synapse.rest.cors.CORSHelper;
-import org.apache.synapse.rest.dispatch.DispatcherHelper;
+import org.apache.synapse.api.cors.SynapseCORSConfiguration;
+import org.apache.synapse.api.cors.CORSHelper;
+import org.apache.synapse.api.dispatch.DispatcherHelper;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class Resource extends AbstractRESTProcessor implements ManagedLifecycle, AspectConfigurable {
+public class Resource extends AbstractRequestProcessor implements ManagedLifecycle, AspectConfigurable {
 
     /**
      * List of HTTP methods applicable on this method. Empty list means all methods
@@ -63,6 +64,8 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
     private int protocol = RESTConstants.PROTOCOL_HTTP_AND_HTTPS;
 
     AspectConfiguration aspectConfiguration;
+
+    private Set<String> bindsTo = new HashSet<>();
 
     /**
      * In-lined sequence to be executed upon receiving messages
@@ -92,7 +95,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
         super(UIDGenerator.generateUID());
     }
 
-    protected String getName() {
+    public String getName() {
         return name;
     }
 
@@ -213,6 +216,14 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
         this.protocol = protocol;
     }
 
+    public Set<String> getBindsTo() {
+        return bindsTo;
+    }
+
+    public void addAllBindsTo(Set<String> inboundEndpointBindings) {
+        this.bindsTo.addAll(inboundEndpointBindings);
+    }
+
     @Override
     boolean canProcess(MessageContext synCtx) {
         if (synCtx.isResponse()) {
@@ -319,7 +330,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
             }
 
             synCtx.setProperty(RESTConstants.SYNAPSE_RESOURCE, name);
-            RESTUtils.populateQueryParamsToMessageContext(synCtx);
+            ApiUtils.populateQueryParamsToMessageContext(synCtx);
         } else {
             // Add CORS headers for response message
             CORSHelper.handleCORSHeadersForResponse(SynapseCORSConfiguration.getInstance(), synCtx);

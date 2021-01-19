@@ -169,6 +169,7 @@
 						<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
 						<Export-Package>
 							org.apache.synapse,
+							org.apache.synapse.api.*,
 							org.apache.synapse.aspects.*,
 							org.apache.synapse.deployers.*,
 							org.apache.synapse.executors.*,

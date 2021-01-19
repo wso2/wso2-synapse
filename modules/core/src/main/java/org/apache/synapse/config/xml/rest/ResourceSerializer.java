@@ -22,12 +22,13 @@ import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.api.ApiConstants;
 import org.apache.synapse.config.xml.SequenceMediatorSerializer;
 import org.apache.synapse.rest.RESTConstants;
-import org.apache.synapse.rest.Resource;
-import org.apache.synapse.rest.dispatch.DispatcherHelper;
-import org.apache.synapse.rest.dispatch.URITemplateHelper;
-import org.apache.synapse.rest.dispatch.URLMappingHelper;
+import org.apache.synapse.api.Resource;
+import org.apache.synapse.api.dispatch.DispatcherHelper;
+import org.apache.synapse.api.dispatch.URITemplateHelper;
+import org.apache.synapse.api.dispatch.URLMappingHelper;
 
 public class ResourceSerializer {
 
@@ -42,6 +43,10 @@ public class ResourceSerializer {
                 value += method + " ";
             }
             resourceElt.addAttribute("methods", value.trim(), null);
+        }
+
+        if (resource.getBindsTo() != null) {
+            resourceElt.addAttribute(ApiConstants.BINDS_TO, String.join(",", resource.getBindsTo()), null);
         }
 
         if (resource.getContentType() != null) {

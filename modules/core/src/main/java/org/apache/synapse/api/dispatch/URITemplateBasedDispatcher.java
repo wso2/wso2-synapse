@@ -16,9 +16,11 @@
 * under the License.
 */
 
-package org.apache.synapse.rest.dispatch;
+package org.apache.synapse.api.dispatch;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.api.ApiUtils;
+import org.apache.synapse.api.Resource;
 import org.apache.synapse.rest.*;
 
 import java.util.Collection;
@@ -28,7 +30,7 @@ import java.util.Map;
 public class URITemplateBasedDispatcher implements RESTDispatcher {
 
     public Resource findResource(MessageContext synCtx, Collection<Resource> resources) {
-        String url = RESTUtils.getSubRequestPath(synCtx);
+        String url = ApiUtils.getSubRequestPath(synCtx);
         for (Resource r : resources) {
             DispatcherHelper helper = r.getDispatcherHelper();
             if (helper instanceof URITemplateHelper) {

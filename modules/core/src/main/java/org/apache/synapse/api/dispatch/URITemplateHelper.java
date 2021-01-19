@@ -16,7 +16,7 @@
 * under the License.
 */
 
-package org.apache.synapse.rest.dispatch;
+package org.apache.synapse.api.dispatch;
 
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.templates.uri.URITemplate;

@@ -33,9 +33,9 @@ import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.rest.API;
+import org.apache.synapse.api.API;
 import org.apache.synapse.rest.RESTConstants;
-import org.apache.synapse.rest.Resource;
+import org.apache.synapse.api.Resource;
 
 import java.util.Set;
 import java.util.Stack;

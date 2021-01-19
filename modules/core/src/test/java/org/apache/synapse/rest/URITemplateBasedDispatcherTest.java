@@ -19,8 +19,10 @@
 package org.apache.synapse.rest;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.api.API;
+import org.apache.synapse.api.Resource;
 import org.apache.synapse.config.SynapseConfiguration;
-import org.apache.synapse.rest.dispatch.URITemplateHelper;
+import org.apache.synapse.api.dispatch.URITemplateHelper;
 
 public class URITemplateBasedDispatcherTest extends RESTMediationTestCase {
 

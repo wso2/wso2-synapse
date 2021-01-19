@@ -44,7 +44,7 @@ import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.rest.API;
+import org.apache.synapse.api.API;
 
 import javax.xml.namespace.QName;
 import java.util.*;

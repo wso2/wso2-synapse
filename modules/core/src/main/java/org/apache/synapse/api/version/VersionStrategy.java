@@ -15,24 +15,17 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-package org.apache.synapse.rest.version;
+package org.apache.synapse.api.version;
 
-import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
-import org.apache.synapse.rest.API;
+public interface VersionStrategy {
 
-public class DefaultStrategy extends  AbstractVersionStrategy{
+    public boolean isMatchingVersion(Object versionInfoObj);
 
-    public DefaultStrategy(API api) {
-        super(api, "", VersionStrategyFactory.TYPE_NULL);
-    }
+    public String getVersion();
 
-    public boolean isMatchingVersion(Object versionInfoObj) {
-        return true;
-    }
+    public String getVersionType();
 
-    public String getVersionParam() {
-        return "";
-    }
+    public String getVersionParam();
 
 
 }

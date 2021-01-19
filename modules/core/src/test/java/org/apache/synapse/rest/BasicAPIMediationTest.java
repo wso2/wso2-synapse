@@ -17,9 +17,10 @@
 package org.apache.synapse.rest;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.api.API;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.rest.version.URLBasedVersionStrategy;
+import org.apache.synapse.api.version.URLBasedVersionStrategy;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 public class BasicAPIMediationTest extends RESTMediationTestCase {

@@ -16,13 +16,13 @@
 * under the License.
 */
 
-package org.apache.synapse.rest.version;
+package org.apache.synapse.api.version;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.api.ApiUtils;
 import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
-import org.apache.synapse.rest.API;
+import org.apache.synapse.api.API;
 import org.apache.synapse.rest.RESTConstants;
-import org.apache.synapse.rest.RESTUtils;
 
 public class ContextVersionStrategy extends AbstractVersionStrategy {
     String versionParam;
@@ -51,7 +51,7 @@ public class ContextVersionStrategy extends AbstractVersionStrategy {
     public boolean isMatchingVersion(Object versionInfoObj) {
         MessageContext msgContext = (MessageContext) versionInfoObj;
 
-        String path = RESTUtils.getFullRequestPath(msgContext);
+        String path = ApiUtils.getFullRequestPath(msgContext);
         String context = getAPI().getContext();
 
         return path.startsWith(context);

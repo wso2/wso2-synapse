@@ -21,10 +21,11 @@ package org.apache.synapse.rest;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.api.API;
 import org.apache.synapse.config.SynapseConfiguration;
-import org.apache.synapse.rest.version.ContextVersionStrategy;
-import org.apache.synapse.rest.version.DefaultStrategy;
-import org.apache.synapse.rest.version.URLBasedVersionStrategy;
+import org.apache.synapse.api.version.ContextVersionStrategy;
+import org.apache.synapse.api.version.DefaultStrategy;
+import org.apache.synapse.api.version.URLBasedVersionStrategy;
 
 public class APIDispatcherTest extends RESTMediationTestCase {
 
