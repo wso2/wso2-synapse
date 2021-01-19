@@ -53,6 +53,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -366,28 +367,51 @@ public class TargetRequest {
     /**
      * Consume the data from the pipe and write it to the wire.
      *
-     * @param conn the connection to the target
+     * @param conn    the connection to the target
      * @param encoder encoder for writing the message through
-     * @throws java.io.IOException if an error occurs
      * @return number of bytes written
+     * @throws java.io.IOException if an error occurs
      */
     public int write(NHttpClientConnection conn, ContentEncoder encoder) throws IOException {
         int bytes = 0;
         if (pipe != null) {
             bytes = pipe.consume(encoder);
         }
+        writePostActions(conn, encoder);
+        return bytes;
+    }
+
+    /**
+     * Same as
+     * {@link TargetRequest#write(org.apache.http.nio.NHttpClientConnection, org.apache.http.nio.ContentEncoder)}
+     * but gives out the data consumed from the pipe.
+     *
+     * @param conn    the connection to the target
+     * @param encoder encoder for writing the message through
+     * @return data consumed
+     * @throws java.io.IOException if an error occurs
+     */
+    public ByteBuffer copyAndWrite(NHttpClientConnection conn, ContentEncoder encoder) throws IOException {
+
+        ByteBuffer bufferCopy = null;
+        if (pipe != null) {
+            bufferCopy = pipe.copyAndConsume(encoder);
+        }
+        writePostActions(conn, encoder);
+        return bufferCopy;
+    }
+
+    private void writePostActions(NHttpClientConnection conn, ContentEncoder encoder) {
 
         if (encoder.isCompleted()) {
-          conn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
-          conn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,System.currentTimeMillis());
+            conn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
+            conn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,
+                                           System.currentTimeMillis());
             targetConfiguration.getMetrics().
                     notifySentMessageSize(conn.getMetrics().getSentBytesCount());
 
             TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
         }
-
-        return bytes;
-
     }
 
     public boolean hasEntityBody() {

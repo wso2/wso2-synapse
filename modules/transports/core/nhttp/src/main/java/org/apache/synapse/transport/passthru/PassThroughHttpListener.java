@@ -74,6 +74,7 @@ import org.apache.synapse.transport.passthru.jmx.TransportView;
 
 import org.apache.synapse.transport.passthru.util.ActiveConnectionMonitor;
 import org.apache.synapse.transport.passthru.util.SessionContextUtil;
+import org.apache.synapse.transport.passthru.util.StreamInterceptorsLoader;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -127,6 +128,8 @@ public class PassThroughHttpListener implements TransportListener {
     private TransportInDescription pttInDescription;
 
     private ConfigurationContext configurationContext;
+
+    private List<StreamInterceptor> interceptors;
 
     /**
      * HttpListener Running port
@@ -184,7 +187,8 @@ public class PassThroughHttpListener implements TransportListener {
         ServerConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportInDescription, host, cfgCtx);
         connFactory = connFactoryBuilder.build(sourceConfiguration.getHttpParams());
 
-        handler = new SourceHandler(sourceConfiguration);
+        interceptors = StreamInterceptorsLoader.getInterceptors();
+        handler = new SourceHandler(sourceConfiguration , interceptors);
         passThroughListeningIOReactorManager = PassThroughListeningIOReactorManager.getInstance();
 
         // register to receive updates on services for lifetime management

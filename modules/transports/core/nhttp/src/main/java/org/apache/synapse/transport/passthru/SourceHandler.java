@@ -16,9 +16,17 @@
 
 package org.apache.synapse.transport.passthru;
 
+import org.apache.axis2.context.MessageContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.*;
+import org.apache.http.ConnectionClosedException;
+import org.apache.http.Header;
+import org.apache.http.HttpException;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.HttpVersion;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.ContentEncoder;
@@ -33,8 +41,8 @@ import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
-import org.apache.synapse.commons.jmx.ThreadingView;
 import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.commons.jmx.ThreadingView;
 import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.commons.transaction.TranscationManger;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
@@ -46,14 +54,17 @@ import org.apache.synapse.transport.passthru.jmx.LatencyCollector;
 import org.apache.synapse.transport.passthru.jmx.LatencyView;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 
-import javax.net.ssl.SSLException;
-import javax.ws.rs.HttpMethod;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
+import javax.net.ssl.SSLException;
+import javax.ws.rs.HttpMethod;
 
 /**
  * This is the class where transport interacts with the client. This class
@@ -82,9 +93,20 @@ public class SourceHandler implements NHttpServerEventHandler {
     public static final String MESSAGE_SIZE_VALIDATION = "message.size.validation.enabled";
     public static final String VALID_MAX_MESSAGE_SIZE = "valid.max.message.size.in.bytes";
 
+    private List<StreamInterceptor> streamInterceptors;
+    private boolean interceptStream;
+    private int noOfInterceptors;
+
     public SourceHandler(SourceConfiguration sourceConfiguration) {
+        this(sourceConfiguration, new ArrayList<StreamInterceptor>());
+    }
+
+    public SourceHandler(SourceConfiguration sourceConfiguration, List<StreamInterceptor> streamInterceptors) {
         this.sourceConfiguration = sourceConfiguration;
         this.metrics = sourceConfiguration.getMetrics();
+        this.streamInterceptors = streamInterceptors;
+        this.interceptStream = !streamInterceptors.isEmpty();
+        this.noOfInterceptors = streamInterceptors.size();
 
         String strNamePostfix = "";
         if (sourceConfiguration.getInDescription() != null &&
@@ -211,7 +233,49 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             SourceRequest request = SourceContext.getRequest(conn);
 
-            int readBytes = request.read(conn, decoder);
+            int readBytes = 0;
+            boolean interceptionEnabled = false;
+            Boolean[] interceptorResults = new Boolean[noOfInterceptors];
+            if (interceptStream) {
+                int index = 0;
+                for (StreamInterceptor interceptor : streamInterceptors) {
+                    interceptorResults[index] = interceptor.interceptSourceRequest((MessageContext) conn.getContext()
+                            .getAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
+                    if (!interceptionEnabled && interceptorResults[index]) {
+                        interceptionEnabled = true;
+                    }
+                    index++;
+                }
+                if (interceptionEnabled) {
+                    ByteBuffer bytesSent = request.copyAndRead(conn, decoder);
+                    if (bytesSent != null) {
+                        readBytes = bytesSent.remaining();
+                        index = 0;
+                        for (StreamInterceptor interceptor : streamInterceptors) {
+                            if (interceptorResults[index]) {
+                                boolean proceed = interceptor.sourceRequest(bytesSent.duplicate().asReadOnlyBuffer(),
+                                                                            (MessageContext) conn.getContext()
+                                                                                    .getAttribute(
+                                                                                            PassThroughConstants.REQUEST_MESSAGE_CONTEXT));
+                                if (!proceed) {
+                                    log.info("Dropping source connection since request is blocked by : " + interceptor
+                                            .getClass().getName());
+                                    dropSourceConnection(conn);
+                                    conn.getContext().setAttribute(PassThroughConstants.SOURCE_CONNECTION_DROPPED,
+                                                                   true);
+                                    request.getPipe().forceProducerComplete(decoder);
+                                    break;
+                                }
+                            }
+                            index++;
+                        }
+                    }
+                } else {
+                    readBytes = request.read(conn, decoder);
+                }
+            } else {
+                readBytes = request.read(conn, decoder);
+            }
             if (isMessageSizeValidationEnabled) {
                 HttpContext httpContext = conn.getContext();
                 //this is introduced as some transports which extends passthrough source handler which have overloaded
@@ -324,7 +388,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                         }
                     }
                 }
-            
+
                 response.start(conn);
                 conn.getContext().setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_START_TIME,
                         System.currentTimeMillis());
@@ -397,8 +461,39 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             SourceResponse response = SourceContext.getResponse(conn);
 
-            int bytesSent = response.write(conn, encoder);
-            
+            int bytesSent = -1;
+            boolean interceptionEnabled = false;
+            Boolean[] interceptorResults = new Boolean[noOfInterceptors];
+            if (interceptStream) {
+                int index = 0;
+                for (StreamInterceptor interceptor : streamInterceptors) {
+                    interceptorResults[index] = interceptor.interceptSourceResponse((MessageContext) conn.getContext()
+                            .getAttribute(PassThroughConstants.RESPONSE_MESSAGE_CONTEXT));
+                    if (!interceptionEnabled && interceptorResults[index]) {
+                        interceptionEnabled = true;
+                    }
+                    index++;
+                }
+                if (interceptionEnabled) {
+                    ByteBuffer bytesWritten = response.copyAndWrite(conn, encoder);
+                    if (bytesWritten != null) {
+                        bytesSent = bytesWritten.remaining();
+                        index = 0;
+                        for (StreamInterceptor interceptor : streamInterceptors) {
+                            if (interceptorResults[index]) {
+                                interceptor.sourceResponse(bytesWritten.duplicate().asReadOnlyBuffer(),
+                                                           (MessageContext) conn.getContext().getAttribute(
+                                                                   PassThroughConstants.RESPONSE_MESSAGE_CONTEXT));
+                            }
+                            index++;
+                        }
+                    }
+                } else {
+                    bytesSent = response.write(conn, encoder);
+                }
+            } else {
+                bytesSent = response.write(conn, encoder);
+            }
 			if (encoder.isCompleted()) {
                 HttpContext context = conn.getContext();
                 long departure = System.currentTimeMillis();

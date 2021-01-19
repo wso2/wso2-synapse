@@ -43,6 +43,7 @@ import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -268,10 +269,11 @@ public class SourceResponse {
 
     /**
      * Consume the content through the Pipe and write them to the wire
-     * @param conn connection
+     *
+     * @param conn    connection
      * @param encoder encoder
-     * @throws java.io.IOException if an error occurs
      * @return number of bytes written
+     * @throws java.io.IOException if an error occurs
      */
     public int write(NHttpServerConnection conn, ContentEncoder encoder) throws IOException {
         int bytes = 0;
@@ -281,6 +283,34 @@ public class SourceResponse {
             encoder.complete();
         }
         // Update connection state
+        writePostActions(conn, encoder);
+        return bytes;
+    }
+
+    /**
+     * Same as
+     * {@link SourceResponse#write(org.apache.http.nio.NHttpServerConnection, org.apache.http.nio.ContentEncoder)}
+     * but gives out the data consumed through the Pipe
+     *
+     * @param conn    connection
+     * @param encoder encoder
+     * @return data consumed
+     * @throws java.io.IOException if an error occurs
+     */
+    public ByteBuffer copyAndWrite(NHttpServerConnection conn, ContentEncoder encoder) throws IOException {
+
+        ByteBuffer bytes = null;
+        if (pipe != null) {
+            bytes = pipe.copyAndConsume(encoder);
+        } else {
+            encoder.complete();
+        }
+        writePostActions(conn, encoder);
+        return bytes;
+    }
+
+    private void writePostActions(NHttpServerConnection conn, ContentEncoder encoder) {
+
         if (encoder.isCompleted()) {
             SourceContext.updateState(conn, ProtocolState.RESPONSE_DONE);
 
@@ -289,12 +319,10 @@ public class SourceResponse {
 
             if (response != null && !this.connStrategy.keepAlive(response, conn.getContext())) {
                 SourceContext.updateState(conn, ProtocolState.CLOSING);
-
                 sourceConfiguration.getSourceConnections().closeConnection(conn);
             } else if (SourceContext.get(conn).isShutDown()) {
                 // we need to shut down if the shutdown flag is set
                 SourceContext.updateState(conn, ProtocolState.CLOSING);
-
                 sourceConfiguration.getSourceConnections().closeConnection(conn);
             } else {
                 // Reset connection state
@@ -303,7 +331,6 @@ public class SourceResponse {
                 conn.requestInput();
             }
         }
-        return bytes;
     }
 
     public void addHeader(String name, String value) {
