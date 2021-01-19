@@ -21,13 +21,14 @@ package org.apache.synapse.transport.passthru;
 import org.apache.axis2.context.MessageContext;
 
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 
 /**
  * Default class implementing the methods of {@link StreamInterceptor}. A stream interceptor can be written by
  * extending and overding the necessary methods of this class.
- * For an example see{@link SampleStreamInterceptor}
+ * For an example see{@link LoggingStreamInterceptor}
  */
 public abstract class DefaultStreamInterceptor implements StreamInterceptor {
 
@@ -70,7 +71,7 @@ public abstract class DefaultStreamInterceptor implements StreamInterceptor {
     }
 
     public Map getProperties() {
-        return properties;
+        return Collections.unmodifiableCollection(properties);
     }
 
 }

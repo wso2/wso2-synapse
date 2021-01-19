@@ -17,7 +17,7 @@
   -->
 <!--resides in conf folder-->
 <interceptors>
-    <interceptor class="org.apache.synapse.transport.passthru.SampleStreamInterceptor">
+    <interceptor class="org.apache.synapse.transport.passthru.LoggingStreamInterceptor">
         <parameter name="charset" value="ISO-8859-1"/>
         <parameter name="enableInterception" value="true"/>
     </interceptor>

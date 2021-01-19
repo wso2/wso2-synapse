@@ -30,7 +30,7 @@ import java.nio.charset.Charset;
  * <pre>
  * {@code
  * <interceptors xmlns:svns="http://org.wso2.securevault/configuration">
- *     <interceptor class="org.apache.synapse.transport.passthru.SampleStreamInterceptor">
+ *     <interceptor class="org.apache.synapse.transport.passthru.LoggingStreamInterceptor">
  *         <parameter name="charset" value="ISO-8859-1"/>
  *         <parameter name="enableInterception" value="true"/>
  *     </interceptor>
@@ -38,9 +38,9 @@ import java.nio.charset.Charset;
  * }
  * </pre>
  */
-public class SampleStreamInterceptor extends DefaultStreamInterceptor {
+public class LoggingStreamInterceptor extends DefaultStreamInterceptor {
 
-    private static final Log log = LogFactory.getLog(SampleStreamInterceptor.class);
+    private static final Log log = LogFactory.getLog(LoggingStreamInterceptor.class);
 
     private static final String INPUT = ">>>";
     private static final String OUTPUT = "<<<";
