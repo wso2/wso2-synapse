@@ -18,15 +18,6 @@
  */
 package org.apache.synapse.transport.http.conn;
 
-import java.net.InetSocketAddress;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import javax.net.ssl.SSLContext;
-
-import org.apache.commons.httpclient.HttpHost;
 import org.apache.http.HttpResponseFactory;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.impl.DefaultHttpResponseFactory;
@@ -40,6 +31,14 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 
+import java.net.InetSocketAddress;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import javax.net.ssl.SSLContext;
+
 /**
  * This custom client connection factory can keep a map of SSLContexts and use the correct
  * SSLContext when connecting to different servers. If a SSLContext cannot be found for a
@@ -52,7 +51,7 @@ public class ClientConnFactory {
     private final SSLContextDetails ssl;
     private final ConcurrentMap<String, SSLContext> sslByHostMap;
     private final HttpParams params;
-
+    private static final String ALL_HOSTS = "*";
     public ClientConnFactory(
             final HttpResponseFactory responseFactory,
             final ByteBufferAllocator allocator,
@@ -86,6 +85,9 @@ public class ClientConnFactory {
             String host = address.getHostName() + ":" + address.getPort();
             // See if there's a custom SSL profile configured for this server
             customContext = sslByHostMap.get(host);
+            if (customContext == null) {
+                customContext = sslByHostMap.get(ALL_HOSTS);
+            }
         }
         if (customContext != null) {
             return customContext;
