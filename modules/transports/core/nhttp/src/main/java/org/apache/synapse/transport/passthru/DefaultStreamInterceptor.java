@@ -21,7 +21,6 @@ package org.apache.synapse.transport.passthru;
 import org.apache.axis2.context.MessageContext;
 
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 
@@ -71,7 +70,7 @@ public abstract class DefaultStreamInterceptor implements StreamInterceptor {
     }
 
     public Map getProperties() {
-        return Collections.unmodifiableCollection(properties);
+        return properties;
     }
 
 }
