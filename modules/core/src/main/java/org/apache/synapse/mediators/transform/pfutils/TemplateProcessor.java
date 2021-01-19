@@ -184,17 +184,18 @@ public abstract class TemplateProcessor {
                 //in content aware mediators.
                 replacementValue = escapeXMLSpecialChars(replacementValue);
             } else if (mediaType.equals(JSON_TYPE) &&
-                    inferReplacementType(replacementEntry).equals(STRING_TYPE) &&
-                    (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
+                    inferReplacementType(replacementEntry).equals(STRING_TYPE)) {
                 replacementValue = escapeSpecialChars(replacementValue);
-                // Check for following property which will force the string to include quotes
-                Object force_string_quote = synCtx.getProperty(QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON);
-                // skip double quotes if replacement is boolean or null or valid json number
-                if (force_string_quote != null && ((String) force_string_quote).equalsIgnoreCase("true")
-                        && !trimmedReplacementValue.equals("true") && !trimmedReplacementValue.equals("false")
-                        && !trimmedReplacementValue.equals("null")
-                        && !validJsonNumber.matcher(trimmedReplacementValue).matches()) {
-                    replacementValue = "\"" + replacementValue + "\"";
+                if (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("[")) {
+                    // Check for following property which will force the string to include quotes
+                    Object force_string_quote = synCtx.getProperty(QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON);
+                    // skip double quotes if replacement is boolean or null or valid json number
+                    if (force_string_quote != null && ((String) force_string_quote).equalsIgnoreCase("true")
+                            && !trimmedReplacementValue.equals("true") && !trimmedReplacementValue.equals("false")
+                            && !trimmedReplacementValue.equals("null")
+                            && !validJsonNumber.matcher(trimmedReplacementValue).matches()) {
+                        replacementValue = "\"" + replacementValue + "\"";
+                    }
                 }
             } else if (
                     (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) &&
