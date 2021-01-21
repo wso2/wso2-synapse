@@ -19,6 +19,7 @@
 package org.apache.synapse.unittest;
 
 import org.apache.log4j.Logger;
+import org.apache.synapse.unittest.testcase.data.classes.ServiceResource;
 import org.apache.synapse.unittest.testcase.data.holders.MockServiceData;
 
 import java.io.IOException;
@@ -28,6 +29,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.apache.synapse.unittest.Constants.BACK_SLASH;
+import static org.apache.synapse.unittest.Constants.EMPTY_VALUE;
 import static org.apache.synapse.unittest.Constants.HTTP;
 import static org.apache.synapse.unittest.Constants.SERVICE_HOST;
 
@@ -38,12 +41,12 @@ import static org.apache.synapse.unittest.Constants.SERVICE_HOST;
  */
 public class ConfigModifier {
 
-    public ConfigModifier() {
+    private ConfigModifier() {
     }
 
     private static Logger log = Logger.getLogger(ConfigModifier.class.getName());
 
-    public static Map unitTestMockEndpointMap = new HashMap();
+    public static Map<String, Map<String, String>> unitTestMockEndpointMap = new HashMap<>();
 
     /**
      * Method parse the artifact data received and replaces actual endpoint urls with mock urls.
@@ -63,10 +66,19 @@ public class ConfigModifier {
             int serviceElementIndex = mockServiceData.getServiceNameIndex(endpointName);
             int port = mockServiceData.getMockServices(serviceElementIndex).getPort();
             String context = mockServiceData.getMockServices(serviceElementIndex).getContext();
-            String serviceURL = HTTP + SERVICE_HOST + ":" + port + context;
+            String cloneContext = context;
+            if (cloneContext.equals(BACK_SLASH)) {
+                cloneContext = EMPTY_VALUE;
+            }
+            String serviceURL = HTTP + SERVICE_HOST + ":" + port + cloneContext;
+            Map<String, String> mockServiceResources = new HashMap<>();
+            for (ServiceResource resource : mockServiceData.getMockServices(serviceElementIndex).getResources()) {
+                String resourcePath = resource.getSubContext();
+                mockServiceResources.put(cloneContext + resourcePath, serviceURL + resourcePath);
+            }
 
             mockServicePorts.add(port);
-            unitTestMockEndpointMap.put(endpointName, serviceURL);
+            unitTestMockEndpointMap.put(endpointName, mockServiceResources);
 
             log.info("Mock service creator ready to start service for " + endpointName);
             MockServiceCreator.startMockServiceServer(endpointName, SERVICE_HOST, port, context,
