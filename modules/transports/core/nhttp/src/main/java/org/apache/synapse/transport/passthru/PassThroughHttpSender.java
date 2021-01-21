@@ -377,10 +377,9 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 
             if ("true".equals(disableChunking) || "true".equals(forceHttp10)) {
 
-                long messageSize;
                 try {
                     OverflowBlob overflowBlob = setStreamAsTempData(formatter, msgContext, format);
-                    messageSize = overflowBlob.getLength();
+                    long messageSize = overflowBlob.getLength();
                     msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH, messageSize);
                     deliveryAgent.submit(msgContext, epr);
                     if (!waitForReady(msgContext)) {
@@ -388,6 +387,10 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     }
                     out = (OutputStream) msgContext.getProperty(PassThroughConstants.BUILDER_OUTPUT_STREAM);
                     if (out != null) {
+                        // Check HTTP method is GET or DELETE with no body
+                        if (ignoreMessageBody(msgContext, pipe)){
+                            return;
+                        }
                         overflowBlob.writeTo(out);
                         if (pipe.isStale) {
                             throw new IOException("Target Connection is stale..");
@@ -404,6 +407,10 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 }
                 out = (OutputStream) msgContext.getProperty(PassThroughConstants.BUILDER_OUTPUT_STREAM);
                 if (out != null) {
+                    // Check HTTP method is GET or DELETE with no body
+                    if (ignoreMessageBody(msgContext, pipe)){
+                        return;
+                    }
                     formatter.writeTo(msgContext, format, out, false);
                     if (pipe.isStale) {
                         handleException("IO while building message", new IOException("Target Connection is stale.."));
@@ -415,9 +422,20 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
             deliveryAgent.submit(msgContext, epr);
         }
     }
-	
-	
-	/**
+
+    // If the HTTP method is GET or DELETE with no body, we need to write down the HEADER information to the wire
+    // and need to ignore any entity enclosed methods available.
+    private boolean ignoreMessageBody(MessageContext msgContext, Pipe pipe) {
+        if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
+                RelayUtils.isDeleteRequestWithoutPayload(msgContext)) {
+            pipe.setSerializationComplete(true);
+            return true;
+        }
+        return false;
+    }
+
+
+    /**
      * Write the stream to a temporary storage and calculate the content length
      *
      * @throws IOException if an exception occurred while writing data
