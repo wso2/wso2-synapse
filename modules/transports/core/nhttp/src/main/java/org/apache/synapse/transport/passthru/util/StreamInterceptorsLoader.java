@@ -77,7 +77,7 @@ public class StreamInterceptorsLoader {
 
     private static void loadInterceptors() {
 
-        OMElement interceptorsConfig = MiscellaneousUtil.loadXMLConfig(RelayConstants.STREAM_INTERCEPTOR_FILE);
+        OMElement interceptorsConfig = MiscellaneousUtil.loadXMLConfig(RelayConstants.STREAM_INTERCEPTOR_FILE, false);
         if (interceptorsConfig != null) {
 
             if (!ROOT_Q.equals(interceptorsConfig.getQName())) {

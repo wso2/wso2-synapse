@@ -24,8 +24,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.SynapseCommonsException;
 
-import javax.xml.stream.XMLStreamException;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectOutputStream;
 import java.util.Properties;
 
 /**
@@ -187,14 +192,25 @@ public class MiscellaneousUtil {
         return properties;
     }
 
+	/**
+	 * Load xml config
+	 *
+	 * @param filePath file path
+	 * @return OMElement of build from the config file
+	 */
+	public static OMElement loadXMLConfig(String filePath) {
 
-    /**
-     * Load a xml configuration file
-     *
-     * @param filePath file path
-     * @return OMElement of build from the config file
-     */
-    public static OMElement loadXMLConfig(String filePath) {
+		return loadXMLConfig(filePath, true);
+	}
+
+	/**
+	 * Load a xml configuration file
+	 *
+	 * @param filePath    file path
+	 * @param isMandatory whether this is a mandatory config
+	 * @return OMElement of build from the config file
+	 */
+	public static OMElement loadXMLConfig(String filePath, boolean isMandatory) {
 
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
 
@@ -207,9 +223,11 @@ public class MiscellaneousUtil {
             try {
                 in = new FileInputStream(System.getProperty(CONF_LOCATION) + File.separator + filePath);
             } catch (FileNotFoundException e) {
-                String msg = "Error loading properties from a file at from the System defined location: "
-                             + System.getProperty(CONF_LOCATION) + File.separator + filePath;
-                log.warn(msg);
+	            if (isMandatory) {
+		            String msg = "Error loading properties from file at system defined location: " + System.getProperty(
+				            CONF_LOCATION) + File.separator + filePath;
+		            log.warn(msg);
+	            }
             }
         }
 
