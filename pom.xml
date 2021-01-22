@@ -597,9 +597,9 @@
              <version>${hc.httpcore.version}</version>
          </dependency>
          <dependency>
-             <groupId>org.wso2.httpcomponents</groupId>
+             <groupId>org.apache.httpcomponents</groupId>
              <artifactId>httpcore-nio</artifactId>
-             <version>${httpcore-nio.wso2.version}</version>
+             <version>${httpcore-nio.version}</version>
          </dependency>
          <dependency>
              <groupId>org.apache.httpcomponents</groupId>
@@ -610,11 +610,10 @@
              <groupId>org.apache.httpcomponents.wso2</groupId>
              <artifactId>httpcore</artifactId>
              <version>${httpcore.wso2.version}</version>
-         </dependency>
-         <dependency>
-             <groupId>org.wso2.orbit.httpcomponents</groupId>
+         </dependency><dependency>
+             <groupId>org.apache.httpcomponents.wso2</groupId>
              <artifactId>httpcore-nio</artifactId>
-             <version>${httpcore-nio.version}</version>
+             <version>${httpcore-nio.wso2.version}</version>
          </dependency>
          <dependency>
              <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
@@ -1326,12 +1325,12 @@
       <quickfixj.wso2.version>${qfj.version}.wso2v1</quickfixj.wso2.version>
       <org.bouncycastle.version>1.60.0.wso2v1</org.bouncycastle.version>
       <imp.pkg.version.wso2.bouncycastle>[1.52.0,2.0.0)</imp.pkg.version.wso2.bouncycastle>
-      <hc.httpcore.version>4.3.3</hc.httpcore.version>
+      <hc.httpcore.version>4.4.14</hc.httpcore.version>
       <httpcore.wso2.version>${hc.httpcore.version}.wso2v1</httpcore.wso2.version>
-      <httpcore-nio.wso2.version>4.3.3-wso2v4</httpcore-nio.wso2.version>
-      <httpcore-nio.version>4.3.3.wso2v4</httpcore-nio.version>
-      <hc.httpclient.version>4.3.6</hc.httpclient.version>
-      <httpclient.wso2.version>${hc.httpclient.version}.wso2v2</httpclient.wso2.version>
+      <httpcore-nio.version>4.4.14</httpcore-nio.version>
+      <httpcore-nio.wso2.version>${httpcore-nio.version}.wso2v1</httpcore-nio.wso2.version>
+      <hc.httpclient.version>4.5.13</hc.httpclient.version>
+      <httpclient.wso2.version>${hc.httpclient.version}.wso2v1</httpclient.wso2.version>
       <aspectj.version>1.8.5</aspectj.version>
       <spring.version>1.2.8</spring.version>
       <commons-codec.version>1.12</commons-codec.version>

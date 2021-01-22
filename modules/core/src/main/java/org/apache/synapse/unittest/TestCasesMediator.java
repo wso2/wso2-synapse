@@ -29,10 +29,10 @@ import org.apache.axis2.context.ServiceContext;
 import org.apache.axis2.description.InOutAxisOperation;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.http.HttpResponse;
-import org.apache.http.annotation.NotThreadSafe;
+import org.apache.http.annotation.ThreadingBehavior;
+import org.apache.http.annotation.Contract;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -494,7 +494,7 @@ public class TestCasesMediator {
         return textElement;
     }
 
-    @NotThreadSafe
+    @Contract(threading = ThreadingBehavior.UNSAFE)
     static class HttpDeleteWithBody extends HttpEntityEnclosingRequestBase {
         static final String METHOD_NAME = "DELETE";
 
