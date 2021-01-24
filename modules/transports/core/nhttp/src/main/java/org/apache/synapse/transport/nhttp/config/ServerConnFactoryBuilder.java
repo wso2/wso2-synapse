@@ -19,6 +19,27 @@
 
 package org.apache.synapse.transport.nhttp.config;
 
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.impl.builder.StAXOMBuilder;
+import org.apache.axis2.AxisFault;
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.description.Parameter;
+import org.apache.axis2.description.TransportInDescription;
+import org.apache.axis2.transport.base.ParamUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpHost;
+import org.apache.http.params.HttpParams;
+import org.apache.synapse.transport.certificatevalidation.RevocationVerificationManager;
+import org.apache.synapse.transport.http.conn.SSLClientAuth;
+import org.apache.synapse.transport.http.conn.SSLContextDetails;
+import org.apache.synapse.transport.http.conn.ServerConnFactory;
+import org.apache.synapse.transport.http.conn.ServerSSLSetupHandler;
+import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.transport.nhttp.util.SecureVaultValueReader;
+import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.SecretResolverFactory;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -40,26 +61,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import javax.xml.namespace.QName;
-
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.impl.builder.StAXOMBuilder;
-import org.apache.axis2.AxisFault;
-import org.apache.axis2.context.ConfigurationContext;
-import org.apache.axis2.description.Parameter;
-import org.apache.axis2.description.TransportInDescription;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.http.HttpHost;
-import org.apache.http.params.HttpParams;
-import org.apache.synapse.transport.certificatevalidation.RevocationVerificationManager;
-import org.apache.synapse.transport.http.conn.SSLClientAuth;
-import org.apache.synapse.transport.http.conn.SSLContextDetails;
-import org.apache.synapse.transport.http.conn.ServerConnFactory;
-import org.apache.synapse.transport.http.conn.ServerSSLSetupHandler;
-import org.apache.synapse.transport.nhttp.NhttpConstants;
-import org.apache.synapse.transport.nhttp.util.SecureVaultValueReader;
-import org.wso2.securevault.SecretResolver;
-import org.wso2.securevault.SecretResolverFactory;
 
 public class ServerConnFactoryBuilder {
 
@@ -399,8 +400,11 @@ public class ServerConnFactoryBuilder {
     }
 
     public ServerConnFactory build(final HttpParams params) throws AxisFault {
+
+        int port = ParamUtils.getRequiredParamInt(transportIn, "port");
+
         if (ssl != null || sslByIPMap != null) {
-            return new ServerConnFactory(ssl, sslByIPMap, params);
+            return new ServerConnFactory(ssl, sslByIPMap, params, port);
         } else {
             return new ServerConnFactory(params);
         }

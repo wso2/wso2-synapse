@@ -43,6 +43,7 @@ public class ServerConnFactory {
     private final Map<InetSocketAddress, SSLContextDetails> sslByIPMap;
     private final HttpParams params;
     public static final String ALL_NETWORK = "0.0.0.0";
+    InetSocketAddress allNetworkAddress;
     public ServerConnFactory(
             final HttpRequestFactory requestFactory,
             final ByteBufferAllocator allocator,
@@ -64,6 +65,13 @@ public class ServerConnFactory {
             final HttpParams params) {
         this(null, null, ssl, sslByIPMap, params);
     }
+    public ServerConnFactory(
+            final SSLContextDetails ssl,
+            final Map<InetSocketAddress, SSLContextDetails> sslByIPMap,
+            final HttpParams params, int port) {
+        this(null, null, ssl, sslByIPMap, params);
+        this.allNetworkAddress = new InetSocketAddress(ALL_NETWORK, port);
+    }
 
     public ServerConnFactory(
             final HttpParams params) {
@@ -73,11 +81,8 @@ public class ServerConnFactory {
     public DefaultNHttpServerConnection createConnection(final IOSession iosession) {
         SSLContextDetails customSSL = null;
         if (sslByIPMap != null) {
-            InetSocketAddress localAddress = (InetSocketAddress) iosession.getLocalAddress();
-            int port = localAddress.getPort();
-            customSSL = sslByIPMap.get(localAddress);
-            if (customSSL == null) {
-                InetSocketAddress allNetworkAddress = new InetSocketAddress(ALL_NETWORK, port);
+            customSSL = sslByIPMap.get(iosession.getLocalAddress());
+            if (customSSL == null && allNetworkAddress != null) {
                 customSSL = sslByIPMap.get(allNetworkAddress);
             }
         }
