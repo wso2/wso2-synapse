@@ -32,6 +32,7 @@ import org.apache.synapse.Startup;
 import org.apache.synapse.SynapseArtifact;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.api.API;
 import org.apache.synapse.api.ApiConstants;
 import org.apache.synapse.api.inbound.InboundApiUtils;
 import org.apache.synapse.aspects.flow.statistics.store.CompletedStructureStore;
@@ -66,11 +67,9 @@ import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.processor.impl.AbstractMessageProcessor;
 import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.registry.Registry;
-import org.apache.synapse.api.API;
 import org.apache.synapse.startup.quartz.StartUpController;
 import org.apache.synapse.task.TaskManager;
 
-import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -85,6 +84,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+import javax.xml.namespace.QName;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -530,8 +530,15 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         return Collections.unmodifiableCollection(apiTable.values());
     }
 
-    public synchronized Map<String, Map<String, API>> getApiTableWithBindsTo() {
-        return Collections.unmodifiableMap(apiTableWithBindsTo);
+    /**
+     * Get the API specifying the binds to option
+     *
+     * @param bindTo Name of inbound/binds-to
+     * @return list of APIs bound to the specified inbound
+     */
+    public synchronized Collection<API> getAPIs(String bindTo) {
+        Map<String, API> apis = apiTableWithBindsTo.get(bindTo);
+        return apis != null ? apis.values() : Collections.emptyList();
     }
 
     public synchronized API getAPI(String name) {
