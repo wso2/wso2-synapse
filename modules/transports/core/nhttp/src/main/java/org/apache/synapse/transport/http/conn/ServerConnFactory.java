@@ -18,14 +18,7 @@
  */
 package org.apache.synapse.transport.http.conn;
 
-import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.http.HttpRequestFactory;
-import org.apache.http.impl.DefaultHttpRequestFactory;
 import org.apache.http.impl.nio.DefaultNHttpServerConnection;
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.nio.reactor.ssl.SSLIOSession;
@@ -36,6 +29,12 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 
+import java.net.InetSocketAddress;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class ServerConnFactory {
 
     private final HttpRequestFactory requestFactory;
@@ -43,7 +42,8 @@ public class ServerConnFactory {
     private final SSLContextDetails ssl;
     private final Map<InetSocketAddress, SSLContextDetails> sslByIPMap;
     private final HttpParams params;
-    
+    public static final String ALL_NETWORK = "0.0.0.0";
+    InetSocketAddress allNetworkAddress;
     public ServerConnFactory(
             final HttpRequestFactory requestFactory,
             final ByteBufferAllocator allocator,
@@ -65,6 +65,13 @@ public class ServerConnFactory {
             final HttpParams params) {
         this(null, null, ssl, sslByIPMap, params);
     }
+    public ServerConnFactory(
+            final SSLContextDetails ssl,
+            final Map<InetSocketAddress, SSLContextDetails> sslByIPMap,
+            final HttpParams params, int port) {
+        this(null, null, ssl, sslByIPMap, params);
+        this.allNetworkAddress = new InetSocketAddress(ALL_NETWORK, port);
+    }
 
     public ServerConnFactory(
             final HttpParams params) {
@@ -75,6 +82,9 @@ public class ServerConnFactory {
         SSLContextDetails customSSL = null;
         if (sslByIPMap != null) {
             customSSL = sslByIPMap.get(iosession.getLocalAddress());
+            if (customSSL == null && allNetworkAddress != null) {
+                customSSL = sslByIPMap.get(allNetworkAddress);
+            }
         }
         if (customSSL == null) {
             customSSL = ssl;
@@ -87,7 +97,7 @@ public class ServerConnFactory {
         } else {
             customSession = iosession;
         }
-        DefaultNHttpServerConnection conn =  LoggingUtils.createServerConnection(
+        DefaultNHttpServerConnection conn = LoggingUtils.createServerConnection(
                 customSession, requestFactory, allocator, params);
         int timeout = HttpConnectionParams.getSoTimeout(params);
         conn.setSocketTimeout(timeout);
