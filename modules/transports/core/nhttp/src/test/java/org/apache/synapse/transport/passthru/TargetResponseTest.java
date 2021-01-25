@@ -24,10 +24,8 @@ import org.apache.axis2.transport.base.threads.NativeWorkerPool;
 import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
-import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.protocol.HttpContext;
@@ -52,7 +50,7 @@ import static org.mockito.ArgumentMatchers.any;
  */
 @RunWith(PowerMockRunner.class)
 @PowerMockIgnore("javax.management.*")
-@PrepareForTest({ TargetContext.class, TargetResponse.class, HttpRequest.class })
+@PrepareForTest({ TargetContext.class, TargetResponse.class })
 public class TargetResponseTest extends TestCase {
     private static Log logger = LogFactory.getLog(TargetResponseTest.class.getName());
 
@@ -75,9 +73,6 @@ public class TargetResponseTest extends TestCase {
         targetConfiguration.setConnections(connections);
 
         PowerMockito.mockStatic(TargetContext.class);
-        PowerMockito.mockStatic(HttpRequest.class);
-        HttpRequest httpRequest = new BasicHttpRequest("GET", "test.com");
-        PowerMockito.when(conn.getContext().getAttribute("http.request")).thenReturn(httpRequest);
 
         TargetResponse targetResponse = new TargetResponse(targetConfiguration, response, conn, false, false);
 
@@ -141,9 +136,6 @@ public class TargetResponseTest extends TestCase {
         targetConfiguration.setConnections(connections);
 
         PowerMockito.mockStatic(TargetContext.class);
-        PowerMockito.mockStatic(HttpRequest.class);
-        HttpRequest httpRequest = new BasicHttpRequest("GET", "test.com");
-        PowerMockito.when(conn.getContext().getAttribute("http.request")).thenReturn(httpRequest);
 
         TargetContext cntxt = new TargetContext(targetConfiguration);
         PowerMockito.when(TargetContext.get(any(NHttpClientConnection.class))).thenReturn(cntxt);

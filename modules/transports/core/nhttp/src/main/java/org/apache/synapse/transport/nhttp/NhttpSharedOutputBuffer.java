@@ -18,8 +18,7 @@
  */
 package org.apache.synapse.transport.nhttp;
 
-import org.apache.http.annotation.ThreadingBehavior;
-import org.apache.http.annotation.Contract;
+import org.apache.http.annotation.ThreadSafe;
 import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.IOControl;
 import org.apache.http.nio.util.ByteBufferAllocator;
@@ -53,7 +52,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * NhttpSharedOutputBuffer from httpcore-nio in order to fix
  * https://github.com/wso2/product-ei/issues/1367, without having to do an API change in httpcore-nio component.
  */
-@Contract(threading = ThreadingBehavior.SAFE_CONDITIONAL)
+@ThreadSafe
 public class NhttpSharedOutputBuffer extends ExpandableBuffer implements ContentOutputBuffer {
 
     private final ReentrantLock lock;
