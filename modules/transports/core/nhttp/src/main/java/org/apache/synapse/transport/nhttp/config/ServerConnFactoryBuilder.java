@@ -400,11 +400,13 @@ public class ServerConnFactoryBuilder {
     }
 
     public ServerConnFactory build(final HttpParams params) throws AxisFault {
-
-        int port = ParamUtils.getRequiredParamInt(transportIn, "port");
-
         if (ssl != null || sslByIPMap != null) {
-            return new ServerConnFactory(ssl, sslByIPMap, params, port);
+            String port = ParamUtils.getOptionalParam(transportIn, "port");
+            if (port != null) {
+                return new ServerConnFactory(ssl, sslByIPMap, params, Integer.parseInt(port));
+            } else {
+                return new ServerConnFactory(ssl, sslByIPMap, params);
+            }
         } else {
             return new ServerConnFactory(params);
         }
