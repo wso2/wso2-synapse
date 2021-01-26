@@ -21,14 +21,13 @@ package org.apache.synapse.api.inbound;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.api.API;
 import org.apache.synapse.api.AbstractApiHandler;
 import org.apache.synapse.api.ApiConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.api.API;
 
 import java.util.Arrays;
-import java.util.Map;
+import java.util.Collection;
 
 /**
  * This class is responsible for receiving requests from inbound endpoints and dispatching
@@ -69,10 +68,9 @@ public class InboundApiHandler extends AbstractApiHandler {
     protected boolean dispatchToAPI(MessageContext synCtx) {
         Object apiCaller = synCtx.getProperty(ApiConstants.API_CALLER);
         if (apiCaller != null) {
-            Map<String, API> apis = synCtx.getEnvironment().getSynapseConfiguration()
-                    .getApiTableWithBindsTo().get(apiCaller.toString());
-            if (apis != null) {
-                return dispatchToAPI(apis.values(), synCtx);
+            Collection<API> apis = synCtx.getEnvironment().getSynapseConfiguration().getAPIs(apiCaller.toString());
+            if (!apis.isEmpty()) {
+                return dispatchToAPI(apis, synCtx);
             }
         }
         return false;

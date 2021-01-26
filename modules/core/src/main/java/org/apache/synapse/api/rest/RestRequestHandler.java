@@ -27,7 +27,7 @@ import org.apache.synapse.api.AbstractApiHandler;
 import org.apache.synapse.api.ApiConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 
-import java.util.Map;
+import java.util.Collection;
 
 /**
  * This class is responsible for receiving requests from various sources and dispatching
@@ -69,10 +69,10 @@ public class RestRequestHandler extends AbstractApiHandler {
 
     @Override
     protected boolean dispatchToAPI(MessageContext synCtx) {
-        Map<String, API> apis = synCtx.getEnvironment().getSynapseConfiguration()
-                .getApiTableWithBindsTo().get(ApiConstants.DEFAULT_BINDING_ENDPOINT_NAME);
-        if (apis != null) {
-            return dispatchToAPI(apis.values(), synCtx);
+        Collection<API> apis = synCtx.getEnvironment().getSynapseConfiguration().getAPIs(
+                ApiConstants.DEFAULT_BINDING_ENDPOINT_NAME);
+        if (!apis.isEmpty()) {
+            return dispatchToAPI(apis, synCtx);
         }
         return false;
     }
