@@ -32,11 +32,6 @@ import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.mediators.transform.Argument;
 import org.apache.synapse.mediators.transform.ArgumentDetails;
-import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,12 +41,10 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 
+import static org.apache.commons.text.StringEscapeUtils.escapeXml10;
 import static org.apache.synapse.mediators.transform.PayloadFactoryMediator.QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON;
 
 /**
@@ -115,7 +108,7 @@ public abstract class TemplateProcessor {
                 value = arg.getValue();
                 details.setXml(isXML(value));
                 if (!details.isXml()) {
-                    value = escapeXMLEnvelope(synCtx, value);
+                    value = escapeXml10(value);
                 }
                 value = Matcher.quoteReplacement(value);
             } else if (arg.getExpression() != null) {
@@ -126,7 +119,7 @@ public abstract class TemplateProcessor {
                     // of the payload is XML.
                     details.setXml(isXML(value));
                     if (!details.isXml() && XML_TYPE.equals(mediaType) && !isJson(value.trim(), arg.getExpression())) {
-                        value = escapeXMLEnvelope(synCtx, value);
+                        value = escapeXml10(value);
                     }
                     value = Matcher.quoteReplacement(value);
                 } else {
@@ -458,54 +451,6 @@ public abstract class TemplateProcessor {
                 .replaceAll("\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
                 .replaceAll("\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
                 .replaceAll("\t", ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES);
-    }
-
-    /**
-     * Escapes XML special characters
-     *
-     * @param msgCtx Message Context
-     * @param value  XML String which needs to be escaped
-     * @return XML special char escaped string
-     */
-    protected String escapeXMLEnvelope(MessageContext msgCtx, String value) {
-
-        String xmlVersion = "1.0"; //Default is set to 1.0
-
-        try {
-            xmlVersion = checkXMLVersion(msgCtx);
-        } catch (IOException e) {
-            log.error("Error reading message envelope", e);
-        } catch (SAXException e) {
-            log.error("Error parsing message envelope", e);
-        } catch (ParserConfigurationException e) {
-            log.error("Error building message envelope document", e);
-        }
-
-        if ("1.1".equals(xmlVersion)) {
-            return org.apache.commons.text.StringEscapeUtils.escapeXml11(value);
-        } else {
-            return org.apache.commons.text.StringEscapeUtils.escapeXml10(value);
-        }
-
-    }
-
-    /**
-     * Checks and returns XML version of the envelope
-     *
-     * @param msgCtx Message Context
-     * @return xmlVersion in XML Declaration
-     * @throws ParserConfigurationException failure in building message envelope document
-     * @throws IOException                  Error reading message envelope
-     * @throws SAXException                 Error parsing message envelope
-     */
-    private String checkXMLVersion(MessageContext msgCtx)
-            throws IOException, SAXException, ParserConfigurationException {
-
-        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-        InputSource inputSource = new InputSource(new StringReader(msgCtx.getEnvelope().toString()));
-        Document document = documentBuilder.parse(inputSource);
-        return document.getXmlVersion();
     }
 
     protected boolean isEscapeXmlChars() {
