@@ -614,8 +614,15 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 			//there is no response
 			if (outCtx == null) {
-				isSuccessful = true;
-				onForwardSuccess(endpoint);
+				if (validateResponse(messageToDispatch)) {
+					// This Means we have invoked an out only operation
+					// remove the message and reset the count
+					onForwardSuccess(endpoint);
+				} else {
+					// This means some error has occurred in out only scenario.
+					isSuccessful = false;
+					onForwardFailure();
+				}
 			} else {
 				//there is a response (In message context) but failed to send with no exception thrown
 				if ("true".equals(outCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
