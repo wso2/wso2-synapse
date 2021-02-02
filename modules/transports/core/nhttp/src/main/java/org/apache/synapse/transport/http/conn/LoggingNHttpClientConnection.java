@@ -132,6 +132,9 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
         if (!SynapseDebugInfoHolder.getInstance().isDebuggerEnabled()) {
             //Debugger not enabled, hence going through normal flow
             super.produceOutput(handler);
+            if (!this.outbuf.hasData() && this.contentEncoder == null && this.status != CLOSED) {
+                this.session.clearEvent(EventMask.WRITE);
+            }
         } else {
             produceOutputWire(handler);
         }
