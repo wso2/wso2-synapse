@@ -28,7 +28,7 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.Startup;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.template.TemplateMediator;
-import org.apache.synapse.rest.API;
+import org.apache.synapse.api.API;
 import org.apache.synapse.startup.quartz.StartUpController;
 import org.apache.synapse.commons.executors.PriorityExecutor;
 import org.apache.synapse.mediators.base.SequenceMediator;

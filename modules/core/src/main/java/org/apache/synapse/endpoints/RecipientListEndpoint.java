@@ -199,7 +199,7 @@ public class RecipientListEndpoint extends AbstractEndpoint {
                     String msg ="Child Endpoint " + (childEndpoint.getName() != null ? childEndpoint.getName() : SynapseConstants.ANONYMOUS_ENDPOINT) +
                                 " of Recipient List endpoint " + (getName() != null ? getName() : SynapseConstants.ANONYMOUS_ENDPOINT) + " encountered an error while sending the message";
                     log.warn(msg);
-                    continue;        //continue sending message to rest of the child endpoints.
+                    continue;        //continue sending message to api of the child endpoints.
                 }
             }
         }

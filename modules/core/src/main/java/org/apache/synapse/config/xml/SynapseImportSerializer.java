@@ -26,7 +26,6 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.rest.API;
 
 /**
  * This will serialize the SynapseImport to the xml configuration as specified bellow

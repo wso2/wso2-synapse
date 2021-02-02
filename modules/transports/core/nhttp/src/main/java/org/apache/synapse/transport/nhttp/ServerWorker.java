@@ -77,7 +77,7 @@ public class ServerWorker implements Runnable {
     private final InputStream is;
     /** the output stream to write the response message body */
     private final OutputStream os;
-    /** Weather we should do rest dispatching or not */
+    /** Weather we should do api dispatching or not */
     private boolean isRestDispatching;
     /** WSDL processor for Get requests */
     private HttpGetRequestProcessor httpGetRequestProcessor;

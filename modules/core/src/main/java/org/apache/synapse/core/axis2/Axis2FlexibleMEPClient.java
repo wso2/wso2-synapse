@@ -49,7 +49,7 @@ import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
-import org.apache.synapse.rest.RESTConstants;
+import org.apache.synapse.api.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
@@ -207,7 +207,7 @@ public class Axis2FlexibleMEPClient {
                     axisOutMsgCtx.setSoapAction(axisOutMsgCtx.getWSAAction());
                 }
 
-                // If the incoming is rest, then message need to be serialized prior to the conversion.
+                // If the incoming is api, then message need to be serialized prior to the conversion.
                 if (originalInMsgCtx.isDoingREST()) {
                     try {
                         MediatorPropertyUtils.serializeOMElement(synapseOutMessageContext);
@@ -302,7 +302,7 @@ public class Axis2FlexibleMEPClient {
                     }
                 }
             } else if (SynapseConstants.FORMAT_REST.equals(endpoint.getFormat())) {
-                /*format=rest is kept only backword compatibility. We no longer needed that.*/
+                /*format=api is kept only backword compatibility. We no longer needed that.*/
                 /* Remove Message Type  for GET and DELETE Request */
                 if (originalInMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD) != null) {
                     if (originalInMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD).
@@ -354,7 +354,7 @@ public class Axis2FlexibleMEPClient {
                 axisOutMsgCtx.removeProperty(NhttpConstants.REST_URL_POSTFIX);
             }
 
-            // add rest request' suffix URI
+            // add api request' suffix URI
             String restSuffix = (String) axisOutMsgCtx.getProperty(NhttpConstants.REST_URL_POSTFIX);
             boolean isRest = SynapseConstants.FORMAT_REST.equals(endpoint.getFormat());
 

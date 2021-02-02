@@ -368,7 +368,7 @@ public class DefaultHttpGetProcessor implements HttpGetRequestProcessor {
      * @param conn              NHttpServerConnection
      * @param os                OutputStream
      * @param serviceName       service name
-     * @param isRestDispatching weather nhttp should do rest dispatching
+     * @param isRestDispatching weather nhttp should do api dispatching
      */
     protected void generateWsdl2(HttpRequest request, HttpResponse response,
                                  MessageContext msgContext,
@@ -454,7 +454,7 @@ public class DefaultHttpGetProcessor implements HttpGetRequestProcessor {
      * @param conn              NHttpServerConnection
      * @param os                OutputStream
      * @param method            HTTP method, either GET or DELETE
-     * @param isRestDispatching weather transport should do rest dispatching
+     * @param isRestDispatching weather transport should do api dispatching
      */
     protected void processGetAndDelete(HttpRequest request, HttpResponse response,
                                        MessageContext msgContext,

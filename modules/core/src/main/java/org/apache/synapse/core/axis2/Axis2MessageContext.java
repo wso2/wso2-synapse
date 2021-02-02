@@ -41,7 +41,7 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
-import org.apache.synapse.rest.RESTConstants;
+import org.apache.synapse.api.RESTConstants;
 
 import java.util.*;
 

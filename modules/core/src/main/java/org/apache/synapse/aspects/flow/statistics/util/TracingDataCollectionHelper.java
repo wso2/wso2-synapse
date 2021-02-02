@@ -174,7 +174,7 @@ public class TracingDataCollectionHelper {
 			// Add each event to Publishing Flow
 			publishingFlow.addEvent(new PublishingEvent(flowId, index, currentStatLog, entryPoint, entrypointHashcode));
 
-			// Skip the rest of things, if message tracing is disabled
+			// Skip the api of things, if message tracing is disabled
 			if (!RuntimeStatisticCollector.isCollectingPayloads()) {
 				continue;
 			}

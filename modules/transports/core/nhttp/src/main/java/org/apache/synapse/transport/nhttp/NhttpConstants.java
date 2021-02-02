@@ -122,7 +122,7 @@ public class NhttpConstants {
     public static final String ENDPOINT_PREFIX = "ENDPOINT_PREFIX";
     protected static final String PRIORITY_CONFIG_FILE_NAME = "priorityConfigFile";
     /* This is a workaround  for  axis2 RestUtils behaviour */
-    public static final String REST_REQUEST_CONTENT_TYPE = "synapse.internal.rest.contentType";
+    public static final String REST_REQUEST_CONTENT_TYPE = "synapse.internal.api.contentType";
     
     /** This constant is used to hold the open connections map in the ConfigurationContext*/
     public static final String OPEN_CONNNECTIONS_MAP = "OPEN_CONNNECTIONS_MAP";
@@ -158,7 +158,7 @@ public class NhttpConstants {
 
     /**
      * This is a name of a parameter in transportReceiver. If set it will disable service
-     * dispatching inside the transport for rest messages
+     * dispatching inside the transport for api messages
      * */
     public static final String DISABLE_REST_SERVICE_DISPATCHING = "disableRestServiceDispatching";
 

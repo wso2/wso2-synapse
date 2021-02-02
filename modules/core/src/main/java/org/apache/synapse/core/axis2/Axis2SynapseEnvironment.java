@@ -62,7 +62,7 @@ import org.apache.synapse.mediators.MediatorWorker;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.elementary.Source;
 import org.apache.synapse.mediators.elementary.Target;
-import org.apache.synapse.rest.RESTRequestHandler;
+import org.apache.synapse.api.RESTRequestHandler;
 import org.apache.synapse.task.SynapseTaskManager;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.passthru.util.RelayUtils;

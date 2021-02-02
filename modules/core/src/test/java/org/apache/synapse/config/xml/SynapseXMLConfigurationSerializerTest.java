@@ -31,7 +31,7 @@ import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.message.store.impl.jms.JmsStore;
 import org.apache.synapse.registry.Registry;
 import org.apache.synapse.registry.SimpleInMemoryRegistry;
-import org.apache.synapse.rest.API;
+import org.apache.synapse.api.API;
 import org.apache.synapse.startup.quartz.QuartzTaskManager;
 import org.apache.synapse.startup.quartz.StartUpController;
 import org.apache.synapse.task.TaskDescription;

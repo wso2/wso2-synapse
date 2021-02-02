@@ -300,7 +300,7 @@ public class RESTUtil {
 				axisService = msgContext.getConfigurationContext().getAxisConfiguration().getService(defaultSvcName);
 			}
 			msgContext.setAxisService(axisService);
-            //When receiving rest request axis2 checks whether axis operation is set in the message context to build
+            //When receiving api request axis2 checks whether axis operation is set in the message context to build
             // the request message. Therefore we have to set axis operation before we handed over request to axis
             // engine. If axis operation is already set in the message context take it from there. If not take the
             // axis operation from axis service.

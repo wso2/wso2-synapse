@@ -19,10 +19,9 @@ package org.apache.synapse.aspects.flow.statistics;
 
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.endpoints.DefaultEndpoint;
-import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.rest.API;
+import org.apache.synapse.api.API;
 import org.junit.Assert;
 import org.junit.Test;
 

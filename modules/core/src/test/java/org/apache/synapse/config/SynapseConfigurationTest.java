@@ -19,7 +19,7 @@ package org.apache.synapse.config;
 
 import java.util.Collection;
 
-import org.apache.synapse.rest.API;
+import org.apache.synapse.api.API;
 
 import junit.framework.TestCase;
 

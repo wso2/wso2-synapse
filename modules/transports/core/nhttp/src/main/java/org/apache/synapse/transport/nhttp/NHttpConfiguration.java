@@ -72,9 +72,9 @@ public final class NHttpConfiguration {
     // log file rotation
     private static final String IS_LOG_ROTATABLE = "nhttp.is.log.rotatable";
   
-    //additional rest dispatch handlers
-    private static final String NHTTP_REST_DISPATCHER_SERVICE="nhttp.rest.dispatcher.service";
-    // URI configurations that determine if it requires custom rest dispatcher
+    //additional api dispatch handlers
+    private static final String NHTTP_REST_DISPATCHER_SERVICE="nhttp.api.dispatcher.service";
+    // URI configurations that determine if it requires custom api dispatcher
     private static final String REST_URI_API_REGEX = "rest_uri_api_regex";
     private static final String REST_URI_PROXY_REGEX = "rest_uri_proxy_regex";
 

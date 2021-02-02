@@ -21,8 +21,6 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMComment;
 import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMText;
-import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.axis2.AxisFault;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -52,14 +50,12 @@ import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.registry.Registry;
-import org.apache.synapse.rest.API;
+import org.apache.synapse.api.API;
 import org.apache.synapse.task.TaskManager;
 import org.apache.synapse.unittest.UnitTestMockRegistry;
 
 import javax.xml.namespace.QName;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Properties;
 
 public class SynapseXMLConfigurationFactory implements ConfigurationFactory {

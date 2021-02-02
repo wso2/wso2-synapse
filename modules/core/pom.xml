@@ -180,17 +180,17 @@
 							org.apache.synapse.message.*,
 							org.apache.synapse.metrics.*,
 							org.apache.synapse.registry.*,
-							org.apache.synapse.rest.*,
+							org.apache.synapse.api.*,
 							org.apache.synapse.inbound.*,
 							org.apache.synapse.startup.*,
 							org.apache.synapse.util.*,
 							org.apache.synapse.unittest.*,
 							org.apache.synapse.libraries.*,
 							org.apache.synapse.carbonext.*,
-                            org.apache.synapse.continuation.*,
-                            org.apache.synapse.debug.*,
-                            org.apache.synapse.messageflowtracer.*
-                        </Export-Package>
+							org.apache.synapse.continuation.*,
+							org.apache.synapse.debug.*,
+							org.apache.synapse.messageflowtracer.*
+						</Export-Package>
 						<Import-Package>
 							!javax.xml.namespace,
 							javax.xml.namespace;

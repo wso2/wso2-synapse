@@ -20,14 +20,6 @@
 package samples.userguide;
 
 import org.apache.synapse.config.AbstractSynapseObserver;
-import org.apache.synapse.config.Entry;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.Startup;
-import org.apache.synapse.eventing.SynapseEventSource;
-import org.apache.synapse.core.axis2.ProxyService;
-import org.apache.synapse.endpoints.Endpoint;
-import org.apache.synapse.inbound.InboundEndpoint;
-import org.apache.synapse.rest.API;
 
 /**
  * This sample observer implementation simply calls the event handlers defined

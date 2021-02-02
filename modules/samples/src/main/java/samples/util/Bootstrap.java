@@ -121,8 +121,8 @@ public class Bootstrap {
                 Thread.currentThread().setContextClassLoader(classLoader);
 
                 // Use reflection to load a class to normally load the
-                // rest of the app. Reflection will use the Thread's context class loader
-                // and therefore pick up the rest of our libraries.
+                // api of the app. Reflection will use the Thread's context class loader
+                // and therefore pick up the api of our libraries.
 
                 Class appClass = classLoader.loadClass("samples.util.SampleAxis2Server");
                 Object app = appClass.newInstance();

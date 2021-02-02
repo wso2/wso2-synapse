@@ -36,7 +36,7 @@ public class ListenerContext {
     private final PriorityExecutor executor;
     /** parser for calculating the priority of incoming messages */
     private final Parser parser;
-    /** if false we won't dispatch to axis2 service in case of rest scenarios */
+    /** if false we won't dispatch to axis2 service in case of api scenarios */
     private final boolean restDispatching;
     /** WSDL processor for Get requests*/
     private final HttpGetRequestProcessor httpGetRequestProcessor;
