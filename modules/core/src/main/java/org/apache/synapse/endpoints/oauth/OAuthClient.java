@@ -28,8 +28,9 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -45,7 +46,7 @@ public class OAuthClient {
 
     private static final Log log = LogFactory.getLog(OAuthClient.class);
 
-    private static final CloseableHttpClient httpClient = HttpClients.createDefault();
+    private static final CloseableHttpClient httpClient = createHTTPClient();
 
     /**
      * Method to generate the access token from an OAuth server
@@ -120,5 +121,17 @@ public class OAuthClient {
             return jsonResponse.get(OAuthConstants.ACCESS_TOKEN).getAsString();
         }
         throw new OAuthException("Missing key [access_token] in the response from the OAuth server");
+    }
+
+    /**
+     * Creates a CloseableHttpClient with NoConnectionReuseStrategy
+     *
+     * @return httpClient CloseableHttpClient
+     */
+    private static CloseableHttpClient createHTTPClient() {
+
+        HttpClientBuilder builder = HttpClientBuilder.create();
+        builder.setConnectionReuseStrategy(new NoConnectionReuseStrategy());
+        return builder.build();
     }
 }
