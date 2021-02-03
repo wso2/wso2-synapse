@@ -27,8 +27,8 @@ import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
 import org.apache.synapse.debug.constructs.SynapseSequenceType;
 import org.apache.synapse.debug.constructs.APIMediationFlowPoint;
 import org.apache.synapse.mediators.AbstractMediator;
-import org.apache.synapse.rest.API;
-import org.apache.synapse.rest.Resource;
+import org.apache.synapse.api.API;
+import org.apache.synapse.api.Resource;
 
 /**
  * Utility class that handle persisting API related breakpoint/skip information at mediator level as

@@ -78,7 +78,7 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
 
     /**
      * Preserve the payload as a template to create new messages with the selected
-     * elements with the rest of the parent, or create new message that contain only
+     * elements with the api of the parent, or create new message that contain only
      * the selected element as its payload?
      */
     private boolean preservePayload = false;

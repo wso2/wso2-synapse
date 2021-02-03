@@ -114,7 +114,7 @@ public class StockQuoteClient {
         String prxUrl = getProperty("prxurl", null);
         String repo = getProperty("repository", "client_repo");
         String svcPolicy = getProperty("policy", null);
-        String rest = getProperty("rest", null);
+        String rest = getProperty("api", null);
         String wsrm = getProperty("wsrm", null);
         String wsrm11 = getProperty("wsrm11", null);
         String itr = getProperty("itr", "1");

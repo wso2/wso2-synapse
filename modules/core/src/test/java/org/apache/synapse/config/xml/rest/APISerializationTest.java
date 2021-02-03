@@ -21,7 +21,7 @@ package org.apache.synapse.config.xml.rest;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.synapse.config.xml.AbstractTestCase;
-import org.apache.synapse.rest.API;
+import org.apache.synapse.api.API;
 
 public class APISerializationTest extends AbstractTestCase {
 

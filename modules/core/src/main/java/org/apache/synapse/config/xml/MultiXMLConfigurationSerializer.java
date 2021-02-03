@@ -38,7 +38,7 @@ import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.Startup;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.message.store.MessageStore;
-import org.apache.synapse.rest.API;
+import org.apache.synapse.api.API;
 import org.apache.synapse.startup.AbstractStartup;
 import org.apache.synapse.commons.executors.PriorityExecutor;
 import org.apache.synapse.commons.executors.config.PriorityExecutorSerializer;

@@ -70,7 +70,7 @@ public class DefaultEndpointSerializer extends EndpointSerializer {
         } else if (SynapseConstants.FORMAT_SOAP12.equals(endpointDefinition.getFormat())) {
             element.addAttribute(fac.createOMAttribute("format", null, "soap12"));
         } else if (SynapseConstants.FORMAT_REST.equals(endpointDefinition.getFormat())) {
-            element.addAttribute(fac.createOMAttribute("format", null, "rest"));
+            element.addAttribute(fac.createOMAttribute("format", null, "api"));
 
             // following two kept for backward compatibility
         } else if (endpointDefinition.isForcePOX()) {
@@ -82,7 +82,7 @@ public class DefaultEndpointSerializer extends EndpointSerializer {
         } else if (endpointDefinition.isForceSOAP12()) {
             element.addAttribute(fac.createOMAttribute("format", null, "soap12"));
         } else if (endpointDefinition.isForceREST()) {
-            element.addAttribute(fac.createOMAttribute("format", null, "rest"));
+            element.addAttribute(fac.createOMAttribute("format", null, "api"));
         }
 
     }

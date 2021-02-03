@@ -98,7 +98,7 @@ public class PassThroughConstants {
     public static final String REQUEST_CONTENT_TYPE = "DEFAULT_REQUEST_CONTENT_TYPE";
 
     // This is a workaround  for  axis2 RestUtils behaviour
-    public static final String REST_REQUEST_CONTENT_TYPE = "synapse.internal.rest.contentType";
+    public static final String REST_REQUEST_CONTENT_TYPE = "synapse.internal.api.contentType";
 
     public static final String MESSAGE_BUILDER_INVOKED = "message.builder.invoked";
 

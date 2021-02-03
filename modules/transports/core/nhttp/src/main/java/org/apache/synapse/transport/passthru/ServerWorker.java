@@ -101,7 +101,7 @@ public class ServerWorker implements Runnable {
     /** WSDL processor for Get requests */
     private HttpGetRequestProcessor httpGetRequestProcessor = null;
     
-    /** Weather we should do rest dispatching or not */
+    /** Weather we should do api dispatching or not */
     private boolean isRestDispatching = true;
     
     private OutputStream os; //only used for WSDL  requests..
@@ -208,7 +208,7 @@ public class ServerWorker implements Runnable {
     }
 
 	/**
-	 * Method will setup the necessary parameters for the rest url post action
+	 * Method will setup the necessary parameters for the api url post action
 	 * 
 	 * @param
 	 * @return

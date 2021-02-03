@@ -26,7 +26,7 @@ import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.inbound.InboundEndpoint;
-import org.apache.synapse.rest.API;
+import org.apache.synapse.api.API;
 
 /**
  * An implementation of this interface can be registered with the SynapseConfiguration to receive

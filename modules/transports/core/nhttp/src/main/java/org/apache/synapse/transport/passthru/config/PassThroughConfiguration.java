@@ -49,9 +49,9 @@ public class PassThroughConfiguration {
     private static final int DEFAULT_LISTENER_SHUTDOWN_WAIT_TIME = 0;
     private Boolean isKeepAliveDisabled = null;
 
-    //additional rest dispatch handlers
+    //additional api dispatch handlers
     private static final String REST_DISPATCHER_SERVICE="rest.dispatcher.service";
-    // URI configurations that determine if it requires custom rest dispatcher
+    // URI configurations that determine if it requires custom api dispatcher
     private static final String REST_URI_API_REGEX = "rest_uri_api_regex";
     private static final String REST_URI_PROXY_REGEX = "rest_uri_proxy_regex";
 

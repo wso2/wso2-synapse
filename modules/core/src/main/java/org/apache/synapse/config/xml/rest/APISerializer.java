@@ -23,10 +23,10 @@ import org.apache.axis2.Constants;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.statistics.StatisticsConfigurable;
 import org.apache.synapse.config.xml.XMLConfigConstants;
-import org.apache.synapse.rest.API;
-import org.apache.synapse.rest.Handler;
-import org.apache.synapse.rest.RESTConstants;
-import org.apache.synapse.rest.Resource;
+import org.apache.synapse.api.API;
+import org.apache.synapse.api.Handler;
+import org.apache.synapse.api.RESTConstants;
+import org.apache.synapse.api.Resource;
 import org.apache.synapse.util.CommentListUtil;
 
 import java.util.Iterator;

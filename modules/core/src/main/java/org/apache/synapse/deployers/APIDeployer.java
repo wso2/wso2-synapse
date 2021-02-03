@@ -26,7 +26,7 @@ import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.config.xml.rest.APIFactory;
 import org.apache.synapse.config.xml.rest.APISerializer;
-import org.apache.synapse.rest.API;
+import org.apache.synapse.api.API;
 
 import java.io.File;
 import java.util.Properties;
@@ -139,6 +139,8 @@ public class APIDeployer extends AbstractSynapseArtifactDeployer {
             if (api != null) {
                 api.setLogSetterValue();
                 getSynapseConfiguration().removeAPI(artifactName);
+                // Remove swagger of the API
+                getSynapseConfiguration().removeSwaggerFromTheAPI(artifactName);
                 if (log.isDebugEnabled()) {
                     log.debug("Undeployment of the API named : "
                             + artifactName + " : Completed");

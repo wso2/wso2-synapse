@@ -256,7 +256,7 @@ public class StockQuoteSampleClient {
 
     public SampleClientResult requestRestQuote(String addUrl, String trpUrl,
                                                String prxUrl, String symbol) {
-        log.info("sending rest request");
+        log.info("sending api request");
         SampleClientResult clientResult = new SampleClientResult();
         try {
             init(addUrl, trpUrl, prxUrl, null, 10000);

@@ -111,6 +111,10 @@
             <groupId>org.antlr.wso2</groupId>
             <artifactId>antlr-runtime</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.freemarker</groupId>
+            <artifactId>freemarker</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -155,6 +159,9 @@
                                 <!--<bundleDef>org.wso2.orbit.joda-time:joda-time:${joda-time.version}</bundleDef>-->
                                 <bundleDef>com.google.guava:guava:${google.guava.version}</bundleDef>
                                 <bundleDef>org.wso2.orbit.com.github.fge:json-schema-validator-all</bundleDef>
+                                <bundleDef>org.wso2.orbit.io.jaeger:jaeger-client:${jaeger-client.version}</bundleDef>
+                                <bundleDef>javax.annotation:javax.annotation-api</bundleDef>
+                                <bundleDef>org.freemarker:freemarker:${freemarker.version}</bundleDef>
                             </bundles>
                             <importBundles>
                                 <importBundleDef>commons-dbcp.wso2:commons-dbcp</importBundleDef>

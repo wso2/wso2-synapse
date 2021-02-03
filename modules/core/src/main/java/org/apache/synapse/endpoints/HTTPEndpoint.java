@@ -25,7 +25,7 @@ import org.apache.axis2.addressing.EndpointReference;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.mediators.MediatorProperty;
-import org.apache.synapse.rest.RESTConstants;
+import org.apache.synapse.api.RESTConstants;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.json.JSONObject;
 
