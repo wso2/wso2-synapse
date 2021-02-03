@@ -74,12 +74,6 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
             templateProcessor.setMediaType(XML_TYPE);
         }
 
-        String templateTypeValue = elem.getAttributeValue(TEMPLATE_Q);
-        if (templateTypeValue != null) {
-            payloadFactoryMediator.setTemplateType(templateTypeValue);
-        } else {
-            payloadFactoryMediator.setTemplateType(REGEX_TEMPLATE);
-        }
 
         boolean escapeXmlCharsValue = Boolean.parseBoolean(elem.getAttributeValue(ESCAPE_XML_CHARS_Q));
         templateProcessor.setEscapeXmlChars(escapeXmlCharsValue);
@@ -219,12 +213,6 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
         for (OMText node : removables) {
             node.detach();
         }
-    }
-
-    private boolean isFreeMarkerTemplate(PayloadFactoryMediator payloadFactoryMediator) {
-
-        return payloadFactoryMediator.getTemplateType() != null &&
-                payloadFactoryMediator.getTemplateType().equalsIgnoreCase(FREEMARKER_TEMPLATE);
     }
 
     private void removeIndentations(OMElement element, List<OMText> removables) {

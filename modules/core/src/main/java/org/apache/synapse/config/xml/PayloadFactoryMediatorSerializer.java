@@ -22,16 +22,18 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.axiom.om.util.AXIOMUtil;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.transform.Argument;
 import org.apache.synapse.mediators.transform.PayloadFactoryMediator;
+import org.apache.synapse.mediators.transform.pfutils.FreeMarkerTemplateProcessor;
+import org.apache.synapse.mediators.transform.pfutils.RegexTemplateProcessor;
+import org.apache.synapse.mediators.transform.pfutils.TemplateProcessor;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import java.util.List;
-import java.util.regex.Pattern;
+
 
 public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer {
 
@@ -69,6 +71,7 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
         }
 
         PayloadFactoryMediator mediator = (PayloadFactoryMediator) m;
+        TemplateProcessor templateProcessor = new RegexTemplateProcessor();
 
         OMElement payloadFactoryElem = fac.createOMElement(PAYLOAD_FACTORY, synNS);
 
@@ -78,6 +81,7 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
 
         if (isFreeMarkerTemplate(mediator)) {
             payloadFactoryElem.addAttribute(fac.createOMAttribute(TEMPLATE_TYPE, null, FREEMARKER));
+            templateProcessor = new FreeMarkerTemplateProcessor();
         }
         if (mediator.isEscapeXmlChars()) {
             payloadFactoryElem.addAttribute(fac.createOMAttribute(ESCAPE_XML_CHARS,null,
@@ -123,7 +127,7 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
         }
 
         OMElement argumentsElem = fac.createOMElement(ARGS, synNS);
-        List<Argument> pathArgList = mediator.getTemplateProcessor().getPathArgumentList();
+        List<Argument> pathArgList = templateProcessor.getPathArgumentList();
 
         if (null != pathArgList && pathArgList.size() > 0) {
 
