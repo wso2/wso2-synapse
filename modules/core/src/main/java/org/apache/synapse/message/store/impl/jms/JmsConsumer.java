@@ -81,7 +81,7 @@ public class JmsConsumer implements MessageConsumer {
 
     public MessageContext receive() {
 
-        if (isAlive()) {
+        if (isAlive) {
             boolean connectionSuccess = checkAndTryConnect();
 
             if (!connectionSuccess) {
@@ -182,6 +182,7 @@ public class JmsConsumer implements MessageConsumer {
     }
 
     public void setAlive(boolean isAlive) {
+        this.isAlive = isAlive;
     }
 
     public Connection getConnection() {
