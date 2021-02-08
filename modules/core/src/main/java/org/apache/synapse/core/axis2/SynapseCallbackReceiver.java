@@ -181,12 +181,19 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 messageCtx.removeProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN);
                 org.apache.synapse.MessageContext SynapseOutMsgCtx = callback.getSynapseOutMsgCtx();
                 ConcurrencyThrottlingUtils.decrementConcurrencyThrottleAccessController(SynapseOutMsgCtx);
-
+                boolean dropMessage = false;
                 synchronized (callback) {
                     if (callback.isMarkedForRemoval()) {
-                        return;
+                        //callback expired by the timeout handler
+                        dropMessage = true;
+                    } else {
+                        callback.setMarkedForRemoval();
                     }
-                    callback.setMarkedForRemoval();
+                }
+                //callback expired by timeout handler, hence dropping the message without proceed further
+                if(dropMessage) {
+                    logWarnNoCallbackRegistered(messageID, messageCtx);
+                    return;
                 }
 
                 if (RuntimeStatisticCollector.isStatisticsEnabled()) {
@@ -201,12 +208,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 }
             } else {
                 // TODO invoke a generic synapse error handler for this message
-                if (!PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER
-                        .equals(messageCtx.getProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN))) {
-                    log.warn("Synapse received a response for the request with message Id : " + messageID
-                            + " and correlation_id : " + messageCtx.getProperty(CorrelationConstants.CORRELATION_ID)
-                            + " But a callback is not registered (anymore) to process " + "this response");
-                }
+                logWarnNoCallbackRegistered(messageID, messageCtx);
                 messageCtx.removeProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN);
             }
 
@@ -746,5 +748,16 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 faultStack.pop();
             }
         }
+    }
+
+    /**
+     * Log the WARN when response receiving after synapse endpoint timeout.
+     * @param messageID messageID
+     * @param messageCtx messageContext
+     */
+    private void logWarnNoCallbackRegistered(String messageID, MessageContext messageCtx){
+        log.warn("Synapse received a response for the request with message Id : " +
+                messageID + " and correlation_id : " + messageCtx.getProperty(CorrelationConstants
+                .CORRELATION_ID) + " But a callback is not registered (anymore) to process this response");
     }
 }
