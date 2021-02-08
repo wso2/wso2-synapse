@@ -54,6 +54,10 @@ public class MessageFormatterDecoratorFactory {
                 Map headers = (Map) o;
 
                 String encode = (String) headers.get(HTTP.CONTENT_ENCODING);
+                // If encode is null, try getting the content encoding header in lowercase.
+                if (encode == null) {
+                    encode = (String) headers.get(HTTP.CONTENT_ENCODING.toLowerCase());
+                }
                 if (encode != null) {
 
                     //If message  contains 'Accept-Encoding' header and  if it's value is 'qzip'
