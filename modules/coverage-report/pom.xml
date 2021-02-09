@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.apache.synapse</groupId>
         <artifactId>Apache-Synapse</artifactId>
-        <version>2.1.7-wso2v183.1-SNAPSHOT</version>
+        <version>2.1.7-wso2v183.1</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -82,96 +82,96 @@
                         </goals>
                         <configuration>
                             <target>
-                                <echo message="Generating JaCoCo Reports"/>
+                                <echo message="Generating JaCoCo Reports" />
                                 <taskdef classname="org.jacoco.ant.ReportTask" name="report">
-                                    <classpath path="${basedir}/target/jacoco-jars/org.jacoco.ant.jar"/>
+                                    <classpath path="${basedir}/target/jacoco-jars/org.jacoco.ant.jar" />
                                 </taskdef>
-                                <mkdir dir="${basedir}/target/coverage-report"/>
+                                <mkdir dir="${basedir}/target/coverage-report" />
                                 <report>
                                     <executiondata>
                                         <fileset dir="../core/target/coverage-reports">
-                                            <include name="jacoco-unit*.exec"/>
+                                            <include name="jacoco-unit*.exec" />
                                         </fileset>
                                         <fileset dir="../commons/target/coverage-reports">
-                                            <include name="jacoco-unit*.exec"/>
+                                            <include name="jacoco-unit*.exec" />
                                         </fileset>
                                         <fileset dir="../extensions/target/coverage-reports">
-                                            <include name="jacoco-unit*.exec"/>
+                                            <include name="jacoco-unit*.exec" />
                                         </fileset>
                                         <fileset dir="../tasks/target/coverage-reports">
-                                            <include name="jacoco-unit*.exec"/>
+                                            <include name="jacoco-unit*.exec" />
                                         </fileset>
                                         <fileset dir="../transports/core/nhttp/target/coverage-reports">
-                                            <include name="jacoco-unit*.exec"/>
+                                            <include name="jacoco-unit*.exec" />
                                         </fileset>
                                         <fileset dir="../transports/core/vfs/target/coverage-reports">
-                                            <include name="jacoco-unit*.exec"/>
+                                            <include name="jacoco-unit*.exec" />
                                         </fileset>
                                         <fileset dir="../transports/optional/fix/target/coverage-reports">
-                                            <include name="jacoco-unit*.exec"/>
+                                            <include name="jacoco-unit*.exec" />
                                         </fileset>
                                     </executiondata>
                                     <structure name="Overall Synapse Code Coverage Summary">
                                         <group name="synapse-core">
                                             <classfiles>
-                                                <fileset dir="../core/target/classes"/>
+                                                <fileset dir="../core/target/classes" />
                                             </classfiles>
                                             <sourcefiles encoding="UTF-8">
-                                                <fileset dir="../core/src/main/java"/>
+                                                <fileset dir="../core/src/main/java" />
                                             </sourcefiles>
                                         </group>
                                         <group name="synapse-commons">
                                             <classfiles>
-                                                <fileset dir="../commons/target/classes"/>
+                                                <fileset dir="../commons/target/classes" />
                                             </classfiles>
                                             <sourcefiles encoding="UTF-8">
-                                                <fileset dir="../commons/src/main/java"/>
+                                                <fileset dir="../commons/src/main/java" />
                                             </sourcefiles>
                                         </group>
                                         <group name="synapse-extensions">
                                             <classfiles>
-                                                <fileset dir="../extensions/target/classes"/>
+                                                <fileset dir="../extensions/target/classes" />
                                             </classfiles>
                                             <sourcefiles encoding="UTF-8">
-                                                <fileset dir="../extensions/src/main/java"/>
+                                                <fileset dir="../extensions/src/main/java" />
                                             </sourcefiles>
                                         </group>
                                         <group name="synapse-tasks">
                                             <classfiles>
-                                                <fileset dir="../tasks/target/classes"/>
+                                                <fileset dir="../tasks/target/classes" />
                                             </classfiles>
                                             <sourcefiles encoding="UTF-8">
-                                                <fileset dir="../tasks/src/main/java"/>
+                                                <fileset dir="../tasks/src/main/java" />
                                             </sourcefiles>
                                         </group>
                                         <group name="synapse-transport-nhttp">
                                             <classfiles>
-                                                <fileset dir="../transports/core/nhttp/target/classes"/>
+                                                <fileset dir="../transports/core/nhttp/target/classes" />
                                             </classfiles>
                                             <sourcefiles encoding="UTF-8">
-                                                <fileset dir="../transports/core/nhttp/src/main/java"/>
+                                                <fileset dir="../transports/core/nhttp/src/main/java" />
                                             </sourcefiles>
                                         </group>
                                         <group name="synapse-transport-vfs">
                                             <classfiles>
-                                                <fileset dir="../transports/core/vfs/target/classes"/>
+                                                <fileset dir="../transports/core/vfs/target/classes" />
                                             </classfiles>
                                             <sourcefiles encoding="UTF-8">
-                                                <fileset dir="../transports/core/vfs/src/main/java"/>
+                                                <fileset dir="../transports/core/vfs/src/main/java" />
                                             </sourcefiles>
                                         </group>
                                         <group name="synapse-transport-fix">
                                             <classfiles>
-                                                <fileset dir="../transports/optional/fix/target/classes"/>
+                                                <fileset dir="../transports/optional/fix/target/classes" />
                                             </classfiles>
                                             <sourcefiles encoding="UTF-8">
-                                                <fileset dir="../transports/optional/fix/src/main/java"/>
+                                                <fileset dir="../transports/optional/fix/src/main/java" />
                                             </sourcefiles>
                                         </group>
                                     </structure>
-                                    <html destdir="${basedir}/target/coverage-report/site"/>
-                                    <xml destfile="${basedir}/target/coverage-report/coverage-report.xml"/>
-                                    <csv destfile="${basedir}/target/coverage-report/coverage-report.csv"/>
+                                    <html destdir="${basedir}/target/coverage-report/site" />
+                                    <xml destfile="${basedir}/target/coverage-report/coverage-report.xml" />
+                                    <csv destfile="${basedir}/target/coverage-report/coverage-report.csv" />
                                 </report>
                             </target>
                         </configuration>
