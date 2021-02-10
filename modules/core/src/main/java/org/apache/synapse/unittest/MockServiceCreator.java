@@ -29,7 +29,13 @@ import org.apache.synapse.commons.emulator.http.dsl.dto.consumer.IncomingMessage
 import org.apache.synapse.commons.emulator.http.dsl.dto.consumer.OutgoingMessage;
 import org.apache.synapse.unittest.testcase.data.classes.ServiceResource;
 
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -93,13 +99,15 @@ class MockServiceCreator {
 
         String serviceMethod = resource.getMethod();
         String serviceSubContext = resource.getSubContext();
+        Map.Entry<String, Map<String, String>> checkQueryParamEntry = splitQueryParams(serviceSubContext);
+        serviceSubContext = checkQueryParamEntry.getKey();
+        Map<String, String> queryParams = checkQueryParamEntry.getValue();
         String serviceRequestPayload = "";
         if (resource.getRequestPayload() != null) {
             serviceRequestPayload = RequestProcessor.trimStrings(resource.getRequestPayload());
         }
 
         String serviceResponsePayload = resource.getResponsePayload();
-
         List<Map.Entry<String, String>> requestHeaders = new ArrayList<>();
         List<Map.Entry<String, String>> responseHeaders = new ArrayList<>();
 
@@ -117,6 +125,9 @@ class MockServiceCreator {
                 //adding headers of request
                 IncomingMessage incomingMessage =
                         request().withMethod(HttpMethod.GET).withPath(serviceSubContext);
+                for (Map.Entry<String, String> queryParam : queryParams.entrySet()) {
+                    incomingMessage.withQueryParameter(queryParam.getKey(), queryParam.getValue());
+                }
                 for (Map.Entry<String, String> header : requestHeaders) {
                     incomingMessage.withHeader(header.getKey(), header.getValue());
                 }
@@ -136,6 +147,9 @@ class MockServiceCreator {
                 //adding headers of request
                 incomingMessage = request().withMethod(HttpMethod.POST)
                         .withBody(serviceRequestPayload).withPath(serviceSubContext);
+                for (Map.Entry<String, String> queryParam : queryParams.entrySet()) {
+                    incomingMessage.withQueryParameter(queryParam.getKey(), queryParam.getValue());
+                }
                 for (Map.Entry<String, String> header : requestHeaders) {
                     incomingMessage.withHeader(header.getKey(), header.getValue());
                 }
@@ -154,6 +168,9 @@ class MockServiceCreator {
             default:
                 //adding headers of request
                 incomingMessage = request().withMethod(HttpMethod.GET).withPath(serviceSubContext);
+                for (Map.Entry<String, String> queryParam : queryParams.entrySet()) {
+                    incomingMessage.withQueryParameter(queryParam.getKey(), queryParam.getValue());
+                }
                 for (Map.Entry<String, String> header : requestHeaders) {
                     incomingMessage.withHeader(header.getKey(), header.getValue());
                 }
@@ -180,5 +197,34 @@ class MockServiceCreator {
         }
 
         emulatorServiceList.clear();
+    }
+
+    /**
+     * Splits query params from the URL if exists.
+     *
+     * @param serviceSubContext mock service sub context
+     * @return subContext and query params as map entry
+     */
+    private static Map.Entry<String, Map<String, String>> splitQueryParams(String serviceSubContext) {
+        Map<String, String> queryParams = new LinkedHashMap<>();
+        try {
+            URL url = new URL(Constants.HTTP + Constants.SERVICE_HOST + serviceSubContext);
+            String query = url.getQuery();
+            serviceSubContext = url.getPath();
+            if (query == null) {
+                return new AbstractMap.SimpleEntry<>(serviceSubContext, queryParams);
+            }
+            String[] pairs = query.split("&");
+            for (String pair : pairs) {
+                int idx = pair.indexOf('=');
+                queryParams.put(URLDecoder.decode(pair.substring(0, idx), Constants.STRING_UTF8),
+                        URLDecoder.decode(pair.substring(idx + 1), Constants.STRING_UTF8));
+            }
+        } catch (UnsupportedEncodingException e) {
+            log.error("Error while checking query params", e);
+        } catch (MalformedURLException e) {
+            log.error("Error while creating URL of the mock service sub context", e);
+        }
+        return new AbstractMap.SimpleEntry<>(serviceSubContext, queryParams);
     }
 }
