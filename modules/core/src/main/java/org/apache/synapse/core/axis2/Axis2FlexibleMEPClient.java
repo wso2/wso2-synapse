@@ -718,11 +718,11 @@ public class Axis2FlexibleMEPClient {
                                                            Map<String, String> mockServiceResources) {
         try {
             URI endpointURI = new URI (endpointUrl);
-            String pathWithContext = endpointURI.getPath();
-            if (mockServiceResources.containsKey(pathWithContext)) {
-                return mockServiceResources.get(pathWithContext);
-            } else if (mockServiceResources.containsKey(pathWithContext + URL_PATH_SEPARATOR)) {
-                return mockServiceResources.get(pathWithContext + URL_PATH_SEPARATOR);
+            String pathWithContextAndParams = endpointUrl.substring(endpointUrl.indexOf(endpointURI.getPath()));
+            if (mockServiceResources.containsKey(pathWithContextAndParams)) {
+                return mockServiceResources.get(pathWithContextAndParams);
+            } else if (mockServiceResources.containsKey(pathWithContextAndParams + URL_PATH_SEPARATOR)) {
+                return mockServiceResources.get(pathWithContextAndParams + URL_PATH_SEPARATOR);
             }
         } catch (URISyntaxException e) {
             log.error("Error while finding the path of the endpoint URL. Hence, proceeding with endpoint url");
