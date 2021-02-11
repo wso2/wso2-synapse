@@ -16,6 +16,7 @@
 
 package org.apache.synapse.transport.passthru.connections;
 
+import org.apache.axis2.context.MessageContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHost;
@@ -23,8 +24,11 @@ import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.nio.reactor.ConnectingIOReactor;
 import org.apache.synapse.transport.passthru.ConnectCallback;
+import org.apache.synapse.transport.passthru.ErrorCodes;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.ProtocolState;
 import org.apache.synapse.transport.passthru.TargetContext;
+import org.apache.synapse.transport.passthru.TargetErrorHandler;
 import org.apache.synapse.transport.passthru.config.ConnectionTimeoutConfiguration;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
@@ -32,6 +36,7 @@ import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -90,7 +95,8 @@ public class TargetConnections {
      * @return Either returns a connection if already available or returns null and notifies
      *         the delivery agent when the connection is available
      */
-    public NHttpClientConnection getConnection(HttpRoute route) {
+    public NHttpClientConnection getConnection(HttpRoute route, MessageContext msgContext,
+                                               TargetErrorHandler targetErrorHandler, Queue<MessageContext> queue) {
         if (log.isDebugEnabled()) {
             log.debug("Trying to get a connection " + route);
         }
@@ -106,6 +112,14 @@ public class TargetConnections {
             } else {
                 log.warn("Connection pool reached maximum allowed connections for route "
                         + route + ". Target server may have become slow");
+                if (msgContext != null) {
+                    queue.remove(msgContext);
+                    msgContext.setProperty(PassThroughConstants.CONNECTION_LIMIT_EXCEEDS, "true");
+                    targetErrorHandler.handleError(msgContext, ErrorCodes.CONNECTION_TIMEOUT,
+                            "No available connections to serve the request",
+                            null, ProtocolState.REQUEST_READY);
+                }
+
             }
         } else {
             return connection;

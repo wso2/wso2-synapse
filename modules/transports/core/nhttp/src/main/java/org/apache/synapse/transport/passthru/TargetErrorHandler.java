@@ -54,7 +54,7 @@ public class TargetErrorHandler {
      * @param exceptionToRaise an Exception to be returned to the MR on failure
      * @param state state of the connection
      */
-    protected void handleError(final MessageContext mc,
+    public void handleError(final MessageContext mc,
                                final int errorCode,
                                final String errorMessage,
                                final Exception exceptionToRaise,
