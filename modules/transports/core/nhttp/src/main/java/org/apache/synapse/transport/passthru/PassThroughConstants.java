@@ -117,6 +117,8 @@ public class PassThroughConstants {
     public static final String FORMATTER_PRESERVE = "chunkedFormatterPreserve";     
     
     public static final String CLONE_PASS_THROUGH_PIPE_REQUEST = "clone_pass-through.pipe_connected";
+
+    public static final String CONNECTION_LIMIT_EXCEEDS = "CONNECTION_LIMIT_EXCEEDS";
     
     /**
      * Name of the .mar file
