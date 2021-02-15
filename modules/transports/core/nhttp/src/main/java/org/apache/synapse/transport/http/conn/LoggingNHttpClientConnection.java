@@ -180,13 +180,14 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
                             this.response.setEntity(entity);
                             this.connMetrics.incrementResponseCount();
                         }
+                        this.hasBufferedInput = this.inbuf.hasData();
                         onResponseReceived(this.response);
                         handler.responseReceived(this);
                         if (this.contentDecoder == null) {
                             resetInput();
                         }
                     }
-                    if (bytesRead == -1) {
+                    if (bytesRead == -1 && !this.inbuf.hasData()) {
                         handler.endOfInput(this);
                     }
                 }
