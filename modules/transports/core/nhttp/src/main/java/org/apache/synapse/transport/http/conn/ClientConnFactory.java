@@ -18,6 +18,7 @@
  */
 package org.apache.synapse.transport.http.conn;
 
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponseFactory;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.impl.DefaultHttpResponseFactory;
@@ -32,6 +33,9 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -120,8 +124,7 @@ public class ClientConnFactory {
         IOSession customSession;
         if (ssl != null && route.isSecure() && !route.isTunnelled()) {
             SSLContext customContext = getSSLContext(iosession);
-            SSLIOSession ssliosession = new SSLIOSession(
-                       iosession, SSLMode.CLIENT, customContext, ssl.getHandler());
+            SSLIOSession ssliosession = createClientModeSSLsession(iosession, customContext);
             iosession.setAttribute(SSLIOSession.SESSION_KEY, ssliosession);
             customSession = ssliosession;
         } else {
@@ -139,8 +142,7 @@ public class ClientConnFactory {
             IOSession iosession = conn.getIOSession();
             if (!(iosession instanceof SSLIOSession)) {
                 SSLContext customContext = getSSLContext(iosession);
-                SSLIOSession ssliosession = new SSLIOSession(
-                    iosession, SSLMode.CLIENT, customContext, ssl.getHandler());
+                SSLIOSession ssliosession = createClientModeSSLsession(iosession, customContext);
                 iosession.setAttribute(SSLIOSession.SESSION_KEY, ssliosession);
                 conn.bind(ssliosession);
             }
@@ -153,8 +155,7 @@ public class ClientConnFactory {
             IOSession iosession = conn.getIOSession();
             if (!(iosession instanceof SSLIOSession)) {
                 SSLContext customContext = getSSLContext(targetHost);
-                SSLIOSession ssliosession = new SSLIOSession(
-                           iosession, SSLMode.CLIENT, customContext, ssl.getHandler());
+                SSLIOSession ssliosession = createClientModeSSLsession(iosession, customContext);
                 iosession.setAttribute(SSLIOSession.SESSION_KEY, ssliosession);
                 conn.bind(ssliosession);
             }
@@ -169,6 +170,43 @@ public class ClientConnFactory {
     public Set<String> getHostList() {
         return sslByHostMap.keySet();
 
+    }
+
+    /**
+     * Creates and returns a ssliosession in client mode
+     *
+     * @param iosession IO session associated with the ssl connection
+     * @param customContext SSL context associated with the ssl connection
+     *
+     * @return created new SSLIOsession
+     */
+    private SSLIOSession createClientModeSSLsession(IOSession iosession, SSLContext customContext) {
+        final SocketAddress address = iosession.getRemoteAddress();
+        SSLIOSession ssliosession;
+        if (address instanceof InetSocketAddress) {
+            final String endpoint = (String) iosession.getAttribute("endPointURI");
+            String hostname;
+            int port;
+            if (endpoint != null && !endpoint.isEmpty()) {
+                URI endpointURI;
+                try {
+                    endpointURI = new URI(endpoint);
+                } catch (URISyntaxException e) {
+                    throw new IllegalArgumentException("Invalid endpointURI");
+                }
+                hostname = endpointURI.getHost();
+                port = endpointURI.getPort();
+            } else {
+                hostname = ((InetSocketAddress) address).getHostName();
+                port = ((InetSocketAddress) address).getPort();
+            }
+            ssliosession = new SSLIOSession(
+                    iosession, SSLMode.CLIENT, new HttpHost(hostname, port), customContext, ssl.getHandler());
+        } else {
+            ssliosession = new SSLIOSession(
+                    iosession, SSLMode.CLIENT, customContext, ssl.getHandler());
+        }
+        return ssliosession;
     }
 
 }
