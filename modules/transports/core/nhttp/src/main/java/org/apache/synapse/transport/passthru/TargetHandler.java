@@ -45,6 +45,7 @@ import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
 import org.apache.synapse.transport.http.conn.ProxyTunnelHandler;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.HostConnections;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
@@ -92,6 +93,7 @@ public class TargetHandler implements NHttpClientEventHandler {
     private List<StreamInterceptor> streamInterceptors;
     private boolean interceptStream;
     private int noOfInterceptors;
+    private static List<String> allowedResponseProperties = new ArrayList<>();
 
     public TargetHandler(DeliveryAgent deliveryAgent, ClientConnFactory connFactory,
                          TargetConfiguration configuration) {
@@ -124,6 +126,14 @@ public class TargetHandler implements NHttpClientEventHandler {
             validMaxMessageSize = Integer.MAX_VALUE;
         }
 
+        PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
+        String properties = conf.getAllowedResponseProperties();
+        if (properties != null) {
+            String[] propertyList = properties.trim().split(",");
+            for (String property : propertyList) {
+                allowedResponseProperties.add(property.trim());
+            }
+        }
     }
 
     public void connected(NHttpClientConnection conn, Object o) {
@@ -445,7 +455,8 @@ public class TargetHandler implements NHttpClientEventHandler {
             }
 
             targetConfiguration.getWorkerPool().execute(
-                    new ClientWorker(targetConfiguration, requestMsgContext, targetResponse));
+                    new ClientWorker(targetConfiguration, requestMsgContext, targetResponse,
+                                     allowedResponseProperties));
 
             targetConfiguration.getMetrics().incrementMessagesReceived();
 

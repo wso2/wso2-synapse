@@ -56,6 +56,8 @@ public class PassThroughConfiguration {
     // URI configurations that determine if it requires custom rest dispatcher
     private static final String REST_URI_API_REGEX = "rest_uri_api_regex";
     private static final String REST_URI_PROXY_REGEX = "rest_uri_proxy_regex";
+    // properties which are allowed to be directly pass through from request context to response context explicitly
+    private static final String ALLOWED_RESPONSE_PROPERTIES = "allowed_response_properties";
 
     /** Reverse proxy mode is enabled or not */
     private Boolean reverseProxyMode = null;
@@ -376,6 +378,10 @@ public class PassThroughConfiguration {
 
     public boolean isListeningIOReactorShared(){
         return getBooleanProperty(PassThroughConfigPNames.HTTP_LISTENING_IO_REACTOR_SHARING_ENABLE, false);
+    }
+
+    public String getAllowedResponseProperties() {
+        return getStringProperty(ALLOWED_RESPONSE_PROPERTIES, null);
     }
 
     /**

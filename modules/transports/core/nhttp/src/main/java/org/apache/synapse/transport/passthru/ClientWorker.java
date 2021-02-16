@@ -45,7 +45,9 @@ import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -63,9 +65,12 @@ public class ClientWorker implements Runnable {
     /** the axis2 message context of the request */
     private MessageContext requestMessageContext;
 
-    public ClientWorker(TargetConfiguration targetConfiguration,
-                        MessageContext outMsgCtx,
-                        TargetResponse response) {
+    public ClientWorker(TargetConfiguration targetConfiguration, MessageContext outMsgCtx, TargetResponse response) {
+        this(targetConfiguration, outMsgCtx, response, Collections.emptyList());
+    }
+
+    public ClientWorker(TargetConfiguration targetConfiguration, MessageContext outMsgCtx, TargetResponse response,
+                        List<String> allowedResponseProperties) {
         this.targetConfiguration = targetConfiguration;
         this.response = response;
         this.expectEntityBody = response.isExpectResponseBody();
@@ -190,6 +195,9 @@ public class ClientWorker implements Runnable {
                 response.getConnection());
         responseMsgCtx.setProperty(CorrelationConstants.CORRELATION_ID,
                 outMsgCtx.getProperty(CorrelationConstants.CORRELATION_ID));
+        for (String property : allowedResponseProperties) {
+            responseMsgCtx.setProperty(property, outMsgCtx.getProperty(property));
+        }
         responseMsgCtx.setProperty(PassThroughConstants.SYNAPSE_ARTIFACT_TYPE,
                                    outMsgCtx.getProperty(PassThroughConstants.SYNAPSE_ARTIFACT_TYPE));
         response.getConnection().getContext().setAttribute(PassThroughConstants.RESPONSE_MESSAGE_CONTEXT,
