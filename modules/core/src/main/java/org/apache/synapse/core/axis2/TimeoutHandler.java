@@ -132,10 +132,20 @@ public class TimeoutHandler extends TimerTask {
 
                         synchronized (callback) {
                             if (callback.isMarkedForRemoval()) {
-                                return;
+                                continue;
                             }
                             callback.setMarkedForRemoval();
                             toRemove.add(key);
+                        }
+                        if (!"true".equals(callback.getSynapseOutMsgCtx().getProperty(SynapseConstants.OUT_ONLY))) {
+                            org.apache.axis2.context.MessageContext axis2MessageContext = callback.getAxis2OutMsgCtx();
+                            ContextAwareLogger.getLogger(axis2MessageContext, log, true)
+                                    .warn("Expiring message ID : " + key + "; dropping message after "
+                                            + callback.getTimeoutType().toString() + " of : "
+                                            + (callback.getTimeoutDuration() / 1000) + " seconds for "
+                                            + getEndpointLogMessage(callback.getSynapseOutMsgCtx(),
+                                            callback.getAxis2OutMsgCtx()) + ", "
+                                            + getServiceLogMessage(callback.getSynapseOutMsgCtx()));
                         }
 
                         if (callback.getTimeOutAction() != SynapseConstants.NONE) {
@@ -204,18 +214,6 @@ public class TimeoutHandler extends TimerTask {
                     if (callback == null) {
                         // we will get here if we get a response from the Backend while clearing callbacks
                         continue;
-                    }
-
-                    org.apache.axis2.context.MessageContext axis2MessageContext = callback.getAxis2OutMsgCtx();
-
-                    if (!"true".equals(callback.getSynapseOutMsgCtx().getProperty(SynapseConstants.OUT_ONLY))) {
-                        ContextAwareLogger.getLogger(axis2MessageContext, log, true)
-                                .warn("Expiring message ID : " + key + "; dropping message after "
-                                        + callback.getTimeoutType().toString() + " of : "
-                                        + (callback.getTimeoutDuration() / 1000) + " seconds for "
-                                        + getEndpointLogMessage(callback.getSynapseOutMsgCtx(),
-                                        callback.getAxis2OutMsgCtx()) + ", "
-                                        + getServiceLogMessage(callback.getSynapseOutMsgCtx()));
                     }
                     org.apache.synapse.MessageContext synapseOutMsgCtx = callback.getSynapseOutMsgCtx();
                     ConcurrencyThrottlingUtils.decrementConcurrencyThrottleAccessController(synapseOutMsgCtx);
