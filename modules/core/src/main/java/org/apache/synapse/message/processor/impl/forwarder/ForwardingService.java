@@ -29,6 +29,7 @@ import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.transport.http.HTTPConstants;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
@@ -36,6 +37,7 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.commons.json.Constants;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -53,6 +55,10 @@ import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.task.Task;
 import org.apache.synapse.util.MessageHelper;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -511,10 +517,29 @@ public class ForwardingService implements Task, ManagedLifecycle {
 				isResponseValidationNotRequired = !isResponseValidationRequiredEndpoint(endpointReferenceValue);
 			}
 			SOAPEnvelope originalEnvelop = messageContext.getEnvelope();
+			InputStream originalInputStream;
+			ByteArrayInputStream originalByteArrayInputStream = null;
+			org.apache.axis2.context.MessageContext origAxis2Ctx =
+					((Axis2MessageContext) messageContext).getAxis2MessageContext();
+
+			//Since copying original envelope is not sufficient for json scenario
+			if (JsonUtil.hasAJsonPayload(origAxis2Ctx)) {
+				Object o = origAxis2Ctx.getProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
+				if (o instanceof InputStream) {
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					originalInputStream = (InputStream) o;
+					try {
+						IOUtils.copy(originalInputStream, baos);
+						originalByteArrayInputStream = new ByteArrayInputStream(baos.toByteArray());
+					} catch (IOException e) {
+						log.warn("Copying the json stream failed");
+					}
+				}
+			}
 			try {
 				// Send message to the client
 				while (!isSuccessful && !isTerminated) {
-					tryToDispatchToEndpoint(messageContext, endpoint, originalEnvelop);
+					tryToDispatchToEndpoint(messageContext, endpoint, originalEnvelop, originalByteArrayInputStream);
 
 					isTerminated = messageProcessor.isDeactivated();
 					if (!isTerminated && (messageProcessor instanceof ScheduledMessageProcessor)) {
@@ -522,7 +547,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 					}
 
 					if (!isSuccessful) {
-						prepareToRetry(messageContext, originalEnvelop);
+						prepareToRetry(messageContext, originalEnvelop, originalByteArrayInputStream);
 					}
 				}
 			} catch (Exception e) {
@@ -550,12 +575,18 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	 * @param messageToDispatch MessageContext containing current message
 	 * @param originalEnvelop MessageContext containing message to forward (original message)
 	 */
-	private void getFreshCopyOfOriginalMessage(MessageContext messageToDispatch, SOAPEnvelope originalEnvelop)
+	private void getFreshCopyOfOriginalMessage(MessageContext messageToDispatch, SOAPEnvelope originalEnvelop,
+											   ByteArrayInputStream originalJsonInputStream)
 			throws AxisFault {
 		// For each retry we need to have a fresh copy of the original message
 		messageToDispatch.setEnvelope(MessageHelper.cloneSOAPEnvelope(originalEnvelop));
 		setSoapHeaderBlock(messageToDispatch);
 		updateAxis2MessageContext(messageToDispatch);
+		if (originalJsonInputStream != null) {
+			org.apache.axis2.context.MessageContext origAxis2Ctx =
+					((Axis2MessageContext) messageToDispatch).getAxis2MessageContext();
+			JsonUtil.getNewJsonPayload(origAxis2Ctx, originalJsonInputStream, true, true);
+		}
 	}
 
 	/**
@@ -566,14 +597,14 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	 * @param originalEnvelop   SoapEnvelope of original message to be forwarded
 	 */
 	private void tryToDispatchToEndpoint(MessageContext messageToDispatch, Endpoint endpoint,
-										 SOAPEnvelope originalEnvelop) {
+										 SOAPEnvelope originalEnvelop, ByteArrayInputStream originalJsonInputStream) {
 
 		isSuccessful = false;
 		MessageContext outCtx = null;
 
 		try {
 			// For each retry we need to have a fresh copy of the original message
-			getFreshCopyOfOriginalMessage(messageToDispatch, originalEnvelop);
+			getFreshCopyOfOriginalMessage(messageToDispatch, originalEnvelop, originalJsonInputStream);
 
 			if (messageConsumer != null && messageConsumer.isAlive()) {
 				messageToDispatch.setProperty(SynapseConstants.BLOCKING_MSG_SENDER, sender);
@@ -842,7 +873,8 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	 * processor. If the MaxDeliveryAttemptDrop is Enabled, then the message is
 	 * dropped and the message processor continues.
 	 */
-	private void checkAndDeactivateProcessor(MessageContext msgCtx, SOAPEnvelope originalEnvelop) throws AxisFault {
+	private void checkAndDeactivateProcessor(MessageContext msgCtx, SOAPEnvelope originalEnvelop,
+											 ByteArrayInputStream originalJsonInputStream) throws AxisFault {
 		if (maxDeliverAttempts > 0) {
 			this.attemptCount++;
 			if (attemptCount >= maxDeliverAttempts) {
@@ -854,7 +886,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 							+ "continue.");
 				} else if (null != failMessageStore) {
 					// We need to store the original message in the failover store
-					getFreshCopyOfOriginalMessage(msgCtx, originalEnvelop);
+					getFreshCopyOfOriginalMessage(msgCtx, originalEnvelop, originalJsonInputStream);
 					storeMessageToBackupStoreAndContinue(msgCtx, failMessageStore);
 				} else {
 					terminate();
@@ -872,9 +904,10 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	/*
 	 * Prepares the message processor for the next retry of delivery.
 	 */
-	private void prepareToRetry(MessageContext msgCtx, SOAPEnvelope originalEnvelop) throws AxisFault {
+	private void prepareToRetry(MessageContext msgCtx, SOAPEnvelope originalEnvelop,
+								ByteArrayInputStream originalJsonInputStream) throws AxisFault {
 		if (!isTerminated) {
-			checkAndDeactivateProcessor(msgCtx, originalEnvelop);
+			checkAndDeactivateProcessor(msgCtx, originalEnvelop, originalJsonInputStream);
 
 			if (log.isDebugEnabled()) {
 				log.debug("Failed to send to client retrying after " + retryInterval +
