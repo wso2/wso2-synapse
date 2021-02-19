@@ -19,6 +19,7 @@
 
 package org.apache.synapse.endpoints;
 
+import org.apache.axis2.addressing.AddressingConstants;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -73,6 +74,14 @@ public class DefaultEndpoint extends AbstractEndpoint {
 
         // For setting Car name (still for Proxy)
         logSetter();
+
+        if (synCtx.getTo().isWSAddressingAnonymous()) {
+            log.warn("'To' header was set to " + AddressingConstants.Final.WSA_ANONYMOUS_URL + ", Message will be " +
+                    "passed to the fault sequence");
+            informFailure(synCtx, SynapseConstants.ENDPOINT_ADDRESS_NONE_READY, "'To' header was set to " +
+                    AddressingConstants.Final.WSA_ANONYMOUS_URL);
+            return;
+        }
 
     	org.apache.axis2.context.MessageContext messageContext =((Axis2MessageContext) synCtx).getAxis2MessageContext();
     	final Pipe pipe = (Pipe) messageContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
