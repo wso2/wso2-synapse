@@ -1373,6 +1373,15 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     }
 
     /**
+     * Set the SynapseTimer of the Synapse Configuration
+     *
+     * @param synapseTimer SynapseTimer of the Synapse Configuration
+     */
+    public void setSynapseTimer(Timer synapseTimer) {
+        this.synapseTimer = synapseTimer;
+    }
+
+    /**
      * Get the startup collection in the configuration
      *
      * @return collection of startup objects registered
