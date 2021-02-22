@@ -175,6 +175,7 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
                             ((HttpEntityEnclosingRequest) this.request).setEntity(entity);
                         }
                         this.connMetrics.incrementRequestCount();
+                        this.hasBufferedInput = this.inbuf.hasData();
                         onRequestReceived(this.request);
                         handler.requestReceived(this);
                         if (this.contentDecoder == null) {
@@ -183,7 +184,7 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
                             resetInput();
                         }
                     }
-                    if (bytesRead == -1) {
+                    if (bytesRead == -1 && !this.inbuf.hasData()) {
                         handler.endOfInput(this);
                     }
                 }
@@ -202,7 +203,6 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
                     }
                 }
             } catch (final HttpException ex) {
-                resetInput();
                 handler.exception(this, ex);
             } catch (final Exception ex) {
                 handler.exception(this, ex);
@@ -242,7 +242,7 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
 
             try {
                 if (this.status == ACTIVE) {
-                    if (this.contentEncoder == null) {
+                    if (this.contentEncoder == null && !this.outbuf.hasData()) {
                         handler.responseReady(this);
                     }
                     if (this.contentEncoder != null) {
