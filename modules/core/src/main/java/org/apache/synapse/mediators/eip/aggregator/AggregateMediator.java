@@ -324,7 +324,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                                                 synCtx.getConfiguration().getSynapseTimer().
                                                         schedule(aggregate, completionTimeoutMillis);
                                             } catch (IllegalStateException e) {
-                                                log.warn("Synapse timer already canceled. Reseting Synapse timer");
+                                                log.warn("Synapse timer already cancelled. Resetting Synapse timer");
                                                 synCtx.getConfiguration().setSynapseTimer(new Timer(true));
                                                 synCtx.getConfiguration().getSynapseTimer().
                                                         schedule(aggregate, completionTimeoutMillis);
