@@ -477,7 +477,7 @@ public class Target {
         Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
         org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
         String jsonString = IOUtils.toString(JsonUtil.getJsonPayload(axis2MessageCtx));
-        String result = removeJSONFromString(jsonString, jsonPath);
+        String result = removeJSONFromString(synCtx, jsonString, jsonPath);
         JsonUtil.getNewJsonPayload(axis2MessageCtx, result, true, true);
     }
 
@@ -501,17 +501,25 @@ public class Target {
                     "Cannot perform the remove operation. Data type of the property " + property + " is not string " +
                             "| JSON");
         }
-        String result = removeJSONFromString(propertyValue,jsonPath);
+        String result = removeJSONFromString(synCtx, propertyValue, jsonPath);
         synCtx.setProperty(property,result);
     }
 
     //Given input sting and jsonPath expression this method will remove all the matching elements from the input string.
-    private String removeJSONFromString(String inputString, SynapsePath jsonPath) {
+    private String removeJSONFromString(MessageContext synCtx, String inputString, SynapsePath jsonPath) {
         String result = inputString;
         SynapseJsonPath synapseJsonPath = (SynapseJsonPath) jsonPath;
         String jsonPathString = synapseJsonPath.toString();
         // removing "json-eval(" and extract only the expression
         jsonPathString = jsonPathString.substring(10, jsonPathString.length() - 1);
+        if (InlineExpressionUtil.checkForInlineExpressions(jsonPathString)) {
+            try {
+                jsonPathString = InlineExpressionUtil.replaceDynamicValues(synCtx, jsonPathString);
+                jsonPathString = jsonPathString.replaceAll("^\"|\"$", "");
+            } catch (Exception e) {
+                log.error("Error occurred while evaluating JSONPath", e);
+            }
+        }
         String[] jsonPathArray = jsonPathString.split(",");
         if (jsonPathArray.length > 0) {
             for (String path : jsonPathArray) {
