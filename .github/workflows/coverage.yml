@@ -1,0 +1,65 @@
+name: CodeCov Coverage Uploader
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v1
+      - name: Set up JDK 1.8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+
+      - name: Build Synapse with Maven
+        run: mvn clean install --file pom.xml
+      - name: Get synapse version
+        run: mvn help:evaluate -Dexpression=project.version -q -DforceStdout > ../SYNAPSE_VERSION_FILE
+      - name: Print synapse version
+        run: |
+          echo $(cat ../SYNAPSE_VERSION_FILE)
+      - name: Checkout Carbon Mediation
+        uses: actions/checkout@v1
+        with:
+          repository: wso2/carbon-mediation
+          ref: refs/heads/master
+      - name: Build carbon-mediation with Maven
+        run: mvn clean install -Dsynapse.version=$(cat ../SYNAPSE_VERSION_FILE) -fae --file ../carbon-mediation/pom.xml
+      - name: Get carbon.mediation.version
+        run: mvn help:evaluate --file ../carbon-mediation/pom.xml -Dexpression=project.version -q -DforceStdout > ../CARBON_MEDIATION_VERSION_FILE
+      - name: Print carbon.mediation.version
+        run: |
+          echo $(cat ../CARBON_MEDIATION_VERSION_FILE)
+      - name: Checkout Micro Integrator
+        uses: actions/checkout@v1
+        with:
+          repository: wso2/micro-integrator
+          ref: refs/heads/master
+      - name: Build micro-integrator with Maven
+        run: mvn clean install -Dsynapse.version=$(cat ../SYNAPSE_VERSION_FILE) -Dcarbon.mediation.version=$(cat ../CARBON_MEDIATION_VERSION_FILE) -fae --file ../micro-integrator/pom.xml
+
+      - name: Upload unit test coverage of synapse to Codecov
+        uses: codecov/codecov-action@v1.2.1
+        with:
+          flags: unit_tests,synapse_unit_tests
+      - name: Upload unit test coverage of carbon.mediation to Codecov
+        uses: codecov/codecov-action@v1.2.1
+        with:
+          flags: unit_tests,mediation_unit_tests
+          directory: ../carbon-mediation/
+      - name: Upload unit test coverage of micro.integrator to Codecov
+        uses: codecov/codecov-action@v1.2.1
+        with:
+          flags: unit_tests,mi_unit_tests
+          directory: ../micro-integrator/components/
+      - name: Upload integration test coverage of micro.integrator to Codecov
+        uses: codecov/codecov-action@v1.2.1
+        with:
+          flags: integration_tests
+          directory: ../micro-integrator/integration/
