@@ -28,6 +28,7 @@ import org.apache.axis2.deployment.repository.util.DeploymentFileData;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.libraries.util.LibDeployerUtils;
@@ -127,6 +128,7 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 		.get(libArtifactName);
 
 	if (synImport != null && synImport.isStatus()) {
+		lib.getArtifacts().put(SynapseConstants.SYNAPSE_CONFIGURATION, getSynapseConfiguration());
 	    LibDeployerUtils.loadLibArtifacts(synImport, lib);
 	    if (log.isDebugEnabled()) {
 		log.debug("Loading Synapse Library: " + libArtifactName + " into memory for Import");

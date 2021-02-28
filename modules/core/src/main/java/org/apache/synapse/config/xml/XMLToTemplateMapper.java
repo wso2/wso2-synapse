@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.XMLToObjectMapper;
 import org.apache.synapse.config.xml.endpoints.TemplateFactory;
 
@@ -30,6 +31,19 @@ import javax.xml.namespace.QName;
 import java.util.Properties;
 
 public class XMLToTemplateMapper implements XMLToObjectMapper {
+
+    SynapseConfiguration configuration = null;
+
+    public XMLToTemplateMapper() {
+        this(null);
+    }
+
+    public XMLToTemplateMapper(SynapseConfiguration config) {
+        if (config != null) {
+            this.setSynapseConfiguration(config);
+        }
+    }
+
     public Object getObjectFromOMNode(OMNode om, Properties properties) {
         if (!(om instanceof OMElement)) {
             throw new SynapseException("Configuration is not in proper format.");
@@ -39,7 +53,7 @@ public class XMLToTemplateMapper implements XMLToObjectMapper {
         OMElement element = elem.getFirstChildWithName(
                 new QName(SynapseConstants.SYNAPSE_NAMESPACE, "sequence"));
         if (element != null) {
-            return MediatorFactoryFinder.getInstance().getMediator(elem, properties);
+            return MediatorFactoryFinder.getInstance().getMediator(elem, properties, this.getSynapseConfiguration());
         }
 
         element = elem.getFirstChildWithName(
@@ -49,5 +63,23 @@ public class XMLToTemplateMapper implements XMLToObjectMapper {
             return templateFactory.createEndpointTemplate(elem, properties);
         }
         return null;
+    }
+
+    /**
+     * Getter method to obtain Synapse configuration
+     *
+     * @return Synapse configurations associated with the Object
+     */
+    public SynapseConfiguration getSynapseConfiguration() {
+        return configuration;
+    }
+
+    /**
+     * Sets synapse configurations associated with the Object
+     *
+     * @param configuration Synapse Configuration
+     */
+    public void setSynapseConfiguration(SynapseConfiguration configuration) {
+        this.configuration = configuration;
     }
 }

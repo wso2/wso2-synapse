@@ -37,6 +37,8 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 
+import java.util.Properties;
+
 /**
  * Unit tests to test methods in class ProxyServiceMessageReceiver
  */
@@ -58,7 +60,7 @@ public class ProxyServiceMessageReceiverTest {
                 + "         <property name=\"TEST\" scope=\"axis2\" type=\"STRING\" value=\"WSO2\"/>\n"
                 + "      </inSequence>");
         proxyService.setTargetInLineInSequence(new SequenceMediatorFactory().
-                createAnonymousSequence(sequenceAsOM, null));
+                createAnonymousSequence(sequenceAsOM, new Properties()));
 
         proxyServiceMessageReceiver.setProxy(proxyService);
 

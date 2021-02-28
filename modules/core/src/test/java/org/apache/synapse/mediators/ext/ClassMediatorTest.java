@@ -58,7 +58,7 @@ public class ClassMediatorTest extends AbstractMediatorTestCase {
     public void testMediationWithoutProperties() throws Exception {
         Mediator cm = MediatorFactoryFinder.getInstance().getMediator(createOMElement(
                 "<class name='org.apache.synapse.mediators.ext.ClassMediatorTestMediator' " +
-                        "xmlns='http://ws.apache.org/ns/synapse'/>"), new Properties());
+                        "xmlns='http://ws.apache.org/ns/synapse'/>"), new Properties(), new SynapseConfiguration());
         TestMessageContext msgContext = new TestMessageContext();
         msgContext.setEnvironment(new Axis2SynapseEnvironment(new SynapseConfiguration()));
         cm.mediate(msgContext);
@@ -68,7 +68,7 @@ public class ClassMediatorTest extends AbstractMediatorTestCase {
     public void testMediationWithLiteralProperties() throws Exception {
         Mediator cm = MediatorFactoryFinder.getInstance().getMediator(createOMElement(
                 "<class name='org.apache.synapse.mediators.ext.ClassMediatorTestMediator' " +
-                        "xmlns='http://ws.apache.org/ns/synapse'><property name='testProp' value='testValue'/></class>"), new Properties());
+                        "xmlns='http://ws.apache.org/ns/synapse'><property name='testProp' value='testValue'/></class>"), new Properties(), new SynapseConfiguration());
         TestMessageContext msgContext = new TestMessageContext();
         msgContext.setEnvironment(new Axis2SynapseEnvironment(new SynapseConfiguration()));
         cm.mediate(msgContext);
@@ -79,7 +79,7 @@ public class ClassMediatorTest extends AbstractMediatorTestCase {
     public void testInitializationAndMedition() throws Exception {
         Mediator cm = MediatorFactoryFinder.getInstance().getMediator(createOMElement(
                 "<class name='org.apache.synapse.mediators.ext.ClassMediatorTestMediator' " +
-                        "xmlns='http://ws.apache.org/ns/synapse'/>"), new Properties());
+                        "xmlns='http://ws.apache.org/ns/synapse'/>"), new Properties(), new SynapseConfiguration());
         ((ManagedLifecycle) cm).init(new Axis2SynapseEnvironment(new SynapseConfiguration()));
         assertTrue(ClassMediatorTestMediator.initialized);
         TestMessageContext msgContext = new TestMessageContext();
@@ -91,7 +91,7 @@ public class ClassMediatorTest extends AbstractMediatorTestCase {
     public void testDestroy() throws Exception {
         Mediator cm = MediatorFactoryFinder.getInstance().getMediator(createOMElement(
                 "<class name='org.apache.synapse.mediators.ext.ClassMediatorTestMediator' " +
-                        "xmlns='http://ws.apache.org/ns/synapse'/>"), new Properties());
+                        "xmlns='http://ws.apache.org/ns/synapse'/>"), new Properties(), new SynapseConfiguration());
         TestMessageContext msgContext = new TestMessageContext();
         msgContext.setEnvironment(new Axis2SynapseEnvironment(new SynapseConfiguration()));
         cm.mediate(msgContext);

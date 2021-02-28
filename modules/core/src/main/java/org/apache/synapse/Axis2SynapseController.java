@@ -38,7 +38,6 @@ import org.apache.synapse.commons.beanstalk.enterprise.EnterpriseBeanstalkManage
 import org.apache.synapse.commons.datasource.DataSourceRepositoryHolder;
 import org.apache.synapse.commons.util.RMIRegistryController;
 import org.apache.synapse.config.*;
-import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.wso2.securevault.SecurityConstants;
 import org.wso2.securevault.secret.SecretCallbackHandler;
 import org.apache.synapse.commons.datasource.DataSourceInformationRepository;
@@ -47,11 +46,8 @@ import org.apache.synapse.commons.jmx.JmxInformation;
 import org.apache.synapse.commons.jmx.JmxInformationFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.*;
-import org.apache.synapse.deployers.ImportDeployer;
 import org.apache.synapse.deployers.LibraryArtifactDeployer;
-import org.apache.synapse.deployers.SynapseArtifactDeploymentStore;
 import org.apache.synapse.eventing.SynapseEventSource;
-import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.task.*;
 import org.wso2.securevault.secret.handler.SharedSecretCallbackHandlerCache;
 import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
@@ -512,6 +508,12 @@ public class Axis2SynapseController implements SynapseController {
         Enumeration keys = properties.keys();
         while (keys.hasMoreElements()) {
             String key = (String) keys.nextElement();
+            // Synapse configuration will be kept in a property to handle synapse import deployment. There is no
+            // point of keeping synapse configurations in a property of synapse configurations itself. Therefore
+            // synapse configurations property will be skipped here.
+            if (key.equals(SynapseConstants.SYNAPSE_CONFIGURATION)) {
+                continue;
+            }
             synapseConfiguration.setProperty(key, properties.getProperty(key));
         }
 

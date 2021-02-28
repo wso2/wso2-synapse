@@ -21,6 +21,7 @@ package org.apache.synapse.libraries.model;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.SynapseArtifact;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.MediatorFactoryFinder;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.config.xml.endpoints.TemplateFactory;
@@ -135,6 +136,10 @@ public class LibraryArtifact implements SynapseArtifact{
     private void delegateClassLoading(LibraryArtifact artifact, SynapseLibrary library) {
         Properties classLoadingProperties = new Properties();
         classLoadingProperties.put(SynapseConstants.SYNAPSE_LIB_LOADER, library.getLibClassLoader());
+        if (library.getArtifact(SynapseConstants.SYNAPSE_CONFIGURATION) != null) {
+            classLoadingProperties.put(SynapseConstants.SYNAPSE_CONFIGURATION,
+                    library.getArtifact(SynapseConstants.SYNAPSE_CONFIGURATION));
+        }
         artifact.file.setProperties(classLoadingProperties);
     }
 
@@ -188,7 +193,7 @@ public class LibraryArtifact implements SynapseArtifact{
                         new QName(XMLConfigConstants.NULL_NAMESPACE, "name"));
                 try {
                     templateObject = MediatorFactoryFinder.getInstance().
-                            getMediator(configurationElement, properties);
+                            getMediator(configurationElement, properties, (SynapseConfiguration) (properties.get(SynapseConstants.SYNAPSE_CONFIGURATION)));
                 } catch (Exception e) {
                     String msg = "Template configuration : " + name + " cannot be built" +
                             "for Synapse Library artifact : " + LibraryArtifact.this.name;;

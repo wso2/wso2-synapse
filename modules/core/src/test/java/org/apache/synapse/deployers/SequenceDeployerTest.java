@@ -28,6 +28,8 @@ import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Properties;
+
 /**
  * Test class for SequenceDeployer
  */
@@ -55,7 +57,7 @@ public class SequenceDeployerTest {
         cfgCtx.setAxisConfiguration(axisConfiguration);
 
         sequenceDeployer.init(cfgCtx);
-        String response = sequenceDeployer.deploySynapseArtifact(inputElement, "sampleFile", null);
+        String response = sequenceDeployer.deploySynapseArtifact(inputElement, "sampleFile", new Properties());
 
         Assert.assertEquals("Sequence not deployed!", "TestSequence", response);
     }
@@ -83,7 +85,7 @@ public class SequenceDeployerTest {
         cfgCtx.setAxisConfiguration(axisConfiguration);
 
         sequenceDeployer.init(cfgCtx);
-        sequenceDeployer.deploySynapseArtifact(inputElement, "sampleFile", null);
+        sequenceDeployer.deploySynapseArtifact(inputElement, "sampleFile", new Properties());
 
         String inputUpdateXML = "<sequence name=\"TestSequenceUpdated\" xmlns=\"http://ws.apache.org/ns/synapse\">"
                 + "                  <log/>"
@@ -91,7 +93,7 @@ public class SequenceDeployerTest {
 
         OMElement updatedElement = AXIOMUtil.stringToOM(inputUpdateXML);
 
-        String response = sequenceDeployer.updateSynapseArtifact(updatedElement, "sampleUpdateFile", "TestSequence", null);
+        String response = sequenceDeployer.updateSynapseArtifact(updatedElement, "sampleUpdateFile", "TestSequence", new Properties());
 
         Assert.assertEquals("Sequence not updated!", "TestSequenceUpdated", response);
     }
@@ -119,7 +121,7 @@ public class SequenceDeployerTest {
         cfgCtx.setAxisConfiguration(axisConfiguration);
 
         sequenceDeployer.init(cfgCtx);
-        sequenceDeployer.deploySynapseArtifact(inputElement, "sampleFile", null);
+        sequenceDeployer.deploySynapseArtifact(inputElement, "sampleFile", new Properties());
         Assert.assertNotNull("Sequence not deployed!", synapseConfiguration.getSequence("TestSequence"));
 
         sequenceDeployer.undeploySynapseArtifact("TestSequence");

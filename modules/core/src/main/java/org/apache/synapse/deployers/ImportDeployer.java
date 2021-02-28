@@ -23,12 +23,12 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.SynapseImportFactory;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.libraries.util.LibDeployerUtils;
 
-import javax.xml.namespace.QName;
 import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
@@ -67,14 +67,17 @@ public class ImportDeployer extends AbstractSynapseArtifactDeployer {
                     //get corresponding library for loading imports if available
                     Library synLib = getSynapseConfiguration().getSynapseLibraries()
                             .get(synImportQualfiedName);
-					if (synLib != null) {
-						if (synImport.isStatus()) {
-							LibDeployerUtils.loadLibArtifacts(synImport, synLib);
-						} else {
-							synLib.setLibStatus(false);
-							synLib.unLoadLibrary();
-						}
-					}
+                    if (synLib != null) {
+                        if (synImport.isStatus()) {
+                            // Need to pass corresponding Synapse configurations for Import deployer to identify
+                            // available synapse import (connectors). This value will be referred from LibraryArtifact class
+                            synLib.getArtifacts().put(SynapseConstants.SYNAPSE_CONFIGURATION, getSynapseConfiguration());
+                            LibDeployerUtils.loadLibArtifacts(synImport, synLib);
+                        } else {
+                            synLib.setLibStatus(false);
+                            synLib.unLoadLibrary();
+                        }
+                    }
                     log.info("Synapse Library Import named '" + synImportQualfiedName +
                              " has been deployed from file : "
                              + fileName);
@@ -125,13 +128,16 @@ public class ImportDeployer extends AbstractSynapseArtifactDeployer {
                 if (synLib != null) {
                     //this is a important step -> we need to unload what ever the components loaded previously
                     //then reload
-					if (synImport.isStatus()) {
-						synLib.unLoadLibrary();
-						LibDeployerUtils.loadLibArtifacts(synImport, synLib);
-					}else{
-						synLib.setLibStatus(false);
-						synLib.unLoadLibrary();
-					}
+                    if (synImport.isStatus()) {
+                        synLib.unLoadLibrary();
+                        // Need to pass corresponding Synapse configurations for Import deployer to identify
+                        // available synapse import (connectors). This value will be referred from LibraryArtifact class
+                        synLib.getArtifacts().put(SynapseConstants.SYNAPSE_CONFIGURATION, getSynapseConfiguration());
+                        LibDeployerUtils.loadLibArtifacts(synImport, synLib);
+                    } else {
+                        synLib.setLibStatus(false);
+                        synLib.unLoadLibrary();
+                    }
                 }
                 log.info("Synapse Library Import named '" + synImportQualfiedName +
                          " has been deployed from file : "
@@ -159,6 +165,7 @@ public class ImportDeployer extends AbstractSynapseArtifactDeployer {
                     synLib.unLoadLibrary();
                     //then reload
                     if (synLib != null) {
+                        synLib.getArtifacts().put(SynapseConstants.SYNAPSE_CONFIGURATION, getSynapseConfiguration());
                         LibDeployerUtils.loadLibArtifacts(synImport, synLib);
                     }
                     log.info("Synapse Library Import named '" + synImportQualfiedName +

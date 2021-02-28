@@ -28,6 +28,8 @@ import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Properties;
+
 /**
  * Test class for TemplateDeployer
  */
@@ -57,7 +59,7 @@ public class TemplateDeployerTest {
         cfgCtx.setAxisConfiguration(axisConfiguration);
 
         templateDeployer.init(cfgCtx);
-        String response = templateDeployer.deploySynapseArtifact(inputElement, "sampleFile", null);
+        String response = templateDeployer.deploySynapseArtifact(inputElement, "sampleFile", new Properties());
 
         Assert.assertEquals("Endpoint template not deployed!", "TestTemplate", response);
     }
@@ -87,7 +89,7 @@ public class TemplateDeployerTest {
         cfgCtx.setAxisConfiguration(axisConfiguration);
 
         templateDeployer.init(cfgCtx);
-        String response = templateDeployer.deploySynapseArtifact(inputElement, "sampleFile", null);
+        String response = templateDeployer.deploySynapseArtifact(inputElement, "sampleFile", new Properties());
 
         Assert.assertEquals("Sequence template not deployed!", "TestTemplate", response);
     }
