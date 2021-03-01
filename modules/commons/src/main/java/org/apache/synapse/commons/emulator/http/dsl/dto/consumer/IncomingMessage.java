@@ -25,6 +25,7 @@ import org.apache.synapse.commons.emulator.http.dsl.dto.Header;
 import org.apache.synapse.commons.emulator.http.consumer.HttpRequestContext;
 import org.apache.synapse.commons.emulator.http.dsl.dto.QueryParameter;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -40,7 +41,7 @@ public class IncomingMessage {
     private String context;
     private Pattern pathRegex;
     private Header header;
-    private QueryParameter queryParameter;
+    private List<QueryParameter> queryParameters;
 
 
     private static IncomingMessage getInstance() {
@@ -73,7 +74,10 @@ public class IncomingMessage {
     }
 
     public IncomingMessage withQueryParameter(String name, String value) {
-        this.queryParameter = new QueryParameter(name, value);
+        if (queryParameters == null) {
+            this.queryParameters = new ArrayList<>();
+        }
+        this.queryParameters.add(new QueryParameter(name, value));
         return this;
     }
 
@@ -156,23 +160,33 @@ public class IncomingMessage {
     }
 
     private boolean isQueryParameterMatch(HttpRequestContext requestContext) {
-        if (queryParameter == null) {
+
+        Map<String, List<String>> requestQueryParameters = requestContext.getQueryParameters();
+        if ((queryParameters == null || queryParameters.isEmpty())
+                && (requestQueryParameters == null || requestQueryParameters.isEmpty())) {
             return true;
-        }
-
-        Map<String, List<String>> queryParameters = requestContext.getQueryParameters();
-        List<String> queryValues = queryParameters.get(queryParameter.getName());
-
-        if (queryParameters == null || queryValues == null || queryValues.isEmpty()) {
+        } else if (queryParameters == null || queryParameters.isEmpty()
+                || queryParameters.size() != requestQueryParameters.size()) {
             return false;
         }
 
-        for (String value : queryValues) {
-            if (value.equalsIgnoreCase(queryParameter.getValue())) {
-                return true;
+        for (QueryParameter definedQueryParams : queryParameters) {
+            if (!requestQueryParameters.containsKey(definedQueryParams.getName())) {
+                return false;
+            }
+
+            List<String> queryValues = requestQueryParameters.get(definedQueryParams.getName());
+            if (queryValues == null || queryValues.isEmpty()) {
+                return false;
+            }
+            for (String value : queryValues) {
+                if (!value.equalsIgnoreCase(definedQueryParams.getValue())) {
+                    return false;
+                }
             }
         }
-        return false;
+
+        return true;
     }
 
     private String buildRegex(String context, String path) {
