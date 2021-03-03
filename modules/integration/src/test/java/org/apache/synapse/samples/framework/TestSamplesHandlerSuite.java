@@ -53,6 +53,7 @@ import org.apache.synapse.samples.framework.tests.endpoint.Sample56;
 import org.apache.synapse.samples.framework.tests.endpoint.Sample58;
 import org.apache.synapse.samples.framework.tests.endpoint.Sample59;
 import org.apache.synapse.samples.framework.tests.endpoint.Sample63;
+import org.apache.synapse.samples.framework.tests.endpoint.Sample64;
 import org.apache.synapse.samples.framework.tests.mediation.Sample17;
 import org.apache.synapse.samples.framework.tests.mediation.Sample19;
 import org.apache.synapse.samples.framework.tests.mediation.Sample363;
@@ -126,7 +127,7 @@ public class TestSamplesHandlerSuite extends TestSuite {
             }
             if (inputSuiteName.equalsIgnoreCase("endpoint")) {
                 suiteName = "EndpointSamplesSuite";
-                for (int i = 50; i <= 63; i++) {
+                for (int i = 50; i <= 64; i++) {
                     Class testClass = (Class) sampleClassRepo.get(Integer.toString(i));
                     if (testClass != null) {
                         suiteClassesList.add(testClass);
@@ -245,6 +246,7 @@ public class TestSamplesHandlerSuite extends TestSuite {
         sampleClassRepo.put("58", Sample58.class);
         sampleClassRepo.put("59", Sample59.class);
         sampleClassRepo.put("63", Sample63.class);
+        sampleClassRepo.put("64", Sample64.class);
     }
 
     private static void populateMediationSamples() {
