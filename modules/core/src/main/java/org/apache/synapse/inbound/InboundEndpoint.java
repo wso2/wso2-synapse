@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ServiceLoader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -101,12 +102,13 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
         if (log.isDebugEnabled()) {
             log.debug("Trying to fetch InboundRequestProcessor from classpath.. ");
         }
-        Iterator<InboundRequestProcessorFactory> it = java.util.ServiceLoader.load(InboundRequestProcessorFactory.class).iterator();
+        Iterator<InboundRequestProcessorFactory> it = ServiceLoader.load(InboundRequestProcessorFactory.class,
+                                                                         InboundRequestProcessorFactory.class
+                                                                                 .getClassLoader()).iterator();
         InboundProcessorParams params = populateParams();
         while (it.hasNext()) {
             InboundRequestProcessorFactory factory = it.next();
-            InboundRequestProcessor inboundRequestProcessor =
-                                factory.createInboundProcessor(params);
+            InboundRequestProcessor inboundRequestProcessor = factory.createInboundProcessor(params);
             if (inboundRequestProcessor != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Inbound Request Processor found in factory : " +
