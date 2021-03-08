@@ -383,7 +383,7 @@ public class ServerWorker implements Runnable {
      */
     private void consumeInputOnException(MessageContext msgContext) {
         try {
-            RelayUtils.consumeAndDiscardMessage(msgContext);
+            RelayUtils.discardRequestMessage(msgContext);
         } catch (AxisFault axisFault) {
             log.error("Exception while consuming the input stream on Axis Fault", axisFault);
         }
@@ -646,7 +646,7 @@ public class ServerWorker implements Runnable {
             } catch (Exception ignore) {
             }
 
-            pipe.setSerializationCompleteWithoutData(true);
+            pipe.setSerializationComplete(true);
 
             SourceContext.setResponse(conn, sourceResponse);
             ProtocolState state = SourceContext.getState(conn);

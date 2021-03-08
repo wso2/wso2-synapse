@@ -210,7 +210,7 @@ public class RelayUtils {
             }
         } catch (Exception e) {
             //Clearing the buffer when there is an exception occurred.
-            consumeAndDiscardMessage(messageContext);
+            discardRequestMessage(messageContext);
             messageContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
             handleException("Error while building Passthrough stream", e);
         }
@@ -473,20 +473,26 @@ public class RelayUtils {
     }
 
     /**
+     * Consumes the data in pipe completely in the request message context and discard it
+     *
+     * @param msgContext Axis2 Message context which contains the data
+     * @throws AxisFault AxisFault
+     * @deprecated use {@link #discardRequestMessage(MessageContext)} instead
+     */
+    @Deprecated
+    public static void consumeAndDiscardMessage(MessageContext msgContext) throws AxisFault {
+        discardRequestMessage(msgContext);
+    }
+
+    /**
      * Consumes the data in pipe completely in the given message context and discard it
      *
      * @param msgContext Axis2 Message context which contains the data
      * @throws AxisFault AxisFault
      */
-    public static void consumeAndDiscardMessage(MessageContext msgContext) throws AxisFault {
-        // Get the request message context
-        MessageContext requestContext = msgContext;
-        Object outTransportInfo = msgContext.getProperty(Constants.OUT_TRANSPORT_INFO);
-        if (outTransportInfo instanceof ServerWorker) {
-            requestContext = ((ServerWorker) outTransportInfo).getRequestContext();
-        }
-        final Pipe pipe = (Pipe) requestContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-        if (pipe != null) {
+    public static void discardMessage(MessageContext msgContext) throws AxisFault {
+        final Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+        if (pipe != null && pipe.hasHttpProducer()) {
             try {
                 while (!pipe.isProducerCompleted() || pipe.isConsumeRequired()) {
                     consume(pipe);
@@ -498,6 +504,22 @@ public class RelayUtils {
                 handleException("Error when consuming the input stream to discard", exception);
             }
         }
+    }
+
+    /**
+     * Consumes the data in pipe completely in the request message context and discard it
+     *
+     * @param msgContext Axis2 Message context which contains the data
+     * @throws AxisFault AxisFault
+     */
+    public static void discardRequestMessage(MessageContext msgContext) throws AxisFault {
+        // Get the request message context
+        MessageContext requestContext = msgContext;
+        Object outTransportInfo = msgContext.getProperty(Constants.OUT_TRANSPORT_INFO);
+        if (outTransportInfo instanceof ServerWorker) {
+            requestContext = ((ServerWorker) outTransportInfo).getRequestContext();
+        }
+        discardMessage(requestContext);
     }
 
     /**

@@ -361,23 +361,25 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 
     private void sendRequestContent(final MessageContext msgContext, final EndpointReference epr) throws AxisFault {
 
+        // consume the buffer completely before sending a GET request or DELETE request without a payload
+        if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
+                RelayUtils.isDeleteRequestWithoutPayload(msgContext)) {
+            RelayUtils.discardMessage(msgContext);
+        }
+
         if (Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
             String disableChunking = (String) msgContext.getProperty(PassThroughConstants.DISABLE_CHUNKING);
             String forceHttp10 = (String) msgContext.getProperty(PassThroughConstants.FORCE_HTTP_1_0);
             Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
             OutputStream out = null;
+            MessageFormatter formatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
+            OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
 
             if ("true".equals(disableChunking) || "true".equals(forceHttp10)) {
 
-                MessageFormatter formatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
-                OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
-                long messageSize = 0;
-
                 try {
-                    boolean hasNoMessageBody = HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(
-                            Constants.Configuration.HTTP_METHOD)) || RelayUtils.isDeleteRequestWithoutPayload(msgContext);
-                    OverflowBlob overflowBlob = setStreamAsTempData(formatter, msgContext, format, hasNoMessageBody);
-                    messageSize = overflowBlob.getLength();
+                    OverflowBlob overflowBlob = setStreamAsTempData(formatter, msgContext, format);
+                    long messageSize = overflowBlob.getLength();
                     msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH, messageSize);
                     deliveryAgent.submit(msgContext, epr);
                     if (!waitForReady(msgContext)) {
@@ -385,26 +387,15 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     }
                     out = (OutputStream) msgContext.getProperty(PassThroughConstants.BUILDER_OUTPUT_STREAM);
                     if (out != null) {
-                        //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
-                        //to ignore any entity enclosed methods available.
-                        if (hasNoMessageBody) {
-                            if (pipe.isStale) {
-                                throw new IOException("Target Connection is stale..");
-                            }
-                            pipe.setSerializationCompleteWithoutData(true);
+                        // Check HTTP method is GET or DELETE with no body
+                        if (ignoreMessageBody(msgContext, pipe)){
                             return;
                         }
                         overflowBlob.writeTo(out);
                         if (pipe.isStale) {
                             throw new IOException("Target Connection is stale..");
                         }
-                        if (messageSize == 0 &&
-                                (msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
-                                        (Boolean) msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY))) {
-                            pipe.setSerializationCompleteWithoutData(true);
-                        } else {
-                            pipe.setSerializationComplete(true);
-                        }
+                        pipe.setSerializationComplete(true);
                     }
                 } catch (IOException e) {
                     handleException("IO while building message", e);
@@ -416,52 +407,42 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 }
                 out = (OutputStream) msgContext.getProperty(PassThroughConstants.BUILDER_OUTPUT_STREAM);
                 if (out != null) {
-                    //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
-                    //to ignore any entity enclosed methods available.
-                    if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
-                            RelayUtils.isDeleteRequestWithoutPayload(msgContext)) {
-                        pipe.setSerializationCompleteWithoutData(true);
+                    // Check HTTP method is GET or DELETE with no body
+                    if (ignoreMessageBody(msgContext, pipe)){
                         return;
                     }
-
-
-                    if ((disableChunking == null || !"true".equals(disableChunking)) ||
-                            (forceHttp10 == null || !"true".equals(forceHttp10))) {
-                        MessageFormatter formatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
-                        OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
-                        formatter.writeTo(msgContext, format, out, false);
-                        if (pipe.isStale) {
-                            handleException("IO while building message", new IOException("Target Connection is stale.."));
-                        }
+                    formatter.writeTo(msgContext, format, out, false);
+                    if (pipe.isStale) {
+                        handleException("IO while building message", new IOException("Target Connection is stale.."));
                     }
-                    if ((msgContext.getProperty(PassThroughConstants.REST_GET_DELETE_INVOKE) != null &&
-                            (Boolean) msgContext.getProperty(PassThroughConstants.REST_GET_DELETE_INVOKE))) {
-                        pipe.setSerializationCompleteWithoutData(true);
-                    }else if ((msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
-                            (Boolean) msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY))) {
-                        pipe.setSerializationCompleteWithoutData(true);
-                    } else {
-                        pipe.setSerializationComplete(true);
-                    }
+                    pipe.setSerializationComplete(true);
                 }
             }
         } else {
             deliveryAgent.submit(msgContext, epr);
         }
     }
-	
-	
-	/**
+
+    // If the HTTP method is GET or DELETE with no body, we need to write down the HEADER information to the wire
+    // and need to ignore any entity enclosed methods available.
+    private boolean ignoreMessageBody(MessageContext msgContext, Pipe pipe) {
+        if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
+                RelayUtils.isDeleteRequestWithoutPayload(msgContext)) {
+            pipe.setSerializationComplete(true);
+            return true;
+        }
+        return false;
+    }
+
+
+    /**
      * Write the stream to a temporary storage and calculate the content length
      *
      * @throws IOException if an exception occurred while writing data
      */
     private OverflowBlob setStreamAsTempData(MessageFormatter messageFormatter, MessageContext msgContext,
-                                             OMOutputFormat format, boolean hasNoMessageBody) throws IOException {
+                                             OMOutputFormat format) throws IOException {
         OverflowBlob serialized = new OverflowBlob(256, 4096, "http-nio_", ".dat");
-        if (hasNoMessageBody) {
-            return serialized;
-        }
         OutputStream out = serialized.getOutputStream();
         try {
             messageFormatter.writeTo(msgContext, format, out, false);
