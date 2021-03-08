@@ -459,7 +459,8 @@ public class Access {
         public void addElement(StringBuilder buf, Date date, HttpRequest request,
                                HttpResponse response) {
             if (request != null) {
-                buf.append(request.getRequestLine().getUri());
+                String uri = request.getRequestLine().getUri().split("\\?")[0];
+                buf.append(uri);
             } else {
                 buf.append('-');
             }

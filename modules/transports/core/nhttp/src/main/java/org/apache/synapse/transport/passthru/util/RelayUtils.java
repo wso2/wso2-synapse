@@ -37,6 +37,7 @@ import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntityEnclosingRequest;
+import static org.apache.synapse.commons.json.Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
@@ -504,6 +505,7 @@ public class RelayUtils {
                 handleException("Error when consuming the input stream to discard", exception);
             }
         }
+        msgContext.removeProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
     }
 
     /**
