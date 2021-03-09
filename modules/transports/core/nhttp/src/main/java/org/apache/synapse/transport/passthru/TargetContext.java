@@ -154,6 +154,9 @@ public class TargetContext {
         TargetContext targetContext = (TargetContext)
                 conn.getContext().getAttribute(CONNECTION_INFORMATION);
         if (targetContext != null) {
+            if(targetContext.getState() == state) {
+                return;
+            }
             targetContext.setState(state);
             if (targetContext.getTargetConfiguration().isCorrelationLoggingEnabled() && isCorrelationIdAvailable(conn)) {
                 long lastStateUpdateTime = targetContext.getLastStateUpdatedTime();

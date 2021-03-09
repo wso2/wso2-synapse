@@ -165,6 +165,9 @@ public class SourceContext {
         SourceContext sourceContext = (SourceContext)
                 conn.getContext().getAttribute(CONNECTION_INFORMATION);
         if (sourceContext != null) {
+            if(sourceContext.getState() == state) {
+                return;
+            }
             if (sourceContext.getSourceConfiguration().isCorrelationLoggingEnabled()) {
                 long lastStateUpdateTime = sourceContext.getLastStateUpdatedTime();
                 String url = "", method = "";
