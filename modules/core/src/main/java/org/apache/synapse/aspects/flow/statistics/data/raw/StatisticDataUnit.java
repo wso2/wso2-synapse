@@ -19,6 +19,7 @@
 package org.apache.synapse.aspects.flow.statistics.data.raw;
 
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.endpoints.Endpoint;
 
 import java.util.List;
 import java.util.Map;
@@ -104,6 +105,59 @@ public class StatisticDataUnit extends BasicStatisticDataUnit {
 	 * Transport property map.
 	 */
 	private Map<String, Object> transportPropertyMap;
+
+	/**
+	 * Endpoint of the sequence.
+	 */
+	private Endpoint endpoint;
+
+	/**
+	 * Transport headers map for the component.
+	 */
+	private Map transportHeaderMap;
+
+	/**
+	 * Status code of the response. Optional
+	 */
+	private String statusCode;
+
+	/**
+	 * Status description of the response. Optional
+	 */
+	private String statusDescription;
+
+	public Endpoint getEndpoint() {
+		return endpoint;
+	}
+
+	public void setEndpoint(Endpoint endpoint) {
+		this.endpoint = endpoint;
+	}
+
+	public Map getTransportHeaderMap() {
+		return transportHeaderMap;
+	}
+
+	public void setTransportHeaderMap(Map transportHeaderMap) {
+		this.transportHeaderMap = transportHeaderMap;
+	}
+
+	public String getStatusCode() {
+		return statusCode;
+	}
+
+	public void setStatusCode(String statusCode) {
+		this.statusCode = statusCode;
+	}
+
+	public String getStatusDescription() {
+		return statusDescription;
+	}
+
+	public void setStatusDescription(String statusDescription) {
+		this.statusDescription = statusDescription;
+	}
+
 
 	public String getPayload() {
 		return payload;

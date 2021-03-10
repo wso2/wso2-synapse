@@ -75,7 +75,8 @@ public class OpenTracingManagerHolder {
      */
     public static void loadZipkinConfigurations(String zipkinBackendURL) {
         ZipkinV2ReporterFactory factory = new ZipkinV2ReporterFactory(zipkinBackendURL);
-        openTracingManager = new JaegerTracingManager(factory.getReporter());
+        ConstSampler sampler = new ConstSampler(true);
+        openTracingManager = new JaegerTracingManager(sampler, factory.getReporter());
     }
 
     /**

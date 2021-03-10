@@ -20,6 +20,7 @@ package org.apache.synapse.aspects.flow.statistics.data.raw;
 
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
+import org.apache.synapse.endpoints.Endpoint;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -142,6 +143,26 @@ public class StatisticsLog {
 	 */
 	private boolean isTracingEnabled;
 
+	/**
+	 * Endpoint of the sequence
+	 */
+	private Endpoint endpoint;
+
+	/**
+	 * Transport headers for the component.
+	 */
+	private Map<String, Object> transportHeaderMap;
+
+	/**
+	 * Status code of the response.
+	 */
+	private String statusCode;
+
+	/**
+	 * Status description of the response.
+	 */
+	private String statusDescription;
+
 	public StatisticsLog(StatisticDataUnit statisticDataUnit) {
 		this.parentIndex = statisticDataUnit.getParentIndex();
 		this.currentIndex = statisticDataUnit.getCurrentIndex();
@@ -163,6 +184,10 @@ public class StatisticsLog {
 			this.componentId = statisticDataUnit.getComponentId();
 		}
 		this.isTracingEnabled = statisticDataUnit.isTracingEnabled();
+		this.endpoint = statisticDataUnit.getEndpoint();
+		this.transportHeaderMap = statisticDataUnit.getTransportHeaderMap();
+		this.statusCode = statisticDataUnit.getStatusCode();
+		this.statusDescription = statisticDataUnit.getStatusDescription();
 	}
 
 	public StatisticsLog(ComponentType componentType, String componentName, int parentIndex) {
@@ -362,5 +387,37 @@ public class StatisticsLog {
 
 	public void setPropertyValue(String propertyValue) {
 		this.propertyValue = propertyValue;
+	}
+
+	public Endpoint getEndpoint() {
+		return endpoint;
+	}
+
+	public void setEndpoint(Endpoint endpoint) {
+		this.endpoint = endpoint;
+	}
+
+	public Map<String, Object> getTransportHeaderMap() {
+		return transportHeaderMap;
+	}
+
+	public void setTransportHeaderMap(Map<String, Object> transportHeaderMap) {
+		this.transportHeaderMap = transportHeaderMap;
+	}
+
+	public String getStatusCode() {
+		return statusCode;
+	}
+
+	public void setStatusCode(String statusCode) {
+		this.statusCode = statusCode;
+	}
+
+	public String getStatusDescription() {
+		return statusDescription;
+	}
+
+	public void setStatusDescription(String statusDescription) {
+		this.statusDescription = statusDescription;
 	}
 }

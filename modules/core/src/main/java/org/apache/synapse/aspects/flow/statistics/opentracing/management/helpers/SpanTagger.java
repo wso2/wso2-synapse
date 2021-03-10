@@ -87,5 +87,18 @@ public class SpanTagger {
         if(openStatisticsLog.getHashCode() != null){
             span.setTag("hashcode", openStatisticsLog.getHashCode());
         }
+        if (openStatisticsLog.getTransportHeaderMap() != null) {
+            span.setTag("Transport Headers", openStatisticsLog.getTransportHeaderMap().toString());
+        }
+
+        if (openStatisticsLog.getStatusCode() != null) {
+            span.setTag("Status code", openStatisticsLog.getStatusCode());
+        }
+        if (openStatisticsLog.getStatusDescription() != null) {
+            span.setTag("Status description", openStatisticsLog.getStatusDescription());
+        }
+        if (openStatisticsLog.getEndpoint() != null) {
+            span.setTag("Endpoint", String.valueOf(openStatisticsLog.getEndpoint().getJsonRepresentation()));
+        }
     }
 }

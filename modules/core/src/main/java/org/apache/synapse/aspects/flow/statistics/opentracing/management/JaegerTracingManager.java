@@ -20,6 +20,7 @@ package org.apache.synapse.aspects.flow.statistics.opentracing.management;
 
 import io.jaegertracing.Configuration;
 import io.jaegertracing.internal.JaegerTracer;
+import io.jaegertracing.internal.samplers.ConstSampler;
 import io.jaegertracing.zipkin.ZipkinV2Reporter;
 import org.apache.synapse.aspects.flow.statistics.opentracing.management.handling.span.JaegerSpanHandler;
 import org.apache.synapse.aspects.flow.statistics.opentracing.management.scoping.TracingScopeManager;
@@ -29,7 +30,11 @@ import org.apache.synapse.aspects.flow.statistics.opentracing.management.scoping
  */
 public class JaegerTracingManager implements OpenTracingManager {
 
-    private static final String SERVICE_NAME = "wso2-synapse";
+    private static final String USER_DEFINED_NAME = System.getenv("SERVICE_NAME");
+
+    //private static final String SERVICE_NAME will read from ENV variable;
+    private static final String SERVICE_NAME =
+            USER_DEFINED_NAME != null & !USER_DEFINED_NAME.isEmpty() ? USER_DEFINED_NAME : "WSO2-SYNAPSE";
 
     /**
      * The common tracer object.
@@ -50,8 +55,8 @@ public class JaegerTracingManager implements OpenTracingManager {
     /**
      * Controls Zipkin spans.
      */
-    public JaegerTracingManager(ZipkinV2Reporter reporter) {
-        initializeTracer(reporter);
+    public JaegerTracingManager(ConstSampler sampler, ZipkinV2Reporter reporter) {
+        initializeTracer(sampler, reporter);
         resolveHandler();
     }
 
@@ -74,11 +79,12 @@ public class JaegerTracingManager implements OpenTracingManager {
     /**
      * Initializes the tracer object for Zipkin.
      *
+     * @param sampler ConstSampler
      * @param reporter Zipkin reporter.
      */
-    private void initializeTracer(ZipkinV2Reporter reporter) {
+    private void initializeTracer(ConstSampler sampler, ZipkinV2Reporter reporter) {
         String serviceName = getServiceName();
-        this.tracer = new JaegerTracer.Builder(serviceName).withReporter(reporter).build();
+        this.tracer = new JaegerTracer.Builder(serviceName).withSampler(sampler).withReporter(reporter).build();
     }
 
 
