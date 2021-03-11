@@ -149,8 +149,8 @@ public class SourceHandler implements NHttpServerEventHandler {
     public void requestReceived(NHttpServerConnection conn) {
         try {
             HttpContext httpContext = conn.getContext();
+            setCorrelationId(conn);
             if (sourceConfiguration.isCorrelationLoggingEnabled()) {
-                setCorrelationId(conn);
                 SourceContext sourceContext = (SourceContext)
                         conn.getContext().getAttribute(TargetContext.CONNECTION_INFORMATION);
                 sourceContext.updateLastStateUpdatedTime();
