@@ -247,11 +247,6 @@ public class PassThroughConstants {
     //Check for invalid json message by parsing the input message
     public static final String FORCE_JSON_MESSAGE_VALIDATION = "force.json.message.validation";
 
-    /**
-     * constants for correlation logging
-     */
-    //correlation enable/disable state property in axis2 message context
-    public static final String CORRELATION_LOG_STATE_PROPERTY = "correlationLogState";
     //system property to enable/disable correlation logging
     public static final String CORRELATION_LOGS_SYS_PROPERTY = "enableCorrelationLogs";
     //correlation logger name in log4J properties
