@@ -512,8 +512,7 @@ public class ServerWorker implements Runnable {
         // propagate correlation logging related properties
         msgContext.setProperty(CorrelationConstants.CORRELATION_ID,
                 conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
-        msgContext.setProperty(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY,
-                sourceConfiguration.isCorrelationLoggingEnabled());
+
         // propagate transaction property
         msgContext.setProperty(BaseConstants.INTERNAL_TRANSACTION_COUNTED,
                                conn.getContext().getAttribute(BaseConstants.INTERNAL_TRANSACTION_COUNTED));
