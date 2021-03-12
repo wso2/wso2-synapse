@@ -143,7 +143,7 @@ public class SynapseJsonPath extends SynapsePath {
     public String stringValueOf(MessageContext synCtx) {
         if (isJSONPathNeedsProcessing) {
             // Create new JSON path by replacing dynamic values with content.
-            jsonPath = JsonPath.compile(InlineExpressionUtil.replaceDynamicValues(synCtx, expression));
+            jsonPath = JsonPath.compile(InlineExpressionUtil.replaceDynamicValuesForJSONPath(synCtx, expression));
         }
 
         // evaluating the jsonPath against a property
