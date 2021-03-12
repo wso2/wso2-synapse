@@ -75,8 +75,21 @@ public final class InlineExpressionUtil {
      * @return Inline text string with replaced dynamic values
      */
     public static String replaceDynamicValues(MessageContext messageContext, String inlineText) {
+        inlineText = replaceValue(messageContext, inlineText, true);
+        return inlineText;
+    }
 
-        Matcher matcher = EXPRESSION_PATTERN.matcher(inlineText);
+    /**
+     * Common function to replace dynamic values in inline texts and expressions.
+     *
+     * @param messageContext Message Context.
+     * @param text           Text value containing the expressions.
+     * @param isInline       inline / expression.
+     * @return Text value with replaced expressions.
+     */
+    private static String replaceValue(MessageContext messageContext, String text, boolean isInline) {
+
+        Matcher matcher = EXPRESSION_PATTERN.matcher(text);
         while (matcher.find()) {
             String matchSeq = matcher.group();
             String value = getDynamicValue(messageContext, matchSeq.substring(1, matchSeq.length() - 1));
@@ -85,11 +98,26 @@ public final class InlineExpressionUtil {
             }
             // If the string is neither XML or JSON, it is considered a String and must be wrapped in double quotes
             // If it is an empty string returned from a json-eval expression it must be wrapped in double quotes
-            if ((value.isEmpty() && matchSeq.contains(EXPRESSION_JSON_EVAL))
-                    || (!isValidXML(value) && !isValidJson(value))) {
+            if (isInline && ((value.isEmpty() && matchSeq.contains(EXPRESSION_JSON_EVAL))
+                    || (!isValidXML(value) && !isValidJson(value)))) {
                 value = "\"" + value + "\"";
             }
-            inlineText = inlineText.replace(matchSeq, value);
+            text = text.replace(matchSeq, value);
+        }
+        return text;
+    }
+
+    /**
+     * Replaces Dynamic Values represented by expressions inside json-eval.
+     *
+     * @param messageContext Message Context.
+     * @param inlineText     JSON eval text containing the expressions.
+     * @return Inline text string with replaced dynamic values.
+     */
+    public static String replaceDynamicValuesForJSONPath(MessageContext messageContext, String inlineText) {
+        inlineText = replaceValue(messageContext, inlineText, false);
+        if (inlineText.startsWith("json-eval(")) {
+            inlineText = inlineText.substring(10, inlineText.length() - 1);
         }
         return inlineText;
     }
