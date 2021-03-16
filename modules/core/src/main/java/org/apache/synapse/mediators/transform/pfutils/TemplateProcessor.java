@@ -179,7 +179,7 @@ public abstract class TemplateProcessor {
             } else if (mediaType.equals(JSON_TYPE) &&
                     inferReplacementType(replacementEntry).equals(STRING_TYPE)) {
                 replacementValue = escapeSpecialChars(replacementValue);
-                if (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("[")) {
+                if (!isJson(trimmedReplacementValue)) {
                     // Check for following property which will force the string to include quotes
                     Object force_string_quote = synCtx.getProperty(QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON);
                     // skip double quotes if replacement is boolean or null or valid json number
@@ -190,13 +190,6 @@ public abstract class TemplateProcessor {
                         replacementValue = "\"" + replacementValue + "\"";
                     }
                 }
-            } else if (
-                    (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) &&
-                            (!trimmedReplacementValue.startsWith("{") &&
-                                    !trimmedReplacementValue.startsWith("["))) {
-                // This is to handle only the string value
-                replacementValue =
-                        replacementValue.replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES);
             }
         }
         return replacementValue;
@@ -310,21 +303,19 @@ public abstract class TemplateProcessor {
 
         if (entry.getValue().isLiteral()) {
             return STRING_TYPE;
-        } else if (entry.getValue().getPathType().equals(SynapsePath.X_PATH)
-                && entry.getValue().isXml()) {
-            return XML_TYPE;
-        } else if (entry.getValue().getPathType().equals(SynapsePath.X_PATH)
-                && !entry.getValue().isXml()) {
-            return STRING_TYPE;
-        } else if (entry.getValue().getPathType().equals(SynapsePath.JSON_PATH)
-                && isJson(entry.getKey())) {
-            return JSON_TYPE;
-        } else if (entry.getValue().getPathType().equals(SynapsePath.JSON_PATH)
-                && !isJson((entry.getKey()))) {
-            return STRING_TYPE;
-        } else {
-            return STRING_TYPE;
         }
+        if (entry.getValue().getPathType().equals(SynapsePath.X_PATH)) {
+            if (entry.getValue().isXml()) {
+                return XML_TYPE;
+            }
+            if (isJson(entry.getKey())) {
+                return JSON_TYPE;
+            }
+        }
+        if (entry.getValue().getPathType().equals(SynapsePath.JSON_PATH) && isJson(entry.getKey())) {
+            return JSON_TYPE;
+        }
+        return STRING_TYPE;
     }
 
     /**
