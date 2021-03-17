@@ -36,12 +36,12 @@ public class FilePropertyLoader {
     private static final String CONF_LOCATION = "conf.location";
     public static final String FILE_PROPERTY_PATH = "properties.file.path";
     private static final String DEFAULT_PROPERTY_FILE = "file.properties";
-    private Map propertyMap;
+    private static Map propertyMap;
 
     private static FilePropertyLoader fileLoaderInstance;
 
     public static FilePropertyLoader getInstance() {
-        if ( null == fileLoaderInstance) {
+        if (null == fileLoaderInstance) {
             fileLoaderInstance = new FilePropertyLoader();
             fileLoaderInstance.loadPropertiesFile();
         }
@@ -56,8 +56,12 @@ public class FilePropertyLoader {
 
         String filePath = System.getProperty(FILE_PROPERTY_PATH);
 
-        if ( null == filePath || filePath.isEmpty()) {
-            throw new SynapseCommonsException(FILE_PROPERTY_PATH + " is empty or null");
+        if (null == filePath || filePath.isEmpty()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(FILE_PROPERTY_PATH + " is empty or null");
+            }
+            propertyMap = new HashMap();
+            return;
         }
         if (("default").equals(filePath)) {
             filePath = System.getProperty(CONF_LOCATION) + File.separator + DEFAULT_PROPERTY_FILE;
@@ -84,5 +88,12 @@ public class FilePropertyLoader {
         } else {
             throw new SynapseCommonsException("File cannot found in " + filePath);
         }
+    }
+
+    public static Map getPropertyMap() {
+        if (propertyMap == null) {
+            FilePropertyLoader.getInstance();
+        }
+        return propertyMap;
     }
 }
