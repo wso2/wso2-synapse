@@ -237,6 +237,11 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     private boolean checkAndReplaceEnvelope(OMElement resultElement, MessageContext synCtx) {
         OMElement firstChild = resultElement.getFirstElement();
+
+        if (firstChild == null) {
+            handleException("Generated content is not a valid XML payload", synCtx);
+        }
+        
         QName resultQName = firstChild.getQName();
         if (resultQName.getLocalPart().equals("Envelope") && (
                 resultQName.getNamespaceURI().equals(SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI) ||
