@@ -47,6 +47,7 @@ public class MediatorProperty {
     private String name;
     private String value;
     private SynapsePath expression;
+    private Object object;
 
     private String scope;
 
@@ -126,6 +127,10 @@ public class MediatorProperty {
     public void setValue(String value) {
         this.value = value;
     }
+
+    public void setObject(Object object) {this.object = object;}
+
+    public Object getObject() {return this.object;}
 
     public SynapsePath getExpression() {
         return expression;

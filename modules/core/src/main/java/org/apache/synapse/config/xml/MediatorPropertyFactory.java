@@ -112,6 +112,12 @@ public class MediatorPropertyFactory {
                     }
                 }
 
+            } else if (propEle.getFirstElement() != null) {
+                OMElement childElement = propEle.getFirstElement();
+                prop.setObject(childElement);
+                if (mediator != null) {
+                    PropertyHelper.setInstanceProperty(prop.getName(), childElement, mediator);
+                }
             } else {
                 String msg = "Entry attribute value OR expression must " +
                     "be specified for a mediator property";
