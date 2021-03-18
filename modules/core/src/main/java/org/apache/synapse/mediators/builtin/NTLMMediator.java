@@ -71,6 +71,13 @@ public class NTLMMediator extends AbstractMediator implements ManagedLifecycle {
     private String domain = null;
     private String ntlmVersion = null;
 
+    /** The Dynamic values of the NTLM mediator if it is dynamic  */
+    private Value dynamicUsername = null;
+    private Value dynamicPassword = null;
+    private Value dynamicHost = null;
+    private Value dynamicDomain = null;
+    private Value dynamicNtmlVersion = null;
+
     private ConfigurationContext configCtx = null;
 
     private int maxConnectionManagerCacheSize = 32;
@@ -94,6 +101,44 @@ public class NTLMMediator extends AbstractMediator implements ManagedLifecycle {
         List<String> authScheme = new ArrayList<String>();
         authScheme.add(HttpTransportProperties.Authenticator.NTLM);
         authenticator.setAuthSchemes(authScheme);
+
+        //checks the attribute values are dynamic or not and set the dynamic values if available
+        String username = this.username;
+        if (dynamicUsername != null) {
+            username  = dynamicUsername.evaluateValue(messageContext);
+            if (StringUtils.isEmpty(username)) {
+                log.warn("Evaluated value for " + this.username + " is empty");
+            }
+        }
+        String password = this.password;
+        if (dynamicPassword != null) {
+            password  = dynamicPassword.evaluateValue(messageContext);
+            if (StringUtils.isEmpty(password)) {
+                log.warn("Evaluated value for " + this.password + " is empty");
+            }
+        }
+
+        String domain = this.domain;
+        if (dynamicDomain != null) {
+            domain  = dynamicDomain.evaluateValue(messageContext);
+            if (StringUtils.isEmpty(domain)) {
+                log.warn("Evaluated value for " + this.domain + " is empty");
+            }
+        }
+        String host = this.host;
+        if (dynamicHost != null) {
+            host  = dynamicHost.evaluateValue(messageContext);
+            if (StringUtils.isEmpty(host)) {
+                log.warn("Evaluated value for " + this.host + " is empty");
+            }
+        }
+        String ntlmVersion = this.ntlmVersion;
+        if (dynamicNtmlVersion != null) {
+            ntlmVersion  = dynamicNtmlVersion.evaluateValue(messageContext);
+            if (StringUtils.isEmpty(ntlmVersion)) {
+                log.warn("Evaluated value for " + this.ntlmVersion + " is empty");
+            }
+        }
 
         if (username != null) {
             authenticator.setUsername(username);
@@ -285,5 +330,25 @@ public class NTLMMediator extends AbstractMediator implements ManagedLifecycle {
 
     public void setNtlmVersion(String ntlmVersion) {
         this.ntlmVersion = ntlmVersion;
+    }
+
+    public void setDynamicUsername(Value dynamicUsername) {
+        this.dynamicUsername = dynamicUsername;
+    }
+
+    public void setDynamicPassword(Value dynamicPassword) {
+        this.dynamicPassword = dynamicPassword;
+    }
+
+    public void setDynamicHost(Value dynamicHost) {
+        this.dynamicHost = dynamicHost;
+    }
+
+    public void setDynamicDomain(Value dynamicDomain) {
+        this.dynamicDomain = dynamicDomain;
+    }
+
+    public void setDynamicNtmlVersion(Value dynamicNtmlVersion) {
+        this.dynamicNtmlVersion = dynamicNtmlVersion;
     }
 }
