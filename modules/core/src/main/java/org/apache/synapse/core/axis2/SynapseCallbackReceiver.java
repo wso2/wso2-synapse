@@ -271,11 +271,11 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             //SynapseCallbackReceiver thread should handle the faultStack.
             Pipe pipe = (Pipe) ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext()
                     .getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-            if (pipe != null && pipe.isSerializationComplete()) {
+            SourceConfiguration sourceConfiguration = (SourceConfiguration) ((Axis2MessageContext) synapseOutMsgCtx)
+                    .getAxis2MessageContext().getProperty("PASS_THROUGH_SOURCE_CONFIGURATION");
+            if (pipe != null && pipe.isSerializationComplete() && sourceConfiguration != null) {
                 NHttpServerConnection conn = (NHttpServerConnection) ((Axis2MessageContext) synapseOutMsgCtx).
                         getAxis2MessageContext().getProperty("pass-through.Source-Connection");
-                SourceConfiguration sourceConfiguration = (SourceConfiguration) ((Axis2MessageContext) synapseOutMsgCtx)
-                        .getAxis2MessageContext().getProperty("PASS_THROUGH_SOURCE_CONFIGURATION");
                 Pipe newPipe = new Pipe(conn, sourceConfiguration.getBufferFactory().getBuffer(), "source",
                         sourceConfiguration);
                 ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext()
@@ -506,12 +506,12 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     //clean up operation the writer will be reset and pull to the buffer
                 	MessageContext axis2OUTMC =((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext();
                     NHttpServerConnection conn = (NHttpServerConnection) axis2OUTMC.getProperty("pass-through.Source-Connection");
-					if (conn != null) {
-						SourceConfiguration sourceConfiguration = (SourceConfiguration) axis2OUTMC.getProperty("PASS_THROUGH_SOURCE_CONFIGURATION");
-						Pipe pipe = new Pipe(conn, sourceConfiguration.getBufferFactory().getBuffer(), "source",
-						                     sourceConfiguration);
-						axis2OUTMC.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, pipe);
-					}
+                    SourceConfiguration sourceConfiguration = (SourceConfiguration) axis2OUTMC.getProperty("PASS_THROUGH_SOURCE_CONFIGURATION");
+                    if (conn != null && sourceConfiguration != null) {
+                        Pipe pipe = new Pipe(conn, sourceConfiguration.getBufferFactory().getBuffer(), "source",
+                                sourceConfiguration);
+                        axis2OUTMC.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, pipe);
+                    }
 
                     synapseOutMsgCtx.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
                     synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_CODE, SynapseConstants.ENDPOINT_CUSTOM_ERROR);
