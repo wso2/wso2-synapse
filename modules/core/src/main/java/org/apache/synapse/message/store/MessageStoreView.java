@@ -21,6 +21,7 @@ package org.apache.synapse.message.store;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.message.store.impl.jdbc.JDBCMessageStore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,8 +75,19 @@ public class MessageStoreView implements MessageStoreViewMBean {
         return null;
     }
 
+    /**
+     * The message count in the store will be returned.
+     * The message count of the JDBC store taken from the table. The message count of other stores
+     * taken as the difference between the enqueue and the dequeue, which calculated in memory.
+     *
+     * @return message count in the store
+     */
     public long getSize() {
-        return ((AbstractMessageStore) messageStore).difference();
+        if (messageStore instanceof JDBCMessageStore) {
+            return messageStore.size();
+        } else {
+            return ((AbstractMessageStore) messageStore).difference();
+        }
     }
 
 }
