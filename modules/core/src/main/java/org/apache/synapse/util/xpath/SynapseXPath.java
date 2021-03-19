@@ -181,7 +181,8 @@ public class SynapseXPath extends SynapsePath {
 	 if (XMLConfigConstants.SCOPE_REGISTRY.equals(propertyScope)
 			|| XMLConfigConstants.SCOPE_SYSTEM.equals(propertyScope)
              || XMLConfigConstants.SCOPE_TRANSPORT.equals(propertyScope)
-             || XMLConfigConstants.SCOPE_SYSTEM.equals(propertyScope)) {
+             || XMLConfigConstants.SCOPE_ENVIRONMENT.equals(propertyScope)
+             || XMLConfigConstants.SCOPE_FILE.equals(propertyScope)) {
          contentAware = false;
          return;
 	 }
