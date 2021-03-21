@@ -278,6 +278,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                         getAxis2MessageContext().getProperty("pass-through.Source-Connection");
                 Pipe newPipe = new Pipe(conn, sourceConfiguration.getBufferFactory().getBuffer(), "source",
                         sourceConfiguration);
+                newPipe.setDiscardable(true);
                 ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext()
                         .setProperty(PassThroughConstants.PASS_THROUGH_PIPE, newPipe);
             }
