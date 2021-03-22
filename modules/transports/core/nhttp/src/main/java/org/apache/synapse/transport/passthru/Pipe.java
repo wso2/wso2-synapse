@@ -73,6 +73,9 @@ public class Pipe {
 
     private boolean producerError = false;
 
+    /** Flag to indicate that the Pipe will not produce anything */
+    private boolean discardable = false;
+
     /**
      * Socket Time out value specified in the nttp properties file.
      */
@@ -478,6 +481,14 @@ public class Pipe {
         } finally {
             lock.unlock();
         }
+    }
+
+    public boolean isDiscardable() {
+        return discardable ;
+    }
+
+    public void setDiscardable(boolean discardable) {
+        this.discardable  = discardable ;
     }
 
     /**
