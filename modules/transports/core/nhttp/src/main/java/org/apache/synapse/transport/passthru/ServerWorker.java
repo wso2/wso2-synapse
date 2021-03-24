@@ -230,8 +230,14 @@ public class ServerWorker implements Runnable {
         if (HTTPConstants.MEDIA_TYPE_X_WWW_FORM.equals(contentType) ||
                 (PassThroughConstants.APPLICATION_OCTET_STREAM.equals(contentType) && contentTypeHdr == null)) {
             msgContext.setTo(new EndpointReference(request.getRequest().getRequestLine().getUri()));
-	        msgContext.setProperty(Constants.Configuration.CONTENT_TYPE,contentType);
-	        String charSetEncoding = BuilderUtil.getCharSetEncoding(contentType);
+            String charSetEncoding;
+            if (contentTypeHdr != null) {
+                msgContext.setProperty(Constants.Configuration.CONTENT_TYPE, contentTypeHdr);
+                charSetEncoding = BuilderUtil.getCharSetEncoding(contentTypeHdr);
+            } else {
+                msgContext.setProperty(Constants.Configuration.CONTENT_TYPE, contentType);
+                charSetEncoding = BuilderUtil.getCharSetEncoding(contentType);
+            }
 		    msgContext.setProperty(Constants.Configuration.CHARACTER_SET_ENCODING, charSetEncoding);
 	        try {
 	            RESTUtil.dispatchAndVerify(msgContext);
