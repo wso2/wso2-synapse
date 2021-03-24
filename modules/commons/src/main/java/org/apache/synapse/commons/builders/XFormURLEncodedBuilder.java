@@ -184,7 +184,7 @@ public class XFormURLEncodedBuilder implements Builder {
                 if (separator > 0) {
                     String value = part.substring(separator + 1);
                     try {
-                        value = URIEncoderDecoder.decode(value);
+                        value = URIEncoderDecoder.decode(value, charsetEncoding);
                     } catch (UnsupportedEncodingException e) {
                         throw AxisFault.makeFault(e);
                     }
@@ -221,7 +221,7 @@ public class XFormURLEncodedBuilder implements Builder {
                             int separator = part.indexOf("=");
                             String value = part.substring(separator + 1);
                             parameterMap.put(replaceInvalidCharacters(part.substring(0, separator)),
-                                             URIEncoderDecoder.decode(value));
+                                    URIEncoderDecoder.decode(value, charsetEncoding));
                         }
                     } else {
                         break;
