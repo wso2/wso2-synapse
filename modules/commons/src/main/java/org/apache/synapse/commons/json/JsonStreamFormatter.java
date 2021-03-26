@@ -21,7 +21,6 @@ package org.apache.synapse.commons.json;
 import org.apache.axiom.om.OMOutputFormat;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
-import org.apache.axis2.builder.BuilderUtil;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.transport.MessageFormatter;
 import org.apache.commons.logging.Log;
@@ -68,13 +67,7 @@ public final class JsonStreamFormatter implements MessageFormatter {
         if (preserve) {
             messageContext.setProperty(JsonUtil.PRESERVE_JSON_STREAM, true);
         }
-
-        String encoding = "UTF-8";
-        if (format != null) {
-            encoding = format.getCharSetEncoding();
-        }
-
-        JsonUtil.writeAsJson(messageContext, out, encoding);
+        JsonUtil.writeAsJson(messageContext, out);
         if (logger.isDebugEnabled()) {
             logger.debug("#writeTo. Wrote JSON payload to output stream. MessageID: " + messageContext.getMessageID());
         }
