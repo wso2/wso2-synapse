@@ -32,6 +32,7 @@ import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
@@ -157,6 +158,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
 
         synCtx.setProperty(SynapseConstants.IS_CLIENT_DOING_REST, mc.isDoingREST());
         synCtx.setProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11, mc.isSOAP11());
+        synCtx.setProperty(CorrelationConstants.CORRELATION_ID, mc.getProperty(CorrelationConstants.CORRELATION_ID));
 
         try {
             if(synCtx.getEnvironment().isDebuggerEnabled()) {
