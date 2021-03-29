@@ -60,9 +60,9 @@ public class LibDeployerUtils {
 
 
     public static Library createSynapseLibrary(String libPath) {
-        String libFilePath = LibDeployerUtils.formatPath(libPath);
+        File libFile = new File(libPath);
         //extract
-        String extractPath = LibDeployerUtils.extractSynapseLib(libFilePath);
+        String extractPath = LibDeployerUtils.extractSynapseLib(libFile);
         //create synapse lib metadata
         SynapseLibrary synapseLib = LibDeployerUtils.populateDependencies(extractPath +
                                                                           LibDeployerConstants.ARTIFACTS_XML);
@@ -74,15 +74,15 @@ public class LibDeployerUtils {
             synapseLib.setLibClassLoader(libLoader);
         } catch (DeploymentException e) {
             throw new SynapseArtifactDeploymentException("Error setting up lib classpath for Synapse" +
-                                                         " Library  : " + libFilePath, e);
+                                                         " Library  : " + libFile.getAbsolutePath(), e);
         }
         //resolve synapse lib artifacts
         LibDeployerUtils.searchAndResolveDependencies(extractPath, synapseLib);
         
         //TODO:reslove local-entry references
         LibDeployerUtils.populateLocalEnties(synapseLib,extractPath+LibDeployerConstants.LOCAL_ENTRIES);
-        
-        synapseLib.setFileName(libFilePath);
+
+        synapseLib.setFileName(libFile.getAbsolutePath());
         return synapseLib;
     }
 
@@ -198,7 +198,7 @@ public class LibDeployerUtils {
                 continue;
             }
 
-            String directoryPath = formatPath(artifactDirectory.getAbsolutePath());
+            String directoryPath = artifactDirectory.getAbsolutePath();
             String artifactXmlPath = directoryPath + File.separator + LibDeployerConstants.ARTIFACT_XML;
 
             File f = new File(artifactXmlPath);
@@ -409,39 +409,23 @@ public class LibDeployerUtils {
      * Extract the Synapse Library at the provided path to the java temp dir. Return the
      * extracted location
      *
-     * @param libPath - Absolute path of the Synapse Lib archive file
+     * @param libFile - Synapse Lib archive file
      * @return - extracted location
      * @throws SynapseException - error on extraction
      */
-    public static String extractSynapseLib(String libPath) throws SynapseException {
-        libPath = formatPath(libPath);
-        String fileName = libPath.substring(libPath.lastIndexOf('/') + 1);
-        String dest = APP_UNZIP_DIR + File.separator + System.currentTimeMillis() +
-                      fileName + File.separator;
+    public static String extractSynapseLib(File libFile) throws SynapseException {
+        String dest = APP_UNZIP_DIR + File.separator + System.currentTimeMillis() + libFile.getName() + File.separator;
         createDir(dest);
 
         try {
-            extract(libPath, dest);
+            extract(libFile, dest);
         } catch (IOException e) {
-            throw new SynapseException("Error while extracting Synapse Library : " + fileName, e);
+            throw new SynapseException("Error while extracting Synapse Library : " + libFile.getName(), e);
         }
         return dest;
     }
 
-    /**
-     * Format the string paths to match any platform.. windows, linux etc..
-     *
-     * @param path - input file path
-     * @return formatted file path
-     */
-    public static String formatPath(String path) {
-        // removing white spaces
-        path = path.replaceAll("\\b\\s+\\b", "%20");
-        // replacing all "\" with "/"
-        return path.replace('\\', '/');
-    }
-
-    private static void extract(String sourcePath, String destPath) throws IOException {
+    private static void extract(File sourcePath, String destPath) throws IOException {
         Enumeration entries;
         ZipFile zipFile;
 
