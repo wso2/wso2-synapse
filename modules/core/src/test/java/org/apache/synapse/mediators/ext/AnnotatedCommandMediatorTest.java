@@ -21,6 +21,7 @@ package org.apache.synapse.mediators.ext;
 
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.MediatorFactoryFinder;
 import org.apache.synapse.mediators.AbstractMediatorTestCase;
 import org.apache.synapse.mediators.TestUtils;
@@ -74,7 +75,7 @@ public class AnnotatedCommandMediatorTest extends AbstractMediatorTestCase {
         m.setCommand(AnnotatedCommand.class);
 
         Mediator pcm = MediatorFactoryFinder.getInstance().getMediator(createOMElement(
-           "<annotatedCommand name='org.apache.synapse.mediators.ext.AnnotatedCommand2' xmlns='http://ws.apache.org/ns/synapse'/>"), new Properties());
+                "<annotatedCommand name='org.apache.synapse.mediators.ext.AnnotatedCommand2' xmlns='http://ws.apache.org/ns/synapse'/>"), new Properties(), new SynapseConfiguration());
 
         MessageContext mc = TestUtils.getTestContext("<m:getQuote xmlns:m=\"http://services.samples/xsd\"><m:request><m:symbol>IBM</m:symbol></m:request></m:getQuote>");
         pcm.mediate(mc);

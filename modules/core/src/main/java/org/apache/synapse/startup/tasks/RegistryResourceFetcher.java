@@ -25,6 +25,7 @@ import org.apache.axiom.om.OMNode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.Entry;
@@ -314,6 +315,7 @@ public class RegistryResourceFetcher implements Task, ManagedLifecycle {
             // if we have a XMLToObjectMapper for this entry, use it to convert this
             // resource into the appropriate object - e.g. sequence or endpoint
             if (entry.getMapper() != null) {
+                properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, this.synapseConfiguration);
                 entry.setValue(entry.getMapper().getObjectFromOMNode(omNode, properties));
 
                 if (entry.getValue() instanceof SequenceMediator) {

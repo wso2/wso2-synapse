@@ -59,6 +59,7 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
         }
 
         try {
+            properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, getSynapseConfiguration());
             ProxyService proxy = ProxyServiceFactory.createProxy(artifactConfig, properties);
             proxy.setArtifactContainerName(customLogContent);
             if (proxy != null) {
@@ -140,6 +141,7 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
         }
 
         try {
+            properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, getSynapseConfiguration());
             ProxyService proxy = ProxyServiceFactory.createProxy(artifactConfig, properties);
             if (proxy != null) {
                 proxy.setLogSetterValue();

@@ -82,7 +82,7 @@ public class TemplateDeployer extends AbstractSynapseArtifactDeployer {
                         new QName(SynapseConstants.SYNAPSE_NAMESPACE, "sequence"));
                 if (element != null) {
                     Mediator mediator = MediatorFactoryFinder.getInstance().
-                            getMediator(artifactConfig, properties);
+                            getMediator(artifactConfig, properties, getSynapseConfiguration());
                     if (mediator instanceof TemplateMediator) {
                         TemplateMediator tm = (TemplateMediator) mediator;
 
@@ -164,7 +164,7 @@ public class TemplateDeployer extends AbstractSynapseArtifactDeployer {
                         new QName(SynapseConstants.SYNAPSE_NAMESPACE, "sequence"));
                 if (element != null) {
                     Mediator mediator = MediatorFactoryFinder.getInstance().
-                            getMediator(artifactConfig, properties);
+                            getMediator(artifactConfig, properties, getSynapseConfiguration());
                     if (mediator instanceof TemplateMediator) {
                         TemplateMediator tm = (TemplateMediator) mediator;
 

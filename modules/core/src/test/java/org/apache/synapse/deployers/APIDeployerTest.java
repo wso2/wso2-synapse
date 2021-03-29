@@ -28,6 +28,8 @@ import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Properties;
+
 /**
  * Test class for APIDeployer
  */
@@ -55,7 +57,7 @@ public class APIDeployerTest {
         cfgCtx.setAxisConfiguration(axisConfiguration);
 
         apiDeployer.init(cfgCtx);
-        String response = apiDeployer.deploySynapseArtifact(inputElement, "sampleFile", null);
+        String response = apiDeployer.deploySynapseArtifact(inputElement, "sampleFile", new Properties());
         Assert.assertEquals("API not deployed!", "TestAPI", response);
     }
 
@@ -82,7 +84,7 @@ public class APIDeployerTest {
         cfgCtx.setAxisConfiguration(axisConfiguration);
 
         apiDeployer.init(cfgCtx);
-        apiDeployer.deploySynapseArtifact(inputElement, "sampleFile", null);
+        apiDeployer.deploySynapseArtifact(inputElement, "sampleFile", new Properties());
 
         String inputUpdatedXML =
                 "<api name=\"TestAPIUpdated\" context=\"/orderUpdated\" xmlns=\"http://ws.apache.org/ns/synapse\">"
@@ -90,7 +92,7 @@ public class APIDeployerTest {
                         + "</api>";
 
         OMElement inputUpdatedElement = AXIOMUtil.stringToOM(inputUpdatedXML);
-        String response = apiDeployer.updateSynapseArtifact(inputUpdatedElement, "sampleUpdatedFile", "TestAPI", null);
+        String response = apiDeployer.updateSynapseArtifact(inputUpdatedElement, "sampleUpdatedFile", "TestAPI", new Properties());
         Assert.assertEquals("API not updated!", "TestAPIUpdated", response);
     }
 
@@ -117,7 +119,7 @@ public class APIDeployerTest {
         cfgCtx.setAxisConfiguration(axisConfiguration);
 
         apiDeployer.init(cfgCtx);
-        apiDeployer.deploySynapseArtifact(inputElement, "sampleFile", null);
+        apiDeployer.deploySynapseArtifact(inputElement, "sampleFile", new Properties());
         Assert.assertNotNull("API not deployed!", synapseConfiguration.getAPI("TestAPI"));
 
         apiDeployer.undeploySynapseArtifact("TestAPI");

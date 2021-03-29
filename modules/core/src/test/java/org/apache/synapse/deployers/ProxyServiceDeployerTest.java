@@ -28,6 +28,8 @@ import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Properties;
+
 /**
  * Test class for ProxyServiceDeployer
  */
@@ -62,7 +64,7 @@ public class ProxyServiceDeployerTest {
         cfgCtx.setAxisConfiguration(axisConfiguration);
 
         proxyServiceDeployer.init(cfgCtx);
-        String response = proxyServiceDeployer.deploySynapseArtifact(inputElement, "sampleFile", null);
+        String response = proxyServiceDeployer.deploySynapseArtifact(inputElement, "sampleFile", new Properties());
         Assert.assertEquals("Proxy service not deployed!", "TestProxy", response);
     }
 
@@ -96,7 +98,7 @@ public class ProxyServiceDeployerTest {
         cfgCtx.setAxisConfiguration(axisConfiguration);
 
         proxyServiceDeployer.init(cfgCtx);
-        proxyServiceDeployer.deploySynapseArtifact(inputElement, "sampleFile", null);
+        proxyServiceDeployer.deploySynapseArtifact(inputElement, "sampleFile", new Properties());
 
         String inputUpdateXML = "<proxy xmlns=\"http://ws.apache.org/ns/synapse\" name=\"TestProxyUpdated\">"
                 + "        <target>"
@@ -111,7 +113,7 @@ public class ProxyServiceDeployerTest {
 
         OMElement updatedElement = AXIOMUtil.stringToOM(inputUpdateXML);
 
-        String response = proxyServiceDeployer.updateSynapseArtifact(updatedElement, "sampleUpdateFile", "TestProxy", null);
+        String response = proxyServiceDeployer.updateSynapseArtifact(updatedElement, "sampleUpdateFile", "TestProxy", new Properties());
 
         Assert.assertEquals("Proxy not updated!", "TestProxyUpdated", response);
     }
@@ -146,7 +148,7 @@ public class ProxyServiceDeployerTest {
         cfgCtx.setAxisConfiguration(axisConfiguration);
 
         proxyServiceDeployer.init(cfgCtx);
-        proxyServiceDeployer.deploySynapseArtifact(inputElement, "sampleFile", null);
+        proxyServiceDeployer.deploySynapseArtifact(inputElement, "sampleFile", new Properties());
         Assert.assertNotNull("Proxy not deployed!", synapseConfiguration.getProxyService("TestProxy"));
 
         proxyServiceDeployer.undeploySynapseArtifact("TestProxy");

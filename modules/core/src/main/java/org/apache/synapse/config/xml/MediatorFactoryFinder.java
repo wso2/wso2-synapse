@@ -27,7 +27,9 @@ import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.XMLToObjectMapper;
 import org.apache.synapse.config.xml.eventing.EventPublisherMediatorFactory;
 import org.apache.synapse.libraries.imports.SynapseImport;
@@ -165,6 +167,19 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
     }
 
     /**
+     * This method returns a Processor given an OMElement. This will be used
+     * recursively by the elements which contain processor elements themselves
+     * (e.g. rules)
+     *
+     * @param element XML representation of a mediator
+     * @param properties bag of properties to pass in any information to the factory
+     * @return Processor
+     */
+    public Mediator getMediator(OMElement element, Properties properties) {
+        return this.getMediator(element, properties, null);
+    }
+
+    /**
 	 * This method returns a Processor given an OMElement. This will be used
 	 * recursively by the elements which contain processor elements themselves
 	 * (e.g. rules)
@@ -173,7 +188,7 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
      * @param properties bag of properties to pass in any information to the factory
      * @return Processor
 	 */
-	public Mediator getMediator(OMElement element, Properties properties) {
+	public Mediator getMediator(OMElement element, Properties properties, SynapseConfiguration configuration) {
 
         String localName = element.getLocalName();
         QName qName;
@@ -206,14 +221,25 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
                 }
             }
 
-            if (synapseImportMap != null && !synapseImportMap.isEmpty()) {
-                for (Map.Entry<String, SynapseImport> entry : synapseImportMap.entrySet()) {
-                    if (localName.startsWith(entry.getValue().getLibName())) {
-                        return getDynamicInvokeMediator(element, entry.getValue().getLibPackage());
+            // Synapse imports is look-up from synapse configurations. however to make the fix backward compatible
+            // kept the look-up from synapse imports as it is.
+            if (configuration != null) {
+                if (configuration.getSynapseImports() != null && !configuration.getSynapseImports().isEmpty()) {
+                    for (Map.Entry<String, SynapseImport> entry : configuration.getSynapseImports().entrySet()) {
+                        if (localName.startsWith(entry.getValue().getLibName())) {
+                            return getDynamicInvokeMediator(element, entry.getValue().getLibPackage());
+                        }
+                    }
+                }
+            } else {
+                if (synapseImportMap != null && !synapseImportMap.isEmpty()) {
+                    for (Map.Entry<String, SynapseImport> entry : synapseImportMap.entrySet()) {
+                        if (localName.startsWith(entry.getValue().getLibName())) {
+                            return getDynamicInvokeMediator(element, entry.getValue().getLibPackage());
+                        }
                     }
                 }
             }
-
 
             String msg = "Unknown mediator referenced by configuration element : " + qName;
             log.error(msg);
@@ -252,7 +278,9 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
      */
     public Object getObjectFromOMNode(OMNode om, Properties properties) {
         if (om instanceof OMElement) {
-            return getMediator((OMElement) om, properties);
+            SynapseConfiguration configuration = properties.get(SynapseConstants.SYNAPSE_CONFIGURATION) != null ?
+                    (SynapseConfiguration) properties.get(SynapseConstants.SYNAPSE_CONFIGURATION) : null;
+            return getMediator((OMElement) om, properties, configuration);
         } else {
             handleException("Invalid mediator configuration XML : " + om);
         }

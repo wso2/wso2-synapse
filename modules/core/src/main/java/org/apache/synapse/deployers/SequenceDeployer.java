@@ -56,7 +56,7 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
         try {
             MediatorFactoryFinder.getInstance().setSynapseLibraryMap(getSynapseConfiguration().getSynapseLibraries());
             Mediator m = MediatorFactoryFinder.getInstance().getMediator(
-                    artifactConfig, properties);
+                    artifactConfig, properties, getSynapseConfiguration());
             if (m instanceof SequenceMediator) {
                 SequenceMediator seq = (SequenceMediator) m;
                 if (getSynapseConfiguration().getDefinedSequences().get(seq.getName()) != null) {
@@ -94,16 +94,15 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public String updateSynapseArtifact(OMElement artifactConfig, String fileName,
                                         String existingArtifactName, Properties properties) {
-
-        Mediator m = MediatorFactoryFinder.getInstance().getMediator(artifactConfig, properties);
-
-        CustomLogSetter.getInstance().setLogAppender((m != null) ? ((SequenceMediator) m).getArtifactContainerName() : "");
-
-        if (log.isDebugEnabled()) {
-            log.debug("Sequence update from file : " + fileName + " has started");
-        }
-
         try {
+            Mediator m = MediatorFactoryFinder.getInstance().getMediator(
+                    artifactConfig, properties, getSynapseConfiguration());
+            CustomLogSetter.getInstance().setLogAppender((m != null) ?
+                    ((SequenceMediator) m).getArtifactContainerName() : "");
+            if (log.isDebugEnabled()) {
+                log.debug("Sequence update from file : " + fileName + " has started");
+            }
+
             if (m == null || !(m instanceof  SequenceMediator)) {
                 handleSynapseArtifactDeploymentError("Sequence update failed. The artifact " +
                         "defined in the file: " + fileName + " is not a valid sequence.");

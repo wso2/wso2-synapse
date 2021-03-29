@@ -45,6 +45,7 @@ public class APIDeployer extends AbstractSynapseArtifactDeployer {
         }
 
         try {
+            properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, getSynapseConfiguration());
             API api = APIFactory.createAPI(artifactConfig, properties);
             api.setArtifactContainerName(customLogContent);
             if (api != null) {
@@ -83,17 +84,17 @@ public class APIDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public String updateSynapseArtifact(OMElement artifactConfig, String fileName, String existingArtifactName, Properties properties) {
 
-        API api = APIFactory.createAPI(artifactConfig, properties);
-
-        if (api != null) {
-            api.setLogSetterValue();
-        }
-
-        if (log.isDebugEnabled()) {
-            log.debug("API update from file : " + fileName + " has started");
-        }
-
         try {
+            properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, getSynapseConfiguration());
+            API api = APIFactory.createAPI(artifactConfig, properties);
+            if (api != null) {
+                api.setLogSetterValue();
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug("API update from file : " + fileName + " has started");
+            }
+
             if (api == null) {
                 handleSynapseArtifactDeploymentError("API update failed. The artifact " +
                         "defined in the file: " + fileName + " is not a valid API.");
