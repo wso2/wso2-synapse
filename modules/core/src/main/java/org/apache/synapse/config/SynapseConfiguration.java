@@ -2270,6 +2270,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         } else {
             Object value = entry.getValue();
             if (value instanceof OMNode) {
+                properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, this);
                 Object object = entry.getMapper().getObjectFromOMNode(
                         (OMNode) value, getProperties());
                 if (object instanceof Mediator) {
