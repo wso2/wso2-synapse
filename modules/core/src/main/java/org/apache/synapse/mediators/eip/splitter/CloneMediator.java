@@ -83,6 +83,8 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
 
     private static final String ITERATION_INDEX_PROPERTY_NAME = "CLONED_ITERATION_INDEX";
 
+    private static final String STOP_FLOW_ON_FAILURE_PROPERTY_NAME = "STOP_FLOW_ON_FAILURE";
+
     /**
      * This will implement the mediate method of the Mediator interface and will provide the
      * functionality of cloning message into the specified targets and mediation
@@ -129,7 +131,11 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
                 MessageContext clonedMsgCtx = getClonedMessageContext(synCtx, i++, targets.size());
                 ContinuationStackManager.addReliantContinuationState(clonedMsgCtx, i - 1,
                         getMediatorPosition());
-                iter.next().mediate(clonedMsgCtx);
+                boolean isSuccess = iter.next().mediate(clonedMsgCtx);
+                boolean isStopFlowOnFailure = "true".equals(synCtx.getProperty(STOP_FLOW_ON_FAILURE_PROPERTY_NAME));
+                if (!isSuccess && sequential && isStopFlowOnFailure) {
+                    return continueParent;
+                }
             }
         }
 
