@@ -279,7 +279,7 @@ public class Target {
                                                               + "dropped"));
             }
         }
-        return true;
+        return false;
     }
 
 }

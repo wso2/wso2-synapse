@@ -83,6 +83,8 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
 
     private static final String ITERATION_INDEX_PROPERTY_NAME = "CLONED_ITERATION_INDEX";
 
+    private static final String STOP_FLOW_ON_FAILURE_PROPERTY_NAME = "STOP_TARGET_EXECUTION_ON_FAILURE";
+
     /**
      * This will implement the mediate method of the Mediator interface and will provide the
      * functionality of cloning message into the specified targets and mediation
@@ -120,6 +122,8 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
             // mediate the cloned messages using the targets
             Iterator<Target> iter = targets.iterator();
             int i = 0;
+            boolean isStopFlowOnFailure = "true".equalsIgnoreCase((String)
+                    synCtx.getProperty(STOP_FLOW_ON_FAILURE_PROPERTY_NAME));
             while (iter.hasNext()) {
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug("Submitting " + (i + 1) + " of " + targets.size() +
@@ -129,7 +133,10 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
                 MessageContext clonedMsgCtx = getClonedMessageContext(synCtx, i++, targets.size());
                 ContinuationStackManager.addReliantContinuationState(clonedMsgCtx, i - 1,
                         getMediatorPosition());
-                iter.next().mediate(clonedMsgCtx);
+                boolean isSuccess = iter.next().mediate(clonedMsgCtx);
+                if (!isSuccess && sequential && isStopFlowOnFailure) {
+                    break;
+                }
             }
         }
 
@@ -153,6 +160,8 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         int noOfIterations = resolveIterationsCount(synCtx);
         SynapseLog synLog = getLog(synCtx);
         Target target = targets.get(0);
+        boolean isStopFlowOnFailure = "true".equalsIgnoreCase((String)
+                synCtx.getProperty(STOP_FLOW_ON_FAILURE_PROPERTY_NAME));
         for (int i = 0; i < noOfIterations; ++i) {
             if (synLog.isTraceOrDebugEnabled()) {
                 synLog.traceOrDebug("Submitting " + (i + 1) + " of " + noOfIterations +
@@ -161,7 +170,10 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
             synCtx.setProperty(ITERATION_INDEX_PROPERTY_NAME, i + 1);
             MessageContext clonedMsgCtx = getClonedMessageContext(synCtx, i, noOfIterations);
             ContinuationStackManager.addReliantContinuationState(clonedMsgCtx, i - 1, getMediatorPosition());
-            target.mediate(clonedMsgCtx);
+            boolean isSuccess = target.mediate(clonedMsgCtx);
+            if (!isSuccess && sequential && isStopFlowOnFailure) {
+                break;
+            }
         }
     }
 
