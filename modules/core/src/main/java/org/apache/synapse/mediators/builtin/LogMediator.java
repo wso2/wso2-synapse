@@ -93,9 +93,6 @@ public class LogMediator extends AbstractMediator {
             }
         }
 
-        if (getCorrelationId(synCtx) != null) {
-            synCtx.setProperty(PassThroughConstants.CORRELATION_ID, getCorrelationId(synCtx));
-        }
         SynapseLog synLog = getLog(synCtx);
 
         if (synLog.isTraceOrDebugEnabled()) {
