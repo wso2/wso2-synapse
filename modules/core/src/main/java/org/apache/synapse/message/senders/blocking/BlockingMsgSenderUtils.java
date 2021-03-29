@@ -338,6 +338,7 @@ public class BlockingMsgSenderUtils {
                                                  Constants.Configuration.HTTP_METHOD,
                                                  Constants.Configuration.MESSAGE_TYPE,
                                                  Constants.Configuration.CONTENT_TYPE,
-                                                 NhttpConstants.REST_URL_POSTFIX};
+                                                 NhttpConstants.REST_URL_POSTFIX,
+                                                 NhttpConstants.REQUEST_HOST_HEADER};
 
 }
