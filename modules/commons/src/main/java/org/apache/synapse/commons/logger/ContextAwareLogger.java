@@ -32,9 +32,7 @@ public class ContextAwareLogger {
 
     static {
         String sysCorrelationStatus = System.getProperty(CorrelationConstants.CORRELATION_LOGS_SYS_PROPERTY);
-        if (sysCorrelationStatus != null) {
-            correlationLoggingEnabled = sysCorrelationStatus.equalsIgnoreCase("true");
-        }
+        correlationLoggingEnabled = "true".equalsIgnoreCase(sysCorrelationStatus);
     }
 
     /**
