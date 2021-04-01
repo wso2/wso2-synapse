@@ -28,6 +28,15 @@ import org.apache.synapse.commons.CorrelationConstants;
  */
 public class ContextAwareLogger {
 
+    private static Boolean correlationLoggingEnabled = false;
+
+    static {
+        String sysCorrelationStatus = System.getProperty(CorrelationConstants.CORRELATION_LOGS_SYS_PROPERTY);
+        if (sysCorrelationStatus != null) {
+            correlationLoggingEnabled = sysCorrelationStatus.equalsIgnoreCase("true");
+        }
+    }
+
     /**
      * Provides a wrapper implementation for the given logger according to the availability of the correlation id in
      * the axis2 and based on the expected behavior of the Correlation-ID MDC property.
@@ -58,9 +67,15 @@ public class ContextAwareLogger {
 
     private static Log getLogger(Object correlationId, Log log, boolean removeFromMDC) {
 
-        return correlationId != null ?
-                (removeFromMDC ? new CorrelationMDCImmediateLogger(correlationId, log)
-                        : new CorrelationMDCAwareLogger(correlationId, log)) : log;
+        if (correlationLoggingEnabled) {
+            if (correlationId != null) {
+                if (removeFromMDC) {
+                    return new CorrelationMDCImmediateLogger(correlationId, log);
+                }
+                return new CorrelationMDCAwareLogger(correlationId, log);
+            }
+        }
+        return log;
     }
 
 }
