@@ -505,6 +505,8 @@ public class RelayUtils {
                 handleException("Error when consuming the input stream to discard", exception);
             }
         }
+        msgContext.removeProperty(org.apache.synapse.commons.json.Constants.
+                ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
     }
 
     /**
