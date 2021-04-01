@@ -160,6 +160,7 @@ public abstract class DynamicProfileReloader {
             setLastUpdatedtime(System.currentTimeMillis());
 
             fileUpdateNotificationHandler.registerListener(this);
+            DynamicProfileReloaderHolder.getInstance().addNotificationHandler(fileUpdateNotificationHandler);
             notificationHandlerStarted = true;
         } else {
             if (log.isDebugEnabled()) {
