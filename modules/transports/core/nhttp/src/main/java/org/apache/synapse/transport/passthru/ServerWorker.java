@@ -66,14 +66,14 @@ import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.xml.parsers.FactoryConfigurationError;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.xml.parsers.FactoryConfigurationError;
 
 /**
  * This is a worker thread for executing an incoming request in to the transport.
@@ -145,7 +145,7 @@ public class ServerWorker implements Runnable {
             MDC.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
             /* Subsequent to removing the correlation id MDC thread local value, a new value is put in case
                there is one */
-            if (StringUtils.isNotEmpty(correlationId)) {
+            if (sourceConfiguration.isCorrelationLoggingEnabled() && StringUtils.isNotEmpty(correlationId)) {
                 MDC.put(CorrelationConstants.CORRELATION_MDC_PROPERTY, correlationId);
                 /* Log the time taken to switch from the previous thread to this thread */
                 if (initiationTimestamp != 0) {
