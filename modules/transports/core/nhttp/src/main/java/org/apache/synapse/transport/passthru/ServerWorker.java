@@ -487,11 +487,24 @@ public class ServerWorker implements Runnable {
     	
     	Map excessHeaders = request.getExcessHeaders();
         ConfigurationContext cfgCtx = sourceConfiguration.getConfigurationContext();
+        NHttpServerConnection conn = request.getConnection();
 
+        Object systemGeneratedCorrelationLog =
+                conn.getContext().getAttribute(CorrelationConstants.SYSTEM_GENERATED_CORRELATION_ID);
+        Object correlationId = conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID);
         if (msgContext == null) {
             msgContext = new MessageContext();
         }
-        msgContext.setMessageID(UIDGenerator.generateURNString());
+        String messageId = null;
+        if (systemGeneratedCorrelationLog instanceof Boolean && (Boolean) systemGeneratedCorrelationLog) {
+            if (correlationId instanceof String && StringUtils.isNotEmpty((String) correlationId)) {
+                messageId = (String) correlationId;
+            }
+        }
+        if (StringUtils.isEmpty(messageId)) {
+            messageId = UIDGenerator.generateURNString();
+        }
+        msgContext.setMessageID(messageId);
 
         // Axis2 spawns a new threads to send a message if this is TRUE - and it has to
         // be the other way
@@ -506,10 +519,8 @@ public class ServerWorker implements Runnable {
 //        msgContext.setIncomingTransportName(Constants.TRANSPORT_HTTP);
 //        msgContext.setProperty(Constants.OUT_TRANSPORT_INFO, this);
         
-        NHttpServerConnection conn = request.getConnection();
         // propagate correlation logging related properties
-        msgContext.setProperty(CorrelationConstants.CORRELATION_ID,
-                conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
+        msgContext.setProperty(CorrelationConstants.CORRELATION_ID, correlationId);
 
         // propagate transaction property
         msgContext.setProperty(BaseConstants.INTERNAL_TRANSACTION_COUNTED,
