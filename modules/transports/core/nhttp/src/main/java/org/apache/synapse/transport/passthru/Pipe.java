@@ -643,6 +643,7 @@ public class Pipe {
                 // ex: when client connection is closed while writing back the response
                 if (consumerError || isStale) {
                     buffer.clear();
+                    isStale = false;
                     throw new IOException("Consumer error or stale connection has occurred.");
                 }
                 if (consumerIoControl instanceof NHttpServerConnection) {
