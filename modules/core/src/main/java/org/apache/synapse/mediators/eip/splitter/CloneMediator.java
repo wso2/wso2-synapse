@@ -133,8 +133,10 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
                 MessageContext clonedMsgCtx = getClonedMessageContext(synCtx, i++, targets.size());
                 ContinuationStackManager.addReliantContinuationState(clonedMsgCtx, i - 1,
                         getMediatorPosition());
-                boolean isSuccess = iter.next().mediate(clonedMsgCtx);
-                if (!isSuccess && sequential && isStopFlowOnFailure) {
+                iter.next().mediate(clonedMsgCtx);
+                boolean isFailure = "true".equalsIgnoreCase((String)clonedMsgCtx.
+                        getProperty(EIPConstants.ERROR_ON_TARGET_EXECUTION));
+                if (isFailure && sequential && isStopFlowOnFailure) {
                     break;
                 }
             }
@@ -170,8 +172,10 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
             synCtx.setProperty(ITERATION_INDEX_PROPERTY_NAME, i + 1);
             MessageContext clonedMsgCtx = getClonedMessageContext(synCtx, i, noOfIterations);
             ContinuationStackManager.addReliantContinuationState(clonedMsgCtx, i - 1, getMediatorPosition());
-            boolean isSuccess = target.mediate(clonedMsgCtx);
-            if (!isSuccess && sequential && isStopFlowOnFailure) {
+            target.mediate(clonedMsgCtx);
+            boolean isFailure = "true".equalsIgnoreCase((String)clonedMsgCtx.
+                    getProperty(EIPConstants.ERROR_ON_TARGET_EXECUTION));
+            if (isFailure && sequential && isStopFlowOnFailure) {
                 break;
             }
         }
