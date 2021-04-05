@@ -16,6 +16,7 @@
 
 package org.apache.synapse.transport.passthru;
 
+import org.apache.axiom.util.UIDGenerator;
 import org.apache.axis2.context.MessageContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -212,7 +213,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         if (correlationHeader.length != 0) {
             correlationId = correlationHeader[0].getValue();
         } else {
-            correlationId = UUID.randomUUID().toString();
+            correlationId = UIDGenerator.generateURNString();
             conn.getHttpRequest().setHeader(correlationHeaderName, correlationId);
             httpContext.setAttribute(CorrelationConstants.SYSTEM_GENERATED_CORRELATION_ID, true);
         }
