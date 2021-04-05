@@ -255,6 +255,7 @@ public class Target {
         try {
             return sequenceMediator.mediate(synCtx);
         } catch (SynapseException syne) {
+            synCtx.setProperty(EIPConstants.ERROR_ON_TARGET_EXECUTION, true);
             if (!synCtx.getFaultStack().isEmpty()) {
                 log.warn(LoggingUtils.getFormattedLog(synCtx, "Executing fault handler due to exception encountered"),
                          syne);
@@ -265,6 +266,7 @@ public class Target {
                                                               + "dropped"));
             }
         } catch (Exception e) {
+            synCtx.setProperty(EIPConstants.ERROR_ON_TARGET_EXECUTION, true);
             String msg = "Unexpected error occurred executing the Target";
             log.error(LoggingUtils.getFormattedLog(synCtx, msg), e);
             if (synCtx.getServiceLog() != null) {

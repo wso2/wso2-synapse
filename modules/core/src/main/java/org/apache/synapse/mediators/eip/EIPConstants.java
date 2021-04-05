@@ -40,4 +40,6 @@ public final class EIPConstants {
 
     /** Constant for the Aggregate Element Type: child */
     public static final String AGGREGATE_ELEMENT_TYPE_CHILD = "child";
+
+    public static final String ERROR_ON_TARGET_EXECUTION = "ERROR_ON_TARGET_EXECUTION";
 }
