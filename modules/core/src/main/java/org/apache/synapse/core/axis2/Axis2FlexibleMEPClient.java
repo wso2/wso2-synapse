@@ -21,6 +21,7 @@ package org.apache.synapse.core.axis2;
 
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.soap.SOAPFactory;
+import org.apache.axiom.util.UIDGenerator;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.addressing.AddressingConstants;
@@ -157,7 +158,7 @@ public class Axis2FlexibleMEPClient {
         }
 
             if (originalInMsgCtx.getProperty(CorrelationConstants.CORRELATION_ID) == null) {
-                originalInMsgCtx.setProperty(CorrelationConstants.CORRELATION_ID, UUID.randomUUID().toString());
+                originalInMsgCtx.setProperty(CorrelationConstants.CORRELATION_ID, UIDGenerator.generateURNString());
             }
             if (headers == null) {
                 headers = new HashMap();
