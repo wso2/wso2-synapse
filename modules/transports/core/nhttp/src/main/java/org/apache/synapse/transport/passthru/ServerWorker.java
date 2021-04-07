@@ -72,6 +72,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.UUID;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.xml.parsers.FactoryConfigurationError;
 
@@ -506,7 +507,7 @@ public class ServerWorker implements Runnable {
         String messageId = null;
         if (systemGeneratedCorrelationLog instanceof Boolean && (Boolean) systemGeneratedCorrelationLog) {
             if (correlationId instanceof String && StringUtils.isNotEmpty((String) correlationId)) {
-                messageId = (String) correlationId;
+                messageId = "urn:uuid:" + correlationId;
             }
         }
         if (StringUtils.isEmpty(messageId)) {
