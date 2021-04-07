@@ -34,7 +34,7 @@ public class JaegerTracingManager implements OpenTracingManager {
 
     //private static final String SERVICE_NAME will read from ENV variable;
     private static final String SERVICE_NAME =
-            USER_DEFINED_NAME != null & !USER_DEFINED_NAME.isEmpty() ? USER_DEFINED_NAME : "WSO2-SYNAPSE";
+            USER_DEFINED_NAME != null && !USER_DEFINED_NAME.isEmpty() ? USER_DEFINED_NAME : "WSO2-SYNAPSE";
 
     /**
      * The common tracer object.
