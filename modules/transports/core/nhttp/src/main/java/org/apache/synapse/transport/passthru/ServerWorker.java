@@ -506,7 +506,7 @@ public class ServerWorker implements Runnable {
         String messageId = null;
         if (systemGeneratedCorrelationLog instanceof Boolean && (Boolean) systemGeneratedCorrelationLog) {
             if (correlationId instanceof String && StringUtils.isNotEmpty((String) correlationId)) {
-                messageId = (String) correlationId;
+                messageId = "urn:uuid:" + correlationId;
             }
         }
         if (StringUtils.isEmpty(messageId)) {
