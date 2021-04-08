@@ -48,8 +48,8 @@ public class OAuthConstants {
     public static final String EXPIRES_IN = "expires_in";
 
     // parameters used to build oauth requests
-    public static final String PARAM_CLIENT_ID = "&clientId=";
-    public static final String PARAM_CLIENT_SECRET = "&clientSecret=";
+    public static final String PARAM_CLIENT_ID = "&client_id=";
+    public static final String PARAM_CLIENT_SECRET = "&client_secret=";
     public static final String PARAM_REFRESH_TOKEN = "&refresh_token=";
 
     public static final String RETRIED_ON_OAUTH_FAILURE = "RETRIED_ON_OAUTH_FAILURE";
