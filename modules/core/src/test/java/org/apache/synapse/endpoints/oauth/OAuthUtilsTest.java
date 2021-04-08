@@ -29,6 +29,7 @@ import org.apache.axis2.context.ServiceContext;
 import org.apache.axis2.description.InOutAxisOperation;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.engine.AxisConfiguration;
+import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -47,6 +48,7 @@ import java.util.Collection;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test for OAuthUtils which contains helper functions used to generate OAuth handlers
@@ -211,6 +213,54 @@ public class OAuthUtilsTest {
             assertEquals(expected,
                     OAuthUtils.retryOnOAuthFailure(httpEndpoint, messageContextIn, messageContextOut));
 
+        }
+    }
+
+    /**
+     * Tests retryOnOauthFailure method
+     */
+    @RunWith(Parameterized.class)
+    public static class Append401HTTPSC {
+
+        private final MessageContext messageContext;
+        private final String expected;
+
+        public Append401HTTPSC(MessageContext messageContext, String expected) {
+
+            this.messageContext = messageContext;
+            this.expected = expected;
+        }
+
+        @Parameterized.Parameters
+        public static Collection provideDataForAppend401HTTPSCTests() throws AxisFault {
+
+            MessageContext messageContext = createMessageContext();
+
+            MessageContext messageContext2 = createMessageContext();
+            org.apache.axis2.context.MessageContext axis2MessageContext =
+                    ((Axis2MessageContext) messageContext2).getAxis2MessageContext();
+            axis2MessageContext.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES, "403");
+
+            return Arrays.asList(new Object[][]{
+                    {messageContext, "401"},
+                    {messageContext2, "401, 403"},
+            });
+        }
+
+        @Test
+        public void testAppend401HTTPSC() {
+
+            OAuthUtils.append401HTTPSC(messageContext);
+
+            org.apache.axis2.context.MessageContext axis2MessageContext =
+                    ((Axis2MessageContext) messageContext).getAxis2MessageContext();
+            Object nonErrorCodesInMsgCtx = axis2MessageContext.getProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES);
+
+            assertTrue(nonErrorCodesInMsgCtx instanceof String);
+            String strNonErrorCodes = ((String) nonErrorCodesInMsgCtx).trim();
+            for (String strRetryErrorCode : expected.split(",")) {
+                assertTrue(strNonErrorCodes.contains(strRetryErrorCode.trim()));
+            }
         }
     }
 
