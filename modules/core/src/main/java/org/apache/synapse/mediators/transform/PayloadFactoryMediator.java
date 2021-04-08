@@ -84,6 +84,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     public PayloadFactoryMediator() {
         //ignore DTDs for XML Input
         inputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
+        inputFactory.setProperty(XMLInputFactory.IS_COALESCING, true);
     }
 
     /**
