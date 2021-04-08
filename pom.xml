@@ -1172,6 +1172,7 @@
               <artifactId>jersey-hk2</artifactId>
               <version>${glassfish.jersey.version}</version>
           </dependency>
+          <dependency>
               <groupId>javax.annotation</groupId>
               <artifactId>javax.annotation-api</artifactId>
               <version>${javax.annotation.verion}</version>
