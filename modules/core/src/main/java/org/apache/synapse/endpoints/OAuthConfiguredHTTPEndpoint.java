@@ -19,14 +19,13 @@
 package org.apache.synapse.endpoints;
 
 import org.apache.axis2.AxisFault;
-import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.oauth.MessageCache;
 import org.apache.synapse.endpoints.oauth.OAuthConstants;
 import org.apache.synapse.endpoints.oauth.OAuthException;
 import org.apache.synapse.endpoints.oauth.OAuthHandler;
+import org.apache.synapse.endpoints.oauth.OAuthUtils;
 import org.apache.synapse.util.MessageHelper;
 
 /**
@@ -50,10 +49,7 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
 
             // If this a blocking call, add 401 as a non error http status code
             if (synCtx.getProperty(SynapseConstants.BLOCKING_MSG_SENDER) != null) {
-                org.apache.axis2.context.MessageContext axis2Ctx =
-                        ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-                axis2Ctx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES,
-                        String.valueOf(OAuthConstants.HTTP_SC_UNAUTHORIZED));
+                OAuthUtils.append401HTTPSC(synCtx);
             }
 
             // Clone the original MessageContext and save it to do a retry after a token refresh

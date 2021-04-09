@@ -90,8 +90,8 @@ public class FoodService {
         String clientSecret = decodedCredentials.split(":")[1];
 
         String refreshToken = tokenRequestParams.getFirst("refresh_token");
-        String clientIdInBody = tokenRequestParams.getFirst("clientId");
-        String clientSecretInBody = tokenRequestParams.getFirst("clientSecret");
+        String clientIdInBody = tokenRequestParams.getFirst("client_id");
+        String clientSecretInBody = tokenRequestParams.getFirst("client_secret");
 
         if (refreshToken != null && !refreshToken.equals(Constants.refreshToken)) {
             return false;
