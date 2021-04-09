@@ -118,6 +118,7 @@ public class BlockingMsgSenderUtils {
         axisOutMsgCtx.setProperty(
                 org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
                 axisInMsgCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
+        axisOutMsgCtx.setDoingREST(axisInMsgCtx.isDoingREST());
 
         // Endpoint format
         if (endpoint.getFormat() != null) {

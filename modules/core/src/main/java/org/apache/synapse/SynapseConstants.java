@@ -237,6 +237,9 @@ public final class SynapseConstants {
     /** Fault Handler which hold the last sequence fault handler */
     public static final String LAST_SEQ_FAULT_HANDLER = "LAST_SEQ_FAULT_HANDLER";
 
+    /** Indicate whether the sequence is content aware or not */
+    public static final String IS_SEQ_CONTENT_AWARE = "IS_SEQ_CONTENT_AWARE";
+
     //- Axis2 Message Context Properties used by Synapse -
     /** an axis2 message context property set to hold the relates to for POX responses */
     public static final String RELATES_TO_FOR_POX = "synapse.RelatesToForPox";
@@ -471,6 +474,7 @@ public final class SynapseConstants {
     public static final int ENDPOINT_FO_NONE_READY   = 303000;
     public static final int ENDPOINT_ADDRESS_NONE_READY = 303001;
     public static final int ENDPOINT_WSDL_NONE_READY = 303002;
+    public static final int ENDPOINT_OAUTH_FAILURE = 303003;
     // Failure on endpoint in the session 
     public static final int ENDPOINT_SAL_NOT_READY = 309001;
     public static final int ENDPOINT_SAL_INVALID_PATH = 309002;

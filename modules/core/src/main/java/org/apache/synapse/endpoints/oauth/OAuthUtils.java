@@ -20,22 +20,17 @@ package org.apache.synapse.endpoints.oauth;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.util.UIDGenerator;
-import org.apache.axis2.Constants;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.HttpHeaders;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 
-import java.util.Map;
 import java.util.Set;
 
 import javax.xml.namespace.QName;
@@ -237,42 +232,6 @@ public class OAuthUtils {
             }
         }
         return false;
-    }
-
-    /**
-     * Send back the error to the client
-     *
-     * @param messageContext MessageContext of the request
-     */
-    public static void sendOAuthFault(MessageContext messageContext) {
-
-        org.apache.axis2.context.MessageContext axis2MC =
-                ((Axis2MessageContext) messageContext).getAxis2MessageContext();
-        JsonUtil.removeJsonPayload(axis2MC);
-
-        axis2MC.setProperty(PassThroughConstants.HTTP_SC, OAuthConstants.HTTP_SC_INTERNAL_SERVER_ERROR);
-
-        Map headers = (Map) axis2MC.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-        String acceptType = (String) headers.get(HttpHeaders.ACCEPT);
-        if (acceptHeaderIsAvailable(acceptType)) {
-            axis2MC.setProperty(Constants.Configuration.MESSAGE_TYPE, acceptType);
-        }
-
-        messageContext.setResponse(true);
-        messageContext.setTo(null);
-
-        Axis2Sender.sendBack(messageContext);
-    }
-
-    /**
-     * Method to check whether accept header is present
-     *
-     * @param acceptType Accept header string of the request
-     * @return true if the accept header is present
-     */
-    private static boolean acceptHeaderIsAvailable(String acceptType) {
-
-        return StringUtils.isNotBlank(acceptType) && !acceptType.equals("*/*");
     }
 
     /**
