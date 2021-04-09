@@ -98,6 +98,10 @@
             <outSequence>
                 <send/>
             </outSequence>
+            <faultSequence>
+                <property name="HTTP_SC" value="500" scope="axis2" />
+                <respond/>
+            </faultSequence>
         </resource>
     </api>
 </definitions>

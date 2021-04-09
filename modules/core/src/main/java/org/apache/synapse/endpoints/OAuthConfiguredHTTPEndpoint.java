@@ -27,7 +27,6 @@ import org.apache.synapse.endpoints.oauth.MessageCache;
 import org.apache.synapse.endpoints.oauth.OAuthConstants;
 import org.apache.synapse.endpoints.oauth.OAuthException;
 import org.apache.synapse.endpoints.oauth.OAuthHandler;
-import org.apache.synapse.endpoints.oauth.OAuthUtils;
 import org.apache.synapse.util.MessageHelper;
 
 /**
@@ -101,7 +100,7 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
     }
 
     /**
-     * This method will send a Internal Server Error to the client and throw a Synapse exception
+     * This method will log the error and call the fault sequence
      *
      * @param synCtx    Original Synapse MessageContext that went through this endpoint
      * @param exception Exception
@@ -109,7 +108,8 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
      */
     private void handleError(MessageContext synCtx, String message, Exception exception) {
 
-        OAuthUtils.sendOAuthFault(synCtx);
-        handleException(message, exception);
+        String errorMsg = message + " " + exception.getMessage();
+        log.error(errorMsg);
+        informFailure(synCtx, SynapseConstants.ENDPOINT_OAUTH_FAILURE, errorMsg);
     }
 }
