@@ -983,6 +983,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                     + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
                     .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn) + ", "
                     + "CONNECTION = " + conn);
+        } else if (state == ProtocolState.RESPONSE_DONE) {
+            return;
         }
         
         if (ex instanceof IOException) {
