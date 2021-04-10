@@ -35,11 +35,14 @@ import org.apache.synapse.deployers.TemplateDeployer;
 
 import java.util.AbstractMap;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Util class for deploying synapse artifacts to the synapse engine.
  */
 class ConfigurationDeployer {
+
+    private Properties properties = new Properties();
 
     /**
      * Method of deploying sequence artifact in synapse.
@@ -61,7 +64,7 @@ class ConfigurationDeployer {
         sequenceDeployer.init(createConfigurationContext(synapseConfiguration));
 
         //deploy synapse artifact
-        String deployedArtifact = sequenceDeployer.deploySynapseArtifact(inputElement, fileName, null);
+        String deployedArtifact = sequenceDeployer.deploySynapseArtifact(inputElement, fileName, properties);
 
         return new AbstractMap.SimpleEntry<>(synapseConfiguration, deployedArtifact);
     }
@@ -86,7 +89,7 @@ class ConfigurationDeployer {
         proxyServiceDeployer.init(createConfigurationContext(synapseConfiguration));
 
         //deploy synapse artifact
-        String deployedArtifact = proxyServiceDeployer.deploySynapseArtifact(inputElement, fileName, null);
+        String deployedArtifact = proxyServiceDeployer.deploySynapseArtifact(inputElement, fileName, properties);
 
         return new AbstractMap.SimpleEntry<>(synapseConfiguration, deployedArtifact);
     }
@@ -111,7 +114,7 @@ class ConfigurationDeployer {
         apiResourceDeployer.init(createConfigurationContext(synapseConfiguration));
 
         //deploy synapse artifact
-        String deployedArtifact = apiResourceDeployer.deploySynapseArtifact(inputElement, fileName, null);
+        String deployedArtifact = apiResourceDeployer.deploySynapseArtifact(inputElement, fileName, properties);
 
         return new AbstractMap.SimpleEntry<>(synapseConfiguration, deployedArtifact);
     }
@@ -136,7 +139,7 @@ class ConfigurationDeployer {
         endpointDeployer.init(createConfigurationContext(synapseConfiguration));
 
         //deploy synapse artifact
-        String deployedArtifact = endpointDeployer.deploySynapseArtifact(inputElement, fileName, null);
+        String deployedArtifact = endpointDeployer.deploySynapseArtifact(inputElement, fileName, properties);
 
         return new AbstractMap.SimpleEntry<>(synapseConfiguration, deployedArtifact);
     }
@@ -161,7 +164,7 @@ class ConfigurationDeployer {
         localEntryDeployer.init(createConfigurationContext(synapseConfiguration));
 
         //deploy synapse artifact
-        String deployedArtifact = localEntryDeployer.deploySynapseArtifact(inputElement, fileName, null);
+        String deployedArtifact = localEntryDeployer.deploySynapseArtifact(inputElement, fileName, properties);
 
         return new AbstractMap.SimpleEntry<>(synapseConfiguration, deployedArtifact);
     }
@@ -186,7 +189,7 @@ class ConfigurationDeployer {
         templateDeployer.init(createConfigurationContext(synapseConfiguration));
 
         //deploy synapse artifact
-        String deployedArtifact = templateDeployer.deploySynapseArtifact(inputElement, fileName, null);
+        String deployedArtifact = templateDeployer.deploySynapseArtifact(inputElement, fileName, properties);
 
         return new AbstractMap.SimpleEntry<>(synapseConfiguration, deployedArtifact);
     }
