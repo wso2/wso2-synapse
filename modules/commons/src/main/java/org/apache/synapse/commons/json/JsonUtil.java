@@ -363,6 +363,10 @@ public final class JsonUtil {
      * @throws org.apache.axis2.AxisFault
      */
     public static void writeAsJson(MessageContext messageContext, OutputStream out) throws AxisFault {
+        writeAsJson(messageContext, out, null);
+    }
+
+    public static void writeAsJson(MessageContext messageContext, OutputStream out, String encoding) throws AxisFault {
         if (messageContext == null || out == null) {
             return;
         }
@@ -383,10 +387,10 @@ public final class JsonUtil {
                     if (isAJsonPayloadElement(element)) {
                         writeJsonStream(json, messageContext, out);
                     } else { // Ignore the JSON stream
-                        writeAsJson(element, out);
+                        writeAsJson(element, out, encoding);
                     }
                 } else if (element != null) { // element is not an OMSourcedElementImpl. But we ignore the JSON stream.
-                    writeAsJson(element, out);
+                    writeAsJson(element, out, encoding);
                 } else { // element == null.
                     writeJsonStream(json, messageContext, out);
                 }
@@ -396,7 +400,7 @@ public final class JsonUtil {
                 throw new AxisFault("Could not write JSON stream.", e);
             }
         } else if (element != null) { // No JSON stream found. Convert the existing element to JSON.
-            writeAsJson(element, out, populateRequiredProperties(messageContext), JsonUtil.jsonOutputFactory);
+            writeAsJson(element, out, populateRequiredProperties(messageContext), JsonUtil.jsonOutputFactory, encoding);
         } else if (jsonStr != null) { // No JSON stream or element found. See if there's a JSON_STRING set.
             try {
                 out.write(jsonStr.getBytes());
@@ -492,9 +496,17 @@ public final class JsonUtil {
      * @throws AxisFault
      */
     public static void writeAsJson(OMElement element, OutputStream outputStream) throws AxisFault {
-        writeAsJson(element, outputStream, null, null);
+        writeAsJson(element, outputStream, null, null, null);
     }
 
+    public static void writeAsJson(OMElement element, OutputStream outputStream, String encoding) throws AxisFault {
+        writeAsJson(element, outputStream, null, null, encoding);
+    }
+
+    public static void writeAsJson(OMElement element, OutputStream outputStream, Map properties,
+                                   JsonXMLOutputFactory jsonOutputFactory) throws AxisFault {
+        writeAsJson(element, outputStream, properties, jsonOutputFactory, null);
+    }
     /**
      * Converts an XML element to its JSON representation and writes it to an output stream.<br/>
      * Note that this method removes all existing namespace declarations and namespace prefixes of the provided XML
@@ -507,8 +519,7 @@ public final class JsonUtil {
      * @throws AxisFault
      */
     public static void writeAsJson(OMElement element, OutputStream outputStream, Map properties,
-                                   JsonXMLOutputFactory jsonOutputFactory) throws
-            AxisFault {
+                                   JsonXMLOutputFactory jsonOutputFactory, String encoding) throws AxisFault {
         jsonOutputFactory = jsonOutputFactory == null ? JsonUtil.jsonOutputFactory : jsonOutputFactory;
         if (element == null) {
             throw new AxisFault("OMElement is null. Cannot convert to JSON.");
@@ -517,7 +528,7 @@ public final class JsonUtil {
             return;
         }
         transformElement(element, true, properties, jsonOutputFactory);
-        convertOMElementToJson(element, outputStream, jsonOutputFactory);
+        convertOMElementToJson(element, outputStream, jsonOutputFactory, encoding);
     }
 
     /**
@@ -530,6 +541,11 @@ public final class JsonUtil {
      */
     private static void convertOMElementToJson(OMElement element, OutputStream outputStream,
                                                JsonXMLOutputFactory jsonOutputFactory) throws AxisFault {
+        convertOMElementToJson(element, outputStream, jsonOutputFactory, null);
+    }
+
+    private static void convertOMElementToJson(OMElement element, OutputStream outputStream,
+                                               JsonXMLOutputFactory jsonOutputFactory, String encoding) throws AxisFault {
         XMLEventReader xmlEventReader = null;
         XMLEventWriter jsonWriter = null;
         try {
@@ -547,7 +563,11 @@ public final class JsonUtil {
                             new ByteArrayInputStream(xmlStream.toByteArray())
                     ), jsonOutputFactory.getConfig().isProcessNCNames())
             );
-            jsonWriter = jsonOutputFactory.createXMLEventWriter(outputStream);
+            if (encoding != null) {
+                jsonWriter = jsonOutputFactory.createXMLEventWriter(outputStream, encoding);
+            } else {
+                jsonWriter = jsonOutputFactory.createXMLEventWriter(outputStream);
+            }
             jsonWriter.add(xmlEventReader);
             outputStream.flush();
         } catch (XMLStreamException e) {
