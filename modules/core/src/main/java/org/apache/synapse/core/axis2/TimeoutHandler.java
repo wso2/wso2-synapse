@@ -29,6 +29,7 @@ import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.endpoints.dispatch.SALSessions;
 import org.apache.synapse.commons.logger.ContextAwareLogger;
@@ -145,7 +146,9 @@ public class TimeoutHandler extends TimerTask {
                                             + (callback.getTimeoutDuration() / 1000) + " seconds for "
                                             + getEndpointLogMessage(callback.getSynapseOutMsgCtx(),
                                             callback.getAxis2OutMsgCtx()) + ", "
-                                            + getServiceLogMessage(callback.getSynapseOutMsgCtx()));
+                                            + getServiceLogMessage(callback.getSynapseOutMsgCtx())
+                                            + "Correlation ID : " + callback.getAxis2OutMsgCtx().getProperty(
+                                            CorrelationConstants.CORRELATION_ID));
                         }
 
                         if (callback.getTimeOutAction() != SynapseConstants.NONE) {

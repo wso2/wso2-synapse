@@ -28,6 +28,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.util.logging.LoggingUtils;
 
@@ -86,6 +87,7 @@ public class SynapseMessageReceiver implements MessageReceiver {
 
         synCtx.setProperty(SynapseConstants.IS_CLIENT_DOING_REST, mc.isDoingREST());
         synCtx.setProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11, mc.isSOAP11());
+        synCtx.setProperty(CorrelationConstants.CORRELATION_ID, mc.getProperty(CorrelationConstants.CORRELATION_ID));
 
         TenantInfoConfigurator configurator = synCtx.getEnvironment().getTenantInfoConfigurator();
         if (configurator != null) {

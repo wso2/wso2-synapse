@@ -578,7 +578,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                     .get("direction") + ", "
                     + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = " + conn
-                    .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
+                    .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn) + ", CONNECTION " + conn
+                    + " Correlation ID : " + conn.getContext().getAttribute(
+                            CorrelationConstants.CORRELATION_ID).toString());
             if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
@@ -591,7 +593,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + ", DIRECTION = " + logDetails.get("direction") + ", "
                     + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = " + conn
-                    .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
+                    .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn) + ", CONNECTION " + conn
+                    +  " Correlation ID : " + conn.getContext().getAttribute(
+                    CorrelationConstants.CORRELATION_ID).toString());
             if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
@@ -606,7 +610,8 @@ public class SourceHandler implements NHttpServerEventHandler {
                             + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = "
                             + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
                             + ", SOCKET_TIMEOUT = " + conn.getSocketTimeout() + ", CLIENT_ADDRESS = "
-                            + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
+                            + getClientConnectionInfo(conn) + ", CONNECTION " + conn + " Correlation ID : "
+                            + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID).toString());
             if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
