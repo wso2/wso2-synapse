@@ -47,6 +47,7 @@ public class AuthorizationCodeHandler extends OAuthHandler {
                 .append(OAuthConstants.PARAM_REFRESH_TOKEN).append(refreshToken);
         payload.append(OAuthConstants.PARAM_CLIENT_ID).append(clientId);
         payload.append(OAuthConstants.PARAM_CLIENT_SECRET).append(clientSecret);
+        payload.append(getRequestParametersAsString());
 
         return payload.toString();
     }

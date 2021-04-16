@@ -27,10 +27,14 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.commons.resolvers.ResolverFactory;
+import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 import javax.xml.namespace.QName;
@@ -126,11 +130,16 @@ public class OAuthUtils {
             }
             return null;
         }
-
-        return new AuthorizationCodeHandler(tokenApiUrl, clientId,
-                clientSecret,
+        AuthorizationCodeHandler handler = new AuthorizationCodeHandler(tokenApiUrl, clientId, clientSecret,
                 refreshToken);
-
+        if (hasRequestParameters(authCodeElement)) {
+            Map<String, String> requestParameters = getRequestParameters(authCodeElement);
+            if (requestParameters == null) {
+                return null;
+            }
+            handler.setRequestParameters(requestParameters);
+        }
+        return handler;
     }
 
     /**
@@ -152,10 +161,65 @@ public class OAuthUtils {
             }
             return null;
         }
+        ClientCredentialsHandler handler = new ClientCredentialsHandler(tokenApiUrl, clientId, clientSecret);
+        if (hasRequestParameters(clientCredentialsElement)) {
+            Map<String, String> requestParameters = getRequestParameters(clientCredentialsElement);
+            if (requestParameters == null) {
+                return null;
+            }
+            handler.setRequestParameters(requestParameters);
+        }
+        return handler;
+    }
 
-        return new ClientCredentialsHandler(tokenApiUrl, clientId,
-                clientSecret);
+    /**
+     * Method to return the request parameters as a Map
+     *
+     * @param oauthElement OAuth config OMElement
+     * @return Map<String, String> containing request parameters
+     */
+    private static Map<String, String> getRequestParameters(OMElement oauthElement) {
 
+        HashMap<String, String> parameterMap = new HashMap<>();
+
+        OMElement requestParametersElement = oauthElement.getFirstChildWithName(
+                new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
+                        OAuthConstants.REQUEST_PARAMETERS));
+
+        Iterator parameters =
+                requestParametersElement.getChildrenWithName(
+                        new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, OAuthConstants.REQUEST_PARAMETER));
+
+        while (parameters.hasNext()) {
+            OMElement parameter = (OMElement) parameters.next();
+            String paramName = parameter.getAttributeValue(new QName(OAuthConstants.NAME));
+            String paramValue = parameter.getText().trim();
+            if (StringUtils.isBlank(paramName) || StringUtils.isBlank(paramValue)) {
+                if (log.isDebugEnabled()) {
+                    log.error("Invalid Request Parameters in OAuth configuration");
+                }
+                return null;
+            }
+            paramValue = ResolverFactory.getInstance().getResolver(paramValue).resolve();
+            parameterMap.put(paramName, paramValue);
+        }
+        return parameterMap;
+    }
+
+    /**
+     * Method to check whether there are request parameters are defined in the OAuth config
+     *
+     * @param oauthElement OAuth config OMElement
+     * @return true if there are request parameters in the oauth element
+     */
+    private static boolean hasRequestParameters(OMElement oauthElement) {
+
+        OMElement requestParametersElement = oauthElement.getFirstChildWithName(
+                new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
+                        OAuthConstants.REQUEST_PARAMETERS));
+        return (requestParametersElement != null && requestParametersElement.getChildrenWithName(
+                new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
+                        OAuthConstants.REQUEST_PARAMETER)).hasNext());
     }
 
     /**

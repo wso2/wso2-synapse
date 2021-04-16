@@ -38,6 +38,8 @@ public abstract class OAuthHandler {
 
     private final String tokenApiUrl;
 
+    private Map<String, String> requestParametersMap;
+
     protected OAuthHandler(String tokenApiUrl) {
 
         this.id = OAuthUtils.getRandomOAuthHandlerID();
@@ -122,4 +124,31 @@ public abstract class OAuthHandler {
      */
     protected abstract String getEncodedCredentials();
 
+    /**
+     * Return the request parameters as a string
+     *
+     * @return String request parameters
+     */
+    protected String getRequestParametersAsString() {
+
+        if (requestParametersMap == null) {
+            return "";
+        }
+        StringBuilder payload = new StringBuilder();
+        for (Map.Entry<String, String> entry : requestParametersMap.entrySet()) {
+            payload.append(OAuthConstants.AMPERSAND).append(entry.getKey()).append(OAuthConstants.EQUAL_MARK)
+                    .append(entry.getValue());
+        }
+        return payload.toString();
+    }
+
+    /**
+     * Method to set the request parameter map
+     *
+     * @param requestParameters the request parameter map
+     */
+    public void setRequestParameters(Map<String, String> requestParameters) {
+
+        this.requestParametersMap = requestParameters;
+    }
 }

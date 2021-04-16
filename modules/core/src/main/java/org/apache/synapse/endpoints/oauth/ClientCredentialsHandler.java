@@ -43,6 +43,7 @@ public class ClientCredentialsHandler extends OAuthHandler {
         payload.append(OAuthConstants.CLIENT_CRED_GRANT_TYPE);
         payload.append(OAuthConstants.PARAM_CLIENT_ID).append(clientId);
         payload.append(OAuthConstants.PARAM_CLIENT_SECRET).append(clientSecret);
+        payload.append(getRequestParametersAsString());
 
         return payload.toString();
     }
