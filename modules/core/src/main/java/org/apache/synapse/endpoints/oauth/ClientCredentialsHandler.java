@@ -19,14 +19,15 @@
 package org.apache.synapse.endpoints.oauth;
 
 import org.apache.axiom.util.base64.Base64Utils;
+import org.apache.synapse.MessageContext;
 
 /**
  * This class is used to handle Client Credentials grant oauth
  */
 public class ClientCredentialsHandler extends OAuthHandler {
 
-    private final String clientId;
-    private final String clientSecret;
+    private String clientId;
+    private String clientSecret;
 
     public ClientCredentialsHandler(String tokenApiUrl, String clientId, String clientSecret) {
 
@@ -36,14 +37,17 @@ public class ClientCredentialsHandler extends OAuthHandler {
     }
 
     @Override
-    protected String buildTokenRequestPayload() {
+    protected String buildTokenRequestPayload(MessageContext messageContext) throws OAuthException {
 
         StringBuilder payload = new StringBuilder();
+
+        clientId = OAuthUtils.resolveExpression(clientId, messageContext);
+        clientSecret = OAuthUtils.resolveExpression(clientSecret, messageContext);
 
         payload.append(OAuthConstants.CLIENT_CRED_GRANT_TYPE);
         payload.append(OAuthConstants.PARAM_CLIENT_ID).append(clientId);
         payload.append(OAuthConstants.PARAM_CLIENT_SECRET).append(clientSecret);
-        payload.append(getRequestParametersAsString());
+        payload.append(getRequestParametersAsString(messageContext));
 
         return payload.toString();
     }

@@ -19,15 +19,16 @@
 package org.apache.synapse.endpoints.oauth;
 
 import org.apache.axiom.util.base64.Base64Utils;
+import org.apache.synapse.MessageContext;
 
 /**
  * This class is used to handle Authorization code grant oauth
  */
 public class AuthorizationCodeHandler extends OAuthHandler {
 
-    private final String clientId;
-    private final String clientSecret;
-    private final String refreshToken;
+    private String clientId;
+    private String clientSecret;
+    private String refreshToken;
 
     public AuthorizationCodeHandler(String tokenApiUrl, String clientId, String clientSecret,
                                     String refreshToken) {
@@ -39,15 +40,19 @@ public class AuthorizationCodeHandler extends OAuthHandler {
     }
 
     @Override
-    protected String buildTokenRequestPayload() {
+    protected String buildTokenRequestPayload(MessageContext messageContext) throws OAuthException {
 
         StringBuilder payload = new StringBuilder();
+
+        clientId = OAuthUtils.resolveExpression(clientId, messageContext);
+        clientSecret = OAuthUtils.resolveExpression(clientSecret, messageContext);
+        refreshToken = OAuthUtils.resolveExpression(refreshToken, messageContext);
 
         payload.append(OAuthConstants.REFRESH_TOKEN_GRANT_TYPE)
                 .append(OAuthConstants.PARAM_REFRESH_TOKEN).append(refreshToken);
         payload.append(OAuthConstants.PARAM_CLIENT_ID).append(clientId);
         payload.append(OAuthConstants.PARAM_CLIENT_SECRET).append(clientSecret);
-        payload.append(getRequestParametersAsString());
+        payload.append(getRequestParametersAsString(messageContext));
 
         return payload.toString();
     }

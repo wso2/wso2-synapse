@@ -30,12 +30,18 @@ import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
+import org.apache.synapse.mediators.Value;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
+import org.apache.synapse.util.xpath.SynapseXPath;
+import org.jaxen.JaxenException;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.xml.namespace.QName;
 
@@ -45,6 +51,7 @@ import javax.xml.namespace.QName;
 public class OAuthUtils {
 
     private static final Log log = LogFactory.getLog(OAuthUtils.class);
+    private static final Pattern EXPRESSION_PATTERN = Pattern.compile("(\\{[^\"<>}\\]]+})");
 
     /**
      * This method will return an OAuthHandler instance depending on the oauth configs
@@ -296,6 +303,68 @@ public class OAuthUtils {
             }
         }
         return false;
+    }
+
+    /**
+     * Method to check whether parameter value is an expression
+     *
+     * @param value String
+     * @return true if the value is an expression
+     */
+    private static boolean isExpression(String value) {
+
+        Matcher matcher = EXPRESSION_PATTERN.matcher(value);
+        return matcher.find();
+    }
+
+    /**
+     * Method to check whether parameter value is a JSON Path
+     *
+     * @param value String
+     * @return true if the value is a JSON Path
+     */
+    private static boolean isJSONPath(String value) {
+
+        return value.startsWith("json-eval(");
+    }
+
+    /**
+     * Method to evaluate the expression
+     *
+     * @param expressionStr  expression String
+     * @param messageContext MessageContext of the request
+     * @return evaluated String value
+     */
+    private static String evaluateExpression(String expressionStr, MessageContext messageContext)
+            throws OAuthException {
+
+        Value expression;
+        try {
+            if (isJSONPath(expressionStr)) {
+                expression = new Value(new SynapseJsonPath(expressionStr.substring(10, expressionStr.length() - 1)));
+            } else {
+                expression = new Value(new SynapseXPath(expressionStr));
+            }
+            return expression.evaluateValue(messageContext);
+        } catch (JaxenException e) {
+            throw new OAuthException("Error while building the expression : " + expressionStr);
+        }
+    }
+
+    /**
+     * This method evaluate the value as an expression or return the value
+     *
+     * @param value          String parameter value
+     * @param messageContext MessageContext of the request
+     * @return evaluated String value or the passed value itself
+     */
+    public static String resolveExpression(String value, MessageContext messageContext) throws OAuthException {
+
+        if (isExpression(value)) {
+            String expressionStr = value.substring(1, value.length() - 1);
+            return evaluateExpression(expressionStr, messageContext);
+        }
+        return value;
     }
 
     /**

@@ -55,7 +55,7 @@ public abstract class OAuthHandler {
      */
     public void setOAuthHeader(MessageContext messageContext) throws OAuthException {
 
-        setAuthorizationHeader(messageContext, getToken());
+        setAuthorizationHeader(messageContext, getToken(messageContext));
     }
 
     /**
@@ -64,14 +64,15 @@ public abstract class OAuthHandler {
      * @return token String
      * @throws OAuthException In the event of errors when generating new token
      */
-    private String getToken() throws OAuthException {
+    private String getToken(final MessageContext messageContext) throws OAuthException {
 
         try {
             return TokenCache.getInstance().getToken(id, new Callable<String>() {
                 @Override
                 public String call() throws OAuthException, IOException {
 
-                    return OAuthClient.generateToken(tokenApiUrl, buildTokenRequestPayload(), getEncodedCredentials());
+                    return OAuthClient.generateToken(tokenApiUrl, buildTokenRequestPayload(messageContext),
+                            getEncodedCredentials());
                 }
             });
         } catch (ExecutionException e) {
@@ -115,7 +116,7 @@ public abstract class OAuthHandler {
      *
      * @return String payload
      */
-    protected abstract String buildTokenRequestPayload();
+    protected abstract String buildTokenRequestPayload(MessageContext messageContext) throws OAuthException;
 
     /**
      * Return the base 64 encoded clientId:clientSecret relevant to the OAuth handler.
@@ -129,15 +130,16 @@ public abstract class OAuthHandler {
      *
      * @return String request parameters
      */
-    protected String getRequestParametersAsString() {
+    protected String getRequestParametersAsString(MessageContext messageContext) throws OAuthException {
 
         if (requestParametersMap == null) {
             return "";
         }
         StringBuilder payload = new StringBuilder();
         for (Map.Entry<String, String> entry : requestParametersMap.entrySet()) {
+            String value = OAuthUtils.resolveExpression(entry.getValue(), messageContext);
             payload.append(OAuthConstants.AMPERSAND).append(entry.getKey()).append(OAuthConstants.EQUAL_MARK)
-                    .append(entry.getValue());
+                    .append(value);
         }
         return payload.toString();
     }
