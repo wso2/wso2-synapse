@@ -71,7 +71,6 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
         }
 
         PayloadFactoryMediator mediator = (PayloadFactoryMediator) m;
-        TemplateProcessor templateProcessor = new RegexTemplateProcessor();
 
         OMElement payloadFactoryElem = fac.createOMElement(PAYLOAD_FACTORY, synNS);
 
@@ -81,7 +80,6 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
 
         if (isFreeMarkerTemplate(mediator)) {
             payloadFactoryElem.addAttribute(fac.createOMAttribute(TEMPLATE_TYPE, null, FREEMARKER));
-            templateProcessor = new FreeMarkerTemplateProcessor();
         }
         if (mediator.isEscapeXmlChars()) {
             payloadFactoryElem.addAttribute(fac.createOMAttribute(ESCAPE_XML_CHARS,null,
@@ -127,7 +125,7 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
         }
 
         OMElement argumentsElem = fac.createOMElement(ARGS, synNS);
-        List<Argument> pathArgList = templateProcessor.getPathArgumentList();
+        List<Argument> pathArgList = mediator.getTemplateProcessor().getPathArgumentList();
 
         if (null != pathArgList && pathArgList.size() > 0) {
 
