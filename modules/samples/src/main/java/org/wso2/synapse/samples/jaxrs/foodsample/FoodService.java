@@ -57,6 +57,22 @@ public class FoodService {
         return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid Credentials").build();
     }
 
+    @POST
+    @Path("/custom-token")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAccessTokenWithCustomParams(@Context HttpHeaders httpHeaders,
+                                                   MultivaluedMap<String, String> tokenRequestParams) {
+
+        String basicHeader = httpHeaders.getHeaderString("Authorization");
+
+        if (validateCustomParams(tokenRequestParams) && validateCredentials(basicHeader, tokenRequestParams)) {
+            return Response.status(Response.Status.OK).entity(new Token(Constants.accessToken, Constants.expiresIn,
+                    Constants.tokenType)).build();
+        }
+        return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid Credentials").build();
+    }
+
     @GET
     @Path("/food")
     @Produces(MediaType.APPLICATION_JSON)
@@ -102,5 +118,13 @@ public class FoodService {
             return false;
         }
         return true;
+    }
+
+    private boolean validateCustomParams(MultivaluedMap<String, String> tokenRequestParams) {
+
+        String accountId = tokenRequestParams.getFirst("account_id");
+        String userRole = tokenRequestParams.getFirst("user_role");
+
+        return accountId.equals("1234") && userRole.equals("tester");
     }
 }
