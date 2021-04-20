@@ -662,9 +662,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
 					handleFailedInvocations(outCtx);
 					return;
 				} else if (validateResponse(outCtx)) {
-					isSuccessful = true;
-					sendThroughReplySeq(outCtx);
-					onForwardSuccess(endpoint);
+					// if onforwardsuccess is executed, isSuccessful will become true
+					isSuccessful = false;
+					if (sendThroughReplySeq(outCtx)) {
+						onForwardSuccess(endpoint);
+					}
 				} else {
 					isSuccessful = false;
 					handleFailedInvocations(outCtx);
@@ -825,13 +827,16 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	 *
 	 * @param outCtx Synapse out {@link MessageContext} to be sent through the
 	 *               reply sequence.
+     *
+     * @return <code>true</code> if reply sequence invocation is successful
+     *         <code>false</code> otherwise
 	 */
-	public void sendThroughReplySeq(MessageContext outCtx) {
+	public boolean sendThroughReplySeq(MessageContext outCtx) {
 		if (replySeq == null) {
 			deactivateMessageProcessor(outCtx);
 			log.error("Failed to send the out message. Reply sequence does not Exist. "
 					+ "Deactivated the message processor.");
-			return;
+			return false;
 		}
 		Mediator mediator = outCtx.getSequence(replySeq);
 
@@ -839,10 +844,10 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			deactivateMessageProcessor(outCtx);
 			log.error("Failed to send the out message. Reply sequence [" + replySeq +
 					"] does not exist. Deactivated the message processor.");
-			return;
+			return false;
 		}
 
-		mediator.mediate(outCtx);
+		return mediator.mediate(outCtx);
 	}
 
 	/**

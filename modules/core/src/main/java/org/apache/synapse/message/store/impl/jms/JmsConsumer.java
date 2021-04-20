@@ -149,7 +149,6 @@ public class JmsConsumer implements MessageConsumer {
     }
 
     public boolean cleanup() throws SynapseException {
-        isAlive = false;
         if (logger.isDebugEnabled()) {
             logger.debug(getId() + " cleaning up...");
         }
