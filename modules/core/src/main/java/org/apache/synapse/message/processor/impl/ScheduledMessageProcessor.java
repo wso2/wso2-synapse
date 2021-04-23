@@ -456,6 +456,10 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
                taskManager.isTaskBlocked(TASK_PREFIX + name + SYMBOL_UNDERSCORE + DEFAULT_TASK_SUFFIX);
 	}
 
+	public boolean isTaskLocationKnown() {
+		return taskManager.isTaskExist(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+	}
+
     @Override
     public boolean isPaused() {
 		return taskManager.isTaskDeactivated(TASK_PREFIX + name + SYMBOL_UNDERSCORE + DEFAULT_TASK_SUFFIX);

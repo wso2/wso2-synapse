@@ -86,4 +86,10 @@ public interface FailoverMessageForwardingProcessorViewMBean {
      * This will stop the processing of Messages.
      */
     public void deactivate();
+
+    /**
+     * Checks if the task location linked to this Message Processor is known
+     * @return true if the task location linked to this Message Processor is known
+     */
+    public boolean isTaskLocationKnown();
 }

@@ -38,4 +38,9 @@ public class SamplingProcessorView implements SamplingProcessorViewMBean {
         assert processor != null;
         return processor.isActive();
     }
+
+    public boolean isTaskLocationKnown() {
+        assert processor != null;
+        return processor.isTaskLocationKnown();
+    }
 }
