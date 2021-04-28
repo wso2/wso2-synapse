@@ -119,7 +119,8 @@ public class MediatorSerializerFinder {
             log.debug("Registering mediator extensions found in the classpath.. ");
         }
         // register MediatorSerializer extensions
-        Iterator it = java.util.ServiceLoader.load(MediatorSerializer.class).iterator();
+        Iterator it = java.util.ServiceLoader
+                .load(MediatorSerializer.class, MediatorSerializerFinder.class.getClassLoader()).iterator();
         while (it.hasNext()) {
             MediatorSerializer ms = (MediatorSerializer) it.next();
             String name = ms.getMediatorClassName();
