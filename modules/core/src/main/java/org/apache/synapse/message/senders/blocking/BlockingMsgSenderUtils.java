@@ -173,6 +173,8 @@ public class BlockingMsgSenderUtils {
                 }
                 axisOutMsgCtx.setDoingREST(true);
             }
+        } else {
+            axisOutMsgCtx.setDoingREST(axisInMsgCtx.isDoingREST());
         }
 
         // MTOM/SWA
