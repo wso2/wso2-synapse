@@ -201,4 +201,6 @@ public class StatisticsConstants {
 
     public static final String STAT_COLLECTOR_PROPERTY = "STATISTIC_COLLECTOR";
 
+    public static final String CONTINUE_STATISTICS_FLOW = "CONTINUE_STATISTICS_FLOW";
+
 }

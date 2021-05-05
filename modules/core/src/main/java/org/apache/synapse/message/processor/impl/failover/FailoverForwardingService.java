@@ -38,6 +38,7 @@ import org.apache.synapse.message.MessageProducer;
 import org.apache.synapse.message.StoreForwardException;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.processor.MessageProcessorConstants;
+import org.apache.synapse.message.processor.MessageProcessorUtils;
 import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.task.Task;
 import org.apache.synapse.util.MessageHelper;
@@ -316,7 +317,9 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
      * store.
      */
     public MessageContext fetch(MessageConsumer msgConsumer) throws StoreForwardException {
-        return messageConsumer.receive();
+        MessageContext messageContext = messageConsumer.receive();
+        MessageProcessorUtils.removeStatisticsReportingEventHolder(messageContext);
+        return messageContext;
     }
 
     /**

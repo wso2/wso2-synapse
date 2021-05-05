@@ -331,10 +331,23 @@ public abstract class RuntimeStatisticCollector {
         }
         eventHolder.addEvent(event);
 
-        if (eventHolder.countHolder.decrementAndGetStatCount() <= 0 && eventHolder.countHolder.getCallBackCount() <= 0) {
+        if (eventHolder.countHolder.decrementAndGetStatCount() <= 0 &&
+                eventHolder.countHolder.getCallBackCount() <= 0 && !continueStatisticFlow(messageContext)) {
             eventHolder.setEvenCollectionFinished(true);
             messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
         }
+    }
+
+    /**
+     * Helper method to check whether we need to continue the current statistic flow
+     *
+     * @param messageContext
+     * @return true if we need to continue the current statistic flow
+     */
+    private static boolean continueStatisticFlow(MessageContext messageContext) {
+
+        Object continueStatisticFlow = messageContext.getProperty(StatisticsConstants.CONTINUE_STATISTICS_FLOW);
+        return continueStatisticFlow != null && (Boolean) continueStatisticFlow;
     }
 
     /**
