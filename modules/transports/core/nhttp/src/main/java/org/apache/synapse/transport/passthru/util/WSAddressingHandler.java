@@ -33,6 +33,9 @@ public class WSAddressingHandler extends AbstractHandler {
 
         Pipe pipe = (Pipe) messageContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
         if (pipe != null) {
+            if (messageContext.isDoingREST()) {
+                return InvocationResponse.CONTINUE;
+            }
             if (messageContext.getAxisService() != null) {
                 if (messageContext.getAxisService().getParameter(
                            PassThroughConstants.ENABLE_WS_ADDRESSING) != null &&
