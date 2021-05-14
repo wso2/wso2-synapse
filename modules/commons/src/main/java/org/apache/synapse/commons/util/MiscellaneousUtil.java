@@ -23,6 +23,7 @@ import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.SynapseCommonsException;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -42,6 +43,8 @@ public class MiscellaneousUtil {
 	private static Log log = LogFactory.getLog(MiscellaneousUtil.class);
 	
 	private static final String CONF_LOCATION = "conf.location";
+
+	private static final String MSMP_PREFIX = "MSMP_";
 
 	private MiscellaneousUtil() {
 	}
@@ -356,4 +359,22 @@ public class MiscellaneousUtil {
         log.error(msg);
         throw new SynapseCommonsException(msg, ex);
     }
+
+	/**
+	 * Checks if the task belongs to a message processor
+	 * @param taskName task name
+	 * @return true if task belongs to a message processor
+	 */
+	public static boolean isTaskOfMessageProcessor(String taskName) {
+		return taskName.startsWith(MSMP_PREFIX);
+	}
+
+	/**
+	 * Provides the name of the corresponding message processor of a task
+	 * @param taskName task name
+	 * @return message processor name
+	 */
+	public static String getMessageProcessorName(String taskName) {
+		return taskName.substring(MSMP_PREFIX.length(), taskName.lastIndexOf("_"));
+	}
 }
