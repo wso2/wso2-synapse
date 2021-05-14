@@ -230,6 +230,7 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
             try {
                 properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, config);
                 mediator = MediatorFactoryFinder.getInstance().getMediator(ele, properties, config);
+                MediatorFactoryFinder.getInstance().setSynapseImportMap(config.getSynapseImports());
                 if (mediator != null) {
                     config.addSequence(name, mediator);
                     // mandatory sequence is treated as a special sequence because it will be fetched for
