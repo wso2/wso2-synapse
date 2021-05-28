@@ -677,7 +677,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 			log.error("[ " + messageProcessor.getName() + " ] Error while forwarding message to endpoint "
 					+ targetEndpoint + ".", e);
-			handleFailedInvocations(outCtx);
+			handleFailedInvocations(messageToDispatch);
 		}
 	}
 
