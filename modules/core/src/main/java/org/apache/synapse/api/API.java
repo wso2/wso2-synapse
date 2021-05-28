@@ -480,17 +480,30 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
             }
             if (!resourceFound) {
                 handleResourceNotFound(synCtx);
-            } else if (resourceFound && !matchingMethodFound) {
-                //Resource found, but in that resource, requested method not allowed. So sending method not allowed http status (405)
-                msgCtx.setProperty(SynapseConstants.HTTP_SC, HttpStatus.SC_METHOD_NOT_ALLOWED);
-                msgCtx.removeProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-                msgCtx.setProperty("NIO-ACK-Requested", true);
+            } else if (!matchingMethodFound) {
+                handleMethodNotAllowed(synCtx);
             } else {
                 //Resource found, and matching method also found, which means request is BAD_REQUEST(400)
                 msgCtx.setProperty(SynapseConstants.HTTP_SC, HttpStatus.SC_BAD_REQUEST);
                 msgCtx.setProperty("NIO-ACK-Requested", true);
             }
         }
+    }
+
+    private void handleMethodNotAllowed(MessageContext synCtx) {
+
+        auditDebug("Method not allowed for the request: " + synCtx.getMessageID());
+        Mediator sequence = synCtx.getSequence(RESTConstants.METHOD_NOT_ALLOWED_RESOURCE_HANDLER);
+        if (sequence != null) {
+            sequence.mediate(synCtx);
+        } else {
+            org.apache.axis2.context.MessageContext msgCtx =
+                    ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+            msgCtx.setProperty(SynapseConstants.HTTP_SC, HttpStatus.SC_METHOD_NOT_ALLOWED);
+            msgCtx.removeProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+            msgCtx.setProperty("NIO-ACK-Requested", true);
+        }
+
     }
 
     /**
