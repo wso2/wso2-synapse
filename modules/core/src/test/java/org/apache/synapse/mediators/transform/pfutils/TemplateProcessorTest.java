@@ -80,7 +80,9 @@ public class TemplateProcessorTest {
                     getArgumentDetails(X_PATH, true, false));
 
             // jsonToXml
-            Map.Entry<String, ArgumentDetails> jsonToXml = Maps.immutableEntry("{\"name\":\"john smith\"}",
+            Map.Entry<String, ArgumentDetails> jsonToXml = Maps.immutableEntry("{\"name\":\"john smith\", \"subject\" : null, \"isStudent\" : true}",
+                    getArgumentDetails(JSON_PATH, false, false));
+            Map.Entry<String, ArgumentDetails> jsonToXmlArray = Maps.immutableEntry("[55, 76]",
                     getArgumentDetails(JSON_PATH, false, false));
             Map.Entry<String, ArgumentDetails> jsonToXmlWithSpecialChars =
                     Maps.immutableEntry("{\"name\":\"hello\\\\nworld\"}",
@@ -135,7 +137,8 @@ public class TemplateProcessorTest {
             return Arrays.asList(new Object[][]{
                     {JSON_TYPE, xmlToJson, synCtx, "{\"name\":\"john smith\"}"},
                     {JSON_TYPE, xmlToJsonWithSpecialChars, synCtx, "{\"name\":\"hello\\\\\\\\\\nworld\"}"},
-                    {XML_TYPE, jsonToXml, synCtx, "<name>john smith</name>"},
+                    {XML_TYPE, jsonToXml, synCtx, "<name>john smith</name><subject /><isStudent>true</isStudent>"},
+                    {XML_TYPE, jsonToXmlArray, synCtx, "<jsonElement>55</jsonElement><jsonElement>76</jsonElement>"},
                     {XML_TYPE, jsonToXmlWithSpecialChars, synCtx, "<name>hello\\\nworld</name>"},
                     {XML_TYPE, jsonToXmlWithInferReplacementTypeString, synCtx, "<name>john smith</name>"},
                     {XML_TYPE, jsonToXmlWithInferReplacementTypeStringAndSpecialChars, synCtx,
