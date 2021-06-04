@@ -49,7 +49,8 @@ public class RESTConstants {
     public static final String DEFAULT_ENCODING = "UTF-8";
     
     public static final String NO_MATCHING_RESOURCE_HANDLER = "_resource_mismatch_handler_";
-
+    public static final String METHOD_NOT_ALLOWED_RESOURCE_HANDLER = "_method_not_allowed_handler_";
+    
     /**
      * Delimiter of an url  query string
      */
