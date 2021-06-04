@@ -707,6 +707,9 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     log.debug("Moving to file :" + VFSUtils.maskURLPassword(dest.getName().getURI()));
                 }
                 try {
+                    if (!entry.getUpdateLastModified()) {
+                        dest.setUpdateLastModified(false);
+                    }
                     fileObject.moveTo(dest);
                 } catch (FileSystemException e) {
                     handleException("Error moving file : " + VFSUtils.maskURLPassword(fileObject.toString()) + " to " +
