@@ -134,10 +134,8 @@ public class TemplateMediator extends AbstractListMediator {
         try {
             pushFuncContextTo(synCtx);
             result = super.mediate(synCtx);
-        } finally {
-            if (result) {
-                popFuncContextFrom(synCtx);
-            }
+            // if we pushed an error handler, pop it from the fault stack
+            // before we exit normally without an exception
             if (errorHandlerMediator != null) {
                 Stack faultStack = synCtx.getFaultStack();
                 if (faultStack != null && !faultStack.isEmpty()) {
@@ -147,6 +145,10 @@ public class TemplateMediator extends AbstractListMediator {
                         faultStack.pop();
                     }
                 }
+            }
+        } finally {
+            if (result) {
+                popFuncContextFrom(synCtx);
             }
         }
         return result;
