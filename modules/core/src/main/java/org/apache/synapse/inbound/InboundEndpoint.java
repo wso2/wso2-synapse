@@ -31,6 +31,9 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
+import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.SecretResolverFactory;
+import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -135,8 +138,19 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
         Properties props = Utils.paramsToProperties(parametersMap);
         //replacing values by secure vault
         resolveSecureVaultExpressions(props);
+        resolveSystemSecureVaultProperties(props);
         inboundProcessorParams.setProperties(props);
         return inboundProcessorParams;
+    }
+
+    private void resolveSystemSecureVaultProperties(Properties props) {
+
+        SecretResolver secretResolver = SecretResolverFactory.create(props);
+        if (secretResolver.isInitialized()) {
+            for (Map.Entry<Object, Object> entry : props.entrySet()) {
+                props.put(entry.getKey(), MiscellaneousUtil.resolve(entry.getValue().toString(), secretResolver));
+            }
+        }
     }
 
     /**
