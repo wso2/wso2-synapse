@@ -17,19 +17,86 @@
 
 package org.apache.synapse.commons.resolvers;
 
-import junit.framework.TestCase;
 import org.apache.synapse.commons.util.FilePropertyLoader;
+import org.awaitility.Awaitility;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
-public class FilePropertyResolverTest extends TestCase {
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.concurrent.TimeUnit;
+
+
+public class FilePropertyResolverTest {
+
+    private final String KEY = "testKey";
+    private static final String FILE_SYNC_INTERVAL = "file.properties.sync.interval";
+
+    @Before
+    public void resetInstance() throws NoSuchFieldException, IllegalAccessException {
+        Field instance = FilePropertyLoader.class.getDeclaredField("fileLoaderInstance");
+        instance.setAccessible(true);
+        instance.set(null, null);
+        System.clearProperty(FILE_SYNC_INTERVAL);
+        System.setProperty("properties.file.path", System.getProperty("user.dir")
+                                                   + "/src/test/resources/file.properties");
+    }
+
+    @After
+    public void resetPropertiesFile() throws IOException {
+        writeContentToFile("testKey=testValue");
+    }
 
     /**
      * Test file property resolve method
      */
-    public void testResolve() {
-        String inputValue = "testKey";
-        System.setProperty(FilePropertyLoader.FILE_PROPERTY_PATH, System.getProperty("user.dir") + "/src/test/resources/file.properties");
-        FilePropertyLoader propertyLoader = FilePropertyLoader.getInstance();
-        String filePropertyValue = propertyLoader.getValue(inputValue);
-        assertEquals("Couldn't resolve the file property variable", "testValue", filePropertyValue);
+    @Test
+    public void testBasicResolve() {
+        assertInitialResolvedValue();
     }
+
+    /**
+     * Test file property resolve method with the sync interval defined.
+     * <p>
+     * The key should be resolved to the updated values once tested after the defined interval.
+     */
+    @Test
+    public void testResolveWithSyncIntervalDefined() throws IOException {
+        System.setProperty(FILE_SYNC_INTERVAL, "1");
+        //assert initial value
+        assertInitialResolvedValue();
+
+        //modify content
+        writeContentToFile("testKey=testValue2");
+
+        //Wait for more than the sync interval and resolve
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            //ignore
+        }
+        FilePropertyLoader propertyLoader = FilePropertyLoader.getInstance();
+        Awaitility.await().pollInterval(500, TimeUnit.MILLISECONDS).atMost(5, TimeUnit.SECONDS).
+                until(() -> "testValue2".equals(propertyLoader.getValue(KEY)));
+    }
+
+    private void writeContentToFile(String s) throws IOException {
+        Path path = Paths.get("src", "test", "resources", "file.properties");
+        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+            writer.write(s);
+        }
+    }
+
+    private void assertInitialResolvedValue() {
+        FilePropertyLoader propertyLoader = FilePropertyLoader.getInstance();
+        String filePropertyValue = propertyLoader.getValue(KEY);
+        Assert.assertEquals("Couldn't resolve the file property variable", "testValue", filePropertyValue);
+    }
+
 }
