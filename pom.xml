@@ -1277,6 +1277,12 @@
               <artifactId>freemarker</artifactId>
               <version>${freemarker.version}</version>
           </dependency>
+          <dependency>
+              <groupId>org.awaitility</groupId>
+              <artifactId>awaitility</artifactId>
+              <version>${awaitility.version}</version>
+              <scope>test</scope>
+          </dependency>
       </dependencies>
    </dependencyManagement>
     <reporting>
@@ -1507,6 +1513,7 @@
        <glassfish.jersey.version>2.32</glassfish.jersey.version>
 
        <freemarker.version>2.3.30</freemarker.version>
+       <awaitility.version>3.1.2</awaitility.version>
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->
