@@ -38,27 +38,9 @@ public class FilePropertyResolverTest {
     private final String KEY = "testKey";
     private static final String FILE_SYNC_INTERVAL = "file.properties.sync.interval";
 
-    @Before
-    public void resetInstance() throws NoSuchFieldException, IllegalAccessException {
-        Field instance = FilePropertyLoader.class.getDeclaredField("fileLoaderInstance");
-        instance.setAccessible(true);
-        instance.set(null, null);
-        System.clearProperty(FILE_SYNC_INTERVAL);
-        System.setProperty("properties.file.path", System.getProperty("user.dir")
-                                                   + "/src/test/resources/file.properties");
-    }
-
     @After
     public void resetPropertiesFile() throws IOException {
         writeContentToFile("testKey=testValue");
-    }
-
-    /**
-     * Test file property resolve method
-     */
-    @Test
-    public void testBasicResolve() {
-        assertInitialResolvedValue();
     }
 
     /**
@@ -68,6 +50,10 @@ public class FilePropertyResolverTest {
      */
     @Test
     public void testResolveWithSyncIntervalDefined() throws IOException {
+
+        System.setProperty("properties.file.path", System.getProperty("user.dir")
+                                                   + "/src/test/resources/file.properties");
+
         System.setProperty(FILE_SYNC_INTERVAL, "1");
         //assert initial value
         assertInitialResolvedValue();
@@ -84,6 +70,20 @@ public class FilePropertyResolverTest {
         FilePropertyLoader propertyLoader = FilePropertyLoader.getInstance();
         Awaitility.await().pollInterval(500, TimeUnit.MILLISECONDS).atMost(5, TimeUnit.SECONDS).
                 until(() -> "testValue2".equals(propertyLoader.getValue(KEY)));
+
+        //modify content
+        writeContentToFile("testKey=testValue3");
+
+        //Wait for more than the sync interval and resolve
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            //ignore
+        }
+        FilePropertyLoader propertyLoader2 = FilePropertyLoader.getInstance();
+        Awaitility.await().pollInterval(500, TimeUnit.MILLISECONDS).atMost(30, TimeUnit.SECONDS).
+                until(() -> "testValue3".equals(propertyLoader2.getValue(KEY)));
+
     }
 
     private void writeContentToFile(String s) throws IOException {
