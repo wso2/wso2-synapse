@@ -280,6 +280,9 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             ", " + e.getMessage() + " Retrying in " + reconnectionTimeout +
                             " milliseconds.");
                 }
+            } catch (Exception e) {
+                log.warn("Runtime error may have occurred. ", e);
+                closeFileSystem(fileObject);
             }
 
             if (wasError) {
@@ -576,19 +579,26 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 entry.setLastPollTime(now);
                 entry.setNextPollTime(now + entry.getPollInterval());
 
-            } else if (log.isDebugEnabled()) {
-				log.debug("Unable to access or read file or directory : "
-						+ VFSUtils.maskURLPassword(fileURI)
-						+ "."
-						+ " Reason: "
-						+ (fileObject.exists() ? (fileObject.isReadable() ? "Unknown reason"
-								: "The file can not be read!")
-								: "The file does not exists!"));
+            } else {
+                // The file object is not readable. Clean the cached connection to trigger
+                // the retry mechanism
+                closeFileSystem(fileObject);
+                if (log.isDebugEnabled()) {
+                    log.debug("Unable to access or read file or directory : "
+                            + VFSUtils.maskURLPassword(fileURI)
+                            + "."
+                            + " Reason: "
+                            + (fileObject.exists() ? (fileObject.isReadable() ? "Unknown reason"
+                            : "The file can not be read!")
+                            : "The file does not exists!"));
+                }
             }
             onPollCompletion(entry);
         } catch (FileSystemException e) {
+            closeFileSystem(fileObject);
             processFailure("Error checking for existence and readability : " + VFSUtils.maskURLPassword(fileURI), e, entry);
         } catch (Exception ex) {
+            closeFileSystem(fileObject);
             processFailure("Un-handled exception thrown when processing the file : ", ex, entry);
         }
     }
