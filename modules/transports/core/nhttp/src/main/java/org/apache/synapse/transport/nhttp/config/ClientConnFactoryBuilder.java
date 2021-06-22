@@ -44,6 +44,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.deployment.util.Utils;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.axis2.transport.base.ParamUtils;
@@ -239,6 +240,7 @@ public class ClientConnFactoryBuilder {
         }
 
         OMElement customProfilesElt = customProfilesParam.getParameterElement();
+        Utils.resolveOMElementChildValues(customProfilesElt);
         SecretResolver secretResolver = SecretResolverFactory.create(customProfilesElt, true);
         Iterator<?> profiles = customProfilesElt.getChildrenWithName(new QName("profile"));
         Map<String, SSLContext> contextMap = new HashMap<String, SSLContext>();
