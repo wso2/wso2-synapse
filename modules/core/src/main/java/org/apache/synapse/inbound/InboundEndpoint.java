@@ -63,8 +63,8 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
     /** Whether the deployed inbound endpoint is edited via the management console */
     private boolean isEdited;
     private AspectConfiguration aspectConfiguration;
-    /** regex for secure vault expression */
-    private static final String secureVaultRegex = "\\{wso2:vault-lookup\\('(.*?)'\\)\\}";
+    /** regex for any vault expression */
+    private static final String secureVaultRegex = "\\{(.*?):vault-lookup\\('(.*?)'\\)\\}";
 
     public void init(SynapseEnvironment se) {
         log.info("Initializing Inbound Endpoint: " + getName());
@@ -136,7 +136,7 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
 
         Properties props = Utils.paramsToProperties(parametersMap);
         //replacing values by secure vault
-        resolveSecureVaultExpressions(props);
+        resolveVaultExpressions(props);
         inboundProcessorParams.setProperties(props);
         return inboundProcessorParams;
     }
@@ -291,7 +291,7 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
         StatisticIdentityGenerator.reportingEndEvent(apiId, ComponentType.INBOUNDENDPOINT, holder);
     }
 
-    private void resolveSecureVaultExpressions(Properties props) {
+    private void resolveVaultExpressions(Properties props) {
         Pattern vaultLookupPattern = Pattern.compile(secureVaultRegex);
         for (Map.Entry<Object, Object> entry : props.entrySet()) {
             String value = (String) entry.getValue();
