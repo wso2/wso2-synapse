@@ -147,8 +147,7 @@ public class MessageHelper {
         //Correlation logging code starts here
         org.apache.axis2.context.MessageContext originalAxis2Ctx =
                 ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-        if (originalAxis2Ctx.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)
-                && originalAxis2Ctx.getProperty(CorrelationConstants.CORRELATION_ID) != null  && isCloneCorrelationId) {
+        if (originalAxis2Ctx.getProperty(CorrelationConstants.CORRELATION_ID) != null  && isCloneCorrelationId) {
             String originalCorrelationId = originalAxis2Ctx.getProperty(CorrelationConstants.CORRELATION_ID).toString();
             axis2MC.getAxis2MessageContext().setProperty(CorrelationConstants.CORRELATION_ID, originalCorrelationId
                     + "_" + UUID.randomUUID().toString());

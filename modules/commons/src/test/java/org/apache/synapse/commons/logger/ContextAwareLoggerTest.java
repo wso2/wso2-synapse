@@ -36,6 +36,7 @@ public class ContextAwareLoggerTest extends TestCase {
         //For axis2MessageContext
         MessageContext messageContext = new MessageContext();
         //when flag 'remove from mdc after logging' is disabled
+        ContextAwareLogger.setCorrelationLoggingEnabled(true);
         Log contextAwareLogger = ContextAwareLogger.getLogger(messageContext, log, false);
         validateLoggerWhileCorrelationLogsDisabled(contextAwareLogger);
 
@@ -51,6 +52,10 @@ public class ContextAwareLoggerTest extends TestCase {
 
         //when flag 'remove from mdc after logging' is enabled
         contextAwareLogger = ContextAwareLogger.getLogger(httpContext, log, true);
+        validateLoggerWhileCorrelationLogsDisabled(contextAwareLogger);
+
+        ContextAwareLogger.setCorrelationLoggingEnabled(false);
+        contextAwareLogger = ContextAwareLogger.getLogger(messageContext, log, false);
         validateLoggerWhileCorrelationLogsDisabled(contextAwareLogger);
     }
 
@@ -82,6 +87,7 @@ public class ContextAwareLoggerTest extends TestCase {
         // Not removing from mdc after logging
         // Axis2 Message Context
         MessageContext messageContext = getCorrelationIdAwareAxis2Context();
+        ContextAwareLogger.setCorrelationLoggingEnabled(true);
         Log contextAwareLogger = ContextAwareLogger.getLogger(messageContext, log, false);
         validateMDCAwareLogger(contextAwareLogger);
 
@@ -96,6 +102,7 @@ public class ContextAwareLoggerTest extends TestCase {
         // Removing from mdc after logging
         // Axis2 MessageContext
         MessageContext messageContext = getCorrelationIdAwareAxis2Context();
+        ContextAwareLogger.setCorrelationLoggingEnabled(true);
         Log contextAwareLogger = ContextAwareLogger.getLogger(messageContext, log, true);
         validateMDCImmediateLogger(contextAwareLogger);
 
@@ -199,6 +206,7 @@ public class ContextAwareLoggerTest extends TestCase {
 
         String logMessage = "Testing WARN log For CorrelationMDCAwareLogger";
         HttpContext httpContext = getCorrelationIdAwareHTTPContext();
+        ContextAwareLogger.setCorrelationLoggingEnabled(true);
         Log contextAwareLogger = ContextAwareLogger.getLogger(httpContext, log, false);
         contextAwareLogger.info(logMessage);
         validateMDCPropertyForMDCAwareLogger();

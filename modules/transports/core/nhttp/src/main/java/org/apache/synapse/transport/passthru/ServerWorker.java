@@ -144,7 +144,7 @@ public class ServerWorker implements Runnable {
             MDC.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
             /* Subsequent to removing the correlation id MDC thread local value, a new value is put in case
                there is one */
-            if (StringUtils.isNotEmpty(correlationId)) {
+            if (sourceConfiguration.isCorrelationLoggingEnabled() && StringUtils.isNotEmpty(correlationId)) {
                 MDC.put(CorrelationConstants.CORRELATION_MDC_PROPERTY, correlationId);
                 /* Log the time taken to switch from the previous thread to this thread */
                 if (initiationTimestamp != 0) {
@@ -487,11 +487,24 @@ public class ServerWorker implements Runnable {
     	
     	Map excessHeaders = request.getExcessHeaders();
         ConfigurationContext cfgCtx = sourceConfiguration.getConfigurationContext();
+        NHttpServerConnection conn = request.getConnection();
 
+        Object systemGeneratedCorrelationLog =
+                conn.getContext().getAttribute(CorrelationConstants.SYSTEM_GENERATED_CORRELATION_ID);
+        Object correlationId = conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID);
         if (msgContext == null) {
             msgContext = new MessageContext();
         }
-        msgContext.setMessageID(UIDGenerator.generateURNString());
+        String messageId = null;
+        if (systemGeneratedCorrelationLog instanceof Boolean && (Boolean) systemGeneratedCorrelationLog) {
+            if (correlationId instanceof String && StringUtils.isNotEmpty((String) correlationId)) {
+                messageId = (String) correlationId;
+            }
+        }
+        if (StringUtils.isEmpty(messageId)) {
+            messageId = UIDGenerator.generateURNString();
+        }
+        msgContext.setMessageID(messageId);
 
         // Axis2 spawns a new threads to send a message if this is TRUE - and it has to
         // be the other way
@@ -506,12 +519,9 @@ public class ServerWorker implements Runnable {
 //        msgContext.setIncomingTransportName(Constants.TRANSPORT_HTTP);
 //        msgContext.setProperty(Constants.OUT_TRANSPORT_INFO, this);
         
-        NHttpServerConnection conn = request.getConnection();
         // propagate correlation logging related properties
-        msgContext.setProperty(CorrelationConstants.CORRELATION_ID,
-                conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
-        msgContext.setProperty(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY,
-                sourceConfiguration.isCorrelationLoggingEnabled());
+        msgContext.setProperty(CorrelationConstants.CORRELATION_ID, correlationId);
+
         // propagate transaction property
         msgContext.setProperty(BaseConstants.INTERNAL_TRANSACTION_COUNTED,
                                conn.getContext().getAttribute(BaseConstants.INTERNAL_TRANSACTION_COUNTED));

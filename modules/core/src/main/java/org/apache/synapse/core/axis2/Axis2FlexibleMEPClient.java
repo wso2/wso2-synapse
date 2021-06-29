@@ -59,6 +59,7 @@ import org.apache.synapse.util.MediatorPropertyUtils;
 import org.apache.synapse.util.MessageHelper;
 
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.UUID;
 import javax.mail.internet.ContentType;
@@ -148,13 +149,15 @@ public class Axis2FlexibleMEPClient {
             headers.put("Cookie", session);
         }
 
-        if (originalInMsgCtx.isPropertyTrue(PassThroughConstants.CORRELATION_LOG_STATE_PROPERTY)) {
             if (originalInMsgCtx.getProperty(CorrelationConstants.CORRELATION_ID) == null) {
                 originalInMsgCtx.setProperty(CorrelationConstants.CORRELATION_ID, UUID.randomUUID().toString());
             }
+            if (headers == null) {
+                headers = new HashMap();
+                originalInMsgCtx.setProperty(MessageContext.TRANSPORT_HEADERS, headers);
+            }
             headers.put(PassThroughConfiguration.getInstance().getCorrelationHeaderName(),
                     originalInMsgCtx.getProperty(CorrelationConstants.CORRELATION_ID).toString());
-        }
 
         // create a new MessageContext to be sent out as this should not corrupt the original
         // we need to create the response to the original message later on

@@ -127,8 +127,8 @@ public class SourceHandler implements NHttpServerEventHandler {
     public void requestReceived(NHttpServerConnection conn) {
         try {
             HttpContext httpContext = conn.getContext();
+            setCorrelationId(conn);
             if (sourceConfiguration.isCorrelationLoggingEnabled()) {
-                setCorrelationId(conn);
                 SourceContext sourceContext = (SourceContext)
                         conn.getContext().getAttribute(TargetContext.CONNECTION_INFORMATION);
                 sourceContext.updateLastStateUpdatedTime();
@@ -192,6 +192,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         } else {
             correlationId = UUID.randomUUID().toString();
             conn.getHttpRequest().setHeader(correlationHeaderName, correlationId);
+            httpContext.setAttribute(CorrelationConstants.SYSTEM_GENERATED_CORRELATION_ID, true);
         }
         httpContext.setAttribute(CorrelationConstants.CORRELATION_ID, correlationId);
     }
