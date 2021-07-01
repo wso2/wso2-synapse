@@ -46,6 +46,8 @@ public class JDBCConfiguration {
      */
     private static final Log log = LogFactory.getLog(JDBCConfiguration.class);
 
+    private static final String H2_INIT = ";init=";
+
     /**
      * Information about datasource
      */
@@ -78,6 +80,10 @@ public class JDBCConfiguration {
      */
     public void buildDataSource(Map<String, Object> parameters) {
         try {
+            Object connectionUrl = parameters.get(JDBCMessageStoreConstants.JDBC_CONNECTION_URL);
+            if (connectionUrl != null && connectionUrl.toString().toLowerCase().contains(H2_INIT)) {
+                throw new Exception("INIT expressions are not allowed in the connection URL due to security reasons.");
+            }
             // Get datasource information
             if ((parameters.get(JDBCMessageStoreConstants.JDBC_DSNAME)) != null) {
                 readLookupConfig(parameters);
