@@ -25,6 +25,7 @@ import org.apache.axiom.om.impl.builder.StAXBuilder;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axis2.AxisFault;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -326,8 +327,48 @@ public abstract class TemplateProcessor {
      */
     protected boolean isJson(String value) {
 
-        return !(value == null || value.trim().isEmpty()) &&
-                (value.trim().charAt(0) == '{' || value.trim().charAt(0) == '[');
+        if (!(value == null || value.trim().isEmpty()) &&
+                (value.trim().charAt(0) == '{' || value.trim().charAt(0) == '[')) {
+            if (isJsonArrayBegin(value)) {
+                return isJsonArray(value.trim().substring(1));
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isJsonArray(String value) {
+        if (isJsonObjectBegin(value) || isJsonArrayBegin(value)) {
+            return true;
+        }
+        int separator = value.indexOf(",");
+        String element;
+        if (separator > 0) {
+            element = value.substring(0, separator);
+        } else {
+            element = value.substring(0, value.length() - 1);
+        }
+        return isNull(element) || isBoolean(element) || NumberUtils.isParsable(element) || isString(element);
+    }
+
+    private boolean isBoolean(String value) {
+        return value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false");
+    }
+
+    private boolean isNull(String value) {
+        return value.equalsIgnoreCase("null");
+    }
+
+    private boolean isString(String value) {
+        return value.charAt(0) == '"';
+    }
+
+    private boolean isJsonObjectBegin(String value) {
+        return value.trim().charAt(0) == '{';
+    }
+
+    private boolean isJsonArrayBegin(String value) {
+        return value.trim().charAt(0) == '[';
     }
 
     /**
