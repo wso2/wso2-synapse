@@ -76,6 +76,34 @@
                             </endpoint>
                         </send>
                     </case>
+                    <case regex="withCustomParams">
+                        <property name="clientID" value="my_client_id"/>
+                        <payloadFactory media-type="json">
+                            <format>{"account_id" : "$1"}</format>
+                            <args>
+                                <arg value="1234"/>
+                            </args>
+                        </payloadFactory>
+                        <send>
+                            <endpoint>
+                                <http method="get" uri-template="http://localhost:9000/foodservice/food">
+                                    <authentication>
+                                        <oauth>
+                                            <clientCredentials>
+                                                <clientId>{$ctx:clientID}</clientId>
+                                                <clientSecret>my_client_secret</clientSecret>
+                                                <tokenUrl>http://localhost:9000/foodservice/custom-token</tokenUrl>
+                                                <requestParameters>
+                                                    <parameter name="account_id">{json-eval($.account_id)}</parameter>
+                                                    <parameter name="user_role">tester</parameter>
+                                                </requestParameters>
+                                            </clientCredentials>
+                                        </oauth>
+                                    </authentication>
+                                </http>
+                            </endpoint>
+                        </send>
+                    </case>
                     <default>
                         <send>
                             <endpoint>
@@ -99,7 +127,7 @@
                 <send/>
             </outSequence>
             <faultSequence>
-                <property name="HTTP_SC" value="500" scope="axis2" />
+                <property name="HTTP_SC" value="500" scope="axis2"/>
                 <respond/>
             </faultSequence>
         </resource>

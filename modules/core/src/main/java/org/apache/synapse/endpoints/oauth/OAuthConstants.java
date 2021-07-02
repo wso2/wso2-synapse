@@ -31,6 +31,9 @@ public class OAuthConstants {
     public static final String OAUTH_CLIENT_ID = "clientId";
     public static final String OAUTH_CLIENT_SECRET = "clientSecret";
     public static final String OAUTH_REFRESH_TOKEN = "refreshToken";
+    public static final String REQUEST_PARAMETERS = "requestParameters";
+    public static final String REQUEST_PARAMETER = "parameter";
+    public static final String NAME = "name";
 
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String BEARER = "Bearer ";
@@ -51,6 +54,8 @@ public class OAuthConstants {
     public static final String PARAM_CLIENT_ID = "&client_id=";
     public static final String PARAM_CLIENT_SECRET = "&client_secret=";
     public static final String PARAM_REFRESH_TOKEN = "&refresh_token=";
+    public static final String AMPERSAND = "&";
+    public static final String EQUAL_MARK = "=";
 
     public static final String RETRIED_ON_OAUTH_FAILURE = "RETRIED_ON_OAUTH_FAILURE";
 

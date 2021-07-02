@@ -31,6 +31,8 @@ import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseException;
+import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
@@ -47,6 +49,7 @@ import java.util.Collection;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -89,15 +92,39 @@ public class OAuthUtilsTest {
                             "<" + tokenUrl + ">oauth_server_url</" + tokenUrl +
                             "></authorizationCode></oauth></authentication></http>";
 
+            String authorizationCodeConfigWithRequestParams =
+                    "<http xmlns=\"http://ws.apache.org/ns/synapse\"><authentication><oauth><authorizationCode>" +
+                            "<" + clientId + ">client_id</" + clientId + ">" +
+                            "<" + clientSecret + ">client_secret</" + clientSecret + ">" +
+                            "<" + refreshToken + ">refresh_token</" + refreshToken + ">" +
+                            "<" + tokenUrl + ">oauth_server_url</" + tokenUrl + ">" +
+                            "<requestParameters>" +
+                            "   <parameter name=\"account_id\">1234</parameter>" +
+                            "</requestParameters>" +
+                            "</authorizationCode></oauth></authentication></http>";
+
             String clientCredentialsConfig =
                     "<http xmlns=\"http://ws.apache.org/ns/synapse\"><authentication><oauth><clientCredentials>" +
                             "<" + clientId + ">client_id</" + clientId + ">" +
                             "<" + clientSecret + ">client_secret</" + clientSecret + ">" +
                             "<" + tokenUrl + ">oauth_server_url</" + tokenUrl +
                             "></clientCredentials></oauth></authentication></http>";
+
+            String clientCredentialsConfigWithRequestParams =
+                    "<http xmlns=\"http://ws.apache.org/ns/synapse\"><authentication><oauth><clientCredentials>" +
+                            "<" + clientId + ">client_id</" + clientId + ">" +
+                            "<" + clientSecret + ">client_secret</" + clientSecret + ">" +
+                            "<" + tokenUrl + ">oauth_server_url</" + tokenUrl + ">" +
+                            "<requestParameters>" +
+                            "   <parameter name=\"account_id\">{$ctx:accountID}</parameter>" +
+                            "</requestParameters>" +
+                            "</clientCredentials></oauth></authentication></http>";
+
             return Arrays.asList(new Object[][]{
                     {authorizationCodeConfig, AuthorizationCodeHandler.class},
-                    {clientCredentialsConfig, ClientCredentialsHandler.class}
+                    {authorizationCodeConfigWithRequestParams, AuthorizationCodeHandler.class},
+                    {clientCredentialsConfig, ClientCredentialsHandler.class},
+                    {clientCredentialsConfigWithRequestParams, ClientCredentialsHandler.class}
             });
         }
 
@@ -136,15 +163,38 @@ public class OAuthUtilsTest {
                             "<" + tokenUrl + ">oauth_server_url</" + tokenUrl +
                             "></authorizationCode></oauth></authentication></http>";
 
+            String authorizationCodeConfigWithInvalidRequestParams =
+                    "<http xmlns=\"http://ws.apache.org/ns/synapse\"><authentication><oauth><authorizationCode>" +
+                            "<" + clientId + ">client_id</" + clientId + ">" +
+                            "<" + clientSecret + ">client_secret</" + clientSecret + ">" +
+                            "<" + refreshToken + ">refresh_token</" + refreshToken + ">" +
+                            "<" + tokenUrl + ">oauth_server_url</" + tokenUrl + ">" +
+                            "<requestParameters>" +
+                            "   <parameter name=\"account_id\"></parameter>" +
+                            "</requestParameters>" +
+                            "</authorizationCode></oauth></authentication></http>";
+
             String clientCredentialsConfig =
                     "<http xmlns=\"http://ws.apache.org/ns/synapse\"><authentication><oauth><clientCredentials>" +
                             "<" + clientId + ">client_id</" + clientId + ">" +
                             "<" + tokenUrl + ">oauth_server_url</" + tokenUrl +
                             "></clientCredentials></oauth></authentication></http>";
 
+            String clientCredentialsConfigWithInvalidRequestParams =
+                    "<http xmlns=\"http://ws.apache.org/ns/synapse\"><authentication><oauth><clientCredentials>" +
+                            "<" + clientId + ">client_id</" + clientId + ">" +
+                            "<" + clientSecret + ">client_secret</" + clientSecret + ">" +
+                            "<" + tokenUrl + ">oauth_server_url</" + tokenUrl + ">" +
+                            "<requestParameters>" +
+                            "   <parameter>abc@123</parameter>" +
+                            "</requestParameters>" +
+                            "</clientCredentials></oauth></authentication></http>";
+
             return Arrays.asList(new Object[][]{
                     {authorizationCodeConfig},
-                    {clientCredentialsConfig}
+                    {authorizationCodeConfigWithInvalidRequestParams},
+                    {clientCredentialsConfig},
+                    {clientCredentialsConfigWithInvalidRequestParams}
             });
         }
 
@@ -213,6 +263,100 @@ public class OAuthUtilsTest {
             assertEquals(expected,
                     OAuthUtils.retryOnOAuthFailure(httpEndpoint, messageContextIn, messageContextOut));
 
+        }
+    }
+
+    /**
+     * Tests resolveExpression method
+     */
+    @RunWith(Parameterized.class)
+    public static class ResolveExpression {
+
+        private final MessageContext messageContext;
+        private final String expression;
+        private final String resolvedValue;
+
+        public ResolveExpression(MessageContext messageContext,
+                                 String expression, String resolvedValue) {
+
+            this.messageContext = messageContext;
+            this.expression = expression;
+            this.resolvedValue = resolvedValue;
+        }
+
+        @Parameterized.Parameters
+        public static Collection provideDataForResolveExpressionTests() throws AxisFault {
+
+            MessageContext messageContext = createMessageContext();
+            org.apache.axis2.context.MessageContext axis2MessageContext =
+                    ((Axis2MessageContext) messageContext).getAxis2MessageContext();
+            messageContext.setProperty("user_role", "tester");
+            messageContext.setProperty("client_id", "q4306sjzviquusd23ojcldr");
+            setJsonPayLoad(axis2MessageContext, "{\"account_id\":\"1234\"}");
+
+            return Arrays.asList(new Object[][]{
+                    {messageContext, "abc#&123", "abc#&123"},
+                    {messageContext, "{$ctx:user_role}", "tester"},
+                    {messageContext, "{get-property('client_id')}", "q4306sjzviquusd23ojcldr"},
+                    {messageContext, "{json-eval($.account_id)}", "1234"},
+            });
+        }
+
+        @Test
+        public void testResolveExpression() throws OAuthException {
+
+            assertEquals(resolvedValue,
+                    OAuthUtils.resolveExpression(expression, messageContext));
+
+        }
+    }
+
+    /**
+     * Tests if the resolveExpression method throw OAuthException exceptions
+     */
+    @RunWith(Parameterized.class)
+    public static class ResolveExpressionException {
+
+        private final MessageContext messageContext;
+        private final String expression;
+        private final String resolvedValue;
+
+        public ResolveExpressionException(MessageContext messageContext,
+                                          String expression, String resolvedValue) {
+
+            this.messageContext = messageContext;
+            this.expression = expression;
+            this.resolvedValue = resolvedValue;
+        }
+
+        @Parameterized.Parameters
+        public static Collection provideDataForResolveExpressionExceptionTests() throws AxisFault {
+
+            MessageContext messageContext = createMessageContext();
+            org.apache.axis2.context.MessageContext axis2MessageContext =
+                    ((Axis2MessageContext) messageContext).getAxis2MessageContext();
+            messageContext.setProperty("user_role", "tester");
+            messageContext.setProperty("client_id", "q4306sjzviquusd23ojcldr");
+            setJsonPayLoad(axis2MessageContext, "{\"account_id\":\"1234\"}");
+
+            return Arrays.asList(new Object[][]{
+                    {messageContext, "{ctx:user_role}", "tester"},
+                    {messageContext, "{get_property('client_id')}", "q4306sjzviquusd23ojcldr"},
+                    {messageContext, "{json-eval.($.account_id)}", "1234"},
+            });
+        }
+
+        @Test
+        public void testResolveExpressionException() throws Exception {
+
+            try {
+                OAuthUtils.resolveExpression(expression, messageContext);
+                Assert.fail("This method must throw an OAuthException");
+            } catch (SynapseException e) {
+                assertThat(e.getMessage(), containsString("resulted in an error"));
+            } catch (OAuthException e) {
+                assertThat(e.getMessage(), containsString("Error while building the expression"));
+            }
         }
     }
 
@@ -287,5 +431,18 @@ public class OAuthUtilsTest {
         mc.setEnvelope(OMAbstractFactory.getSOAP12Factory().createSOAPEnvelope());
         mc.getEnvelope().addChild(OMAbstractFactory.getSOAP12Factory().createSOAPBody());
         return mc;
+    }
+
+    /**
+     * Set a json payload to the message context
+     *
+     * @param axis2MessageContext Test message context
+     * @param jsonString          Json payload in string format
+     * @throws AxisFault on an error when setting json payload
+     */
+    public static void setJsonPayLoad(org.apache.axis2.context.MessageContext axis2MessageContext, String jsonString)
+            throws AxisFault {
+
+        JsonUtil.getNewJsonPayload(axis2MessageContext, jsonString, true, true);
     }
 }
