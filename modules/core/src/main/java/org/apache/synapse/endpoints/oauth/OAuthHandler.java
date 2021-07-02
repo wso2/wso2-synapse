@@ -22,7 +22,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
@@ -87,10 +89,20 @@ public abstract class OAuthHandler {
      * @param accessToken    Access token to be set
      */
     private void setAuthorizationHeader(MessageContext messageContext, String accessToken) {
-
-        Map<String, Object> transportHeaders = (Map<String, Object>) ((Axis2MessageContext) messageContext)
+        Object transportHeaders = ((Axis2MessageContext) messageContext)
                 .getAxis2MessageContext().getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-        transportHeaders.put(OAuthConstants.AUTHORIZATION_HEADER, OAuthConstants.BEARER + accessToken);
+        if (transportHeaders != null && transportHeaders instanceof Map) {
+            Map transportHeadersMap = (Map) transportHeaders;
+            transportHeadersMap.put(OAuthConstants.AUTHORIZATION_HEADER, OAuthConstants.BEARER + accessToken);
+        } else {
+            Map<String, Object> transportHeadersMap = new TreeMap<>(new Comparator<String>() {
+                public int compare(String o1, String o2) {
+                    return o1.compareToIgnoreCase(o2);
+                }
+            });
+            transportHeadersMap.put(OAuthConstants.AUTHORIZATION_HEADER, OAuthConstants.BEARER + accessToken);
+            ((Axis2MessageContext) messageContext).getAxis2MessageContext().setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, transportHeadersMap);
+        }
     }
 
     /**
