@@ -88,21 +88,17 @@ public abstract class OAuthHandler {
     private void setAuthorizationHeader(MessageContext messageContext, String accessToken) {
         Object transportHeaders = ((Axis2MessageContext) messageContext)
                 .getAxis2MessageContext().getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-        if(transportHeaders!=null && transportHeaders instanceof Map){
+        if (transportHeaders != null && transportHeaders instanceof Map) {
             Map transportHeadersMap = (Map) transportHeaders;
             transportHeadersMap.put(OAuthConstants.AUTHORIZATION_HEADER, OAuthConstants.BEARER + accessToken);
-        }
-        if (transportHeaders == null) {
+        } else {
             Map<String, Object> transportHeadersMap = new TreeMap<>(new Comparator<String>() {
                 public int compare(String o1, String o2) {
                     return o1.compareToIgnoreCase(o2);
                 }
             });
             transportHeadersMap.put(OAuthConstants.AUTHORIZATION_HEADER, OAuthConstants.BEARER + accessToken);
-            ((Axis2MessageContext) messageContext)
-                    .getAxis2MessageContext().setProperty(
-                    org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
-                    transportHeadersMap);
+            ((Axis2MessageContext) messageContext).getAxis2MessageContext().setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, transportHeadersMap);
         }
     }
 
