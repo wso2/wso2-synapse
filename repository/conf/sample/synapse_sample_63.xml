@@ -76,6 +76,31 @@
                             </endpoint>
                         </send>
                     </case>
+                    <case regex="withoutTransportHeaders">
+                        <property name="clientID" value="my_client_id"/>
+                        <payloadFactory media-type="json">
+                            <format>{"account_id" : "$1"}</format>
+                            <args>
+                                <arg value="1234"/>
+                            </args>
+                        </payloadFactory>
+                        <property name="TRANSPORT_HEADERS" scope="axis2" action="remove"/>
+                        <send>
+                            <endpoint>
+                                <http method="get" uri-template="http://localhost:9000/foodservice/food">
+                                    <authentication>
+                                        <oauth>
+                                            <clientCredentials>
+                                                <clientId>{$ctx:clientID}</clientId>
+                                                <clientSecret>my_client_secret</clientSecret>
+                                                <tokenUrl>http://localhost:9000/foodservice/token</tokenUrl>
+                                            </clientCredentials>
+                                        </oauth>
+                                    </authentication>
+                                </http>
+                            </endpoint>
+                        </send>
+                    </case>
                     <default>
                         <send>
                             <endpoint>
