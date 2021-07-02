@@ -43,6 +43,7 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.processor.MessageProcessorConstants;
+import org.apache.synapse.message.processor.MessageProcessorUtils;
 import org.apache.synapse.task.Task;
 
 /**
@@ -248,6 +249,7 @@ public class SamplingService implements Task, ManagedLifecycle {
 				}
 			}
 		}
+		MessageProcessorUtils.removeStatisticsReportingEventHolder(newMsg);
 		return newMsg;
 	}
 

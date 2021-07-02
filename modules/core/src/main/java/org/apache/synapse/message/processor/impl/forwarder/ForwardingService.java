@@ -38,6 +38,8 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.json.Constants;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -49,6 +51,7 @@ import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.StoreForwardException;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.processor.MessageProcessorConstants;
+import org.apache.synapse.message.processor.MessageProcessorUtils;
 import org.apache.synapse.message.processor.impl.ScheduledMessageProcessor;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.message.store.MessageStore;
@@ -477,7 +480,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 				}
 			}
 		}
-
+		MessageProcessorUtils.removeStatisticsReportingEventHolder(fetchedMessage);
 		return fetchedMessage;
 	}
 
@@ -616,6 +619,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
 					keySet.remove(SynapseConstants.LAST_ENDPOINT);
 					keySet.remove(SynapseConstants.BLOCKING_SENDER_ERROR);
 				}
+				// Set this property to consider the endpoint call and subsequent sequence call as a single
+				// statistic flow if this not a out only message
+				if (!StatisticDataCollectionHelper.isOutOnlyFlow(messageToDispatch)) {
+					messageToDispatch.setProperty(StatisticsConstants.CONTINUE_STATISTICS_FLOW, true);
+				}
 				endpoint.send(messageToDispatch);
 				if ("true".equals(messageToDispatch.getProperty(SynapseConstants.OUT_ONLY))) {
 					if ("true".equals(messageToDispatch.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
@@ -655,6 +663,12 @@ public class ForwardingService implements Task, ManagedLifecycle {
 					onForwardFailure();
 				}
 			} else {
+
+				Set pros = outCtx.getPropertyKeySet();
+				if (pros != null) {
+					pros.remove(StatisticsConstants.CONTINUE_STATISTICS_FLOW);
+				}
+
 				//there is a response (In message context) but failed to send with no exception thrown
 				if ("true".equals(outCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
 					log.error("Blocking Sender Error " + outCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
