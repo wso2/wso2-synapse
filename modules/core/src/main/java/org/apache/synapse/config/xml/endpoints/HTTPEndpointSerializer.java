@@ -19,7 +19,6 @@
 
 package org.apache.synapse.config.xml.endpoints;
 
-
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.SynapseConstants;
@@ -28,8 +27,6 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.HTTPEndpoint;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
-import org.apache.synapse.endpoints.auth.oauth.AuthorizationCodeHandler;
-import org.apache.synapse.endpoints.auth.oauth.ClientCredentialsHandler;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 
 public class HTTPEndpointSerializer extends DefaultEndpointSerializer {
@@ -117,16 +114,7 @@ public class HTTPEndpointSerializer extends DefaultEndpointSerializer {
                 AuthConstants.OAUTH,
                 SynapseConstants.SYNAPSE_OMNAMESPACE);
         authentication.addChild(oauth);
-
-        if (oAuthConfiguredHTTPEndpoint.getOauthHandler() instanceof AuthorizationCodeHandler) {
-            oauth.addChild(serializeAuthorizationCodeConfigurationElements(
-                    (AuthorizationCodeHandler) oAuthConfiguredHTTPEndpoint.getOauthHandler()));
-        }
-
-        if (oAuthConfiguredHTTPEndpoint.getOauthHandler() instanceof ClientCredentialsHandler) {
-            oauth.addChild(serializeClientCredentialsConfigurationElements(
-                    (ClientCredentialsHandler) oAuthConfiguredHTTPEndpoint.getOauthHandler()));
-        }
+        oauth.addChild(oAuthConfiguredHTTPEndpoint.getOauthHandler().serializeOAuthConfiguration(fac));
     }
 
     /**
@@ -145,56 +133,6 @@ public class HTTPEndpointSerializer extends DefaultEndpointSerializer {
                 basicAuthConfiguredHTTPEndpoint.getBasicAuthHandler().getUsername()));
         basicAuth.addChild(createOMElementWithValue(AuthConstants.BASIC_AUTH_PASSWORD,
                 basicAuthConfiguredHTTPEndpoint.getBasicAuthHandler().getPassword()));
-    }
-
-    /**
-     * This method returns an OMElement containing the Client Credentials configuration
-     *
-     * @param clientCredentialsHandler ClientCredentialsHandler of the OAuth Configured HTTP Endpoint
-     * @return OMElement containing the Client Credentials configuration
-     */
-    private OMElement serializeClientCredentialsConfigurationElements(
-            ClientCredentialsHandler clientCredentialsHandler) {
-
-        OMElement clientCredentials = fac.createOMElement(
-                AuthConstants.CLIENT_CREDENTIALS,
-                SynapseConstants.SYNAPSE_OMNAMESPACE);
-
-        clientCredentials.addChild(
-                createOMElementWithValue(AuthConstants.OAUTH_CLIENT_ID, clientCredentialsHandler.getClientId()));
-        clientCredentials.addChild(createOMElementWithValue(AuthConstants.OAUTH_CLIENT_SECRET,
-                clientCredentialsHandler.getClientSecret()));
-        clientCredentials
-                .addChild(
-                        createOMElementWithValue(AuthConstants.TOKEN_API_URL, clientCredentialsHandler.getTokenUrl()));
-
-        return clientCredentials;
-    }
-
-    /**
-     * This method returns an OMElement containing the Authorization Code configuration
-     *
-     * @param authorizationCodeHandler AuthorizationCodeHandler of the OAuth Configured HTTP Endpoint
-     * @return OMElement containing the Authorization Code configuration
-     */
-    private OMElement serializeAuthorizationCodeConfigurationElements(
-            AuthorizationCodeHandler authorizationCodeHandler) {
-
-        OMElement clientCredentials = fac.createOMElement(
-                AuthConstants.AUTHORIZATION_CODE,
-                SynapseConstants.SYNAPSE_OMNAMESPACE);
-
-        clientCredentials.addChild(createOMElementWithValue(AuthConstants.OAUTH_CLIENT_ID,
-                authorizationCodeHandler.getClientId()));
-        clientCredentials.addChild(createOMElementWithValue(AuthConstants.OAUTH_CLIENT_SECRET,
-                authorizationCodeHandler.getClientSecret()));
-        clientCredentials.addChild(
-                createOMElementWithValue(AuthConstants.OAUTH_REFRESH_TOKEN, authorizationCodeHandler.getRefreshToken()));
-        clientCredentials
-                .addChild(
-                        createOMElementWithValue(AuthConstants.TOKEN_API_URL, authorizationCodeHandler.getTokenUrl()));
-
-        return clientCredentials;
     }
 
     /**

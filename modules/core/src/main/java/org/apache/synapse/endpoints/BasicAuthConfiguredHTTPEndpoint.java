@@ -19,6 +19,7 @@
 package org.apache.synapse.endpoints;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.endpoints.auth.AuthHandler;
 import org.apache.synapse.endpoints.auth.basicauth.BasicAuthHandler;
@@ -43,24 +44,11 @@ public class BasicAuthConfiguredHTTPEndpoint extends HTTPEndpoint  {
             super.send(synCtx);
 
         } catch (AuthException e) {
-            handleError(synCtx,"Error while setting basic auth header", e);
+            informFailure(synCtx, SynapseConstants.ENDPOINT_AUTH_FAILURE, "Error while setting basic auth header");
         }
     }
 
     public BasicAuthHandler getBasicAuthHandler() {
         return basicAuthHandler;
-    }
-
-    /**
-     * This method will send a Internal Server Error to the client and throw a Synapse exception
-     *
-     * @param synCtx    Original Synapse MessageContext that went through this endpoint
-     * @param exception Exception
-     * @param message   Error message
-     */
-    private void handleError(MessageContext synCtx, String message, Exception exception) {
-
-        OAuthUtils.sendOAuthFault(synCtx);
-        handleException(message, exception);
     }
 }

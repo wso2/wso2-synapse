@@ -69,7 +69,9 @@ public class OAuthClient {
 
         HttpPost httpPost = new HttpPost(tokenApiUrl);
         httpPost.setHeader(AuthConstants.CONTENT_TYPE_HEADER, AuthConstants.APPLICATION_X_WWW_FORM_URLENCODED);
-        httpPost.setHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.BASIC + credentials);
+        if (credentials != null) {
+            httpPost.setHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.BASIC + credentials);
+        }
         httpPost.setEntity(new StringEntity(payload));
 
         try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
