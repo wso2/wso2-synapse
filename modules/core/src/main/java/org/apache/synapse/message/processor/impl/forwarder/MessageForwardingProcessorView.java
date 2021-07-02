@@ -67,4 +67,9 @@ public class MessageForwardingProcessorView implements MessageForwardingProcesso
         assert processor != null;
         processor.deactivate();
     }
+
+    public boolean isTaskLocationKnown() {
+        assert processor != null;
+        return processor.isTaskLocationKnown();
+    }
 }

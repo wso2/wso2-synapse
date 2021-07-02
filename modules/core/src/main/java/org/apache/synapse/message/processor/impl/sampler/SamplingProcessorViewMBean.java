@@ -38,4 +38,9 @@ public interface SamplingProcessorViewMBean {
      */
     public boolean isActive();
 
+    /**
+     * Checks if the task location linked to this Message Processor is known
+     * @return true if the task location linked to this Message Processor is known
+     */
+    public boolean isTaskLocationKnown();
 }

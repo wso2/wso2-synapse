@@ -68,4 +68,9 @@ public class FailoverMessageForwardingProcessorView implements
         assert processor != null;
         processor.deactivate();
     }
+
+    public boolean isTaskLocationKnown() {
+        assert processor != null;
+        return processor.isTaskLocationKnown();
+    }
 }
