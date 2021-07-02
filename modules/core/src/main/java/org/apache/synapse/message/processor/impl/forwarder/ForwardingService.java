@@ -943,10 +943,10 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	}
 
 	private void deactivateMessageProcessor(MessageContext messageContext) {
+		this.messageProcessor.deactivate();
 		if (null != messageContext) {
 			sendThroughDeactivateSeq(messageContext);
 		}
-		this.messageProcessor.deactivate();
 	}
 
 	private void resetService() {
