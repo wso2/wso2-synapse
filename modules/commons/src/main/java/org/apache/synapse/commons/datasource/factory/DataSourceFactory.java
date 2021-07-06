@@ -35,6 +35,7 @@ public class DataSourceFactory {
 
     private final static Log log = LogFactory.getLog(DataSourceFactory.class);
 
+    private final static String H2_INIT = ";init=";
 
     private DataSourceFactory() {
     }
@@ -61,6 +62,8 @@ public class DataSourceFactory {
 
         if (url == null || "".equals(url)) {
             handleException("Database connection URL cannot be found.");
+        } else if (url.toLowerCase().contains(H2_INIT)) {
+            handleException("INIT expressions are not allowed in the connection URL due to security reasons.");
         }
 
         String user = dataSourceInformation.getSecretInformation().getUser();
