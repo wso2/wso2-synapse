@@ -79,4 +79,11 @@ public class Sample63 extends SynapseTestCase {
         HttpResponse response = client.doGet("http://127.0.0.1:8280/foodapi/list/withCustomParams");
         assertEquals(HttpStatus.SC_OK, response.getStatus());
     }
+
+    public void testOAuthConfiguredEPWithoutTransportHeaders() throws Exception {
+
+        BasicHttpClient client = new BasicHttpClient();
+        HttpResponse response = client.doGet("http://127.0.0.1:8280/foodapi/list/withoutTransportHeaders");
+        assertEquals(HttpStatus.SC_OK, response.getStatus());
+    }
 }
