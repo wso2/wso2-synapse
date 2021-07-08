@@ -29,6 +29,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.libraries.util.LibDeployerUtils;
@@ -215,16 +216,17 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
     }
 
     public void undeploySynapseArtifact(String artifactName) {
-	// get Old Lib config
-	Library existingLib = null;
-	try {
-	    existingLib = getSynapseConfiguration().getSynapseLibraries().get(artifactName);
-	    existingLib.unLoadLibrary();
-	    getSynapseConfiguration().removeSynapseImport(artifactName);
-	    getSynapseConfiguration().removeSynapseLibrary(artifactName);
-	} catch (DeploymentException e) {
-	    handleDeploymentError(e.getMessage(), e);
-	}
+		// get Old Lib config
+		try {
+			Library existingLib = getSynapseConfiguration().getSynapseLibraries().get(artifactName);
+			if (SynapseConfiguration.getDeployedLibCount(artifactName) <= 1) {
+				existingLib.unLoadLibrary();
+			}
+			getSynapseConfiguration().removeSynapseImport(artifactName);
+			getSynapseConfiguration().removeSynapseLibrary(artifactName);
+		} catch (DeploymentException e) {
+			handleDeploymentError(e.getMessage(), e);
+		}
     }
 
     private void handleDeploymentError(String msg, Exception e) {

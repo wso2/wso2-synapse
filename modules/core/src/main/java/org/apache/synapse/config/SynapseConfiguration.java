@@ -71,6 +71,7 @@ import org.apache.synapse.startup.quartz.StartUpController;
 import org.apache.synapse.task.TaskManager;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -251,6 +252,8 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
     /** The Completed StructureStore object */
     private CompletedStructureStore completedStructureStore = new CompletedStructureStore();
+
+    private static Map<String, Map.Entry<Library, Integer>> deployedLibs = new ConcurrentHashMap<>();
 
 
     /**
@@ -2013,6 +2016,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     public void addSynapseLibrary(String name, Library library) {
         if (!(synapseLibraries.containsKey(name))) {
             synapseLibraries.put(name, library);
+            addNewDeployedLib(name, library);
             for (SynapseObserver o : observers) {
                 o.synapseLibraryAdded(library);
             }
@@ -2030,6 +2034,45 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         return synapseLibraries;
     }
 
+    public static Library getDeployedLib(String name) {
+        Map.Entry<Library, Integer> libraryCountEntry = deployedLibs.get(name);
+        if (libraryCountEntry == null) {
+            return null;
+        }
+        return libraryCountEntry.getKey();
+    }
+
+    public static int getDeployedLibCount(String name){
+        Map.Entry<Library, Integer> libraryCountEntry = deployedLibs.get(name);
+        if (libraryCountEntry == null) {
+            return 0;
+        }
+        return libraryCountEntry.getValue();
+    }
+
+    public static void removeOneDeployedLib(String name) {
+        Map.Entry<Library, Integer> libraryCountEntry = deployedLibs.get(name);
+        if (libraryCountEntry != null) {
+            Integer count = libraryCountEntry.getValue();
+            if (count > 0) {
+                count--;
+                libraryCountEntry.setValue(count);
+            } else {
+                deployedLibs.remove(name);
+            }
+        }
+    }
+
+    public static void addNewDeployedLib(String name, Library library){
+        Map.Entry<Library, Integer> libraryCountEntry = deployedLibs.get(name);
+        if (libraryCountEntry != null) {
+            Integer count = libraryCountEntry.getValue();
+            libraryCountEntry.setValue(count + 1);
+        } else {
+            deployedLibs.put(name, new AbstractMap.SimpleEntry<>(library, 1));
+        }
+    }
+
     /**
      * remove the Synapse library from the synapse configuration
      *
@@ -2038,6 +2081,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      */
     public Library removeSynapseLibrary(String name) {
         Library removedLib = synapseLibraries.remove(name);
+        removeOneDeployedLib(name);
         if (removedLib != null) {
             for (SynapseObserver o : observers) {
                 o.synapseLibraryRemoved(removedLib);
