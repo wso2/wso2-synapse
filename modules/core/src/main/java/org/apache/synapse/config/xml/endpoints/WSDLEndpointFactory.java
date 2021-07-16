@@ -150,6 +150,8 @@ public class WSDLEndpointFactory extends DefaultEndpointFactory {
 
                                     handleException("WSDL 2.0 Endpoints are currently not supported");
                                 }
+                            } else {
+                                handleException(omElement.getText());
                             }
                         }
                     } catch (ConnectException e) {
