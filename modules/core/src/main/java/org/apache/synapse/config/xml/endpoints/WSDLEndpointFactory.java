@@ -155,9 +155,9 @@ public class WSDLEndpointFactory extends DefaultEndpointFactory {
                             }
                         }
                     } catch (ConnectException e) {
-                        log.warn("Could not connect to the WSDL endpoint " + wsdlURI.trim(), e);
+                        handleException("Could not connect to the WSDL endpoint " + wsdlURI.trim(), e);
                     } catch (IOException e) {
-                        log.warn("Could not read the WSDL endpoint " + wsdlURI.trim(), e);
+                        handleException("Could not read the WSDL endpoint " + wsdlURI.trim(), e);
                     } catch (Exception e) {
                         handleException("Couldn't create endpoint from the given WSDL URI : "
                                 + e.getMessage(), e);
