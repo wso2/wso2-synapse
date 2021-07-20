@@ -238,6 +238,11 @@ public class PropertyMediator extends AbstractMediator {
                     registry.newNonEmptyResource(path, false, CONTENT_TYPE, resultValue.toString(), propertyName);
                     registry.updateResource(path, EMPTY_CONTENT);
                 }
+            } else if (XMLConfigConstants.SCOPE_SYSTEM.equals(scope)
+                    && synCtx instanceof Axis2MessageContext) {
+                if (resultValue != null ) {
+                    System.setProperty(name, resultValue.toString());
+                }
             }
 
         } else {
