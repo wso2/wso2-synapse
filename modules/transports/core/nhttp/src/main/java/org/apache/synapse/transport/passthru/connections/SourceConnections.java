@@ -152,12 +152,24 @@ public class SourceConnections {
      * @param conn the connection that needs to be closed.
      */
     public void closeConnection(NHttpServerConnection conn) {
+        closeConnection(conn, false);
+    }
+
+    /**
+     * Close a connection gracefully.
+     *
+     * @param conn the connection that needs to be closed.
+     * @param isError  whether an error is causing the shutdown of the connection.
+     *                 When as error is causing a close of a connection we should
+     *                 not release the associated buffers into the pool.
+     */
+    public void closeConnection(NHttpServerConnection conn, boolean isError) {
         if (log.isDebugEnabled()) {
             log.debug("Shutting down connection forcefully " + conn);
         }
         lock.lock();
         try {
-            SourceContext.get(conn).reset();
+            SourceContext.get(conn).reset(isError);
 
             if (!busyConnections.remove(conn)) {
                 freeConnections.remove(conn);
