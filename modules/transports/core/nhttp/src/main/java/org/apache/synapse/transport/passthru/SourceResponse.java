@@ -317,11 +317,11 @@ public class SourceResponse {
             sourceConfiguration.getMetrics().
                     notifySentMessageSize(conn.getMetrics().getSentBytesCount());
 
-            if (response != null && !this.connStrategy.keepAlive(response, conn.getContext())) {
-                SourceContext.updateState(conn, ProtocolState.CLOSING);
-                sourceConfiguration.getSourceConnections().closeConnection(conn);
-            } else if (SourceContext.get(conn).isShutDown()) {
+            if (SourceContext.get(conn).isShutDown()) {
                 // we need to shut down if the shutdown flag is set
+                SourceContext.updateState(conn, ProtocolState.CLOSING);
+                sourceConfiguration.getSourceConnections().closeConnection(conn, true);
+            } else if (response != null && !this.connStrategy.keepAlive(response, conn.getContext())) {
                 SourceContext.updateState(conn, ProtocolState.CLOSING);
                 sourceConfiguration.getSourceConnections().closeConnection(conn);
             } else {
