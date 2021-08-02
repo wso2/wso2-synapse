@@ -30,6 +30,7 @@ import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
@@ -414,8 +415,10 @@ public class ForwardingService implements Task, ManagedLifecycle {
 		}
 
 		// Setting the interval value.
-		interval = Long.parseLong((String) parametersMap.get(MessageProcessorConstants.INTERVAL));
-
+		String intervalParameter = (String) parametersMap.get(MessageProcessorConstants.INTERVAL);
+		if (StringUtils.isNotBlank(intervalParameter)) {
+			interval = Long.parseLong(intervalParameter);
+		}
 		/*
 		 * Make sure to set the isInitialized flag to TRUE in order to avoid
 		 * re-initialization.
