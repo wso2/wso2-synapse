@@ -140,6 +140,9 @@ public class IndirectEndpoint extends AbstractEndpoint {
         return realEndpoint;
     }
 
+    public Endpoint getRealEndpoint() {
+        return realEndpoint;
+    }
 
     /**
      * Reload as needed , either from registry , local entries or predefined endpoints 
