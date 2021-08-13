@@ -23,6 +23,7 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.ConfigurationContextFactory;
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
@@ -555,7 +556,8 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         getAspectConfiguration().setUniqueId(cloneId);
 
         if (endpoint != null && !blocking) {
-            if (endpoint instanceof IndirectEndpoint) {
+            if (endpoint instanceof IndirectEndpoint && !StringUtils.isEmpty(((IndirectEndpoint) endpoint).getKey()) &&
+                    isDynamicEndpoint(((IndirectEndpoint) endpoint).getKey())) {
                 Endpoint realEndpoint = ((IndirectEndpoint) endpoint).getRealEndpoint();
                 realEndpoint.setComponentStatisticsId(holder);
                 ((AbstractEndpoint) realEndpoint).getDefinition().getAspectConfiguration()
@@ -565,6 +567,15 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             }
         }
         StatisticIdentityGenerator.reportingEndEvent(cloneId, ComponentType.MEDIATOR, holder);
+    }
+
+    /**
+     * Method to check dynamic endpoints defined in config and governance registry.
+     * @param key Endpoint Key.
+     * @return whether the endpoint saved in the registry
+     */
+    private boolean isDynamicEndpoint(String key) {
+        return key.startsWith("gov:") || key.startsWith("conf:");
     }
 
     public boolean isSourceAvailable() {

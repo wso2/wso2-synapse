@@ -19,6 +19,7 @@
 
 package org.apache.synapse.mediators.builtin;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
@@ -179,7 +180,8 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
         String cloneId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.MEDIATOR, holder);
         getAspectConfiguration().setUniqueId(cloneId);
         if (endpoint != null) {
-            if (endpoint instanceof IndirectEndpoint) {
+            if (endpoint instanceof IndirectEndpoint && !StringUtils.isEmpty(((IndirectEndpoint) endpoint).getKey()) &&
+                    isDynamicEndpoint(((IndirectEndpoint) endpoint).getKey())) {
                 Endpoint realEndpoint = ((IndirectEndpoint) endpoint).getRealEndpoint();
                 realEndpoint.setComponentStatisticsId(holder);
                 ((AbstractEndpoint) realEndpoint).getDefinition().getAspectConfiguration()
@@ -194,5 +196,14 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
             StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
         }
         StatisticIdentityGenerator.reportingEndEvent(cloneId, ComponentType.MEDIATOR, holder);
+    }
+
+    /**
+     * Method to check dynamic endpoints defined in config and governance registry.
+     * @param key Endpoint Key.
+     * @return whether the endpoint saved in the registry
+     */
+    private boolean isDynamicEndpoint(String key) {
+        return key.startsWith("gov:") || key.startsWith("conf:");
     }
 }
