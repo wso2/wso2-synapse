@@ -76,10 +76,6 @@ public class Axis2FlexibleMEPClient {
 
     private static final Log log = LogFactory.getLog(Axis2FlexibleMEPClient.class);
 
-    private static final String SYNAPSE_TEST = "synapseTest";
-    private static final String TRUE = "true";
-    private static final String URL_PATH_SEPARATOR = "/";
-
     /**
      * Based on the Axis2 client code. Sends the Axis2 Message context out and returns
      * the Axis2 message context for the response.
@@ -438,17 +434,8 @@ public class Axis2FlexibleMEPClient {
                 }
             }
 
-            String endPointName = endpoint.leafEndpoint.getName();
-            if (TRUE.equals(System.getProperty(SYNAPSE_TEST)) && (synapseOutMessageContext.getConfiguration().
-                    getProperty(org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST) != null &&
-                    synapseOutMessageContext.getConfiguration().getProperty
-                            (org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST).equals(TRUE)) &&
-                    (ConfigModifier.unitTestMockEndpointMap.containsKey(endPointName))) {
-                Map<String, String> endpointMockResources = ConfigModifier.unitTestMockEndpointMap.get(endPointName);
-                String modifiedUrl = modifyEndpointUrlWithMockService(axisOutMsgCtx.getTo().getAddress(),
-                        endpointMockResources);
-                axisOutMsgCtx.getTo().setAddress(modifiedUrl);
-            }
+            // Update To url if mock-service exists for unit test
+            MediatorPropertyUtils.updateSendToUrlForMockServices(endpoint, synapseOutMessageContext, axisOutMsgCtx);
 
             if (endpoint.isUseSeparateListener()) {
                 axisOutMsgCtx.getOptions().setUseSeparateListener(true);
@@ -703,29 +690,6 @@ public class Axis2FlexibleMEPClient {
             current.setProperty(SynapseConstants.RAMPART_POLICY, null);
             current = current.getParent();
         }
-    }
-
-    /**
-     * Checks current endpoint URL path contains in the mockServiceResources map.
-     *
-     * @param endpointUrl endpoint url as a string
-     * @param mockServiceResources mock resources urls as a map
-     * @return mock service url, if resource path doesn't exists returns endpointURL
-     */
-    private static String modifyEndpointUrlWithMockService(String endpointUrl,
-                                                           Map<String, String> mockServiceResources) {
-        try {
-            URI endpointURI = new URI (endpointUrl);
-            String pathWithContextAndParams = endpointUrl.substring(endpointUrl.indexOf(endpointURI.getPath()));
-            if (mockServiceResources.containsKey(pathWithContextAndParams)) {
-                return mockServiceResources.get(pathWithContextAndParams);
-            } else if (mockServiceResources.containsKey(pathWithContextAndParams + URL_PATH_SEPARATOR)) {
-                return mockServiceResources.get(pathWithContextAndParams + URL_PATH_SEPARATOR);
-            }
-        } catch (URISyntaxException e) {
-            log.error("Error while finding the path of the endpoint URL. Hence, proceeding with endpoint url");
-        }
-        return endpointUrl;
     }
 
     /**

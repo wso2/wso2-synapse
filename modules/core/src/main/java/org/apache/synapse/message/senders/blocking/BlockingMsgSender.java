@@ -366,6 +366,9 @@ public class BlockingMsgSender {
         // Fill Client options
         BlockingMsgSenderUtils.fillClientOptions(endpointDefinition, clientOptions, synapseInMsgCtx);
 
+        // Update To url if mock-service exists for unit test
+        MediatorPropertyUtils.updateSendToUrlForMockServices(endpointDefinition, synapseInMsgCtx, axisOutMsgCtx);
+
         anonymousService.getParent().addParameter(SynapseConstants.HIDDEN_SERVICE_PARAM, "true");
         ServiceGroupContext serviceGroupContext =
                 new ServiceGroupContext(configurationContext,

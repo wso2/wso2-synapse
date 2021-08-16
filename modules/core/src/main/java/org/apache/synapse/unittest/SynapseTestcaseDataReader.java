@@ -32,9 +32,15 @@ import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 import org.apache.synapse.unittest.testcase.data.holders.ArtifactData;
 import org.apache.synapse.unittest.testcase.data.holders.MockServiceData;
 import org.apache.synapse.unittest.testcase.data.holders.TestCaseData;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,7 +50,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.xml.namespace.QName;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import static org.apache.synapse.unittest.Constants.ARTIFACT;
 import static org.apache.synapse.unittest.Constants.ARTIFACT_KEY_ATTRIBUTE;
@@ -58,6 +70,7 @@ import static org.apache.synapse.unittest.Constants.HTTPS_KEY;
 import static org.apache.synapse.unittest.Constants.HTTP_KEY;
 import static org.apache.synapse.unittest.Constants.MOCK_SERVICES;
 import static org.apache.synapse.unittest.Constants.NAME_ATTRIBUTE;
+import static org.apache.synapse.unittest.Constants.PASSED_KEY;
 import static org.apache.synapse.unittest.Constants.REGISTRY_MEDIA_TYPE;
 import static org.apache.synapse.unittest.Constants.REGISTRY_NAME;
 import static org.apache.synapse.unittest.Constants.REGISTRY_PATH;
@@ -91,6 +104,8 @@ import static org.apache.synapse.unittest.Constants.TEST_CASE_REQUEST_METHOD;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_REQUEST_PATH;
 import static org.apache.synapse.unittest.Constants.TYPE_LOCAL_ENTRY;
 import static org.apache.synapse.unittest.Constants.TYPE_PROXY;
+import static org.apache.synapse.unittest.Constants.TYPE_SEQUENCE;
+import static org.apache.synapse.unittest.Constants.TYPE_TEMPLATE;
 
 
 /**
@@ -135,11 +150,13 @@ class SynapseTestcaseDataReader {
 
         QName qualifiedArtifact = new QName("", ARTIFACT, "");
         OMElement testArtifactDataNode = testArtifactNode.getFirstChildWithName(qualifiedArtifact);
-        String testArtifactData = testArtifactDataNode.getFirstElement().toString();
-        testArtifact.setArtifact(testArtifactData);
-
         //Read test artifact type from synapse test data
         String testArtifactType = testArtifactDataNode.getFirstElement().getLocalName();
+        String testArtifactData = testArtifactDataNode.getFirstElement().toString();
+        if (testArtifactType.equals(TYPE_SEQUENCE)) {
+            testArtifactData = updateCallMediatorBlockingMode(testArtifactData);
+        }
+        testArtifact.setArtifact(testArtifactData);
         testArtifact.setArtifactType(testArtifactType);
 
         //Read artifact name from descriptor data
@@ -190,10 +207,12 @@ class SynapseTestcaseDataReader {
 
             //Read supportive artifact from synapse test data
             String supportiveArtifactData = artifact.getFirstElement().toString();
-            supportiveArtifact.setArtifact(supportiveArtifactData);
-
             //Read supportive artifact type from synapse test data
             String supportiveArtifactType = artifact.getFirstElement().getLocalName();
+            if (supportiveArtifactType.equals(TYPE_SEQUENCE) || supportiveArtifactType.equals(TYPE_TEMPLATE)) {
+                supportiveArtifactData = updateCallMediatorBlockingMode(supportiveArtifactData);
+            }
+            supportiveArtifact.setArtifact(supportiveArtifactData);
             supportiveArtifact.setArtifactType(supportiveArtifactType);
 
             //Read artifact name from descriptor data
@@ -650,5 +669,76 @@ class SynapseTestcaseDataReader {
                 mockService.setResponseHeaders(headers);
             }
         }
+    }
+
+    /**
+     * Update call mediator as blocking=True.
+     *
+     * @param artifactData  synapse artifact data
+     * @return updated artifact if call mediator exist
+     */
+    private String updateCallMediatorBlockingMode(String artifactData) {
+        if (!artifactData.contains(Constants.CALL_START_TAG) && !artifactData.contains(Constants.CALL_END_TAG)) {
+            return artifactData;
+        }
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document document = builder.parse(new InputSource(new StringReader(artifactData.trim())));
+
+            // Get all call mediator tags
+            NodeList nodes = document.getElementsByTagName("call");
+            if (nodes.getLength() == 0) {
+                return artifactData;
+            }
+
+            for (int x = 0; x < nodes.getLength(); x++) {
+                Node node = nodes.item(x);
+                boolean isUrlPostfixPropertyRequired = false;
+                Node blockingAttribute = node.getAttributes().getNamedItem(Constants.CALL_BLOCKING_ATTRIBUTE);
+                if (blockingAttribute != null) {
+                    if (!node.getAttributes().getNamedItem(Constants.CALL_BLOCKING_ATTRIBUTE)
+                            .getNodeValue().equals(Constants.STRING_TRUE)) {
+                        node.getAttributes().getNamedItem(Constants.CALL_BLOCKING_ATTRIBUTE)
+                                .setNodeValue(Constants.STRING_TRUE);
+                        isUrlPostfixPropertyRequired = true;
+                    }
+                } else {
+                    ((Element) node).setAttribute(Constants.CALL_BLOCKING_ATTRIBUTE, Constants.STRING_TRUE);
+                    isUrlPostfixPropertyRequired = true;
+                }
+                if (isUrlPostfixPropertyRequired) {
+                    // Append REST_URL_POSTFIX property to remove uri-template or url-mapping path in endpoint
+                    Element urlPostFixRemoveProperty = document
+                            .createElementNS(Constants.SYNAPSE_NAMESPACE, Constants.TEST_CASE_INPUT_PROPERTY);
+                    urlPostFixRemoveProperty.setAttribute(NAME_ATTRIBUTE, "REST_URL_POSTFIX");
+                    urlPostFixRemoveProperty.setAttribute(TEST_CASE_INPUT_PROPERTY_SCOPE, Constants.INPUT_PROPERTY_SCOPE_AXIS2);
+                    urlPostFixRemoveProperty.setAttribute("action", "remove");
+                    node.getParentNode().appendChild(urlPostFixRemoveProperty);
+                    node.getParentNode().insertBefore(urlPostFixRemoveProperty, node);
+                    node.getParentNode().normalize();
+
+                    // Append setCharacterEncoding property to false
+                    Element setCharacterEncodingProperty = document
+                            .createElementNS(Constants.SYNAPSE_NAMESPACE, Constants.TEST_CASE_INPUT_PROPERTY);
+                    setCharacterEncodingProperty.setAttribute(NAME_ATTRIBUTE, "setCharacterEncoding");
+                    setCharacterEncodingProperty.setAttribute(TEST_CASE_INPUT_PROPERTY_SCOPE, Constants.INPUT_PROPERTY_SCOPE_AXIS2);
+                    setCharacterEncodingProperty.setAttribute("value", "false");
+                    setCharacterEncodingProperty.setAttribute("type", "STRING");
+                    node.getParentNode().appendChild(setCharacterEncodingProperty);
+                    node.getParentNode().insertBefore(setCharacterEncodingProperty, node);
+                    node.getParentNode().normalize();
+                }
+            }
+            // Transformation of document to xml string
+            StringWriter stringWriter = new StringWriter();
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            transformer.transform(new DOMSource(document), new StreamResult(stringWriter));
+            return stringWriter.toString();
+        } catch (Exception e) {
+            log.error("Error while parsing test artifact data in pre-processing stage", e);
+        }
+        return artifactData;
     }
 }
