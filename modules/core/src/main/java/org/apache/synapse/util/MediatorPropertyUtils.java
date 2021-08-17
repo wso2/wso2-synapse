@@ -19,7 +19,11 @@ package org.apache.synapse.util;
 
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.unittest.ConfigModifier;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 import javax.xml.stream.XMLStreamException;
 
@@ -27,6 +31,10 @@ import javax.xml.stream.XMLStreamException;
  *  This class contains the util methods with respect to mediator properties
  */
 public class MediatorPropertyUtils {
+
+    private static final String SYNAPSE_TEST = "synapseTest";
+    private static final String TRUE = "true";
+    private static final String URL_PATH_SEPARATOR = "/";
 
     /**
      * This method removes the current content-type header value from the Axis2 message context and
@@ -87,5 +95,53 @@ public class MediatorPropertyUtils {
      */
     public static void serializeOMElement(org.apache.axis2.context.MessageContext  msgCtx) throws XMLStreamException {
         msgCtx.getEnvelope().toString(); // This is an implemented method in OMElement
+    }
+
+    /**
+     * Updates the message context To address with mock URL if mock service exists in unit test mode.
+     *
+     * @param endpoint endpoint definition
+     * @param synapseOutMessageContext synapse message context
+     * @param axisOutMsgCtx axis2 message context
+     */
+    public static void updateSendToUrlForMockServices(EndpointDefinition endpoint,
+                                                      MessageContext synapseOutMessageContext,
+                                                      org.apache.axis2.context.MessageContext axisOutMsgCtx) {
+
+        String endPointName = endpoint.leafEndpoint.getName();
+        if (TRUE.equals(System.getProperty(SYNAPSE_TEST)) && (synapseOutMessageContext.getConfiguration().
+                getProperty(org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST) != null &&
+                synapseOutMessageContext.getConfiguration().getProperty
+                        (org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST).equals(TRUE)) &&
+                (ConfigModifier.unitTestMockEndpointMap.containsKey(endPointName))) {
+            Map<String, String> endpointMockResources = ConfigModifier.unitTestMockEndpointMap.get(endPointName);
+            String modifiedUrl = modifyEndpointUrlWithMockService(axisOutMsgCtx.getTo().getAddress(),
+                    endpointMockResources);
+            axisOutMsgCtx.getTo().setAddress(modifiedUrl);
+            synapseOutMessageContext.getTo().setAddress(modifiedUrl);
+        }
+    }
+
+    /**
+     * Checks current endpoint URL path contains in the mockServiceResources map.
+     *
+     * @param endpointUrl endpoint url as a string
+     * @param mockServiceResources mock resources urls as a map
+     * @return mock service url, if resource path doesn't exists returns endpointURL
+     */
+    private static String modifyEndpointUrlWithMockService(String endpointUrl,
+                                                           Map<String, String> mockServiceResources) {
+        try {
+            URI endpointURI = new URI (endpointUrl);
+            String pathWithContextAndParams = endpointUrl.substring(endpointUrl.indexOf(endpointURI.getPath()));
+            if (mockServiceResources.containsKey(pathWithContextAndParams)) {
+                return mockServiceResources.get(pathWithContextAndParams);
+            } else if (mockServiceResources.containsKey(pathWithContextAndParams + URL_PATH_SEPARATOR)) {
+                return mockServiceResources.get(pathWithContextAndParams + URL_PATH_SEPARATOR);
+            }
+        } catch (URISyntaxException e) {
+            // ignore the exception
+        }
+        return endpointUrl;
     }
 }

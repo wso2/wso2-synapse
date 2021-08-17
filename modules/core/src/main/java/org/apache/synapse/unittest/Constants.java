@@ -64,6 +64,7 @@ public class Constants {
     static final String TEST_CASE_INPUT = "input";
     static final String TEST_CASE_INPUT_PAYLOAD = "payload";
     static final String TEST_CASE_INPUT_PROPERTIES = "properties";
+    static final String TEST_CASE_INPUT_PROPERTY = "property";
     static final String TEST_CASE_INPUT_PROPERTY_NAME = "name";
     static final String TEST_CASE_INPUT_PROPERTY_VALUE = "value";
     static final String TEST_CASE_INPUT_PROPERTY_SCOPE = "scope";
@@ -135,6 +136,9 @@ public class Constants {
 
     //parameter constants
     static final String PRAM_TEMP_DIR = "java.io.tmpdir";
+    static final String CALL_START_TAG = "<call";
+    static final String CALL_END_TAG = "</call>";
+    static final String CALL_BLOCKING_ATTRIBUTE = "blocking";
 
     //common constants
     static final String NEW_LINE = "\n";
@@ -143,12 +147,14 @@ public class Constants {
     static final String STRING_NULL = "null";
     static final String STRING_COLON = ":";
     static final String STRING_UTF8 = "UTF-8";
+    static final String STRING_TRUE = "true";
 
     //input data formats
     static final String XML_FORMAT = "XML";
     static final String JSON_FORMAT = "JSON";
     static final String TEXT_FORMAT = "TEXT";
     static final String TEXT_NAMESPACE = "http://ws.apache.org/commons/ns/payload";
+    static final String SYNAPSE_NAMESPACE = "http://ws.apache.org/ns/synapse";
 
     //synapse property constants
     public static final String IS_RUNNING_AS_UNIT_TEST = "IS_RUNNING_AS_UNIT_TEST";
