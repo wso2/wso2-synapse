@@ -72,6 +72,14 @@ public class PropertyHelperTest {
         PropertyHelper.setInstanceProperty(name, "45.67", pojoInstance);
         Assert.assertEquals("parameter must be set by the method", 45.67f, pojoInstance.getDoubleParameter(), 0.001);
 
+        name = "booleanParameter";
+        PropertyHelper.setInstanceProperty(name, "true", pojoInstance);
+        Assert.assertTrue("parameter must be set by the method to true", pojoInstance.getBooleanParameter());
+
+        name = "booleanParameter";
+        PropertyHelper.setInstanceProperty(name, "false", pojoInstance);
+        Assert.assertFalse("parameter must be set by the method to false", pojoInstance.getBooleanParameter());
+
         name = "omElementParameter";
         PropertyHelper.setInstanceProperty(name, element, pojoInstance);
         Assert.assertEquals("parameter must be set by the method", element, pojoInstance.getOmElementParameter());
