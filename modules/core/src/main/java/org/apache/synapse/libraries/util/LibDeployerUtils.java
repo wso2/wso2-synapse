@@ -67,14 +67,20 @@ public class LibDeployerUtils {
         SynapseLibrary synapseLib = LibDeployerUtils.populateDependencies(extractPath +
                                                                           LibDeployerConstants.ARTIFACTS_XML);
 
-        //create a ClassLoader for loading this synapse lib classes/resources
-        try {
-            ClassLoader libLoader = Utils.getClassLoader(LibDeployerUtils.class.getClassLoader(),
-                                                         extractPath, false);
-            synapseLib.setLibClassLoader(libLoader);
-        } catch (DeploymentException e) {
-            throw new SynapseArtifactDeploymentException("Error setting up lib classpath for Synapse" +
-                                                         " Library  : " + libFile.getAbsolutePath(), e);
+        String libArtifactName = synapseLib.getQName().toString();
+        Library deployedLib = SynapseConfiguration.getDeployedLib(libArtifactName);
+        if (deployedLib == null) {
+            //create a ClassLoader for loading this synapse lib classes/resources
+            try {
+                ClassLoader libLoader = Utils.getClassLoader(LibDeployerUtils.class.getClassLoader(),
+                        extractPath, false);
+                synapseLib.setLibClassLoader(libLoader);
+            } catch (DeploymentException e) {
+                throw new SynapseArtifactDeploymentException("Error setting up lib classpath for Synapse" +
+                        " Library  : " + libFile.getAbsolutePath(), e);
+            }
+        } else {
+            synapseLib.setLibClassLoader(deployedLib.getLibClassLoader());
         }
         //resolve synapse lib artifacts
         LibDeployerUtils.searchAndResolveDependencies(extractPath, synapseLib);
