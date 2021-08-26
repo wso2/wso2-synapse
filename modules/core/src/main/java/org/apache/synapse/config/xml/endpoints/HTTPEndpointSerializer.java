@@ -31,6 +31,8 @@ import org.apache.synapse.endpoints.oauth.AuthorizationCodeHandler;
 import org.apache.synapse.endpoints.oauth.ClientCredentialsHandler;
 import org.apache.synapse.endpoints.oauth.OAuthConstants;
 
+import java.util.Map;
+
 public class HTTPEndpointSerializer extends DefaultEndpointSerializer {
     @Override
     protected OMElement serializeEndpoint(Endpoint endpoint) {
@@ -135,8 +137,30 @@ public class HTTPEndpointSerializer extends DefaultEndpointSerializer {
         clientCredentials
                 .addChild(
                         createOMElementWithValue(OAuthConstants.TOKEN_API_URL, clientCredentialsHandler.getTokenUrl()));
-
+        if (clientCredentialsHandler.getRequestParametersMap() != null &&
+                clientCredentialsHandler.getRequestParametersMap().size() > 0) {
+            OMElement requestParameters = createOMRequestParams(clientCredentialsHandler.getRequestParametersMap());
+            clientCredentials.addChild(requestParameters);
+        }
         return clientCredentials;
+    }
+
+    /**
+     * Create an OMElement for request parameter map.
+     *
+     * @param requestParametersMap input parameter map.
+     * @return OMElement of parameter map.
+     */
+    private OMElement createOMRequestParams(Map<String, String> requestParametersMap) {
+        OMElement requestParameters =
+                fac.createOMElement("requestParameters", SynapseConstants.SYNAPSE_OMNAMESPACE);
+        for (Map.Entry<String, String> entry : requestParametersMap.entrySet()) {
+            OMElement parameter = fac.createOMElement("parameter", SynapseConstants.SYNAPSE_OMNAMESPACE);
+            parameter.addAttribute("name", entry.getKey(), null);
+            parameter.setText(entry.getValue());
+            requestParameters.addChild(parameter);
+        }
+        return requestParameters;
     }
 
     /**
@@ -161,7 +185,11 @@ public class HTTPEndpointSerializer extends DefaultEndpointSerializer {
         clientCredentials
                 .addChild(
                         createOMElementWithValue(OAuthConstants.TOKEN_API_URL, authorizationCodeHandler.getTokenUrl()));
-
+        if (authorizationCodeHandler.getRequestParametersMap() != null &&
+                authorizationCodeHandler.getRequestParametersMap().size() > 0) {
+            OMElement requestParameters = createOMRequestParams(authorizationCodeHandler.getRequestParametersMap());
+            clientCredentials.addChild(requestParameters);
+        }
         return clientCredentials;
     }
 
