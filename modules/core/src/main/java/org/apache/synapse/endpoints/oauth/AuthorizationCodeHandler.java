@@ -26,9 +26,9 @@ import org.apache.synapse.MessageContext;
  */
 public class AuthorizationCodeHandler extends OAuthHandler {
 
-    private String clientId;
-    private String clientSecret;
-    private String refreshToken;
+    private final String clientId;
+    private final String clientSecret;
+    private final String refreshToken;
 
     public AuthorizationCodeHandler(String tokenApiUrl, String clientId, String clientSecret,
                                     String refreshToken) {
@@ -44,23 +44,22 @@ public class AuthorizationCodeHandler extends OAuthHandler {
 
         StringBuilder payload = new StringBuilder();
 
-        clientId = OAuthUtils.resolveExpression(clientId, messageContext);
-        clientSecret = OAuthUtils.resolveExpression(clientSecret, messageContext);
-        refreshToken = OAuthUtils.resolveExpression(refreshToken, messageContext);
-
         payload.append(OAuthConstants.REFRESH_TOKEN_GRANT_TYPE)
-                .append(OAuthConstants.PARAM_REFRESH_TOKEN).append(refreshToken);
-        payload.append(OAuthConstants.PARAM_CLIENT_ID).append(clientId);
-        payload.append(OAuthConstants.PARAM_CLIENT_SECRET).append(clientSecret);
+                .append(OAuthConstants.PARAM_REFRESH_TOKEN)
+                .append(OAuthUtils.resolveExpression(refreshToken, messageContext));
+        payload.append(OAuthConstants.PARAM_CLIENT_ID).append(OAuthUtils.resolveExpression(clientId, messageContext));
+        payload.append(OAuthConstants.PARAM_CLIENT_SECRET)
+                .append(OAuthUtils.resolveExpression(clientSecret, messageContext));
         payload.append(getRequestParametersAsString(messageContext));
 
         return payload.toString();
     }
 
     @Override
-    protected String getEncodedCredentials() {
+    protected String getEncodedCredentials(MessageContext messageContext) throws OAuthException {
 
-        return Base64Utils.encode((clientId + ":" + clientSecret).getBytes());
+        return Base64Utils.encode((OAuthUtils.resolveExpression(clientId, messageContext) + ":" +
+                OAuthUtils.resolveExpression(clientSecret, messageContext)).getBytes());
     }
 
     /**

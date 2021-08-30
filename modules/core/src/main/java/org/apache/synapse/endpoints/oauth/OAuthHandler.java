@@ -74,7 +74,7 @@ public abstract class OAuthHandler {
                 public String call() throws OAuthException, IOException {
 
                     return OAuthClient.generateToken(tokenApiUrl, buildTokenRequestPayload(messageContext),
-                            getEncodedCredentials());
+                            getEncodedCredentials(messageContext));
                 }
             });
         } catch (ExecutionException e) {
@@ -133,9 +133,11 @@ public abstract class OAuthHandler {
     /**
      * Return the base 64 encoded clientId:clientSecret relevant to the OAuth handler.
      *
+     * @param messageContext Message Context of the request which will be used to resolve dynamic expressions
      * @return String payload
+     * @throws OAuthException In the event of errors when resolving the dynamic expressions
      */
-    protected abstract String getEncodedCredentials();
+    protected abstract String getEncodedCredentials(MessageContext messageContext) throws OAuthException;
 
     /**
      * Return the request parameters as a string
