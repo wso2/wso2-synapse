@@ -100,7 +100,10 @@ public class OAuthUtils {
         OMElement clientCredentialsElement = oauthElement.getFirstChildWithName(new QName(
                 SynapseConstants.SYNAPSE_NAMESPACE, OAuthConstants.CLIENT_CREDENTIALS));
 
-        if (authCodeElement != null && clientCredentialsElement != null) {
+        OMElement passwordCredentialsElement = oauthElement.getFirstChildWithName(new QName(
+                SynapseConstants.SYNAPSE_NAMESPACE, OAuthConstants.PASSWORD_CREDENTIALS));
+
+        if (hasMultipleOAuthConfigs(authCodeElement, clientCredentialsElement, passwordCredentialsElement)) {
             if (log.isDebugEnabled()) {
                 log.error("Invalid OAuth configuration: AuthorizationCode and ClientCredentials grants are not " +
                         "allowed together");
@@ -115,7 +118,27 @@ public class OAuthUtils {
         if (clientCredentialsElement != null) {
             oAuthHandler = getClientCredentialsHandler(clientCredentialsElement);
         }
+
+        if (passwordCredentialsElement != null) {
+            oAuthHandler = getPasswordCredentialsHandler(passwordCredentialsElement);
+        }
         return oAuthHandler;
+    }
+
+    /**
+     * Method to check whether there are multiple OAuth config defined
+     *
+     * @param authCodeElement OAuth config for authorization code
+     * @param clientCredentialsElement OAuth config for client credentials
+     * @param passwordCredentialsElement OAuth config for password credentials
+     * @return true if there are multiple OAuth config defined
+     */
+    private static boolean hasMultipleOAuthConfigs(OMElement authCodeElement, OMElement clientCredentialsElement,
+                                                   OMElement passwordCredentialsElement) {
+
+        return authCodeElement != null ?
+                (clientCredentialsElement != null || passwordCredentialsElement != null) :
+                (clientCredentialsElement != null && passwordCredentialsElement != null);
     }
 
     /**
@@ -171,6 +194,39 @@ public class OAuthUtils {
         ClientCredentialsHandler handler = new ClientCredentialsHandler(tokenApiUrl, clientId, clientSecret);
         if (hasRequestParameters(clientCredentialsElement)) {
             Map<String, String> requestParameters = getRequestParameters(clientCredentialsElement);
+            if (requestParameters == null) {
+                return null;
+            }
+            handler.setRequestParameters(requestParameters);
+        }
+        return handler;
+    }
+
+    /**
+     * Method to get a PasswordCredentialsHandler
+     *
+     * @param passwordCredentialsElement Element containing password credentials configs
+     * @return PasswordCredentialsHandler object
+     */
+    private static PasswordCredentialsHandler getPasswordCredentialsHandler(
+            OMElement passwordCredentialsElement) {
+
+        String clientId = getChildValue(passwordCredentialsElement, OAuthConstants.OAUTH_CLIENT_ID);
+        String clientSecret = getChildValue(passwordCredentialsElement, OAuthConstants.OAUTH_CLIENT_SECRET);
+        String username = getChildValue(passwordCredentialsElement, OAuthConstants.OAUTH_USERNAME);
+        String password = getChildValue(passwordCredentialsElement, OAuthConstants.OAUTH_PASSWORD);
+        String tokenApiUrl = getChildValue(passwordCredentialsElement, OAuthConstants.TOKEN_API_URL);
+
+        if (username == null || password == null || tokenApiUrl == null || clientId == null || clientSecret == null) {
+            if (log.isDebugEnabled()) {
+                log.error("Invalid PasswordCredentials configuration");
+            }
+            return null;
+        }
+        PasswordCredentialsHandler handler = new PasswordCredentialsHandler(tokenApiUrl, clientId, clientSecret,
+                username, password);
+        if (hasRequestParameters(passwordCredentialsElement)) {
+            Map<String, String> requestParameters = getRequestParameters(passwordCredentialsElement);
             if (requestParameters == null) {
                 return null;
             }
