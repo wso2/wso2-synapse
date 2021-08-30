@@ -30,6 +30,7 @@ import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
 import org.apache.synapse.endpoints.oauth.AuthorizationCodeHandler;
 import org.apache.synapse.endpoints.oauth.ClientCredentialsHandler;
 import org.apache.synapse.endpoints.oauth.OAuthConstants;
+import org.apache.synapse.endpoints.oauth.PasswordCredentialsHandler;
 
 import java.util.Map;
 
@@ -114,6 +115,11 @@ public class HTTPEndpointSerializer extends DefaultEndpointSerializer {
                     (ClientCredentialsHandler) oAuthConfiguredHTTPEndpoint.getOauthHandler()));
         }
 
+        if (oAuthConfiguredHTTPEndpoint.getOauthHandler() instanceof PasswordCredentialsHandler) {
+            oauth.addChild(serializePasswordCredentialsConfigurationElements(
+                    (PasswordCredentialsHandler) oAuthConfiguredHTTPEndpoint.getOauthHandler()));
+        }
+
         return authentication;
     }
 
@@ -191,6 +197,37 @@ public class HTTPEndpointSerializer extends DefaultEndpointSerializer {
             clientCredentials.addChild(requestParameters);
         }
         return clientCredentials;
+    }
+
+    /**
+     * This method returns an OMElement containing the Password Credentials configuration
+     *
+     * @param passwordCredentialsHandler PasswordCredentialsHandler of the OAuth Configured HTTP Endpoint
+     * @return OMElement containing the Password Credentials configuration
+     */
+    private OMElement serializePasswordCredentialsConfigurationElements(
+            PasswordCredentialsHandler passwordCredentialsHandler) {
+
+        OMElement passwordCredentials = fac.createOMElement(
+                OAuthConstants.PASSWORD_CREDENTIALS,
+                SynapseConstants.SYNAPSE_OMNAMESPACE);
+
+        passwordCredentials.addChild(createOMElementWithValue(OAuthConstants.OAUTH_CLIENT_ID,
+                passwordCredentialsHandler.getClientId()));
+        passwordCredentials.addChild(createOMElementWithValue(OAuthConstants.OAUTH_CLIENT_SECRET,
+                passwordCredentialsHandler.getClientSecret()));
+        passwordCredentials.addChild(createOMElementWithValue(OAuthConstants.OAUTH_USERNAME,
+                passwordCredentialsHandler.getUsername()));
+        passwordCredentials.addChild(createOMElementWithValue(OAuthConstants.OAUTH_PASSWORD,
+                passwordCredentialsHandler.getPassword()));
+        passwordCredentials.addChild(createOMElementWithValue(OAuthConstants.TOKEN_API_URL,
+                passwordCredentialsHandler.getTokenUrl()));
+        if (passwordCredentialsHandler.getRequestParametersMap() != null &&
+                passwordCredentialsHandler.getRequestParametersMap().size() > 0) {
+            OMElement requestParameters = createOMRequestParams(passwordCredentialsHandler.getRequestParametersMap());
+            passwordCredentials.addChild(requestParameters);
+        }
+        return passwordCredentials;
     }
 
     /**
