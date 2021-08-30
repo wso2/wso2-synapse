@@ -63,6 +63,8 @@ public class OAuthUtilsTest {
 
     private final static String clientId = "clientId";
     private final static String clientSecret = "clientSecret";
+    private final static String username = "username";
+    private final static String password = "password";
     private final static String refreshToken = "refreshToken";
     private final static String tokenUrl = "tokenUrl";
 
@@ -120,11 +122,34 @@ public class OAuthUtilsTest {
                             "</requestParameters>" +
                             "</clientCredentials></oauth></authentication></http>";
 
+            String passwordCredentialsConfig =
+                    "<http xmlns=\"http://ws.apache.org/ns/synapse\"><authentication><oauth><passwordCredentials>" +
+                            "<" + clientId + ">client_id</" + clientId + ">" +
+                            "<" + clientSecret + ">client_secret</" + clientSecret + ">" +
+                            "<" + username + ">tester123</" + username + ">" +
+                            "<" + password + ">abc@123</" + password + ">" +
+                            "<" + tokenUrl + ">oauth_server_url</" + tokenUrl +
+                            "></passwordCredentials></oauth></authentication></http>";
+
+            String passwordCredentialsConfigWithRequestParams =
+                    "<http xmlns=\"http://ws.apache.org/ns/synapse\"><authentication><oauth><passwordCredentials>" +
+                            "<" + clientId + ">client_id</" + clientId + ">" +
+                            "<" + clientSecret + ">client_secret</" + clientSecret + ">" +
+                            "<" + username + ">tester123</" + username + ">" +
+                            "<" + password + ">abc@123</" + password + ">" +
+                            "<" + tokenUrl + ">oauth_server_url</" + tokenUrl + ">" +
+                            "<requestParameters>" +
+                            "   <parameter name=\"account_id\">{$ctx:accountID}</parameter>" +
+                            "</requestParameters>" +
+                            "</passwordCredentials></oauth></authentication></http>";
+
             return Arrays.asList(new Object[][]{
                     {authorizationCodeConfig, AuthorizationCodeHandler.class},
                     {authorizationCodeConfigWithRequestParams, AuthorizationCodeHandler.class},
                     {clientCredentialsConfig, ClientCredentialsHandler.class},
-                    {clientCredentialsConfigWithRequestParams, ClientCredentialsHandler.class}
+                    {clientCredentialsConfigWithRequestParams, ClientCredentialsHandler.class},
+                    {passwordCredentialsConfig, PasswordCredentialsHandler.class},
+                    {passwordCredentialsConfigWithRequestParams, PasswordCredentialsHandler.class}
             });
         }
 
@@ -190,11 +215,48 @@ public class OAuthUtilsTest {
                             "</requestParameters>" +
                             "</clientCredentials></oauth></authentication></http>";
 
+            String passwordCredentialsConfig =
+                    "<http xmlns=\"http://ws.apache.org/ns/synapse\"><authentication><oauth><passwordCredentials>" +
+                            "<" + clientId + ">client_id</" + clientId + ">" +
+                            "<" + password + ">abc@123</" + password + ">" +
+                            "<" + tokenUrl + ">oauth_server_url</" + tokenUrl +
+                            "></passwordCredentials></oauth></authentication></http>";
+
+            String passwordCredentialsConfigWithInvalidRequestParams =
+                    "<http xmlns=\"http://ws.apache.org/ns/synapse\"><authentication><oauth><passwordCredentials>" +
+                            "<" + clientId + ">client_id</" + clientId + ">" +
+                            "<" + clientSecret + ">client_secret</" + clientSecret + ">" +
+                            "<" + username + ">tester123</" + username + ">" +
+                            "<" + password + ">abc@123</" + password + ">" +
+                            "<" + tokenUrl + ">oauth_server_url</" + tokenUrl + ">" +
+                            "<requestParameters>" +
+                            "   <parameter>abc@123</parameter>" +
+                            "</requestParameters>" +
+                            "</passwordCredentials></oauth></authentication></http>";
+
+            String multipleOAuthConfig =
+                    "<http xmlns=\"http://ws.apache.org/ns/synapse\"><authentication><oauth><passwordCredentials>" +
+                            "<" + clientId + ">client_id</" + clientId + ">" +
+                            "<" + clientSecret + ">client_secret</" + clientSecret + ">" +
+                            "<" + username + ">tester123</" + username + ">" +
+                            "<" + password + ">abc@123</" + password + ">" +
+                            "<" + tokenUrl + ">oauth_server_url</" + tokenUrl +
+                            "></passwordCredentials>" +
+                            "<authorizationCode>" +
+                            "<" + clientId + ">client_id</" + clientId + ">" +
+                            "<" + clientSecret + ">client_secret</" + clientSecret + ">" +
+                            "<" + refreshToken + ">refresh_token</" + refreshToken + ">" +
+                            "<" + tokenUrl + ">oauth_server_url</" + tokenUrl + ">" +
+                            "</authorizationCode></oauth></authentication></http>";
+
             return Arrays.asList(new Object[][]{
                     {authorizationCodeConfig},
                     {authorizationCodeConfigWithInvalidRequestParams},
                     {clientCredentialsConfig},
-                    {clientCredentialsConfigWithInvalidRequestParams}
+                    {clientCredentialsConfigWithInvalidRequestParams},
+                    {passwordCredentialsConfig},
+                    {passwordCredentialsConfigWithInvalidRequestParams},
+                    {multipleOAuthConfig}
             });
         }
 
