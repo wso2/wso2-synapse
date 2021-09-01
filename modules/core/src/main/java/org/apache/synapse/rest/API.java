@@ -50,12 +50,7 @@ import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.logging.LoggingUtils;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class API extends AbstractRESTProcessor implements ManagedLifecycle, AspectConfigurable, SynapseArtifact {
 
@@ -353,10 +348,23 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
 		}
         if (synCtx.isResponse()) {
             org.apache.axis2.context.MessageContext context = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-                Map headers = (Map) context.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-            if (headers != null) {
-                headers.put(PassThroughConfiguration.getInstance().getCorrelationHeaderName(),
-                        context.getProperty(CorrelationConstants.CORRELATION_ID));
+            context.setProperty(NhttpConstants.ACTIVITY_ID_STATUS, true);
+            Map headers = (Map) context.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+            String sysRestrictedHeaders = System.getProperty(CorrelationConstants.RESTRICT_HEADERS_SYS_PROP);
+            List<String> headerList;
+            if (sysRestrictedHeaders != null) {
+                headerList = Arrays.asList(sysRestrictedHeaders.split(","));
+                if (headerList.contains(PassThroughConstants.CORRELATION_DEFAULT_HEADER)) {
+                    ((Axis2MessageContext) synCtx).getAxis2MessageContext().
+                            setProperty(NhttpConstants.ACTIVITY_ID_STATUS, false);
+                }
+            }
+            Object status = context.getProperty(NhttpConstants.ACTIVITY_ID_STATUS);
+            if ((status != null) && ((boolean) status)) {
+                if (headers != null) {
+                    headers.put(PassThroughConfiguration.getInstance().getCorrelationHeaderName(),
+                            context.getProperty(CorrelationConstants.CORRELATION_ID));
+                }
             }
         }
 
