@@ -50,7 +50,13 @@ import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.logging.LoggingUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Arrays;
 
 public class API extends AbstractRESTProcessor implements ManagedLifecycle, AspectConfigurable, SynapseArtifact {
 
