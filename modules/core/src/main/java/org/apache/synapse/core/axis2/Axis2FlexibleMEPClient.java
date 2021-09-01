@@ -149,15 +149,18 @@ public class Axis2FlexibleMEPClient {
             headers.put("Cookie", session);
         }
 
-            if (originalInMsgCtx.getProperty(CorrelationConstants.CORRELATION_ID) == null) {
-                originalInMsgCtx.setProperty(CorrelationConstants.CORRELATION_ID, UUID.randomUUID().toString());
-            }
-            if (headers == null) {
-                headers = new HashMap();
-                originalInMsgCtx.setProperty(MessageContext.TRANSPORT_HEADERS, headers);
-            }
+        if (originalInMsgCtx.getProperty(CorrelationConstants.CORRELATION_ID) == null) {
+            originalInMsgCtx.setProperty(CorrelationConstants.CORRELATION_ID, UUID.randomUUID().toString());
+        }
+        if (headers == null) {
+            headers = new HashMap();
+            originalInMsgCtx.setProperty(MessageContext.TRANSPORT_HEADERS, headers);
+        }
+        Object status = originalInMsgCtx.getProperty(NhttpConstants.ACTIVITY_ID_STATUS);
+        if ((status != null) && ((boolean) status)) {
             headers.put(PassThroughConfiguration.getInstance().getCorrelationHeaderName(),
                     originalInMsgCtx.getProperty(CorrelationConstants.CORRELATION_ID).toString());
+        }
 
         // create a new MessageContext to be sent out as this should not corrupt the original
         // we need to create the response to the original message later on
