@@ -18,25 +18,23 @@
 
 package org.apache.synapse.endpoints.oauth;
 
-import org.apache.axiom.util.base64.Base64Utils;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 
 /**
- * This class is used to handle Password Credentials grant oauth
+ * This class is used to handle Password Credentials grant oauth.
  */
 public class PasswordCredentialsHandler extends OAuthHandler {
 
-    private final String clientId;
-    private final String clientSecret;
     private final String username;
     private final String password;
 
     protected PasswordCredentialsHandler(String tokenApiUrl, String clientId, String clientSecret, String username,
                                          String password) {
 
-        super(tokenApiUrl);
-        this.clientId = clientId;
-        this.clientSecret = clientSecret;
+        super(tokenApiUrl, clientId, clientSecret);
         this.username = username;
         this.password = password;
     }
@@ -56,20 +54,17 @@ public class PasswordCredentialsHandler extends OAuthHandler {
     }
 
     @Override
-    protected String getEncodedCredentials(MessageContext messageContext) throws OAuthException {
+    protected OMElement serializeSpecificOAuthConfigs(OMFactory omFactory) {
 
-        return Base64Utils.encode((OAuthUtils.resolveExpression(clientId, messageContext) + ":" +
-                OAuthUtils.resolveExpression(clientSecret, messageContext)).getBytes());
-    }
+        OMElement passwordCredentials = omFactory.createOMElement(
+                OAuthConstants.PASSWORD_CREDENTIALS,
+                SynapseConstants.SYNAPSE_OMNAMESPACE);
 
-    public String getClientId() {
-
-        return clientId;
-    }
-
-    public String getClientSecret() {
-
-        return clientSecret;
+        passwordCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory, OAuthConstants.OAUTH_USERNAME,
+                username));
+        passwordCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory, OAuthConstants.OAUTH_PASSWORD,
+                password));
+        return passwordCredentials;
     }
 
     public String getUsername() {

@@ -18,6 +18,9 @@
 
 package org.apache.synapse.endpoints.oauth;
 
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMFactory;
+import org.apache.axiom.util.base64.Base64Utils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 
@@ -39,18 +42,21 @@ public abstract class OAuthHandler {
     private final String id;
 
     private final String tokenApiUrl;
-
+    private final String clientId;
+    private final String clientSecret;
     private Map<String, String> requestParametersMap;
 
-    protected OAuthHandler(String tokenApiUrl) {
+    protected OAuthHandler(String tokenApiUrl, String clientId, String clientSecret) {
 
         this.id = OAuthUtils.getRandomOAuthHandlerID();
         this.tokenApiUrl = tokenApiUrl;
+        this.clientId = clientId;
+        this.clientSecret = clientSecret;
     }
 
     /**
      * This method will set the Authorization header after checking for expired tokens and generating new access
-     * tokens
+     * tokens.
      *
      * @param messageContext Message context to which the token needs to be set
      * @throws OAuthException In the event of errors when generating new token
@@ -61,7 +67,7 @@ public abstract class OAuthHandler {
     }
 
     /**
-     * This method returns a token string
+     * This method returns a token string.
      *
      * @return token String
      * @throws OAuthException In the event of errors when generating new token
@@ -83,12 +89,13 @@ public abstract class OAuthHandler {
     }
 
     /**
-     * Method to set the Authorization header
+     * Method to set the Authorization header.
      *
      * @param messageContext Message Context of the request
      * @param accessToken    Access token to be set
      */
     private void setAuthorizationHeader(MessageContext messageContext, String accessToken) {
+
         Object transportHeaders = ((Axis2MessageContext) messageContext)
                 .getAxis2MessageContext().getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
         if (transportHeaders != null && transportHeaders instanceof Map) {
@@ -97,16 +104,18 @@ public abstract class OAuthHandler {
         } else {
             Map<String, Object> transportHeadersMap = new TreeMap<>(new Comparator<String>() {
                 public int compare(String o1, String o2) {
+
                     return o1.compareToIgnoreCase(o2);
                 }
             });
             transportHeadersMap.put(OAuthConstants.AUTHORIZATION_HEADER, OAuthConstants.BEARER + accessToken);
-            ((Axis2MessageContext) messageContext).getAxis2MessageContext().setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, transportHeadersMap);
+            ((Axis2MessageContext) messageContext).getAxis2MessageContext()
+                    .setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, transportHeadersMap);
         }
     }
 
     /**
-     * Method to remove the token from the cache when the endpoint is destroyed
+     * Method to remove the token from the cache when the endpoint is destroyed.
      */
     public void removeTokenFromCache() {
 
@@ -124,11 +133,59 @@ public abstract class OAuthHandler {
     }
 
     /**
+     * Return the client id relevant to the OAuth Handler.
+     *
+     * @return String client id
+     */
+    public String getClientId() {
+
+        return clientId;
+    }
+
+    /**
+     * Return the client secret relevant to the OAuth Handler.
+     *
+     * @return String client secret
+     */
+    public String getClientSecret() {
+
+        return clientSecret;
+    }
+
+    /**
      * Return the request payload relevant to the OAuth handler.
      *
      * @return String payload
      */
     protected abstract String buildTokenRequestPayload(MessageContext messageContext) throws OAuthException;
+
+    /**
+     * Return the OMElement for OAuth configuration relevant to the OAuth handler.
+     *
+     * @return OMElement OAuth configuration
+     */
+    protected abstract OMElement serializeSpecificOAuthConfigs(OMFactory omFactory);
+
+    /**
+     * This method returns an OMElement containing the OAuth configuration.
+     *
+     * @return OMElement OAuth configuration
+     */
+    public OMElement serializeOAuthConfiguration(OMFactory omFactory) {
+
+        OMElement oauthCredentials = serializeSpecificOAuthConfigs(omFactory);
+        oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory, OAuthConstants.OAUTH_CLIENT_ID,
+                clientId));
+        oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory, OAuthConstants.OAUTH_CLIENT_SECRET,
+                clientSecret));
+        oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory, OAuthConstants.TOKEN_API_URL,
+                tokenApiUrl));
+        if (requestParametersMap != null && !requestParametersMap.isEmpty()) {
+            OMElement requestParameters = OAuthUtils.createOMRequestParams(omFactory, requestParametersMap);
+            oauthCredentials.addChild(requestParameters);
+        }
+        return oauthCredentials;
+    }
 
     /**
      * Return the base 64 encoded clientId:clientSecret relevant to the OAuth handler.
@@ -137,10 +194,14 @@ public abstract class OAuthHandler {
      * @return String payload
      * @throws OAuthException In the event of errors when resolving the dynamic expressions
      */
-    protected abstract String getEncodedCredentials(MessageContext messageContext) throws OAuthException;
+    protected String getEncodedCredentials(MessageContext messageContext) throws OAuthException {
+
+        return Base64Utils.encode((OAuthUtils.resolveExpression(clientId, messageContext) + ":" +
+                OAuthUtils.resolveExpression(clientSecret, messageContext)).getBytes());
+    }
 
     /**
-     * Return the request parameters as a string
+     * Return the request parameters as a string.
      *
      * @return String request parameters
      */
@@ -159,7 +220,7 @@ public abstract class OAuthHandler {
     }
 
     /**
-     * Method to set the request parameter map
+     * Method to set the request parameter map.
      *
      * @param requestParameters the request parameter map
      */
@@ -169,6 +230,7 @@ public abstract class OAuthHandler {
     }
 
     public Map<String, String> getRequestParametersMap() {
+
         return requestParametersMap;
     }
 }
