@@ -25,6 +25,7 @@ import org.apache.axiom.om.impl.builder.StAXBuilder;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axis2.AxisFault;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -348,7 +349,7 @@ public abstract class TemplateProcessor {
         } else {
             element = value.substring(0, value.length() - 1);
         }
-        return isNull(element) || isBoolean(element) || NumberUtils.isParsable(element) || isString(element);
+        return StringUtils.isBlank(element) || isNull(element) || isBoolean(element) || NumberUtils.isParsable(element) || isString(element);
     }
 
     private boolean isBoolean(String value) {
