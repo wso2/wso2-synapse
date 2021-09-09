@@ -345,6 +345,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         HttpResponse response = conn.getHttpResponse();
         ProtocolState connState;
         try {
+            boolean isError = false;
             String method = null;
             ProxyTunnelHandler tunnelHandler = (ProxyTunnelHandler) context.getAttribute(PassThroughConstants.TUNNEL_HANDLER);
             if (tunnelHandler != null && !tunnelHandler.isCompleted()) {
@@ -357,6 +358,9 @@ public class TargetHandler implements NHttpClientEventHandler {
                     conn.requestOutput();
                     return;
                 } else {
+                    // TLS tunnel has not been established, so mark connection as failed to prevent that it is
+                    // returned back into pool
+                    isError = true;
                     log.warn("Tunnel response failed");
                     // the reason for getting the targetRequest and calling the consumeError() on pipe. Instead of
                     // calling the informWriterError(NHTTPClientConnection) is, at this point the
@@ -390,7 +394,6 @@ public class TargetHandler implements NHttpClientEventHandler {
                         .info((System.currentTimeMillis() - startTime) + "|HTTP|"
                         + TargetContext.getRequest(conn).getUrl().toString() + "|BACKEND LATENCY");
             }
-            boolean isError = false;
             if (connState != ProtocolState.REQUEST_DONE) {
                 isError = true;
                 MessageContext requestMsgContext = TargetContext.get(conn).getRequestMsgCtx();
