@@ -26,6 +26,7 @@ public class TestCase {
     private String testCaseName;
     private String requestPath;
     private String requestMethod;
+    private String protocolType;
     private String inputPayload;
     private List<Map<String, String>> propertyMap = new ArrayList<>();
     private List<AssertEqual> assertEquals = new ArrayList<>();
@@ -92,6 +93,24 @@ public class TestCase {
      */
     public String getRequestMethod() {
         return requestMethod;
+    }
+
+    /**
+     * Get request protocol type of the test case
+     * @return protocol type of the test case
+     */
+    public String getProtocolType() {
+
+        return protocolType;
+    }
+
+    /**
+     * Set protocol type of the test case
+     * @param protocolType Protocol type to set
+     */
+    public void setProtocolType(String protocolType) {
+
+        this.protocolType = protocolType;
     }
 
     /**

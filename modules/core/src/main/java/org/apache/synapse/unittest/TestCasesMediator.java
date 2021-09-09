@@ -169,20 +169,28 @@ public class TestCasesMediator {
      * @return response received from the API resource
      */
     static Map.Entry<String, HttpResponse> apiResourceExecutor(TestCase currentTestCase, String context,
-                                                               String resourceMethod) throws IOException {
+                                                               String resourceMethod, String protocolType) throws IOException {
+
+        String urlPrefix = "";
+        if (protocolType.equals(HTTP_KEY)) {
+            urlPrefix = HTTP_LOCALHOST_URL + httpPassThruOperatingPort ;
+        } else if (protocolType.equals(HTTPS_KEY)) {
+            urlPrefix = HTTPS_LOCALHOST_URL + httpsPassThruOperatingPort;
+        } else {
+            return new AbstractMap.SimpleEntry<>("'" + urlPrefix + "' transport is not supported", null);
+        }
+
 
         String url;
         if (currentTestCase.getRequestPath() != null) {
             if (currentTestCase.getRequestPath().startsWith("/")) {
-                url = HTTP_LOCALHOST_URL + httpPassThruOperatingPort
-                        + context + currentTestCase.getRequestPath();
+                url = urlPrefix + context + currentTestCase.getRequestPath();
             } else {
-                url = HTTP_LOCALHOST_URL + httpPassThruOperatingPort
-                        + context + "/" + currentTestCase.getRequestPath();
+                url = urlPrefix + context + "/" + currentTestCase.getRequestPath();
             }
 
         } else {
-            url = HTTP_LOCALHOST_URL + httpPassThruOperatingPort + context;
+            url = urlPrefix + context;
         }
 
 
