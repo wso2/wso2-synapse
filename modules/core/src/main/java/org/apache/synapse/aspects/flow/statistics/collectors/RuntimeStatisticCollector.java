@@ -334,7 +334,9 @@ public abstract class RuntimeStatisticCollector {
         if (eventHolder.countHolder.decrementAndGetStatCount() <= 0 &&
                 eventHolder.countHolder.getCallBackCount() <= 0 && !continueStatisticFlow(messageContext)) {
             eventHolder.setEvenCollectionFinished(true);
-            messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
+            if (isMediationFlowStatisticsEnabled) {
+                messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
+            }
         }
     }
 
@@ -397,7 +399,9 @@ public abstract class RuntimeStatisticCollector {
 
         if (eventHolder.countHolder.decrementAndGetCallbackCount() <= 0 && eventHolder.countHolder.getStatCount() <= 0) {
             eventHolder.setEvenCollectionFinished(true);
-            messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
+            if (isMediationFlowStatisticsEnabled) {
+                messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
+            }
         }
     }
 
@@ -445,7 +449,9 @@ public abstract class RuntimeStatisticCollector {
 
             eventHolder.setEvenCollectionFinished(true);
             eventHolder.setMessageFlowError(true);
-            messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
+            if (isMediationFlowStatisticsEnabled) {
+                messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
+            }
         }
     }
 
