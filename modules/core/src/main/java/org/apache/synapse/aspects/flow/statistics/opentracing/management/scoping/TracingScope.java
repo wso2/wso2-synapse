@@ -57,10 +57,9 @@ public class TracingScope {
      */
     private Integer pendingCallbacksCount;
 
-    public TracingScope(TracingScope parentScope, String tracingScopeId) {
+    public TracingScope(String tracingScopeId) {
         this.tracingScopeId = tracingScopeId;
         this.spanStore = new SpanStore();
-        this.parentScope = parentScope;
         this.pendingCallbacksCount = 0;
     }
 
@@ -73,11 +72,6 @@ public class TracingScope {
      */
     public void addCallback() {
         this.incrementPendingCallbacksCount();
-        TracingScope parent = this.parentScope;
-        while (parent != null) {
-            parent.incrementPendingCallbacksCount();
-            parent = parent.parentScope;
-        }
     }
 
     /**
@@ -85,11 +79,6 @@ public class TracingScope {
      */
     public void removeCallback() {
         this.decrementPendingCallbacksCount();
-        TracingScope parent = this.parentScope;
-        while (parent != null) {
-            parent.decrementPendingCallbacksCount();
-            parent = parent.parentScope;
-        }
     }
 
     private synchronized void incrementPendingCallbacksCount() {
