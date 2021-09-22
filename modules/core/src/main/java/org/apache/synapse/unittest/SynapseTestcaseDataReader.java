@@ -100,6 +100,7 @@ import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTIES;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_NAME;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_SCOPE;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_VALUE;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_PROTOCOL_TYPE;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_REQUEST_METHOD;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_REQUEST_PATH;
 import static org.apache.synapse.unittest.Constants.TYPE_LOCAL_ENTRY;
@@ -385,6 +386,14 @@ class SynapseTestcaseDataReader {
         if (testCaseRequestMethodNode != null) {
             String requestMethod = testCaseRequestMethodNode.getText();
             testCase.setRequestMethod(requestMethod);
+        }        
+        
+        QName qualifiedInputProtocolType = new QName("", TEST_CASE_PROTOCOL_TYPE, "");
+        OMElement testCaseProtocolTypeNode = testCaseInputNode.getFirstChildWithName(qualifiedInputProtocolType);
+
+        if (testCaseProtocolTypeNode != null) {
+            String protocolType = testCaseProtocolTypeNode.getText();
+            testCase.setProtocolType(protocolType);
         }
 
 

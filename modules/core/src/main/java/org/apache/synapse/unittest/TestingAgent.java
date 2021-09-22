@@ -48,6 +48,7 @@ import java.util.Map;
 import javax.xml.namespace.QName;
 
 import static org.apache.synapse.unittest.Constants.API_CONTEXT;
+import static org.apache.synapse.unittest.Constants.HTTP_KEY;
 import static org.apache.synapse.unittest.Constants.TYPE_API;
 import static org.apache.synapse.unittest.Constants.TYPE_ENDPOINT;
 import static org.apache.synapse.unittest.Constants.TYPE_LOCAL_ENTRY;
@@ -307,8 +308,12 @@ class TestingAgent {
                     case TYPE_API:
                         String context = artifactNode.getAttributeValue(new QName(API_CONTEXT));
                         String resourceMethod = currentTestCase.getRequestMethod();
+                        String protocolType = currentTestCase.getProtocolType();
+                        if (protocolType == null || protocolType.isEmpty()) {
+                            protocolType = HTTP_KEY;
+                        }
                         Map.Entry<String, HttpResponse> invokedApiResult = TestCasesMediator.apiResourceExecutor
-                                (currentTestCase, context, resourceMethod);
+                                (currentTestCase, context, resourceMethod, protocolType);
 
                         testSuiteSummary.setMediationStatus(Constants.PASSED_KEY);
                         checkAssertionWithAPIMediation(invokedApiResult, currentTestCase, testSummary);
