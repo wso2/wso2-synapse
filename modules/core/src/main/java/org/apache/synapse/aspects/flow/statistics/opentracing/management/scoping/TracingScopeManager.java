@@ -52,9 +52,7 @@ public class TracingScopeManager {
                 // Already existing scope. Return its reference
                 return tracingScopes.get(tracingScopeId);
             } else {
-                // Create scope and return its reference
-                TracingScope parent = getLatestTracingScope();
-                TracingScope tracingScope = new TracingScope(parent, tracingScopeId);
+                TracingScope tracingScope = new TracingScope(tracingScopeId);
                 tracingScopes.put(tracingScopeId, tracingScope);
                 return tracingScope;
             }
