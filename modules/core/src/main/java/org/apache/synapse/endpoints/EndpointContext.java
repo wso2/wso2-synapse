@@ -44,6 +44,7 @@ public class EndpointContext {
     private static final String REMAINING_RETRIES = ".remaining_retries";
     private static final String LAST_SUSPEND_DURATION = ".last_suspend_duration";
     private static final String MAXIMUM_REMAINING_RETRIES = ".maximum_remaining_retries";
+    private static final String MAXIMUM_REMAINING_RECURSIVE_RETRIES = ".maximum_remaining_recursive_retries";
 
     // The different states an endpoint could exist at any point in time
     /** And active endpoint known to be functioning properly */
@@ -80,6 +81,17 @@ public class EndpointContext {
             .getPropertyValue(SynapseConstants.SUSPEND_DURATION_ON_MAX_FAILOVER_CONFIG,
                     String.valueOf(SynapseConstants.DEFAULT_ENDPOINT_SUSPEND_TIME)));
 
+    /** The maximum number of failover attempts allowed for the endpoint */
+    private int maximumRecursiveRetryLimit =
+            Integer.parseInt(SynapsePropertiesLoader.getPropertyValue(SynapseConstants.MAX_FAILOVER_RECUSIVE_RETRIES_CONFIG,
+                    String.valueOf(SynapseConstants.DEFAULT_MAX_FAILOVER_RETRIES)));
+    /** The number of attempts left for endpoint failures, until they make the endpoint suspended */
+    private int maximumRemainingRecursiveRetries = maximumRecursiveRetryLimit;
+    /** The endpoint suspension duration in ms if the maximum retry attempts exceeded */
+    private long suspendDurationOnMaximumRecursiveFailover = Long.parseLong(SynapsePropertiesLoader
+            .getPropertyValue(SynapseConstants.SUSPEND_DURATION_ON_MAX_RECURSIVE_FAILOVER_CONFIG,
+                    String.valueOf(SynapseConstants.DEFAULT_ENDPOINT_SUSPEND_TIME)));
+
     /** Is the environment clustered ? */
     private boolean isClustered = false;
     /** Name of the endpoint - mainly for logging */
@@ -101,6 +113,7 @@ public class EndpointContext {
     private final String REMAINING_RETRIES_KEY;
     private final String LAST_SUSPEND_DURATION_KEY;
     private final String MAXIMUM_REMAINING_RETRIES_KEY;
+    private final String MAXIMUM_REMAINING_RECURSIVE_RETRIES_KEY;
 
     /**
      * Create an EndpointContext to hold runtime state of an Endpoint
@@ -139,6 +152,7 @@ public class EndpointContext {
         REMAINING_RETRIES_KEY = KEY_PREFIX + endpointName + REMAINING_RETRIES;
         LAST_SUSPEND_DURATION_KEY = KEY_PREFIX + endpointName + LAST_SUSPEND_DURATION;
         MAXIMUM_REMAINING_RETRIES_KEY = KEY_PREFIX + endpointName + MAXIMUM_REMAINING_RETRIES;
+        MAXIMUM_REMAINING_RECURSIVE_RETRIES_KEY = KEY_PREFIX + endpointName + MAXIMUM_REMAINING_RECURSIVE_RETRIES;
 
         if (isClustered && (endpointDefinition == null ||
                 !endpointDefinition.isReplicationDisabled())) {
@@ -198,6 +212,9 @@ public class EndpointContext {
                             definition.getRetriesOnTimeoutBeforeSuspend(), cfgCtx);
                     Replicator.setAndReplicateState(LAST_SUSPEND_DURATION_KEY, null, cfgCtx);
                     Replicator.setAndReplicateState(REMAINING_RETRIES_KEY, maximumRetryLimit, cfgCtx);
+                    if (maximumRecursiveRetryLimit != -1) {
+                        Replicator.setAndReplicateState(REMAINING_RETRIES_KEY, maximumRecursiveRetryLimit, cfgCtx);
+                    }
                     break;
                 }
                 case ST_TIMEOUT: {
@@ -239,6 +256,9 @@ public class EndpointContext {
                                     definition.getRetriesOnTimeoutBeforeSuspend(), cfgCtx);
                     Replicator.setAndReplicateState(LAST_SUSPEND_DURATION_KEY, null, cfgCtx);
                     Replicator.setAndReplicateState(REMAINING_RETRIES_KEY, maximumRetryLimit, cfgCtx);
+                    if (maximumRecursiveRetryLimit != -1) {
+                        Replicator.setAndReplicateState(REMAINING_RETRIES_KEY, maximumRecursiveRetryLimit, cfgCtx);
+                    }
                     break;
                 }
             }
@@ -258,6 +278,9 @@ public class EndpointContext {
                         localRemainingRetries = definition.getRetriesOnTimeoutBeforeSuspend();
                         localLastSuspendDuration = -1;
                         maximumRemainingRetries = maximumRetryLimit;
+                        if (maximumRecursiveRetryLimit != -1) {
+                            maximumRemainingRetries = maximumRecursiveRetryLimit;
+                        }
                         break;
                     }
                     case ST_TIMEOUT: {
@@ -295,6 +318,9 @@ public class EndpointContext {
                                 -1 : definition.getRetriesOnTimeoutBeforeSuspend();
                         localLastSuspendDuration = -1;
                         maximumRemainingRetries = maximumRetryLimit;
+                        if (maximumRecursiveRetryLimit != -1) {
+                            maximumRemainingRetries = maximumRecursiveRetryLimit;
+                        }
                         break;
                     }
                 }
@@ -582,12 +608,20 @@ public class EndpointContext {
     /**
      * Check whether the endpoint has exceed the maximum retry limit on failover
      */
-    public boolean isMaxRetryLimitReached() {
+    public boolean isMaxRetryLimitReached(boolean isRecursiveEndpoint) {
 
         if (isClustered) {
-            Integer remainingMaxRetries = (Integer) cfgCtx.getPropertyNonReplicable(MAXIMUM_REMAINING_RETRIES_KEY);
+            Integer remainingMaxRetries;
+            int maximumRetryLimitCount;
+            if (isRecursiveEndpoint) {
+                remainingMaxRetries = (Integer) cfgCtx.getPropertyNonReplicable(MAXIMUM_REMAINING_RECURSIVE_RETRIES_KEY);
+                maximumRetryLimitCount = maximumRecursiveRetryLimit;
+            } else {
+                remainingMaxRetries = (Integer) cfgCtx.getPropertyNonReplicable(MAXIMUM_REMAINING_RETRIES_KEY);
+                maximumRetryLimitCount = maximumRetryLimit;
+            }
             if (remainingMaxRetries == null) {
-                remainingMaxRetries = maximumRetryLimit;
+                remainingMaxRetries = maximumRetryLimitCount;
             }
 
             if (remainingMaxRetries == -1) {
@@ -600,26 +634,45 @@ public class EndpointContext {
             }
 
             if (remainingMaxRetries <= 0) {
+                if (isRecursiveEndpoint) {
+                    Replicator.setAndReplicateState(MAXIMUM_REMAINING_RECURSIVE_RETRIES_KEY,
+                            maximumRecursiveRetryLimit, cfgCtx);
+                }
                 return true;
             } else {
-                Replicator.setAndReplicateState(MAXIMUM_REMAINING_RETRIES_KEY, (remainingMaxRetries - 1), cfgCtx);
+                if (isRecursiveEndpoint) {
+                    Replicator.setAndReplicateState(MAXIMUM_REMAINING_RECURSIVE_RETRIES_KEY,
+                            (remainingMaxRetries - 1), cfgCtx);
+                } else {
+                    Replicator.setAndReplicateState(MAXIMUM_REMAINING_RETRIES_KEY, (remainingMaxRetries - 1), cfgCtx);
+                }
                 return false;
             }
         } else {
-            if (maximumRemainingRetries == -1) {
+            int maximumRemainingRetriesCount = isRecursiveEndpoint ? maximumRemainingRecursiveRetries :
+                    maximumRemainingRetries;
+            if (maximumRemainingRetriesCount == -1) {
                 //disable endpoint suspension
                 return false;
             }
 
             if (log.isDebugEnabled()) {
                 log.debug("Endpoint : " + endpointName + printEndpointAddress()
-                        + " has " + maximumRemainingRetries + " maximum retries before suspension");
+                        + " has " + maximumRemainingRetriesCount + " maximum retries before suspension");
             }
 
-            if (maximumRemainingRetries <= 0) {
+            if (maximumRemainingRetriesCount <= 0) {
+                if (isRecursiveEndpoint) {
+                    maximumRemainingRecursiveRetries = maximumRecursiveRetryLimit;
+                }
                 return true;
             } else {
-                maximumRemainingRetries -= 1;
+                maximumRemainingRetriesCount -= 1;
+                if (isRecursiveEndpoint) {
+                    maximumRemainingRecursiveRetries = maximumRemainingRetriesCount;
+                } else {
+                    maximumRemainingRetries = maximumRemainingRetriesCount;
+                }
                 return false;
             }
         }
@@ -628,23 +681,25 @@ public class EndpointContext {
     /**
      * Endpoint has exceeded the maximum retry attempts on failover
      */
-    public void onFailoverRetryLimit() {
+    public void onFailoverRetryLimit(boolean isRecursiveEndpoint) {
 
         recordStatistics(ST_SUSPENDED);
-        long nextRetryTime = System.currentTimeMillis() + suspendDurationOnMaximumFailover;
+        long suspendDuration = isRecursiveEndpoint ? suspendDurationOnMaximumRecursiveFailover :
+                suspendDurationOnMaximumFailover;
+        long nextRetryTime = System.currentTimeMillis() + suspendDuration;
         if (isClustered) {
             Replicator.setAndReplicateState(STATE_KEY, ST_SUSPENDED, cfgCtx);
-            Replicator.setAndReplicateState(LAST_SUSPEND_DURATION_KEY, suspendDurationOnMaximumFailover, cfgCtx);
+            Replicator.setAndReplicateState(LAST_SUSPEND_DURATION_KEY, suspendDuration, cfgCtx);
             Replicator.setAndReplicateState(NEXT_RETRY_TIME_KEY, nextRetryTime, cfgCtx);
         } else {
             localState = ST_SUSPENDED;
-            localLastSuspendDuration = suspendDurationOnMaximumFailover;
+            localLastSuspendDuration = suspendDuration;
             localNextRetryTime = nextRetryTime;
         }
 
         log.warn("Endpoint : " + endpointName + printEndpointAddress() +
                 " will be marked SUSPENDED as it failed until the maximum failover retry limit. Current suspend " +
                 "duration is : " +
-                suspendDurationOnMaximumFailover + "ms - Next retry after : " + new Date(nextRetryTime));
+                suspendDuration + "ms - Next retry after : " + new Date(nextRetryTime));
     }
 }

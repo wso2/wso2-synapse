@@ -44,7 +44,8 @@ public class WSDLEndpoint extends AbstractEndpoint {
     private String portName;
 
     public void onFault(MessageContext synCtx) {
-
+        boolean isRecursive = getParentEndpoint() instanceof FailoverEndpoint ||
+                getParentEndpoint() instanceof LoadbalanceEndpoint;
         // For setting Car name (still for Proxy)
         logSetter();
 
@@ -63,8 +64,8 @@ public class WSDLEndpoint extends AbstractEndpoint {
 
         // is this an actual leaf endpoint
         if (getParentEndpoint() != null) {
-            if (getContext().isMaxRetryLimitReached()) {
-                getContext().onFailoverRetryLimit();
+            if (getContext().isMaxRetryLimitReached(isRecursive)) {
+                getContext().onFailoverRetryLimit(isRecursive);
             } else {
                 // is this really a fault or a timeout/connection close etc?
                 if (isTimeout(synCtx)) {
