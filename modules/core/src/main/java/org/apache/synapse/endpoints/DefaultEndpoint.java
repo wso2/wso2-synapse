@@ -36,11 +36,12 @@ import org.json.JSONObject;
 public class DefaultEndpoint extends AbstractEndpoint {
 
     public void onFault(MessageContext synCtx) {
-
+        boolean isRecursive = getParentEndpoint() instanceof FailoverEndpoint ||
+                getParentEndpoint() instanceof LoadbalanceEndpoint;
         // For setting Car name (still for Proxy)
         logSetter();
-        if (getContext().isMaxRetryLimitReached()) {
-            getContext().onFailoverRetryLimit();
+        if (getContext().isMaxRetryLimitReached(isRecursive)) {
+            getContext().onFailoverRetryLimit(isRecursive);
         } else {
             // is this really a fault or a timeout/connection close etc?
             if (isTimeout(synCtx)) {

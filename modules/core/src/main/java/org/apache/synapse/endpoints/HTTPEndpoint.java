@@ -54,8 +54,10 @@ public class HTTPEndpoint extends AbstractEndpoint {
     public void onFault(MessageContext synCtx) {
         // For setting Car name (still for Proxy)
         logSetter();
-        if (getContext().isMaxRetryLimitReached()) {
-            getContext().onFailoverRetryLimit();
+        boolean isRecursive = getParentEndpoint() instanceof FailoverEndpoint ||
+                getParentEndpoint() instanceof LoadbalanceEndpoint;
+        if (getContext().isMaxRetryLimitReached(isRecursive)) {
+            getContext().onFailoverRetryLimit(isRecursive);
         } else {
             // is this really a fault or a timeout/connection close etc?
             if (isTimeout(synCtx)) {

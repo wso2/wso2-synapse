@@ -598,6 +598,10 @@ public final class SynapseConstants {
     public static final String MAX_FAILOVER_RETRIES_CONFIG = "maximum.failover.retries";
     public static final String SUSPEND_DURATION_ON_MAX_FAILOVER_CONFIG = "suspend.duration.on.maximum.failover";
 
+    public static final String MAX_FAILOVER_RECUSIVE_RETRIES_CONFIG = "maximum.failover.recursive.retries";
+    public static final String SUSPEND_DURATION_ON_MAX_RECURSIVE_FAILOVER_CONFIG =
+            "suspend.duration.on.maximum.recursive.failover";
+
     /**
      * Synapse Configuration holder property name, used for handling synapse import deployments
      */
