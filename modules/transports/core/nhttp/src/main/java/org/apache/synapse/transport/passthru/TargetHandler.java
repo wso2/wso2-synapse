@@ -988,8 +988,6 @@ public class TargetHandler implements NHttpClientEventHandler {
                     + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
                     .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn) + ", "
                     + "CONNECTION = " + conn);
-        } else if (state == ProtocolState.RESPONSE_DONE) {
-            return;
         }
         
         if (ex instanceof IOException) {
@@ -998,7 +996,7 @@ public class TargetHandler implements NHttpClientEventHandler {
             if (targetConfiguration.isCorrelationLoggingEnabled()){
                 logHttpRequestErrorInCorrelationLog(conn, "IO Exception in " + state.name());
             }
-            if (requestMsgCtx != null) {
+            if (state != ProtocolState.RESPONSE_DONE && requestMsgCtx != null) {
                 requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
                         PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
                 targetErrorHandler.handleError(requestMsgCtx,
@@ -1015,7 +1013,7 @@ public class TargetHandler implements NHttpClientEventHandler {
             if (targetConfiguration.isCorrelationLoggingEnabled()){
                 logHttpRequestErrorInCorrelationLog(conn, "HTTP Exception in " + state.name());
             }
-            if (requestMsgCtx != null) {
+            if (state != ProtocolState.RESPONSE_DONE && requestMsgCtx != null) {
                 requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
                         PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
                 targetErrorHandler.handleError(requestMsgCtx,
