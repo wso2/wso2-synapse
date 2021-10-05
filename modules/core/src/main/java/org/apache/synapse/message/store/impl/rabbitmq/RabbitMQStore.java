@@ -91,6 +91,7 @@ public class RabbitMQStore extends AbstractMessageStore {
     private int retryInterval;
     private int retryCount;
     private boolean publisherConfirmsEnabled;
+    private Channel channel;
 
     @Override
     public void init(SynapseEnvironment se) {
@@ -122,6 +123,7 @@ public class RabbitMQStore extends AbstractMessageStore {
         } else {
             log.error(nameString() + ". Initialization failed...");
         }
+        channel = createChannel(producerConnection);
     }
 
     /**
@@ -353,6 +355,10 @@ public class RabbitMQStore extends AbstractMessageStore {
         if (log.isDebugEnabled()) {
             log.debug(nameString() + " created message producer " + producer.getId());
         }
+        if (channel == null) {
+            channel = createChannel(producerConnection);
+        }
+        producer.setChannel(channel);
         return producer;
     }
 
