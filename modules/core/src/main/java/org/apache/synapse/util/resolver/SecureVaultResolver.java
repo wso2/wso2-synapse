@@ -40,7 +40,7 @@ public class SecureVaultResolver {
     private SecureVaultResolver(){}
 
     /** regex for secure vault expression */
-    private static final String SECURE_VAULT_REGEX = "\\{(wso2:vault-lookup\\('(.*?)'\\))\\}";
+    private static final String SECURE_VAULT_REGEX = "\\{((.*?):vault-lookup\\('(.*?)'\\))\\}";
 
     private static Pattern vaultLookupPattern = Pattern.compile(SECURE_VAULT_REGEX);
 
@@ -78,7 +78,9 @@ public class SecureVaultResolver {
             } catch (JaxenException e) {
                 throw new SynapseException("Error while building the expression : " + expressionStr, e);
             }
-            resolvedValue = expression.evaluateValue(synapseEnvironment.createMessageContext());
+            resolvedValue =
+                    resolvedValue.replaceFirst(SECURE_VAULT_REGEX,
+                            expression.evaluateValue(synapseEnvironment.createMessageContext()));
             if (StringUtils.isEmpty(resolvedValue)) {
                 log.warn("Found Empty value for expression : " + expression.getExpression());
                 resolvedValue = "";
