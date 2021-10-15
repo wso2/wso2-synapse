@@ -102,6 +102,7 @@ public class SynapseJsonPath extends SynapsePath {
         this.contentAware = true;
         // supporting evaluation against a property
         // Ex: json-eval($ctx:prop1.student.name)
+        this.expression = jsonPathExpression;
         if (jsonPathExpression.startsWith("$ctx:") || jsonPathExpression.startsWith("$trp:") ||
                 jsonPathExpression.startsWith("$axis2:")) {
             // pattern to extract the property
@@ -109,22 +110,23 @@ public class SynapseJsonPath extends SynapsePath {
             Matcher extractPropMatcher = extractProp.matcher(jsonPathExpression);
             if (extractPropMatcher.find()) {
                 propertyExpression = extractPropMatcher.group(0);
-                expression = "$" + jsonPathExpression.substring(propertyExpression.length());
             }
         } else {
-            this.expression = jsonPathExpression;
+            jsonPath = JsonPath.compile(expression);
+            checkIsWholeBody();
         }
-
         // Though SynapseJsonPath support "$.", the JSONPath implementation does not support it
         if (expression.endsWith(".")) {
             expression = expression.substring(0, expression.length() - 1);
         }
-        jsonPath = JsonPath.compile(expression);
+        this.setPathType(SynapsePath.JSON_PATH);
+    }
+
+    private void checkIsWholeBody() {
         // Check if the JSON path expression evaluates to the whole payload. If so no point in evaluating the path.
-        if ("$".equals(jsonPath.getPath().trim()) || "$.".equals(jsonPath.getPath().trim())) {
+        if (jsonPath != null && ("$".equals(jsonPath.getPath().trim()) || "$.".equals(jsonPath.getPath().trim()))) {
             isWholeBody = true;
         }
-        this.setPathType(SynapsePath.JSON_PATH);
     }
 
     public String stringValueOf(final String jsonString) {
@@ -142,6 +144,11 @@ public class SynapseJsonPath extends SynapsePath {
     public String stringValueOf(MessageContext synCtx) {
         // evaluating the jsonPath against a property
         if (propertyExpression != null) {
+            if (jsonPath == null) {
+                String validExpression = "$" + expression.substring(propertyExpression.length());
+                jsonPath = JsonPath.compile(validExpression);
+                checkIsWholeBody();
+            }
             try {
                 SynapseXPath xPath = new SynapseXPath(propertyExpression);
                 String result = xPath.stringValueOf(synCtx);
