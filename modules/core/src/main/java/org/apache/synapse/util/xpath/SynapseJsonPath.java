@@ -52,9 +52,11 @@ public class SynapseJsonPath extends SynapsePath {
 
     private static final Log log = LogFactory.getLog(SynapseJsonPath.class);
 
-    private static final String EXTRACT_PROP_REGEX = "^(\\$ctx|\\$trp|\\$axis2):([a-zA-Z0-9]+)";
+    private static final String EXTRACT_PROP_REGEX = "^(\\$ctx|\\$trp|\\$axis2):([a-zA-Z0-9_-]+)";
 
     private String propertyExpression;
+
+    private String resolvedExpression;
 
     private String enableStreamingJsonPath = SynapsePropertiesLoader.loadSynapseProperties().
     getProperty(SynapseConstants.STREAMING_JSONPATH_PROCESSING);
@@ -65,7 +67,7 @@ public class SynapseJsonPath extends SynapsePath {
 
     // Given a json-path this method will return the parent json-path.
     public String getParentPath() {
-        String[] array = expression.split("\\.");
+        String[] array = resolvedExpression.split("\\.");
         if (array.length > 1) {
             // handle json-path expressions ends with array notation Ex:- $.student.marks[0]
             if (array[array.length - 1].endsWith("]")) {
@@ -97,6 +99,7 @@ public class SynapseJsonPath extends SynapsePath {
         EIPUtils.setJsonPathConfiguration();
 
         this.contentAware = true;
+        this.expression = jsonPathExpression;
         // supporting evaluation against a property
         // Ex: json-eval($ctx:prop1.student.name)
         if (jsonPathExpression.startsWith("$ctx:") || jsonPathExpression.startsWith("$trp:") ||
@@ -106,23 +109,23 @@ public class SynapseJsonPath extends SynapsePath {
             Matcher extractPropMatcher = extractProp.matcher(jsonPathExpression);
             if (extractPropMatcher.find()) {
                 propertyExpression = extractPropMatcher.group(0);
-                expression = "$" + jsonPathExpression.substring(propertyExpression.length());
+                resolvedExpression = "$" + jsonPathExpression.substring(resolvedExpression.length());
             }
         } else {
-            this.expression = jsonPathExpression;
+            this.resolvedExpression = jsonPathExpression;
         }
 
         // Though SynapseJsonPath support "$.", the JSONPath implementation does not support it
-        if (expression.endsWith(".")) {
-            expression = expression.substring(0, expression.length() - 1);
+        if (resolvedExpression.endsWith(".")) {
+            resolvedExpression = resolvedExpression.substring(0, resolvedExpression.length() - 1);
         }
-        jsonPath = JsonPath.compile(expression);
+        jsonPath = JsonPath.compile(resolvedExpression);
         // Check if the JSON path expression evaluates to the whole payload. If so no point in evaluating the path.
         if ("$".equals(jsonPath.getPath().trim()) || "$.".equals(jsonPath.getPath().trim())) {
             isWholeBody = true;
         }
         // Check if the JSON path expression has dynamic values
-        if (InlineExpressionUtil.checkForInlineExpressions(expression)) {
+        if (InlineExpressionUtil.checkForInlineExpressions(resolvedExpression)) {
             isJSONPathNeedsProcessing = true;
         }
         this.setPathType(SynapsePath.JSON_PATH);
@@ -226,6 +229,9 @@ public class SynapseJsonPath extends SynapsePath {
     }
 
     public String getJsonPathExpression() {
+        if (null != resolvedExpression) {
+            return resolvedExpression;
+        }
         return expression;
     }
 
