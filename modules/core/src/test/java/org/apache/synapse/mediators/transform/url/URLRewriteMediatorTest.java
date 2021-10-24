@@ -267,4 +267,118 @@ public class URLRewriteMediatorTest extends TestCase {
         assertEquals("https://test.com:9443/services/StockQuoteService#id",
                 msgCtx.getTo().getAddress());
     }
+
+    public void testAppendQueryParam() throws Exception {
+        URLRewriteMediator mediator = new URLRewriteMediator();
+        mediator.setOutputProperty("outURL");
+
+        RewriteAction action1 = new RewriteAction();
+        action1.setValue("https://test.com:9443/services/StockQuoteService?symbol=IBM");
+
+        RewriteRule rule1 = new RewriteRule();
+        rule1.addRewriteAction(action1);
+        mediator.addRule(rule1);
+
+        RewriteAction action2 = new RewriteAction();
+        action2.setActionType(RewriteAction.ACTION_APPEND);
+        action2.setFragmentIndex(URIFragments.QUERY);
+        action2.setValue("price=10");
+
+        RewriteRule rule2 = new RewriteRule();
+        rule2.addRewriteAction(action2);
+        mediator.addRule(rule2);
+
+        MessageContext msgCtx = TestUtils.createLightweightSynapseMessageContext("<empty/>");
+        mediator.mediate(msgCtx);
+
+        System.out.println(msgCtx.getProperty("outURL"));
+        assertEquals("https://test.com:9443/services/StockQuoteService?symbol=IBM&price=10",
+                msgCtx.getProperty("outURL"));
+    }
+
+    public void testPrependQueryParam() throws Exception {
+        URLRewriteMediator mediator = new URLRewriteMediator();
+        mediator.setOutputProperty("outURL");
+
+        RewriteAction action1 = new RewriteAction();
+        action1.setValue("https://test.com:9443/services/StockQuoteService?symbol=IBM");
+
+        RewriteRule rule1 = new RewriteRule();
+        rule1.addRewriteAction(action1);
+        mediator.addRule(rule1);
+
+        RewriteAction action2 = new RewriteAction();
+        action2.setActionType(RewriteAction.ACTION_PREPEND);
+        action2.setFragmentIndex(URIFragments.QUERY);
+        action2.setValue("price=10");
+
+        RewriteRule rule2 = new RewriteRule();
+        rule2.addRewriteAction(action2);
+        mediator.addRule(rule2);
+
+        MessageContext msgCtx = TestUtils.createLightweightSynapseMessageContext("<empty/>");
+        mediator.mediate(msgCtx);
+
+        System.out.println(msgCtx.getProperty("outURL"));
+        assertEquals("https://test.com:9443/services/StockQuoteService?price=10&symbol=IBM",
+                msgCtx.getProperty("outURL"));
+    }
+
+    public void testRemoveQueryParam() throws Exception {
+        URLRewriteMediator mediator = new URLRewriteMediator();
+        mediator.setOutputProperty("outURL");
+
+        RewriteAction action1 = new RewriteAction();
+        action1.setValue("https://test.com:9443/services/StockQuoteService?symbol=IBM&price=10");
+
+        RewriteRule rule1 = new RewriteRule();
+        rule1.addRewriteAction(action1);
+        mediator.addRule(rule1);
+
+        RewriteAction action2 = new RewriteAction();
+        action2.setActionType(RewriteAction.ACTION_REMOVE_QUERY_PARAM);
+        action2.setFragmentIndex(URIFragments.QUERY);
+        action2.setValue("price");
+
+        RewriteRule rule2 = new RewriteRule();
+        rule2.addRewriteAction(action2);
+        mediator.addRule(rule2);
+
+        MessageContext msgCtx = TestUtils.createLightweightSynapseMessageContext("<empty/>");
+        mediator.mediate(msgCtx);
+
+        System.out.println(msgCtx.getProperty("outURL"));
+        assertEquals("https://test.com:9443/services/StockQuoteService?symbol=IBM",
+                msgCtx.getProperty("outURL"));
+    }
+
+    public void testResolvePathParam() throws Exception {
+        URLRewriteMediator mediator = new URLRewriteMediator();
+        mediator.setOutputProperty("outURL");
+
+        RewriteAction action1 = new RewriteAction();
+        action1.setValue("https://test.com:9443/services/StockQuoteService");
+
+        RewriteRule rule1 = new RewriteRule();
+        rule1.addRewriteAction(action1);
+        mediator.addRule(rule1);
+
+        RewriteAction action2 = new RewriteAction();
+        action2.setActionType(RewriteAction.ACTION_SET);
+        action2.setFragmentIndex(URIFragments.PATH);
+        action2.setResolve(true);
+        action2.setValue("/services/StockQuoteService/{uri.var.symbol}");
+
+        RewriteRule rule2 = new RewriteRule();
+        rule2.addRewriteAction(action2);
+        mediator.addRule(rule2);
+
+        MessageContext msgCtx = TestUtils.createLightweightSynapseMessageContext("<empty/>");
+        msgCtx.setProperty("uri.var.symbol", "IBM");
+        mediator.mediate(msgCtx);
+
+        System.out.println(msgCtx.getProperty("outURL"));
+        assertEquals("https://test.com:9443/services/StockQuoteService/IBM",
+                msgCtx.getProperty("outURL"));
+    }
 }
