@@ -19,6 +19,7 @@
 
 package org.apache.synapse.mediators.transform.url;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.util.xpath.SynapseXPath;
@@ -87,11 +88,23 @@ public class RewriteAction {
 
 			switch (actionType) {
 				case ACTION_PREPEND:
-					str = result.concat(currentValue);
+				    if (result != null) {
+				        if (fragmentIndex == URIFragments.QUERY && !StringUtils.isEmpty(currentValue)) {
+                            str = result.concat("&" + currentValue);
+                        } else {
+                            str = result.concat(currentValue);
+                        }
+                    } else {
+				        str = "";
+                    }
 					break;
 				case ACTION_APPEND:
 					if (result != null) {
-						str = currentValue.concat(result);
+                        if (fragmentIndex == URIFragments.QUERY && !StringUtils.isEmpty(currentValue)) {
+                            str = currentValue.concat("&" + result);
+                        } else {
+                            str = currentValue.concat(result);
+                        }
 					} else {
 						str = "";
 					}
