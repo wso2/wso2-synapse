@@ -27,6 +27,12 @@ import org.apache.synapse.MessageContext;
 
 import java.net.URISyntaxException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Represents a URL rewrite action. The action could be rewriting the entire URL
@@ -41,6 +47,7 @@ public class RewriteAction {
     public static final int ACTION_PREPEND  = 2;
     public static final int ACTION_REPLACE  = 3;
     public static final int ACTION_REMOVE   = 4;
+    public static final int ACTION_REMOVE_QUERY_PARAM = 5;
 
     private String value;
     private SynapseXPath xpath;
@@ -119,6 +126,27 @@ public class RewriteAction {
 				case ACTION_REMOVE:
 					str = null;
 					break;
+                case ACTION_REMOVE_QUERY_PARAM:
+                    if (!StringUtils.isEmpty(currentValue)) {
+                        String[] queryParams = currentValue.split("&");
+                        List<String> queryParamList = new ArrayList<>(Arrays.asList(queryParams));
+                        Iterator iterator = queryParamList.iterator();
+
+                        Pattern pattern = Pattern.compile(result + "=.*");
+                        Matcher matcher;
+                        while (iterator.hasNext()) {
+                            String s = (String)iterator.next();
+                            matcher = pattern.matcher(s);
+                            if (matcher.find()) {
+                                iterator.remove();
+                                break;
+                            }
+                        }
+                        str = String.join("&", queryParamList);
+                    } else {
+                        str = "";
+                    }
+                    break;
 				default:
 					str = result;
 			}
