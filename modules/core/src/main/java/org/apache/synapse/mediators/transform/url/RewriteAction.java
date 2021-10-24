@@ -54,6 +54,10 @@ public class RewriteAction {
     private String regex;
     private int fragmentIndex = URIFragments.FULL_URI;
     private int actionType = ACTION_SET;
+    private boolean resolve = false;
+
+    private static String pathParamRegex = "[^{}]*\\{([^{}]*)}";
+    private static Pattern pathParamPattern =  Pattern.compile(pathParamRegex);
 
     public void execute(URIFragments fragments,
                         MessageContext messageContext) throws URISyntaxException {
@@ -150,6 +154,20 @@ public class RewriteAction {
 				default:
 					str = result;
 			}
+
+            if (resolve) {
+                Matcher matcher = pathParamPattern.matcher(str);
+                while (matcher.find()) {
+                    String pathParam = matcher.group(1);
+                    String paramValue = (String) messageContext.getProperty(pathParam);
+                    if (!StringUtils.isEmpty(paramValue)) {
+                        str = str.replace("{" + pathParam + "}", paramValue);
+                    } else {
+                        log.error("Path parameter '" + pathParam + "' was not found in the provided URL postfix");
+                        str = "";
+                    }
+                }
+            }
 			
             fragments.setStringFragment(fragmentIndex, str);
         }
@@ -193,5 +211,13 @@ public class RewriteAction {
 
     public void setActionType(int actionType) {
         this.actionType = actionType;
+    }
+
+    public boolean isResolve() {
+        return resolve;
+    }
+
+    public void setResolve(boolean resolve) {
+        this.resolve = resolve;
     }
 }
