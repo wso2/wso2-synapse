@@ -55,6 +55,7 @@ public class RewriteAction {
     private int fragmentIndex = URIFragments.FULL_URI;
     private int actionType = ACTION_SET;
     private boolean resolve = false;
+    private static final String QUERY_PARAM_DELIMETER = "&";
 
     private static String pathParamRegex = "[^{}]*\\{([^{}]*)}";
     private static Pattern pathParamPattern =  Pattern.compile(pathParamRegex);
@@ -101,7 +102,7 @@ public class RewriteAction {
 				case ACTION_PREPEND:
 				    if (result != null) {
 				        if (fragmentIndex == URIFragments.QUERY && !StringUtils.isEmpty(currentValue)) {
-                            str = result.concat("&" + currentValue);
+                            str = result.concat(QUERY_PARAM_DELIMETER + currentValue);
                         } else {
                             str = result.concat(currentValue);
                         }
@@ -112,7 +113,7 @@ public class RewriteAction {
 				case ACTION_APPEND:
 					if (result != null) {
                         if (fragmentIndex == URIFragments.QUERY && !StringUtils.isEmpty(currentValue)) {
-                            str = currentValue.concat("&" + result);
+                            str = currentValue.concat(QUERY_PARAM_DELIMETER + result);
                         } else {
                             str = currentValue.concat(result);
                         }
@@ -132,7 +133,7 @@ public class RewriteAction {
 					break;
                 case ACTION_REMOVE_QUERY_PARAM:
                     if (!StringUtils.isEmpty(currentValue)) {
-                        String[] queryParams = currentValue.split("&");
+                        String[] queryParams = currentValue.split(QUERY_PARAM_DELIMETER);
                         List<String> queryParamList = new ArrayList<>(Arrays.asList(queryParams));
                         Iterator iterator = queryParamList.iterator();
 
@@ -146,7 +147,7 @@ public class RewriteAction {
                                 break;
                             }
                         }
-                        str = String.join("&", queryParamList);
+                        str = String.join(QUERY_PARAM_DELIMETER, queryParamList);
                     } else {
                         str = "";
                     }
