@@ -66,12 +66,22 @@ public class XFormURLEncodedBuilderTest extends TestCase {
                 "</xformValues>" +
                 "</soapenv:Body>" +
                 "</soapenv:Envelope>";
+        String expectedSoapEnvelope2 = "<?xml version='1.0' encoding='utf-8'?>" +
+                "<soapenv:Envelope xmlns:soapenv=\"http://www.w3.org/2003/05/soap-envelope\">" +
+                "<soapenv:Body>" +
+                "<xformValues>" +
+                "<symbol>WSO2</symbol>" +
+                "<price>10</price>" +
+                "</xformValues>" +
+                "</soapenv:Body>" +
+                "</soapenv:Envelope>";
         MessageContext messageContext = Util.newMessageContext();
         messageContext.setTo(new EndpointReference("http://localhost:9000/stockquote/test?symbol=WSO2&price=10"));
         messageContext.setProperty(HTTPConstants.HTTP_METHOD, "POST");
         XFormURLEncodedBuilder urlEncodedBuilder = new XFormURLEncodedBuilder();
         OMElement element = urlEncodedBuilder.processDocument(null, "", messageContext);
-        assertEquals("Invalid SOAPEnvelope received", expectedSoapEnvelope, element.toString());
+        boolean assertion = expectedSoapEnvelope.equals(element.toString()) || expectedSoapEnvelope2.equals(element.toString());
+        assertTrue("Invalid SOAPEnvelope received", assertion);
     }
 
     /**
