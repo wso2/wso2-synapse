@@ -28,4 +28,5 @@ public class CorrelationConstants {
     public static final String CORRELATION_MDC_PROPERTY = "Correlation-ID";
     public static final String CORRELATION_LOGS_SYS_PROPERTY = "enableCorrelationLogs";
     public static final String SYSTEM_GENERATED_CORRELATION_ID = "systemGeneratedCorrelationId";
+    public static final String RESTRICT_HEADERS_SYS_PROP = "remove.outgoing.headers";
 }
