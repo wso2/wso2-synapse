@@ -1510,7 +1510,7 @@
        <javax.api.version>2.1.1</javax.api.version>
        <javax.inject.version>1</javax.inject.version>
 
-       <glassfish.jersey.version>2.32</glassfish.jersey.version>
+       <glassfish.jersey.version>2.35</glassfish.jersey.version>
 
        <freemarker.version>2.3.30</freemarker.version>
        <awaitility.version>3.1.2</awaitility.version>
