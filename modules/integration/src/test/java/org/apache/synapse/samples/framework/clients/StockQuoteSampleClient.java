@@ -161,10 +161,8 @@ public class StockQuoteSampleClient {
                     symbol, 1);
             serviceClient.getOptions().setAction("urn:getQuote");
             OMElement resultElement = serviceClient.sendReceive(payload);
-            if (resultElement != null) {
-                String parsedResponse = StockQuoteHandler.parseStandardQuoteResponse(resultElement);
-                log.info("Standard :: Stock price = $" + parsedResponse);
-            }
+            log.info("Standard :: Stock price = $" +
+                    StockQuoteHandler.parseStandardQuoteResponse(resultElement));
             clientResult.incrementResponseCount();
         } catch (Exception e) {
             log.error("Error invoking service", e);
