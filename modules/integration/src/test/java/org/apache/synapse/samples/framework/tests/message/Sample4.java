@@ -19,6 +19,7 @@
 
 package org.apache.synapse.samples.framework.tests.message;
 
+import org.apache.axis2.AxisFault;
 import org.apache.synapse.samples.framework.SampleClientResult;
 import org.apache.synapse.samples.framework.SynapseTestCase;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
@@ -41,11 +42,18 @@ public class Sample4 extends SynapseTestCase {
         assertResponseReceived(result);
 
         result = client.requestStandardQuote(addUrl, trpUrl, null, "MSFT" ,null);
-        assertTrue("Did not get a response", result.responseReceived());
+        assertFalse("Must not get a response", result.responseReceived());
+        Exception resultEx = result.getException();
+        assertNotNull("Did not receive expected error" , resultEx);
+        log.info("Got an error as expected: " + resultEx.getMessage());
+        assertTrue("Did not receive expected error", resultEx instanceof AxisFault);
 
         result = client.requestStandardQuote(addUrl, trpUrl, null, "SUN" ,null);
-        assertTrue("Did not get a response", result.responseReceived());
-
+        assertFalse("Must not get a response", result.responseReceived());
+        Exception resultEx2 = result.getException();
+        assertNotNull("Did not receive expected error" , resultEx);
+        log.info("Got an error as expected: " + resultEx.getMessage());
+        assertTrue("Did not receive expected error", resultEx2 instanceof AxisFault);
     }
 
 }
