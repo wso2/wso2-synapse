@@ -1,8 +1,5 @@
 package org.apache.synapse.commons.throttle.core;
 
-import com.hazelcast.core.AsyncAtomicLong;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IFunction;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.throttle.core.internal.ThrottleServiceDataHolder;
@@ -17,7 +14,7 @@ public class SharedParamManager {
 	private static Log log = LogFactory.getLog(SharedParamManager.class.getName());
 
 	/**
-	 * Return hazelcast shared counter for this caller context with given id. If it's not distributed will get from the
+	 * Return distributed shared counter for this caller context with given id. If it's not distributed will get from the
 	 * local counter
 	 *
 	 * @param id of the shared counter
@@ -28,12 +25,13 @@ public class SharedParamManager {
 			log.debug("GET TIMESTAMP WITH ID " + id);
 		}
 		id = ThrottleConstants.THROTTLE_SHARED_COUNTER_KEY + id;
-		HazelcastInstance hazelcastInstance = getHazelcastInstance();
-		if(hazelcastInstance != null) {
-			return hazelcastInstance.getAtomicLong(id).get();
+		DistributedCounterManager distributedCounterManager =
+				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
+		if (distributedCounterManager.isEnable()) {
+			return distributedCounterManager.getCounter(id);
 		} else {
 			Long counter = counters.get(id);
-			if(counter != null) {
+			if (counter != null) {
 				return counter;
 			} else {
 				counters.put(id, 0L);
@@ -54,9 +52,10 @@ public class SharedParamManager {
 			log.debug("SETTING COUNTER WITH ID " + id);
 		}
 		id = ThrottleConstants.THROTTLE_SHARED_COUNTER_KEY + id;
-		HazelcastInstance hazelcastInstance = getHazelcastInstance();
-		if(hazelcastInstance != null) {
-			hazelcastInstance.getAtomicLong(id).set(value);
+		DistributedCounterManager distributedCounterManager =
+				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
+		if(distributedCounterManager.isEnable()) {
+			distributedCounterManager.setCounter(id,value);
 		} else {
 			counters.put(id, value);
 		}
@@ -70,10 +69,12 @@ public class SharedParamManager {
 	 * @param value to set to the global counter
 	 */
 	public static long addAndGetDistributedCounter(String id, long value) {
-		HazelcastInstance hazelcastInstance = getHazelcastInstance();
+
+		DistributedCounterManager distributedCounterManager =
+				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
 		id = ThrottleConstants.THROTTLE_SHARED_COUNTER_KEY + id;
-		if(hazelcastInstance != null) {
-			return hazelcastInstance.getAtomicLong(id).addAndGet(value);
+		if(distributedCounterManager.isEnable()) {
+			return distributedCounterManager.addAndGetCounter(id, value);
 		} else {
 			long currentCount = counters.get(id);
 			long updatedCount = currentCount + value;
@@ -94,12 +95,10 @@ public class SharedParamManager {
 			log.debug("ASYNC CREATING AND SETTING COUNTER WITH ID " + id);
 		}
 		id = ThrottleConstants.THROTTLE_SHARED_COUNTER_KEY + id;
-		HazelcastInstance hazelcastInstance = getHazelcastInstance();
-		if(hazelcastInstance != null) {
-			AsyncAtomicLong asyncAtomicLong = (AsyncAtomicLong) hazelcastInstance.getAtomicLong(id);
-			long currentGlobalCounter = asyncAtomicLong.get();
-			asyncAtomicLong.asyncAddAndGet(value);
-			return currentGlobalCounter;
+		DistributedCounterManager distributedCounterManager =
+				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
+		if(distributedCounterManager.isEnable()) {
+			return distributedCounterManager.asyncGetAndAddCounter(id, value);
 		} else {
 			Long currentCount = counters.get(id);
 			if(currentCount == null) {
@@ -119,13 +118,11 @@ public class SharedParamManager {
 	 * @param value to set to the global counter
 	 */
 	public static long asyncGetAndAlterDistributedCounter(String id, long value) {
-		HazelcastInstance hazelcastInstance = getHazelcastInstance();
 		id = ThrottleConstants.THROTTLE_SHARED_COUNTER_KEY + id;
-		if(hazelcastInstance != null) {
-			AsyncAtomicLong asyncAtomicLong = (AsyncAtomicLong) hazelcastInstance.getAtomicLong(id);
-			long currentGlobalCounter = asyncAtomicLong.get();
-			asyncAtomicLong.asyncAlter(new AddLocalCount(value));
-			return currentGlobalCounter;
+		DistributedCounterManager distributedCounterManager =
+				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
+		if(distributedCounterManager.isEnable()) {
+			return distributedCounterManager.asyncGetAndAlterCounter(id,value);
 		} else {
 			Long currentCount = counters.get(id);
 			if(currentCount == null) {
@@ -147,9 +144,10 @@ public class SharedParamManager {
 			log.debug("REMOVING COUNTER WITH ID " + id);
 		}
 		id = ThrottleConstants.THROTTLE_SHARED_COUNTER_KEY + id;
-		HazelcastInstance hazelcastInstance = getHazelcastInstance();
-		if(hazelcastInstance != null) {
-			hazelcastInstance.getAtomicLong(id).destroy();
+		DistributedCounterManager distributedCounterManager =
+				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
+		if(distributedCounterManager.isEnable()) {
+			distributedCounterManager.removeCounter(id);
 		} else {
 			counters.remove(id);
 		}
@@ -167,9 +165,11 @@ public class SharedParamManager {
 			log.debug("GET TIMESTAMP WITH ID " + id);
 		}
 		String key = ThrottleConstants.THROTTLE_TIMESTAMP_KEY + id;
-		HazelcastInstance hazelcastInstance = getHazelcastInstance();
-		if(hazelcastInstance != null) {
-			return hazelcastInstance.getAtomicLong(key).get();
+
+		DistributedCounterManager distributedCounterManager =
+				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
+		if(distributedCounterManager.isEnable()) {
+			return distributedCounterManager.getTimestamp(key);
 		} else {
 			Long timestamp = timestamps.get(key);
 			if(timestamp != null) {
@@ -181,30 +181,6 @@ public class SharedParamManager {
 		}
 	}
 
-	/**
-	 * Return hazelcast shared timestamp for this caller context with given full id. If it's not distributed will get from the
-	 * local counter
-	 *
-	 * @param id of the shared counter
-	 * @return shared hazelcast current shared counter
-	 */
-	public static long getSharedTimestampWithFullId(String id) {
-		if(log.isDebugEnabled()) {
-			log.info("GET TIMESTAMP WITH FULL ID " + id);
-		}
-		HazelcastInstance hazelcastInstance = getHazelcastInstance();
-		if(hazelcastInstance != null) {
-			return hazelcastInstance.getAtomicLong(id).get();
-		} else {
-			Long timestamp = timestamps.get(id);
-			if(timestamp != null) {
-				return timestamp;
-			} else {
-				timestamps.put(id, 0L);
-				return 0;
-			}
-		}
-	}
 
 	/**
 	 * Set distribute timestamp of caller context of given id to the provided value. If it's not distributed do the same for
@@ -218,9 +194,10 @@ public class SharedParamManager {
 			log.debug("SETTING TIMESTAMP WITH ID" + id);
 		}
 		String key = ThrottleConstants.THROTTLE_TIMESTAMP_KEY + id;
-		HazelcastInstance hazelcastInstance = getHazelcastInstance();
-		if(hazelcastInstance != null) {
-			hazelcastInstance.getAtomicLong(key).set(timestamp);
+		DistributedCounterManager distributedCounterManager =
+				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
+		if(distributedCounterManager.isEnable()) {
+			distributedCounterManager.setTimestamp(key, timestamp);
 		} else {
 			timestamps.put(id, timestamp);
 		}
@@ -236,49 +213,31 @@ public class SharedParamManager {
 			log.debug("REMOVING TIMESTAMP WITH ID " + id);
 		}
 		String key = ThrottleConstants.THROTTLE_TIMESTAMP_KEY + id;
-		HazelcastInstance hazelcastInstance = getHazelcastInstance();
-		if(hazelcastInstance != null) {
-			hazelcastInstance.getAtomicLong(key).destroy();
+		DistributedCounterManager distributedCounterManager =
+				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
+		if(distributedCounterManager.isEnable()) {
+			distributedCounterManager.removeTimestamp(key);
 		} else {
 			timestamps.remove(key);
 		}
 	}
 
-	/**
-	 * Destroy hazelcast shared timggestamp counter with full id, if it's local then remove the map entry
-	 *
-	 * @param id of the caller context
-	 */
-	public static void removeTimestampWithFullId(String id) {
+
+
+	public static void setExpiryTime(String id, long expiryTimeStamp) {
 		if(log.isDebugEnabled()) {
-			log.info("REMOVING TIMESTAMP WITH FULL ID " + id);
+			log.debug("SETTING Expiry WITH ID " + id);
 		}
-		HazelcastInstance hazelcastInstance = getHazelcastInstance();
-		if(hazelcastInstance != null) {
-			hazelcastInstance.getAtomicLong(id).destroy();
-		} else {
-			timestamps.remove(id);
-		}
-	}
+		String sharedCounterKey = ThrottleConstants.THROTTLE_SHARED_COUNTER_KEY + id;
+		String sharedTimeStampKey = ThrottleConstants.THROTTLE_TIMESTAMP_KEY + id;
 
-	private static HazelcastInstance getHazelcastInstance() {
-		return ThrottleServiceDataHolder.getInstance().getHazelCastInstance();
-	}
+		DistributedCounterManager distributedCounterManager =
+				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
+		if(distributedCounterManager.isEnable()) {
+			distributedCounterManager.setExpiry(sharedCounterKey, expiryTimeStamp);
+			distributedCounterManager.setExpiry(sharedTimeStampKey, expiryTimeStamp);
 
-	/**
-	* This class is used for asynchronously update the value of distributed counter which is reside in the particular
-	* partition.
-	*/
-	private static class AddLocalCount implements IFunction<Long, Long> {
-
-		private long localCount;
-
-		public AddLocalCount(long localCount) {
-			this.localCount = localCount;
 		}
 
-		public Long apply( Long input ) {
-			return input + localCount;
-		}
 	}
 }

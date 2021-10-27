@@ -21,6 +21,8 @@ import javax.xml.namespace.QName;
 
 public final class ThrottleConstants {
 
+    public static final String HAZELCAST = "hazelcast";
+
     private ThrottleConstants() {
 
     }
@@ -182,5 +184,7 @@ public final class ThrottleConstants {
     public static final String THROTTLING_KEYS_TO_REPLICATE = "throttling.keys.to.replicate";
     public static final String WINDOW_REPLICATOR_POOL_SIZE = "throttlingWindowReplicator.pool.size";
     public static final String WINDOW_REPLICATOR_FREQUENCY = "throttlingWindowReplicator.replication.frequency";
+    public static final String DISTRIBUTED_COUNTER_TYPE = "throttling.distributed.counter.type";
+    public static final String DISTRIBUTED_COUNTER_CONFIGURATIONS  = "throttling.distributed.counter.configurations.";
 
 }
