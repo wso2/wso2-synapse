@@ -31,7 +31,6 @@ public class ThrottleContextFactory {
     private static final ThrottleReplicator throttleReplicator = new ThrottleReplicator();
     private static final ThrottleWindowReplicator throttleWindowReplicator = new ThrottleWindowReplicator();
     private static final ThrottleContextCleanupTask throttleContextCleanupTask = new ThrottleContextCleanupTask();
-    private static final ThrottleDistributedInstancesCleanupTask distributedObjectsCleanupTask = new ThrottleDistributedInstancesCleanupTask();
     /**
      * To create a ThrottleContext for the given throttle type
      * Needs to provide a throttle configuration
