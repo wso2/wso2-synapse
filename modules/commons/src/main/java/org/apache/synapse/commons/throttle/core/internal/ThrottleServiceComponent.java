@@ -20,6 +20,8 @@ package org.apache.synapse.commons.throttle.core.internal;
 import com.hazelcast.core.HazelcastInstance;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.throttle.core.DistributedCounterManager;
+import org.apache.synapse.commons.throttle.core.HazelcastDistributedCounterManager;
 import org.apache.synapse.commons.throttle.core.ThrottleUtil;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
@@ -52,22 +54,21 @@ public class ThrottleServiceComponent {
 	}
 
 	/**
-	 * Access Hazelcast Instance, which is exposed as an OSGI service.
-	 *
-	 * @param hazelcastInstance hazelcastInstance found from the OSGI service
+	 * Access Distributed Counter Instance, which is exposed as an OSGI service.
+	 * @param distributedCounterManager
 	 */
 	@Reference(
-			name = "hazelcast.instance.service",
-			service = com.hazelcast.core.HazelcastInstance.class,
-			cardinality = ReferenceCardinality.MANDATORY,
+			name = "distributedCounterManager.instance.service",
+			service = DistributedCounterManager.class,
+			cardinality = ReferenceCardinality.MULTIPLE,
 			policy = ReferencePolicy.DYNAMIC,
-			unbind = "unsetHazelcastInstance"
+			unbind = "removeDistributedCounterManagerInstance"
 	)
-	protected void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-		ThrottleServiceDataHolder.getInstance().setHazelCastInstance(hazelcastInstance);
+	protected void addDistributedCounterManagerInstance(DistributedCounterManager distributedCounterManager) {
+		ThrottleServiceDataHolder.getInstance().addDistributedCounterManager(distributedCounterManager);
 	}
 
-	protected void unsetHazelcastInstance(HazelcastInstance hazelcastInstance) {
-		ThrottleServiceDataHolder.getInstance().setHazelCastInstance(null);
+	protected void removeDistributedCounterManagerInstance(DistributedCounterManager distributedCounterManager) {
+		ThrottleServiceDataHolder.getInstance().removeDistributedCounterManager(distributedCounterManager);
 	}
 }
