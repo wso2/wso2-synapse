@@ -59,11 +59,8 @@ public class Sample5 extends SynapseTestCase {
                    resultEx.getMessage().contains(expectedError_SUN));
 
         result = client.requestStandardQuote(addUrl, trpUrl, null, "IBM" ,null);
-        assertFalse("Must not get a response", result.responseReceived());
-        resultEx = result.getException();
-        assertNotNull("Did not receive expected error", resultEx);
-        log.info("Got an error as expected: " + resultEx.getMessage());
-        assertTrue("Did not receive expected error", resultEx instanceof AxisFault);
+        assertTrue("Did not get a response", result.responseReceived());
+
     }
 
 }
