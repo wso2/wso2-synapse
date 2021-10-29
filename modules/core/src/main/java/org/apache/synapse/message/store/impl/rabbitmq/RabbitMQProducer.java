@@ -107,6 +107,24 @@ public class RabbitMQProducer implements MessageProducer {
                     "Could not store message to store [" + store.getName() + "]. " +
                     "Error:" + e.getLocalizedMessage();
             log.error(errorMsg, e);
+            //Reset channel and the underlying connection upon any transport level exception.
+            //This will force the store to renew the connection and the channel
+            if (channel != null) {
+                try {
+                    channel.close();
+                } catch (IOException | TimeoutException exception) {
+                    log.error("Error occurred while closing the malformed channel Error: " +
+                            exception.getLocalizedMessage());
+                }
+            }
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (IOException ioException) {
+                    log.error("Error occurred while closing the malformed connection Error: " +
+                            ioException.getLocalizedMessage());
+                }
+            }
             channel = null;
             connection = null;
         }
