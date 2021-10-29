@@ -102,11 +102,13 @@ public class RabbitMQProducer implements MessageProducer {
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (IOException e) {
+        } catch (Exception e) {
             String errorMsg = getId() + ". Ignored MessageId: " + synCtx.getMessageID() + ". " +
                     "Could not store message to store [" + store.getName() + "]. " +
                     "Error:" + e.getLocalizedMessage();
             log.error(errorMsg, e);
+            channel = null;
+            connection = null;
         }
         store.enqueued();
         return result;

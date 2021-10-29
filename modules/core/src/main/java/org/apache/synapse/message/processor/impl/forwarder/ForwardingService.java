@@ -183,6 +183,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 	Pattern httpPattern = Pattern.compile("^(http|https|hl7):");
 
+    /**
+     * Lock for store message operation
+     */
+    private final Object storeMessageLock = new Object();
+
 	public ForwardingService(MessageProcessor messageProcessor, BlockingMsgSender sender,
 							 SynapseEnvironment synapseEnvironment, long threshouldInterval) {
 		this.messageProcessor = messageProcessor;
@@ -997,9 +1002,10 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			deactivateMessageProcessor(forwardFailedMessage);
 			return;
 		}
-
-		boolean produceStatus = messageStore.getProducer().storeMessage(forwardFailedMessage);
-
+        boolean produceStatus;
+        synchronized (storeMessageLock) {
+            produceStatus = messageStore.getProducer().storeMessage(forwardFailedMessage);
+        }
 		if (produceStatus) {
 			messageConsumer.ack();
 			attemptCount = 0;
