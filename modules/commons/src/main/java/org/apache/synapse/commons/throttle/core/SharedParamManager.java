@@ -27,7 +27,7 @@ public class SharedParamManager {
 		id = ThrottleConstants.THROTTLE_SHARED_COUNTER_KEY + id;
 		DistributedCounterManager distributedCounterManager =
 				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
-		if (distributedCounterManager.isEnable()) {
+		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
 			return distributedCounterManager.getCounter(id);
 		} else {
 			Long counter = counters.get(id);
@@ -54,7 +54,7 @@ public class SharedParamManager {
 		id = ThrottleConstants.THROTTLE_SHARED_COUNTER_KEY + id;
 		DistributedCounterManager distributedCounterManager =
 				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
-		if(distributedCounterManager.isEnable()) {
+		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
 			distributedCounterManager.setCounter(id,value);
 		} else {
 			counters.put(id, value);
@@ -73,7 +73,7 @@ public class SharedParamManager {
 		DistributedCounterManager distributedCounterManager =
 				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
 		id = ThrottleConstants.THROTTLE_SHARED_COUNTER_KEY + id;
-		if(distributedCounterManager.isEnable()) {
+		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
 			return distributedCounterManager.addAndGetCounter(id, value);
 		} else {
 			long currentCount = counters.get(id);
@@ -97,7 +97,7 @@ public class SharedParamManager {
 		id = ThrottleConstants.THROTTLE_SHARED_COUNTER_KEY + id;
 		DistributedCounterManager distributedCounterManager =
 				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
-		if(distributedCounterManager.isEnable()) {
+		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
 			return distributedCounterManager.asyncGetAndAddCounter(id, value);
 		} else {
 			Long currentCount = counters.get(id);
@@ -121,7 +121,7 @@ public class SharedParamManager {
 		id = ThrottleConstants.THROTTLE_SHARED_COUNTER_KEY + id;
 		DistributedCounterManager distributedCounterManager =
 				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
-		if(distributedCounterManager.isEnable()) {
+		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
 			return distributedCounterManager.asyncGetAndAlterCounter(id,value);
 		} else {
 			Long currentCount = counters.get(id);
@@ -146,7 +146,7 @@ public class SharedParamManager {
 		id = ThrottleConstants.THROTTLE_SHARED_COUNTER_KEY + id;
 		DistributedCounterManager distributedCounterManager =
 				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
-		if(distributedCounterManager.isEnable()) {
+		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
 			distributedCounterManager.removeCounter(id);
 		} else {
 			counters.remove(id);
@@ -168,7 +168,7 @@ public class SharedParamManager {
 
 		DistributedCounterManager distributedCounterManager =
 				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
-		if(distributedCounterManager.isEnable()) {
+		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
 			return distributedCounterManager.getTimestamp(key);
 		} else {
 			Long timestamp = timestamps.get(key);
@@ -196,7 +196,7 @@ public class SharedParamManager {
 		String key = ThrottleConstants.THROTTLE_TIMESTAMP_KEY + id;
 		DistributedCounterManager distributedCounterManager =
 				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
-		if(distributedCounterManager.isEnable()) {
+		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
 			distributedCounterManager.setTimestamp(key, timestamp);
 		} else {
 			timestamps.put(id, timestamp);
@@ -215,7 +215,7 @@ public class SharedParamManager {
 		String key = ThrottleConstants.THROTTLE_TIMESTAMP_KEY + id;
 		DistributedCounterManager distributedCounterManager =
 				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
-		if(distributedCounterManager.isEnable()) {
+		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
 			distributedCounterManager.removeTimestamp(key);
 		} else {
 			timestamps.remove(key);
@@ -233,11 +233,12 @@ public class SharedParamManager {
 
 		DistributedCounterManager distributedCounterManager =
 				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
-		if(distributedCounterManager.isEnable()) {
+		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
 			distributedCounterManager.setExpiry(sharedCounterKey, expiryTimeStamp);
 			distributedCounterManager.setExpiry(sharedTimeStampKey, expiryTimeStamp);
 
 		}
 
 	}
+
 }
