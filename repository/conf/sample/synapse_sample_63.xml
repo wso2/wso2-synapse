@@ -76,6 +76,36 @@
                             </endpoint>
                         </send>
                     </case>
+                    <case regex="passwordGrant">
+                        <property name="clientID" value="my_client_id"/>
+                        <payloadFactory media-type="json">
+                            <format>{"account_id" : "$1"}</format>
+                            <args>
+                                <arg value="1234"/>
+                            </args>
+                        </payloadFactory>
+                        <send>
+                            <endpoint>
+                                <http method="get" uri-template="http://localhost:9000/foodservice/food">
+                                    <authentication>
+                                        <oauth>
+                                            <passwordCredentials>
+                                                <clientId>{$ctx:clientID}</clientId>
+                                                <clientSecret>my_client_secret</clientSecret>
+                                                <username>tester123</username>
+                                                <password>abc@123</password>
+                                                <tokenUrl>http://localhost:9000/foodservice/password-token</tokenUrl>
+                                                <requestParameters>
+                                                    <parameter name="account_id">{json-eval($.account_id)}</parameter>
+                                                    <parameter name="user_role">tester</parameter>
+                                                </requestParameters>
+                                            </passwordCredentials>
+                                        </oauth>
+                                    </authentication>
+                                </http>
+                            </endpoint>
+                        </send>
+                    </case>
                     <case regex="withCustomParams">
                         <property name="clientID" value="my_client_id"/>
                         <payloadFactory media-type="json">
