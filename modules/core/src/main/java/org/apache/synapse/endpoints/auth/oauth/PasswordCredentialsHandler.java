@@ -16,12 +16,14 @@
  *  under the License.
  */
 
-package org.apache.synapse.endpoints.oauth;
+package org.apache.synapse.endpoints.auth.oauth;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.endpoints.auth.AuthConstants;
+import org.apache.synapse.endpoints.auth.AuthException;
 
 /**
  * This class is used to handle Password Credentials grant oauth.
@@ -40,13 +42,13 @@ public class PasswordCredentialsHandler extends OAuthHandler {
     }
 
     @Override
-    protected String buildTokenRequestPayload(MessageContext messageContext) throws OAuthException {
+    protected String buildTokenRequestPayload(MessageContext messageContext) throws AuthException {
 
         StringBuilder payload = new StringBuilder();
 
-        payload.append(OAuthConstants.PASSWORD_CRED_GRANT_TYPE);
-        payload.append(OAuthConstants.PARAM_USERNAME).append(OAuthUtils.resolveExpression(username, messageContext));
-        payload.append(OAuthConstants.PARAM_PASSWORD).append(OAuthUtils.resolveExpression(password, messageContext));
+        payload.append(AuthConstants.PASSWORD_CRED_GRANT_TYPE);
+        payload.append(AuthConstants.PARAM_USERNAME).append(OAuthUtils.resolveExpression(username, messageContext));
+        payload.append(AuthConstants.PARAM_PASSWORD).append(OAuthUtils.resolveExpression(password, messageContext));
         String requestParams = getRequestParametersAsString(messageContext);
         payload.append(requestParams);
 
@@ -57,12 +59,12 @@ public class PasswordCredentialsHandler extends OAuthHandler {
     protected OMElement serializeSpecificOAuthConfigs(OMFactory omFactory) {
 
         OMElement passwordCredentials = omFactory.createOMElement(
-                OAuthConstants.PASSWORD_CREDENTIALS,
+                AuthConstants.PASSWORD_CREDENTIALS,
                 SynapseConstants.SYNAPSE_OMNAMESPACE);
 
-        passwordCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory, OAuthConstants.OAUTH_USERNAME,
+        passwordCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.OAUTH_USERNAME,
                 username));
-        passwordCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory, OAuthConstants.OAUTH_PASSWORD,
+        passwordCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.OAUTH_PASSWORD,
                 password));
         return passwordCredentials;
     }

@@ -16,12 +16,14 @@
  *  under the License.
  */
 
-package org.apache.synapse.endpoints.oauth;
+package org.apache.synapse.endpoints.auth.oauth;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.endpoints.auth.AuthConstants;
+import org.apache.synapse.endpoints.auth.AuthException;
 
 /**
  * This class is used to handle Authorization code grant oauth.
@@ -38,16 +40,16 @@ public class AuthorizationCodeHandler extends OAuthHandler {
     }
 
     @Override
-    protected String buildTokenRequestPayload(MessageContext messageContext) throws OAuthException {
+    protected String buildTokenRequestPayload(MessageContext messageContext) throws AuthException {
 
         StringBuilder payload = new StringBuilder();
 
-        payload.append(OAuthConstants.REFRESH_TOKEN_GRANT_TYPE)
-                .append(OAuthConstants.PARAM_REFRESH_TOKEN)
+        payload.append(AuthConstants.REFRESH_TOKEN_GRANT_TYPE)
+                .append(AuthConstants.PARAM_REFRESH_TOKEN)
                 .append(OAuthUtils.resolveExpression(refreshToken, messageContext));
-        payload.append(OAuthConstants.PARAM_CLIENT_ID)
+        payload.append(AuthConstants.PARAM_CLIENT_ID)
                 .append(OAuthUtils.resolveExpression(getClientId(), messageContext));
-        payload.append(OAuthConstants.PARAM_CLIENT_SECRET)
+        payload.append(AuthConstants.PARAM_CLIENT_SECRET)
                 .append(OAuthUtils.resolveExpression(getClientSecret(), messageContext));
         payload.append(getRequestParametersAsString(messageContext));
 
@@ -58,11 +60,11 @@ public class AuthorizationCodeHandler extends OAuthHandler {
     protected OMElement serializeSpecificOAuthConfigs(OMFactory omFactory) {
 
         OMElement authCode = omFactory.createOMElement(
-                OAuthConstants.AUTHORIZATION_CODE,
+                AuthConstants.AUTHORIZATION_CODE,
                 SynapseConstants.SYNAPSE_OMNAMESPACE);
 
         authCode.addChild(
-                OAuthUtils.createOMElementWithValue(omFactory, OAuthConstants.OAUTH_REFRESH_TOKEN, getRefreshToken()));
+                OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.OAUTH_REFRESH_TOKEN, getRefreshToken()));
         return authCode;
     }
 

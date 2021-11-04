@@ -16,12 +16,14 @@
  *  under the License.
  */
 
-package org.apache.synapse.endpoints.oauth;
+package org.apache.synapse.endpoints.auth.oauth;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.endpoints.auth.AuthConstants;
+import org.apache.synapse.endpoints.auth.AuthException;
 
 /**
  * This class is used to handle Client Credentials grant oauth.
@@ -34,14 +36,14 @@ public class ClientCredentialsHandler extends OAuthHandler {
     }
 
     @Override
-    protected String buildTokenRequestPayload(MessageContext messageContext) throws OAuthException {
+    protected String buildTokenRequestPayload(MessageContext messageContext) throws AuthException {
 
         StringBuilder payload = new StringBuilder();
 
-        payload.append(OAuthConstants.CLIENT_CRED_GRANT_TYPE);
-        payload.append(OAuthConstants.PARAM_CLIENT_ID)
+        payload.append(AuthConstants.CLIENT_CRED_GRANT_TYPE);
+        payload.append(AuthConstants.PARAM_CLIENT_ID)
                 .append(OAuthUtils.resolveExpression(getClientId(), messageContext));
-        payload.append(OAuthConstants.PARAM_CLIENT_SECRET)
+        payload.append(AuthConstants.PARAM_CLIENT_SECRET)
                 .append(OAuthUtils.resolveExpression(getClientSecret(), messageContext));
         payload.append(getRequestParametersAsString(messageContext));
 
@@ -51,6 +53,6 @@ public class ClientCredentialsHandler extends OAuthHandler {
     @Override
     protected OMElement serializeSpecificOAuthConfigs(OMFactory omFactory) {
 
-        return omFactory.createOMElement(OAuthConstants.CLIENT_CREDENTIALS, SynapseConstants.SYNAPSE_OMNAMESPACE);
+        return omFactory.createOMElement(AuthConstants.CLIENT_CREDENTIALS, SynapseConstants.SYNAPSE_OMNAMESPACE);
     }
 }

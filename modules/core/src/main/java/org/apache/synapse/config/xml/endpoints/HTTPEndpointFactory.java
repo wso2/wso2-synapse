@@ -26,13 +26,17 @@ import org.apache.axis2.Constants;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.commons.resolvers.ResolverFactory;
+import org.apache.synapse.endpoints.BasicAuthConfiguredHTTPEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.HTTPEndpoint;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
-import org.apache.synapse.endpoints.oauth.OAuthException;
-import org.apache.synapse.endpoints.oauth.OAuthHandler;
-import org.apache.synapse.endpoints.oauth.OAuthUtils;
+import org.apache.synapse.endpoints.auth.AuthConstants;
+import org.apache.synapse.endpoints.auth.AuthException;
+import org.apache.synapse.endpoints.auth.AuthHandler;
+import org.apache.synapse.endpoints.auth.AuthUtils;
+import org.apache.synapse.endpoints.auth.oauth.OAuthHandler;
+import org.apache.synapse.endpoints.auth.oauth.OAuthUtils;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.util.CommentListUtil;
 
@@ -76,12 +80,20 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
         OMElement httpElement = epConfig.getFirstChildWithName(
                 new QName(SynapseConstants.SYNAPSE_NAMESPACE, "http"));
 
-        HTTPEndpoint httpEndpoint;
+        HTTPEndpoint httpEndpoint = null;
 
-        OAuthHandler oAuthhandler = createOAuthHandler(httpElement, name);
-
-        if (oAuthhandler != null) {
-            httpEndpoint = new OAuthConfiguredHTTPEndpoint(oAuthhandler);
+        AuthHandler authHandler = createAuthHandler(httpElement, name);
+        if (authHandler != null) {
+            switch (authHandler.getAuthType()) {
+                case AuthConstants.BASIC_AUTH:
+                    httpEndpoint = new BasicAuthConfiguredHTTPEndpoint(authHandler);
+                    break;
+                case AuthConstants.OAUTH:
+                    httpEndpoint = new OAuthConfiguredHTTPEndpoint(authHandler);
+                    break;
+                default:
+                    handleException("Invalid auth handler type found");
+            }
         } else {
             httpEndpoint = new HTTPEndpoint();
         }
@@ -164,21 +176,21 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
     }
 
     /**
-     * This method will return an OAuthHandler instance depending on the oauth configs or throw a synapse exception
+     * This method will return an AuthHandler instance depending on the auth configs or throw a synapse exception
      *
      * @param httpElement Element containing http configs
      * @param endpointName Name of the http endpoint
-     * @return OAuthHandler instance if valid oauth configuration is found
+     * @return AuthHandler instance if valid auth configuration is found
      */
-    private OAuthHandler createOAuthHandler(OMElement httpElement, String endpointName) {
-        OAuthHandler handler = null;
+    private AuthHandler createAuthHandler(OMElement httpElement, String endpointName) {
+        AuthHandler handler = null;
         try {
-            handler = OAuthUtils.getOAuthHandler(httpElement);
-        } catch (OAuthException e) {
+            handler = AuthUtils.getAuthHandler(httpElement);
+        } catch (AuthException e) {
             if (endpointName == null) {
                 endpointName = "";
             }
-            handleException("Invalid OAuth configuration for endpoint " + endpointName);
+            handleException("Invalid authentication configuration for endpoint " + endpointName, e);
         }
         return handler;
     }

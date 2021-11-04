@@ -16,7 +16,7 @@
  *  under the License.
  */
 
-package org.apache.synapse.endpoints.oauth;
+package org.apache.synapse.endpoints.auth.oauth;
 
 import junit.framework.TestCase;
 import org.apache.http.HttpEntity;
