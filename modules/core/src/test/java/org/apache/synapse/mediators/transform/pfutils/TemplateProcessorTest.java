@@ -94,7 +94,7 @@ public class TemplateProcessorTest {
                     getArgumentDetails(JSON_PATH, false, true));
             Map.Entry<String, ArgumentDetails> jsonToXmlWithInferReplacementTypeStringAndSpecialChars =
                     Maps.immutableEntry(
-                            "{\"name\":\"hello\\\\nworld\"}",
+                            "{\"name\":\"hello & world\"}",
                             getArgumentDetails(JSON_PATH, false, true));
 
             // InferReplacementTypeStringAndMediaTypeJson
@@ -140,9 +140,9 @@ public class TemplateProcessorTest {
                     {XML_TYPE, jsonToXml, synCtx, "<name>john smith</name><subject /><isStudent>true</isStudent>"},
                     {XML_TYPE, jsonToXmlArray, synCtx, "<jsonElement>55</jsonElement><jsonElement>76</jsonElement>"},
                     {XML_TYPE, jsonToXmlWithSpecialChars, synCtx, "<name>hello\\\nworld</name>"},
-                    {XML_TYPE, jsonToXmlWithInferReplacementTypeString, synCtx, "<name>john smith</name>"},
+                    {XML_TYPE, jsonToXmlWithInferReplacementTypeString, synCtx, "{\"name\":\"john smith\"}"},
                     {XML_TYPE, jsonToXmlWithInferReplacementTypeStringAndSpecialChars, synCtx,
-                            "<name>hello\\\nworld</name>"},
+                            "{\"name\":\"hello & world\"}"},
                     {JSON_TYPE, inferReplacementTypeStringAndMediaTypeJson, synCtx,
                             "{\\\\\"name\\\\\":\\\\\"hello\\\\\\\\nworld\\\\\"}"},
                     {JSON_TYPE, inferReplacementTypeStringAndMediaTypeJson2, synCtx,
