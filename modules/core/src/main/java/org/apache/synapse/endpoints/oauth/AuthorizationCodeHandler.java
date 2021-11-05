@@ -31,9 +31,9 @@ public class AuthorizationCodeHandler extends OAuthHandler {
     private final String refreshToken;
 
     public AuthorizationCodeHandler(String tokenApiUrl, String clientId, String clientSecret,
-                                    String refreshToken) {
+                                    String refreshToken, String authMode) {
 
-        super(tokenApiUrl, clientId, clientSecret);
+        super(tokenApiUrl, clientId, clientSecret, authMode);
         this.refreshToken = refreshToken;
     }
 
@@ -45,10 +45,12 @@ public class AuthorizationCodeHandler extends OAuthHandler {
         payload.append(OAuthConstants.REFRESH_TOKEN_GRANT_TYPE)
                 .append(OAuthConstants.PARAM_REFRESH_TOKEN)
                 .append(OAuthUtils.resolveExpression(refreshToken, messageContext));
-        payload.append(OAuthConstants.PARAM_CLIENT_ID)
-                .append(OAuthUtils.resolveExpression(getClientId(), messageContext));
-        payload.append(OAuthConstants.PARAM_CLIENT_SECRET)
-                .append(OAuthUtils.resolveExpression(getClientSecret(), messageContext));
+        if ("payload".equalsIgnoreCase(getAuthMode())) {
+            payload.append(OAuthConstants.PARAM_CLIENT_ID)
+                    .append(OAuthUtils.resolveExpression(getClientId(), messageContext));
+            payload.append(OAuthConstants.PARAM_CLIENT_SECRET)
+                    .append(OAuthUtils.resolveExpression(getClientSecret(), messageContext));
+        }
         payload.append(getRequestParametersAsString(messageContext));
 
         return payload.toString();
