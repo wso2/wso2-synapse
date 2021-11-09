@@ -16,9 +16,10 @@
  *  under the License.
  */
 
-package org.apache.synapse.endpoints.oauth;
+package org.apache.synapse.endpoints.auth.oauth;
 
 import org.apache.axiom.util.base64.Base64Utils;
+import org.apache.synapse.endpoints.auth.AuthConstants;
 
 /**
  * This class is used to handle Authorization code grant oauth
@@ -43,10 +44,10 @@ public class AuthorizationCodeHandler extends OAuthHandler {
 
         StringBuilder payload = new StringBuilder();
 
-        payload.append(OAuthConstants.REFRESH_TOKEN_GRANT_TYPE)
-                .append(OAuthConstants.PARAM_REFRESH_TOKEN).append(refreshToken);
-        payload.append(OAuthConstants.PARAM_CLIENT_ID).append(clientId);
-        payload.append(OAuthConstants.PARAM_CLIENT_SECRET).append(clientSecret);
+        payload.append(AuthConstants.REFRESH_TOKEN_GRANT_TYPE)
+                .append(AuthConstants.PARAM_REFRESH_TOKEN).append(refreshToken);
+        payload.append(AuthConstants.PARAM_CLIENT_ID).append(clientId);
+        payload.append(AuthConstants.PARAM_CLIENT_SECRET).append(clientSecret);
 
         return payload.toString();
     }

@@ -16,7 +16,7 @@
  *  under the License.
  */
 
-package org.apache.synapse.endpoints.oauth;
+package org.apache.synapse.endpoints.auth.oauth;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -30,6 +30,8 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.synapse.endpoints.auth.AuthConstants;
+import org.apache.synapse.endpoints.auth.AuthException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -54,20 +56,20 @@ public class OAuthClient {
      * @param payload     The payload of the request
      * @param credentials The encoded credentials
      * @return accessToken String
-     * @throws OAuthException In the event of an unexpected HTTP status code return from the server or access_token
+     * @throws AuthException In the event of an unexpected HTTP status code return from the server or access_token
      *                        key missing in the response payload
      * @throws IOException    In the event of a problem parsing the response from the server
      */
     public static String generateToken(String tokenApiUrl, String payload, String credentials)
-            throws OAuthException, IOException {
+            throws AuthException, IOException {
 
         if (log.isDebugEnabled()) {
             log.debug("Initializing token generation request: [token-endpoint] " + tokenApiUrl);
         }
 
         HttpPost httpPost = new HttpPost(tokenApiUrl);
-        httpPost.setHeader(OAuthConstants.CONTENT_TYPE_HEADER, OAuthConstants.APPLICATION_X_WWW_FORM_URLENCODED);
-        httpPost.setHeader(OAuthConstants.AUTHORIZATION_HEADER, OAuthConstants.BASIC + credentials);
+        httpPost.setHeader(AuthConstants.CONTENT_TYPE_HEADER, AuthConstants.APPLICATION_X_WWW_FORM_URLENCODED);
+        httpPost.setHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.BASIC + credentials);
         httpPost.setEntity(new StringEntity(payload));
 
         try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
@@ -82,11 +84,11 @@ public class OAuthClient {
      *
      * @param response CloseableHttpResponse object
      * @return accessToken String
-     * @throws OAuthException In the event of an unexpected HTTP status code return from the server or access_token
+     * @throws AuthException In the event of an unexpected HTTP status code return from the server or access_token
      *                        key missing in the response payload
      * @throws IOException    In the event of a problem parsing the response from the server
      */
-    private static String extractToken(CloseableHttpResponse response) throws OAuthException, IOException {
+    private static String extractToken(CloseableHttpResponse response) throws AuthException, IOException {
 
         int responseCode = response.getStatusLine().getStatusCode();
 
@@ -110,15 +112,15 @@ public class OAuthClient {
         }
 
         if (responseCode != HttpStatus.SC_OK) {
-            throw new OAuthException("Error while accessing the Token URL. "
+            throw new AuthException("Error while accessing the Token URL. "
                     + response.getStatusLine());
         }
 
         JsonParser parser = new JsonParser();
         JsonObject jsonResponse = (JsonObject) parser.parse(stringBuilder.toString());
-        if (jsonResponse.has(OAuthConstants.ACCESS_TOKEN)) {
-            return jsonResponse.get(OAuthConstants.ACCESS_TOKEN).getAsString();
+        if (jsonResponse.has(AuthConstants.ACCESS_TOKEN)) {
+            return jsonResponse.get(AuthConstants.ACCESS_TOKEN).getAsString();
         }
-        throw new OAuthException("Missing key [access_token] in the response from the OAuth server");
+        throw new AuthException("Missing key [access_token] in the response from the OAuth server");
     }
 }

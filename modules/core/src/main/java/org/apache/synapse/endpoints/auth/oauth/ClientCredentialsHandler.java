@@ -16,9 +16,10 @@
  *  under the License.
  */
 
-package org.apache.synapse.endpoints.oauth;
+package org.apache.synapse.endpoints.auth.oauth;
 
 import org.apache.axiom.util.base64.Base64Utils;
+import org.apache.synapse.endpoints.auth.AuthConstants;
 
 /**
  * This class is used to handle Client Credentials grant oauth
@@ -40,9 +41,9 @@ public class ClientCredentialsHandler extends OAuthHandler {
 
         StringBuilder payload = new StringBuilder();
 
-        payload.append(OAuthConstants.CLIENT_CRED_GRANT_TYPE);
-        payload.append(OAuthConstants.PARAM_CLIENT_ID).append(clientId);
-        payload.append(OAuthConstants.PARAM_CLIENT_SECRET).append(clientSecret);
+        payload.append(AuthConstants.CLIENT_CRED_GRANT_TYPE);
+        payload.append(AuthConstants.PARAM_CLIENT_ID).append(clientId);
+        payload.append(AuthConstants.PARAM_CLIENT_SECRET).append(clientSecret);
 
         return payload.toString();
     }
