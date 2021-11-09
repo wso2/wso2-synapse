@@ -16,10 +16,13 @@
  *  under the License.
  */
 
-package org.apache.synapse.endpoints.oauth;
+package org.apache.synapse.endpoints.auth.oauth;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.endpoints.auth.AuthConstants;
+import org.apache.synapse.endpoints.auth.AuthException;
+import org.apache.synapse.endpoints.auth.AuthHandler;
 
 import java.io.IOException;
 import java.util.Map;
@@ -32,7 +35,7 @@ import java.util.concurrent.ExecutionException;
  * and add tokens to in-memory cache
  */
 
-public abstract class OAuthHandler {
+public abstract class OAuthHandler implements AuthHandler {
 
     private final String id;
 
@@ -44,15 +47,13 @@ public abstract class OAuthHandler {
         this.tokenApiUrl = tokenApiUrl;
     }
 
-    /**
-     * This method will set the Authorization header after checking for expired tokens and generating new access
-     * tokens
-     *
-     * @param messageContext Message context to which the token needs to be set
-     * @throws OAuthException In the event of errors when generating new token
-     */
-    public void setOAuthHeader(MessageContext messageContext) throws OAuthException {
+    @Override
+    public String getAuthType() {
+        return AuthConstants.OAUTH;
+    }
 
+    @Override
+    public void setAuthHeader(MessageContext messageContext) throws AuthException {
         setAuthorizationHeader(messageContext, getToken());
     }
 
@@ -60,20 +61,20 @@ public abstract class OAuthHandler {
      * This method returns a token string
      *
      * @return token String
-     * @throws OAuthException In the event of errors when generating new token
+     * @throws AuthException In the event of errors when generating new token
      */
-    private String getToken() throws OAuthException {
+    private String getToken() throws AuthException {
 
         try {
             return TokenCache.getInstance().getToken(id, new Callable<String>() {
                 @Override
-                public String call() throws OAuthException, IOException {
+                public String call() throws AuthException, IOException {
 
                     return OAuthClient.generateToken(tokenApiUrl, buildTokenRequestPayload(), getEncodedCredentials());
                 }
             });
         } catch (ExecutionException e) {
-            throw new OAuthException(e);
+            throw new AuthException(e);
         }
     }
 
@@ -87,7 +88,7 @@ public abstract class OAuthHandler {
 
         Map<String, Object> transportHeaders = (Map<String, Object>) ((Axis2MessageContext) messageContext)
                 .getAxis2MessageContext().getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-        transportHeaders.put(OAuthConstants.AUTHORIZATION_HEADER, OAuthConstants.BEARER + accessToken);
+        transportHeaders.put(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.BEARER + accessToken);
     }
 
     /**

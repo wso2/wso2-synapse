@@ -23,11 +23,12 @@ import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.endpoints.oauth.MessageCache;
-import org.apache.synapse.endpoints.oauth.OAuthConstants;
-import org.apache.synapse.endpoints.oauth.OAuthException;
-import org.apache.synapse.endpoints.oauth.OAuthHandler;
-import org.apache.synapse.endpoints.oauth.OAuthUtils;
+import org.apache.synapse.endpoints.auth.AuthHandler;
+import org.apache.synapse.endpoints.auth.oauth.MessageCache;
+import org.apache.synapse.endpoints.auth.AuthConstants;
+import org.apache.synapse.endpoints.auth.AuthException;
+import org.apache.synapse.endpoints.auth.oauth.OAuthHandler;
+import org.apache.synapse.endpoints.auth.oauth.OAuthUtils;
 import org.apache.synapse.util.MessageHelper;
 
 /**
@@ -38,23 +39,23 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
 
     private final OAuthHandler oAuthHandler;
 
-    public OAuthConfiguredHTTPEndpoint(OAuthHandler oAuthHandler) {
+    public OAuthConfiguredHTTPEndpoint(AuthHandler authHandler) {
 
-        this.oAuthHandler = oAuthHandler;
+        this.oAuthHandler = (OAuthHandler) authHandler;
     }
 
     @Override
     public void send(MessageContext synCtx) {
 
         try {
-            oAuthHandler.setOAuthHeader(synCtx);
+            oAuthHandler.setAuthHeader(synCtx);
 
             // If this a blocking call, add 401 as a non error http status code
             if (synCtx.getProperty(SynapseConstants.BLOCKING_MSG_SENDER) != null) {
                 org.apache.axis2.context.MessageContext axis2Ctx =
                         ((Axis2MessageContext) synCtx).getAxis2MessageContext();
                 axis2Ctx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES,
-                        String.valueOf(OAuthConstants.HTTP_SC_UNAUTHORIZED));
+                        String.valueOf(AuthConstants.HTTP_SC_UNAUTHORIZED));
             }
 
             // Clone the original MessageContext and save it to do a retry after a token refresh
@@ -63,7 +64,7 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
 
             super.send(synCtx);
 
-        } catch (OAuthException e) {
+        } catch (AuthException e) {
             handleError(synCtx,
                     "Could not generate access token for oauth configured http endpoint " + this.getName(), e);
         } catch (AxisFault axisFault) {
@@ -83,7 +84,7 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
         // remove the existing token from the cache so that a new token is generated
         oAuthHandler.removeTokenFromCache();
         // set RETRIED_ON_OAUTH_FAILURE property to true
-        synCtx.setProperty(OAuthConstants.RETRIED_ON_OAUTH_FAILURE, true);
+        synCtx.setProperty(AuthConstants.RETRIED_ON_OAUTH_FAILURE, true);
         send(synCtx);
         return synCtx;
     }

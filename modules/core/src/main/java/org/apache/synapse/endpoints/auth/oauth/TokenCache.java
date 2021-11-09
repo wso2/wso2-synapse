@@ -16,10 +16,11 @@
  *  under the License.
  */
 
-package org.apache.synapse.endpoints.oauth;
+package org.apache.synapse.endpoints.auth.oauth;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.apache.synapse.endpoints.auth.AuthConstants;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -34,7 +35,7 @@ public class TokenCache {
     private static final TokenCache instance = new TokenCache();
 
     private final Cache<String, String> tokenMap =
-            CacheBuilder.newBuilder().expireAfterWrite(OAuthConstants.TOKEN_CACHE_TIMEOUT, TimeUnit.MINUTES).build();
+            CacheBuilder.newBuilder().expireAfterWrite(AuthConstants.TOKEN_CACHE_TIMEOUT, TimeUnit.MINUTES).build();
 
     private TokenCache() {
 

@@ -16,7 +16,7 @@
  *  under the License.
  */
 
-package org.apache.synapse.endpoints.oauth;
+package org.apache.synapse.endpoints.auth.oauth;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.util.UIDGenerator;
@@ -32,6 +32,8 @@ import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
+import org.apache.synapse.endpoints.auth.AuthConstants;
+import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 
 import java.util.Map;
@@ -48,49 +50,18 @@ public class OAuthUtils {
     /**
      * This method will return an OAuthHandler instance depending on the oauth configs
      *
-     * @param httpElement Element containing http configs
-     * @return OAuthHandler object
-     * @throws OAuthException throw exception for invalid oauth configs
-     */
-    public static OAuthHandler getOAuthHandler(OMElement httpElement) throws OAuthException {
-
-        if (httpElement != null) {
-            OMElement authElement = httpElement.getFirstChildWithName(
-                    new QName(SynapseConstants.SYNAPSE_NAMESPACE, OAuthConstants.AUTHENTICATION));
-
-            if (authElement != null) {
-                OMElement oauthElement = authElement.getFirstChildWithName(
-                        new QName(SynapseConstants.SYNAPSE_NAMESPACE, OAuthConstants.OAUTH));
-
-                if (oauthElement != null) {
-
-                    OAuthHandler oAuthHandler = getSpecificOAuthHandler(oauthElement);
-                    if (oAuthHandler != null) {
-                        return oAuthHandler;
-                    } else {
-                        throw new OAuthException("Invalid OAuth configuration");
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * This method will return an OAuthHandler instance depending on the oauth configs
-     *
      * @param oauthElement Element containing OAuth configs
      * @return OAuthHandler object
      */
-    private static OAuthHandler getSpecificOAuthHandler(OMElement oauthElement) {
+    public static OAuthHandler getSpecificOAuthHandler(OMElement oauthElement) {
 
         OAuthHandler oAuthHandler = null;
 
         OMElement authCodeElement = oauthElement.getFirstChildWithName(new QName(
-                SynapseConstants.SYNAPSE_NAMESPACE, OAuthConstants.AUTHORIZATION_CODE));
+                SynapseConstants.SYNAPSE_NAMESPACE, AuthConstants.AUTHORIZATION_CODE));
 
         OMElement clientCredentialsElement = oauthElement.getFirstChildWithName(new QName(
-                SynapseConstants.SYNAPSE_NAMESPACE, OAuthConstants.CLIENT_CREDENTIALS));
+                SynapseConstants.SYNAPSE_NAMESPACE, AuthConstants.CLIENT_CREDENTIALS));
 
         if (authCodeElement != null && clientCredentialsElement != null) {
             if (log.isDebugEnabled()) {
@@ -118,10 +89,10 @@ public class OAuthUtils {
      */
     private static AuthorizationCodeHandler getAuthorizationCodeHandler(OMElement authCodeElement) {
 
-        String clientId = getChildValue(authCodeElement, OAuthConstants.OAUTH_CLIENT_ID);
-        String clientSecret = getChildValue(authCodeElement, OAuthConstants.OAUTH_CLIENT_SECRET);
-        String refreshToken = getChildValue(authCodeElement, OAuthConstants.OAUTH_REFRESH_TOKEN);
-        String tokenApiUrl = getChildValue(authCodeElement, OAuthConstants.TOKEN_API_URL);
+        String clientId = getChildValue(authCodeElement, AuthConstants.OAUTH_CLIENT_ID);
+        String clientSecret = getChildValue(authCodeElement, AuthConstants.OAUTH_CLIENT_SECRET);
+        String refreshToken = getChildValue(authCodeElement, AuthConstants.OAUTH_REFRESH_TOKEN);
+        String tokenApiUrl = getChildValue(authCodeElement, AuthConstants.TOKEN_API_URL);
 
         if (clientId == null || clientSecret == null || refreshToken == null || tokenApiUrl == null) {
             if (log.isDebugEnabled()) {
@@ -145,9 +116,9 @@ public class OAuthUtils {
     private static ClientCredentialsHandler getClientCredentialsHandler(
             OMElement clientCredentialsElement) {
 
-        String clientId = getChildValue(clientCredentialsElement, OAuthConstants.OAUTH_CLIENT_ID);
-        String clientSecret = getChildValue(clientCredentialsElement, OAuthConstants.OAUTH_CLIENT_SECRET);
-        String tokenApiUrl = getChildValue(clientCredentialsElement, OAuthConstants.TOKEN_API_URL);
+        String clientId = getChildValue(clientCredentialsElement, AuthConstants.OAUTH_CLIENT_ID);
+        String clientSecret = getChildValue(clientCredentialsElement, AuthConstants.OAUTH_CLIENT_SECRET);
+        String tokenApiUrl = getChildValue(clientCredentialsElement, AuthConstants.TOKEN_API_URL);
 
         if (clientId == null || clientSecret == null || tokenApiUrl == null) {
             if (log.isDebugEnabled()) {
@@ -168,7 +139,7 @@ public class OAuthUtils {
      * @param childName     name of the child
      * @return String containing the value of the child
      */
-    private static String getChildValue(OMElement parentElement, String childName) {
+    public static String getChildValue(OMElement parentElement, String childName) {
 
         OMElement childElement = parentElement.getFirstChildWithName(new QName(
                 SynapseConstants.SYNAPSE_NAMESPACE, childName));
@@ -198,7 +169,7 @@ public class OAuthUtils {
     public static String getRandomOAuthHandlerID() {
 
         String uuid = UIDGenerator.generateUID();
-        return OAuthConstants.OAUTH_PREFIX + uuid;
+        return AuthConstants.OAUTH_PREFIX + uuid;
     }
 
     /**
@@ -212,7 +183,7 @@ public class OAuthUtils {
     public static boolean retryOnOAuthFailure(OAuthConfiguredHTTPEndpoint httpEndpoint, MessageContext synapseInMsgCtx,
                                               MessageContext synapseOutMsgCtx) {
 
-        Boolean hasRetried = (Boolean) synapseOutMsgCtx.getProperty(OAuthConstants.RETRIED_ON_OAUTH_FAILURE);
+        Boolean hasRetried = (Boolean) synapseOutMsgCtx.getProperty(AuthConstants.RETRIED_ON_OAUTH_FAILURE);
         if (hasRetried != null && hasRetried) {
             return false;
         }
@@ -226,7 +197,7 @@ public class OAuthUtils {
             try {
                 int httpStatus =
                         Integer.parseInt(axis2MessageContext.getProperty(PassThroughConstants.HTTP_SC).toString());
-                if (httpStatus == OAuthConstants.HTTP_SC_UNAUTHORIZED) {
+                if (httpStatus == AuthConstants.HTTP_SC_UNAUTHORIZED) {
                     return true;
                 }
             } catch (NumberFormatException e) {
@@ -248,7 +219,7 @@ public class OAuthUtils {
                 ((Axis2MessageContext) messageContext).getAxis2MessageContext();
         JsonUtil.removeJsonPayload(axis2MC);
 
-        axis2MC.setProperty(PassThroughConstants.HTTP_SC, OAuthConstants.HTTP_SC_INTERNAL_SERVER_ERROR);
+        axis2MC.setProperty(PassThroughConstants.HTTP_SC, AuthConstants.HTTP_SC_INTERNAL_SERVER_ERROR);
 
         Map headers = (Map) axis2MC.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
         String acceptType = (String) headers.get(HttpHeaders.ACCEPT);

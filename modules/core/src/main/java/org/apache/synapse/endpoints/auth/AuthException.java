@@ -16,19 +16,19 @@
  *  under the License.
  */
 
-package org.apache.synapse.endpoints.oauth;
+package org.apache.synapse.endpoints.auth;
 
 /**
  * Exception to be thrown when a OAuth related error occurs
  */
-public class OAuthException extends Exception {
+public class AuthException extends Exception {
 
-    public OAuthException(String message) {
+    public AuthException(String message) {
 
         super(message);
     }
 
-    public OAuthException(Throwable e) {
+    public AuthException(Throwable e) {
 
         super(e);
     }

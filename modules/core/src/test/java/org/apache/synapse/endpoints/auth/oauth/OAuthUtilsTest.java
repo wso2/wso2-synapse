@@ -16,7 +16,7 @@
  *  under the License.
  */
 
-package org.apache.synapse.endpoints.oauth;
+package org.apache.synapse.endpoints.auth.oauth;
 
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
@@ -34,6 +34,9 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
+import org.apache.synapse.endpoints.auth.AuthConstants;
+import org.apache.synapse.endpoints.auth.AuthException;
+import org.apache.synapse.endpoints.auth.AuthUtils;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.junit.Assert;
 import org.junit.Test;
@@ -104,7 +107,7 @@ public class OAuthUtilsTest {
 
             OMElement oauthElement = AXIOMUtil.stringToOM(configs);
 
-            OAuthHandler oAuthHandler = OAuthUtils.getOAuthHandler(oauthElement);
+            OAuthHandler oAuthHandler = (OAuthHandler) AuthUtils.getAuthHandler(oauthElement);
 
             assertThat(oAuthHandler, instanceOf(handler));
         }
@@ -152,10 +155,10 @@ public class OAuthUtilsTest {
             OMElement oauthElement = AXIOMUtil.stringToOM(configs);
 
             try {
-                OAuthHandler oAuthHandler = OAuthUtils.getOAuthHandler(oauthElement);
+                OAuthHandler oAuthHandler = (OAuthHandler) AuthUtils.getAuthHandler(oauthElement);
                 Assert.fail("This method must throw an OAuthException");
-            } catch (OAuthException e) {
-                Assert.assertEquals("Invalid OAuth configuration", e.getMessage());
+            } catch (AuthException e) {
+                Assert.assertEquals("Authentication configuration is invalid", e.getMessage());
             }
         }
     }
@@ -197,7 +200,7 @@ public class OAuthUtilsTest {
             MessageContext messageContextOut1 = createMessageContext();
             MessageContext messageContextOut2 = createMessageContext();
 
-            messageContextOut2.setProperty(OAuthConstants.RETRIED_ON_OAUTH_FAILURE, true);
+            messageContextOut2.setProperty(AuthConstants.RETRIED_ON_OAUTH_FAILURE, true);
 
             return Arrays.asList(new Object[][]{
                     {httpEndpoint, messageContextIn, messageContextOut1, true},
