@@ -38,8 +38,10 @@ import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.protocol.HTTP;
 import org.apache.log4j.Logger;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
@@ -75,6 +77,7 @@ import static org.apache.synapse.unittest.Constants.JSON_FORMAT;
 import static org.apache.synapse.unittest.Constants.POST_METHOD;
 import static org.apache.synapse.unittest.Constants.PROXY_INVOKE_PREFIX_URL;
 import static org.apache.synapse.unittest.Constants.PUT_METHOD;
+import static org.apache.synapse.unittest.Constants.STRING_UTF8;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_NAME;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_SCOPE;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_VALUE;
@@ -216,7 +219,7 @@ public class TestCasesMediator {
                         postPayload = EMPTY_VALUE;
                     }
 
-                    StringEntity postEntity = new StringEntity(postPayload);
+                    StringEntity postEntity = new StringEntity(postPayload, getCharSetEncoding(currentTestCase));
                     httpPost.setEntity(postEntity);
                     response = clientConnector.execute(httpPost);
                     break;
@@ -229,7 +232,7 @@ public class TestCasesMediator {
                     if (putPayload == null) {
                         putPayload = EMPTY_VALUE;
                     }
-                    StringEntity putEntity = new StringEntity(putPayload);
+                    StringEntity putEntity = new StringEntity(putPayload, getCharSetEncoding(currentTestCase));
                     httpPut.setEntity(putEntity);
                     response = clientConnector.execute(httpPut);
                     break;
@@ -345,7 +348,7 @@ public class TestCasesMediator {
         if (deletePayload == null) {
             deletePayload = EMPTY_VALUE;
         }
-        StringEntity deleteEntity = new StringEntity(deletePayload);
+        StringEntity deleteEntity = new StringEntity(deletePayload, getCharSetEncoding(currentTestCase));
         httpDelete.setEntity(deleteEntity);
 
         return httpDelete;
@@ -501,6 +504,29 @@ public class TestCasesMediator {
         }
         textElement.setText(content);
         return textElement;
+    }
+
+    /**
+     * Retrieves the charset encoding type by the content-type header.
+     *
+     * @param currentTestCase current test case
+     * @return String charset
+     */
+    private static String getCharSetEncoding(TestCase currentTestCase) {
+
+        String charSetEncoding = STRING_UTF8;
+        ContentType contentType = null;
+        for (Map<String, String> property : currentTestCase.getPropertyMap()) {
+            if (property.get(TEST_CASE_INPUT_PROPERTY_NAME) != null
+                    && property.get(TEST_CASE_INPUT_PROPERTY_NAME).equals(HTTP.CONTENT_TYPE)) {
+                contentType = ContentType.parse(property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
+                break;
+            }
+        }
+        if (contentType != null && contentType.getCharset() != null) {
+            charSetEncoding = contentType.getCharset().name();
+        }
+        return charSetEncoding;
     }
 
     @Contract(threading = ThreadingBehavior.UNSAFE)
