@@ -26,6 +26,7 @@ import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.om.OMText;
 import org.apache.axiom.om.impl.builder.StAXBuilder;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
+import org.apache.axiom.om.util.StAXUtils;
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAP12Constants;
 import org.apache.axiom.soap.SOAPEnvelope;
@@ -85,6 +86,13 @@ public class PayloadFactoryMediator extends AbstractMediator {
         //ignore DTDs for XML Input
         inputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
         inputFactory.setProperty(XMLInputFactory.IS_COALESCING, true);
+        Map props = StAXUtils.loadFactoryProperties("XMLInputFactory.properties");
+        if (props != null) {
+            for (Object o : props.entrySet()) {
+                Map.Entry entry = (Map.Entry) o;
+                inputFactory.setProperty((String) entry.getKey(), entry.getValue());
+            }
+        }
     }
 
     /**
