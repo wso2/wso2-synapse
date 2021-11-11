@@ -137,8 +137,10 @@ public class MessageStoreMediator extends AbstractMediator{
                             .isEmpty()) {
 
                         MessageStore failoverMessageStore = synCtx.getConfiguration().getMessageStore(failoverMessageStoreName);
-                        boolean failoverProduceStatus = failoverMessageStore.getProducer().storeMessage(newCtx);
-
+                        boolean failoverProduceStatus;
+                        synchronized (storeMessageLock) {
+                            failoverProduceStatus = failoverMessageStore.getProducer().storeMessage(newCtx);
+                        }
                         if (!failoverProduceStatus) {
                             synCtx.setProperty(NhttpConstants.HTTP_SC, 500);
                             synCtx.setProperty(NhttpConstants.ERROR_DETAIL, "Failed to store message.");

@@ -109,7 +109,7 @@ public class SynapseJsonPath extends SynapsePath {
             Matcher extractPropMatcher = extractProp.matcher(jsonPathExpression);
             if (extractPropMatcher.find()) {
                 propertyExpression = extractPropMatcher.group(0);
-                resolvedExpression = "$" + jsonPathExpression.substring(resolvedExpression.length());
+                resolvedExpression = "$" + jsonPathExpression.substring(propertyExpression.length());
             }
         } else {
             this.resolvedExpression = jsonPathExpression;

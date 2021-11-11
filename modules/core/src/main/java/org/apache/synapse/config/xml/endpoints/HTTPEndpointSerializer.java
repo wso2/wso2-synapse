@@ -19,7 +19,6 @@
 
 package org.apache.synapse.config.xml.endpoints;
 
-
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.SynapseConstants;
@@ -27,11 +26,7 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.HTTPEndpoint;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
-import org.apache.synapse.endpoints.oauth.AuthorizationCodeHandler;
-import org.apache.synapse.endpoints.oauth.ClientCredentialsHandler;
 import org.apache.synapse.endpoints.oauth.OAuthConstants;
-
-import java.util.Map;
 
 public class HTTPEndpointSerializer extends DefaultEndpointSerializer {
     @Override
@@ -88,7 +83,7 @@ public class HTTPEndpointSerializer extends DefaultEndpointSerializer {
     }
 
     /**
-     * This method returns an OMElement containing the OAuth configuration
+     * This method returns an OMElement containing the OAuth configuration.
      *
      * @param oAuthConfiguredHTTPEndpoint OAuth Configured HTTP Endpoint
      * @return OMElement containing the OAuth configuration
@@ -104,106 +99,7 @@ public class HTTPEndpointSerializer extends DefaultEndpointSerializer {
                 SynapseConstants.SYNAPSE_OMNAMESPACE);
         authentication.addChild(oauth);
 
-        if (oAuthConfiguredHTTPEndpoint.getOauthHandler() instanceof AuthorizationCodeHandler) {
-            oauth.addChild(serializeAuthorizationCodeConfigurationElements(
-                    (AuthorizationCodeHandler) oAuthConfiguredHTTPEndpoint.getOauthHandler()));
-        }
-
-        if (oAuthConfiguredHTTPEndpoint.getOauthHandler() instanceof ClientCredentialsHandler) {
-            oauth.addChild(serializeClientCredentialsConfigurationElements(
-                    (ClientCredentialsHandler) oAuthConfiguredHTTPEndpoint.getOauthHandler()));
-        }
-
+        oauth.addChild(oAuthConfiguredHTTPEndpoint.getOauthHandler().serializeOAuthConfiguration(fac));
         return authentication;
-    }
-
-    /**
-     * This method returns an OMElement containing the Client Credentials configuration
-     *
-     * @param clientCredentialsHandler ClientCredentialsHandler of the OAuth Configured HTTP Endpoint
-     * @return OMElement containing the Client Credentials configuration
-     */
-    private OMElement serializeClientCredentialsConfigurationElements(
-            ClientCredentialsHandler clientCredentialsHandler) {
-
-        OMElement clientCredentials = fac.createOMElement(
-                OAuthConstants.CLIENT_CREDENTIALS,
-                SynapseConstants.SYNAPSE_OMNAMESPACE);
-
-        clientCredentials.addChild(
-                createOMElementWithValue(OAuthConstants.OAUTH_CLIENT_ID, clientCredentialsHandler.getClientId()));
-        clientCredentials.addChild(createOMElementWithValue(OAuthConstants.OAUTH_CLIENT_SECRET,
-                clientCredentialsHandler.getClientSecret()));
-        clientCredentials
-                .addChild(
-                        createOMElementWithValue(OAuthConstants.TOKEN_API_URL, clientCredentialsHandler.getTokenUrl()));
-        if (clientCredentialsHandler.getRequestParametersMap() != null &&
-                clientCredentialsHandler.getRequestParametersMap().size() > 0) {
-            OMElement requestParameters = createOMRequestParams(clientCredentialsHandler.getRequestParametersMap());
-            clientCredentials.addChild(requestParameters);
-        }
-        return clientCredentials;
-    }
-
-    /**
-     * Create an OMElement for request parameter map.
-     *
-     * @param requestParametersMap input parameter map.
-     * @return OMElement of parameter map.
-     */
-    private OMElement createOMRequestParams(Map<String, String> requestParametersMap) {
-        OMElement requestParameters =
-                fac.createOMElement("requestParameters", SynapseConstants.SYNAPSE_OMNAMESPACE);
-        for (Map.Entry<String, String> entry : requestParametersMap.entrySet()) {
-            OMElement parameter = fac.createOMElement("parameter", SynapseConstants.SYNAPSE_OMNAMESPACE);
-            parameter.addAttribute("name", entry.getKey(), null);
-            parameter.setText(entry.getValue());
-            requestParameters.addChild(parameter);
-        }
-        return requestParameters;
-    }
-
-    /**
-     * This method returns an OMElement containing the Authorization Code configuration
-     *
-     * @param authorizationCodeHandler AuthorizationCodeHandler of the OAuth Configured HTTP Endpoint
-     * @return OMElement containing the Authorization Code configuration
-     */
-    private OMElement serializeAuthorizationCodeConfigurationElements(
-            AuthorizationCodeHandler authorizationCodeHandler) {
-
-        OMElement clientCredentials = fac.createOMElement(
-                OAuthConstants.AUTHORIZATION_CODE,
-                SynapseConstants.SYNAPSE_OMNAMESPACE);
-
-        clientCredentials.addChild(createOMElementWithValue(OAuthConstants.OAUTH_CLIENT_ID,
-                authorizationCodeHandler.getClientId()));
-        clientCredentials.addChild(createOMElementWithValue(OAuthConstants.OAUTH_CLIENT_SECRET,
-                authorizationCodeHandler.getClientSecret()));
-        clientCredentials.addChild(
-                createOMElementWithValue(OAuthConstants.OAUTH_REFRESH_TOKEN, authorizationCodeHandler.getRefreshToken()));
-        clientCredentials
-                .addChild(
-                        createOMElementWithValue(OAuthConstants.TOKEN_API_URL, authorizationCodeHandler.getTokenUrl()));
-        if (authorizationCodeHandler.getRequestParametersMap() != null &&
-                authorizationCodeHandler.getRequestParametersMap().size() > 0) {
-            OMElement requestParameters = createOMRequestParams(authorizationCodeHandler.getRequestParametersMap());
-            clientCredentials.addChild(requestParameters);
-        }
-        return clientCredentials;
-    }
-
-    /**
-     * This method returns an OMElement containing the elementValue encapsulated by the elementName
-     *
-     * @param elementName  Name of the OMElement
-     * @param elementValue Value of the OMElement
-     * @return OMElement containing the value encapsulated by the elementName
-     */
-    private OMElement createOMElementWithValue(String elementName, String elementValue) {
-
-        OMElement element = fac.createOMElement(elementName, SynapseConstants.SYNAPSE_OMNAMESPACE);
-        element.setText(elementValue);
-        return element;
     }
 }

@@ -51,6 +51,7 @@ public class RabbitMQProducer implements MessageProducer {
     private boolean isInitialized = false;
     private String idString; // ID of the MessageProducer
     private boolean publisherConfirmsEnabled;
+    private Channel channel;
 
     /**
      * The RabbitMQ producer
@@ -83,7 +84,7 @@ public class RabbitMQProducer implements MessageProducer {
             return false;
         }
         boolean result = false;
-        try (Channel channel = connection.createChannel()) {
+        try {
             if (publisherConfirmsEnabled) {
                 channel.confirmSelect();
             }
@@ -101,11 +102,31 @@ public class RabbitMQProducer implements MessageProducer {
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (TimeoutException | IOException e) {
+        } catch (Exception e) {
             String errorMsg = getId() + ". Ignored MessageId: " + synCtx.getMessageID() + ". " +
                     "Could not store message to store [" + store.getName() + "]. " +
                     "Error:" + e.getLocalizedMessage();
             log.error(errorMsg, e);
+            //Reset channel and the underlying connection upon any transport level exception.
+            //This will force the store to renew the connection and the channel
+            if (channel != null) {
+                try {
+                    channel.close();
+                } catch (IOException | TimeoutException exception) {
+                    log.error("Error occurred while closing the malformed channel Error: " +
+                            exception.getLocalizedMessage());
+                }
+            }
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (IOException ioException) {
+                    log.error("Error occurred while closing the malformed connection Error: " +
+                            ioException.getLocalizedMessage());
+                }
+            }
+            channel = null;
+            connection = null;
         }
         store.enqueued();
         return result;
@@ -215,7 +236,14 @@ public class RabbitMQProducer implements MessageProducer {
     public void setConnection(Connection connection) {
         this.connection = connection;
     }
-
+    /**
+     * Set the {@link Channel} object
+     *
+     * @param channel a {@link Channel} object
+     */
+    public void setChannel(Channel channel) {
+        this.channel = channel;
+    }
     /**
      * Set the publisher confirm enabled or not
      *

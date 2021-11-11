@@ -19,6 +19,7 @@
 
 package org.apache.synapse.mediators.builtin;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
@@ -28,8 +29,10 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.endpoints.IndirectEndpoint;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.MessageHelper;
@@ -177,7 +180,15 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
         String cloneId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.MEDIATOR, holder);
         getAspectConfiguration().setUniqueId(cloneId);
         if (endpoint != null) {
-            endpoint.setComponentStatisticsId(holder);
+            if (endpoint instanceof IndirectEndpoint && !StringUtils.isEmpty(((IndirectEndpoint) endpoint).getKey()) &&
+                    isDynamicEndpoint(((IndirectEndpoint) endpoint).getKey())) {
+                Endpoint realEndpoint = ((IndirectEndpoint) endpoint).getRealEndpoint();
+                realEndpoint.setComponentStatisticsId(holder);
+                ((AbstractEndpoint) realEndpoint).getDefinition().getAspectConfiguration()
+                        .setHashCode(holder.getHashCodeAsString());
+            } else {
+                endpoint.setComponentStatisticsId(holder);
+            }
         }
         if (receivingSequence != null) {
             String childId = StatisticIdentityGenerator
@@ -185,5 +196,14 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
             StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
         }
         StatisticIdentityGenerator.reportingEndEvent(cloneId, ComponentType.MEDIATOR, holder);
+    }
+
+    /**
+     * Method to check dynamic endpoints defined in config and governance registry.
+     * @param key Endpoint Key.
+     * @return whether the endpoint saved in the registry
+     */
+    private boolean isDynamicEndpoint(String key) {
+        return key.startsWith("gov:") || key.startsWith("conf:");
     }
 }

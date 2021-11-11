@@ -19,6 +19,7 @@
 package org.apache.synapse.endpoints.oauth;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.util.UIDGenerator;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.commons.lang.StringUtils;
@@ -46,7 +47,7 @@ import java.util.regex.Pattern;
 import javax.xml.namespace.QName;
 
 /**
- * Helper class to build OAuth handlers using the synapse configuration of the endpoints
+ * Helper class to build OAuth handlers using the synapse configuration of the endpoints.
  */
 public class OAuthUtils {
 
@@ -54,7 +55,7 @@ public class OAuthUtils {
     private static final Pattern EXPRESSION_PATTERN = Pattern.compile("(\\{[^\"<>}\\]]+})");
 
     /**
-     * This method will return an OAuthHandler instance depending on the oauth configs
+     * This method will return an OAuthHandler instance depending on the oauth configs.
      *
      * @param httpElement Element containing http configs
      * @return OAuthHandler object
@@ -85,7 +86,7 @@ public class OAuthUtils {
     }
 
     /**
-     * This method will return an OAuthHandler instance depending on the oauth configs
+     * This method will return an OAuthHandler instance depending on the oauth configs.
      *
      * @param oauthElement Element containing OAuth configs
      * @return OAuthHandler object
@@ -100,26 +101,42 @@ public class OAuthUtils {
         OMElement clientCredentialsElement = oauthElement.getFirstChildWithName(new QName(
                 SynapseConstants.SYNAPSE_NAMESPACE, OAuthConstants.CLIENT_CREDENTIALS));
 
-        if (authCodeElement != null && clientCredentialsElement != null) {
-            if (log.isDebugEnabled()) {
-                log.error("Invalid OAuth configuration: AuthorizationCode and ClientCredentials grants are not " +
-                        "allowed together");
-            }
+        OMElement passwordCredentialsElement = oauthElement.getFirstChildWithName(new QName(
+                SynapseConstants.SYNAPSE_NAMESPACE, OAuthConstants.PASSWORD_CREDENTIALS));
+
+        if (hasMultipleOAuthConfigs(authCodeElement, clientCredentialsElement, passwordCredentialsElement)) {
+            log.error("Invalid OAuth configuration: Multiple OAuth configurations are defined");
             return null;
         }
 
         if (authCodeElement != null) {
             oAuthHandler = getAuthorizationCodeHandler(authCodeElement);
-        }
-
-        if (clientCredentialsElement != null) {
+        } else if (clientCredentialsElement != null) {
             oAuthHandler = getClientCredentialsHandler(clientCredentialsElement);
+        } else if (passwordCredentialsElement != null) {
+            oAuthHandler = getPasswordCredentialsHandler(passwordCredentialsElement);
         }
         return oAuthHandler;
     }
 
     /**
-     * Method to get a AuthorizationCodeHandler
+     * Method to check whether there are multiple OAuth config defined.
+     *
+     * @param authCodeElement            OAuth config for authorization code
+     * @param clientCredentialsElement   OAuth config for client credentials
+     * @param passwordCredentialsElement OAuth config for password credentials
+     * @return true if there are multiple OAuth config defined
+     */
+    private static boolean hasMultipleOAuthConfigs(OMElement authCodeElement, OMElement clientCredentialsElement,
+                                                   OMElement passwordCredentialsElement) {
+
+        return authCodeElement != null ?
+                (clientCredentialsElement != null || passwordCredentialsElement != null) :
+                (clientCredentialsElement != null && passwordCredentialsElement != null);
+    }
+
+    /**
+     * Method to get a AuthorizationCodeHandler.
      *
      * @param authCodeElement Element containing authorization code configs
      * @return AuthorizationCodeHandler object
@@ -132,9 +149,7 @@ public class OAuthUtils {
         String tokenApiUrl = getChildValue(authCodeElement, OAuthConstants.TOKEN_API_URL);
 
         if (clientId == null || clientSecret == null || refreshToken == null || tokenApiUrl == null) {
-            if (log.isDebugEnabled()) {
-                log.error("Invalid AuthorizationCode configuration");
-            }
+            log.error("Invalid AuthorizationCode configuration");
             return null;
         }
         AuthorizationCodeHandler handler = new AuthorizationCodeHandler(tokenApiUrl, clientId, clientSecret,
@@ -150,7 +165,7 @@ public class OAuthUtils {
     }
 
     /**
-     * Method to get a ClientCredentialsHandler
+     * Method to get a ClientCredentialsHandler.
      *
      * @param clientCredentialsElement Element containing client credentials configs
      * @return ClientCredentialsHandler object
@@ -163,9 +178,7 @@ public class OAuthUtils {
         String tokenApiUrl = getChildValue(clientCredentialsElement, OAuthConstants.TOKEN_API_URL);
 
         if (clientId == null || clientSecret == null || tokenApiUrl == null) {
-            if (log.isDebugEnabled()) {
-                log.error("Invalid ClientCredentials configuration");
-            }
+            log.error("Invalid ClientCredentials configuration");
             return null;
         }
         ClientCredentialsHandler handler = new ClientCredentialsHandler(tokenApiUrl, clientId, clientSecret);
@@ -180,7 +193,38 @@ public class OAuthUtils {
     }
 
     /**
-     * Method to return the request parameters as a Map
+     * Method to get a PasswordCredentialsHandler.
+     *
+     * @param passwordCredentialsElement Element containing password credentials configs
+     * @return PasswordCredentialsHandler object
+     */
+    private static PasswordCredentialsHandler getPasswordCredentialsHandler(
+            OMElement passwordCredentialsElement) {
+
+        String clientId = getChildValue(passwordCredentialsElement, OAuthConstants.OAUTH_CLIENT_ID);
+        String clientSecret = getChildValue(passwordCredentialsElement, OAuthConstants.OAUTH_CLIENT_SECRET);
+        String username = getChildValue(passwordCredentialsElement, OAuthConstants.OAUTH_USERNAME);
+        String password = getChildValue(passwordCredentialsElement, OAuthConstants.OAUTH_PASSWORD);
+        String tokenApiUrl = getChildValue(passwordCredentialsElement, OAuthConstants.TOKEN_API_URL);
+
+        if (username == null || password == null || tokenApiUrl == null || clientId == null || clientSecret == null) {
+            log.error("Invalid PasswordCredentials configuration");
+            return null;
+        }
+        PasswordCredentialsHandler handler = new PasswordCredentialsHandler(tokenApiUrl, clientId, clientSecret,
+                username, password);
+        if (hasRequestParameters(passwordCredentialsElement)) {
+            Map<String, String> requestParameters = getRequestParameters(passwordCredentialsElement);
+            if (requestParameters == null) {
+                return null;
+            }
+            handler.setRequestParameters(requestParameters);
+        }
+        return handler;
+    }
+
+    /**
+     * Method to return the request parameters as a Map.
      *
      * @param oauthElement OAuth config OMElement
      * @return Map<String, String> containing request parameters
@@ -202,9 +246,7 @@ public class OAuthUtils {
             String paramName = parameter.getAttributeValue(new QName(OAuthConstants.NAME));
             String paramValue = parameter.getText().trim();
             if (StringUtils.isBlank(paramName) || StringUtils.isBlank(paramValue)) {
-                if (log.isDebugEnabled()) {
-                    log.error("Invalid Request Parameters in OAuth configuration");
-                }
+                log.error("Invalid Request Parameters in OAuth configuration");
                 return null;
             }
             paramValue = ResolverFactory.getInstance().getResolver(paramValue).resolve();
@@ -214,7 +256,7 @@ public class OAuthUtils {
     }
 
     /**
-     * Method to check whether there are request parameters are defined in the OAuth config
+     * Method to check whether there are request parameters are defined in the OAuth config.
      *
      * @param oauthElement OAuth config OMElement
      * @return true if there are request parameters in the oauth element
@@ -230,7 +272,7 @@ public class OAuthUtils {
     }
 
     /**
-     * Method to get the value inside a child element
+     * Method to get the value inside a child element.
      *
      * @param parentElement Parent OMElement
      * @param childName     name of the child
@@ -248,7 +290,7 @@ public class OAuthUtils {
     }
 
     /**
-     * Method to check whether a non empty value is present inside an OMelement
+     * Method to check whether a non empty value is present inside an OMelement.
      *
      * @param childElement OMElement
      * @return true if there is a non empty value inside the element
@@ -259,7 +301,7 @@ public class OAuthUtils {
     }
 
     /**
-     * Method to generate a random id for each OAuth handler
+     * Method to generate a random id for each OAuth handler.
      *
      * @return String containing random id
      */
@@ -270,7 +312,7 @@ public class OAuthUtils {
     }
 
     /**
-     * Method to check whether retry is needed
+     * Method to check whether retry is needed.
      *
      * @param httpEndpoint     OAuth Configured HTTP Endpoint related to the message context
      * @param synapseInMsgCtx  MessageContext that has been received
@@ -306,7 +348,7 @@ public class OAuthUtils {
     }
 
     /**
-     * Method to check whether parameter value is an expression
+     * Method to check whether parameter value is an expression.
      *
      * @param value String
      * @return true if the value is an expression
@@ -318,7 +360,7 @@ public class OAuthUtils {
     }
 
     /**
-     * Method to check whether parameter value is a JSON Path
+     * Method to check whether parameter value is a JSON Path.
      *
      * @param value String
      * @return true if the value is a JSON Path
@@ -329,7 +371,7 @@ public class OAuthUtils {
     }
 
     /**
-     * Method to evaluate the expression
+     * Method to evaluate the expression.
      *
      * @param expressionStr  expression String
      * @param messageContext MessageContext of the request
@@ -352,7 +394,7 @@ public class OAuthUtils {
     }
 
     /**
-     * This method evaluate the value as an expression or return the value
+     * This method evaluate the value as an expression or return the value.
      *
      * @param value          String parameter value
      * @param messageContext MessageContext of the request
@@ -368,7 +410,7 @@ public class OAuthUtils {
     }
 
     /**
-     * Method to append 401 status code to NON_ERROR_HTTP_STATUS_CODES property
+     * Method to append 401 status code to NON_ERROR_HTTP_STATUS_CODES property.
      *
      * @param synCtx MessageContext of the request
      */
@@ -398,5 +440,39 @@ public class OAuthUtils {
             axis2Ctx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES,
                     String.valueOf(OAuthConstants.HTTP_SC_UNAUTHORIZED));
         }
+    }
+
+    /**
+     * This method returns an OMElement containing the elementValue encapsulated by the elementName.
+     *
+     * @param elementName  Name of the OMElement
+     * @param elementValue Value of the OMElement
+     * @return OMElement containing the value encapsulated by the elementName
+     */
+    public static OMElement createOMElementWithValue(OMFactory omFactory, String elementName, String elementValue) {
+
+        OMElement element = omFactory.createOMElement(elementName, SynapseConstants.SYNAPSE_OMNAMESPACE);
+        element.setText(elementValue);
+        return element;
+    }
+
+    /**
+     * Create an OMElement for request parameter map.
+     *
+     * @param requestParametersMap input parameter map.
+     * @return OMElement of parameter map.
+     */
+    public static OMElement createOMRequestParams(OMFactory omFactory, Map<String, String> requestParametersMap) {
+
+        OMElement requestParameters =
+                omFactory.createOMElement(OAuthConstants.REQUEST_PARAMETERS, SynapseConstants.SYNAPSE_OMNAMESPACE);
+        for (Map.Entry<String, String> entry : requestParametersMap.entrySet()) {
+            OMElement parameter =
+                    omFactory.createOMElement(OAuthConstants.REQUEST_PARAMETER, SynapseConstants.SYNAPSE_OMNAMESPACE);
+            parameter.addAttribute(OAuthConstants.NAME, entry.getKey(), null);
+            parameter.setText(entry.getValue());
+            requestParameters.addChild(parameter);
+        }
+        return requestParameters;
     }
 }

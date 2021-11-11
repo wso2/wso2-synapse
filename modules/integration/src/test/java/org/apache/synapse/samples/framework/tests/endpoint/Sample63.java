@@ -86,4 +86,11 @@ public class Sample63 extends SynapseTestCase {
         HttpResponse response = client.doGet("http://127.0.0.1:8280/foodapi/list/withoutTransportHeaders");
         assertEquals(HttpStatus.SC_OK, response.getStatus());
     }
+
+    public void testOAuthConfiguredEPPasswordGrantType() throws Exception {
+
+        BasicHttpClient client = new BasicHttpClient();
+        HttpResponse response = client.doGet("http://127.0.0.1:8280/foodapi/list/passwordGrant");
+        assertEquals(HttpStatus.SC_OK, response.getStatus());
+    }
 }

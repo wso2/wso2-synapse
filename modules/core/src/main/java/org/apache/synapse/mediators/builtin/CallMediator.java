@@ -23,6 +23,7 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.ConfigurationContextFactory;
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
@@ -37,9 +38,11 @@ import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.endpoints.IndirectEndpoint;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.elementary.Source;
 import org.apache.synapse.mediators.elementary.Target;
@@ -552,10 +555,27 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         String cloneId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.MEDIATOR, holder);
         getAspectConfiguration().setUniqueId(cloneId);
 
-        if(endpoint != null && !blocking){
-            endpoint.setComponentStatisticsId(holder);
+        if (endpoint != null && !blocking) {
+            if (endpoint instanceof IndirectEndpoint && !StringUtils.isEmpty(((IndirectEndpoint) endpoint).getKey()) &&
+                    isDynamicEndpoint(((IndirectEndpoint) endpoint).getKey())) {
+                Endpoint realEndpoint = ((IndirectEndpoint) endpoint).getRealEndpoint();
+                realEndpoint.setComponentStatisticsId(holder);
+                ((AbstractEndpoint) realEndpoint).getDefinition().getAspectConfiguration()
+                        .setHashCode(holder.getHashCodeAsString());
+            } else {
+                endpoint.setComponentStatisticsId(holder);
+            }
         }
         StatisticIdentityGenerator.reportingEndEvent(cloneId, ComponentType.MEDIATOR, holder);
+    }
+
+    /**
+     * Method to check dynamic endpoints defined in config and governance registry.
+     * @param key Endpoint Key.
+     * @return whether the endpoint saved in the registry
+     */
+    private boolean isDynamicEndpoint(String key) {
+        return key.startsWith("gov:") || key.startsWith("conf:");
     }
 
     public boolean isSourceAvailable() {
