@@ -61,6 +61,7 @@ import org.apache.synapse.transport.passthru.Pipe;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.ConcurrencyThrottlingUtils;
+import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.ResponseAcceptEncodingProcessor;
 
 import java.util.Iterator;
@@ -269,53 +270,57 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         if (o != null && Boolean.TRUE.equals(o)) {
             //This path hits with a fault. Sequence mediator threads should not remove faultSequence.
             //SynapseCallbackReceiver thread should handle the faultStack.
-            Pipe pipe = (Pipe) ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext()
+            //We have to clone the message context to avoid Intermittently ConcurrentModificationException when request
+            // burst on passthrough transport
+
+            org.apache.synapse.MessageContext clonedMessageContext = MessageHelper.cloneMessageContext(synapseOutMsgCtx);
+            Pipe pipe = (Pipe) ((Axis2MessageContext) clonedMessageContext).getAxis2MessageContext()
                     .getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-            SourceConfiguration sourceConfiguration = (SourceConfiguration) ((Axis2MessageContext) synapseOutMsgCtx)
+            SourceConfiguration sourceConfiguration = (SourceConfiguration) ((Axis2MessageContext) clonedMessageContext)
                     .getAxis2MessageContext().getProperty("PASS_THROUGH_SOURCE_CONFIGURATION");
             if (pipe != null && pipe.isSerializationComplete() && sourceConfiguration != null) {
-                NHttpServerConnection conn = (NHttpServerConnection) ((Axis2MessageContext) synapseOutMsgCtx).
+                NHttpServerConnection conn = (NHttpServerConnection) ((Axis2MessageContext) clonedMessageContext).
                         getAxis2MessageContext().getProperty("pass-through.Source-Connection");
                 Pipe newPipe = new Pipe(conn, sourceConfiguration.getBufferFactory().getBuffer(), "source",
                         sourceConfiguration);
                 newPipe.setDiscardable(true);
-                ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext()
+                ((Axis2MessageContext) clonedMessageContext).getAxis2MessageContext()
                         .setProperty(PassThroughConstants.PASS_THROUGH_PIPE, newPipe);
             }
 
             // there is a sending fault. propagate the fault to fault handlers.
 
-            Stack faultStack = synapseOutMsgCtx.getFaultStack();
+            Stack faultStack = clonedMessageContext.getFaultStack();
             if (faultStack != null && !faultStack.isEmpty()) {
 
-                // if we have access to the full synapseOutMsgCtx.getEnvelope(), then let
+                // if we have access to the full clonedMessageContext.getEnvelope(), then let
                 // it flow with the error details. Else, replace its envelope with the
                 // fault envelope
                 try {
-                    synapseOutMsgCtx.getEnvelope().build();
+                    clonedMessageContext.getEnvelope().build();
                 } catch (Exception x) {
-                    synapseOutMsgCtx.setEnvelope(response.getEnvelope());
+                    clonedMessageContext.setEnvelope(response.getEnvelope());
                 }
 
                 Exception e = (Exception) response.getProperty(SynapseConstants.ERROR_EXCEPTION);
 
-                synapseOutMsgCtx.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
-                synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_CODE,
+                clonedMessageContext.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
+                clonedMessageContext.setProperty(SynapseConstants.ERROR_CODE,
                     response.getProperty(SynapseConstants.ERROR_CODE));
-                synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_MESSAGE,
+                clonedMessageContext.setProperty(SynapseConstants.ERROR_MESSAGE,
                     response.getProperty(SynapseConstants.ERROR_MESSAGE));
-                synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_DETAIL,
+                clonedMessageContext.setProperty(SynapseConstants.ERROR_DETAIL,
                     response.getProperty(SynapseConstants.ERROR_DETAIL));
-                synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, e);
+                clonedMessageContext.setProperty(SynapseConstants.ERROR_EXCEPTION, e);
 
-                if (synapseOutMsgCtx.getEnvironment().isContinuationEnabled()) {
-                    synapseOutMsgCtx.setContinuationEnabled(true);
+                if (clonedMessageContext.getEnvironment().isContinuationEnabled()) {
+                    clonedMessageContext.setContinuationEnabled(true);
                 }
 
                 if (log.isDebugEnabled()) {
                     log.debug("[Failed Request Message ID : " + messageID + "]" +
                             " [New to be Retried Request Message ID : " +
-                            synapseOutMsgCtx.getMessageID() + "]");
+                            clonedMessageContext.getMessageID() + "]");
                 }
 
                 Integer errorCode = (Integer) response.getProperty(SynapseConstants.ERROR_CODE);
@@ -330,7 +335,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                         faultStack.removeAllElements();
                 }
                 else{
-                    ((FaultHandler) faultStack.pop()).handleFault(synapseOutMsgCtx, null);
+                    ((FaultHandler) faultStack.pop()).handleFault(clonedMessageContext, null);
                 }
             }
         } else {
