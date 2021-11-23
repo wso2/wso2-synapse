@@ -173,6 +173,15 @@ public class TimeoutHandler extends TimerTask {
                             msgContext.setProperty(SynapseConstants.ERROR_MESSAGE,
                                                    SEND_TIMEOUT_MESSAGE);
 
+                            /* Clear the NO_KEEPALIVE property to prevent closing response connection when going through
+                               the fault sequence due to end point time out. Since the axis2 message context used here
+                               is the same axis2 message context used in request path and the intention of this property
+                               is to Disable HTTP keep alive for outgoing requests. If it is required this can be put
+                               in fault sequence.
+                            */
+                            ((Axis2MessageContext) msgContext).getAxis2MessageContext().
+                                    removeProperty(PassThroughConstants.NO_KEEPALIVE);
+
                             SOAPEnvelope soapEnvelope;
                             if (msgContext.isSOAP11()) {
                                 soapEnvelope = OMAbstractFactory.

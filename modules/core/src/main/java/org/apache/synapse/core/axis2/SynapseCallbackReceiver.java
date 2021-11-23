@@ -313,6 +313,15 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     response.getProperty(SynapseConstants.ERROR_DETAIL));
                 clonedMessageContext.setProperty(SynapseConstants.ERROR_EXCEPTION, e);
 
+                /* Clear the NO_KEEPALIVE property to prevent closing response connection when going through
+                   the fault sequence due to sender error. Since the axis2 message context used here
+                   is the same axis2 message context used in request path and the intention of this property
+                   is to Disable HTTP keep alive for outgoing requests only. If it is required this can be put
+                   in fault sequence.
+               */
+                ((Axis2MessageContext) clonedMessageContext).getAxis2MessageContext().
+                        removeProperty(PassThroughConstants.NO_KEEPALIVE);
+
                 if (clonedMessageContext.getEnvironment().isContinuationEnabled()) {
                     clonedMessageContext.setContinuationEnabled(true);
                 }
