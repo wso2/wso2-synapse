@@ -70,10 +70,10 @@ class LoggingNHttpServiceHandler implements NHttpServerEventHandler {
             msg = "";
         }
         if (ex instanceof ConnectionClosedException ||
-                ex.getMessage().contains("Connection reset by peer") ||
-                ex.getMessage().contains("forcibly closed")) {
+                msg.contains("Connection reset by peer") ||
+                msg.contains("forcibly closed")) {
             if (this.log.isDebugEnabled()) {
-                this.log.debug(conn + ": " + ex.getMessage() +
+                this.log.debug(conn + ": " + msg +
                         " (Probably the keepalive connection was closed)");
             }
         } else {
