@@ -273,45 +273,44 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             //We have to clone the message context to avoid Intermittently ConcurrentModificationException when request
             // burst on passthrough transport
 
-            org.apache.synapse.MessageContext clonedMessageContext = MessageHelper.cloneMessageContext(synapseOutMsgCtx);
-            Pipe pipe = (Pipe) ((Axis2MessageContext) clonedMessageContext).getAxis2MessageContext()
+            Pipe pipe = (Pipe) ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext()
                     .getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-            SourceConfiguration sourceConfiguration = (SourceConfiguration) ((Axis2MessageContext) clonedMessageContext)
+            SourceConfiguration sourceConfiguration = (SourceConfiguration) ((Axis2MessageContext) synapseOutMsgCtx)
                     .getAxis2MessageContext().getProperty("PASS_THROUGH_SOURCE_CONFIGURATION");
             if (pipe != null && pipe.isSerializationComplete() && sourceConfiguration != null) {
-                NHttpServerConnection conn = (NHttpServerConnection) ((Axis2MessageContext) clonedMessageContext).
+                NHttpServerConnection conn = (NHttpServerConnection) ((Axis2MessageContext) synapseOutMsgCtx).
                         getAxis2MessageContext().getProperty("pass-through.Source-Connection");
                 Pipe newPipe = new Pipe(conn, sourceConfiguration.getBufferFactory().getBuffer(), "source",
                         sourceConfiguration);
                 newPipe.setDiscardable(true);
-                ((Axis2MessageContext) clonedMessageContext).getAxis2MessageContext()
+                ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext()
                         .setProperty(PassThroughConstants.PASS_THROUGH_PIPE, newPipe);
             }
 
             // there is a sending fault. propagate the fault to fault handlers.
 
-            Stack faultStack = clonedMessageContext.getFaultStack();
+            Stack faultStack = synapseOutMsgCtx.getFaultStack();
             if (faultStack != null && !faultStack.isEmpty()) {
 
                 // if we have access to the full clonedMessageContext.getEnvelope(), then let
                 // it flow with the error details. Else, replace its envelope with the
                 // fault envelope
                 try {
-                    clonedMessageContext.getEnvelope().build();
+                    synapseOutMsgCtx.getEnvelope().build();
                 } catch (Exception x) {
-                    clonedMessageContext.setEnvelope(response.getEnvelope());
+                    synapseOutMsgCtx.setEnvelope(response.getEnvelope());
                 }
 
                 Exception e = (Exception) response.getProperty(SynapseConstants.ERROR_EXCEPTION);
 
-                clonedMessageContext.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
-                clonedMessageContext.setProperty(SynapseConstants.ERROR_CODE,
+                synapseOutMsgCtx.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
+                synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_CODE,
                     response.getProperty(SynapseConstants.ERROR_CODE));
-                clonedMessageContext.setProperty(SynapseConstants.ERROR_MESSAGE,
+                synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_MESSAGE,
                     response.getProperty(SynapseConstants.ERROR_MESSAGE));
-                clonedMessageContext.setProperty(SynapseConstants.ERROR_DETAIL,
+                synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_DETAIL,
                     response.getProperty(SynapseConstants.ERROR_DETAIL));
-                clonedMessageContext.setProperty(SynapseConstants.ERROR_EXCEPTION, e);
+                synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, e);
 
                 /* Clear the NO_KEEPALIVE property to prevent closing response connection when going through
                    the fault sequence due to sender error. Since the axis2 message context used here
@@ -319,17 +318,17 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                    is to Disable HTTP keep alive for outgoing requests only. If it is required this can be put
                    in fault sequence.
                */
-                ((Axis2MessageContext) clonedMessageContext).getAxis2MessageContext().
+                ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext().
                         removeProperty(PassThroughConstants.NO_KEEPALIVE);
 
-                if (clonedMessageContext.getEnvironment().isContinuationEnabled()) {
-                    clonedMessageContext.setContinuationEnabled(true);
+                if (synapseOutMsgCtx.getEnvironment().isContinuationEnabled()) {
+                    synapseOutMsgCtx.setContinuationEnabled(true);
                 }
 
                 if (log.isDebugEnabled()) {
                     log.debug("[Failed Request Message ID : " + messageID + "]" +
                             " [New to be Retried Request Message ID : " +
-                            clonedMessageContext.getMessageID() + "]");
+                              synapseOutMsgCtx.getMessageID() + "]");
                 }
 
                 Integer errorCode = (Integer) response.getProperty(SynapseConstants.ERROR_CODE);
@@ -344,7 +343,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                         faultStack.removeAllElements();
                 }
                 else{
-                    ((FaultHandler) faultStack.pop()).handleFault(clonedMessageContext, null);
+                    ((FaultHandler) faultStack.pop()).handleFault(synapseOutMsgCtx, null);
                 }
             }
         } else {
