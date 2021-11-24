@@ -858,7 +858,7 @@ public class SourceHandler implements NHttpServerEventHandler {
     private String getClientConnectionInfo(NHttpServerConnection conn) {
         if (conn instanceof LoggingNHttpServerConnection) {
             IOSession session = ((LoggingNHttpServerConnection) conn).getIOSession();
-            if (session != null) {
+            if (session != null && session.getRemoteAddress() != null) {
                 return session.getRemoteAddress().toString();
             }
         }
