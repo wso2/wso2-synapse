@@ -272,6 +272,10 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             //SynapseCallbackReceiver thread should handle the faultStack.
             //We have to clone the message context to avoid Intermittently ConcurrentModificationException when request
             // burst on passthrough transport
+            Axis2MessageContext axis2MC = (Axis2MessageContext) synapseOutMsgCtx;
+            axis2MC.setAxis2MessageContext(
+                    MessageHelper.cloneAxis2MessageContext(((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext(),
+                            true, true, false));
 
             Pipe pipe = (Pipe) ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext()
                     .getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
