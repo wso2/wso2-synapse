@@ -31,6 +31,7 @@ public class OAuthConstants {
     public static final String TOKEN_API_URL = "tokenUrl";
     public static final String OAUTH_CLIENT_ID = "clientId";
     public static final String OAUTH_CLIENT_SECRET = "clientSecret";
+    public static final String OAUTH_AUTHENTICATION_MODE = "authMode";
     public static final String OAUTH_USERNAME = "username";
     public static final String OAUTH_PASSWORD = "password";
     public static final String OAUTH_REFRESH_TOKEN = "refreshToken";

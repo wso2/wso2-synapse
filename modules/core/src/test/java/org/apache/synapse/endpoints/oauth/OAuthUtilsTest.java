@@ -300,7 +300,7 @@ public class OAuthUtilsTest {
 
             OAuthHandler oAuthHandler =
                     new AuthorizationCodeHandler("oauth_server_url", "client_id", "client_secret",
-                            "refresh_token");
+                            "refresh_token", "header");
 
             OAuthConfiguredHTTPEndpoint httpEndpoint = new OAuthConfiguredHTTPEndpoint(oAuthHandler);
 

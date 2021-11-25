@@ -147,13 +147,14 @@ public class OAuthUtils {
         String clientSecret = getChildValue(authCodeElement, OAuthConstants.OAUTH_CLIENT_SECRET);
         String refreshToken = getChildValue(authCodeElement, OAuthConstants.OAUTH_REFRESH_TOKEN);
         String tokenApiUrl = getChildValue(authCodeElement, OAuthConstants.TOKEN_API_URL);
+        String authMode = getChildValue(authCodeElement, OAuthConstants.OAUTH_AUTHENTICATION_MODE);
 
         if (clientId == null || clientSecret == null || refreshToken == null || tokenApiUrl == null) {
             log.error("Invalid AuthorizationCode configuration");
             return null;
         }
         AuthorizationCodeHandler handler = new AuthorizationCodeHandler(tokenApiUrl, clientId, clientSecret,
-                refreshToken);
+                refreshToken, authMode);
         if (hasRequestParameters(authCodeElement)) {
             Map<String, String> requestParameters = getRequestParameters(authCodeElement);
             if (requestParameters == null) {
@@ -176,12 +177,13 @@ public class OAuthUtils {
         String clientId = getChildValue(clientCredentialsElement, OAuthConstants.OAUTH_CLIENT_ID);
         String clientSecret = getChildValue(clientCredentialsElement, OAuthConstants.OAUTH_CLIENT_SECRET);
         String tokenApiUrl = getChildValue(clientCredentialsElement, OAuthConstants.TOKEN_API_URL);
+        String authMode = getChildValue(clientCredentialsElement, OAuthConstants.OAUTH_AUTHENTICATION_MODE);
 
         if (clientId == null || clientSecret == null || tokenApiUrl == null) {
             log.error("Invalid ClientCredentials configuration");
             return null;
         }
-        ClientCredentialsHandler handler = new ClientCredentialsHandler(tokenApiUrl, clientId, clientSecret);
+        ClientCredentialsHandler handler = new ClientCredentialsHandler(tokenApiUrl, clientId, clientSecret, authMode);
         if (hasRequestParameters(clientCredentialsElement)) {
             Map<String, String> requestParameters = getRequestParameters(clientCredentialsElement);
             if (requestParameters == null) {
@@ -206,13 +208,14 @@ public class OAuthUtils {
         String username = getChildValue(passwordCredentialsElement, OAuthConstants.OAUTH_USERNAME);
         String password = getChildValue(passwordCredentialsElement, OAuthConstants.OAUTH_PASSWORD);
         String tokenApiUrl = getChildValue(passwordCredentialsElement, OAuthConstants.TOKEN_API_URL);
+        String authMode = getChildValue(passwordCredentialsElement, OAuthConstants.OAUTH_AUTHENTICATION_MODE);
 
         if (username == null || password == null || tokenApiUrl == null || clientId == null || clientSecret == null) {
             log.error("Invalid PasswordCredentials configuration");
             return null;
         }
         PasswordCredentialsHandler handler = new PasswordCredentialsHandler(tokenApiUrl, clientId, clientSecret,
-                username, password);
+                username, password, authMode);
         if (hasRequestParameters(passwordCredentialsElement)) {
             Map<String, String> requestParameters = getRequestParameters(passwordCredentialsElement);
             if (requestParameters == null) {

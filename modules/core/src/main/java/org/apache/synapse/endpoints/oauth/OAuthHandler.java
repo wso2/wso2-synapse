@@ -21,6 +21,7 @@ package org.apache.synapse.endpoints.oauth;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.util.base64.Base64Utils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 
@@ -45,13 +46,15 @@ public abstract class OAuthHandler {
     private final String clientId;
     private final String clientSecret;
     private Map<String, String> requestParametersMap;
+    private final String authMode;
 
-    protected OAuthHandler(String tokenApiUrl, String clientId, String clientSecret) {
+    protected OAuthHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode) {
 
         this.id = OAuthUtils.getRandomOAuthHandlerID();
         this.tokenApiUrl = tokenApiUrl;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
+        this.authMode = authMode;
     }
 
     /**
@@ -184,6 +187,11 @@ public abstract class OAuthHandler {
             OMElement requestParameters = OAuthUtils.createOMRequestParams(omFactory, requestParametersMap);
             oauthCredentials.addChild(requestParameters);
         }
+        if (!StringUtils.isEmpty(getAuthMode())) {
+            oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory,
+                    OAuthConstants.OAUTH_AUTHENTICATION_MODE, getAuthMode()));
+        }
+
         return oauthCredentials;
     }
 
@@ -196,6 +204,9 @@ public abstract class OAuthHandler {
      */
     protected String getEncodedCredentials(MessageContext messageContext) throws OAuthException {
 
+        if ("payload".equalsIgnoreCase(authMode)) {
+            return null;
+        }
         return Base64Utils.encode((OAuthUtils.resolveExpression(clientId, messageContext) + ":" +
                 OAuthUtils.resolveExpression(clientSecret, messageContext)).getBytes());
     }
@@ -232,5 +243,9 @@ public abstract class OAuthHandler {
     public Map<String, String> getRequestParametersMap() {
 
         return requestParametersMap;
+    }
+
+    public String getAuthMode() {
+        return authMode;
     }
 }

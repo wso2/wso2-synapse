@@ -32,9 +32,9 @@ public class PasswordCredentialsHandler extends OAuthHandler {
     private final String password;
 
     protected PasswordCredentialsHandler(String tokenApiUrl, String clientId, String clientSecret, String username,
-                                         String password) {
+                                         String password, String authMode) {
 
-        super(tokenApiUrl, clientId, clientSecret);
+        super(tokenApiUrl, clientId, clientSecret, authMode);
         this.username = username;
         this.password = password;
     }
@@ -47,6 +47,12 @@ public class PasswordCredentialsHandler extends OAuthHandler {
         payload.append(OAuthConstants.PASSWORD_CRED_GRANT_TYPE);
         payload.append(OAuthConstants.PARAM_USERNAME).append(OAuthUtils.resolveExpression(username, messageContext));
         payload.append(OAuthConstants.PARAM_PASSWORD).append(OAuthUtils.resolveExpression(password, messageContext));
+        if ("payload".equalsIgnoreCase(getAuthMode())) {
+            payload.append(OAuthConstants.PARAM_CLIENT_ID)
+                    .append(OAuthUtils.resolveExpression(getClientId(), messageContext));
+            payload.append(OAuthConstants.PARAM_CLIENT_SECRET)
+                    .append(OAuthUtils.resolveExpression(getClientSecret(), messageContext));
+        }
         String requestParams = getRequestParametersAsString(messageContext);
         payload.append(requestParams);
 

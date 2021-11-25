@@ -28,9 +28,9 @@ import org.apache.synapse.SynapseConstants;
  */
 public class ClientCredentialsHandler extends OAuthHandler {
 
-    public ClientCredentialsHandler(String tokenApiUrl, String clientId, String clientSecret) {
+    public ClientCredentialsHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode) {
 
-        super(tokenApiUrl, clientId, clientSecret);
+        super(tokenApiUrl, clientId, clientSecret, authMode);
     }
 
     @Override
@@ -39,10 +39,12 @@ public class ClientCredentialsHandler extends OAuthHandler {
         StringBuilder payload = new StringBuilder();
 
         payload.append(OAuthConstants.CLIENT_CRED_GRANT_TYPE);
-        payload.append(OAuthConstants.PARAM_CLIENT_ID)
-                .append(OAuthUtils.resolveExpression(getClientId(), messageContext));
-        payload.append(OAuthConstants.PARAM_CLIENT_SECRET)
-                .append(OAuthUtils.resolveExpression(getClientSecret(), messageContext));
+        if ("payload".equalsIgnoreCase(getAuthMode())) {
+            payload.append(OAuthConstants.PARAM_CLIENT_ID)
+                    .append(OAuthUtils.resolveExpression(getClientId(), messageContext));
+            payload.append(OAuthConstants.PARAM_CLIENT_SECRET)
+                    .append(OAuthUtils.resolveExpression(getClientSecret(), messageContext));
+        }
         payload.append(getRequestParametersAsString(messageContext));
 
         return payload.toString();
