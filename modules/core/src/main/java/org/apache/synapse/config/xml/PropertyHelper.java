@@ -24,8 +24,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 
-import javax.xml.namespace.QName;
 import java.lang.reflect.Method;
+import javax.xml.namespace.QName;
 
 /**
  * This class will be used as a Helper class to get the properties loaded while building the
@@ -93,6 +93,7 @@ public class PropertyHelper {
                         }
                     }
                     invoked = true;
+                    break;
                 }
             }
 
