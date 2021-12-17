@@ -46,10 +46,12 @@ import org.apache.synapse.commons.jmx.ThreadingView;
 import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.commons.transaction.TranscationManger;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
+import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
 import org.apache.synapse.transport.http.conn.LoggingNHttpServerConnection;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
+import org.apache.synapse.transport.passthru.connections.TargetConnections;
 import org.apache.synapse.transport.passthru.jmx.LatencyCollector;
 import org.apache.synapse.transport.passthru.jmx.LatencyView;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
@@ -96,6 +98,9 @@ public class SourceHandler implements NHttpServerEventHandler {
     private List<StreamInterceptor> streamInterceptors;
     private boolean interceptStream;
     private int noOfInterceptors;
+
+    private static final String SSE_TARGET_CONNECTION = "SSE_TARGET_CONNECTION";
+    private static final String SSE_TARGET_CONNECTIONS = "SSE_TARGET_CONNECTIONS";
 
     public SourceHandler(SourceConfiguration sourceConfiguration) {
         this(sourceConfiguration, new ArrayList<StreamInterceptor>());
@@ -687,6 +692,21 @@ public class SourceHandler implements NHttpServerEventHandler {
     public void exception(NHttpServerConnection conn, Exception ex) {
     	boolean isFault = false;
         if (ex instanceof IOException) {
+            /*
+             * If the flow is SSE we have already set references to target connection and targetConnections
+             * within the source connection so access them here and shut down target connection when source
+             * connection is broken.
+             * */
+            if (conn != null && conn instanceof LoggingNHttpServerConnection) {
+                LoggingNHttpClientConnection targetConnection =
+                        (LoggingNHttpClientConnection) ((LoggingNHttpServerConnection) conn).getIOSession()
+                                .getAttribute(SSE_TARGET_CONNECTION);
+                TargetConnections targetConnections = (TargetConnections) ((LoggingNHttpServerConnection) conn)
+                        .getIOSession().getAttribute(SSE_TARGET_CONNECTIONS);
+                if (targetConnections != null && targetConnection != null) {
+                    targetConnections.shutdownConnection(targetConnection, true);
+                }
+            }
             logIOException(conn, (IOException) ex);
             if (sourceConfiguration.isCorrelationLoggingEnabled()) {
                 logHttpRequestErrorInCorrelationLog(conn, "IO Exception");
