@@ -26,8 +26,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHost;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.nio.NHttpClientConnection;
+import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.transport.http.conn.LoggingNHttpServerConnection;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.passthru.config.PassThroughConfigPNames;
@@ -56,6 +58,10 @@ import java.util.concurrent.locks.ReentrantLock;
 public class DeliveryAgent {
 
     private static final Log log = LogFactory.getLog(DeliveryAgent.class);
+    private static final String SYNAPSE_ARTIFACT_TYPE = "SYNAPSE_ARTIFACT_TYPE";
+    private static final String SSE = "SSE";
+    private static final String SSE_TARGET_CONNECTION = "SSE_TARGET_CONNECTION";
+    private static final String SSE_TARGET_CONNECTIONS = "SSE_TARGET_CONNECTIONS";
 
     /**
      * This Map holds the messages that need to be delivered. But at the moment maximum
@@ -271,8 +277,24 @@ public class DeliveryAgent {
         if (conn != null) {
             try {
                 HttpContext ctx = conn.getContext();
+                /*
+                * If the flow is SSE we need to set references to target connection and targetConnections
+                * in the source connection to access them and shut down target connection when source connection is
+                * broken.
+                * */
+                if (SSE.equals(messageContext.getProperty(SYNAPSE_ARTIFACT_TYPE))) {
+                    LoggingNHttpServerConnection sourceConnection = (LoggingNHttpServerConnection)
+                            ((ServerWorker) messageContext.getProperty(
+                            "OutTransportInfo")).getRequestContext().getProperty
+                                    (PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
+                    if (sourceConnection != null) {
+                        sourceConnection.getIOSession().setAttribute(SSE_TARGET_CONNECTIONS, targetConnections);
+                        sourceConnection.getIOSession().setAttribute(SSE_TARGET_CONNECTION, conn);
+                    }
+                }
                 ctx.setAttribute(CorrelationConstants.CORRELATION_ID,
                                  messageContext.getProperty(CorrelationConstants.CORRELATION_ID));
+
                 ctx.setAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT, messageContext);
                 TargetContext.updateState(conn, ProtocolState.REQUEST_READY);
                 TargetContext.get(conn).setRequestMsgCtx(messageContext);
