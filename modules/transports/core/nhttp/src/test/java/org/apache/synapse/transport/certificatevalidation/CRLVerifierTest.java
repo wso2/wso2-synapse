@@ -21,7 +21,7 @@ package org.apache.synapse.transport.certificatevalidation;
 import junit.framework.TestCase;
 import org.apache.synapse.commons.crypto.CryptoConstants;
 import org.apache.synapse.transport.certificatevalidation.crl.CRLCache;
-import org.apache.synapse.transport.certificatevalidation.crl.CRLVerifier;import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.apache.synapse.transport.certificatevalidation.crl.CRLVerifier;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.CRLNumber;
