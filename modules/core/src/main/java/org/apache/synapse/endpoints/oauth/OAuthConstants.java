@@ -69,7 +69,9 @@ public class OAuthConstants {
     public static final int HTTP_SC_UNAUTHORIZED = 401;
     public static final int HTTP_SC_INTERNAL_SERVER_ERROR = 500;
 
-    // Timeout in minutes to invalidate the tokens in the cache
-    public static final int TOKEN_CACHE_TIMEOUT = 50;
+    // Timeout in seconds to invalidate the tokens in the cache
+    public static final int TOKEN_CACHE_TIMEOUT = 3000;
+
+    public static final String TOKEN_CACHE_TIMEOUT_PROPERTY = "synapse.endpoint.http.oauth.cache.timeout";
 
 }
