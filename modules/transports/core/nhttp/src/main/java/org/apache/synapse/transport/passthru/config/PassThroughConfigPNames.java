@@ -123,4 +123,9 @@ public interface PassThroughConfigPNames {
      * Defines the header name set for correlation logs
      */
     public String CORRELATION_HEADER_NAME_PROPERTY = "correlation_header_name";
+
+    /**
+     * Defines whether viewing services are enabled or not
+     */
+    public String BLOCK_SERVICE_LIST = "http.block_service_list";
 }

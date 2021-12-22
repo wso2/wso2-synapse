@@ -150,6 +150,10 @@ public class PassThroughConfiguration {
         return getStringProperty(PassThroughConfigPNames.HTTP_RESPONSE_HEADERS_PRESERVE, "");
     }
 
+    public boolean isServiceListBlocked() {
+        return getBooleanProperty(PassThroughConfigPNames.BLOCK_SERVICE_LIST, true);
+    }
+
     public int getConnectionIdleTime() {
 
         int idleTime;
