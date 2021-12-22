@@ -170,6 +170,7 @@ public abstract class TemplateProcessor {
             //If media type is xml and replacement value is literal escape xml special characters prior to replacement
             if (mediaType.equals(XML_TYPE) && inferReplacementType(replacementEntry).equals(STRING_TYPE)) {
                 replacementValue = escapeSpecialCharactersOfXml(replacementValue);
+                replacementValue = Matcher.quoteReplacement(replacementValue);
             } else if (mediaType.equals(JSON_TYPE) &&
                     inferReplacementType(replacementEntry).equals(JSON_TYPE) &&
                     isEscapeXmlChars()) {
