@@ -50,7 +50,7 @@ public class FoodService {
 
         String basicHeader = httpHeaders.getHeaderString("Authorization");
 
-        if (validateBasicAuthHeader(basicHeader) && validateCredentials(tokenRequestParams)) {
+        if (validateBasicAuthHeader(basicHeader)) {
             return Response.status(Response.Status.OK).entity(new Token(Constants.accessToken, Constants.expiresIn,
                     Constants.tokenType)).build();
         }
@@ -66,8 +66,7 @@ public class FoodService {
 
         String basicHeader = httpHeaders.getHeaderString("Authorization");
 
-        if (validateBasicAuthHeader(basicHeader) && validateCustomParams(tokenRequestParams) &&
-                validateCredentials(tokenRequestParams)) {
+        if (validateBasicAuthHeader(basicHeader) && validateCustomParams(tokenRequestParams)) {
             return Response.status(Response.Status.OK).entity(new Token(Constants.accessToken, Constants.expiresIn,
                     Constants.tokenType)).build();
         }
