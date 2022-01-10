@@ -331,7 +331,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
     private void validateTypeCombination(OMElement sourceElement, OMElement targetElement) {
         int sourceType = -1;
         int targetType = -1;
-        int targetAction = -1;
+        int targetAction = 0;
 
         // source type attribute
         OMAttribute sourceTypeAttr = sourceElement.getAttribute(ATT_TYPE);

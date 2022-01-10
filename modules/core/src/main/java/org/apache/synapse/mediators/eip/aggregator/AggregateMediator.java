@@ -499,6 +499,15 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                 try {
                     aggregate.getLastMessage().setEnvelope(
                             MessageHelper.cloneSOAPEnvelope(newSynCtx.getEnvelope()));
+                    // Setting the new JSON stream to the next mediator
+                    if (aggregationExpression instanceof SynapseJsonPath) {
+                        org.apache.axis2.context.MessageContext msgCtx = ((Axis2MessageContext) aggregate.getLastMessage())
+                                .getAxis2MessageContext();
+                        org.apache.axis2.context.MessageContext newAxisMsgCtx = ((Axis2MessageContext) newSynCtx)
+                                .getAxis2MessageContext();
+                        msgCtx.setProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM,
+                                newAxisMsgCtx.getProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM));
+                    }
                 } catch (AxisFault axisFault) {
                     log.warn("Error occurred while assigning aggregated message" +
                              " back to the last received message context");
