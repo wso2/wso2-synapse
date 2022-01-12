@@ -22,14 +22,15 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.*;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.emulator.http.dsl.HttpConsumerContext;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 public class HttpResponseProcessHandler extends ChannelInboundHandlerAdapter {
-    private static final Logger log = Logger.getLogger(HttpResponseProcessHandler.class);
+    private static final Log log = LogFactory.getLog(HttpResponseProcessHandler.class);
     private HttpRequestContext httpRequestContext;
     private HttpRequestInformationProcessor httpRequestInformationProcessor;
     private HttpResponseProcessor httpResponseProcessor;

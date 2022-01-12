@@ -20,7 +20,8 @@ package org.apache.synapse.commons.emulator;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
@@ -46,7 +47,7 @@ public class RequestProcessor {
     RequestProcessor() {
     }
 
-    private static Logger log = Logger.getLogger(RequestProcessor.class.getName());
+    private static Log log = LogFactory.getLog(RequestProcessor.class.getName());
 
     /**
      * Remove irrelevant whitespaces from the input string.

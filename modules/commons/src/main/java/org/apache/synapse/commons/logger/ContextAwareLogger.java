@@ -18,6 +18,7 @@
 package org.apache.synapse.commons.logger;
 
 import org.apache.axis2.context.MessageContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.commons.CorrelationConstants;
@@ -66,11 +67,11 @@ public class ContextAwareLogger {
     private static Log getLogger(Object correlationId, Log log, boolean removeFromMDC) {
 
         if (correlationLoggingEnabled) {
-            if (correlationId != null) {
+            if (correlationId != null && correlationId instanceof String && StringUtils.isNotEmpty((String) correlationId)) {
                 if (removeFromMDC) {
-                    return new CorrelationMDCImmediateLogger(correlationId, log);
+                    return new CorrelationMDCImmediateLogger((String) correlationId, log);
                 }
-                return new CorrelationMDCAwareLogger(correlationId, log);
+                return new CorrelationMDCAwareLogger((String) correlationId, log);
             }
         }
         return log;

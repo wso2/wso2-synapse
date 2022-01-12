@@ -18,7 +18,7 @@
 package org.apache.synapse.commons.logger;
 
 import org.apache.commons.logging.Log;
-import org.apache.log4j.MDC;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.synapse.commons.CorrelationConstants;
 
 /**
@@ -27,14 +27,14 @@ import org.apache.synapse.commons.CorrelationConstants;
  */
 public class CorrelationMDCImmediateLogger extends CorrelationMDCAwareLogger {
 
-    public CorrelationMDCImmediateLogger(Object correlationId, Log log) {
+    public CorrelationMDCImmediateLogger(String correlationId, Log log) {
 
         super(correlationId, log);
     }
 
     private void removeCorrelationIdFromMDC() {
 
-        MDC.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
+        ThreadContext.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
     }
 
     @Override

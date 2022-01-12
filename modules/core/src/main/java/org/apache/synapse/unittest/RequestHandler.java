@@ -21,7 +21,8 @@ package org.apache.synapse.unittest;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.unittest.testcase.data.classes.RegistryResource;
 import org.apache.synapse.unittest.testcase.data.classes.SynapseTestCase;
@@ -50,7 +51,7 @@ import java.util.Map;
  */
 public class RequestHandler implements Runnable {
 
-    private static Logger log = Logger.getLogger(UnitTestingExecutor.class.getName());
+    private static Log log = LogFactory.getLog(UnitTestingExecutor.class.getName());
 
     private Socket socket;
     private boolean isTransportPassThroughPortChecked = false;

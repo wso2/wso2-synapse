@@ -18,7 +18,8 @@
 
 package org.apache.synapse.transport.passthru.core;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.transport.passthru.PassThroughHttpSSLSender;
 import org.apache.synapse.transport.passthru.PassThroughHttpSender;
 
@@ -28,7 +29,7 @@ import org.apache.synapse.transport.passthru.PassThroughHttpSender;
  */
 public class PassThroughSenderManager {
 
-    private static final Logger logger = Logger.getLogger(PassThroughSenderManager.class);
+    private static final Log logger = LogFactory.getLog(PassThroughSenderManager.class);
 
     private static PassThroughSenderManager passThroughSenderManager;
 

@@ -25,7 +25,8 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.commons.emulator.RequestProcessor;
 import org.apache.synapse.commons.json.JsonUtil;
@@ -56,7 +57,7 @@ import static org.apache.synapse.unittest.Constants.TEXT_NAMESPACE;
  */
 class Assertor {
 
-    private static Logger log = Logger.getLogger(Assertor.class.getName());
+    private static Log log = LogFactory.getLog(Assertor.class.getName());
 
     private Assertor() {
     }

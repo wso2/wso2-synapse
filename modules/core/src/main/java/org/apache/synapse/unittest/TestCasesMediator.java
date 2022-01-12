@@ -42,7 +42,8 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HTTP;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.commons.json.JsonUtil;
@@ -94,7 +95,7 @@ public class TestCasesMediator {
     private TestCasesMediator() {
     }
 
-    private static Logger log = Logger.getLogger(UnitTestingExecutor.class.getName());
+    private static Log log = LogFactory.getLog(UnitTestingExecutor.class.getName());
     private static int httpPassThruOperatingPort = Integer.parseInt(System.getProperty("http.nio.port"));
     private static int httpsPassThruOperatingPort = Integer.parseInt(System.getProperty("https.nio.port"));
 

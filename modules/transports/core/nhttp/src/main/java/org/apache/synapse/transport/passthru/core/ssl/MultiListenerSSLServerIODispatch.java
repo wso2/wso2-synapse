@@ -20,7 +20,8 @@ package org.apache.synapse.transport.passthru.core.ssl;
 import org.apache.http.impl.nio.DefaultNHttpServerConnection;
 import org.apache.http.nio.NHttpServerEventHandler;
 import org.apache.http.nio.reactor.IOSession;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.transport.http.conn.ServerConnFactory;
 import org.apache.synapse.transport.passthru.core.MultiListenerServerIODispatch;
 
@@ -30,7 +31,7 @@ import java.util.Map;
 
 public class MultiListenerSSLServerIODispatch extends MultiListenerServerIODispatch {
 
-    private static final Logger log = Logger.getLogger(MultiListenerSSLServerIODispatch.class);
+    private static final Log log = LogFactory.getLog(MultiListenerSSLServerIODispatch.class);
 
     private volatile Map<Integer, ServerConnFactory> endpointSSLConfigHolder;
 

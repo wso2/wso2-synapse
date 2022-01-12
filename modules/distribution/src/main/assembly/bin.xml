@@ -245,7 +245,6 @@
                 <exclude>xerces:xercesImpl:jar</exclude>
                 <exclude>junit:junit:jar</exclude>
                 <exclude>org.apache.mina:mina-core:jar</exclude>
-                <exclude>org.slf4j:slf4j-api:jar</exclude>
                 <exclude>org.slf4j:slf4j-jdk14:jar</exclude>
                 <exclude>org.slf4j:jcl-over-slf4j:jar</exclude>
                 <exclude>org.slf4j:log4j-over-slf4j:jar</exclude>

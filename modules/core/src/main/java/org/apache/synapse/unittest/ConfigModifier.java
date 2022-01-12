@@ -18,7 +18,8 @@
 
 package org.apache.synapse.unittest;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.unittest.testcase.data.classes.ServiceResource;
 import org.apache.synapse.unittest.testcase.data.holders.MockServiceData;
 
@@ -44,7 +45,7 @@ public class ConfigModifier {
     private ConfigModifier() {
     }
 
-    private static Logger log = Logger.getLogger(ConfigModifier.class.getName());
+    private static Log log = LogFactory.getLog(ConfigModifier.class.getName());
 
     public static Map<String, Map<String, String>> unitTestMockEndpointMap = new HashMap<>();
 

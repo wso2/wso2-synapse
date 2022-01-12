@@ -88,8 +88,8 @@
                 <configuration>
                     <systemProperties>
                         <property>
-                            <name>log4j.configuration</name>
-                            <value>file:../../log4j.properties</value>
+                            <name>log4j2.configurationFile</name>
+                            <value>file:../../log4j2.properties</value>
                         </property>
                         <property>
                             <name>net.sourceforge.cobertura.datafile</name>
@@ -196,12 +196,6 @@
             <groupId>org.wso2.caching</groupId>
             <artifactId>wso2caching-core</artifactId>
             <type>jar</type>
-            <exclusions>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jacoco</groupId>
@@ -228,6 +222,27 @@
             <groupId>com.tngtech.java</groupId>
             <artifactId>junit-dataprovider</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <scope>test</scope>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 

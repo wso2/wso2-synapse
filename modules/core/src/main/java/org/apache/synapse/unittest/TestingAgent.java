@@ -24,7 +24,8 @@ import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.http.HttpResponse;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapseConfiguration;
@@ -62,7 +63,7 @@ import static org.apache.synapse.unittest.Constants.TYPE_TEMPLATE;
  */
 class TestingAgent {
 
-    private Logger log = Logger.getLogger(TestingAgent.class.getName());
+    private Log log = LogFactory.getLog(TestingAgent.class.getName());
     private SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
     private String mainTestArtifactType = null;
     private String proxyTransportMethod = null;

@@ -51,7 +51,7 @@ import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.ssl.SSLIOSession;
 import org.apache.http.protocol.HTTP;
-import org.apache.log4j.MDC;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiatorProvider;
@@ -142,11 +142,11 @@ public class ServerWorker implements Runnable {
         try {
              /* Remove correlation id MDC thread local value that can be persisting from the
                previous usage of this thread */
-            MDC.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
+            ThreadContext.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
             /* Subsequent to removing the correlation id MDC thread local value, a new value is put in case
                there is one */
             if (sourceConfiguration.isCorrelationLoggingEnabled() && StringUtils.isNotEmpty(correlationId)) {
-                MDC.put(CorrelationConstants.CORRELATION_MDC_PROPERTY, correlationId);
+                ThreadContext.put(CorrelationConstants.CORRELATION_MDC_PROPERTY, correlationId);
                 /* Log the time taken to switch from the previous thread to this thread */
                 if (initiationTimestamp != 0) {
                     correlationLog.info((System.currentTimeMillis() - initiationTimestamp) +

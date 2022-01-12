@@ -18,7 +18,6 @@ package org.apache.synapse.endpoints.dispatch;
 
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.engine.AxisConfiguration;
-import org.apache.log4j.BasicConfigurator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapseConfiguration;
@@ -44,7 +43,6 @@ public class SALSessionsTest {
      */
     @Test
     public void testUpdateWithId() throws Exception {
-        BasicConfigurator.configure();
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
         ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
@@ -73,7 +71,6 @@ public class SALSessionsTest {
      */
     @Test
     public void testUpdateWithCookie() throws Exception {
-        BasicConfigurator.configure();
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
         ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
@@ -105,7 +102,6 @@ public class SALSessionsTest {
      */
     @Test
     public void testUpdateWithOldSession() throws Exception {
-        BasicConfigurator.configure();
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
         ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
@@ -135,7 +131,6 @@ public class SALSessionsTest {
      */
     @Test
     public void testUpdateWithOldSessionSameName() throws Exception {
-        BasicConfigurator.configure();
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
         ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
@@ -166,7 +161,6 @@ public class SALSessionsTest {
      */
     @Test
     public void testUpdateCookieWithOldSession() throws Exception {
-        BasicConfigurator.configure();
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
         ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
@@ -202,7 +196,6 @@ public class SALSessionsTest {
      */
     @Test
     public void testUpdateCookieWithOldSessionSameName() throws Exception {
-        BasicConfigurator.configure();
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
         AxisConfiguration axisConfiguration = synapseConfiguration.getAxisConfiguration();
         ConfigurationContext cfgCtx = new ConfigurationContext(axisConfiguration);
