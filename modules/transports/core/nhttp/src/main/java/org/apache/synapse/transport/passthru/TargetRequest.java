@@ -188,11 +188,11 @@ public class TargetRequest {
 		if (o != null && o instanceof TreeMap) {
 			Map _headers = (Map) o;
 			String trpContentType = (String) _headers.get(HTTP.CONTENT_TYPE);
-			if (trpContentType != null && !trpContentType.equals("")) {
-				if (!TargetRequestFactory.isMultipartContent(trpContentType)) {
-					addHeader(HTTP.CONTENT_TYPE, trpContentType);
-				}
-			}
+            if (trpContentType != null && !trpContentType.equals("")) {
+                if (!TargetRequestFactory.isMultipartContent(trpContentType) && !requestMsgCtx.isDoingSwA()) {
+                    addHeader(HTTP.CONTENT_TYPE, trpContentType);
+                }
+            }
 
 		}
 
