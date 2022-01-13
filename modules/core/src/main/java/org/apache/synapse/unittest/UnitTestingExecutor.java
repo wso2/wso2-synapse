@@ -18,7 +18,8 @@
 
 package org.apache.synapse.unittest;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.config.SynapseConfiguration;
 
 /**
@@ -27,7 +28,7 @@ import org.apache.synapse.config.SynapseConfiguration;
  */
 public class UnitTestingExecutor extends Thread {
 
-    private static Logger log = Logger.getLogger(UnitTestingExecutor.class.getName());
+    private static Log log = LogFactory.getLog(UnitTestingExecutor.class.getName());
     private SynapseConfiguration synapseConfiguration;
     private static UnitTestingExecutor initializeThread = new UnitTestingExecutor();
 

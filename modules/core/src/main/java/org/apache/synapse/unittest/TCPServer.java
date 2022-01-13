@@ -17,7 +17,8 @@
  */
 package org.apache.synapse.unittest;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -28,7 +29,7 @@ import java.net.Socket;
  */
 public class TCPServer {
 
-    private static Logger log = Logger.getLogger(UnitTestingExecutor.class.getName());
+    private static Log log = LogFactory.getLog(UnitTestingExecutor.class.getName());
 
     private ServerSocket serverSocket;
     private boolean isUnitTestingOver = false;

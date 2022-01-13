@@ -23,7 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
-import org.apache.log4j.MDC;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.synapse.commons.CorrelationConstants;
 
 public class ContextAwareLoggerTest extends TestCase {
@@ -181,7 +181,7 @@ public class ContextAwareLoggerTest extends TestCase {
         contextAwareLogger.info(logMessage);
         validateMDCPropertyForMDCAwareLogger();
 
-        MDC.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
+        ThreadContext.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
         MessageContext messageContext = getCorrelationIdAwareAxis2Context();
         contextAwareLogger = ContextAwareLogger.getLogger(messageContext, log, false);
         contextAwareLogger.error(logMessage);
@@ -211,7 +211,7 @@ public class ContextAwareLoggerTest extends TestCase {
         contextAwareLogger.info(logMessage);
         validateMDCPropertyForMDCAwareLogger();
 
-        MDC.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
+        ThreadContext.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
         MessageContext messageContext = getCorrelationIdAwareAxis2Context();
         contextAwareLogger = ContextAwareLogger.getLogger(messageContext, log, false);
         contextAwareLogger.warn(logMessage);
@@ -220,15 +220,15 @@ public class ContextAwareLoggerTest extends TestCase {
 
     private void validateMDCPropertyForMDCImmediateLogger() {
 
-        Object correlationIdFromMDC = MDC.get(CorrelationConstants.CORRELATION_MDC_PROPERTY);
+        Object correlationIdFromMDC = ThreadContext.get(CorrelationConstants.CORRELATION_MDC_PROPERTY);
         assertNull(correlationIdFromMDC);
     }
 
     private void validateMDCPropertyForMDCAwareLogger() {
 
-        Object correlationIdFromMDC = MDC.get(CorrelationConstants.CORRELATION_MDC_PROPERTY);
+        Object correlationIdFromMDC = ThreadContext.get(CorrelationConstants.CORRELATION_MDC_PROPERTY);
         assertNotNull(correlationIdFromMDC);
         assertEquals((String) correlationIdFromMDC, correlationId);
-        MDC.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
+        ThreadContext.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
     }
 }

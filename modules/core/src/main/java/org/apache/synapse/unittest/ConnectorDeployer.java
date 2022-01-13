@@ -30,7 +30,8 @@ import org.apache.axis2.deployment.repository.util.DeploymentFileData;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.Entry;
@@ -68,7 +69,7 @@ import javax.xml.stream.XMLStreamReader;
  */
 class ConnectorDeployer {
 
-    private static Logger log = Logger.getLogger(ConnectorDeployer.class.getName());
+    private static Log log = LogFactory.getLog(ConnectorDeployer.class.getName());
 
     private static final String SYNAPSE_CONFIG_LOCK = "synapse.config.lock";
     private static final String SYNAPSE_LIBS = "synapse-libs";

@@ -24,7 +24,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.SOAPHeader;
 import org.apache.axiom.soap.SOAPHeaderBlock;
-import org.apache.log4j.MDC;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.commons.json.JsonUtil;
@@ -83,8 +83,8 @@ public class LogMediator extends AbstractMediator {
     public boolean mediate(MessageContext synCtx) {
 
         Object correlationId = getCorrelationId(synCtx);
-        if (correlationId != null) {
-            MDC.put(CorrelationConstants.CORRELATION_MDC_PROPERTY, correlationId);
+        if (correlationId instanceof String) {
+            ThreadContext.put(CorrelationConstants.CORRELATION_MDC_PROPERTY, String.valueOf(correlationId));
         }
 
         if (synCtx.getEnvironment().isDebuggerEnabled()) {

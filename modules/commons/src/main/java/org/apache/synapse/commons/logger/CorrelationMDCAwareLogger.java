@@ -18,7 +18,7 @@
 package org.apache.synapse.commons.logger;
 
 import org.apache.commons.logging.Log;
-import org.apache.log4j.MDC;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.synapse.commons.CorrelationConstants;
 
 /**
@@ -27,10 +27,10 @@ import org.apache.synapse.commons.CorrelationConstants;
  */
 public class CorrelationMDCAwareLogger implements Log {
 
-    private final Object correlationId;
+    private final String correlationId;
     private final Log log;
 
-    public CorrelationMDCAwareLogger(Object correlationId, Log log) {
+    public CorrelationMDCAwareLogger(String correlationId, Log log) {
 
         this.log = log;
         this.correlationId = correlationId;
@@ -158,7 +158,7 @@ public class CorrelationMDCAwareLogger implements Log {
 
     private void addCorrelationIdToMDC() {
 
-        MDC.put(CorrelationConstants.CORRELATION_MDC_PROPERTY, correlationId);
+        ThreadContext.put(CorrelationConstants.CORRELATION_MDC_PROPERTY, correlationId);
     }
 
 }

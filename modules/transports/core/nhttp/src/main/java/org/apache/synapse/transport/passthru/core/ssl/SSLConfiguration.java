@@ -21,14 +21,15 @@ import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.om.util.AXIOMUtil;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 import javax.xml.stream.XMLStreamException;
 
 public class SSLConfiguration {
 
-    private Logger log = Logger.getLogger(SSLConfiguration.class);
+    private Log log = LogFactory.getLog(SSLConfiguration.class);
 
     private String keyStore;
     private String trustStore;

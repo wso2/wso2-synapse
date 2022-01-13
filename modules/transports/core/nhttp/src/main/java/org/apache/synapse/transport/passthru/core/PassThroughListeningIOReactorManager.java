@@ -23,7 +23,8 @@ import org.apache.http.nio.NHttpServerEventHandler;
 import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.nio.reactor.ListenerEndpoint;
 import org.apache.http.nio.reactor.ListeningIOReactor;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.transport.http.conn.ServerConnFactory;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.ServerIODispatch;
@@ -43,7 +44,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PassThroughListeningIOReactorManager {
 
-    private static final Logger log = Logger.getLogger(PassThroughListeningIOReactorManager.class);
+    private static final Log log = LogFactory.getLog(PassThroughListeningIOReactorManager.class);
 
     /**
      * Singleton Object of class PassThroughListeningIOReactorManager

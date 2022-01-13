@@ -18,13 +18,14 @@
 
 package org.apache.synapse.commons.emulator.core;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public abstract class AbstractProtocolEmulator {
 
     private Emulator emulator;
     private EmulatorType emulatorType;
-    private static final Logger log = Logger.getLogger(AbstractProtocolEmulator.class);
+    private static final Log log = LogFactory.getLog(AbstractProtocolEmulator.class);
 
     public AbstractProtocolEmulator(Emulator emulator) {
         this.emulator = emulator;

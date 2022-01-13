@@ -18,11 +18,12 @@
 
 package org.apache.synapse.commons.emulator.core;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.emulator.http.HTTPProtocolEmulator;
 
 public class Emulator extends Thread {
-    private static final Logger log = Logger.getLogger(Emulator.class);
+    private static final Log log = LogFactory.getLog(Emulator.class);
     private HTTPProtocolEmulator httpProtocolEmulator;
     private EmulatorType emulatorType;
 

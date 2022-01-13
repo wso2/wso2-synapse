@@ -20,7 +20,8 @@ package org.apache.synapse.unittest;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.AXIOMUtil;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.apache.synapse.unittest.testcase.data.classes.Artifact;
 import org.apache.synapse.unittest.testcase.data.classes.AssertEqual;
@@ -114,7 +115,7 @@ import static org.apache.synapse.unittest.Constants.TYPE_TEMPLATE;
  */
 class SynapseTestcaseDataReader {
 
-    private static Logger log = Logger.getLogger(SynapseTestcaseDataReader.class.getName());
+    private static Log log = LogFactory.getLog(SynapseTestcaseDataReader.class.getName());
     private OMElement importXMLFile = null;
 
     /**

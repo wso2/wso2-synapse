@@ -26,7 +26,7 @@ import org.apache.axis2.util.MessageContextBuilder;
 import org.apache.axis2.wsdl.WSDLConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.MDC;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
@@ -81,10 +81,10 @@ public class TargetErrorHandler {
 
                 // Remove Correlation-ID MDC thread local value that can be persisting from the previous usage of
                 // this thread and add a new one if there is any
-                MDC.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
+                ThreadContext.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
                 Object correlationId = mc.getProperty(CorrelationConstants.CORRELATION_ID);
-                if (correlationId != null) {
-                    MDC.put(CorrelationConstants.CORRELATION_MDC_PROPERTY, correlationId);
+                if (correlationId != null && correlationId instanceof String) {
+                    ThreadContext.put(CorrelationConstants.CORRELATION_MDC_PROPERTY, String.valueOf(correlationId));
                 }
 
                 try {
