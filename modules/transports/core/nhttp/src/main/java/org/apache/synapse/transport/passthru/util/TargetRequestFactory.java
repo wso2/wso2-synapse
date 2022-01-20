@@ -114,6 +114,9 @@ public class TargetRequestFactory {
 			String cType = getContentType(msgContext, configuration.isPreserveHttpHeader(HTTP.CONTENT_TYPE));
 			if (cType != null && !httpMethod.equals(HTTPConstants.HTTP_METHOD_GET)
 					&& RelayUtils.shouldOverwriteContentType(msgContext, request)) {
+                if (!TargetRequestFactory.isMultipartContent(cType) && msgContext.isDoingSwA()) {
+                    cType = HTTPConstants.MEDIA_TYPE_MULTIPART_RELATED;
+                }
 				String messageType = (String) msgContext.getProperty(NhttpConstants.MESSAGE_TYPE);
 				if (messageType != null) {
 					boolean builderInvoked = false;
