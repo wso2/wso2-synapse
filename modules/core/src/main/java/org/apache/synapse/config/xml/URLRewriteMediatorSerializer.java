@@ -122,7 +122,9 @@ public class URLRewriteMediatorSerializer extends AbstractMediatorSerializer {
             case RewriteAction.ACTION_REMOVE:
                 typeStr = URLRewriteMediatorFactory.ACTION_REMOVE;
                 break;
-
+            case RewriteAction.ACTION_REMOVE_QUERY_PARAM:
+                typeStr = URLRewriteMediatorFactory.ACTION_REMOVE_QUERY_PARAM;
+                break;
             default:
                 typeStr = URLRewriteMediatorFactory.ACTION_SET;
         }

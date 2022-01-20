@@ -47,7 +47,7 @@ import java.util.Properties;
  *          &lt;action
  *              value="value"
  *              xpath="xpath"
- *              [type="set | append | prepend | replace | remove"]
+ *              [type="set | append | prepend | replace | remove | remove-query-param"]
  *              [fragment="protocol | user | host | port | path | query | ref | full"]
  *              [regex="regex"] /&gt; +
  *      &lt;/rewriterule&gt; *
@@ -66,12 +66,14 @@ public class URLRewriteMediatorFactory extends AbstractMediatorFactory {
     private static final QName ATT_OUT_PROPERTY = new QName("outProperty");
     private static final QName ATT_TYPE = new QName("type");
     private static final QName ATT_FRAGMENT = new QName("fragment");
+    private static final QName ATT_RESOLVE = new QName("resolve");
 
     public static final String ACTION_SET = "set";
     public static final String ACTION_APPEND = "append";
     public static final String ACTION_PREPEND = "prepend";
     public static final String ACTION_REPLACE = "replace";
     public static final String ACTION_REMOVE = "remove";
+    public static final String ACTION_REMOVE_QUERY_PARAM = "remove-query-param";
 
     public static final String FRAGMENT_PROTOCOL = "protocol";
     public static final String FRAGMENT_USER_INFO = "user";
@@ -193,10 +195,19 @@ public class URLRewriteMediatorFactory extends AbstractMediatorFactory {
                 }
             } else if (ACTION_REMOVE.equals(type)) {
                 action.setActionType(RewriteAction.ACTION_REMOVE);
+            } else if (ACTION_REMOVE_QUERY_PARAM.equals(type)) {
+                if (!FRAGMENT_QUERY.equals(fragment)) {
+                    handleException("Action remove-query-param is only allowed for query fragment");
+                } else {
+                    action.setActionType(RewriteAction.ACTION_REMOVE_QUERY_PARAM);
+                }
             } else {
                 handleException("Unknown URL rewrite action type: " + type);
             }
         }
+
+        boolean resolve = Boolean.parseBoolean(actionElement.getAttributeValue(ATT_RESOLVE));
+        action.setResolve(resolve);
 
         return action;
     }
