@@ -167,10 +167,10 @@ public abstract class TemplateProcessor {
             // No conversion required, as path evaluates to regular String.
             replacementValue = replacementEntry.getKey();
             String trimmedReplacementValue = replacementValue.trim();
-            //If media type is xml and replacement value is literal escape xml special characters prior to replacement
-            if (mediaType.equals(XML_TYPE) && inferReplacementType(replacementEntry).equals(STRING_TYPE)) {
-                replacementValue = escapeSpecialCharactersOfXml(replacementValue);
-                replacementValue = Matcher.quoteReplacement(replacementValue);
+            //If media type is xml and replacement value is json convert it to xml format prior to replacement
+            if (mediaType.equals(XML_TYPE) && inferReplacementType(replacementEntry).equals(STRING_TYPE)
+                    && isJson(trimmedReplacementValue)) {
+                replacementValue = convertJsonStringToXml(replacementValue);
             } else if (mediaType.equals(JSON_TYPE) &&
                     inferReplacementType(replacementEntry).equals(JSON_TYPE) &&
                     isEscapeXmlChars()) {
@@ -179,18 +179,16 @@ public abstract class TemplateProcessor {
                 //in content aware mediators.
                 replacementValue = escapeXMLSpecialChars(replacementValue);
             } else if (mediaType.equals(JSON_TYPE) &&
-                    inferReplacementType(replacementEntry).equals(STRING_TYPE)) {
+                    inferReplacementType(replacementEntry).equals(STRING_TYPE) &&
+                    (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
                 replacementValue = escapeSpecialChars(replacementValue);
-                if (!isJson(trimmedReplacementValue)) {
-                    // Check for following property which will force the string to include quotes
-                    Object force_string_quote = synCtx.getProperty(QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON);
-                    // skip double quotes if replacement is boolean or null or valid json number
-                    if (force_string_quote != null && ((String) force_string_quote).equalsIgnoreCase("true")
-                            && !trimmedReplacementValue.equals("true") && !trimmedReplacementValue.equals("false")
-                            && !trimmedReplacementValue.equals("null")
-                            && !validJsonNumber.matcher(trimmedReplacementValue).matches()) {
-                        replacementValue = "\"" + replacementValue + "\"";
-                    }
+                Object force_string_quote = synCtx.getProperty(QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON);
+                // skip double quotes if replacement is boolean or null or valid json number
+                if (force_string_quote != null && ((String) force_string_quote).equalsIgnoreCase("true")
+                        && !trimmedReplacementValue.equals("true") && !trimmedReplacementValue.equals("false")
+                        && !trimmedReplacementValue.equals("null")
+                        && !validJsonNumber.matcher(trimmedReplacementValue).matches()) {
+                    replacementValue = "\"" + replacementValue + "\"";
                 }
             }
         }
@@ -305,19 +303,21 @@ public abstract class TemplateProcessor {
 
         if (entry.getValue().isLiteral()) {
             return STRING_TYPE;
-        }
-        if (entry.getValue().getPathType().equals(SynapsePath.X_PATH)) {
-            if (entry.getValue().isXml()) {
-                return XML_TYPE;
-            }
-            if (isJson(entry.getKey())) {
-                return JSON_TYPE;
-            }
-        }
-        if (entry.getValue().getPathType().equals(SynapsePath.JSON_PATH) && isJson(entry.getKey())) {
+        } else if (entry.getValue().getPathType().equals(SynapsePath.X_PATH)
+                && entry.getValue().isXml()) {
+            return XML_TYPE;
+        } else if (entry.getValue().getPathType().equals(SynapsePath.X_PATH)
+                && !entry.getValue().isXml()) {
+            return STRING_TYPE;
+        } else if (entry.getValue().getPathType().equals(SynapsePath.JSON_PATH)
+                && isJson(entry.getKey())) {
             return JSON_TYPE;
+        } else if (entry.getValue().getPathType().equals(SynapsePath.JSON_PATH)
+                && !isJson((entry.getKey()))) {
+            return STRING_TYPE;
+        } else {
+            return STRING_TYPE;
         }
-        return STRING_TYPE;
     }
 
     /**
@@ -328,14 +328,8 @@ public abstract class TemplateProcessor {
      */
     protected boolean isJson(String value) {
 
-        if (!(value == null || value.trim().isEmpty()) &&
-                (value.trim().charAt(0) == '{' || value.trim().charAt(0) == '[')) {
-            if (isJsonArrayBegin(value)) {
-                return isJsonArray(value.trim().substring(1));
-            }
-            return true;
-        }
-        return false;
+        return !(value == null || value.trim().isEmpty()) &&
+                (value.trim().charAt(0) == '{' || value.trim().charAt(0) == '[');
     }
 
     private boolean isJsonArray(String value) {
