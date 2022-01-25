@@ -178,9 +178,11 @@ public abstract class TemplateProcessor {
                 //escapes xml chars. otherwise json messages with non escaped xml characters will fail to build
                 //in content aware mediators.
                 replacementValue = escapeXMLSpecialChars(replacementValue);
-            } else if (mediaType.equals(JSON_TYPE) &&
-                    inferReplacementType(replacementEntry).equals(STRING_TYPE) &&
-                    (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
+            } else if (mediaType.equals(JSON_TYPE)
+                    && (replacementEntry.getValue().isLiteral()
+                    || (inferReplacementType(replacementEntry).equals(STRING_TYPE)
+                    && (!trimmedReplacementValue.startsWith("{")
+                    && !trimmedReplacementValue.startsWith("["))))) {
                 replacementValue = escapeSpecialChars(replacementValue);
                 Object force_string_quote = synCtx.getProperty(QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON);
                 // skip double quotes if replacement is boolean or null or valid json number
