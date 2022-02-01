@@ -47,6 +47,8 @@ import org.apache.axis2.engine.AxisObserver;
 import org.apache.axis2.transport.TransportListener;
 import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.base.BaseUtils;
+import org.apache.axis2.transport.base.ManagementSupport;
+import org.apache.axis2.transport.base.TransportMBeanSupport;
 import org.apache.axis2.transport.base.threads.NativeThreadFactory;
 import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.axis2.transport.base.tracker.AxisServiceFilter;
@@ -172,11 +174,6 @@ public class PassThroughHttpListener implements TransportListener {
         PassThroughTransportMetricsCollector metrics = new PassThroughTransportMetricsCollector(
                 true, scheme.getName());
 
-        TransportView view = new TransportView(this, null, metrics, null);
-        MBeanRegistrar.getInstance().registerMBean(
-                view, "Transport",
-                "passthru-" + namePrefix.toLowerCase() + "-receiver");
-
         sourceConfiguration = new SourceConfiguration(cfgCtx, transportInDescription, scheme, workerPool, metrics);
         sourceConfiguration.build();
 
@@ -234,6 +231,10 @@ public class PassThroughHttpListener implements TransportListener {
                     }
                 });
 
+        TransportView view = new TransportView(this, null, metrics, sourceConfiguration.getWorkerPool());
+        MBeanRegistrar.getInstance().registerMBean(
+                view, "Transport",
+                "passthru-" + namePrefix.toLowerCase() + "-receiver");
     }
 
     public void start() throws AxisFault {

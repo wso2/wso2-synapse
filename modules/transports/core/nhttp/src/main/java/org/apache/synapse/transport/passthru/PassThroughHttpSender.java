@@ -148,9 +148,6 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 
         PassThroughTransportMetricsCollector metrics = new PassThroughTransportMetricsCollector(
             false, scheme.getName());
-        TransportView view = new TransportView(null, this, metrics, null);
-        MBeanRegistrar.getInstance().registerMBean(view, "Transport",
-                 "passthru-" + namePrefix.toLowerCase() + "-sender");
         
         proxyConfig = new ProxyConfigBuilder().build(transportOutDescription);
         if (log.isDebugEnabled()) {
@@ -202,6 +199,10 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 
         targetConnections = new TargetConnections(ioReactor, targetConfiguration, connectCallback);
         targetConfiguration.setConnections(targetConnections);
+
+        TransportView view = new TransportView(null, this, metrics, targetConfiguration.getWorkerPool());
+        MBeanRegistrar.getInstance().registerMBean(view, "Transport",
+                "passthru-" + namePrefix.toLowerCase() + "-sender");
 
         // create the delivery agent to hand over messages
         deliveryAgent = new DeliveryAgent(targetConfiguration, targetConnections, proxyConfig);
