@@ -168,10 +168,7 @@ public abstract class TemplateProcessor {
             replacementValue = replacementEntry.getKey();
             String trimmedReplacementValue = replacementValue.trim();
             //If media type is xml and replacement value is json convert it to xml format prior to replacement
-            if (mediaType.equals(XML_TYPE) && inferReplacementType(replacementEntry).equals(STRING_TYPE)
-                    && isJson(trimmedReplacementValue)) {
-                replacementValue = convertJsonStringToXml(replacementValue);
-            } else if (mediaType.equals(JSON_TYPE) &&
+            if (mediaType.equals(JSON_TYPE) &&
                     inferReplacementType(replacementEntry).equals(JSON_TYPE) &&
                     isEscapeXmlChars()) {
                 //checks whether the escapeXmlChars attribute is true when media-type and evaluator is json and
