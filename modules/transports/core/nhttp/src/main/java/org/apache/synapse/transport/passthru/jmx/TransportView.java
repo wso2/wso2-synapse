@@ -20,6 +20,7 @@
 package org.apache.synapse.transport.passthru.jmx;
 
 import org.apache.axis2.AxisFault;
+import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.synapse.transport.passthru.PassThroughHttpListener;
 import org.apache.synapse.transport.passthru.PassThroughHttpSender;
 
@@ -34,12 +35,12 @@ public class TransportView implements TransportViewMBean {
 
     private PassThroughTransportMetricsCollector metrics = null;
 
-    private ThreadPoolExecutor threadPool = null;
+    private WorkerPool threadPool = null;
 
     public TransportView(PassThroughHttpListener listener,
                          PassThroughHttpSender sender,
                          PassThroughTransportMetricsCollector metrics,
-                         ThreadPoolExecutor threadPool) throws AxisFault {
+                         WorkerPool threadPool) throws AxisFault {
         this.listener = listener;
         this.metrics = metrics;
         this.threadPool = threadPool;
@@ -78,8 +79,8 @@ public class TransportView implements TransportViewMBean {
     }
 
     public int getQueueSize() {
-        if (threadPool != null && threadPool.getQueue() != null) {
-            return threadPool.getQueue().size();
+        if (threadPool != null) {
+            return threadPool.getQueueSize();
         }
         return 0;
     }
