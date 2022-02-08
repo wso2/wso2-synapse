@@ -1,168 +1,149 @@
 package org.apache.synapse.mediators.opa;
 
-import org.apache.axis2.util.JavaUtils;
+import org.apache.axis2.AxisFault;
+import org.apache.axis2.Constants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
+import org.apache.http.HttpStatus;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseException;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
-import org.json.JSONObject;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class OPAMediator extends AbstractMediator {
 
     private static final Log log = LogFactory.getLog(OPAMediator.class);
-    public static final String HTTP_METHOD_STRING = "HTTP_METHOD";
-    public static final String API_BASEPATH_STRING = "TransportInURL";
-    public static final int SERVER_RESPONSE_CODE_SUCCESS = 200;
-    public static final int SERVER_RESPONSE_BAD_REQUEST = 400;
-    public static final int SERVER_RESPONSE_SERVER_ERROR = 500;
 
-    private String opaServerUrl = null;
-    private String opaToken = null;
-    private String requestGeneratorClass = "org.apache.synapse.mediators.opa.OPASynapseRequestGenerator";
+    private String serverUrl = null;
+    private String accessToken = null;
+    private String policy = null;
+    private String rule = null;
+    private String requestGeneratorClassName = "org.apache.synapse.mediators.opa.OPASynapseRequestGenerator";
     private Map<String, Object> advancedProperties = new HashMap<String, Object>();
 
+    public void init() {
 
-    public void init(){
     }
 
     @Override
     public boolean mediate(MessageContext messageContext) {
 
-        String requestGeneratorClass = this.getRequestGeneratorClass();
         OPARequestGenerator requestGenerator = null;
-        boolean opaResponse = false;
         String opaResponseString = null;
         try {
-            Class<?> requestGeneratorClassObject = Class.forName(requestGeneratorClass);
-            Constructor<?> constructor = requestGeneratorClassObject.getConstructor();
-            requestGenerator = (OPARequestGenerator) constructor.newInstance();
+            try {
+                Class<?> requestGeneratorClassObject = Class.forName(requestGeneratorClassName);
+                Constructor<?> constructor = requestGeneratorClassObject.getConstructor();
+                requestGenerator = (OPARequestGenerator) constructor.newInstance();
+            } catch (NoSuchMethodException | ClassNotFoundException | InstantiationException | IllegalAccessException
+                    | InvocationTargetException e) {
+                throw new OPASecurityException(OPASecurityException.MEDIATOR_ERROR,
+                        "Cannot initialize the provided request generator", e);
+            }
 
-            String opaPayload = requestGenerator.createRequest(messageContext, this.getAdvancedProperties());
-            opaResponseString = publish(opaPayload,  this.getOpaServerUrl(), this.getOpaToken());
-            opaResponse = requestGenerator.handleResponse(messageContext, opaResponseString);
-        } catch (NoSuchMethodException | ClassNotFoundException | InstantiationException | IllegalAccessException
-                | InvocationTargetException e) {
-            e.printStackTrace();
+            String opaPayload = requestGenerator.createRequest(policy, rule, advancedProperties, messageContext);
+            String evaluatingPolicyUrl = serverUrl + "/" + policy + "/" + rule;
+
+            opaResponseString = OPAClient.publish(evaluatingPolicyUrl, opaPayload, accessToken);
+            return requestGenerator.handleResponse(policy, rule, opaResponseString, messageContext);
+        } catch (OPASecurityException e) {
+            handleAuthFailure(messageContext, e);
         }
-        return opaResponse;
+        return false;
     }
 
-    public String publish(String opaPayload, String url, String token) throws SynapseException {
+    protected void handleAuthFailure(MessageContext messageContext, OPASecurityException e) {
 
-        HttpPost postRequest = new HttpPost(url);
-        postRequest.addHeader("Authorization", token);
-        postRequest.addHeader("Content-type", "application/json");
-        CloseableHttpResponse response = null;
-        String responseString = null;
+        org.apache.axis2.context.MessageContext axis2MC = ((Axis2MessageContext) messageContext).
+                getAxis2MessageContext();
+        // This property need to be set to avoid sending the content in pass-through pipe (request message)
+        // as the response.
+        axis2MC.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
         try {
-            postRequest.setEntity(new StringEntity(opaPayload));
-
-            if (log.isDebugEnabled()) {
-                log.debug("Sending POST to " + url);
-            }
-
-            CloseableHttpClient httpClient = OPAUtils.getClient(url);
-            if (httpClient != null) {
-                long publishingStartTime = System.nanoTime();
-                response = httpClient.execute(postRequest);
-                long publishingEndTime = System.nanoTime();
-
-                if (log.isDebugEnabled()) {
-                    log.debug("Time taken to communicate with OPA server:" + (publishingEndTime - publishingStartTime));
-                }
-
-                if (response != null) {
-                    int serverResponseCode = response.getStatusLine().getStatusCode();
-                    switch (serverResponseCode) {
-                        case SERVER_RESPONSE_BAD_REQUEST:
-                            log.error("Incorrect JSON format sent for the server from the request ");
-                            break;
-                        case SERVER_RESPONSE_SERVER_ERROR:
-                            if (log.isDebugEnabled()) {
-                                log.debug("OPA Server error code sent for the request ");
-                            }
-                            break;
-                        case SERVER_RESPONSE_CODE_SUCCESS:
-                            HttpEntity entity = response.getEntity();
-                            responseString = EntityUtils.toString(entity, "UTF-8");
-                            if (log.isDebugEnabled()) {
-                                log.debug("OPA Server Response for for the request " + " was " + responseString);
-                            }
-                            break;
-                    }
-
-                    if (log.isDebugEnabled()) {
-                        log.debug("OPA Server connection time for the request in nano seconds is "
-                                + (publishingEndTime - publishingStartTime));
-                    }
-                } else {
-                    throw new SynapseException("Null response returned from OPA server for the request");
-                }
-            } else {
-                throw new SynapseException("Internal server error. Cannot find a http client");
-            }
-        } catch (SocketTimeoutException e) {
-            log.error("Connection timed out. Socket Timeout");
-            throw new SynapseException("Internal server error. OPA server takes more time than expected", e);
-        } catch (IOException e) {
-            log.error("Error occurred while sending POST request to OPA endpoint.", e);
-            throw new SynapseException("Internal server error. Unable to send request to the OPA server", e);
-        } finally {
-            if (response != null) {
-                try {
-                    EntityUtils.consumeQuietly(response.getEntity());
-                    response.close();
-                } catch (IOException e) {
-                    log.error("Error occurred when closing the response of the post request", e);
-                }
-            }
+            RelayUtils.consumeAndDiscardMessage(axis2MC);
+        } catch (AxisFault axisFault) {
+            //In case of an error it is logged and the process is continued because we're setting a fault message in the payload.
+            log.error("Error occurred while consuming and discarding the message", axisFault);
         }
-        return responseString;
+        axis2MC.setProperty(Constants.Configuration.MESSAGE_TYPE, "application/soap+xml");
+        int status;
+        String errorMessage;
+        if (e.getErrorCode() == OPASecurityException.MEDIATOR_ERROR
+                || e.getErrorCode() == OPASecurityException.OPA_REQUEST_ERROR) {
+            status = HttpStatus.SC_INTERNAL_SERVER_ERROR;
+            errorMessage = "Internal Sever Error";
+        } else if (e.getErrorCode() == OPASecurityException.ACCESS_REVOKED) {
+            status = HttpStatus.SC_FORBIDDEN;
+            errorMessage = "Forbidden";
+        } else if (e.getErrorCode() == OPASecurityException.OPA_RESPONSE_ERROR) {
+            status = HttpStatus.SC_BAD_REQUEST;
+            errorMessage = "Bad Request";
+        } else {
+            status = HttpStatus.SC_UNAUTHORIZED;
+            errorMessage = "Unauthorized";
+        }
 
+        messageContext.setProperty(SynapseConstants.ERROR_CODE, status);
+        messageContext.setProperty(SynapseConstants.ERROR_MESSAGE, errorMessage);
+        messageContext.setProperty(SynapseConstants.ERROR_EXCEPTION, e);
+        OPAUtils.sendFault(messageContext, status);
     }
 
-    public String getOpaServerUrl() {
+    public String getServerUrl() {
 
-        return opaServerUrl;
+        return serverUrl;
     }
 
-    public void setOpaServerUrl(String opaServerUrl) {
+    public void setServerUrl(String serverUrl) {
 
-        this.opaServerUrl = opaServerUrl;
+        this.serverUrl = serverUrl;
     }
 
-    public String getOpaToken() {
+    public String getAccessToken() {
 
-        return opaToken;
+        return accessToken;
     }
 
-    public void setOpaToken(String opaToken) {
+    public void setAccessToken(String accessToken) {
 
-        this.opaToken = opaToken;
+        this.accessToken = accessToken;
     }
 
-    public String getRequestGeneratorClass() {
+    public String getRequestGeneratorClassName() {
 
-        return requestGeneratorClass;
+        return requestGeneratorClassName;
     }
 
-    public void setRequestGeneratorClass(String requestGeneratorClass) {
+    public void setRequestGeneratorClassName(String requestGeneratorClassName) {
 
-        this.requestGeneratorClass = requestGeneratorClass;
+        this.requestGeneratorClassName = requestGeneratorClassName;
+    }
+
+    public String getPolicy() {
+
+        return policy;
+    }
+
+    public void setPolicy(String policy) {
+
+        this.policy = policy;
+    }
+
+    public String getRule() {
+
+        return rule;
+    }
+
+    public void setRule(String rule) {
+
+        this.rule = rule;
     }
 
     public Map<String, Object> getAdvancedProperties() {
@@ -175,8 +156,8 @@ public class OPAMediator extends AbstractMediator {
         this.advancedProperties = advancedProperties;
     }
 
-    public void addAdvancedProperty(String parameter, Object value) {
+    public void addAdvancedProperty(String property, Object value) {
 
-        this.advancedProperties.put(parameter, value);
+        this.advancedProperties.put(property, value);
     }
 }

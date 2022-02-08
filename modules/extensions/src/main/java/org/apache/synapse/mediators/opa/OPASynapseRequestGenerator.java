@@ -26,17 +26,18 @@ public class OPASynapseRequestGenerator implements OPARequestGenerator {
 
 
     @Override
-    public String createRequest(MessageContext messageContext,  Map<String, Object> advancedProperties){
+    public String createRequest(String policyName, String rule, Map<String, Object> advancedProperties,
+                                MessageContext messageContext) throws OPASecurityException {
 
         org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) messageContext)
                 .getAxis2MessageContext();
         TreeMap<String, String> transportHeadersMap = (TreeMap<String, String>) axis2MessageContext
                 .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
 
-        String requestOriginIP = getIp(axis2MessageContext);
+        String requestOriginIP = OPAUtils.getIp(axis2MessageContext);
         String requestMethod = (String) axis2MessageContext.getProperty(HTTP_METHOD_STRING);
         String requestPath = (String) axis2MessageContext.getProperty(API_BASEPATH_STRING);
-        String requestHttpVersion = getHttpVersion(axis2MessageContext);
+        String requestHttpVersion = OPAUtils.getHttpVersion(axis2MessageContext);
 
         JSONObject opaPayload = new JSONObject();
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -52,57 +53,29 @@ public class OPASynapseRequestGenerator implements OPARequestGenerator {
     }
 
     @Override
-    public boolean handleResponse(MessageContext messageContent, String response) {
-        boolean serverResponse = false;
-        if (response.equals("{}")) {
+    public boolean handleResponse(String policyName, String rule, String opaResponse, MessageContext messageContext)
+            throws OPASecurityException {
+        if (opaResponse.equals("{}")) {
             //The policy for this API has not been created at the OPA server. Request will be sent to
             // backend without validation
             if (log.isDebugEnabled()) {
-                log.debug("OPA Policy was not defined for the API ");
+                log.debug("Empty result received for the rule " + rule + " of policy " + policyName);
             }
+            throw new OPASecurityException(OPASecurityException.OPA_RESPONSE_ERROR,
+                    "Empty result received for the OPA policy rule");
         } else {
-            JSONObject responseObject = new JSONObject(response);
-            Object resultObject = responseObject.get("result");
+            JSONObject responseObject = new JSONObject(opaResponse);
+            Object resultObject = responseObject.get(rule);
             if (resultObject != null) {
-                serverResponse = JavaUtils.isTrueExplicitly(resultObject);
+                if (JavaUtils.isTrueExplicitly(resultObject)) {
+                    return true;
+                } else {
+                    throw new OPASecurityException(OPASecurityException.ACCESS_REVOKED, "Access revoked");
+                }
             }
+            throw new OPASecurityException(OPASecurityException.OPA_RESPONSE_ERROR,
+                    "Specified rule is not included in the OPA server response");
         }
-        return serverResponse;
-    }
-
-    public String getIp(org.apache.axis2.context.MessageContext axis2MessageContext) {
-
-        //Set transport headers of the message
-        TreeMap<String, String> transportHeaderMap = (TreeMap<String, String>) axis2MessageContext
-                .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-        // Assigning an Empty String so that when doing comparisons, .equals method can be used without explicitly
-        // checking for nullity.
-        String remoteIP = "";
-        //Check whether headers map is null and x forwarded for header is present
-        if (transportHeaderMap != null) {
-            remoteIP = transportHeaderMap.get("X-Forwarded-For");
-        }
-
-        //Setting IP of the client by looking at x forded for header and  if it's empty get remote address
-        if (remoteIP != null && !remoteIP.isEmpty()) {
-            if (remoteIP.indexOf(",") > 0) {
-                remoteIP = remoteIP.substring(0, remoteIP.indexOf(","));
-            }
-        } else {
-            remoteIP = (String) axis2MessageContext.getProperty(org.apache.axis2.context.MessageContext.REMOTE_ADDR);
-        }
-        if (remoteIP.indexOf(":") > 0) {
-            remoteIP = remoteIP.substring(0, remoteIP.indexOf(":"));
-        }
-        return remoteIP;
-    }
-
-    public String getHttpVersion(org.apache.axis2.context.MessageContext axis2MessageContext) {
-
-        ServerWorker worker = (ServerWorker) axis2MessageContext.getProperty(Constants.OUT_TRANSPORT_INFO);
-        SourceRequest sourceRequest = worker.getSourceRequest();
-        ProtocolVersion httpProtocolVersion = sourceRequest.getVersion();
-        return httpProtocolVersion.getMajor() + HTTP_VERSION_CONNECTOR + httpProtocolVersion.getMinor();
     }
 
 }

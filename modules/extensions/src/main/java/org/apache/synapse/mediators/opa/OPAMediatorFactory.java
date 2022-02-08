@@ -16,10 +16,12 @@ public class OPAMediatorFactory extends AbstractMediatorFactory {
 
     static final QName OPA_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "opa");
     static final QName SERVER_URL_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "serverUrl");
-    static final QName TOKEN_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "opaToken");
-    static final QName PAYLOAD_GENERATOR_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "payloadGenerator");
+    static final QName TOKEN_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "accessToken");
+    static final QName POLICY_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "policy");
+    static final QName Rule_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "rule");
+    static final QName PAYLOAD_GENERATOR_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "requestGenerator");
     static final QName ADVANCED_PROPERTIES_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "advancedProperties");
-    static final QName PARAMETER_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "parameter");
+    static final QName PROPERTY_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "property");
     static final QName NAME_Q = new QName("name");
 
 
@@ -31,22 +33,33 @@ public class OPAMediatorFactory extends AbstractMediatorFactory {
 
         OMElement serverUrlElement = omElement.getFirstChildWithName(SERVER_URL_Q);
         if (serverUrlElement != null) {
-            opaMediator.setOpaServerUrl(serverUrlElement.getText());
+            opaMediator.setServerUrl(serverUrlElement.getText());
         }
 
         OMElement opaTokenElement = omElement.getFirstChildWithName(TOKEN_Q);
         if (opaTokenElement != null) {
-            opaMediator.setOpaToken(opaTokenElement.getText());
+            opaMediator.setAccessToken(opaTokenElement.getText());
         }
+
+        OMElement policyElement = omElement.getFirstChildWithName(POLICY_Q);
+        if (policyElement != null) {
+            opaMediator.setPolicy(policyElement.getText());
+        }
+
+        OMElement ruleElement = omElement.getFirstChildWithName(Rule_Q);
+        if (ruleElement != null) {
+            opaMediator.setRule(ruleElement.getText());
+        }
+
 
         OMElement payloadGeneratorElement = omElement.getFirstChildWithName(PAYLOAD_GENERATOR_Q);
         if (payloadGeneratorElement != null) {
-            opaMediator.setRequestGeneratorClass(payloadGeneratorElement.getText());
+            opaMediator.setRequestGeneratorClassName(payloadGeneratorElement.getText());
         }
 
         OMElement advancedPropertiesElement = omElement.getFirstChildWithName(ADVANCED_PROPERTIES_Q);
         if (advancedPropertiesElement != null) {
-            Iterator parameterIter = advancedPropertiesElement.getChildrenWithName(PARAMETER_Q);
+            Iterator parameterIter = advancedPropertiesElement.getChildrenWithName(PROPERTY_Q);
             while (parameterIter.hasNext()) {
                 OMElement parameterElement = (OMElement) parameterIter.next();
                 OMAttribute nameAtr = parameterElement.getAttribute(NAME_Q);
