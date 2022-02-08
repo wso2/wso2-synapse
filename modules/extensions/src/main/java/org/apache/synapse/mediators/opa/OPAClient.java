@@ -29,7 +29,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.synapse.endpoints.oauth.OAuthException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -54,13 +53,12 @@ public class OPAClient {
     /**
      * Method to publish the OPA payload to the OPA server
      *
-     * @param opaServerUrl The token url of the server
+     * @param opaServerUrl The url of the opa server
      * @param payload     The payload of the request
-     * @param credentials The encoded credentials
-     * @return accessToken String
-     * @throws OAuthException In the event of an unexpected HTTP status code return from the server or access_token
-     *                        key missing in the response payload
-     * @throws IOException    In the event of a problem parsing the response from the server
+     * @param credentials Token of the opa validation request
+     *
+     * @return opa response String
+     * @throws OPASecurityException
      */
     public static String publish(String opaServerUrl, String payload, String credentials)
             throws OPASecurityException {
@@ -89,13 +87,11 @@ public class OPAClient {
     }
 
     /**
-     * Method to retrieve the token response sent from the server
+     * Extract the opa response string from HTTP response
      *
      * @param response CloseableHttpResponse object
-     * @return accessToken String
-     * @throws OAuthException In the event of an unexpected HTTP status code return from the server or access_token
-     *                        key missing in the response payload
-     * @throws IOException    In the event of a problem parsing the response from the server
+     * @return opaResponse String
+     * @throws OPASecurityException
      */
     private static String extractResponse(CloseableHttpResponse response)
             throws OPASecurityException {

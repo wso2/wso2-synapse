@@ -1,16 +1,30 @@
+/*
+ *  Copyright (c) 2022, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+
 package org.apache.synapse.mediators.opa;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.apache.axis2.Constants;
 import org.apache.axis2.util.JavaUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.ProtocolVersion;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.transport.passthru.ServerWorker;
-import org.apache.synapse.transport.passthru.SourceRequest;
 import org.json.JSONObject;
 
 import java.util.Map;
@@ -22,8 +36,6 @@ public class OPASynapseRequestGenerator implements OPARequestGenerator {
     public static final String API_BASEPATH_STRING = "TransportInURL";
     static final String HTTP_VERSION_CONNECTOR = ".";
     private static final Log log = LogFactory.getLog(OPASynapseRequestGenerator.class);
-
-
 
     @Override
     public String createRequest(String policyName, String rule, Map<String, Object> advancedProperties,
@@ -55,9 +67,8 @@ public class OPASynapseRequestGenerator implements OPARequestGenerator {
     @Override
     public boolean handleResponse(String policyName, String rule, String opaResponse, MessageContext messageContext)
             throws OPASecurityException {
+
         if (opaResponse.equals("{}")) {
-            //The policy for this API has not been created at the OPA server. Request will be sent to
-            // backend without validation
             if (log.isDebugEnabled()) {
                 log.debug("Empty result received for the rule " + rule + " of policy " + policyName);
             }

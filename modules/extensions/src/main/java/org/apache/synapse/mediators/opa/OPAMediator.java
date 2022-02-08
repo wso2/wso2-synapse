@@ -1,16 +1,27 @@
+/*
+ *  Copyright (c) 2022, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+
 package org.apache.synapse.mediators.opa;
 
-import org.apache.axis2.AxisFault;
-import org.apache.axis2.Constants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.HttpStatus;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
-import org.apache.synapse.transport.passthru.PassThroughConstants;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -24,7 +35,7 @@ public class OPAMediator extends AbstractMediator {
     private String serverUrl = null;
     private String accessToken = null;
     private String policy = null;
-    private String rule = null;
+    private String rule = "allow";
     private String requestGeneratorClassName = "org.apache.synapse.mediators.opa.OPASynapseRequestGenerator";
     private Map<String, Object> advancedProperties = new HashMap<String, Object>();
 
@@ -54,46 +65,9 @@ public class OPAMediator extends AbstractMediator {
             opaResponseString = OPAClient.publish(evaluatingPolicyUrl, opaPayload, accessToken);
             return requestGenerator.handleResponse(policy, rule, opaResponseString, messageContext);
         } catch (OPASecurityException e) {
-            handleAuthFailure(messageContext, e);
+            handleException("Rejected from opa policy." + e.getMessage(), messageContext);
         }
         return false;
-    }
-
-    protected void handleAuthFailure(MessageContext messageContext, OPASecurityException e) {
-
-        org.apache.axis2.context.MessageContext axis2MC = ((Axis2MessageContext) messageContext).
-                getAxis2MessageContext();
-        // This property need to be set to avoid sending the content in pass-through pipe (request message)
-        // as the response.
-        axis2MC.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
-        try {
-            RelayUtils.consumeAndDiscardMessage(axis2MC);
-        } catch (AxisFault axisFault) {
-            //In case of an error it is logged and the process is continued because we're setting a fault message in the payload.
-            log.error("Error occurred while consuming and discarding the message", axisFault);
-        }
-        axis2MC.setProperty(Constants.Configuration.MESSAGE_TYPE, "application/soap+xml");
-        int status;
-        String errorMessage;
-        if (e.getErrorCode() == OPASecurityException.MEDIATOR_ERROR
-                || e.getErrorCode() == OPASecurityException.OPA_REQUEST_ERROR) {
-            status = HttpStatus.SC_INTERNAL_SERVER_ERROR;
-            errorMessage = "Internal Sever Error";
-        } else if (e.getErrorCode() == OPASecurityException.ACCESS_REVOKED) {
-            status = HttpStatus.SC_FORBIDDEN;
-            errorMessage = "Forbidden";
-        } else if (e.getErrorCode() == OPASecurityException.OPA_RESPONSE_ERROR) {
-            status = HttpStatus.SC_BAD_REQUEST;
-            errorMessage = "Bad Request";
-        } else {
-            status = HttpStatus.SC_UNAUTHORIZED;
-            errorMessage = "Unauthorized";
-        }
-
-        messageContext.setProperty(SynapseConstants.ERROR_CODE, status);
-        messageContext.setProperty(SynapseConstants.ERROR_MESSAGE, errorMessage);
-        messageContext.setProperty(SynapseConstants.ERROR_EXCEPTION, e);
-        OPAUtils.sendFault(messageContext, status);
     }
 
     public String getServerUrl() {

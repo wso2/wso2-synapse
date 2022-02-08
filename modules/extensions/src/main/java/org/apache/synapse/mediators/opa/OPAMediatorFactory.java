@@ -1,3 +1,21 @@
+/*
+ *  Copyright (c) 2022, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+
 package org.apache.synapse.mediators.opa;
 
 import org.apache.axiom.om.OMAttribute;
@@ -20,8 +38,8 @@ public class OPAMediatorFactory extends AbstractMediatorFactory {
     static final QName POLICY_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "policy");
     static final QName Rule_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "rule");
     static final QName PAYLOAD_GENERATOR_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "requestGenerator");
-    static final QName ADVANCED_PROPERTIES_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "advancedProperties");
-    static final QName PROPERTY_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "property");
+    static final QName ADDITIONAL_PARAMETERS_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "additionalParameters");
+    static final QName PARAMETER_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "parameter");
     static final QName NAME_Q = new QName("name");
 
 
@@ -57,9 +75,9 @@ public class OPAMediatorFactory extends AbstractMediatorFactory {
             opaMediator.setRequestGeneratorClassName(payloadGeneratorElement.getText());
         }
 
-        OMElement advancedPropertiesElement = omElement.getFirstChildWithName(ADVANCED_PROPERTIES_Q);
+        OMElement advancedPropertiesElement = omElement.getFirstChildWithName(ADDITIONAL_PARAMETERS_Q);
         if (advancedPropertiesElement != null) {
-            Iterator parameterIter = advancedPropertiesElement.getChildrenWithName(PROPERTY_Q);
+            Iterator parameterIter = advancedPropertiesElement.getChildrenWithName(PARAMETER_Q);
             while (parameterIter.hasNext()) {
                 OMElement parameterElement = (OMElement) parameterIter.next();
                 OMAttribute nameAtr = parameterElement.getAttribute(NAME_Q);
