@@ -33,7 +33,7 @@ public class OPAMediator extends AbstractMediator {
     private static final Log log = LogFactory.getLog(OPAMediator.class);
 
     private String serverUrl = null;
-    private String accessToken = null;
+    private String accessKey = null;
     private String policy = null;
     private String rule = "allow";
     private String requestGeneratorClassName = "org.apache.synapse.mediators.opa.OPASynapseRequestGenerator";
@@ -62,7 +62,7 @@ public class OPAMediator extends AbstractMediator {
             String opaPayload = requestGenerator.createRequest(policy, rule, advancedProperties, messageContext);
             String evaluatingPolicyUrl = serverUrl + "/" + policy + "/" + rule;
 
-            opaResponseString = OPAClient.publish(evaluatingPolicyUrl, opaPayload, accessToken);
+            opaResponseString = OPAClient.publish(evaluatingPolicyUrl, opaPayload, accessKey);
             return requestGenerator.handleResponse(policy, rule, opaResponseString, messageContext);
         } catch (OPASecurityException e) {
             handleException("Rejected from opa policy." + e.getMessage(), messageContext);
@@ -80,14 +80,14 @@ public class OPAMediator extends AbstractMediator {
         this.serverUrl = serverUrl;
     }
 
-    public String getAccessToken() {
+    public String getAccessKey() {
 
-        return accessToken;
+        return accessKey;
     }
 
-    public void setAccessToken(String accessToken) {
+    public void setAccessKey(String accessKey) {
 
-        this.accessToken = accessToken;
+        this.accessKey = accessKey;
     }
 
     public String getRequestGeneratorClassName() {

@@ -19,17 +19,12 @@
 package org.apache.synapse.mediators.opa;
 
 import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMNamespace;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.config.xml.AbstractMediatorSerializer;
-import org.apache.synapse.config.xml.XMLConfigConstants;
 
 import java.util.Map;
 
 public class OPAMediatorSerializer extends AbstractMediatorSerializer {
-
-    private static final OMNamespace opaNS =
-            fac.createOMNamespace(XMLConfigConstants.SYNAPSE_NAMESPACE, "opa");
 
     public OMElement serializeSpecificMediator(Mediator m) {
 
@@ -38,7 +33,6 @@ public class OPAMediatorSerializer extends AbstractMediatorSerializer {
         }
 
         OPAMediator mediator = (OPAMediator) m;
-
         OMElement opaElement = fac.createOMElement("opa", synNS);
 
         saveTracingState(opaElement, mediator);
@@ -50,9 +44,9 @@ public class OPAMediatorSerializer extends AbstractMediatorSerializer {
             handleException("Invalid mediator. Server url is required.");
         }
 
-        if (mediator.getAccessToken() != null) {
-            OMElement tokenElement = fac.createOMElement(OPAMediatorFactory.TOKEN_Q, opaElement);
-            tokenElement.setText(mediator.getAccessToken());
+        if (mediator.getAccessKey() != null) {
+            OMElement tokenElement = fac.createOMElement(OPAMediatorFactory.ACCESS_KEY_Q, opaElement);
+            tokenElement.setText(mediator.getAccessKey());
         }
 
         if (mediator.getPolicy() != null) {

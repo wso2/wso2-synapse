@@ -46,7 +46,6 @@ public class OPAClient {
 
     private static final CloseableHttpClient httpClient = createHTTPClient();
     public static final String AUTHORIZATION_HEADER = "Authorization";
-    public static final String BASIC = "Basic ";
     public static final String CONTENT_TYPE_HEADER = "Content-Type";
     public static final String APPLICATION_JSON = "application/json";
 
@@ -55,7 +54,7 @@ public class OPAClient {
      *
      * @param opaServerUrl The url of the opa server
      * @param payload     The payload of the request
-     * @param credentials Token of the opa validation request
+     * @param credentials Access key of the opa validation request
      *
      * @return opa response String
      * @throws OPASecurityException
@@ -74,10 +73,8 @@ public class OPAClient {
         }
         try {
             httpPost.setEntity(new StringEntity(payload));
-
             CloseableHttpResponse response = httpClient.execute(httpPost);
             return extractResponse(response);
-
         } catch (IOException e){
             throw new OPASecurityException(OPASecurityException.OPA_REQUEST_ERROR,
                     "Error occurred while publishing to OPA server", e);
@@ -99,7 +96,6 @@ public class OPAClient {
         String opaResponse = null;
         try {
             int responseCode = response.getStatusLine().getStatusCode();
-
             if (responseCode != HttpStatus.SC_OK) {
                 throw new OPASecurityException(OPASecurityException.OPA_RESPONSE_ERROR,
                         "Error while accessing the OPA server URL. " + response.getStatusLine());

@@ -34,15 +34,13 @@ public class OPAMediatorFactory extends AbstractMediatorFactory {
 
     static final QName OPA_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "opa");
     static final QName SERVER_URL_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "serverUrl");
-    static final QName TOKEN_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "accessToken");
+    static final QName ACCESS_KEY_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "accessKey");
     static final QName POLICY_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "policy");
     static final QName Rule_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "rule");
     static final QName PAYLOAD_GENERATOR_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "requestGenerator");
     static final QName ADDITIONAL_PARAMETERS_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "additionalParameters");
     static final QName PARAMETER_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "parameter");
     static final QName NAME_Q = new QName("name");
-
-
 
     @Override
     protected Mediator createSpecificMediator(OMElement omElement, Properties properties) {
@@ -54,9 +52,9 @@ public class OPAMediatorFactory extends AbstractMediatorFactory {
             opaMediator.setServerUrl(serverUrlElement.getText());
         }
 
-        OMElement opaTokenElement = omElement.getFirstChildWithName(TOKEN_Q);
-        if (opaTokenElement != null) {
-            opaMediator.setAccessToken(opaTokenElement.getText());
+        OMElement opaKeyElement = omElement.getFirstChildWithName(ACCESS_KEY_Q);
+        if (opaKeyElement != null) {
+            opaMediator.setAccessKey(opaKeyElement.getText());
         }
 
         OMElement policyElement = omElement.getFirstChildWithName(POLICY_Q);

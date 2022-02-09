@@ -30,9 +30,10 @@ public interface OPARequestGenerator {
     /**
      * Generate the OPA request payload from the provided message context and the additional Properties Map
      *
+     * @param policyName         Name of the policy validated
+     * @param rule               The rule of the policy
+     * @param advancedProperties Advanced properties that can be used to construct the opa payload
      * @param messageContext     The message to be validated with OPA server
-     * @param advancedProperties Advanced properies that can be used to construct the opa payload
-     *
      * @return json input as a string and this will be sent to the OPA server for validation
      * @throws OPASecurityException If an authentication failure or some other error occurs
      */
@@ -42,9 +43,10 @@ public interface OPARequestGenerator {
     /**
      * Authenticates the given request using the authenticators which have been initialized.
      *
+     * @param policyName     Name of the policy validated
+     * @param rule           The rule of the policy
+     * @param opaResponse    The message to be authenticated
      * @param messageContext The message to be authenticated
-     * @param opaResponse The message to be authenticated
-     *
      * @return true if the authentication is successful (never returns false)
      * @throws OPASecurityException If an authentication failure or some other error occurs
      */
