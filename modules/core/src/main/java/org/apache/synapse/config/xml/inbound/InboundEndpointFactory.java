@@ -28,9 +28,11 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.commons.handlers.MessagingHandler;
 import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.XMLConfigConstants;
+import org.apache.synapse.config.xml.rest.APIFactory;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.inbound.InboundEndpointConstants;
 
@@ -38,6 +40,7 @@ import sun.util.logging.resources.logging;
 
 import javax.xml.namespace.QName;
 import java.util.Iterator;
+import java.util.Objects;
 
 public class InboundEndpointFactory {
 
@@ -158,6 +161,41 @@ public class InboundEndpointFactory {
                 }
             }
         }
+
+        // Set Inbound Endpoint Handlers
+        OMElement handlersElt = inboundEndpointElem.getFirstChildWithName(
+                new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
+                        InboundEndpointConstants.INBOUND_ENDPOINT_HANDLERS));
+        if (handlersElt != null) {
+            Iterator handlers =
+                    handlersElt.getChildrenWithName(
+                            new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
+                                    InboundEndpointConstants.INBOUND_ENDPOINT_HANDLER));
+
+            while (handlers.hasNext()) {
+                OMElement handler = (OMElement) handlers.next();
+                String handlerClass = handler.getAttributeValue(new QName(
+                        InboundEndpointConstants.INBOUND_ENDPOINT_CLASS));
+
+                if (Objects.isNull(handlerClass) || handlerClass.isEmpty()) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Class name of the Inbound Endpoint handler has not been configured or is empty");
+                    }
+                    continue;
+                }
+
+                try {
+                    Class clazz = APIFactory.class.getClassLoader().loadClass(handlerClass);
+                    MessagingHandler inboundEndpointHandler = (MessagingHandler) clazz.newInstance();
+                    inboundEndpoint.addHandler(inboundEndpointHandler);
+                } catch (Exception e) {
+                    String errorMsg = "Error initializing Inbound Endpoint handler: " + handlerClass;
+                    log.error(errorMsg, e);
+                    throw new SynapseException(errorMsg, e);
+                }
+            }
+        }
+
         inboundEndpoint.setFileName(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_NAME))+".xml");
         return inboundEndpoint;
     }

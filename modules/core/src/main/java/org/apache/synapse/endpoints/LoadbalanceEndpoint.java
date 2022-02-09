@@ -39,8 +39,8 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.endpoints.algorithms.AlgorithmContext;
 import org.apache.synapse.endpoints.algorithms.LoadbalanceAlgorithm;
+import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.json.JSONObject;
 
 import javax.xml.stream.XMLStreamException;
@@ -522,7 +522,9 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
      */
     private void buildMessage(MessageContext synCtx) {
         try {
-            RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext());
+            org.apache.axis2.context.MessageContext axis2MsgCtx =
+                    ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+            MessageHandlerProvider.getMessageHandler(axis2MsgCtx).buildMessage(axis2MsgCtx);
         } catch (IOException | XMLStreamException ex) {
             handleException("Error while building the message", ex, synCtx);
         }

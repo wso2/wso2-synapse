@@ -43,9 +43,9 @@ import org.apache.synapse.config.xml.OMElementUtils;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.streaming_xpath.StreamingXPATH;
 import org.apache.synapse.util.streaming_xpath.compiler.exception.StreamingXPATHCompilerException;
 import org.apache.synapse.util.streaming_xpath.custom.components.ParserComponent;
@@ -381,9 +381,9 @@ public class SynapseXPath extends SynapsePath {
                     String contentType = (String) axis2MC.getProperty(SynapseConstants.AXIS2_PROPERTY_CONTENT_TYPE);
                     if (!isStreamingXpathSupportedContentType(contentType) &&
                             !Boolean.TRUE.equals(PassThroughConstants.MESSAGE_BUILDER_INVOKED)) {
-                        RelayUtils.buildMessage(axis2MC);
+                        MessageHandlerProvider.getMessageHandler(axis2MC).buildMessage(axis2MC);
                     } else {
-                        inputStream = getMessageInputStreamPT(axis2MC);
+                        inputStream = MessageHandlerProvider.getMessageHandler(axis2MC).getMessageDataStream(axis2MC);
                     }
                 } catch (XMLStreamException e) {
                     handleException("Error occurred while building the message from the message context", e);

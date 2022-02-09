@@ -55,6 +55,7 @@ import org.apache.logging.log4j.ThreadContext;
 import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiatorProvider;
+import org.apache.synapse.transport.util.PassThroughMessageHandler;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.nhttp.HttpCoreRequestResponseTransport;
@@ -599,6 +600,8 @@ public class ServerWorker implements Runnable {
 
         msgContext.setProperty(RequestResponseTransport.TRANSPORT_CONTROL,
                 new HttpCoreRequestResponseTransport(msgContext));
+
+        msgContext.setProperty(PassThroughConstants.TRANSPORT_MESSAGE_HANDLER, new PassThroughMessageHandler());
 
         return msgContext;
     }

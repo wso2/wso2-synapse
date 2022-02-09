@@ -23,10 +23,13 @@ import org.apache.axis2.addressing.AddressingConstants;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.transport.netty.util.RequestResponseUtils;
+import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.json.JSONObject;
+
+import java.util.Objects;
 
 /**
  * This class represents an endpoint with the EPR as the 'To' header of the message. It is
@@ -86,12 +89,14 @@ public class DefaultEndpoint extends AbstractEndpoint {
 
     	org.apache.axis2.context.MessageContext messageContext =((Axis2MessageContext) synCtx).getAxis2MessageContext();
     	final Pipe pipe = (Pipe) messageContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-        if (pipe != null && !Boolean.TRUE.equals(messageContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)) && messageContext.getProperty("To") == null) {
-        	 try {
-	            RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(),false);
+        if ((pipe != null || RequestResponseUtils.isHttpCarbonMessagePresent(messageContext))
+                && !Boolean.TRUE.equals(messageContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))
+                && messageContext.getProperty("To") == null) {
+            try {
+                MessageHandlerProvider.getMessageHandler(messageContext).buildMessage(messageContext, false);
             } catch (Exception e) {
                  handleException("Error while building message", e, synCtx);
-             }
+            }
         }
         if (getParentEndpoint() == null && !readyToSend()) {
             // if the this leaf endpoint is too a root endpoint and is in inactive

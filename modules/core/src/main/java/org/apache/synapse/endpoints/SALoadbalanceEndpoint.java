@@ -36,7 +36,7 @@ import org.apache.synapse.endpoints.dispatch.Dispatcher;
 import org.apache.synapse.endpoints.dispatch.HttpSessionDispatcher;
 import org.apache.synapse.endpoints.dispatch.SALSessions;
 import org.apache.synapse.endpoints.dispatch.SessionInformation;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
+import org.apache.synapse.transport.util.MessageHandlerProvider;
 
 /**
  * SALoadbalanceEndpoint supports session affinity based load balancing. Each of this endpoint
@@ -137,7 +137,9 @@ public class SALoadbalanceEndpoint extends LoadbalanceEndpoint {
 
         if (!(dispatcher instanceof HttpSessionDispatcher)) {
             try {
-                RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(),false);
+                org.apache.axis2.context.MessageContext axis2MsgCtx =
+                        ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+                MessageHandlerProvider.getMessageHandler(axis2MsgCtx).buildMessage(axis2MsgCtx, false);
             } catch (Exception e) {
                 handleException("Error while building message", e, synCtx);
             }

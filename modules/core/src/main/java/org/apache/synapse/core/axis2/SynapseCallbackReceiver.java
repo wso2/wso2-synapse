@@ -55,11 +55,11 @@ import org.apache.synapse.endpoints.dispatch.Dispatcher;
 import org.apache.synapse.endpoints.oauth.MessageCache;
 import org.apache.synapse.endpoints.oauth.OAuthUtils;
 import org.apache.synapse.mediators.MediatorFaultHandler;
+import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.ConcurrencyThrottlingUtils;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.ResponseAcceptEncodingProcessor;
@@ -508,7 +508,9 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 }
                 
                 try {
-                    RelayUtils.buildMessage(((Axis2MessageContext) synapseInMessageContext).getAxis2MessageContext(),true);
+                    org.apache.axis2.context.MessageContext axis2MsgCtx =
+                            ((Axis2MessageContext) synapseInMessageContext).getAxis2MessageContext();
+                    MessageHandlerProvider.getMessageHandler(axis2MsgCtx).buildMessage(axis2MsgCtx, true);
                 } catch (Exception e) {
                    // handleException("Error while building message", e, synapseInMessageContext);
                 }

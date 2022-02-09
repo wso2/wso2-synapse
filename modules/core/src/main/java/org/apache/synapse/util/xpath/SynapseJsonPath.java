@@ -40,6 +40,7 @@ import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.util.InlineExpressionUtil;
 import org.jaxen.JaxenException;
 
@@ -168,7 +169,7 @@ public class SynapseJsonPath extends SynapsePath {
             try {
                 if (null == amc.getEnvelope().getBody().getFirstElement()) {
                     // Get message from PT Pipe.
-                    stream = getMessageInputStreamPT(amc);
+                    stream = MessageHandlerProvider.getMessageHandler(amc).getMessageDataStream(amc);
                     if (stream == null) {
                         stream = JsonUtil.getJsonPayload(amc);
                     } else {
@@ -267,7 +268,7 @@ public class SynapseJsonPath extends SynapsePath {
             try {
                 if (null == amc.getEnvelope().getBody().getFirstElement()) {
                     // Get message from PT Pipe.
-                    stream = getMessageInputStreamPT(amc);
+                    stream = MessageHandlerProvider.getMessageHandler(amc).getMessageDataStream(amc);
                     if (stream == null) {
                         stream = JsonUtil.getJsonPayload(amc);
                     } else {
