@@ -10,7 +10,7 @@ import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.AxisOperation;
 import org.apache.axis2.description.AxisService;
 import org.apache.axis2.dispatchers.SOAPMessageBodyBasedDispatcher;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
+import org.apache.synapse.transport.util.MessageHandlerProvider;
 
 public class SynapseSOAPMessageBodyBasedDispatcher extends
 		SOAPMessageBodyBasedDispatcher {
@@ -33,7 +33,7 @@ public class SynapseSOAPMessageBodyBasedDispatcher extends
 		if (body.getFirstElement() == null) {
 			// Can be a pass-through case try to build and see.
 			try {
-				RelayUtils.buildMessage(mc, false);
+				MessageHandlerProvider.getMessageHandler(mc).buildMessage(mc, false);
 			} catch (IOException e) {
 				e.printStackTrace();
 			} catch (XMLStreamException e) {

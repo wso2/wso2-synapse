@@ -39,6 +39,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCol
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
+import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -49,7 +50,6 @@ import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.transport.passthru.util.RelayConstants;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.logging.LoggingUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -382,7 +382,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
         if (contentAware) {
             try {
-                RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
+                MessageHandlerProvider.getMessageHandler(axis2Ctx).buildMessage(axis2Ctx, false);
+
                 axis2Ctx.setProperty(RelayConstants.FORCE_RESPONSE_EARLY_BUILD, Boolean.TRUE);
                 if (forceBuildMC) {
                     ((Axis2MessageContext) synCtx).getAxis2MessageContext().getEnvelope().build();

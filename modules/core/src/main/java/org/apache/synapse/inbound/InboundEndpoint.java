@@ -27,6 +27,7 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.commons.handlers.MessagingHandler;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.xpath.SynapseXPath;
@@ -35,8 +36,10 @@ import org.wso2.securevault.SecretResolver;
 import org.wso2.securevault.SecretResolverFactory;
 import org.wso2.securevault.commons.MiscellaneousUtil;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
@@ -58,6 +61,7 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
     private String onErrorSeq;
     private Map<String, String> parametersMap = new LinkedHashMap<String, String>();
     private Map<String, String> parameterKeyMap = new LinkedHashMap<String, String>();
+    private List<MessagingHandler> handlers = new ArrayList();
     private String fileName;
     private SynapseEnvironment synapseEnvironment;
     private InboundRequestProcessor inboundRequestProcessor;
@@ -142,6 +146,10 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
         resolveVaultExpressions(props);
         resolveSystemSecureVaultProperties(props);
         inboundProcessorParams.setProperties(props);
+
+        for (MessagingHandler handler: handlers) {
+            inboundProcessorParams.addHandler(handler);
+        }
         return inboundProcessorParams;
     }
 
@@ -334,5 +342,15 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
             }
         }
 
+    }
+
+    public List<MessagingHandler> getHandlers() {
+
+        return handlers;
+    }
+
+    public void addHandler(MessagingHandler handler) {
+
+        this.handlers.add(handler);
     }
 }

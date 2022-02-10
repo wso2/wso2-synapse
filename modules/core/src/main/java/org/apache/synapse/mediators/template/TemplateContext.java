@@ -19,8 +19,6 @@
 package org.apache.synapse.mediators.template;
 
 import org.apache.axiom.om.OMAttribute;
-import org.apache.axiom.om.OMDocument;
-import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMText;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
@@ -28,8 +26,8 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 
 import javax.xml.stream.XMLStreamException;
@@ -136,7 +134,9 @@ public class TemplateContext {
                             && (!Boolean.TRUE.equals(axis2MessageContext.
                             getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)))) {
 
-                        RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext());
+                        org.apache.axis2.context.MessageContext axis2MsgCtx =
+                                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+                        MessageHandlerProvider.getMessageHandler(axis2MsgCtx).buildMessage(axis2MsgCtx);
                     }
 
                     if (expression.getExpression() instanceof SynapseJsonPath) {

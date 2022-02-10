@@ -22,6 +22,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.util.ConfigurationBuilderUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -82,72 +83,81 @@ public class PassThroughConfiguration {
     }
 
     public int getWorkerPoolCoreSize() {
-        return getIntProperty(PassThroughConfigPNames.WORKER_POOL_SIZE_CORE,
-                DEFAULT_WORKER_POOL_SIZE_CORE);
+        return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.WORKER_POOL_SIZE_CORE,
+                DEFAULT_WORKER_POOL_SIZE_CORE, props);
     }
 
     public int getWorkerPoolMaxSize() {
-        return getIntProperty(PassThroughConfigPNames.WORKER_POOL_SIZE_MAX,
-                DEFAULT_WORKER_POOL_SIZE_MAX);
+        return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.WORKER_POOL_SIZE_MAX,
+                DEFAULT_WORKER_POOL_SIZE_MAX, props);
     }
 
     public int getWorkerThreadKeepaliveSec() {
-        return getIntProperty(PassThroughConfigPNames.WORKER_THREAD_KEEP_ALIVE_SEC,
-                DEFAULT_WORKER_THREAD_KEEPALIVE_SEC);
+        return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.WORKER_THREAD_KEEP_ALIVE_SEC,
+                DEFAULT_WORKER_THREAD_KEEPALIVE_SEC, props);
     }
 
     public int getWorkerPoolQueueLen() {
-        return getIntProperty(PassThroughConfigPNames.WORKER_POOL_QUEUE_LENGTH,
-                DEFAULT_WORKER_POOL_QUEUE_LENGTH);
+        return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.WORKER_POOL_QUEUE_LENGTH,
+                DEFAULT_WORKER_POOL_QUEUE_LENGTH, props);
     }
 
     public int getIOThreadsPerReactor() {
-        return getIntProperty(PassThroughConfigPNames.IO_THREADS_PER_REACTOR,
-                DEFAULT_IO_THREADS_PER_REACTOR);
+        return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.IO_THREADS_PER_REACTOR,
+                DEFAULT_IO_THREADS_PER_REACTOR, props);
     }
 
     public int getIOBufferSize() {
-        return getIntProperty(PassThroughConfigPNames.IO_BUFFER_SIZE,
-                DEFAULT_IO_BUFFER_SIZE);
+        return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.IO_BUFFER_SIZE,
+                DEFAULT_IO_BUFFER_SIZE, props);
     }
 
     public boolean isKeepAliveDisabled() {
         if (isKeepAliveDisabled == null) {
-            isKeepAliveDisabled = getBooleanProperty(PassThroughConfigPNames.DISABLE_KEEPALIVE, false);
+            isKeepAliveDisabled =
+                    ConfigurationBuilderUtil.getBooleanProperty(PassThroughConfigPNames.DISABLE_KEEPALIVE,
+                            false, props);
         }
-        return isKeepAliveDisabled.booleanValue();
+        return isKeepAliveDisabled;
     }
 
     public int getMaxActiveConnections() {
-        return getIntProperty(PassThroughConfigPNames.C_MAX_ACTIVE, DEFAULT_MAX_ACTIVE_CON);
+        return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.C_MAX_ACTIVE, DEFAULT_MAX_ACTIVE_CON,
+                props);
     }
     public int getListenerShutdownWaitTime() {
-        return getIntProperty(PassThroughConfigPNames.TRANSPORT_LISTENER_SHUTDOWN_WAIT_TIME_SEC,
-                DEFAULT_LISTENER_SHUTDOWN_WAIT_TIME)*1000;
+        return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames
+                        .TRANSPORT_LISTENER_SHUTDOWN_WAIT_TIME_SEC, DEFAULT_LISTENER_SHUTDOWN_WAIT_TIME, props) * 1000;
     }
 
     public boolean isPreserveUserAgentHeader() {
-        return getBooleanProperty(PassThroughConfigPNames.USER_AGENT_HEADER_PRESERVE, false);
+        return ConfigurationBuilderUtil.getBooleanProperty(PassThroughConfigPNames.USER_AGENT_HEADER_PRESERVE,
+                false, props);
     }
 
     public boolean isPreserveServerHeader() {
-        return getBooleanProperty(PassThroughConfigPNames.SERVER_HEADER_PRESERVE, false);
+        return ConfigurationBuilderUtil.getBooleanProperty(PassThroughConfigPNames.SERVER_HEADER_PRESERVE,
+                false, props);
     }
 
     public boolean isForcedXmlMessageValidationEnabled() {
-        return getBooleanProperty(PassThroughConstants.FORCE_XML_MESSAGE_VALIDATION, false);
+        return ConfigurationBuilderUtil.getBooleanProperty(PassThroughConstants.FORCE_XML_MESSAGE_VALIDATION,
+                false, props);
     }
 
     public boolean isForcedJSONMessageValidationEnabled() {
-        return getBooleanProperty(PassThroughConstants.FORCE_JSON_MESSAGE_VALIDATION, false);
+        return ConfigurationBuilderUtil.getBooleanProperty(PassThroughConstants.FORCE_JSON_MESSAGE_VALIDATION,
+                false, props);
     }
 
     public String getPreserveHttpHeaders() {
-        return getStringProperty(PassThroughConfigPNames.HTTP_HEADERS_PRESERVE, "");
+        return ConfigurationBuilderUtil.getStringProperty(PassThroughConfigPNames.HTTP_HEADERS_PRESERVE,
+                "", props);
     }
 
     public String getResponsePreseveHttpHeaders() {
-        return getStringProperty(PassThroughConfigPNames.HTTP_RESPONSE_HEADERS_PRESERVE, "");
+        return ConfigurationBuilderUtil.getStringProperty(PassThroughConfigPNames.HTTP_RESPONSE_HEADERS_PRESERVE,
+                "", props);
     }
 
     public boolean isServiceListBlocked() {
@@ -158,11 +168,12 @@ public class PassThroughConfiguration {
 
         int idleTime;
         // Giving higher priority for grace time if it is configured, than for the configured idle time
-        if (isIntPropertyConfigured(PassThroughConfigPNames.CONNECTION_GRACE_TIME)) {
+        if (ConfigurationBuilderUtil.isIntPropertyConfigured(PassThroughConfigPNames.CONNECTION_GRACE_TIME, props)) {
             idleTime = getIdleTimeFromGraceTime();
         } else {
             // Setting idle time if it is configured, if not, using the default grace time to calculate idle time
-            idleTime = getIntProperty(PassThroughConfigPNames.CONNECTION_IDLE_TIME, getIdleTimeFromGraceTime());
+            idleTime = ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.CONNECTION_IDLE_TIME,
+                    getIdleTimeFromGraceTime(), props);
         }
 
         if (idleTime < 0) {
@@ -171,23 +182,26 @@ public class PassThroughConfiguration {
         return idleTime;
     }
     public int getMaximumConnectionLifespan() {
-        return getIntProperty(PassThroughConfigPNames.MAXIMUM_CONNECTION_LIFESPAN, Integer.MAX_VALUE);
+        return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.MAXIMUM_CONNECTION_LIFESPAN,
+                Integer.MAX_VALUE, props);
     }
     public int getConnectionGraceTime() {
-        return getIntProperty(PassThroughConfigPNames.CONNECTION_GRACE_TIME, DEFAULT_CONNECTION_GRACE_TIME);
+        return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.CONNECTION_GRACE_TIME,
+                DEFAULT_CONNECTION_GRACE_TIME, props);
     }
 
     /**
-     * For the default value, grace time is reduced to avoid connection being used at the moment it is being closed
+     * For the default value, grace time is reduced to avoid connection being used at the moment it is being closed.
      * @return default connection idle time
      */
-    private int getIdleTimeFromGraceTime(){
-        return getIntProperty(HttpConnectionParams.SO_TIMEOUT, 60000) - getConnectionGraceTime();
+    private int getIdleTimeFromGraceTime() {
+        return ConfigurationBuilderUtil
+                .getIntProperty(HttpConnectionParams.SO_TIMEOUT, 60000, props) - getConnectionGraceTime();
     }
 
     public String getCorrelationHeaderName() {
-        return getStringProperty(PassThroughConfigPNames.CORRELATION_HEADER_NAME_PROPERTY,
-                PassThroughConstants.CORRELATION_DEFAULT_HEADER);
+        return ConfigurationBuilderUtil.getStringProperty(PassThroughConfigPNames.CORRELATION_HEADER_NAME_PROPERTY,
+                PassThroughConstants.CORRELATION_DEFAULT_HEADER, props);
     }
 
     /**
@@ -248,144 +262,41 @@ public class PassThroughConfiguration {
          return properties;
     }
 
-    /**
-     * Get an int property that tunes pass-through http transport. Prefer system properties
-     *
-     * @param name name of the system/config property
-     * @param def  default value to return if the property is not set
-     * @return the value of the property to be used
-     */
-    public Integer getIntProperty(String name, Integer def) {
-        String val = System.getProperty(name);
-        if (val == null) {
-            val = props.getProperty(name);
-        }
-
-        if (val != null) {
-            int intVal;
-            try {
-                intVal = Integer.valueOf(val);
-            } catch (NumberFormatException e) {
-                log.warn("Invalid pass-through http tuning property value. " + name +
-                        " must be an integer");
-                return def;
-            }
-            if (log.isDebugEnabled()) {
-                log.debug("Using pass-through http tuning parameter : " + name + " = " + val);
-            }
-            return intVal;
-        }
-
-        return def;
-    }
-
-    /**
-     * Return true if user has configured an int property that tunes pass-through http transport
-     * @param name  name of the system/config property
-     * @return      true if property is configured
-     */
-    private boolean isIntPropertyConfigured(String name) {
-
-        String val = System.getProperty(name);
-        if (val == null) {
-            val = props.getProperty(name);
-        }
-
-        if (val != null) {
-            try {
-                Integer.parseInt(val);
-            } catch (NumberFormatException e) {
-                log.warn("Incorrect pass-through http tuning property value. " + name +
-                        " must be an integer");
-                return false;
-            }
-            if (log.isDebugEnabled()) {
-                log.debug("Using configured pass-through http tuning property value for : " + name);
-            }
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Get an int property that tunes pass-through http transport. Prefer system properties
-     *
-     * @param name name of the system/config property
-     * @return the value of the property, null if the property is not found
-     */
-    public Integer getIntProperty(String name) {
-        return getIntProperty(name, null);
-    }
-
-    /**
-     * Get a boolean property that tunes pass-through http transport. Prefer system properties
-     *
-     * @param name name of the system/config property
-     * @param def  default value to return if the property is not set
-     * @return the value of the property to be used
-     */
-    public Boolean getBooleanProperty(String name, Boolean def) {
-        String val = System.getProperty(name);
-        if (val == null) {
-            val = props.getProperty(name);
-        }
-
-        if (val != null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Using pass-through http tuning parameter : " + name + " = " + val);
-            }
-            return Boolean.valueOf(val);
-        }
-
-        return def;
-    }
-
-    /**
-     * Get a Boolean property that tunes pass-through http transport. Prefer system properties
-     *
-     * @param name name of the system/config property
-     * @return the value of the property, null if the property is not found
-     */
     public Boolean getBooleanProperty(String name) {
-        return getBooleanProperty(name, null);
+        return ConfigurationBuilderUtil.getBooleanProperty(name, null, props);
     }
 
-    /**
-     * Get a String property that tunes pass-through http transport. Prefer system properties
-     *
-     * @param name name of the system/config property
-     * @param def  default value to return if the property is not set
-     * @return the value of the property to be used
-     */
+    public Boolean getBooleanProperty(String name, Boolean def) {
+        return ConfigurationBuilderUtil.getBooleanProperty(name, def, props);
+    }
+
+    public Integer getIntProperty(String name, Integer def) {
+        return ConfigurationBuilderUtil.getIntProperty(name, def, props);
+    }
+
     public String getStringProperty(String name, String def) {
-        String val = System.getProperty(name);
-        if (val == null) {
-            val = props.getProperty(name);
-        }
-
-        return val == null ? def : val;
+        return ConfigurationBuilderUtil.getStringProperty(name, def, props);
     }
-
 
     public String getRESTDispatchService() {
-        return getStringProperty(REST_DISPATCHER_SERVICE,"");
+        return ConfigurationBuilderUtil.getStringProperty(REST_DISPATCHER_SERVICE, "", props);
     }
 
     public String getRestUriApiRegex() {
-        return getStringProperty(REST_URI_API_REGEX, "");
+        return ConfigurationBuilderUtil.getStringProperty(REST_URI_API_REGEX, "", props);
     }
 
     public String getRestUriProxyRegex() {
-        return getStringProperty(REST_URI_PROXY_REGEX, "");
+        return ConfigurationBuilderUtil.getStringProperty(REST_URI_PROXY_REGEX, "", props);
     }
 
-    public boolean isListeningIOReactorShared(){
-        return getBooleanProperty(PassThroughConfigPNames.HTTP_LISTENING_IO_REACTOR_SHARING_ENABLE, false);
+    public boolean isListeningIOReactorShared() {
+        return ConfigurationBuilderUtil
+                .getBooleanProperty(PassThroughConfigPNames.HTTP_LISTENING_IO_REACTOR_SHARING_ENABLE, false, props);
     }
 
     public String getAllowedResponseProperties() {
-        return getStringProperty(ALLOWED_RESPONSE_PROPERTIES, null);
+        return ConfigurationBuilderUtil.getStringProperty(ALLOWED_RESPONSE_PROPERTIES, null, props);
     }
 
     /**

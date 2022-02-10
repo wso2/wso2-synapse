@@ -280,6 +280,11 @@
             <artifactId>log4j-api</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.transport.http</groupId>
+            <artifactId>org.wso2.transport.http.netty</artifactId>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
     <properties />
 </project>

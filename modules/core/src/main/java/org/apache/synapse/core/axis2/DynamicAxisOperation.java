@@ -38,6 +38,8 @@ import org.apache.axis2.transport.TransportUtils;
 import org.apache.axis2.util.TargetResolver;
 import org.apache.axis2.wsdl.WSDLConstants;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.transport.netty.BridgeConstants;
+import org.apache.synapse.transport.netty.util.RequestResponseUtils;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 import javax.xml.namespace.QName;
@@ -47,130 +49,149 @@ import javax.xml.namespace.QName;
  */
 public class DynamicAxisOperation extends OutInAxisOperation {
 
-	public DynamicAxisOperation() {
-		super();
-	}
+    public DynamicAxisOperation() {
 
-	public DynamicAxisOperation(QName name) {
-		super(name);
-	}
+        super();
+    }
 
-	public OperationClient createClient(ServiceContext sc, Options options) {
-		return new DynamicOperationClient(this, sc, options);
-	}
+    public DynamicAxisOperation(QName name) {
 
-	static class DynamicOperationClient extends OperationClient {
+        super(name);
+    }
 
-		DynamicOperationClient(OutInAxisOperation axisOp, ServiceContext sc, Options options) {
+    public OperationClient createClient(ServiceContext sc, Options options) {
+
+        return new DynamicOperationClient(this, sc, options);
+    }
+
+    static class DynamicOperationClient extends OperationClient {
+
+        DynamicOperationClient(OutInAxisOperation axisOp, ServiceContext sc, Options options) {
+
             super(axisOp, sc, options);
-		}
+        }
 
-		/**
+        /**
          * same as OutInAxisOperationClient
-		 */
-		public void addMessageContext(MessageContext mc) throws AxisFault {
-			mc.setServiceContext(sc);
-			if (mc.getMessageID() == null) {
-				setMessageID(mc);
-			}
-			axisOp.registerOperationContext(mc, oc);
-		}
+         */
+        public void addMessageContext(MessageContext mc) throws AxisFault {
 
-		/**
-		 * same as OutInAxisOperationClient
-		 */
-		public MessageContext getMessageContext(String messageLabel) throws AxisFault {
-			return oc.getMessageContext(messageLabel);
-		}
+            mc.setServiceContext(sc);
+            if (mc.getMessageID() == null) {
+                setMessageID(mc);
+            }
+            axisOp.registerOperationContext(mc, oc);
+        }
 
-		public void executeImpl(boolean block) throws AxisFault {
+        /**
+         * same as OutInAxisOperationClient
+         */
+        public MessageContext getMessageContext(String messageLabel) throws AxisFault {
+
+            return oc.getMessageContext(messageLabel);
+        }
+
+        public void executeImpl(boolean block) throws AxisFault {
 
             // if the MEP is completed, throw a fault
             if (completed) {
-				throw new AxisFault(Messages.getMessage("mepiscomplted"));
-			}
+                throw new AxisFault(Messages.getMessage("mepiscomplted"));
+            }
 
             // if the OUT message is not set on the operation context, throw a fault
             MessageContext outMsgCtx = oc.getMessageContext(WSDLConstants.MESSAGE_LABEL_OUT_VALUE);
-			if (outMsgCtx == null) {
-				throw new AxisFault(Messages.getMessage("outmsgctxnull"));
-			}
+            if (outMsgCtx == null) {
+                throw new AxisFault(Messages.getMessage("outmsgctxnull"));
+            }
 
             ConfigurationContext cfgCtx = sc.getConfigurationContext();
 
             // set ClientOptions to the current outgoing message
             outMsgCtx.setOptions(options);
 
-			// do Target Resolution
-			TargetResolver tr = cfgCtx.getAxisConfiguration().getTargetResolverChain();
+            // do Target Resolution
+            TargetResolver tr = cfgCtx.getAxisConfiguration().getTargetResolverChain();
             if (tr != null) {
                 tr.resolveTarget(outMsgCtx);
             }
 
             // if the transport to use for sending is not specified, try to find it from the URL
-			TransportOutDescription transportOut = options.getTransportOut();
-			if (transportOut == null) {
-				EndpointReference toEPR =
-                    (options.getTo() != null) ? options.getTo() : outMsgCtx.getTo();
-				transportOut =
-                    ClientUtils.inferOutTransport(cfgCtx.getAxisConfiguration(), toEPR, outMsgCtx);
-			}
-			outMsgCtx.setTransportOut(transportOut);
+            TransportOutDescription transportOut = options.getTransportOut();
+            if (transportOut == null) {
+                EndpointReference toEPR =
+                        (options.getTo() != null) ? options.getTo() : outMsgCtx.getTo();
+                transportOut =
+                        ClientUtils.inferOutTransport(cfgCtx.getAxisConfiguration(), toEPR, outMsgCtx);
 
-			if (options.getTransportIn() == null && outMsgCtx.getTransportIn() == null) {
-				outMsgCtx.setTransportIn(ClientUtils.inferInTransport(
+                // Check if the message context contains the "HTTP_CARBON_MESSAGE" property to see if this message
+                // came from the HTTP transport based on Netty. Depending on that, we need to change the "transport"
+                // variable as below to pick the correct TransportOutDescription from the AxisConfiguration.
+                if (RequestResponseUtils.isHttpCarbonMessagePresent(outMsgCtx)) {
+                    String transportName = transportOut.getName();
+                    if (Constants.TRANSPORT_HTTP.equalsIgnoreCase(transportName)) {
+                        transportOut = cfgCtx.getAxisConfiguration().getTransportOut(BridgeConstants.TRANSPORT_HTTPWS);
+                    } else if (Constants.TRANSPORT_HTTPS.equalsIgnoreCase(transportName)) {
+                        transportOut = cfgCtx.getAxisConfiguration()
+                                .getTransportOut(BridgeConstants.TRANSPORT_HTTPSWSS);
+                    }
+                }
+            }
+            outMsgCtx.setTransportOut(transportOut);
+
+            if (options.getTransportIn() == null && outMsgCtx.getTransportIn() == null) {
+                outMsgCtx.setTransportIn(ClientUtils.inferInTransport(
                         cfgCtx.getAxisConfiguration(), options, outMsgCtx));
-			} else if (outMsgCtx.getTransportIn() == null) {
-				outMsgCtx.setTransportIn(options.getTransportIn());
-			}
+            } else if (outMsgCtx.getTransportIn() == null) {
+                outMsgCtx.setTransportIn(options.getTransportIn());
+            }
 
             // add reference parameters to To EPR
             addReferenceParameters(outMsgCtx);
 
             if (options.isUseSeparateListener()) {
 
-				options.setTransportIn(outMsgCtx.getConfigurationContext()
-						.getAxisConfiguration().getTransportIn(Constants.TRANSPORT_HTTP));
+                options.setTransportIn(outMsgCtx.getConfigurationContext()
+                        .getAxisConfiguration().getTransportIn(Constants.TRANSPORT_HTTP));
 
-				SynapseCallbackReceiver callbackReceiver =
+                SynapseCallbackReceiver callbackReceiver =
                         (SynapseCallbackReceiver) axisOp.getMessageReceiver();
-                
-                ((Axis2MessageContext)((AsyncCallback)
+
+                ((Axis2MessageContext) ((AsyncCallback)
                         axisCallback).getSynapseOutMsgCtx()).getAxis2MessageContext().setProperty(
                         NhttpConstants.IGNORE_SC_ACCEPTED, Constants.VALUE_TRUE);
                 callbackReceiver.addCallback(outMsgCtx.getMessageID(), axisCallback);
-                
+
                 EndpointReference replyToFromTransport = outMsgCtx.getConfigurationContext()
                         .getListenerManager().getEPRforService(sc.getAxisService().getName(),
-                        axisOp.getName().getLocalPart(), outMsgCtx.getTransportOut().getName());
+                                axisOp.getName().getLocalPart(), outMsgCtx.getTransportOut().getName());
 
-				if (outMsgCtx.getReplyTo() == null) {
-					outMsgCtx.setReplyTo(replyToFromTransport);
-				} else {
-					outMsgCtx.getReplyTo().setAddress(replyToFromTransport.getAddress());
-				}
+                if (outMsgCtx.getReplyTo() == null) {
+                    outMsgCtx.setReplyTo(replyToFromTransport);
+                } else {
+                    outMsgCtx.getReplyTo().setAddress(replyToFromTransport.getAddress());
+                }
 
-				outMsgCtx.getConfigurationContext().registerOperationContext(
-						outMsgCtx.getMessageID(), oc);
+                outMsgCtx.getConfigurationContext().registerOperationContext(
+                        outMsgCtx.getMessageID(), oc);
 
                 AxisEngine.send(outMsgCtx);
 
-				// Options object reused so soapAction needs to be removed so
-				// that soapAction+wsa:Action on response don't conflict
-				options.setAction("");
+                // Options object reused so soapAction needs to be removed so
+                // that soapAction+wsa:Action on response don't conflict
+                options.setAction("");
 
-			} else {
+            } else {
 
                 SynapseCallbackReceiver callbackReceiver =
-                    (SynapseCallbackReceiver) axisOp.getMessageReceiver();
+                        (SynapseCallbackReceiver) axisOp.getMessageReceiver();
                 callbackReceiver.addCallback(outMsgCtx.getMessageID(), axisCallback);
                 send(outMsgCtx);
-			}
-		}
+            }
+        }
 
-		private void send(MessageContext msgctx) throws AxisFault {
+        private void send(MessageContext msgctx) throws AxisFault {
 
-			// create the responseMessageContext and set that its related to the current outgoing
+            // create the responseMessageContext and set that its related to the current outgoing
             // message, so that it could be tied back to the original request even if the response
             // envelope does not contain addressing headers
             MessageContext responseMessageContext = new MessageContext();
@@ -179,28 +200,28 @@ public class DynamicAxisOperation extends OutInAxisOperation {
                     SynapseConstants.RELATES_TO_FOR_POX, msgctx.getMessageID());
             responseMessageContext.setOptions(options);
             responseMessageContext.setServerSide(true);
-			addMessageContext(responseMessageContext);
+            addMessageContext(responseMessageContext);
             responseMessageContext.setProperty("synapse.send", "true");
 
             AxisEngine.send(msgctx);
 
             // did the engine receive a immediate synchronous response?
             // e.g. sometimes the transport sender may listen for a syncronous reply
-			if (msgctx.getProperty(MessageContext.TRANSPORT_IN) != null) {
+            if (msgctx.getProperty(MessageContext.TRANSPORT_IN) != null) {
 
-                responseMessageContext.setOperationContext(msgctx.getOperationContext());                
+                responseMessageContext.setOperationContext(msgctx.getOperationContext());
                 responseMessageContext.setAxisMessage(
-                    msgctx.getOperationContext().getAxisOperation().
-                    getMessage(WSDLConstants.MESSAGE_LABEL_IN_VALUE));
+                        msgctx.getOperationContext().getAxisOperation().
+                                getMessage(WSDLConstants.MESSAGE_LABEL_IN_VALUE));
                 responseMessageContext.setAxisService(msgctx.getAxisService());
 
                 responseMessageContext.setProperty(MessageContext.TRANSPORT_OUT,
-                    msgctx.getProperty(MessageContext.TRANSPORT_OUT));
+                        msgctx.getProperty(MessageContext.TRANSPORT_OUT));
                 responseMessageContext.setProperty(org.apache.axis2.Constants.OUT_TRANSPORT_INFO,
-                    msgctx.getProperty(org.apache.axis2.Constants.OUT_TRANSPORT_INFO));
+                        msgctx.getProperty(org.apache.axis2.Constants.OUT_TRANSPORT_INFO));
 
                 responseMessageContext.setProperty(
-                    org.apache.synapse.SynapseConstants.ISRESPONSE_PROPERTY, Boolean.TRUE);
+                        org.apache.synapse.SynapseConstants.ISRESPONSE_PROPERTY, Boolean.TRUE);
                 responseMessageContext.setTransportIn(msgctx.getTransportIn());
                 responseMessageContext.setTransportOut(msgctx.getTransportOut());
 
@@ -208,7 +229,7 @@ public class DynamicAxisOperation extends OutInAxisOperation {
                 responseMessageContext.setDoingREST(msgctx.isDoingREST());
 
                 responseMessageContext.setProperty(MessageContext.TRANSPORT_IN,
-                    msgctx.getProperty(MessageContext.TRANSPORT_IN));
+                        msgctx.getProperty(MessageContext.TRANSPORT_IN));
                 responseMessageContext.setTransportIn(msgctx.getTransportIn());
                 responseMessageContext.setTransportOut(msgctx.getTransportOut());
 
@@ -231,7 +252,7 @@ public class DynamicAxisOperation extends OutInAxisOperation {
                     }
 
                     SOAPEnvelope resenvelope =
-                        TransportUtils.createSOAPMessage(responseMessageContext);
+                            TransportUtils.createSOAPMessage(responseMessageContext);
 
                     if (resenvelope != null) {
                         responseMessageContext.setEnvelope(resenvelope);
@@ -248,6 +269,6 @@ public class DynamicAxisOperation extends OutInAxisOperation {
                 }
             }
         }
-        
+
     }
 }

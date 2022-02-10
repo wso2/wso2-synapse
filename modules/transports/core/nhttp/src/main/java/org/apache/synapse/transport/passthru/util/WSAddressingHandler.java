@@ -22,6 +22,8 @@ import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.handlers.AbstractHandler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.transport.util.MessageHandlerProvider;
+import org.apache.synapse.transport.netty.util.RequestResponseUtils;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
 
@@ -32,7 +34,7 @@ public class WSAddressingHandler extends AbstractHandler {
     public InvocationResponse invoke(MessageContext messageContext) throws AxisFault {
 
         Pipe pipe = (Pipe) messageContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-        if (pipe != null) {
+        if (pipe != null || RequestResponseUtils.isHttpCarbonMessagePresent(messageContext)) {
             if (messageContext.isDoingREST()) {
                 return InvocationResponse.CONTINUE;
             }
@@ -53,7 +55,7 @@ public class WSAddressingHandler extends AbstractHandler {
 
     private void build(MessageContext messageContext) {
         try {
-            RelayUtils.buildMessage(messageContext, false);
+            MessageHandlerProvider.getMessageHandler(messageContext).buildMessage(messageContext, false);
         } catch (Exception e) {
             log.error("Error while executing ws addressing handler", e);
         }

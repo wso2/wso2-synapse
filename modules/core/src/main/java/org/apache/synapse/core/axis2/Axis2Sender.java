@@ -41,8 +41,8 @@ import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.inbound.InboundResponseSender;
+import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.MediatorPropertyUtils;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.POXUtils;
@@ -374,7 +374,9 @@ public class Axis2Sender {
             }
 
             try {                   // Message need to be built prior to the conversion
-                RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
+                org.apache.axis2.context.MessageContext axis2MsgCtx =
+                        ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+                MessageHandlerProvider.getMessageHandler(axis2MsgCtx).buildMessage(axis2MsgCtx, false);
             } catch (Exception e) {
                 handleException("Error while building message", e, synCtx);
             }
@@ -401,7 +403,9 @@ public class Axis2Sender {
             }
 
             try {                   // Message need to be built prior to the conversion
-                RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
+                org.apache.axis2.context.MessageContext axis2MsgCtx =
+                        ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+                MessageHandlerProvider.getMessageHandler(axis2MsgCtx).buildMessage(axis2MsgCtx, false);
             } catch (Exception e) {
                 handleException("Error while building message", e, synCtx);
             }

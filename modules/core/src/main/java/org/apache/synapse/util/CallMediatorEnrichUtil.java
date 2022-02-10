@@ -44,7 +44,7 @@ import org.apache.synapse.mediators.MediatorLog;
 import org.apache.synapse.mediators.elementary.EnrichMediator;
 import org.apache.synapse.mediators.elementary.Source;
 import org.apache.synapse.mediators.elementary.Target;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
+import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
@@ -239,7 +239,9 @@ public class CallMediatorEnrichUtil {
 
     public static void buildMessage(MessageContext synCtx) {
         try {
-            RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
+            org.apache.axis2.context.MessageContext axis2MsgCtx =
+                    ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+            MessageHandlerProvider.getMessageHandler(axis2MsgCtx).buildMessage(axis2MsgCtx, false);
         } catch (Exception e) {
             handleException("Error while building message. " + e.getMessage(), e, synCtx);
         }

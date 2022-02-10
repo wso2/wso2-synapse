@@ -25,6 +25,8 @@ import org.apache.axis2.description.HandlerDescription;
 import org.apache.axis2.engine.AbstractDispatcher;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.transport.util.MessageHandlerProvider;
+import org.apache.synapse.transport.netty.util.RequestResponseUtils;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
 
@@ -58,7 +60,7 @@ public class TraceMessageBuilderDispatchHandler extends AbstractDispatcher{
 
         InvocationResponse invocationResponse = super.invoke(messageContext);
         Pipe pipe = (Pipe) messageContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-        if (pipe != null) {
+        if (pipe != null || RequestResponseUtils.isHttpCarbonMessagePresent(messageContext)) {
             if (!messageContext.isEngaged(PassThroughConstants.SECURITY_MODULE_NAME)) {
                 if (messageContext.isEngaged(PassThroughConstants.TRACE_SOAP_MESSAGE)) {
                     build(messageContext);
@@ -70,7 +72,7 @@ public class TraceMessageBuilderDispatchHandler extends AbstractDispatcher{
 
     private void build(MessageContext messageContext) {
         try {
-            RelayUtils.buildMessage(messageContext, false);
+            MessageHandlerProvider.getMessageHandler(messageContext).buildMessage(messageContext, false);
         } catch (Exception e) {
             log.error("Error while executing the message at relaySecurity handler", e);
         }

@@ -63,8 +63,8 @@ import org.apache.synapse.mediators.elementary.Source;
 import org.apache.synapse.mediators.elementary.Target;
 import org.apache.synapse.rest.RESTRequestHandler;
 import org.apache.synapse.task.SynapseTaskManager;
+import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.unittest.UnitTestingExecutor;
 import org.apache.synapse.util.CallMediatorEnrichUtil;
 import org.apache.synapse.util.concurrent.InboundThreadPool;
@@ -899,7 +899,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     private void buildMessage(MessageContext synCtx) {
         try {
-            RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
+            org.apache.axis2.context.MessageContext axis2MsgCtx =
+                    ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+            MessageHandlerProvider.getMessageHandler(axis2MsgCtx).buildMessage(axis2MsgCtx, false);
         } catch (Exception e) {
             handleException("Error while building message", e);
         }

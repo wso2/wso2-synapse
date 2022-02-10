@@ -25,6 +25,8 @@ import org.apache.axis2.description.Parameter;
 import org.apache.axis2.engine.AbstractDispatcher;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.transport.util.MessageHandlerProvider;
+import org.apache.synapse.transport.netty.util.RequestResponseUtils;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
 import org.wso2.caching.CacheConfiguration;
@@ -44,20 +46,22 @@ public class CacheMessageBuilderDispatchandler extends AbstractDispatcher {
 
 		Pipe pipe = (Pipe) messageContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
 
-		if (pipe != null && messageContext.getAxisMessage() != null) {
+		if ((pipe != null || RequestResponseUtils.isHttpCarbonMessagePresent(messageContext))
+				&& messageContext.getAxisMessage() != null) {
 			CacheConfiguration cacheCfg = null;
 			Parameter ccfgParam = messageContext.getAxisMessage().getParameter(CachingConstants.CACHE_CONFIGURATION);
 			
 	        
 			if (ccfgParam != null && ccfgParam.getValue() instanceof CacheConfiguration) {
 
-				cacheCfg = (CacheConfiguration) ccfgParam.getValue();
-				 // even though we found a cache config, if the timeout is <= 0, caching is disabled
-		        if (cacheCfg.getTimeout() <= 0) {
-		        	return invocationResponse;
-		        }
-				try {
-	                RelayUtils.buildMessage(messageContext, false);
+                cacheCfg = (CacheConfiguration) ccfgParam.getValue();
+                // even though we found a cache config, if the timeout is <= 0, caching is disabled
+                if (cacheCfg.getTimeout() <= 0) {
+                    return invocationResponse;
+                }
+                try {
+                    MessageHandlerProvider.getMessageHandler(messageContext)
+                            .buildMessage(messageContext, false);
                 } catch (Exception e) {
                 	log.error("Error while executing the message at cache message builder handler", e);
                 }

@@ -110,6 +110,8 @@ public class PassThroughConstants {
 
     public static final String MESSAGE_BUILDER_INVOKED = "message.builder.invoked";
 
+    public static final String TRANSPORT_MESSAGE_HANDLER = "transport.message.handler";
+
     // This is similar to isDoingREST  - if the request contains a REST (i.e. format=POX | GET | REST) call, then we set this to TRUE
     public static final String INVOKED_REST = "invokedREST";
 
