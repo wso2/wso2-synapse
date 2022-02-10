@@ -29,8 +29,10 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.netty.BridgeConstants;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * This class is responsible for receiving requests from various sources and dispatching
@@ -40,6 +42,10 @@ import java.util.Collections;
 public class RestRequestHandler extends AbstractApiHandler {
 
     private static final Log log = LogFactory.getLog(RestRequestHandler.class);
+
+    private static final List<String> supportedProtocols = Arrays.asList(Constants.TRANSPORT_HTTP,
+            Constants.TRANSPORT_HTTPS, BridgeConstants.TRANSPORT_HTTPWS, BridgeConstants.TRANSPORT_HTTPSWSS);
+
 
     /**
      * Attempt to process the given message through one of the available APIs. This method
@@ -60,9 +66,7 @@ public class RestRequestHandler extends AbstractApiHandler {
         org.apache.axis2.context.MessageContext msgCtx = ((Axis2MessageContext) synCtx).
                 getAxis2MessageContext();
         String protocol = msgCtx.getIncomingTransportName();
-        if (!Constants.TRANSPORT_HTTP.equals(protocol) && !Constants.TRANSPORT_HTTPS.equals(protocol)
-                && !BridgeConstants.TRANSPORT_HTTPWS.equals(protocol)
-                && !BridgeConstants.TRANSPORT_HTTPSWSS.equals(protocol)) {
+        if (!supportedProtocols.contains(protocol)) {
             if (log.isDebugEnabled()) {
                 log.debug("Invalid protocol for REST API mediation: " + protocol);
             }
