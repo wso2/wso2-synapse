@@ -422,8 +422,8 @@ public class RequestResponseUtils {
         Parameter handshakeTimeoutParam = transportIn.getParameter(BridgeConstants.SSL_HANDSHAKE_TIMEOUT);
         String sessionTimeoutEl = sessionTimeoutParam != null && sessionTimeoutParam.getValue() != null
                 ? sessionTimeoutParam.getValue().toString() : null;
-        String handshakeTimeoutEl = handshakeTimeoutParam != null && handshakeTimeoutParam.getParameterElement() != null
-                ? handshakeTimeoutParam.getParameterElement().toString() : null;
+        String handshakeTimeoutEl = handshakeTimeoutParam != null && handshakeTimeoutParam.getValue() != null
+                ? handshakeTimeoutParam.getValue().toString() : null;
         populateTimeoutConfigs(sessionTimeoutEl, handshakeTimeoutEl, listenerConfiguration);
 
         if (!serverParamList.isEmpty()) {
@@ -533,8 +533,10 @@ public class RequestResponseUtils {
 
         if ("true".equalsIgnoreCase(cvEnable)) {
             sslConfiguration.setValidateCertEnabled(true);
-            String cacheSizeString = cvpEl.getFirstChildWithName(new QName(BridgeConstants.CACHE_SIZE)).getText();
-            String cacheDelayString = cvpEl.getFirstChildWithName(new QName(BridgeConstants.CACHE_DELAY)).getText();
+            String cacheSizeString = cvpEl.getFirstChildWithName(
+                    new QName(cvpEl.getNamespace().getNamespaceURI(), BridgeConstants.CACHE_SIZE)).getText();
+            String cacheDelayString = cvpEl.getFirstChildWithName(
+                    new QName(cvpEl.getNamespace().getNamespaceURI(), BridgeConstants.CACHE_DELAY)).getText();
             Integer cacheSize = null;
             Integer cacheDelay = null;
             try {
