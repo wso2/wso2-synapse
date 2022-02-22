@@ -82,8 +82,8 @@ public abstract class OAuthHandler {
                 @Override
                 public String call() throws OAuthException, IOException {
 
-                    return OAuthClient.generateToken(tokenApiUrl, buildTokenRequestPayload(messageContext),
-                            getEncodedCredentials(messageContext));
+                    return OAuthClient.generateToken(OAuthUtils.resolveExpression(tokenApiUrl, messageContext),
+                            buildTokenRequestPayload(messageContext), getEncodedCredentials(messageContext));
                 }
             });
         } catch (ExecutionException e) {
@@ -204,7 +204,8 @@ public abstract class OAuthHandler {
      */
     protected String getEncodedCredentials(MessageContext messageContext) throws OAuthException {
 
-        if ("payload".equalsIgnoreCase(authMode)) {
+        if (StringUtils.isNotBlank(authMode) &&
+                "payload".equalsIgnoreCase(OAuthUtils.resolveExpression(authMode, messageContext))) {
             return null;
         }
         return Base64Utils.encode((OAuthUtils.resolveExpression(clientId, messageContext) + ":" +

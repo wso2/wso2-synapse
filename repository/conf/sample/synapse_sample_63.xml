@@ -159,6 +159,26 @@
                             </endpoint>
                         </send>
                     </case>
+                    <case regex="dynamicValues">
+                        <property name="tokenUrl" value="http://localhost:9000/foodservice/token"/>
+                        <property name="authMode" value="header"/>
+                        <send>
+                            <endpoint>
+                                <http method="get" uri-template="http://localhost:9000/foodservice/food">
+                                    <authentication>
+                                        <oauth>
+                                            <clientCredentials>
+                                                <clientId>my_client_id</clientId>
+                                                <clientSecret>my_client_secret</clientSecret>
+                                                <tokenUrl>{$ctx:tokenUrl}</tokenUrl>
+                                                <authMode>{$ctx:authMode}</authMode>
+                                            </clientCredentials>
+                                        </oauth>
+                                    </authentication>
+                                </http>
+                            </endpoint>
+                        </send>
+                    </case>
                     <default>
                         <send>
                             <endpoint>
