@@ -37,8 +37,8 @@ public interface OPARequestGenerator {
      * @return json input as a string and this will be sent to the OPA server for validation
      * @throws OPASecurityException If an authentication failure or some other error occurs
      */
-    String createRequest(String policyName, String rule, Map<String, Object> advancedProperties,
-                         MessageContext messageContext) throws OPASecurityException;
+    String generateRequest(String policyName, String rule, Map<String, Object> advancedProperties,
+                           MessageContext messageContext) throws OPASecurityException;
 
     /**
      * Authenticates the given request using the authenticators which have been initialized.
@@ -47,7 +47,7 @@ public interface OPARequestGenerator {
      * @param rule           The rule of the policy
      * @param opaResponse    The message to be authenticated
      * @param messageContext The message to be authenticated
-     * @return true if the authentication is successful (never returns false)
+     * @return true if the authentication is successful
      * @throws OPASecurityException If an authentication failure or some other error occurs
      */
     boolean handleResponse(String policyName, String rule, String opaResponse, MessageContext messageContext)

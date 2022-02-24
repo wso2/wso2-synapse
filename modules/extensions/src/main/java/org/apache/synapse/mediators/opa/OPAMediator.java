@@ -48,7 +48,7 @@ public class OPAMediator extends AbstractMediator {
 
         try {
             OPARequestGenerator requestGenerator = getRequestGenerator(requestGeneratorClassName);
-            String opaPayload = requestGenerator.createRequest(policy, rule, advancedProperties, messageContext);
+            String opaPayload = requestGenerator.generateRequest(policy, rule, advancedProperties, messageContext);
 
             String evaluatingPolicyUrl = serverUrl + "/" + policy;
             if (rule != null) {

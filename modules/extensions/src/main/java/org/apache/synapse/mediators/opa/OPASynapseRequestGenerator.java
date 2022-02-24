@@ -38,8 +38,8 @@ public class OPASynapseRequestGenerator implements OPARequestGenerator {
     private static final Log log = LogFactory.getLog(OPASynapseRequestGenerator.class);
 
     @Override
-    public String createRequest(String policyName, String rule, Map<String, Object> advancedProperties,
-                                MessageContext messageContext) throws OPASecurityException {
+    public String generateRequest(String policyName, String rule, Map<String, Object> advancedProperties,
+                                  MessageContext messageContext) throws OPASecurityException {
 
         org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) messageContext)
                 .getAxis2MessageContext();
