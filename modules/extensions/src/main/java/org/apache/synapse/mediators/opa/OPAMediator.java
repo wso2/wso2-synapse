@@ -20,8 +20,14 @@ package org.apache.synapse.mediators.opa;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpStatus;
+import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -35,8 +41,8 @@ public class OPAMediator extends AbstractMediator {
     private String serverUrl = null;
     private String accessKey = null;
     private String policy = null;
-    private String rule = "allow";
-    private String requestGeneratorClassName = "org.apache.synapse.mediators.opa.OPASynapseRequestGenerator";
+    private String rule = null;
+    private String requestGeneratorClassName = null;
     private Map<String, Object> advancedProperties = new HashMap<String, Object>();
 
     public void init() {
@@ -46,28 +52,90 @@ public class OPAMediator extends AbstractMediator {
     @Override
     public boolean mediate(MessageContext messageContext) {
 
-        OPARequestGenerator requestGenerator = null;
-        String opaResponseString = null;
         try {
-            try {
-                Class<?> requestGeneratorClassObject = Class.forName(requestGeneratorClassName);
-                Constructor<?> constructor = requestGeneratorClassObject.getConstructor();
-                requestGenerator = (OPARequestGenerator) constructor.newInstance();
-            } catch (NoSuchMethodException | ClassNotFoundException | InstantiationException | IllegalAccessException
-                    | InvocationTargetException e) {
-                throw new OPASecurityException(OPASecurityException.MEDIATOR_ERROR,
-                        "Cannot initialize the provided request generator", e);
+            OPARequestGenerator requestGenerator = getRequestGenerator(requestGeneratorClassName);
+            String opaPayload = requestGenerator.createRequest(policy, rule, advancedProperties, messageContext);
+
+            String evaluatingPolicyUrl = serverUrl + "/" + policy;
+            if (rule != null) {
+                evaluatingPolicyUrl += "/" + rule;
             }
 
-            String opaPayload = requestGenerator.createRequest(policy, rule, advancedProperties, messageContext);
-            String evaluatingPolicyUrl = serverUrl + "/" + policy + "/" + rule;
-
-            opaResponseString = OPAClient.publish(evaluatingPolicyUrl, opaPayload, accessKey);
-            return requestGenerator.handleResponse(policy, rule, opaResponseString, messageContext);
+            String opaResponseString = OPAClient.publish(evaluatingPolicyUrl, opaPayload, accessKey);
+            if (requestGenerator.handleResponse(policy, rule, opaResponseString, messageContext)) {
+                return true;
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("Access revoked for the API request by the OPA policy. Policy payload " + opaPayload
+                            + " and OPA response " + opaResponseString);
+                }
+                throw new OPASecurityException(OPASecurityException.ACCESS_REVOKED,
+                        OPASecurityException.ACCESS_REVOKED_MESSAGE);
+            }
         } catch (OPASecurityException e) {
-            handleException("Rejected from opa policy." + e.getMessage(), messageContext);
+            handleAuthFailure(messageContext, e);
         }
         return false;
+    }
+
+    private OPARequestGenerator getRequestGenerator(String className) throws OPASecurityException {
+
+        Class<?> requestGeneratorClassObject = null;
+        try {
+            if (className == null) {
+                className = "org.apache.synapse.mediators.opa.OPASynapseRequestGenerator";
+                if (log.isDebugEnabled()) {
+                    log.debug("Request generator class not found. Default generator used.");
+                }
+            }
+            requestGeneratorClassObject = Class.forName(className);
+            Constructor<?> constructor = requestGeneratorClassObject.getConstructor();
+            return (OPARequestGenerator) constructor.newInstance();
+        } catch (NoSuchMethodException | ClassNotFoundException | InstantiationException | IllegalAccessException
+                | InvocationTargetException e) {
+            log.error("An error occurred while creating the request generator.", e);
+            throw new OPASecurityException(OPASecurityException.MEDIATOR_ERROR,
+                   OPASecurityException.MEDIATOR_ERROR_MESSAGE);
+        }
+    }
+
+    private void handleAuthFailure(MessageContext messageContext, OPASecurityException e) {
+
+        int status;
+        String errorMessage;
+        if (e.getErrorCode() == OPASecurityException.MEDIATOR_ERROR
+                || e.getErrorCode() == OPASecurityException.OPA_RESPONSE_ERROR) {
+            // OPA response error occurs when the policy is not defined in the opa end. This is considered as an
+            // internal server error
+            status = HttpStatus.SC_INTERNAL_SERVER_ERROR;
+            errorMessage = "Internal Sever Error";
+        } else if (e.getErrorCode() == OPASecurityException.ACCESS_REVOKED) {
+            status = HttpStatus.SC_FORBIDDEN;
+            errorMessage = "Forbidden";
+        } else if (e.getErrorCode() == OPASecurityException.OPA_REQUEST_ERROR) {
+            status = HttpStatus.SC_BAD_REQUEST;
+            errorMessage = "Bad Request";
+        } else {
+            status = HttpStatus.SC_UNAUTHORIZED;
+            errorMessage = "Unauthorized";
+        }
+
+        messageContext.setProperty(SynapseConstants.ERROR_CODE, status);
+        messageContext.setProperty(SynapseConstants.ERROR_MESSAGE, errorMessage);
+        messageContext.setProperty(SynapseConstants.ERROR_DETAIL, e.getMessage());
+        messageContext.setProperty(SynapseConstants.ERROR_EXCEPTION, e);
+
+        Mediator sequence = messageContext.getSequence("_auth_failure_handler_");
+        if (sequence != null && !sequence.mediate(messageContext)) {
+            // If needed user should be able to prevent the rest of the fault handling
+            // logic from getting executed
+            return;
+        }
+
+        org.apache.axis2.context.MessageContext axis2MC = ((Axis2MessageContext) messageContext).
+                getAxis2MessageContext();
+        axis2MC.setProperty(NhttpConstants.HTTP_SC, status);
+        Axis2Sender.sendBack(messageContext);
     }
 
     public String getServerUrl() {

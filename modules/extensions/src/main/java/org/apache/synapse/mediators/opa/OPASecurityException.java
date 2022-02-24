@@ -32,7 +32,7 @@ public class OPASecurityException extends Exception {
     public static final int OPA_RESPONSE_ERROR = 90102;
     public static final String OPA_RESPONSE_ERROR_MESSAGE = "OPA Mediator: Error with the OPA validation response";
     public static final int ACCESS_REVOKED = 90103;
-    public static final String ACCESS_REVOKED_MESSAGE = "OPA mediator: Access Revoked";
+    public static final String ACCESS_REVOKED_MESSAGE = "Access revoked from an OPA Policy";
 
     private int errorCode;
 

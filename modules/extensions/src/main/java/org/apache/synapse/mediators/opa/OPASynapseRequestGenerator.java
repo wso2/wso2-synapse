@@ -18,23 +18,23 @@
 
 package org.apache.synapse.mediators.opa;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import org.apache.axis2.util.JavaUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Map;
 import java.util.TreeMap;
 
+/**
+ * Default implementation of the {@link OPARequestGenerator}.
+ */
 public class OPASynapseRequestGenerator implements OPARequestGenerator {
 
     public static final String HTTP_METHOD_STRING = "HTTP_METHOD";
     public static final String API_BASEPATH_STRING = "TransportInURL";
-    static final String HTTP_VERSION_CONNECTOR = ".";
     private static final Log log = LogFactory.getLog(OPASynapseRequestGenerator.class);
 
     @Override
@@ -51,17 +51,21 @@ public class OPASynapseRequestGenerator implements OPARequestGenerator {
         String requestPath = (String) axis2MessageContext.getProperty(API_BASEPATH_STRING);
         String requestHttpVersion = OPAUtils.getHttpVersion(axis2MessageContext);
 
+        JSONObject inputPayload = new JSONObject();
         JSONObject opaPayload = new JSONObject();
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        String transportHeadersJson = gson.toJson(transportHeadersMap);
+
+        //opaPayload.put("apiName", requestOriginIP);
+        //opaPayload.put("apiVersion", requestContext.getMatchedAPI().getVersion());
+        //opaPayload.put("orgId", requestContext.getMatchedAPI().getOrganizationId());
+        //opaPayload.put("requestBody", requestContext.getRequestPayload());
 
         opaPayload.put("requestOrigin", requestOriginIP);
         opaPayload.put("method", requestMethod);
         opaPayload.put("path", requestPath);
         opaPayload.put("httpVersion", requestHttpVersion);
-        opaPayload.put("transportHeaders", transportHeadersJson);
-
-        return opaPayload.toString();
+        opaPayload.put("transportHeaders", new JSONObject(transportHeadersMap));
+        inputPayload.put("input", opaPayload);
+        return inputPayload.toString();
     }
 
     @Override
@@ -75,18 +79,20 @@ public class OPASynapseRequestGenerator implements OPARequestGenerator {
             throw new OPASecurityException(OPASecurityException.OPA_RESPONSE_ERROR,
                     "Empty result received for the OPA policy rule");
         } else {
-            JSONObject responseObject = new JSONObject(opaResponse);
-            Object resultObject = responseObject.get(rule);
-            if (resultObject != null) {
-                if (JavaUtils.isTrueExplicitly(resultObject)) {
-                    return true;
+            try {
+                JSONObject responseObject = new JSONObject(opaResponse);
+                if (rule != null) {
+                    return responseObject.getBoolean("result");
                 } else {
-                    throw new OPASecurityException(OPASecurityException.ACCESS_REVOKED, "Access revoked");
+                    // If a rule is not specified, default allow rule is considered
+                    JSONObject resultObjectFromAllow = (JSONObject)responseObject.get("allow");
+                    return resultObjectFromAllow.getBoolean("result");
                 }
+            } catch (JSONException e) {
+                log.error("Error parsing OPA JSON response, the field \"result\" not found or not a Boolean", e);
+                throw new OPASecurityException(OPASecurityException.OPA_RESPONSE_ERROR,
+                        OPASecurityException.OPA_RESPONSE_ERROR_MESSAGE, e);
             }
-            throw new OPASecurityException(OPASecurityException.OPA_RESPONSE_ERROR,
-                    "Specified rule is not included in the OPA server response");
         }
     }
-
 }

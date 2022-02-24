@@ -18,11 +18,8 @@
 
 package org.apache.synapse.mediators.opa;
 
-import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
-import org.apache.axis2.engine.AxisEngine;
 import org.apache.http.ProtocolVersion;
-import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.ServerWorker;
 import org.apache.synapse.transport.passthru.SourceRequest;
 
@@ -65,11 +62,5 @@ public class OPAUtils {
         SourceRequest sourceRequest = worker.getSourceRequest();
         ProtocolVersion httpProtocolVersion = sourceRequest.getVersion();
         return httpProtocolVersion.getMajor() + HTTP_VERSION_CONNECTOR + httpProtocolVersion.getMinor();
-    }
-
-    public static void sendFault(org.apache.axis2.context.MessageContext faultContext, int status) throws AxisFault {
-
-        faultContext.setProperty(NhttpConstants.HTTP_SC, status);
-        AxisEngine.sendFault(faultContext);
     }
 }
