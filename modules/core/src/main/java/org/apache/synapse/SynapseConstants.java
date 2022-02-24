@@ -208,6 +208,8 @@ public final class SynapseConstants {
         public static final String PRESERVE_WS_ADDRESSING = "PRESERVE_WS_ADDRESSING";
         /** The Synapse MC property that marks to Exception to be thrown on SOAPFault(Retry on SOAPFault)*/
         public static final String RETRY_ON_SOAPFAULT = "RETRY_ON_SOAPFAULT";
+        /** The Synapse MC property name that collect payload forcefully when tracing enabled */
+        public static final String FORCE_COLLECT_PAYLOAD = "FORCE_COLLECT_PAYLOAD";
 
         /**
          * The name of the property which specifies the operation name that is
