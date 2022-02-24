@@ -164,6 +164,7 @@ public class OPAClient {
      *
      * @param protocol- service endpoint protocol. It can be http/https
      * @return PoolManager
+     * @throws OPASecurityException
      */
     private static PoolingHttpClientConnectionManager getPoolingHttpClientConnectionManager(String protocol)
             throws OPASecurityException {
@@ -196,7 +197,8 @@ public class OPAClient {
                                 .register("https", sslsf).build();
                 poolManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
             } catch (IOException | KeyStoreException | CertificateException | NoSuchAlgorithmException | KeyManagementException e) {
-                throw new OPASecurityException("Error while reading and setting truststore", e);
+                throw new OPASecurityException(OPASecurityException.MEDIATOR_ERROR,
+                        "Error while reading and setting truststore", e);
             }
         } else {
             poolManager = new PoolingHttpClientConnectionManager();
@@ -209,7 +211,8 @@ public class OPAClient {
      *
      * @param protocol Service endpoint protocol.It can be http/https
      * @return CloseableHttpClient
-     */
+     * @throws OPASecurityException
+     **/
     public static CloseableHttpClient createHttpClient(String protocol) throws OPASecurityException {
 
         PoolingHttpClientConnectionManager pool;
@@ -231,6 +234,13 @@ public class OPAClient {
         return HttpClients.custom().setConnectionManager(pool).setDefaultRequestConfig(params).build();
     }
 
+    /**
+     * Return a closeable http client based on the url. It can be either a http client or a https client
+     *
+     * @param url Service endpoint
+     * @return CloseableHttpClient
+     * @throws OPASecurityException If the url is not valid
+     */
     public static CloseableHttpClient getHttpClient(String url) throws OPASecurityException {
 
         try {

@@ -20,14 +20,8 @@ package org.apache.synapse.mediators.opa;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.HttpStatus;
-import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.mediators.AbstractMediator;
-import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -73,14 +67,13 @@ public class OPAMediator extends AbstractMediator {
                         OPASecurityException.ACCESS_REVOKED_MESSAGE);
             }
         } catch (OPASecurityException e) {
-            handleAuthFailure(messageContext, e);
+            OPAUtils.handlePolicyFailure(messageContext, e);
         }
         return false;
     }
 
     private OPARequestGenerator getRequestGenerator(String className) throws OPASecurityException {
 
-        Class<?> requestGeneratorClassObject = null;
         try {
             if (className == null) {
                 className = "org.apache.synapse.mediators.opa.OPASynapseRequestGenerator";
@@ -88,7 +81,7 @@ public class OPAMediator extends AbstractMediator {
                     log.debug("Request generator class not found. Default generator used.");
                 }
             }
-            requestGeneratorClassObject = Class.forName(className);
+            Class<?> requestGeneratorClassObject = Class.forName(className);
             Constructor<?> constructor = requestGeneratorClassObject.getConstructor();
             return (OPARequestGenerator) constructor.newInstance();
         } catch (NoSuchMethodException | ClassNotFoundException | InstantiationException | IllegalAccessException
@@ -97,45 +90,6 @@ public class OPAMediator extends AbstractMediator {
             throw new OPASecurityException(OPASecurityException.MEDIATOR_ERROR,
                    OPASecurityException.MEDIATOR_ERROR_MESSAGE);
         }
-    }
-
-    private void handleAuthFailure(MessageContext messageContext, OPASecurityException e) {
-
-        int status;
-        String errorMessage;
-        if (e.getErrorCode() == OPASecurityException.MEDIATOR_ERROR
-                || e.getErrorCode() == OPASecurityException.OPA_RESPONSE_ERROR) {
-            // OPA response error occurs when the policy is not defined in the opa end. This is considered as an
-            // internal server error
-            status = HttpStatus.SC_INTERNAL_SERVER_ERROR;
-            errorMessage = "Internal Sever Error";
-        } else if (e.getErrorCode() == OPASecurityException.ACCESS_REVOKED) {
-            status = HttpStatus.SC_FORBIDDEN;
-            errorMessage = "Forbidden";
-        } else if (e.getErrorCode() == OPASecurityException.OPA_REQUEST_ERROR) {
-            status = HttpStatus.SC_BAD_REQUEST;
-            errorMessage = "Bad Request";
-        } else {
-            status = HttpStatus.SC_UNAUTHORIZED;
-            errorMessage = "Unauthorized";
-        }
-
-        messageContext.setProperty(SynapseConstants.ERROR_CODE, status);
-        messageContext.setProperty(SynapseConstants.ERROR_MESSAGE, errorMessage);
-        messageContext.setProperty(SynapseConstants.ERROR_DETAIL, e.getMessage());
-        messageContext.setProperty(SynapseConstants.ERROR_EXCEPTION, e);
-
-        Mediator sequence = messageContext.getSequence("_auth_failure_handler_");
-        if (sequence != null && !sequence.mediate(messageContext)) {
-            // If needed user should be able to prevent the rest of the fault handling
-            // logic from getting executed
-            return;
-        }
-
-        org.apache.axis2.context.MessageContext axis2MC = ((Axis2MessageContext) messageContext).
-                getAxis2MessageContext();
-        axis2MC.setProperty(NhttpConstants.HTTP_SC, status);
-        Axis2Sender.sendBack(messageContext);
     }
 
     public String getServerUrl() {

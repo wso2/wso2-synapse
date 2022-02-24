@@ -46,23 +46,16 @@ public class OPASynapseRequestGenerator implements OPARequestGenerator {
         TreeMap<String, String> transportHeadersMap = (TreeMap<String, String>) axis2MessageContext
                 .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
 
-        String requestOriginIP = OPAUtils.getIp(axis2MessageContext);
+        String requestOriginIP = OPAUtils.getRequestIp(axis2MessageContext);
         String requestMethod = (String) axis2MessageContext.getProperty(HTTP_METHOD_STRING);
         String requestPath = (String) axis2MessageContext.getProperty(API_BASEPATH_STRING);
-        String requestHttpVersion = OPAUtils.getHttpVersion(axis2MessageContext);
 
         JSONObject inputPayload = new JSONObject();
         JSONObject opaPayload = new JSONObject();
 
-        //opaPayload.put("apiName", requestOriginIP);
-        //opaPayload.put("apiVersion", requestContext.getMatchedAPI().getVersion());
-        //opaPayload.put("orgId", requestContext.getMatchedAPI().getOrganizationId());
-        //opaPayload.put("requestBody", requestContext.getRequestPayload());
-
         opaPayload.put("requestOrigin", requestOriginIP);
         opaPayload.put("method", requestMethod);
         opaPayload.put("path", requestPath);
-        opaPayload.put("httpVersion", requestHttpVersion);
         opaPayload.put("transportHeaders", new JSONObject(transportHeadersMap));
         inputPayload.put("input", opaPayload);
         return inputPayload.toString();
