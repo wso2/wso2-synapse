@@ -52,6 +52,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.util.Map;
 
 import javax.net.ssl.SSLContext;
 
@@ -70,8 +71,24 @@ public class OPAClient {
     private static final String ALLOW_ALL = "AllowAll";
     private static final String HOST_NAME_VERIFIER = "httpclient.hostnameVerifier";
 
-    private static CloseableHttpClient httpClient = null;
-    private static CloseableHttpClient httpsClient = null;
+    private int maxOpenConnections = 500;
+    private int maxPerRoute = 200;
+    private int connectionTimeout = 30;
+
+    private CloseableHttpClient httpClient = null;
+
+    public OPAClient(String url, Map<String, Object> additionalParameters) throws OPASecurityException {
+        if (additionalParameters.get("maxOpenConnections") != null) {
+            this.maxOpenConnections = (int)additionalParameters.get("additionalParameters");
+        }
+        if (additionalParameters.get("maxPerRoute") != null) {
+            this.maxPerRoute = (int)additionalParameters.get("maxPerRoute");
+        }
+        if (additionalParameters.get("connectionTimeout") != null) {
+            this.connectionTimeout = (int)additionalParameters.get("connectionTimeout");
+        }
+        httpClient = createHttpClient(url);
+    }
 
     /**
      * Method to publish the OPA payload to the OPA server
@@ -82,7 +99,7 @@ public class OPAClient {
      * @return opa response String
      * @throws OPASecurityException
      */
-    public static String publish(String opaServerUrl, String payload, String credentials)
+    public String publish(String opaServerUrl, String payload, String credentials)
             throws OPASecurityException {
 
         if (log.isDebugEnabled()) {
@@ -97,12 +114,12 @@ public class OPAClient {
         CloseableHttpResponse response = null;
         try {
             httpPost.setEntity(new StringEntity(payload));
-            response = getHttpClient(opaServerUrl).execute(httpPost);
+            response = httpClient.execute(httpPost);
             return extractResponse(response);
         } catch (IOException e) {
             log.error("Error occurred while publishing to OPA server", e);
-            throw new OPASecurityException(OPASecurityException.OPA_REQUEST_ERROR,
-                    OPASecurityException.OPA_REQUEST_ERROR_MESSAGE, e);
+            throw new OPASecurityException(OPASecurityException.INTERNAL_ERROR,
+                    OPASecurityException.INTERNAL_ERROR_MESSAGE, e);
         } finally {
             httpPost.releaseConnection();
             if (response != null) {
@@ -122,7 +139,7 @@ public class OPAClient {
      * @return opaResponse String
      * @throws OPASecurityException
      */
-    private static String extractResponse(CloseableHttpResponse response)
+    private String extractResponse(CloseableHttpResponse response)
             throws OPASecurityException {
 
         String opaResponse = null;
@@ -130,7 +147,7 @@ public class OPAClient {
             int responseCode = response.getStatusLine().getStatusCode();
             if (responseCode != HttpStatus.SC_OK) {
                 log.error("Error occurred while connecting to the OPA server. " + responseCode + " response returned");
-                throw new OPASecurityException(OPASecurityException.OPA_RESPONSE_ERROR,
+                throw new OPASecurityException(OPASecurityException.INTERNAL_ERROR,
                         "Error while accessing the OPA server URL. " + response.getStatusLine());
             } else {
                 HttpEntity entity = response.getEntity();
@@ -152,7 +169,8 @@ public class OPAClient {
                 }
             }
         } catch (IOException e) {
-            throw new OPASecurityException(OPASecurityException.OPA_RESPONSE_ERROR,
+            log.error("Error while reading the OPA policy validation response", e);
+            throw new OPASecurityException(OPASecurityException.INTERNAL_ERROR,
                     "Error while reading the OPA policy validation response", e);
         }
 
@@ -166,7 +184,7 @@ public class OPAClient {
      * @return PoolManager
      * @throws OPASecurityException
      */
-    private static PoolingHttpClientConnectionManager getPoolingHttpClientConnectionManager(String protocol)
+    private PoolingHttpClientConnectionManager getPoolingHttpClientConnectionManager(String protocol)
             throws OPASecurityException {
 
         PoolingHttpClientConnectionManager poolManager;
@@ -197,7 +215,8 @@ public class OPAClient {
                                 .register("https", sslsf).build();
                 poolManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
             } catch (IOException | KeyStoreException | CertificateException | NoSuchAlgorithmException | KeyManagementException e) {
-                throw new OPASecurityException(OPASecurityException.MEDIATOR_ERROR,
+                log.error("Error while reading and setting truststore", e);
+                throw new OPASecurityException(OPASecurityException.INTERNAL_ERROR,
                         "Error while reading and setting truststore", e);
             }
         } else {
@@ -209,57 +228,30 @@ public class OPAClient {
     /**
      * Return a CloseableHttpClient instance
      *
-     * @param protocol Service endpoint protocol.It can be http/https
+     * @param url Service endpoint.It can be http/https
      * @return CloseableHttpClient
      * @throws OPASecurityException
      **/
-    public static CloseableHttpClient createHttpClient(String protocol) throws OPASecurityException {
+    public CloseableHttpClient createHttpClient(String url) throws OPASecurityException {
 
         PoolingHttpClientConnectionManager pool;
         try {
+            String protocol = new URL(url).getProtocol();
             pool = getPoolingHttpClientConnectionManager(protocol);
-        } catch (OPASecurityException e) {
-            throw new OPASecurityException(OPASecurityException.MEDIATOR_ERROR,
-                    OPASecurityException.MEDIATOR_ERROR_MESSAGE, e);
+        } catch (OPASecurityException | MalformedURLException e) {
+            log.error("Error while creating the http client", e);
+            throw new OPASecurityException(OPASecurityException.INTERNAL_ERROR,
+                    OPASecurityException.INTERNAL_ERROR_MESSAGE, e);
         }
 
-        pool.setMaxTotal(200);
-        pool.setDefaultMaxPerRoute(500);
+        pool.setMaxTotal(maxOpenConnections);
+        pool.setDefaultMaxPerRoute(maxPerRoute);
 
         //Socket timeout is set to 10 seconds addition to connection timeout.
         RequestConfig params = RequestConfig.custom()
-                .setConnectTimeout(30 * 1000)
-                .setSocketTimeout((30 + 10) * 10000).build();
+                .setConnectTimeout(connectionTimeout * 1000)
+                .setSocketTimeout((connectionTimeout + 10) * 10000).build();
 
         return HttpClients.custom().setConnectionManager(pool).setDefaultRequestConfig(params).build();
-    }
-
-    /**
-     * Return a closeable http client based on the url. It can be either a http client or a https client
-     *
-     * @param url Service endpoint
-     * @return CloseableHttpClient
-     * @throws OPASecurityException If the url is not valid
-     */
-    public static CloseableHttpClient getHttpClient(String url) throws OPASecurityException {
-
-        try {
-            String protocol = new URL(url).getProtocol();
-            // There can be both type of opa server endpoints in a single API
-            if ("https".equals(protocol)) {
-                if (httpsClient == null) {
-                    httpsClient = createHttpClient(url);
-                }
-                return httpsClient;
-            } else {
-                if (httpClient == null) {
-                    httpClient = createHttpClient(url);
-                }
-                return httpClient;
-            }
-        } catch (MalformedURLException e) {
-            throw new OPASecurityException(OPASecurityException.MEDIATOR_ERROR,
-                    OPASecurityException.MEDIATOR_ERROR_MESSAGE, e);
-        }
     }
 }

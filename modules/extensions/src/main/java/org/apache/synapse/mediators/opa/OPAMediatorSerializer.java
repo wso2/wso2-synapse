@@ -68,12 +68,12 @@ public class OPAMediatorSerializer extends AbstractMediatorSerializer {
             requestGeneratorElement.setText(mediator.getRequestGeneratorClassName());
         }
 
-        if (mediator.getAdvancedProperties() != null && !mediator.getAdvancedProperties().isEmpty()) {
+        if (mediator.getAdditionalParameters() != null && !mediator.getAdditionalParameters().isEmpty()) {
             OMElement additionalParametersElement =
                     fac.createOMElement(OPAMediatorFactory.ADDITIONAL_PARAMETERS_Q, opaElement);
 
-            Map additionalParameters = mediator.getAdvancedProperties();
-            for (String parameter : mediator.getAdvancedProperties().keySet()) {
+            Map additionalParameters = mediator.getAdditionalParameters();
+            for (String parameter : mediator.getAdditionalParameters().keySet()) {
                 Object parameterValue = additionalParameters.get(parameter);
 
                 OMElement parameterElement = fac.createOMElement(OPAMediatorFactory.PARAMETER_Q, additionalParametersElement);

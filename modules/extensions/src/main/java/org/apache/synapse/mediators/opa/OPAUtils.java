@@ -73,28 +73,20 @@ public class OPAUtils {
 
         int status;
         String errorMessage;
-        if (e.getErrorCode() == OPASecurityException.MEDIATOR_ERROR
-                || e.getErrorCode() == OPASecurityException.OPA_RESPONSE_ERROR) {
-            // OPA response error occurs when the policy is not defined in the opa end. This is considered as an
-            // internal server error
-            status = HttpStatus.SC_INTERNAL_SERVER_ERROR;
-            errorMessage = "Internal Sever Error";
-        } else if (e.getErrorCode() == OPASecurityException.ACCESS_REVOKED) {
+        if (e.getErrorCode() == OPASecurityException.ACCESS_REVOKED) {
             status = HttpStatus.SC_FORBIDDEN;
             errorMessage = "Forbidden";
-        } else if (e.getErrorCode() == OPASecurityException.OPA_REQUEST_ERROR) {
-            status = HttpStatus.SC_BAD_REQUEST;
-            errorMessage = "Bad Request";
         } else {
-            status = HttpStatus.SC_UNAUTHORIZED;
-            errorMessage = "Unauthorized";
+            status = HttpStatus.SC_INTERNAL_SERVER_ERROR;
+            errorMessage = "Internal Sever Error";
         }
 
-        messageContext.setProperty(SynapseConstants.ERROR_CODE, status);
+        messageContext.setProperty("HTTP_RESPONSE_STATUS_CODE", status);
+        messageContext.setProperty(SynapseConstants.ERROR_CODE, e.getErrorCode());
         messageContext.setProperty(SynapseConstants.ERROR_MESSAGE, errorMessage);
         messageContext.setProperty(SynapseConstants.ERROR_EXCEPTION, e);
 
-        Mediator sequence = messageContext.getSequence("_auth_failure_handler_");
+        Mediator sequence = messageContext.getSequence("_opa_policy_failure_handler_");
         if (sequence != null && !sequence.mediate(messageContext)) {
             // If needed user should be able to prevent the rest of the fault handling
             // logic from getting executed

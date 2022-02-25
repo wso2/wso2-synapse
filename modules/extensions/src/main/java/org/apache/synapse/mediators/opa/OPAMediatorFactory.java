@@ -84,7 +84,7 @@ public class OPAMediatorFactory extends AbstractMediatorFactory {
                     Object parameterValue = parameterElement.getText();
 
                     if (parameterName != null && parameterValue != null) {
-                        opaMediator.addAdvancedProperty(parameterName, parameterValue);
+                        opaMediator.addAdditionalParameter(parameterName, parameterValue);
                     }
                 } else {
                     throw new SynapseException("Name attribute missing");

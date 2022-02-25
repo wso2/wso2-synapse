@@ -25,14 +25,10 @@ import org.apache.http.HttpStatus;
  */
 public class OPASecurityException extends Exception {
 
-    public static final int MEDIATOR_ERROR = 90100;
-    public static final String MEDIATOR_ERROR_MESSAGE = "OPA Mediator: Unexpected mediator failure";
-    public static final int OPA_REQUEST_ERROR = 90101;
-    public static final String OPA_REQUEST_ERROR_MESSAGE = "OPA Mediator: Error with the OPA validation request";
-    public static final int OPA_RESPONSE_ERROR = 90102;
-    public static final String OPA_RESPONSE_ERROR_MESSAGE = "OPA Mediator: Error with the OPA validation response";
-    public static final int ACCESS_REVOKED = 90103;
-    public static final String ACCESS_REVOKED_MESSAGE = "Access revoked from an OPA Policy";
+    public static final int INTERNAL_ERROR = 902011;
+    public static final String INTERNAL_ERROR_MESSAGE = "Unexpected OPA mediator failure";
+    public static final int ACCESS_REVOKED = 902012;
+    public static final String ACCESS_REVOKED_MESSAGE = "Request validation failure at the remote authorization server";
 
     private int errorCode;
 
@@ -57,30 +53,6 @@ public class OPASecurityException extends Exception {
 
     public OPASecurityException(Throwable cause) {
         super(cause.getMessage(), cause);
-    }
-
-    /**
-     * returns an String that corresponds to errorCode passed in
-     * @param errorCode - error code
-     * @return String
-     */
-    public static String getAuthenticationFailureMessage(int errorCode) {
-        String errorMessage;
-        switch (errorCode) {
-            case HttpStatus.SC_INTERNAL_SERVER_ERROR:
-                errorMessage = "Unexpected error occurred in the OPA mediator";
-                break;
-            case HttpStatus.SC_FORBIDDEN:
-                errorMessage = "Access revoked by OPA";
-                break;
-            case HttpStatus.SC_BAD_REQUEST:
-                errorMessage = "Bad request";
-                break;
-            default:
-                errorMessage = "Unexpected error";
-                break;
-        }
-        return errorMessage;
     }
 
     public int getErrorCode() {

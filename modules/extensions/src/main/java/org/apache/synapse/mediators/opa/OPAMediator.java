@@ -20,7 +20,10 @@ package org.apache.synapse.mediators.opa;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseException;
+import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
 
 import java.lang.reflect.Constructor;
@@ -28,7 +31,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class OPAMediator extends AbstractMediator {
+public class OPAMediator extends AbstractMediator implements ManagedLifecycle {
 
     private static final Log log = LogFactory.getLog(OPAMediator.class);
 
@@ -37,32 +40,29 @@ public class OPAMediator extends AbstractMediator {
     private String policy = null;
     private String rule = null;
     private String requestGeneratorClassName = null;
-    private Map<String, Object> advancedProperties = new HashMap<String, Object>();
-
-    public void init() {
-
-    }
+    private Map<String, Object> additionalParameters = new HashMap<String, Object>();
+    private OPARequestGenerator requestGenerator = null;
+    private OPAClient opaClient;
 
     @Override
     public boolean mediate(MessageContext messageContext) {
 
         try {
-            OPARequestGenerator requestGenerator = getRequestGenerator(requestGeneratorClassName);
-            String opaPayload = requestGenerator.generateRequest(policy, rule, advancedProperties, messageContext);
+            String opaPayload = requestGenerator.generateRequest(policy, rule, additionalParameters, messageContext);
 
             String evaluatingPolicyUrl = serverUrl + "/" + policy;
             if (rule != null) {
                 evaluatingPolicyUrl += "/" + rule;
             }
 
-            String opaResponseString = OPAClient.publish(evaluatingPolicyUrl, opaPayload, accessKey);
-            if (requestGenerator.handleResponse(policy, rule, opaResponseString, messageContext)) {
+            String opaResponseString = opaClient.publish(evaluatingPolicyUrl, opaPayload, accessKey);
+            if (requestGenerator.handleResponse(policy, rule, opaResponseString, additionalParameters, messageContext)) {
                 return true;
             } else {
                 if (log.isDebugEnabled()) {
-                    log.debug("Access revoked for the API request by the OPA policy. Policy payload " + opaPayload
-                            + " and OPA response " + opaResponseString);
+                    log.debug("Access revoked for the API request by the OPA policy.OPA response " + opaResponseString);
                 }
+                log.warn("Access revoked for the API request by the OPA policy.");
                 throw new OPASecurityException(OPASecurityException.ACCESS_REVOKED,
                         OPASecurityException.ACCESS_REVOKED_MESSAGE);
             }
@@ -86,9 +86,9 @@ public class OPAMediator extends AbstractMediator {
             return (OPARequestGenerator) constructor.newInstance();
         } catch (NoSuchMethodException | ClassNotFoundException | InstantiationException | IllegalAccessException
                 | InvocationTargetException e) {
-            log.error("An error occurred while creating the request generator.", e);
-            throw new OPASecurityException(OPASecurityException.MEDIATOR_ERROR,
-                   OPASecurityException.MEDIATOR_ERROR_MESSAGE);
+            log.error("An error occurred while creating the request generator for " + className, e);
+            throw new OPASecurityException(OPASecurityException.INTERNAL_ERROR,
+                   OPASecurityException.INTERNAL_ERROR_MESSAGE);
         }
     }
 
@@ -142,18 +142,33 @@ public class OPAMediator extends AbstractMediator {
         this.rule = rule;
     }
 
-    public Map<String, Object> getAdvancedProperties() {
+    public Map<String, Object> getAdditionalParameters() {
 
-        return advancedProperties;
+        return additionalParameters;
     }
 
-    public void setAdvancedProperties(Map<String, Object> advancedProperties) {
+    public void setAdditionalParameters(Map<String, Object> additionalParameters) {
 
-        this.advancedProperties = advancedProperties;
+        this.additionalParameters = additionalParameters;
     }
 
-    public void addAdvancedProperty(String property, Object value) {
+    public void addAdditionalParameter(String parameter, Object value) {
 
-        this.advancedProperties.put(property, value);
+        this.additionalParameters.put(parameter, value);
+    }
+
+    @Override
+    public void init(SynapseEnvironment se) {
+        try {
+            requestGenerator = getRequestGenerator(requestGeneratorClassName);
+            opaClient = new OPAClient(serverUrl, additionalParameters);
+        } catch (OPASecurityException e) {
+            throw new SynapseException("Error when initializing the OPA Mediator", e);
+        }
+    }
+
+    @Override
+    public void destroy() {
+
     }
 }

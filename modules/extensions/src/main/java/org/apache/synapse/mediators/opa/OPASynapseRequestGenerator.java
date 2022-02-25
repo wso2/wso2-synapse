@@ -38,7 +38,7 @@ public class OPASynapseRequestGenerator implements OPARequestGenerator {
     private static final Log log = LogFactory.getLog(OPASynapseRequestGenerator.class);
 
     @Override
-    public String generateRequest(String policyName, String rule, Map<String, Object> advancedProperties,
+    public String generateRequest(String policyName, String rule, Map<String, Object> additionalParameters,
                                   MessageContext messageContext) throws OPASecurityException {
 
         org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) messageContext)
@@ -57,20 +57,29 @@ public class OPASynapseRequestGenerator implements OPARequestGenerator {
         opaPayload.put("method", requestMethod);
         opaPayload.put("path", requestPath);
         opaPayload.put("transportHeaders", new JSONObject(transportHeadersMap));
+
+        if (additionalParameters.get("additionalMCProperties") != null) {
+            String additionalMCPropertiesString = (String) additionalParameters.get("additionalMCProperties");
+            String[] additionalMCProperties = additionalMCPropertiesString.split(",");
+            for (String mcProperty : additionalMCProperties) {
+                if (messageContext.getProperty(mcProperty) != null) {
+                    opaPayload.put(mcProperty, messageContext.getProperty(mcProperty));
+                }
+            }
+        }
+
         inputPayload.put("input", opaPayload);
         return inputPayload.toString();
     }
 
     @Override
-    public boolean handleResponse(String policyName, String rule, String opaResponse, MessageContext messageContext)
-            throws OPASecurityException {
+    public boolean handleResponse(String policyName, String rule, String opaResponse, Map<String,
+            Object> additionalParameters, MessageContext messageContext) throws OPASecurityException {
 
         if (opaResponse.equals("{}")) {
-            if (log.isDebugEnabled()) {
-                log.debug("Empty result received for the rule " + rule + " of policy " + policyName);
-            }
-            throw new OPASecurityException(OPASecurityException.OPA_RESPONSE_ERROR,
-                    "Empty result received for the OPA policy rule");
+            log.error("Empty result received for the OPA policy " + policyName + " for rule " + rule);
+            throw new OPASecurityException(OPASecurityException.INTERNAL_ERROR,
+                    "Empty result received for the OPA policy " + policyName + " for rule " + rule);
         } else {
             try {
                 JSONObject responseObject = new JSONObject(opaResponse);
@@ -83,8 +92,8 @@ public class OPASynapseRequestGenerator implements OPARequestGenerator {
                 }
             } catch (JSONException e) {
                 log.error("Error parsing OPA JSON response, the field \"result\" not found or not a Boolean", e);
-                throw new OPASecurityException(OPASecurityException.OPA_RESPONSE_ERROR,
-                        OPASecurityException.OPA_RESPONSE_ERROR_MESSAGE, e);
+                throw new OPASecurityException(OPASecurityException.INTERNAL_ERROR,
+                        OPASecurityException.INTERNAL_ERROR_MESSAGE, e);
             }
         }
     }
