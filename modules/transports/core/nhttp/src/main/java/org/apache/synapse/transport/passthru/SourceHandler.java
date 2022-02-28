@@ -379,7 +379,9 @@ public class SourceHandler implements NHttpServerEventHandler {
             SourceResponse response = SourceContext.getResponse(conn);
             SourceRequest request = SourceContext.getRequest(conn);
             if (response != null) {
-
+                if (SourceContext.get(conn).isShutDown()) {
+                    response.setKeepAlive(false);
+                }
                 // Handle Http ETag
                 String ifNoneMatchHeader =
                         SourceContext.getRequest(conn).getHeaders().get(HttpHeaders.IF_NONE_MATCH);
