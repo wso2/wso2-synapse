@@ -64,28 +64,21 @@ public class OPAClient {
 
     private static final Log log = LogFactory.getLog(OPAClient.class);
 
-    public static final String AUTHORIZATION_HEADER = "Authorization";
-    public static final String CONTENT_TYPE_HEADER = "Content-Type";
-    public static final String APPLICATION_JSON = "application/json";
-    private static final String STRICT = "Strict";
-    private static final String ALLOW_ALL = "AllowAll";
-    private static final String HOST_NAME_VERIFIER = "httpclient.hostnameVerifier";
-
     private int maxOpenConnections = 500;
     private int maxPerRoute = 200;
     private int connectionTimeout = 30;
 
     private CloseableHttpClient httpClient = null;
 
-    public OPAClient(String url, Map<String, Object> additionalParameters) throws OPASecurityException {
-        if (additionalParameters.get("maxOpenConnections") != null) {
-            this.maxOpenConnections = (int)additionalParameters.get("additionalParameters");
+    public OPAClient(String url, Map<String, String> additionalParameters) throws OPASecurityException {
+        if (additionalParameters.get(OPAConstants.MAX_OPEN_CONNECTIONS_PARAMETER) != null) {
+            this.maxOpenConnections = Integer.parseInt(additionalParameters.get(OPAConstants.MAX_OPEN_CONNECTIONS_PARAMETER));
         }
-        if (additionalParameters.get("maxPerRoute") != null) {
-            this.maxPerRoute = (int)additionalParameters.get("maxPerRoute");
+        if (additionalParameters.get(OPAConstants.MAX_PER_ROUTE_PARAMETER) != null) {
+            this.maxPerRoute = Integer.parseInt(additionalParameters.get(OPAConstants.MAX_PER_ROUTE_PARAMETER));
         }
-        if (additionalParameters.get("connectionTimeout") != null) {
-            this.connectionTimeout = (int)additionalParameters.get("connectionTimeout");
+        if (additionalParameters.get(OPAConstants.CONNECTION_TIMEOUT_PARAMETER) != null) {
+            this.connectionTimeout = Integer.parseInt(additionalParameters.get(OPAConstants.CONNECTION_TIMEOUT_PARAMETER));
         }
         httpClient = createHttpClient(url);
     }
@@ -107,9 +100,9 @@ public class OPAClient {
         }
 
         HttpPost httpPost = new HttpPost(opaServerUrl);
-        httpPost.setHeader(CONTENT_TYPE_HEADER, APPLICATION_JSON);
+        httpPost.setHeader(OPAConstants.CONTENT_TYPE_HEADER, OPAConstants.APPLICATION_JSON);
         if (credentials != null) {
-            httpPost.setHeader(AUTHORIZATION_HEADER, credentials);
+            httpPost.setHeader(OPAConstants.AUTHORIZATION_HEADER, credentials);
         }
         CloseableHttpResponse response = null;
         try {
@@ -188,10 +181,10 @@ public class OPAClient {
             throws OPASecurityException {
 
         PoolingHttpClientConnectionManager poolManager;
-        if ("https".equals(protocol)) {
+        if (OPAConstants.HTTPS.equals(protocol)) {
 
-            char[] trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword").toCharArray();
-            String trustStoreLocation = System.getProperty("javax.net.ssl.trustStore");
+            char[] trustStorePassword = System.getProperty(OPAConstants.TRUST_STORE_PASSWORD_SYSTEM_PROPERTY).toCharArray();
+            String trustStoreLocation = System.getProperty(OPAConstants.TRUST_STORE_LOCATION_SYSTEM_PROPERTY);
             File trustStoreFile = new File(trustStoreLocation);
             try (InputStream localTrustStoreStream = new FileInputStream(trustStoreFile)) {
                 KeyStore trustStore = KeyStore.getInstance("JKS");
@@ -199,11 +192,11 @@ public class OPAClient {
                 SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(trustStore).build();
 
                 X509HostnameVerifier hostnameVerifier;
-                String hostnameVerifierOption = System.getProperty(HOST_NAME_VERIFIER);
+                String hostnameVerifierOption = System.getProperty(OPAConstants.HOST_NAME_VERIFIER);
 
-                if (ALLOW_ALL.equalsIgnoreCase(hostnameVerifierOption)) {
+                if (OPAConstants.ALLOW_ALL.equalsIgnoreCase(hostnameVerifierOption)) {
                     hostnameVerifier = SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
-                } else if (STRICT.equalsIgnoreCase(hostnameVerifierOption)) {
+                } else if (OPAConstants.STRICT.equalsIgnoreCase(hostnameVerifierOption)) {
                     hostnameVerifier = SSLConnectionSocketFactory.STRICT_HOSTNAME_VERIFIER;
                 } else {
                     hostnameVerifier = SSLConnectionSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER;
@@ -212,7 +205,7 @@ public class OPAClient {
                 SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext, hostnameVerifier);
                 Registry<ConnectionSocketFactory> socketFactoryRegistry =
                         RegistryBuilder.<ConnectionSocketFactory>create()
-                                .register("https", sslsf).build();
+                                .register(OPAConstants.HTTPS, sslsf).build();
                 poolManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
             } catch (IOException | KeyStoreException | CertificateException | NoSuchAlgorithmException | KeyManagementException e) {
                 log.error("Error while reading and setting truststore", e);

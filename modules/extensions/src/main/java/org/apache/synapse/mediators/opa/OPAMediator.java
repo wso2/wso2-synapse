@@ -34,13 +34,14 @@ import java.util.Map;
 public class OPAMediator extends AbstractMediator implements ManagedLifecycle {
 
     private static final Log log = LogFactory.getLog(OPAMediator.class);
+    private static final String defaultRequestGenerator = "org.apache.synapse.mediators.opa.OPASynapseRequestGenerator";
 
     private String serverUrl = null;
     private String accessKey = null;
     private String policy = null;
     private String rule = null;
     private String requestGeneratorClassName = null;
-    private Map<String, Object> additionalParameters = new HashMap<String, Object>();
+    private Map<String, String> additionalParameters = new HashMap<String, String>();
     private OPARequestGenerator requestGenerator = null;
     private OPAClient opaClient;
 
@@ -76,7 +77,7 @@ public class OPAMediator extends AbstractMediator implements ManagedLifecycle {
 
         try {
             if (className == null) {
-                className = "org.apache.synapse.mediators.opa.OPASynapseRequestGenerator";
+                className = defaultRequestGenerator;
                 if (log.isDebugEnabled()) {
                     log.debug("Request generator class not found. Default generator used.");
                 }
@@ -142,17 +143,17 @@ public class OPAMediator extends AbstractMediator implements ManagedLifecycle {
         this.rule = rule;
     }
 
-    public Map<String, Object> getAdditionalParameters() {
+    public Map<String, String> getAdditionalParameters() {
 
         return additionalParameters;
     }
 
-    public void setAdditionalParameters(Map<String, Object> additionalParameters) {
+    public void setAdditionalParameters(Map<String, String> additionalParameters) {
 
         this.additionalParameters = additionalParameters;
     }
 
-    public void addAdditionalParameter(String parameter, Object value) {
+    public void addAdditionalParameter(String parameter, String value) {
 
         this.additionalParameters.put(parameter, value);
     }

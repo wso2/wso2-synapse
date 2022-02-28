@@ -81,7 +81,7 @@ public class OPAMediatorFactory extends AbstractMediatorFactory {
                 OMAttribute nameAtr = parameterElement.getAttribute(NAME_Q);
                 if (nameAtr != null) {
                     String parameterName = nameAtr.getAttributeValue();
-                    Object parameterValue = parameterElement.getText();
+                    String parameterValue = parameterElement.getText();
 
                     if (parameterName != null && parameterValue != null) {
                         opaMediator.addAdditionalParameter(parameterName, parameterValue);
