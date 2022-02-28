@@ -19,6 +19,7 @@
 package org.apache.synapse.aspects.flow.statistics.opentracing.management.helpers;
 
 import io.opentracing.Span;
+import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
 import org.apache.synapse.aspects.flow.statistics.opentracing.OpenTracingManagerHolder;
 import org.apache.synapse.aspects.flow.statistics.opentracing.models.SpanWrapper;
@@ -46,9 +47,12 @@ public class SpanTagger {
                 if(openStatisticsLog.getBeforePayload() != null) {
                     span.setTag("beforePayload", openStatisticsLog.getBeforePayload());
                 }
-                if (spanWrapper.getCloseEventStatisticDataUnit() != null) {
-                    span.setTag("afterPayload", spanWrapper.getCloseEventStatisticDataUnit().getPayload());
-                } else {
+                StatisticDataUnit statisticDataUnit = spanWrapper.getCloseEventStatisticDataUnit();
+                if (statisticDataUnit != null) {
+                    if (statisticDataUnit.getPayload() != null) {
+                        span.setTag("afterPayload", statisticDataUnit.getPayload());
+                    }
+                } else if (openStatisticsLog.getBeforePayload() !=null){
                     //This means a close event hasn't been triggered so payload is equal to before payload
                     span.setTag("afterPayload", openStatisticsLog.getBeforePayload());
                 }
