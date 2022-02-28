@@ -577,7 +577,7 @@ public final class SynapseConstants {
     public enum ENDPOINT_TIMEOUT_TYPE { ENDPOINT_TIMEOUT, GLOBAL_TIMEOUT, HTTP_CONNECTION_TIMEOUT};
 
     // URL pattern
-    public static final Pattern URL_PATTERN = Pattern.compile("[a-z]+://.*");
+    public static final Pattern URL_PATTERN = Pattern.compile("[a-zA-Z0-9]+://.*");
 
     // Password pattern
     public static final Pattern PASSWORD_PATTERN = Pattern.compile(":(?:[^/]+)@");

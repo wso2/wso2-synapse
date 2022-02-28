@@ -899,7 +899,7 @@ public class MessageHelper {
         String maskUrl;
         if (urlMatcher.find()) {
             final Matcher pwdMatcher = PASSWORD_PATTERN.matcher(url);
-            maskUrl = pwdMatcher.replaceFirst("\":***@\"");
+            maskUrl = pwdMatcher.replaceFirst(":***@");
             return maskUrl;
         }
         return url;
