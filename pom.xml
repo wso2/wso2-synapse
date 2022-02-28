@@ -1317,6 +1317,11 @@
               <scope>test</scope>
               <optional>true</optional>
           </dependency>
+          <dependency>
+              <groupId>org.json.wso2</groupId>
+              <artifactId>json</artifactId>
+              <version>${org.wso2.json.version}</version>
+          </dependency>
       </dependencies>
    </dependencyManagement>
     <reporting>
