@@ -89,7 +89,11 @@ public class Axis2Sender {
                     // The Axis2 Message context of the Synapse MC
                     synapseInMessageContext);
         } catch (Exception e) {
-            handleException("Unexpected error during sending message out", e, synapseInMessageContext);
+            if (e.getMessage() != null) {
+                handleException("Unexpected error during sending message out. " + e.getMessage(), e, synapseInMessageContext);
+            } else {
+                handleException("Unexpected error during sending message out", e, synapseInMessageContext);
+            }
         }
     }
 
