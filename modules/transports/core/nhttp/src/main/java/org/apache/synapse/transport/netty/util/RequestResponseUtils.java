@@ -50,6 +50,8 @@ import org.wso2.transport.http.netty.contract.config.ListenerConfiguration;
 import org.wso2.transport.http.netty.contract.config.SslConfiguration;
 import org.wso2.transport.http.netty.message.HttpCarbonMessage;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -106,10 +108,10 @@ public class RequestResponseUtils {
         msgCtx.setProperty(BridgeConstants.HTTP_SOURCE_CONFIGURATION, sourceConfiguration);
 
         // Following section is required for throttling to work
-        msgCtx.setProperty(MessageContext.REMOTE_ADDR, incomingCarbonMsg.getProperty(
-                org.wso2.transport.http.netty.contract.Constants.REMOTE_ADDRESS).toString());
-        msgCtx.setProperty(BridgeConstants.REMOTE_HOST,
-                incomingCarbonMsg.getProperty(org.wso2.transport.http.netty.contract.Constants.ORIGIN_HOST));
+        InetAddress remoteAddress = ((InetSocketAddress) incomingCarbonMsg.getProperty(
+                org.wso2.transport.http.netty.contract.Constants.REMOTE_ADDRESS)).getAddress();
+        msgCtx.setProperty(MessageContext.REMOTE_ADDR, remoteAddress.getHostAddress());
+        msgCtx.setProperty(BridgeConstants.REMOTE_HOST, getHostName(remoteAddress));
 
         // http transport header names are case insensitive
         Map<String, String> headers = new HashMap<>();
@@ -122,6 +124,38 @@ public class RequestResponseUtils {
         msgCtx.setProperty(BridgeConstants.HTTP_CLIENT_REQUEST_CARBON_MESSAGE, incomingCarbonMsg);
         msgCtx.setProperty(BridgeConstants.TRANSPORT_MESSAGE_HANDLER, new HttpMessageHandler());
         return msgCtx;
+    }
+
+    /**
+     * This method tries to determine the hostname of the given InetAddress without
+     * triggering a reverse DNS lookup.  {@link java.net.InetAddress#getHostName()}
+     * triggers a reverse DNS lookup which can be very costly in cases where reverse
+     * DNS fails. Tries to parse a symbolic hostname from {@link java.net.InetAddress#toString()},
+     * which is documented to return a String of the form "hostname / literal IP address"
+     * with 'hostname' blank if not already computed & stored in <code>address</code>.
+     * <p/>
+     * If the hostname cannot be determined from InetAddress.toString(),
+     * the value of {@link java.net.InetAddress#getHostAddress()} is returned.
+     *
+     * @param address The InetAddress whose hostname has to be determined
+     * @return hostsname, if it can be determined. hostaddress, if not.
+     */
+    public static String getHostName(InetAddress address) {
+        String result;
+        String hostAddress = address.getHostAddress();
+        String inetAddress = address.toString();
+        int index1 = inetAddress.lastIndexOf('/');
+        int index2 = inetAddress.indexOf(hostAddress);
+        if (index2 == index1 + 1) {
+            if (index1 == 0) {
+                result = hostAddress;
+            } else {
+                result = inetAddress.substring(0, index1);
+            }
+        } else {
+            result = hostAddress;
+        }
+        return result;
     }
 
     /**
