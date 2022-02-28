@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.api.ApiConstants;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
 
@@ -44,6 +45,7 @@ public class OPAMediator extends AbstractMediator implements ManagedLifecycle {
     private Map<String, String> additionalParameters = new HashMap<String, String>();
     private OPARequestGenerator requestGenerator = null;
     private OPAClient opaClient;
+    private String opaPolicyFailuretHandler = "_opa_policy_failure_handler_";
 
     @Override
     public boolean mediate(MessageContext messageContext) {
@@ -68,7 +70,7 @@ public class OPAMediator extends AbstractMediator implements ManagedLifecycle {
                         OPASecurityException.ACCESS_REVOKED_MESSAGE);
             }
         } catch (OPASecurityException e) {
-            OPAUtils.handlePolicyFailure(messageContext, e);
+            OPAUtils.handlePolicyFailure(messageContext, e, opaPolicyFailuretHandler);
         }
         return false;
     }
@@ -163,6 +165,9 @@ public class OPAMediator extends AbstractMediator implements ManagedLifecycle {
         try {
             requestGenerator = getRequestGenerator(requestGeneratorClassName);
             opaClient = new OPAClient(serverUrl, additionalParameters);
+            if (additionalParameters.get(OPAConstants.OPA_POLICY_FAILURE_HANDLER_PARAMETER)!= null) {
+                opaPolicyFailuretHandler = additionalParameters.get(OPAConstants.OPA_POLICY_FAILURE_HANDLER_PARAMETER);
+            }
         } catch (OPASecurityException e) {
             throw new SynapseException("Error when initializing the OPA Mediator", e);
         }

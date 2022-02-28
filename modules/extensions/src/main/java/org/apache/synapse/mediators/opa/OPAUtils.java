@@ -69,7 +69,7 @@ public class OPAUtils {
      * @param messageContext Message context
      * @param e              OPASecurityException
      */
-    public static void handlePolicyFailure(MessageContext messageContext, OPASecurityException e) {
+    public static void handlePolicyFailure(MessageContext messageContext, OPASecurityException e, String faultHandler) {
 
         int status;
         String errorMessage;
@@ -81,12 +81,12 @@ public class OPAUtils {
             errorMessage = "Internal Sever Error";
         }
 
-        messageContext.setProperty("HTTP_RESPONSE_STATUS_CODE", status);
+        messageContext.setProperty(OPAConstants.HTTP_RESPONSE_STATUS_CODE, status);
         messageContext.setProperty(SynapseConstants.ERROR_CODE, e.getErrorCode());
         messageContext.setProperty(SynapseConstants.ERROR_MESSAGE, errorMessage);
         messageContext.setProperty(SynapseConstants.ERROR_EXCEPTION, e);
 
-        Mediator sequence = messageContext.getSequence("_opa_policy_failure_handler_");
+        Mediator sequence = messageContext.getSequence(faultHandler);
         if (sequence != null && !sequence.mediate(messageContext)) {
             // If needed user should be able to prevent the rest of the fault handling
             // logic from getting executed

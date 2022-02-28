@@ -34,6 +34,7 @@ public final class OPAConstants {
     public static final String TRUST_STORE_LOCATION_SYSTEM_PROPERTY = "javax.net.ssl.trustStore";
     public static final String HTTP_METHOD_STRING = "HTTP_METHOD";
     public static final String API_BASEPATH_STRING = "TransportInURL";
+    public static final String HTTP_RESPONSE_STATUS_CODE = "HTTP_RESPONSE_STATUS_CODE";
 
     // Additional properties
     public static final String MAX_OPEN_CONNECTIONS_PARAMETER = "maxOpenConnections";
@@ -41,6 +42,7 @@ public final class OPAConstants {
     public static final String CONNECTION_TIMEOUT_PARAMETER = "connectionTimeout";
     public static final String ADDITIONAL_MC_PROPERTY_PARAMETER = "additionalMCProperties";
     public static final String ADDITIONAL_MC_PROPERTY_DIVIDER = ",";
+    public static final String OPA_POLICY_FAILURE_HANDLER_PARAMETER = "opaPolicyFailureHandler";
 
     //OPA output fields
     public static final String INPUT_KEY = "input";
@@ -53,8 +55,4 @@ public final class OPAConstants {
     public static final String EMPTY_OPA_RESPONSE = "{}";
     public static final String OPA_RESPONSE_RESULT_KEY = "result";
     public static final String OPA_RESPONSE_DEFAULT_RULE = "allow";
-
-
-
-
 }
