@@ -41,7 +41,7 @@ public interface OPARequestGenerator {
                            MessageContext messageContext) throws OPASecurityException;
 
     /**
-     * Authenticates the given request using the authenticators which have been initialized.
+     * Handle the OPA response based on the implementation
      *
      * @param policyName           Name of the policy validated
      * @param rule                 The rule of the policy

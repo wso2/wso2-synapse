@@ -71,14 +71,17 @@ public class OPAClient {
     private CloseableHttpClient httpClient = null;
 
     public OPAClient(String url, Map<String, String> additionalParameters) throws OPASecurityException {
+
         if (additionalParameters.get(OPAConstants.MAX_OPEN_CONNECTIONS_PARAMETER) != null) {
-            this.maxOpenConnections = Integer.parseInt(additionalParameters.get(OPAConstants.MAX_OPEN_CONNECTIONS_PARAMETER));
+            this.maxOpenConnections =
+                    Integer.parseInt(additionalParameters.get(OPAConstants.MAX_OPEN_CONNECTIONS_PARAMETER));
         }
         if (additionalParameters.get(OPAConstants.MAX_PER_ROUTE_PARAMETER) != null) {
             this.maxPerRoute = Integer.parseInt(additionalParameters.get(OPAConstants.MAX_PER_ROUTE_PARAMETER));
         }
         if (additionalParameters.get(OPAConstants.CONNECTION_TIMEOUT_PARAMETER) != null) {
-            this.connectionTimeout = Integer.parseInt(additionalParameters.get(OPAConstants.CONNECTION_TIMEOUT_PARAMETER));
+            this.connectionTimeout =
+                    Integer.parseInt(additionalParameters.get(OPAConstants.CONNECTION_TIMEOUT_PARAMETER));
         }
         httpClient = createHttpClient(url);
     }
@@ -183,7 +186,8 @@ public class OPAClient {
         PoolingHttpClientConnectionManager poolManager;
         if (OPAConstants.HTTPS.equals(protocol)) {
 
-            char[] trustStorePassword = System.getProperty(OPAConstants.TRUST_STORE_PASSWORD_SYSTEM_PROPERTY).toCharArray();
+            char[] trustStorePassword =
+                    System.getProperty(OPAConstants.TRUST_STORE_PASSWORD_SYSTEM_PROPERTY).toCharArray();
             String trustStoreLocation = System.getProperty(OPAConstants.TRUST_STORE_LOCATION_SYSTEM_PROPERTY);
             File trustStoreFile = new File(trustStoreLocation);
             try (InputStream localTrustStoreStream = new FileInputStream(trustStoreFile)) {

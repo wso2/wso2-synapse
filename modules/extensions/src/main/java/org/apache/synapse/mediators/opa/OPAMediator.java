@@ -23,7 +23,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.api.ApiConstants;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
 
@@ -59,7 +58,8 @@ public class OPAMediator extends AbstractMediator implements ManagedLifecycle {
             }
 
             String opaResponseString = opaClient.publish(evaluatingPolicyUrl, opaPayload, accessKey);
-            if (requestGenerator.handleResponse(policy, rule, opaResponseString, additionalParameters, messageContext)) {
+            if (requestGenerator
+                    .handleResponse(policy, rule, opaResponseString, additionalParameters, messageContext)) {
                 return true;
             } else {
                 if (log.isDebugEnabled()) {
@@ -75,6 +75,14 @@ public class OPAMediator extends AbstractMediator implements ManagedLifecycle {
         return false;
     }
 
+    /**
+     * Initialize the request generator object based on the className provided. If class name is not provided, default
+     * policy generator object will be created
+     *
+     * @param className Request generator implementation
+     * @return OPA request generator object
+     * @throws OPASecurityException
+     */
     private OPARequestGenerator getRequestGenerator(String className) throws OPASecurityException {
 
         try {
@@ -91,7 +99,7 @@ public class OPAMediator extends AbstractMediator implements ManagedLifecycle {
                 | InvocationTargetException e) {
             log.error("An error occurred while creating the request generator for " + className, e);
             throw new OPASecurityException(OPASecurityException.INTERNAL_ERROR,
-                   OPASecurityException.INTERNAL_ERROR_MESSAGE);
+                    OPASecurityException.INTERNAL_ERROR_MESSAGE);
         }
     }
 
@@ -162,10 +170,11 @@ public class OPAMediator extends AbstractMediator implements ManagedLifecycle {
 
     @Override
     public void init(SynapseEnvironment se) {
+
         try {
             requestGenerator = getRequestGenerator(requestGeneratorClassName);
             opaClient = new OPAClient(serverUrl, additionalParameters);
-            if (additionalParameters.get(OPAConstants.OPA_POLICY_FAILURE_HANDLER_PARAMETER)!= null) {
+            if (additionalParameters.get(OPAConstants.OPA_POLICY_FAILURE_HANDLER_PARAMETER) != null) {
                 opaPolicyFailuretHandler = additionalParameters.get(OPAConstants.OPA_POLICY_FAILURE_HANDLER_PARAMETER);
             }
         } catch (OPASecurityException e) {

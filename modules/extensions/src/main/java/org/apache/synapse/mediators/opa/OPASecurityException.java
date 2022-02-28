@@ -18,8 +18,6 @@
 
 package org.apache.synapse.mediators.opa;
 
-import org.apache.http.HttpStatus;
-
 /**
  * Exception to be thrown when a OPA mediator related error occurs
  */
@@ -38,24 +36,29 @@ public class OPASecurityException extends Exception {
     }
 
     public OPASecurityException(int errorCode, String message) {
+
         super(message);
         this.errorCode = errorCode;
     }
 
     public OPASecurityException(int errorCode, String message, Throwable cause) {
+
         super(message, cause);
         this.errorCode = errorCode;
     }
 
     public OPASecurityException(String message, Throwable cause) {
+
         super(message, cause);
     }
 
     public OPASecurityException(Throwable cause) {
+
         super(cause.getMessage(), cause);
     }
 
     public int getErrorCode() {
+
         return errorCode;
     }
 }

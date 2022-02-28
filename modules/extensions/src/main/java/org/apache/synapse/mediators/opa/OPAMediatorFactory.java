@@ -38,12 +38,14 @@ public class OPAMediatorFactory extends AbstractMediatorFactory {
     static final QName POLICY_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "policy");
     static final QName Rule_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "rule");
     static final QName PAYLOAD_GENERATOR_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "requestGenerator");
-    static final QName ADDITIONAL_PARAMETERS_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "additionalParameters");
+    static final QName ADDITIONAL_PARAMETERS_Q =
+            new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "additionalParameters");
     static final QName PARAMETER_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "parameter");
     static final QName NAME_Q = new QName("name");
 
     @Override
     protected Mediator createSpecificMediator(OMElement omElement, Properties properties) {
+
         OPAMediator opaMediator = new OPAMediator();
         processAuditStatus(opaMediator, omElement);
 
@@ -66,7 +68,6 @@ public class OPAMediatorFactory extends AbstractMediatorFactory {
         if (ruleElement != null) {
             opaMediator.setRule(ruleElement.getText());
         }
-
 
         OMElement payloadGeneratorElement = omElement.getFirstChildWithName(PAYLOAD_GENERATOR_Q);
         if (payloadGeneratorElement != null) {

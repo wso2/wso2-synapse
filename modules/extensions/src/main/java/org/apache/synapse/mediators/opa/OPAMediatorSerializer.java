@@ -76,7 +76,8 @@ public class OPAMediatorSerializer extends AbstractMediatorSerializer {
             for (String parameter : mediator.getAdditionalParameters().keySet()) {
                 Object parameterValue = additionalParameters.get(parameter);
 
-                OMElement parameterElement = fac.createOMElement(OPAMediatorFactory.PARAMETER_Q, additionalParametersElement);
+                OMElement parameterElement =
+                        fac.createOMElement(OPAMediatorFactory.PARAMETER_Q, additionalParametersElement);
                 parameterElement.addAttribute(fac.createOMAttribute("name", nullNS, parameter));
                 parameterElement.setText(String.valueOf(parameterValue));
             }
