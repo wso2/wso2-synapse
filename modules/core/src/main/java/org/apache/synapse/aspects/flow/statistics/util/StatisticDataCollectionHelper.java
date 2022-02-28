@@ -122,9 +122,10 @@ public class StatisticDataCollectionHelper {
 		statisticDataUnit.setParentList(getParentList(messageContext));
 
 		statisticDataUnit.setTime(System.currentTimeMillis());
-
+		boolean isForceCollectPayload = "true".equals(messageContext.getProperty(
+				SynapseConstants.FORCE_COLLECT_PAYLOAD));
 		if (isCollectingTracing != null && isCollectingTracing) {
-			if (RuntimeStatisticCollector.isCollectingPayloads() && isContentAltering) {//Change to Other one
+			if (RuntimeStatisticCollector.isCollectingPayloads() && isContentAltering||isForceCollectPayload) {//Change to Other one
 				statisticDataUnit.setPayload(TracingDataCollectionHelper.collectPayload(messageContext));
 			}
 			if (RuntimeStatisticCollector.isCollectingProperties()) {
