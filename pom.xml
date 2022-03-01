@@ -602,6 +602,18 @@
               <version>${quickfixj.version}</version>
           </dependency>
           <dependency>
+              <groupId>org.quickfixj</groupId>
+              <artifactId>quickfixj-messages-fix41</artifactId>
+              <version>${quickfixj.version}</version>
+              <scope>test</scope>
+          </dependency>
+          <dependency>
+              <groupId>org.quickfixj</groupId>
+              <artifactId>quickfixj-messages-fix44</artifactId>
+              <version>${quickfixj.version}</version>
+              <scope>test</scope>
+          </dependency>
+          <dependency>
              <groupId>oro</groupId>
              <artifactId>oro</artifactId>
              <version>${oro.version}</version>
