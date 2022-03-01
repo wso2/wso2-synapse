@@ -145,7 +145,7 @@
     <dependencies>
         <dependency>
             <groupId>org.quickfixj</groupId>
-            <artifactId>quickfixj-all</artifactId>
+            <artifactId>quickfixj-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.synapse</groupId>
