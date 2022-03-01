@@ -516,7 +516,7 @@ public class FIXSessionFactory {
         try {
             JmxExporter jmxExporter = new JmxExporter();
             jmxExporter.setRegistrationBehavior(JmxExporter.REGISTRATION_IGNORE_EXISTING);
-            jmxExporter.export(connector);
+            jmxExporter.register(connector);
         } catch (JMException e) {
             log.error("Error while initializing JMX support for the service: " + service, e);
         }
