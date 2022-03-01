@@ -591,17 +591,12 @@
              <artifactId>quartz</artifactId>
              <version>${quartz.wso2.version}</version>
          </dependency>
-         <dependency>
-             <groupId>quickfixj</groupId>
-             <artifactId>quickfixj-all</artifactId>
-             <version>${qfj.version}</version>
-         </dependency>
-         <dependency>
-             <groupId>quickfixj.wso2</groupId>
-             <artifactId>quickfixj</artifactId>
-             <version>${quickfixj.wso2.version}</version>
-         </dependency>
-         <dependency>
+          <dependency>
+              <groupId>org.quickfixj</groupId>
+              <artifactId>quickfixj-all</artifactId>
+              <version>${quickfixj.version}</version>
+          </dependency>
+          <dependency>
              <groupId>oro</groupId>
              <artifactId>oro</artifactId>
              <version>${oro.version}</version>
@@ -1412,7 +1407,7 @@
       <antlr.wso2.version>3.2.0.wso2v1</antlr.wso2.version>
       <com.jayway.jsonpath.version>2.4.0.wso2v2</com.jayway.jsonpath.version>
       <qfj.version>1.5.3</qfj.version>
-      <quickfixj.wso2.version>${qfj.version}.wso2v1</quickfixj.wso2.version>
+       <quickfixj.version>2.3.1</quickfixj.version>
       <org.bouncycastle.version>1.69.0.wso2v1</org.bouncycastle.version>
       <imp.pkg.version.wso2.bouncycastle>[1.52.0,2.0.0)</imp.pkg.version.wso2.bouncycastle>
        <hc.httpcore.version>4.4.14</hc.httpcore.version>
