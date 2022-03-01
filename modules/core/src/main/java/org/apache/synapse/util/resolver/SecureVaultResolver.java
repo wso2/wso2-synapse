@@ -40,7 +40,7 @@ public class SecureVaultResolver {
     private SecureVaultResolver(){}
 
     /** regex for secure vault expression */
-    private static final String SECURE_VAULT_REGEX = "\\{((.*?):vault-lookup\\('(.*?)'\\))\\}";
+    private static final String SECURE_VAULT_REGEX = "\\{([^:]*:vault-lookup\\('.*?'\\))\\}";
 
     private static Pattern vaultLookupPattern = Pattern.compile(SECURE_VAULT_REGEX);
 
@@ -68,24 +68,23 @@ public class SecureVaultResolver {
             return null;
         }
         Matcher lookupMatcher = vaultLookupPattern.matcher(value);
-        String resolvedValue = value;
-        if (lookupMatcher.find()) {
+        StringBuffer resolvedValue = new StringBuffer(value.length());
+        while (lookupMatcher.find()) {
             Value expression = null;
-            //getting the expression with out curly brackets
+            //getting the expression without curly brackets
             String expressionStr = lookupMatcher.group(1);
             try {
                 expression = new Value(new SynapseXPath(expressionStr));
             } catch (JaxenException e) {
                 throw new SynapseException("Error while building the expression : " + expressionStr, e);
             }
-            resolvedValue =
-                    resolvedValue.replaceFirst(SECURE_VAULT_REGEX,
-                            expression.evaluateValue(synapseEnvironment.createMessageContext()));
-            if (StringUtils.isEmpty(resolvedValue)) {
+            String evaluatedValue = expression.evaluateValue(synapseEnvironment.createMessageContext());
+            if (StringUtils.isEmpty(evaluatedValue)) {
                 log.warn("Found Empty value for expression : " + expression.getExpression());
-                resolvedValue = "";
             }
+            lookupMatcher.appendReplacement(resolvedValue, Matcher.quoteReplacement(evaluatedValue));
         }
-        return resolvedValue;
+        lookupMatcher.appendTail(resolvedValue);
+        return resolvedValue.toString();
     }
 }
