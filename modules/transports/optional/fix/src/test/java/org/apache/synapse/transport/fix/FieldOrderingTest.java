@@ -29,6 +29,7 @@ import quickfix.fix44.QuoteRequest;
 
 import javax.xml.namespace.QName;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -54,8 +55,8 @@ public class FieldOrderingTest extends TestCase {
         group.setField(new OrderQty(500));
         group.setField(new SettlDate("20151116"));
         group.setField(new QuotePriceType(1));
-        group.setField(new ValidUntilTime(new Date()));
-        group.setField(new ExpireTime(new Date()));
+        group.setField(new ValidUntilTime(LocalDateTime.now()));
+        group.setField(new ExpireTime(LocalDateTime.now()));
         message.addGroup(group);
         System.out.println("Original Message: " + message);
 
