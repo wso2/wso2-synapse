@@ -96,6 +96,7 @@
                             org.apache.synapse.mediators.spring.*,
                             org.apache.synapse.mediators.throttle.*,
                             org.apache.synapse.mediators.xquery.*,
+                            org.apache.synapse.mediators.opa.*,
                             org.apache.synapse.inboundfactory.*,
                             org.apache.synapse.protocol.*,
                         </Export-Package>
@@ -106,6 +107,7 @@
                             !org.apache.synapse.mediators.spring.*,
                             !org.apache.synapse.mediators.throttle.*,
                             !org.apache.synapse.mediators.xquery.*,
+                            !org.apache.synapse.mediators.opa.*,
                             !org.apache.synapse.inboundfactory.*,
                             !org.apache.synapse.protocol.*,                            
                             !javax.xml.namespace,
@@ -326,6 +328,10 @@
             <artifactId>org.jacoco.agent</artifactId>
             <classifier>runtime</classifier>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.json.wso2</groupId>
+            <artifactId>json</artifactId>
         </dependency>
     </dependencies>
     
