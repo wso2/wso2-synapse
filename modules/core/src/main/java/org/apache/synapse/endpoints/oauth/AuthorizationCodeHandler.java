@@ -20,6 +20,7 @@ package org.apache.synapse.endpoints.oauth;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 
@@ -45,7 +46,8 @@ public class AuthorizationCodeHandler extends OAuthHandler {
         payload.append(OAuthConstants.REFRESH_TOKEN_GRANT_TYPE)
                 .append(OAuthConstants.PARAM_REFRESH_TOKEN)
                 .append(OAuthUtils.resolveExpression(refreshToken, messageContext));
-        if ("payload".equalsIgnoreCase(getAuthMode())) {
+        if (StringUtils.isNotBlank(getAuthMode()) &&
+                "payload".equalsIgnoreCase(OAuthUtils.resolveExpression(getAuthMode(), messageContext))) {
             payload.append(OAuthConstants.PARAM_CLIENT_ID)
                     .append(OAuthUtils.resolveExpression(getClientId(), messageContext));
             payload.append(OAuthConstants.PARAM_CLIENT_SECRET)

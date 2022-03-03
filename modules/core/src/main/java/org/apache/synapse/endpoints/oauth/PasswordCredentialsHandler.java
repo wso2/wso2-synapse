@@ -20,6 +20,7 @@ package org.apache.synapse.endpoints.oauth;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 
@@ -47,7 +48,8 @@ public class PasswordCredentialsHandler extends OAuthHandler {
         payload.append(OAuthConstants.PASSWORD_CRED_GRANT_TYPE);
         payload.append(OAuthConstants.PARAM_USERNAME).append(OAuthUtils.resolveExpression(username, messageContext));
         payload.append(OAuthConstants.PARAM_PASSWORD).append(OAuthUtils.resolveExpression(password, messageContext));
-        if ("payload".equalsIgnoreCase(getAuthMode())) {
+        if (StringUtils.isNotBlank(getAuthMode()) &&
+                "payload".equalsIgnoreCase(OAuthUtils.resolveExpression(getAuthMode(), messageContext))) {
             payload.append(OAuthConstants.PARAM_CLIENT_ID)
                     .append(OAuthUtils.resolveExpression(getClientId(), messageContext));
             payload.append(OAuthConstants.PARAM_CLIENT_SECRET)
