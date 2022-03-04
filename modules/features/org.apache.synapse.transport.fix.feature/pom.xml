@@ -39,14 +39,6 @@
             <groupId>org.apache.synapse</groupId>
             <artifactId>synapse-fix-transport</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.quickfixj</groupId>
-            <artifactId>quickfixj-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.mina</groupId>
-            <artifactId>mina-core</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
@@ -73,8 +65,6 @@
                             <bundles>
                                 <bundleDef>org.apache.synapse:synapse-commons</bundleDef>
                                 <bundleDef>org.apache.synapse:synapse-fix-transport</bundleDef>
-                                <bundleDef>org.quickfixj:quickfixj-core</bundleDef>
-                                <bundleDef>org.apache.mina:mina-core</bundleDef>
                             </bundles>
                         </configuration>
                     </execution>
