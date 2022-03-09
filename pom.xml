@@ -1432,9 +1432,9 @@
        <quickfixj.version>2.3.1</quickfixj.version>
       <org.bouncycastle.version>1.69.0.wso2v1</org.bouncycastle.version>
       <imp.pkg.version.wso2.bouncycastle>[1.52.0,2.0.0)</imp.pkg.version.wso2.bouncycastle>
-       <hc.httpcore.version>4.4.14</hc.httpcore.version>
+       <hc.httpcore.version>4.4.15</hc.httpcore.version>
       <httpcore.wso2.version>${hc.httpcore.version}.wso2v1</httpcore.wso2.version>
-       <httpcore-nio.version>4.4.14</httpcore-nio.version>
+       <httpcore-nio.version>4.4.15</httpcore-nio.version>
        <httpcore-nio.wso2.version>${httpcore-nio.version}.wso2v1</httpcore-nio.wso2.version>
        <hc.httpclient.version>4.5.13</hc.httpclient.version>
        <httpclient.wso2.version>${hc.httpclient.version}.wso2v1</httpclient.wso2.version>
