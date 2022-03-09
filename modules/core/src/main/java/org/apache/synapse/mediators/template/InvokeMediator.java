@@ -349,9 +349,6 @@ public class InvokeMediator extends AbstractMediator implements
     public void destroy() {
         TemplateMediator templateMediator =
                 synapseEnv.getSynapseConfiguration().getSequenceTemplate(targetTemplate);
-        if (templateMediator != null) {
-            templateMediator.destroy();
-        }
         if (templateMediator == null || templateMediator.isDynamic()) {
             synapseEnv.removeUnavailableArtifactRef(targetTemplate);
         }
