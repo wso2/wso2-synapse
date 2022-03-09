@@ -295,7 +295,7 @@
 			<version>1.6.1-wso2v10</version>
 		</dependency-->
 		<dependency>
-			<groupId>org.wso2.orbit.com.jayway.jsonpath</groupId>
+			<groupId>com.jayway.jsonpath</groupId>
 			<artifactId>json-path</artifactId>
 		</dependency>
         <dependency>
