@@ -16,7 +16,7 @@
  *  under the License.
  */
 
-package org.apache.synapse.endpoints.oauth;
+package org.apache.synapse.endpoints.auth.oauth;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
@@ -24,6 +24,9 @@ import org.apache.axiom.util.base64.Base64Utils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.endpoints.auth.AuthConstants;
+import org.apache.synapse.endpoints.auth.AuthException;
+import org.apache.synapse.endpoints.auth.AuthHandler;
 
 import java.io.IOException;
 import java.util.Comparator;
@@ -38,7 +41,7 @@ import java.util.concurrent.ExecutionException;
  * and add tokens to in-memory cache
  */
 
-public abstract class OAuthHandler {
+public abstract class OAuthHandler implements AuthHandler {
 
     private final String id;
 
@@ -57,15 +60,13 @@ public abstract class OAuthHandler {
         this.authMode = authMode;
     }
 
-    /**
-     * This method will set the Authorization header after checking for expired tokens and generating new access
-     * tokens.
-     *
-     * @param messageContext Message context to which the token needs to be set
-     * @throws OAuthException In the event of errors when generating new token
-     */
-    public void setOAuthHeader(MessageContext messageContext) throws OAuthException {
+    @Override
+    public String getAuthType() {
+        return AuthConstants.OAUTH;
+    }
 
+    @Override
+    public void setAuthHeader(MessageContext messageContext) throws AuthException {
         setAuthorizationHeader(messageContext, getToken(messageContext));
     }
 
@@ -73,21 +74,21 @@ public abstract class OAuthHandler {
      * This method returns a token string.
      *
      * @return token String
-     * @throws OAuthException In the event of errors when generating new token
+     * @throws AuthException In the event of errors when generating new token
      */
-    private String getToken(final MessageContext messageContext) throws OAuthException {
+    private String getToken(final MessageContext messageContext) throws AuthException {
 
         try {
             return TokenCache.getInstance().getToken(id, new Callable<String>() {
                 @Override
-                public String call() throws OAuthException, IOException {
+                public String call() throws AuthException, IOException {
 
                     return OAuthClient.generateToken(OAuthUtils.resolveExpression(tokenApiUrl, messageContext),
                             buildTokenRequestPayload(messageContext), getEncodedCredentials(messageContext));
                 }
             });
         } catch (ExecutionException e) {
-            throw new OAuthException(e.getCause());
+            throw new AuthException(e.getCause());
         }
     }
 
@@ -103,7 +104,7 @@ public abstract class OAuthHandler {
                 .getAxis2MessageContext().getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
         if (transportHeaders != null && transportHeaders instanceof Map) {
             Map transportHeadersMap = (Map) transportHeaders;
-            transportHeadersMap.put(OAuthConstants.AUTHORIZATION_HEADER, OAuthConstants.BEARER + accessToken);
+            transportHeadersMap.put(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.BEARER + accessToken);
         } else {
             Map<String, Object> transportHeadersMap = new TreeMap<>(new Comparator<String>() {
                 public int compare(String o1, String o2) {
@@ -111,7 +112,7 @@ public abstract class OAuthHandler {
                     return o1.compareToIgnoreCase(o2);
                 }
             });
-            transportHeadersMap.put(OAuthConstants.AUTHORIZATION_HEADER, OAuthConstants.BEARER + accessToken);
+            transportHeadersMap.put(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.BEARER + accessToken);
             ((Axis2MessageContext) messageContext).getAxis2MessageContext()
                     .setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, transportHeadersMap);
         }
@@ -160,7 +161,7 @@ public abstract class OAuthHandler {
      *
      * @return String payload
      */
-    protected abstract String buildTokenRequestPayload(MessageContext messageContext) throws OAuthException;
+    protected abstract String buildTokenRequestPayload(MessageContext messageContext) throws AuthException;
 
     /**
      * Return the OMElement for OAuth configuration relevant to the OAuth handler.
@@ -177,11 +178,11 @@ public abstract class OAuthHandler {
     public OMElement serializeOAuthConfiguration(OMFactory omFactory) {
 
         OMElement oauthCredentials = serializeSpecificOAuthConfigs(omFactory);
-        oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory, OAuthConstants.OAUTH_CLIENT_ID,
+        oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.OAUTH_CLIENT_ID,
                 clientId));
-        oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory, OAuthConstants.OAUTH_CLIENT_SECRET,
+        oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.OAUTH_CLIENT_SECRET,
                 clientSecret));
-        oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory, OAuthConstants.TOKEN_API_URL,
+        oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.TOKEN_API_URL,
                 tokenApiUrl));
         if (requestParametersMap != null && !requestParametersMap.isEmpty()) {
             OMElement requestParameters = OAuthUtils.createOMRequestParams(omFactory, requestParametersMap);
@@ -189,7 +190,7 @@ public abstract class OAuthHandler {
         }
         if (!StringUtils.isEmpty(getAuthMode())) {
             oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory,
-                    OAuthConstants.OAUTH_AUTHENTICATION_MODE, getAuthMode()));
+                    AuthConstants.OAUTH_AUTHENTICATION_MODE, getAuthMode()));
         }
 
         return oauthCredentials;
@@ -200,9 +201,9 @@ public abstract class OAuthHandler {
      *
      * @param messageContext Message Context of the request which will be used to resolve dynamic expressions
      * @return String payload
-     * @throws OAuthException In the event of errors when resolving the dynamic expressions
+     * @throws AuthException In the event of errors when resolving the dynamic expressions
      */
-    protected String getEncodedCredentials(MessageContext messageContext) throws OAuthException {
+    protected String getEncodedCredentials(MessageContext messageContext) throws AuthException {
 
         if (StringUtils.isNotBlank(authMode) &&
                 "payload".equalsIgnoreCase(OAuthUtils.resolveExpression(authMode, messageContext))) {
@@ -217,7 +218,7 @@ public abstract class OAuthHandler {
      *
      * @return String request parameters
      */
-    protected String getRequestParametersAsString(MessageContext messageContext) throws OAuthException {
+    protected String getRequestParametersAsString(MessageContext messageContext) throws AuthException {
 
         if (requestParametersMap == null) {
             return "";
@@ -225,7 +226,7 @@ public abstract class OAuthHandler {
         StringBuilder payload = new StringBuilder();
         for (Map.Entry<String, String> entry : requestParametersMap.entrySet()) {
             String value = OAuthUtils.resolveExpression(entry.getValue(), messageContext);
-            payload.append(OAuthConstants.AMPERSAND).append(entry.getKey()).append(OAuthConstants.EQUAL_MARK)
+            payload.append(AuthConstants.AMPERSAND).append(entry.getKey()).append(AuthConstants.EQUAL_MARK)
                     .append(value);
         }
         return payload.toString();

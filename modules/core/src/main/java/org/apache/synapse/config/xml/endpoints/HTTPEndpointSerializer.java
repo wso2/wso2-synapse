@@ -22,11 +22,12 @@ package org.apache.synapse.config.xml.endpoints;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.endpoints.BasicAuthConfiguredHTTPEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.HTTPEndpoint;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
-import org.apache.synapse.endpoints.oauth.OAuthConstants;
+import org.apache.synapse.endpoints.auth.AuthConstants;
 
 public class HTTPEndpointSerializer extends DefaultEndpointSerializer {
     @Override
@@ -59,9 +60,8 @@ public class HTTPEndpointSerializer extends DefaultEndpointSerializer {
 
         endpointElement.addChild(httpEPElement);
 
-        if (endpoint instanceof OAuthConfiguredHTTPEndpoint) {
-            httpEPElement.addChild(serializeOAuthConfiguration((OAuthConfiguredHTTPEndpoint) endpoint));
-        }
+        // serialize authentication configurations
+        serializeAuthConfiguration(endpoint, httpEPElement);
 
         // serialize the properties
         serializeProperties(httpEndpoint, endpointElement);
@@ -83,23 +83,68 @@ public class HTTPEndpointSerializer extends DefaultEndpointSerializer {
     }
 
     /**
-     * This method returns an OMElement containing the OAuth configuration.
+     * This method serializes authentication configuration.
      *
-     * @param oAuthConfiguredHTTPEndpoint OAuth Configured HTTP Endpoint
-     * @return OMElement containing the OAuth configuration
+     * @param endpoint endpoint
+     * @param httpEPElement HTTP Endpoint configuration OMElement
      */
-    private OMElement serializeOAuthConfiguration(OAuthConfiguredHTTPEndpoint oAuthConfiguredHTTPEndpoint) {
+    private void serializeAuthConfiguration(Endpoint endpoint, OMElement httpEPElement) {
 
-        OMElement authentication = fac.createOMElement(
-                OAuthConstants.AUTHENTICATION,
+        OMElement authentication = fac.createOMElement(AuthConstants.AUTHENTICATION,
                 SynapseConstants.SYNAPSE_OMNAMESPACE);
 
-        OMElement oauth = fac.createOMElement(
-                OAuthConstants.OAUTH,
-                SynapseConstants.SYNAPSE_OMNAMESPACE);
+        if (endpoint instanceof OAuthConfiguredHTTPEndpoint) {
+            serializeOAuthConfiguration(authentication, (OAuthConfiguredHTTPEndpoint) endpoint);
+            httpEPElement.addChild(authentication);
+        } else if (endpoint instanceof BasicAuthConfiguredHTTPEndpoint) {
+            serializeBasicAuthConfiguration(authentication, (BasicAuthConfiguredHTTPEndpoint) endpoint);
+            httpEPElement.addChild(authentication);
+        }
+    }
+
+    /**
+     * This method returns an OMElement containing the Auth configuration.
+     *
+     * @param authentication Authentication OMElement
+     * @param oAuthConfiguredHTTPEndpoint OAuth Configured HTTP Endpoint
+     */
+    private void serializeOAuthConfiguration(OMElement authentication, OAuthConfiguredHTTPEndpoint oAuthConfiguredHTTPEndpoint) {
+
+        OMElement oauth = fac.createOMElement(AuthConstants.OAUTH, SynapseConstants.SYNAPSE_OMNAMESPACE);
         authentication.addChild(oauth);
 
         oauth.addChild(oAuthConfiguredHTTPEndpoint.getOauthHandler().serializeOAuthConfiguration(fac));
-        return authentication;
+    }
+
+    /**
+     * This method returns an OMElement containing the Auth configuration.
+     *
+     * @param authentication Authentication OMElement
+     * @param basicAuthConfiguredHTTPEndpoint BasicAuth Configured HTTP Endpoint
+     */
+    private void serializeBasicAuthConfiguration(OMElement authentication,
+                                                 BasicAuthConfiguredHTTPEndpoint basicAuthConfiguredHTTPEndpoint) {
+
+        OMElement basicAuth = fac.createOMElement(AuthConstants.BASIC_AUTH, SynapseConstants.SYNAPSE_OMNAMESPACE);
+        authentication.addChild(basicAuth);
+
+        basicAuth.addChild(createOMElementWithValue(AuthConstants.BASIC_AUTH_USERNAME,
+                basicAuthConfiguredHTTPEndpoint.getBasicAuthHandler().getUsername()));
+        basicAuth.addChild(createOMElementWithValue(AuthConstants.BASIC_AUTH_PASSWORD,
+                basicAuthConfiguredHTTPEndpoint.getBasicAuthHandler().getPassword()));
+    }
+
+    /**
+     * This method returns an OMElement containing the elementValue encapsulated by the elementName.
+     *
+     * @param elementName  Name of the OMElement
+     * @param elementValue Value of the OMElement
+     * @return OMElement containing the value encapsulated by the elementName
+     */
+    private OMElement createOMElementWithValue(String elementName, String elementValue) {
+
+        OMElement element = fac.createOMElement(elementName, SynapseConstants.SYNAPSE_OMNAMESPACE);
+        element.setText(elementValue);
+        return element;
     }
 }

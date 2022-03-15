@@ -16,15 +16,16 @@
  *  under the License.
  */
 
-package org.apache.synapse.endpoints.oauth;
+package org.apache.synapse.endpoints.auth;
 
-public class OAuthConstants {
+public class AuthConstants {
 
     public static final String OAUTH_PREFIX = "oauth_";
 
     // elements in the oauth synapse configuration
     public static final String AUTHENTICATION = "authentication";
     public static final String OAUTH = "oauth";
+    public static final String BASIC_AUTH = "basicAuth";
     public static final String CLIENT_CREDENTIALS = "clientCredentials";
     public static final String AUTHORIZATION_CODE = "authorizationCode";
     public static final String PASSWORD_CREDENTIALS = "passwordCredentials";
@@ -73,5 +74,9 @@ public class OAuthConstants {
     public static final int TOKEN_CACHE_TIMEOUT = 3000;
 
     public static final String TOKEN_CACHE_TIMEOUT_PROPERTY = "synapse.endpoint.http.oauth.cache.timeout";
+
+    // basic auth parameters
+    public static final String BASIC_AUTH_USERNAME = "username";
+    public static final String BASIC_AUTH_PASSWORD = "password";
 
 }
