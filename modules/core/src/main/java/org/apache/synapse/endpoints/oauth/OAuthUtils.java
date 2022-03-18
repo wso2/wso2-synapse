@@ -327,6 +327,7 @@ public class OAuthUtils {
 
         Boolean hasRetried = (Boolean) synapseOutMsgCtx.getProperty(OAuthConstants.RETRIED_ON_OAUTH_FAILURE);
         if (hasRetried != null && hasRetried) {
+            synapseInMsgCtx.setProperty(OAuthConstants.RETRIED_ON_OAUTH_FAILURE, false);
             return false;
         }
 
