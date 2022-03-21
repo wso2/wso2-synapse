@@ -23,7 +23,6 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.endpoints.auth.AuthHandler;
 import org.apache.synapse.endpoints.auth.basicauth.BasicAuthHandler;
-import org.apache.synapse.endpoints.auth.oauth.OAuthUtils;
 
 /**
  * This class represents a http endpoint with basic auth configured

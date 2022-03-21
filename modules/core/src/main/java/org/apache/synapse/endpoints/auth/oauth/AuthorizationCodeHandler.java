@@ -24,6 +24,8 @@ import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.endpoints.auth.AuthConstants;
+import org.apache.synapse.endpoints.auth.AuthException;
 
 /**
  * This class is used to handle Authorization code grant oauth.
@@ -47,7 +49,8 @@ public class AuthorizationCodeHandler extends OAuthHandler {
         payload.append(AuthConstants.REFRESH_TOKEN_GRANT_TYPE)
                 .append(AuthConstants.PARAM_REFRESH_TOKEN)
                 .append(OAuthUtils.resolveExpression(refreshToken, messageContext));
-        if ("payload".equalsIgnoreCase(getAuthMode())) {
+        if (StringUtils.isNotBlank(getAuthMode()) &&
+                "payload".equalsIgnoreCase(OAuthUtils.resolveExpression(getAuthMode(), messageContext))) {
             payload.append(AuthConstants.PARAM_CLIENT_ID)
                     .append(OAuthUtils.resolveExpression(getClientId(), messageContext));
             payload.append(AuthConstants.PARAM_CLIENT_SECRET)

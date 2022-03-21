@@ -270,7 +270,7 @@ public class OAuthUtilsTest {
 
             try {
                 OAuthHandler oAuthHandler = (OAuthHandler) AuthUtils.getAuthHandler(oauthElement);
-                Assert.fail("This method must throw an AuthException");
+                Assert.fail("This method must throw an OAuthException");
             } catch (AuthException e) {
                 Assert.assertEquals("Authentication configuration is invalid", e.getMessage());
             }

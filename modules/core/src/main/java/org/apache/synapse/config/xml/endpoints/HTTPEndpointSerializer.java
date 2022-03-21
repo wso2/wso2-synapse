@@ -110,9 +110,7 @@ public class HTTPEndpointSerializer extends DefaultEndpointSerializer {
      */
     private void serializeOAuthConfiguration(OMElement authentication, OAuthConfiguredHTTPEndpoint oAuthConfiguredHTTPEndpoint) {
 
-        OMElement oauth = fac.createOMElement(
-                AuthConstants.OAUTH,
-                SynapseConstants.SYNAPSE_OMNAMESPACE);
+        OMElement oauth = fac.createOMElement(AuthConstants.OAUTH, SynapseConstants.SYNAPSE_OMNAMESPACE);
         authentication.addChild(oauth);
         oauth.addChild(oAuthConfiguredHTTPEndpoint.getOauthHandler().serializeOAuthConfiguration(fac));
     }
@@ -136,7 +134,7 @@ public class HTTPEndpointSerializer extends DefaultEndpointSerializer {
     }
 
     /**
-     * This method returns an OMElement containing the elementValue encapsulated by the elementName
+     * This method returns an OMElement containing the elementValue encapsulated by the elementName.
      *
      * @param elementName  Name of the OMElement
      * @param elementValue Value of the OMElement

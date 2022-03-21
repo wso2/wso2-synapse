@@ -26,6 +26,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.api.dispatch.RESTDispatcher;
 import org.apache.synapse.api.dispatch.DefaultDispatcher;
 import org.apache.synapse.api.dispatch.URLMappingBasedDispatcher;

@@ -22,6 +22,7 @@ import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.api.version.ContextVersionStrategy;
 import org.apache.synapse.api.version.DefaultStrategy;
 import org.apache.synapse.api.version.URLBasedVersionStrategy;

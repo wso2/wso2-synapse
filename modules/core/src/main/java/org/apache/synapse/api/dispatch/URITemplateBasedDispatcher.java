@@ -20,6 +20,7 @@ package org.apache.synapse.api.dispatch;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.api.*;
+import org.apache.synapse.rest.RESTConstants;
 
 import java.util.Collection;
 import java.util.HashMap;

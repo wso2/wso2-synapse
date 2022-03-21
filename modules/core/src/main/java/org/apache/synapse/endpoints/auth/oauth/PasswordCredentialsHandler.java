@@ -49,7 +49,8 @@ public class PasswordCredentialsHandler extends OAuthHandler {
         payload.append(AuthConstants.PASSWORD_CRED_GRANT_TYPE);
         payload.append(AuthConstants.PARAM_USERNAME).append(OAuthUtils.resolveExpression(username, messageContext));
         payload.append(AuthConstants.PARAM_PASSWORD).append(OAuthUtils.resolveExpression(password, messageContext));
-        if ("payload".equalsIgnoreCase(getAuthMode())) {
+        if (StringUtils.isNotBlank(getAuthMode()) &&
+                "payload".equalsIgnoreCase(OAuthUtils.resolveExpression(getAuthMode(), messageContext))) {
             payload.append(AuthConstants.PARAM_CLIENT_ID)
                     .append(OAuthUtils.resolveExpression(getClientId(), messageContext));
             payload.append(AuthConstants.PARAM_CLIENT_SECRET)

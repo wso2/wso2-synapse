@@ -28,6 +28,7 @@ import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.builtin.PropertyMediator;
 import org.apache.synapse.mediators.transform.XSLTMediator;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.api.dispatch.URITemplateHelper;
 
 public class ResourceTest extends RESTMediationTestCase {

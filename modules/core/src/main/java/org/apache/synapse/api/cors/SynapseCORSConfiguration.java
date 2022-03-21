@@ -19,7 +19,7 @@
 package org.apache.synapse.api.cors;
 
 import org.apache.synapse.config.SynapsePropertiesLoader;
-import org.apache.synapse.api.RESTConstants;
+import org.apache.synapse.rest.RESTConstants;
 
 import java.util.Arrays;
 import java.util.HashSet;

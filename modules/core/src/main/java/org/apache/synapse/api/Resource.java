@@ -39,6 +39,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.api.cors.SynapseCORSConfiguration;
 import org.apache.synapse.api.cors.CORSHelper;
 import org.apache.synapse.api.dispatch.DispatcherHelper;

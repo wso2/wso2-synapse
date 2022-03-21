@@ -29,7 +29,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 
@@ -124,5 +124,17 @@ public class OAuthClient {
             return jsonResponse.get(AuthConstants.ACCESS_TOKEN).getAsString();
         }
         throw new AuthException("Missing key [access_token] in the response from the OAuth server");
+    }
+
+    /**
+     * Creates a CloseableHttpClient with NoConnectionReuseStrategy
+     *
+     * @return httpClient CloseableHttpClient
+     */
+    private static CloseableHttpClient createHTTPClient() {
+
+        HttpClientBuilder builder = HttpClientBuilder.create();
+        builder.setConnectionReuseStrategy(new NoConnectionReuseStrategy());
+        return builder.build();
     }
 }

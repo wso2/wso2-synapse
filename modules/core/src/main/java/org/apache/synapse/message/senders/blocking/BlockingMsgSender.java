@@ -52,6 +52,7 @@ import org.apache.synapse.endpoints.ResolvingEndpoint;
 import org.apache.synapse.endpoints.TemplateEndpoint;
 import org.apache.synapse.endpoints.auth.oauth.MessageCache;
 import org.apache.synapse.endpoints.auth.oauth.OAuthUtils;
+import org.apache.synapse.util.MediatorPropertyUtils;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
 

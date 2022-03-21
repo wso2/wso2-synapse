@@ -24,6 +24,8 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.endpoints.auth.AuthConstants;
+import org.apache.synapse.endpoints.auth.AuthException;
 
 /**
  * This class is used to handle Client Credentials grant oauth.
@@ -41,7 +43,8 @@ public class ClientCredentialsHandler extends OAuthHandler {
         StringBuilder payload = new StringBuilder();
 
         payload.append(AuthConstants.CLIENT_CRED_GRANT_TYPE);
-        if ("payload".equalsIgnoreCase(getAuthMode())) {
+        if (StringUtils.isNotBlank(getAuthMode()) &&
+                "payload".equalsIgnoreCase(OAuthUtils.resolveExpression(getAuthMode(), messageContext))) {
             payload.append(AuthConstants.PARAM_CLIENT_ID)
                     .append(OAuthUtils.resolveExpression(getClientId(), messageContext));
             payload.append(AuthConstants.PARAM_CLIENT_SECRET)
