@@ -73,6 +73,8 @@ public class AuthConstants {
     // Timeout in minutes to invalidate the tokens in the cache
     public static final int TOKEN_CACHE_TIMEOUT = 50;
 
+    public static final String TOKEN_CACHE_TIMEOUT_PROPERTY = "synapse.endpoint.http.oauth.cache.timeout";
+
     // basic auth parameters
     public static final String BASIC_AUTH_USERNAME = "username";
     public static final String BASIC_AUTH_PASSWORD = "password";

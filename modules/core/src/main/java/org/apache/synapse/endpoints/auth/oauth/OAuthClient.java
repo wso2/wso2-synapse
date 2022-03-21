@@ -28,6 +28,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.synapse.endpoints.auth.AuthConstants;
@@ -47,7 +48,7 @@ public class OAuthClient {
 
     private static final Log log = LogFactory.getLog(OAuthClient.class);
 
-    private static final CloseableHttpClient httpClient = HttpClients.createDefault();
+    private static final CloseableHttpClient httpClient = createHTTPClient();
 
     /**
      * Method to generate the access token from an OAuth server

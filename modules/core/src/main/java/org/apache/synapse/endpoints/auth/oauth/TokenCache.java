@@ -37,9 +37,11 @@ import static org.apache.synapse.endpoints.auth.AuthConstants.TOKEN_CACHE_TIMEOU
  */
 public class TokenCache {
 
+    private static final Log log = LogFactory.getLog(TokenCache.class);
+
     private static final TokenCache instance = new TokenCache();
 
-    private final Cache<String, String> tokenMap =
+    private static Cache<String, String> tokenMap =
             CacheBuilder.newBuilder().expireAfterWrite(AuthConstants.TOKEN_CACHE_TIMEOUT, TimeUnit.MINUTES).build();
 
     private TokenCache() {
