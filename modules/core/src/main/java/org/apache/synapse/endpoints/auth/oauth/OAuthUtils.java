@@ -16,7 +16,7 @@
  *  under the License.
  */
 
-package org.apache.synapse.endpoints.oauth;
+package org.apache.synapse.endpoints.auth.oauth;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
@@ -31,6 +31,8 @@ import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
+import org.apache.synapse.endpoints.auth.AuthConstants;
+import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
@@ -57,52 +59,21 @@ public class OAuthUtils {
     /**
      * This method will return an OAuthHandler instance depending on the oauth configs.
      *
-     * @param httpElement Element containing http configs
-     * @return OAuthHandler object
-     * @throws OAuthException throw exception for invalid oauth configs
-     */
-    public static OAuthHandler getOAuthHandler(OMElement httpElement) throws OAuthException {
-
-        if (httpElement != null) {
-            OMElement authElement = httpElement.getFirstChildWithName(
-                    new QName(SynapseConstants.SYNAPSE_NAMESPACE, OAuthConstants.AUTHENTICATION));
-
-            if (authElement != null) {
-                OMElement oauthElement = authElement.getFirstChildWithName(
-                        new QName(SynapseConstants.SYNAPSE_NAMESPACE, OAuthConstants.OAUTH));
-
-                if (oauthElement != null) {
-
-                    OAuthHandler oAuthHandler = getSpecificOAuthHandler(oauthElement);
-                    if (oAuthHandler != null) {
-                        return oAuthHandler;
-                    } else {
-                        throw new OAuthException("Invalid OAuth configuration");
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * This method will return an OAuthHandler instance depending on the oauth configs.
-     *
      * @param oauthElement Element containing OAuth configs
      * @return OAuthHandler object
      */
-    private static OAuthHandler getSpecificOAuthHandler(OMElement oauthElement) {
+    public static OAuthHandler getSpecificOAuthHandler(OMElement oauthElement) {
 
         OAuthHandler oAuthHandler = null;
 
         OMElement authCodeElement = oauthElement.getFirstChildWithName(new QName(
-                SynapseConstants.SYNAPSE_NAMESPACE, OAuthConstants.AUTHORIZATION_CODE));
+                SynapseConstants.SYNAPSE_NAMESPACE, AuthConstants.AUTHORIZATION_CODE));
 
         OMElement clientCredentialsElement = oauthElement.getFirstChildWithName(new QName(
-                SynapseConstants.SYNAPSE_NAMESPACE, OAuthConstants.CLIENT_CREDENTIALS));
+                SynapseConstants.SYNAPSE_NAMESPACE, AuthConstants.CLIENT_CREDENTIALS));
 
         OMElement passwordCredentialsElement = oauthElement.getFirstChildWithName(new QName(
-                SynapseConstants.SYNAPSE_NAMESPACE, OAuthConstants.PASSWORD_CREDENTIALS));
+                SynapseConstants.SYNAPSE_NAMESPACE, AuthConstants.PASSWORD_CREDENTIALS));
 
         if (hasMultipleOAuthConfigs(authCodeElement, clientCredentialsElement, passwordCredentialsElement)) {
             log.error("Invalid OAuth configuration: Multiple OAuth configurations are defined");
@@ -143,11 +114,11 @@ public class OAuthUtils {
      */
     private static AuthorizationCodeHandler getAuthorizationCodeHandler(OMElement authCodeElement) {
 
-        String clientId = getChildValue(authCodeElement, OAuthConstants.OAUTH_CLIENT_ID);
-        String clientSecret = getChildValue(authCodeElement, OAuthConstants.OAUTH_CLIENT_SECRET);
-        String refreshToken = getChildValue(authCodeElement, OAuthConstants.OAUTH_REFRESH_TOKEN);
-        String tokenApiUrl = getChildValue(authCodeElement, OAuthConstants.TOKEN_API_URL);
-        String authMode = getChildValue(authCodeElement, OAuthConstants.OAUTH_AUTHENTICATION_MODE);
+        String clientId = getChildValue(authCodeElement, AuthConstants.OAUTH_CLIENT_ID);
+        String clientSecret = getChildValue(authCodeElement, AuthConstants.OAUTH_CLIENT_SECRET);
+        String refreshToken = getChildValue(authCodeElement, AuthConstants.OAUTH_REFRESH_TOKEN);
+        String tokenApiUrl = getChildValue(authCodeElement, AuthConstants.TOKEN_API_URL);
+        String authMode = getChildValue(authCodeElement, AuthConstants.OAUTH_AUTHENTICATION_MODE);
 
         if (clientId == null || clientSecret == null || refreshToken == null || tokenApiUrl == null) {
             log.error("Invalid AuthorizationCode configuration");
@@ -174,10 +145,10 @@ public class OAuthUtils {
     private static ClientCredentialsHandler getClientCredentialsHandler(
             OMElement clientCredentialsElement) {
 
-        String clientId = getChildValue(clientCredentialsElement, OAuthConstants.OAUTH_CLIENT_ID);
-        String clientSecret = getChildValue(clientCredentialsElement, OAuthConstants.OAUTH_CLIENT_SECRET);
-        String tokenApiUrl = getChildValue(clientCredentialsElement, OAuthConstants.TOKEN_API_URL);
-        String authMode = getChildValue(clientCredentialsElement, OAuthConstants.OAUTH_AUTHENTICATION_MODE);
+        String clientId = getChildValue(clientCredentialsElement, AuthConstants.OAUTH_CLIENT_ID);
+        String clientSecret = getChildValue(clientCredentialsElement, AuthConstants.OAUTH_CLIENT_SECRET);
+        String tokenApiUrl = getChildValue(clientCredentialsElement, AuthConstants.TOKEN_API_URL);
+        String authMode = getChildValue(clientCredentialsElement, AuthConstants.OAUTH_AUTHENTICATION_MODE);
 
         if (clientId == null || clientSecret == null || tokenApiUrl == null) {
             log.error("Invalid ClientCredentials configuration");
@@ -203,12 +174,12 @@ public class OAuthUtils {
     private static PasswordCredentialsHandler getPasswordCredentialsHandler(
             OMElement passwordCredentialsElement) {
 
-        String clientId = getChildValue(passwordCredentialsElement, OAuthConstants.OAUTH_CLIENT_ID);
-        String clientSecret = getChildValue(passwordCredentialsElement, OAuthConstants.OAUTH_CLIENT_SECRET);
-        String username = getChildValue(passwordCredentialsElement, OAuthConstants.OAUTH_USERNAME);
-        String password = getChildValue(passwordCredentialsElement, OAuthConstants.OAUTH_PASSWORD);
-        String tokenApiUrl = getChildValue(passwordCredentialsElement, OAuthConstants.TOKEN_API_URL);
-        String authMode = getChildValue(passwordCredentialsElement, OAuthConstants.OAUTH_AUTHENTICATION_MODE);
+        String clientId = getChildValue(passwordCredentialsElement, AuthConstants.OAUTH_CLIENT_ID);
+        String clientSecret = getChildValue(passwordCredentialsElement, AuthConstants.OAUTH_CLIENT_SECRET);
+        String username = getChildValue(passwordCredentialsElement, AuthConstants.OAUTH_USERNAME);
+        String password = getChildValue(passwordCredentialsElement, AuthConstants.OAUTH_PASSWORD);
+        String tokenApiUrl = getChildValue(passwordCredentialsElement, AuthConstants.TOKEN_API_URL);
+        String authMode = getChildValue(passwordCredentialsElement, AuthConstants.OAUTH_AUTHENTICATION_MODE);
 
         if (username == null || password == null || tokenApiUrl == null || clientId == null || clientSecret == null) {
             log.error("Invalid PasswordCredentials configuration");
@@ -238,15 +209,15 @@ public class OAuthUtils {
 
         OMElement requestParametersElement = oauthElement.getFirstChildWithName(
                 new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
-                        OAuthConstants.REQUEST_PARAMETERS));
+                        AuthConstants.REQUEST_PARAMETERS));
 
         Iterator parameters =
                 requestParametersElement.getChildrenWithName(
-                        new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, OAuthConstants.REQUEST_PARAMETER));
+                        new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, AuthConstants.REQUEST_PARAMETER));
 
         while (parameters.hasNext()) {
             OMElement parameter = (OMElement) parameters.next();
-            String paramName = parameter.getAttributeValue(new QName(OAuthConstants.NAME));
+            String paramName = parameter.getAttributeValue(new QName(AuthConstants.NAME));
             String paramValue = parameter.getText().trim();
             if (StringUtils.isBlank(paramName) || StringUtils.isBlank(paramValue)) {
                 log.error("Invalid Request Parameters in OAuth configuration");
@@ -268,10 +239,10 @@ public class OAuthUtils {
 
         OMElement requestParametersElement = oauthElement.getFirstChildWithName(
                 new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
-                        OAuthConstants.REQUEST_PARAMETERS));
+                        AuthConstants.REQUEST_PARAMETERS));
         return (requestParametersElement != null && requestParametersElement.getChildrenWithName(
                 new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
-                        OAuthConstants.REQUEST_PARAMETER)).hasNext());
+                        AuthConstants.REQUEST_PARAMETER)).hasNext());
     }
 
     /**
@@ -281,7 +252,7 @@ public class OAuthUtils {
      * @param childName     name of the child
      * @return String containing the value of the child
      */
-    private static String getChildValue(OMElement parentElement, String childName) {
+    public static String getChildValue(OMElement parentElement, String childName) {
 
         OMElement childElement = parentElement.getFirstChildWithName(new QName(
                 SynapseConstants.SYNAPSE_NAMESPACE, childName));
@@ -311,7 +282,7 @@ public class OAuthUtils {
     public static String getRandomOAuthHandlerID() {
 
         String uuid = UIDGenerator.generateUID();
-        return OAuthConstants.OAUTH_PREFIX + uuid;
+        return AuthConstants.OAUTH_PREFIX + uuid;
     }
 
     /**
@@ -325,7 +296,7 @@ public class OAuthUtils {
     public static boolean retryOnOAuthFailure(OAuthConfiguredHTTPEndpoint httpEndpoint, MessageContext synapseInMsgCtx,
                                               MessageContext synapseOutMsgCtx) {
 
-        Boolean hasRetried = (Boolean) synapseOutMsgCtx.getProperty(OAuthConstants.RETRIED_ON_OAUTH_FAILURE);
+        Boolean hasRetried = (Boolean) synapseOutMsgCtx.getProperty(AuthConstants.RETRIED_ON_OAUTH_FAILURE);
         if (hasRetried != null && hasRetried) {
             synapseInMsgCtx.setProperty(OAuthConstants.RETRIED_ON_OAUTH_FAILURE, false);
             return false;
@@ -340,7 +311,7 @@ public class OAuthUtils {
             try {
                 int httpStatus =
                         Integer.parseInt(axis2MessageContext.getProperty(PassThroughConstants.HTTP_SC).toString());
-                if (httpStatus == OAuthConstants.HTTP_SC_UNAUTHORIZED) {
+                if (httpStatus == AuthConstants.HTTP_SC_UNAUTHORIZED) {
                     return true;
                 }
             } catch (NumberFormatException e) {
@@ -382,7 +353,7 @@ public class OAuthUtils {
      * @return evaluated String value
      */
     private static String evaluateExpression(String expressionStr, MessageContext messageContext)
-            throws OAuthException {
+            throws AuthException {
 
         Value expression;
         try {
@@ -393,7 +364,7 @@ public class OAuthUtils {
             }
             return expression.evaluateValue(messageContext);
         } catch (JaxenException e) {
-            throw new OAuthException("Error while building the expression : " + expressionStr);
+            throw new AuthException("Error while building the expression : " + expressionStr);
         }
     }
 
@@ -404,7 +375,7 @@ public class OAuthUtils {
      * @param messageContext MessageContext of the request
      * @return evaluated String value or the passed value itself
      */
-    public static String resolveExpression(String value, MessageContext messageContext) throws OAuthException {
+    public static String resolveExpression(String value, MessageContext messageContext) throws AuthException {
 
         if (isExpression(value)) {
             String expressionStr = value.substring(1, value.length() - 1);
@@ -426,23 +397,23 @@ public class OAuthUtils {
         Object nonErrorCodesInMsgCtx = axis2Ctx.getProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES);
         if (nonErrorCodesInMsgCtx instanceof Set) {
             Set<Integer> nonErrorCodes = (Set<Integer>) nonErrorCodesInMsgCtx;
-            nonErrorCodes.add(OAuthConstants.HTTP_SC_UNAUTHORIZED);
+            nonErrorCodes.add(AuthConstants.HTTP_SC_UNAUTHORIZED);
             axis2Ctx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES,
                     nonErrorCodes);
         } else if (nonErrorCodesInMsgCtx instanceof String) {
             String strNonErrorCodes = ((String) nonErrorCodesInMsgCtx).trim();
-            if (strNonErrorCodes.contains(String.valueOf(OAuthConstants.HTTP_SC_UNAUTHORIZED))) {
+            if (strNonErrorCodes.contains(String.valueOf(AuthConstants.HTTP_SC_UNAUTHORIZED))) {
                 return;
             }
             if (!strNonErrorCodes.endsWith(",")) {
                 strNonErrorCodes += ",";
             }
-            strNonErrorCodes += String.valueOf(OAuthConstants.HTTP_SC_UNAUTHORIZED);
+            strNonErrorCodes += String.valueOf(AuthConstants.HTTP_SC_UNAUTHORIZED);
             axis2Ctx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES,
                     strNonErrorCodes);
         } else {
             axis2Ctx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES,
-                    String.valueOf(OAuthConstants.HTTP_SC_UNAUTHORIZED));
+                    String.valueOf(AuthConstants.HTTP_SC_UNAUTHORIZED));
         }
     }
 
@@ -469,11 +440,11 @@ public class OAuthUtils {
     public static OMElement createOMRequestParams(OMFactory omFactory, Map<String, String> requestParametersMap) {
 
         OMElement requestParameters =
-                omFactory.createOMElement(OAuthConstants.REQUEST_PARAMETERS, SynapseConstants.SYNAPSE_OMNAMESPACE);
+                omFactory.createOMElement(AuthConstants.REQUEST_PARAMETERS, SynapseConstants.SYNAPSE_OMNAMESPACE);
         for (Map.Entry<String, String> entry : requestParametersMap.entrySet()) {
             OMElement parameter =
-                    omFactory.createOMElement(OAuthConstants.REQUEST_PARAMETER, SynapseConstants.SYNAPSE_OMNAMESPACE);
-            parameter.addAttribute(OAuthConstants.NAME, entry.getKey(), null);
+                    omFactory.createOMElement(AuthConstants.REQUEST_PARAMETER, SynapseConstants.SYNAPSE_OMNAMESPACE);
+            parameter.addAttribute(AuthConstants.NAME, entry.getKey(), null);
             parameter.setText(entry.getValue());
             requestParameters.addChild(parameter);
         }

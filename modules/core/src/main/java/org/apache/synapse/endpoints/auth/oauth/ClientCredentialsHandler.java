@@ -16,41 +16,37 @@
  *  under the License.
  */
 
-package org.apache.synapse.endpoints.oauth;
+package org.apache.synapse.endpoints.auth.oauth;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.endpoints.auth.AuthConstants;
+import org.apache.synapse.endpoints.auth.AuthException;
 
 /**
- * This class is used to handle Authorization code grant oauth.
+ * This class is used to handle Client Credentials grant oauth.
  */
-public class AuthorizationCodeHandler extends OAuthHandler {
+public class ClientCredentialsHandler extends OAuthHandler {
 
-    private final String refreshToken;
-
-    public AuthorizationCodeHandler(String tokenApiUrl, String clientId, String clientSecret,
-                                    String refreshToken, String authMode) {
+    public ClientCredentialsHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode) {
 
         super(tokenApiUrl, clientId, clientSecret, authMode);
-        this.refreshToken = refreshToken;
     }
 
     @Override
-    protected String buildTokenRequestPayload(MessageContext messageContext) throws OAuthException {
+    protected String buildTokenRequestPayload(MessageContext messageContext) throws AuthException {
 
         StringBuilder payload = new StringBuilder();
 
-        payload.append(OAuthConstants.REFRESH_TOKEN_GRANT_TYPE)
-                .append(OAuthConstants.PARAM_REFRESH_TOKEN)
-                .append(OAuthUtils.resolveExpression(refreshToken, messageContext));
+        payload.append(AuthConstants.CLIENT_CRED_GRANT_TYPE);
         if (StringUtils.isNotBlank(getAuthMode()) &&
                 "payload".equalsIgnoreCase(OAuthUtils.resolveExpression(getAuthMode(), messageContext))) {
-            payload.append(OAuthConstants.PARAM_CLIENT_ID)
+            payload.append(AuthConstants.PARAM_CLIENT_ID)
                     .append(OAuthUtils.resolveExpression(getClientId(), messageContext));
-            payload.append(OAuthConstants.PARAM_CLIENT_SECRET)
+            payload.append(AuthConstants.PARAM_CLIENT_SECRET)
                     .append(OAuthUtils.resolveExpression(getClientSecret(), messageContext));
         }
         payload.append(getRequestParametersAsString(messageContext));
@@ -61,22 +57,6 @@ public class AuthorizationCodeHandler extends OAuthHandler {
     @Override
     protected OMElement serializeSpecificOAuthConfigs(OMFactory omFactory) {
 
-        OMElement authCode = omFactory.createOMElement(
-                OAuthConstants.AUTHORIZATION_CODE,
-                SynapseConstants.SYNAPSE_OMNAMESPACE);
-
-        authCode.addChild(
-                OAuthUtils.createOMElementWithValue(omFactory, OAuthConstants.OAUTH_REFRESH_TOKEN, getRefreshToken()));
-        return authCode;
-    }
-
-    /**
-     * Return the refresh token secret relevant to the Authorization Code Handler.
-     *
-     * @return String refresh token
-     */
-    public String getRefreshToken() {
-
-        return refreshToken;
+        return omFactory.createOMElement(AuthConstants.CLIENT_CREDENTIALS, SynapseConstants.SYNAPSE_OMNAMESPACE);
     }
 }

@@ -16,19 +16,20 @@
  *  under the License.
  */
 
-package org.apache.synapse.endpoints.oauth;
+package org.apache.synapse.endpoints.auth.oauth;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.config.SynapsePropertiesLoader;
+import org.apache.synapse.endpoints.auth.AuthConstants;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static org.apache.synapse.endpoints.oauth.OAuthConstants.TOKEN_CACHE_TIMEOUT_PROPERTY;
+import static org.apache.synapse.endpoints.auth.AuthConstants.TOKEN_CACHE_TIMEOUT_PROPERTY;
 
 /**
  * Token Cache Implementation
@@ -44,7 +45,7 @@ public class TokenCache {
 
     private TokenCache() {
 
-        long cacheTimeout = OAuthConstants.TOKEN_CACHE_TIMEOUT;
+        long cacheTimeout = AuthConstants.TOKEN_CACHE_TIMEOUT;
         try {
             cacheTimeout =
                     Long.parseLong(
