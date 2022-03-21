@@ -455,29 +455,26 @@ public class TestCasesMediator {
 
                     case INPUT_PROPERTY_SCOPE_TRANSPORT:
                         //Setting Transport Headers
-                        Object headers = axis2MessageContext.getProperty(
+                        Object headers = axis2MessageCtx.getProperty(
                                 org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
 
-
+                        Map<String, Object> headersMap;
                         if (headers != null) {
-                            @SuppressWarnings("unchecked")
-                            Map<String, Object> headersMap = (Map) headers;
-                            headersMap.put(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
-                                    property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
-                        }
-                        if (headers == null) {
-                            Map<String, Object> headersMap = new TreeMap<>(new Comparator<String>() {
+                            headersMap = (Map) headers;
+                        } else {
+                            // Add the transport headers to the message context
+                            headersMap = new TreeMap<>(new Comparator<String>() {
                                 public int compare(String o1, String o2) {
+
                                     return o1.compareToIgnoreCase(o2);
                                 }
                             });
-                            headersMap.put(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
-                                    property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
-                            axis2MessageContext.setProperty(
+                            axis2MessageCtx.setProperty(
                                     org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
                                     headersMap);
                         }
-
+                        headersMap.put(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
+                                property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
                         break;
 
                     default:
