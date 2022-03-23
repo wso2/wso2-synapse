@@ -151,6 +151,11 @@ public class StatisticsConstants {
 	public static final String FLOW_TRACE_IS_COLLECTED = "mediation.flow.trace.collected";
 
 	/**
+	 * Freemarker template base path.
+	 */
+	public static final String FREEMARKER_TEMPLATE_BASE_PATH = "freemarker.template.base.path";
+
+	/**
 	 * Flow statistic default queue size.
 	 */
 	public static final String FLOW_STATISTICS_DEFAULT_QUEUE_SIZE = "10000";

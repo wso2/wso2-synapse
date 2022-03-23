@@ -29,4 +29,8 @@ public class TemplateProcessorException extends RuntimeException {
 
         super(message);
     }
+
+    public TemplateProcessorException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
