@@ -365,6 +365,63 @@ public class FreeMarkerTemplateProcessorTest extends TestCase {
     }
 
     /**
+     * Test FreeMarkerTemplateProcessor with XML payload with template with Ftl header
+     */
+    public void testWithXMLPayloadWithFtlHeader() throws Exception {
+
+        final String xmlInput = "<int0:saveHeader xmlns:int0=\"http://integration.eib" +
+                ".org/admin/report/mediation/inf/integration\">\n" +
+                "  <int0:reportId>M551</int0:reportId>\n" +
+                "  <int0:tableId>M552</int0:tableId>\n" +
+                "  <int0:title>title</int0:title>\n" +
+                "  <int0:alternateColor>Y</int0:alternateColor>\n" +
+                "  <int0:color1>1</int0:color1>\n" +
+                "  <int0:color2>2</int0:color2>\n" +
+                "  <int0:columnNames>columnNames</int0:columnNames>\n" +
+                "</int0:saveHeader>";
+
+        final String ftlTemplate = "<#ftl ns_prefixes={\"int0\": \"http://integration.eib" +
+                ".org/admin/report/mediation/inf/integration\", \"xsi\": \"http://www.w3.org/2001/XMLSchema-instance\"}>\n" +
+                "<int:saveHeader xmlns:int=\"http://integration.eib.org/admin/report/backend/inf/integration\">\n" +
+                "<int:reportId>${payload['int0:saveHeader']['int0:reportId']}</int:reportId>\n" +
+                "<int:tableId>${payload['int0:saveHeader']['int0:tableId']}</int:tableId>\n" +
+                "<int:title>${payload['int0:saveHeader']['int0:title']}</int:title>\n" +
+                "<int:alternateColor>${payload['int0:saveHeader']['int0:alternateColor']}</int:alternateColor>\n" +
+                "<int:color1>${payload['int0:saveHeader']['int0:color1']}</int:color1>\n" +
+                "<int:color2>${payload['int0:saveHeader']['int0:color2']}</int:color2>\n" +
+                "<int:columnNames>${payload['int0:saveHeader']['int0:columnNames']}</int:columnNames>\n" +
+                "</int:saveHeader>";
+
+        PayloadFactoryMediator payloadFactoryMediator = new PayloadFactoryMediator();
+        TemplateProcessor templateProcessor = new FreeMarkerTemplateProcessor();
+        payloadFactoryMediator.setFormat(ftlTemplate);
+        payloadFactoryMediator.setType("xml");
+        templateProcessor.setMediaType("xml");
+        templateProcessor.setFormat(ftlTemplate);
+        templateProcessor.init();
+        payloadFactoryMediator.setTemplateProcessor(templateProcessor);
+
+        //do mediation
+        MessageContext synCtx = TestUtils.getAxis2MessageContext(xmlInput, null);
+        payloadFactoryMediator.setTemplateType("FREEMARKER");
+        payloadFactoryMediator.mediate(synCtx);
+
+        String expectedEnvelopeFtl = "<soapenv:Body xmlns:soapenv=\"http://schemas.xmlsoap" +
+                ".org/soap/envelope/\"><int:saveHeader xmlns:int=\"http://integration.eib.org/admin/report/backend/inf/integration\">\n" +
+                "<int:reportId>M551</int:reportId>\n" +
+                "<int:tableId>M552</int:tableId>\n" +
+                "<int:title>title</int:title>\n" +
+                "<int:alternateColor>Y</int:alternateColor>\n" +
+                "<int:color1>1</int:color1>\n" +
+                "<int:color2>2</int:color2>\n" +
+                "<int:columnNames>columnNames</int:columnNames>\n" +
+                "</int:saveHeader></soapenv:Body>";
+
+        assertEquals("FreeMarker Template Processor has not "
+                + "set expected format", expectedEnvelopeFtl, synCtx.getEnvelope().getBody().toString());
+    }
+
+    /**
      * Test FreeMarkerTemplateProcessor with Text payload
      */
     public void testWithTextPayload() throws Exception {
