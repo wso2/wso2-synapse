@@ -32,6 +32,7 @@ import org.apache.axiom.soap.SOAP12Constants;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
@@ -121,11 +122,16 @@ public class PayloadFactoryMediator extends AbstractMediator {
         StringBuilder result = new StringBuilder();
         transform(result, synCtx, format);
         String out = result.toString().trim();
+        String updatedFormat = templateProcessor.getFormat();
         if (log.isDebugEnabled()) {
             log.debug("#mediate. Transformed payload format>>> " + out);
         }
         if (mediaType.equals(XML_TYPE)) {
             try {
+                if (templateType.equals(FREEMARKER_TEMPLATE_TYPE)
+                        && StringUtils.isNotEmpty(updatedFormat) && updatedFormat.startsWith("<#ftl")) {
+                    out = "<pfPadding>" + out + "</pfPadding>";
+                }
                 JsonUtil.removeJsonPayload(axis2MessageContext);
                 OMElement omXML = convertStringToOM(out);
                 if (!checkAndReplaceEnvelope(omXML, synCtx)) { // check if the target of the PF 'format' is the entire SOAP envelop, not just the body.

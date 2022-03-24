@@ -33,6 +33,7 @@ import freemarker.template.TemplateExceptionHandler;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.OMText;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.text.StringEscapeUtils;
@@ -192,7 +193,8 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
     private void compileFreeMarkerTemplate(String templateString, String mediaType) {
 
         try {
-            if (XML_TYPE.equals(mediaType)) {
+            if (XML_TYPE.equals(mediaType) &&
+                    StringUtils.isNotEmpty(templateString) && !templateString.startsWith("<#ftl")) {
                 templateString = "<pfPadding>" + templateString + "</pfPadding>";
             }
 
