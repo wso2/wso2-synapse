@@ -23,7 +23,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.SequenceMediatorSerializer;
-import org.apache.synapse.api.RESTConstants;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.api.Resource;
 import org.apache.synapse.api.dispatch.DispatcherHelper;
 import org.apache.synapse.api.dispatch.URITemplateHelper;

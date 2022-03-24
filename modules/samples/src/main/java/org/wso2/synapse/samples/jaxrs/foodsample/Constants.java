@@ -26,5 +26,7 @@ public class Constants {
     static final String tokenType = "Bearer";
     static final String clientId = "my_client_id";
     static final String clientSecret = "my_client_secret";
-
+    static final String username = "tester123";
+    static final String password = "abc@123";
+    static final String passwordGrant = "password";
 }

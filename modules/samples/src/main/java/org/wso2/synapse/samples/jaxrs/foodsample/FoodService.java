@@ -50,7 +50,41 @@ public class FoodService {
 
         String basicHeader = httpHeaders.getHeaderString("Authorization");
 
-        if (validateCredentials(basicHeader, tokenRequestParams)) {
+        if (validateBasicAuthHeader(basicHeader) && validateCredentials(tokenRequestParams)) {
+            return Response.status(Response.Status.OK).entity(new Token(Constants.accessToken, Constants.expiresIn,
+                    Constants.tokenType)).build();
+        }
+        return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid Credentials").build();
+    }
+
+    @POST
+    @Path("/custom-token")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAccessTokenWithCustomParams(@Context HttpHeaders httpHeaders,
+                                                   MultivaluedMap<String, String> tokenRequestParams) {
+
+        String basicHeader = httpHeaders.getHeaderString("Authorization");
+
+        if (validateBasicAuthHeader(basicHeader) && validateCustomParams(tokenRequestParams) &&
+                validateCredentials(tokenRequestParams)) {
+            return Response.status(Response.Status.OK).entity(new Token(Constants.accessToken, Constants.expiresIn,
+                    Constants.tokenType)).build();
+        }
+        return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid Credentials").build();
+    }
+
+    @POST
+    @Path("/password-token")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAccessTokenWithPasswordGrant(@Context HttpHeaders httpHeaders,
+                                                    MultivaluedMap<String, String> tokenRequestParams) {
+
+        String basicHeader = httpHeaders.getHeaderString("Authorization");
+
+        if (validateBasicAuthHeader(basicHeader) && validateCustomParams(tokenRequestParams) &&
+                validatePasswordCredentials(tokenRequestParams)) {
             return Response.status(Response.Status.OK).entity(new Token(Constants.accessToken, Constants.expiresIn,
                     Constants.tokenType)).build();
         }
@@ -81,7 +115,30 @@ public class FoodService {
         return Response.status(Response.Status.UNAUTHORIZED).entity(unauthorizedReqCount).build();
     }
 
-    private boolean validateCredentials(String basicHeader, MultivaluedMap<String, String> tokenRequestParams) {
+    private boolean validateCredentials(MultivaluedMap<String, String> tokenRequestParams) {
+
+        String refreshToken = tokenRequestParams.getFirst("refresh_token");
+        String clientIdInBody = tokenRequestParams.getFirst("client_id");
+        String clientSecretInBody = tokenRequestParams.getFirst("client_secret");
+
+        if (refreshToken != null && !refreshToken.equals(Constants.refreshToken)) {
+            return false;
+        }
+
+        return clientIdInBody.equals(Constants.clientId) && clientSecretInBody.equals(Constants.clientSecret);
+    }
+
+    private boolean validatePasswordCredentials(MultivaluedMap<String, String> tokenRequestParams) {
+
+        String username = tokenRequestParams.getFirst("username");
+        String password = tokenRequestParams.getFirst("password");
+        String grantType = tokenRequestParams.getFirst("grant_type");
+
+        return username.equals(Constants.username) && password.equals(Constants.password) &&
+                grantType.equals(Constants.passwordGrant);
+    }
+
+    private boolean validateBasicAuthHeader(String basicHeader) {
 
         String credentials = basicHeader.substring(6).trim();
 
@@ -89,18 +146,14 @@ public class FoodService {
         String clientId = decodedCredentials.split(":")[0];
         String clientSecret = decodedCredentials.split(":")[1];
 
-        String refreshToken = tokenRequestParams.getFirst("refresh_token");
-        String clientIdInBody = tokenRequestParams.getFirst("clientId");
-        String clientSecretInBody = tokenRequestParams.getFirst("clientSecret");
+        return clientId.equals(Constants.clientId) && clientSecret.equals(Constants.clientSecret);
+    }
 
-        if (refreshToken != null && !refreshToken.equals(Constants.refreshToken)) {
-            return false;
-        }
+    private boolean validateCustomParams(MultivaluedMap<String, String> tokenRequestParams) {
 
-        if (!clientId.equals(Constants.clientId) || !clientIdInBody.equals(Constants.clientId) ||
-                !clientSecret.equals(Constants.clientSecret) || !clientSecretInBody.equals(Constants.clientSecret)) {
-            return false;
-        }
-        return true;
+        String accountId = tokenRequestParams.getFirst("account_id");
+        String userRole = tokenRequestParams.getFirst("user_role");
+
+        return accountId.equals("1234") && userRole.equals("tester");
     }
 }

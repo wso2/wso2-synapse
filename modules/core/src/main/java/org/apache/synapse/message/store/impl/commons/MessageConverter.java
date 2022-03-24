@@ -46,7 +46,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.api.RESTConstants;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.util.UUIDGenerator;
 
 import java.io.ByteArrayInputStream;

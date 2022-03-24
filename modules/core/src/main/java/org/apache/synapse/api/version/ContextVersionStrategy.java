@@ -20,8 +20,8 @@ package org.apache.synapse.api.version;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.api.API;
-import org.apache.synapse.api.RESTConstants;
 import org.apache.synapse.api.RESTUtils;
 
 public class ContextVersionStrategy extends AbstractVersionStrategy {

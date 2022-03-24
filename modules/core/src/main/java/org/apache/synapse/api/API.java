@@ -36,6 +36,7 @@ import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.api.dispatch.DispatcherHelper;
 import org.apache.synapse.api.dispatch.RESTDispatcher;
 import org.apache.synapse.api.version.DefaultStrategy;

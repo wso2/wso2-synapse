@@ -20,6 +20,7 @@ package org.apache.synapse.api;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.api.dispatch.URITemplateHelper;
 
 public class URITemplateBasedDispatcherTest extends RESTMediationTestCase {

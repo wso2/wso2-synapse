@@ -18,59 +18,47 @@
 
 package org.apache.synapse.endpoints.auth.oauth;
 
-import org.apache.axiom.util.base64.Base64Utils;
 import org.apache.synapse.endpoints.auth.AuthConstants;
+import org.apache.synapse.endpoints.auth.AuthException;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMFactory;
+import org.apache.commons.lang.StringUtils;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.endpoints.auth.AuthConstants;
+import org.apache.synapse.endpoints.auth.AuthException;
 
 /**
- * This class is used to handle Client Credentials grant oauth
+ * This class is used to handle Client Credentials grant oauth.
  */
 public class ClientCredentialsHandler extends OAuthHandler {
 
-    private final String clientId;
-    private final String clientSecret;
+    public ClientCredentialsHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode) {
 
-    public ClientCredentialsHandler(String tokenApiUrl, String clientId, String clientSecret) {
-
-        super(tokenApiUrl);
-        this.clientId = clientId;
-        this.clientSecret = clientSecret;
+        super(tokenApiUrl, clientId, clientSecret, authMode);
     }
 
     @Override
-    protected String buildTokenRequestPayload() {
+    protected String buildTokenRequestPayload(MessageContext messageContext) throws AuthException {
 
         StringBuilder payload = new StringBuilder();
 
         payload.append(AuthConstants.CLIENT_CRED_GRANT_TYPE);
-        payload.append(AuthConstants.PARAM_CLIENT_ID).append(clientId);
-        payload.append(AuthConstants.PARAM_CLIENT_SECRET).append(clientSecret);
+        if (StringUtils.isNotBlank(getAuthMode()) &&
+                "payload".equalsIgnoreCase(OAuthUtils.resolveExpression(getAuthMode(), messageContext))) {
+            payload.append(AuthConstants.PARAM_CLIENT_ID)
+                    .append(OAuthUtils.resolveExpression(getClientId(), messageContext));
+            payload.append(AuthConstants.PARAM_CLIENT_SECRET)
+                    .append(OAuthUtils.resolveExpression(getClientSecret(), messageContext));
+        }
+        payload.append(getRequestParametersAsString(messageContext));
 
         return payload.toString();
     }
 
     @Override
-    protected String getEncodedCredentials() {
+    protected OMElement serializeSpecificOAuthConfigs(OMFactory omFactory) {
 
-        return Base64Utils.encode((clientId + ":" + clientSecret).getBytes());
-    }
-
-    /**
-     * Return the client id relevant to the Client Credentials Handler
-     *
-     * @return String client id
-     */
-    public String getClientId() {
-
-        return clientId;
-    }
-
-    /**
-     * Return the client secret relevant to the Client Credentials Handler
-     *
-     * @return String client secret
-     */
-    public String getClientSecret() {
-
-        return clientSecret;
+        return omFactory.createOMElement(AuthConstants.CLIENT_CREDENTIALS, SynapseConstants.SYNAPSE_OMNAMESPACE);
     }
 }

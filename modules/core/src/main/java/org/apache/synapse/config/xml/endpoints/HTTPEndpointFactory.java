@@ -24,8 +24,8 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.Constants;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.api.RESTConstants;
 import org.apache.synapse.config.xml.XMLConfigConstants;
+import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.endpoints.BasicAuthConfiguredHTTPEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
@@ -35,6 +35,9 @@ import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.endpoints.auth.AuthHandler;
 import org.apache.synapse.endpoints.auth.AuthUtils;
+import org.apache.synapse.endpoints.auth.oauth.OAuthHandler;
+import org.apache.synapse.endpoints.auth.oauth.OAuthUtils;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.util.CommentListUtil;
 
 import java.util.Properties;
@@ -183,7 +186,7 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
             if (endpointName == null) {
                 endpointName = "";
             }
-            handleException("Invalid authentication configuration for endpoint " + endpointName);
+            handleException("Invalid authentication configuration for endpoint " + endpointName, e);
         }
         return handler;
     }

@@ -29,9 +29,9 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.commons.util.PropertyHelper;
 import org.apache.synapse.config.xml.XMLConfigConstants;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.api.API;
 import org.apache.synapse.api.Handler;
-import org.apache.synapse.api.RESTConstants;
 import org.apache.synapse.api.version.VersionStrategy;
 import org.apache.synapse.util.CommentListUtil;
 

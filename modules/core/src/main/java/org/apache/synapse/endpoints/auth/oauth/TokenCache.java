@@ -20,11 +20,16 @@ package org.apache.synapse.endpoints.auth.oauth;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import static org.apache.synapse.endpoints.auth.AuthConstants.TOKEN_CACHE_TIMEOUT_PROPERTY;
 
 /**
  * Token Cache Implementation
@@ -32,13 +37,24 @@ import java.util.concurrent.TimeUnit;
  */
 public class TokenCache {
 
+    private static final Log log = LogFactory.getLog(TokenCache.class);
+
     private static final TokenCache instance = new TokenCache();
 
-    private final Cache<String, String> tokenMap =
+    private static Cache<String, String> tokenMap =
             CacheBuilder.newBuilder().expireAfterWrite(AuthConstants.TOKEN_CACHE_TIMEOUT, TimeUnit.MINUTES).build();
 
     private TokenCache() {
 
+        long cacheTimeout = AuthConstants.TOKEN_CACHE_TIMEOUT;
+        try {
+            cacheTimeout =
+                    Long.parseLong(
+                            SynapsePropertiesLoader.loadSynapseProperties().getProperty(TOKEN_CACHE_TIMEOUT_PROPERTY));
+        } catch (NumberFormatException e) {
+            log.debug("OAuth token cache will be using default timeout");
+        }
+        tokenMap = CacheBuilder.newBuilder().expireAfterWrite(cacheTimeout, TimeUnit.SECONDS).build();
     }
 
     /**

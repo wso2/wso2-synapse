@@ -31,7 +31,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCo
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.endpoints.dispatch.SALSessions;
-import org.apache.synapse.api.RESTConstants;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.util.ConcurrencyThrottlingUtils;
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -21,25 +21,25 @@ package org.apache.synapse.endpoints.auth.oauth;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.commons.lang.StringUtils;
-import org.apache.synapse.endpoints.auth.AuthConstants;
-import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 
 /**
- * This class is used to handle Authorization code grant oauth.
+ * This class is used to handle Password Credentials grant oauth.
  */
-public class AuthorizationCodeHandler extends OAuthHandler {
+public class PasswordCredentialsHandler extends OAuthHandler {
 
-    private final String refreshToken;
+    private final String username;
+    private final String password;
 
-    public AuthorizationCodeHandler(String tokenApiUrl, String clientId, String clientSecret,
-                                    String refreshToken, String authMode) {
+    public PasswordCredentialsHandler(String tokenApiUrl, String clientId, String clientSecret, String username,
+                                         String password, String authMode) {
 
         super(tokenApiUrl, clientId, clientSecret, authMode);
-        this.refreshToken = refreshToken;
+        this.username = username;
+        this.password = password;
     }
 
     @Override
@@ -47,9 +47,9 @@ public class AuthorizationCodeHandler extends OAuthHandler {
 
         StringBuilder payload = new StringBuilder();
 
-        payload.append(AuthConstants.REFRESH_TOKEN_GRANT_TYPE)
-                .append(AuthConstants.PARAM_REFRESH_TOKEN)
-                .append(OAuthUtils.resolveExpression(refreshToken, messageContext));
+        payload.append(AuthConstants.PASSWORD_CRED_GRANT_TYPE);
+        payload.append(AuthConstants.PARAM_USERNAME).append(OAuthUtils.resolveExpression(username, messageContext));
+        payload.append(AuthConstants.PARAM_PASSWORD).append(OAuthUtils.resolveExpression(password, messageContext));
         if (StringUtils.isNotBlank(getAuthMode()) &&
                 "payload".equalsIgnoreCase(OAuthUtils.resolveExpression(getAuthMode(), messageContext))) {
             payload.append(AuthConstants.PARAM_CLIENT_ID)
@@ -57,7 +57,8 @@ public class AuthorizationCodeHandler extends OAuthHandler {
             payload.append(AuthConstants.PARAM_CLIENT_SECRET)
                     .append(OAuthUtils.resolveExpression(getClientSecret(), messageContext));
         }
-        payload.append(getRequestParametersAsString(messageContext));
+        String requestParams = getRequestParametersAsString(messageContext);
+        payload.append(requestParams);
 
         return payload.toString();
     }
@@ -65,22 +66,24 @@ public class AuthorizationCodeHandler extends OAuthHandler {
     @Override
     protected OMElement serializeSpecificOAuthConfigs(OMFactory omFactory) {
 
-        OMElement authCode = omFactory.createOMElement(
-                AuthConstants.AUTHORIZATION_CODE,
+        OMElement passwordCredentials = omFactory.createOMElement(
+                AuthConstants.PASSWORD_CREDENTIALS,
                 SynapseConstants.SYNAPSE_OMNAMESPACE);
 
-        authCode.addChild(
-                OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.OAUTH_REFRESH_TOKEN, getRefreshToken()));
-        return authCode;
+        passwordCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.OAUTH_USERNAME,
+                username));
+        passwordCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.OAUTH_PASSWORD,
+                password));
+        return passwordCredentials;
     }
 
-    /**
-     * Return the refresh token secret relevant to the Authorization Code Handler.
-     *
-     * @return String refresh token
-     */
-    public String getRefreshToken() {
+    public String getUsername() {
 
-        return refreshToken;
+        return username;
+    }
+
+    public String getPassword() {
+
+        return password;
     }
 }

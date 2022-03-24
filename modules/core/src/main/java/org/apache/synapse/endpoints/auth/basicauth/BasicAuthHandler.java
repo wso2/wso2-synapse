@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
 
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -24,7 +24,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.endpoints.auth.AuthHandler;
-import org.apache.synapse.endpoints.auth.AuthUtils;
+import org.apache.synapse.endpoints.auth.oauth.OAuthUtils;
 
 import java.util.Comparator;
 import java.util.Map;
@@ -70,8 +70,8 @@ public class BasicAuthHandler implements AuthHandler {
     }
 
     private String getEncodedCredentials(MessageContext messageContext) throws AuthException {
-        return Base64Utils.encode((AuthUtils.resolveExpression(username, messageContext) + ":" +
-                AuthUtils.resolveExpression(password, messageContext)).getBytes());
+        return Base64Utils.encode((OAuthUtils.resolveExpression(username, messageContext) + ":" +
+                OAuthUtils.resolveExpression(password, messageContext)).getBytes());
     }
 
     public String getUsername() {
