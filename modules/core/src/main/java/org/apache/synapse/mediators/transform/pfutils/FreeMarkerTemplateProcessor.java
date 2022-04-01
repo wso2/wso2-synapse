@@ -25,6 +25,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
+import freemarker.core.StopException;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -120,6 +121,8 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
             return out.toString();
         } catch (IOException e) {
             handleException("Error parsing FreeMarker template");
+        } catch (StopException e) {
+            handleException(e.getMessage());
         } catch (TemplateException e) {
             handleException(generateTemplateErrorMessage(e));
         } catch (SAXException | ParserConfigurationException e) {
