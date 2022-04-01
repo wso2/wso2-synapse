@@ -25,6 +25,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
+import freemarker.cache.FileTemplateLoader;
 import freemarker.core.StopException;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -33,17 +34,21 @@ import freemarker.template.TemplateExceptionHandler;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.OMText;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.transform.ArgumentDetails;
 import org.apache.synapse.util.PayloadHelper;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -86,12 +91,22 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
 
     private static final Log log = LogFactory.getLog(FreeMarkerTemplateProcessor.class);
 
+    private static final String DEFAULT_FREEMARKER_BASE_PATH_CONF = "conf:/";
+    private static final String DEFAULT_FREEMARKER_BASE_PATH_GOV = "gov:/";
+    private static final String REGISTRY_PATH = "/registry";
+    private static final String CONFIG_PATH = "/config";
+    private static final String GOVERNANCE_PATH = "/governance";
+
     public FreeMarkerTemplateProcessor() {
 
         cfg = new Configuration(Configuration.VERSION_2_3_30);
         cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
         cfg.setLogTemplateExceptions(false);
-
+        try {
+            cfg.setTemplateLoader(getBasePathTemplates());
+        } catch (TemplateProcessorException e) {
+            log.warn("Unable to load feemarker template base path correctly", e);
+        }
         gson = new Gson();
     }
 
@@ -132,6 +147,36 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
         return "";
     }
 
+    private FileTemplateLoader getBasePathTemplates() throws TemplateProcessorException {
+        String freemarkerConfBasePath =
+                SynapsePropertiesLoader.getPropertyValue(
+                        StatisticsConstants.FREEMARKER_TEMPLATE_BASE_PATH, DEFAULT_FREEMARKER_BASE_PATH_CONF);
+        String[] freemarkerBasePathSplit = freemarkerConfBasePath.split("conf:|gov:");
+        String carbonHome = System.getProperty("carbon.home");
+        String freemarkerBasePath = System.getProperty("carbon.home");
+        if (carbonHome != null) {
+            freemarkerBasePath = freemarkerBasePath.concat(REGISTRY_PATH);
+        } else {
+            throw new TemplateProcessorException("Carbon home not found ");
+        }
+        if (freemarkerConfBasePath.startsWith(DEFAULT_FREEMARKER_BASE_PATH_CONF)) {
+            freemarkerBasePath +=  CONFIG_PATH;
+        } else if (freemarkerConfBasePath.startsWith(DEFAULT_FREEMARKER_BASE_PATH_GOV)) {
+            freemarkerBasePath += GOVERNANCE_PATH;
+        } else {
+            freemarkerBasePath += CONFIG_PATH;
+            log.warn("Error while loading freemarker path " + freemarkerConfBasePath + ". Using default path " + freemarkerBasePath);
+        }
+        if (freemarkerBasePathSplit.length > 1) {
+            freemarkerBasePath += freemarkerBasePathSplit[1];
+        }
+        try {
+            return new FileTemplateLoader(new File(freemarkerBasePath));
+        } catch (IOException e) {
+            throw new TemplateProcessorException("Error while reading templates directory " + freemarkerBasePath, e);
+        }
+    }
+
     private String generateTemplateErrorMessage(TemplateException e) {
 
         if (log.isDebugEnabled()) {
@@ -151,7 +196,8 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
     private void compileFreeMarkerTemplate(String templateString, String mediaType) {
 
         try {
-            if (XML_TYPE.equals(mediaType)) {
+            if (XML_TYPE.equals(mediaType) &&
+                    StringUtils.isNotEmpty(templateString) && !templateString.startsWith("<#ftl")) {
                 templateString = "<pfPadding>" + templateString + "</pfPadding>";
             }
 
