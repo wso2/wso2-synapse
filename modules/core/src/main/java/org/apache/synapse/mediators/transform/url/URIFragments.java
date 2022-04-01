@@ -112,6 +112,6 @@ public class URIFragments {
      * @throws URISyntaxException if the fragments form a malformed URI
      */
     public String toURIString() throws URISyntaxException {
-        return toURI().toString();
+        return toURI().toASCIIString();
     }
 }
