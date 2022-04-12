@@ -652,6 +652,10 @@ public class Pipe {
                         writeCondition.signalAll();
                         buffer.clear();
                         return;
+                    } else if (isProducerError()) {
+                        writeCondition.signalAll();
+                        buffer.clear();
+                        return;
                     }
                 } else if (consumerIoControl instanceof NHttpClientConnection) {
                     if (((NHttpClientConnection) consumerIoControl).isStale()) {
