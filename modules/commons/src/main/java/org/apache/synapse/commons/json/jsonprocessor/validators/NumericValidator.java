@@ -28,6 +28,8 @@ import org.apache.synapse.commons.json.jsonprocessor.exceptions.ValidatorExcepti
 import org.apache.synapse.commons.json.jsonprocessor.utils.DataTypeConverter;
 import org.apache.synapse.commons.json.jsonprocessor.utils.JsonProcessorUtils;
 
+import java.math.BigDecimal;
+
 /**
  * validate numeric instances according to the given schema.
  */
@@ -143,7 +145,7 @@ public class NumericValidator {
                 return new JsonPrimitive(DataTypeConverter.convertToInt(value));
             } else {
                 // this condition address both type number and empty json schemas
-                return new JsonPrimitive(doubleValue);
+                return new JsonPrimitive(new BigDecimal(doubleValue.toString()));
             }
         }
         throw new ParserException("\"" + value + "\"" + " is not a number. " +
