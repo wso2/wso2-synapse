@@ -20,25 +20,47 @@ package org.apache.synapse.endpoints.auth.oauth;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.apache.axiom.om.OMElement;
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.description.Parameter;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLContexts;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
+import org.apache.synapse.transport.nhttp.util.SecureVaultValueReader;
+import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.SecretResolverFactory;
 
+import javax.net.ssl.SSLContext;
+import javax.xml.namespace.QName;
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 
 /**
  * This class represents the client used to request and retrieve OAuth tokens
@@ -48,7 +70,23 @@ public class OAuthClient {
 
     private static final Log log = LogFactory.getLog(OAuthClient.class);
 
-    private static final CloseableHttpClient httpClient = createHTTPClient();
+    // Elements defined in key/trust store configuration
+    private static final String STORE_TYPE = "Type";
+    private static final String STORE_LOCATION = "Location";
+    private static final String STORE_PASSWORD = "Password";
+    private static final String HTTP_CONNECTION = "http";
+    private static final String HTTPS_CONNECTION = "https";
+
+    private CloseableHttpClient httpClient;
+
+    public OAuthClient(MessageContext messageContext) throws AuthException {
+        httpClient = getSecureClient(messageContext);
+    }
+    public OAuthClient() {
+        // preserving the previous behaviour in case there is a scenario to invoke
+        // the client without the message context
+        httpClient = getDefaultHttpClient();
+    }
 
     /**
      * Method to generate the access token from an OAuth server
@@ -61,7 +99,7 @@ public class OAuthClient {
      *                        key missing in the response payload
      * @throws IOException    In the event of a problem parsing the response from the server
      */
-    public static String generateToken(String tokenApiUrl, String payload, String credentials)
+    public String generateToken(String tokenApiUrl, String payload, String credentials)
             throws AuthException, IOException {
 
         if (log.isDebugEnabled()) {
@@ -128,12 +166,105 @@ public class OAuthClient {
     }
 
     /**
-     * Creates a CloseableHttpClient with NoConnectionReuseStrategy
+     * Initializes a Secure HTTP client fot token endpoint.
      *
-     * @return httpClient CloseableHttpClient
+     * @return Secure CloseableHttpClient
+     * @throws AuthException
      */
-    private static CloseableHttpClient createHTTPClient() {
+    private CloseableHttpClient getSecureClient(MessageContext messageContext) throws AuthException {
+        SSLContext sslContext = getSSLContext(messageContext);
 
+        SSLConnectionSocketFactory sslConnectionFactory =
+                new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
+        Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create().
+                register(HTTPS_CONNECTION, sslConnectionFactory).register(HTTP_CONNECTION, new PlainConnectionSocketFactory())
+                .build();
+
+        BasicHttpClientConnectionManager connManager = new BasicHttpClientConnectionManager(registry);
+
+        CloseableHttpClient client = HttpClients.custom().setConnectionManager(connManager)
+                .setSSLSocketFactory(sslConnectionFactory).build();
+
+        return client;
+    }
+
+    /**
+     * Returns SSL Context for the token endpoint.
+     *
+     * @return SSLContext
+     * @throws AuthException
+     */
+    private SSLContext getSSLContext(MessageContext messageContext) throws AuthException {
+        ConfigurationContext configurationContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext().
+                getConfigurationContext();
+
+        Parameter keystoreParameter = configurationContext.getAxisConfiguration().getTransportOut("https").
+                getParameter("keystore");
+
+        Parameter truststoreParameter = configurationContext.getAxisConfiguration().getTransportOut("https").
+                getParameter("truststore");
+
+        OMElement keystoreElem, truststoreElem;
+        if (keystoreParameter != null && truststoreParameter != null) {
+            keystoreElem = keystoreParameter.getParameterElement().getFirstElement();
+            truststoreElem = truststoreParameter.getParameterElement().getFirstElement();
+        } else {
+            throw new AuthException("Key Store and/or Trust Store parameters missing in Axis2 configuration");
+        }
+
+        SecretResolver resolver;
+        if (configurationContext != null && configurationContext.getAxisConfiguration() != null) {
+            resolver = configurationContext.getAxisConfiguration().getSecretResolver();
+        } else {
+            resolver = SecretResolverFactory.create(keystoreElem, false);
+        }
+
+        String keystorePassword = SecureVaultValueReader.getSecureVaultValue(resolver,
+                keystoreElem.getFirstChildWithName(new QName(STORE_PASSWORD)));
+
+        KeyStore keyStore = getStore(keystoreElem, resolver);
+        KeyStore truststore = getStore(truststoreElem, resolver);
+        try {
+            return SSLContexts.custom().loadKeyMaterial(keyStore, keystorePassword.toCharArray()).
+                    loadTrustMaterial(truststore).build();
+        } catch (GeneralSecurityException e) {
+            throw new AuthException(e);
+        }
+    }
+
+    /**
+     * Returns Trust Store for the provided Axis2 Configuration.
+     *
+     * @param storeElem OMElement
+     * @param resolver Secret Resolver
+     * @return Trust tStore
+     * @throws AuthException
+     */
+    private KeyStore getStore(OMElement storeElem, SecretResolver resolver) throws AuthException {
+        OMElement storeLocationElement = storeElem.getFirstChildWithName(new QName(STORE_LOCATION));
+        OMElement typeElement = storeElem.getFirstChildWithName(new QName(STORE_TYPE));
+        String storePassword = SecureVaultValueReader.getSecureVaultValue(resolver,
+                storeElem.getFirstChildWithName(new QName(STORE_PASSWORD)));
+
+        if (storeLocationElement == null || typeElement == null || storePassword == null) {
+            throw new AuthException("Missing parameters in the store");
+        }
+
+        String storeLocation = storeLocationElement.getText();
+        String type = typeElement.getText();
+
+        try (FileInputStream fis = new FileInputStream(storeLocation)) {
+            KeyStore trustStore = KeyStore.getInstance(type);
+            trustStore.load(fis, storePassword.toCharArray());
+            return trustStore;
+        } catch (GeneralSecurityException gse) {
+            throw new AuthException("Error loading Trust/Key store : " + storeLocation);
+        } catch (IOException ioe) {
+            throw new AuthException("Error opening Trust/Key store : " + storeLocation);
+        }
+    }
+
+    public CloseableHttpClient getDefaultHttpClient() {
         HttpClientBuilder builder = HttpClientBuilder.create();
         builder.setConnectionReuseStrategy(new NoConnectionReuseStrategy());
         return builder.build();
