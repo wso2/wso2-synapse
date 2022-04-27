@@ -608,4 +608,8 @@ public final class SynapseConstants {
      * Synapse Configuration holder property name, used for handling synapse import deployments
      */
     public static final String SYNAPSE_CONFIGURATION = "SynapseConfiguration";
+
+    //Jaeger SpanID tracerID constants
+    public static final String JAEGER_TRACE_ID = "jaeger_trace_id";
+    public static final String JAEGER_SPAN_ID = "jaeger_span_id";
 }
