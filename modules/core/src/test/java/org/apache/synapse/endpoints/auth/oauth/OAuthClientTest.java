@@ -76,7 +76,7 @@ public class OAuthClientTest extends TestCase {
                         "\"expires_in\" : 3600 }").getBytes());
         when(entity.getContent()).thenReturn(stream);
 
-        String token = OAuthClient.generateToken("uri", "body", "credentials");
+        String token = new OAuthClient().generateToken("uri", "body", "credentials");
 
         assertEquals("abc123", token);
     }

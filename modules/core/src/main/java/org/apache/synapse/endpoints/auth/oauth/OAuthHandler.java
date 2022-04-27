@@ -83,7 +83,8 @@ public abstract class OAuthHandler implements AuthHandler {
                 @Override
                 public String call() throws AuthException, IOException {
 
-                    return OAuthClient.generateToken(OAuthUtils.resolveExpression(tokenApiUrl, messageContext),
+                    OAuthClient oAuthClient = new OAuthClient(messageContext);
+                    return oAuthClient.generateToken(OAuthUtils.resolveExpression(tokenApiUrl, messageContext),
                             buildTokenRequestPayload(messageContext), getEncodedCredentials(messageContext));
                 }
             });
