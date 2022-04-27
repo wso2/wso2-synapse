@@ -18,15 +18,19 @@
 
 package org.apache.synapse.aspects.flow.statistics.opentracing.management.handling.span;
 
+import io.jaegertracing.internal.JaegerSpanContext;
 import io.jaegertracing.internal.JaegerTracer;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMapExtractAdapter;
 import io.opentracing.propagation.TextMapInjectAdapter;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SequenceType;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
@@ -50,6 +54,7 @@ import java.util.Objects;
  */
 public class JaegerSpanHandler implements OpenTracingSpanHandler {
 
+    private Log logger = LogFactory.getLog(JaegerSpanHandler.class);
     /**
      * The tracer object, that is used to hold all the Jaeger spans.
      */
@@ -160,6 +165,11 @@ public class JaegerSpanHandler implements OpenTracingSpanHandler {
         if (spanContext != null) {
             // Set tracing headers
             tracer.inject(spanContext, Format.Builtin.HTTP_HEADERS, new TextMapInjectAdapter(tracerSpecificCarrier));
+            synCtx.setProperty(SynapseConstants.JAEGER_TRACE_ID, ((JaegerSpanContext) spanContext).getTraceId());
+            synCtx.setProperty(SynapseConstants.JAEGER_SPAN_ID, Long.toHexString(((JaegerSpanContext) spanContext).getSpanId()));
+            if (logger.isDebugEnabled()) {
+                logger.debug("Jaeger Trace ID: " + synCtx.getProperty(SynapseConstants.JAEGER_TRACE_ID) + " Jaeger Span ID: " + synCtx.getProperty(SynapseConstants.JAEGER_SPAN_ID));
+            }
         }
         // Set text map key value pairs as HTTP headers
         // Fix possible null pointer issue which can occur when following property is used
@@ -168,6 +178,7 @@ public class JaegerSpanHandler implements OpenTracingSpanHandler {
             headersMap.putAll(tracerSpecificCarrier);
             statisticDataUnit.setTransportHeaderMap(headersMap);
         }
+
         if (statusCode != null) {
             statisticDataUnit.setStatusCode(statusCode.toString());
         }
