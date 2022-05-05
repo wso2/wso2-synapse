@@ -245,7 +245,9 @@ public class ProxyServiceFactory {
                         new QName(XMLConfigConstants.NULL_NAMESPACE, "uri"));
                 if (wsdlURI != null) {
                     try {
-                        proxy.setWsdlURI(new URI(wsdlURI.getAttributeValue()));
+                        String  resolvedWsdlURI =
+                                ResolverFactory.getInstance().getResolver(wsdlURI.getAttributeValue()).resolve();
+                        proxy.setWsdlURI(new URI(resolvedWsdlURI));
                     } catch (URISyntaxException e) {
                         String msg = "Error creating uri for proxy service wsdl";
                         log.error(msg);
