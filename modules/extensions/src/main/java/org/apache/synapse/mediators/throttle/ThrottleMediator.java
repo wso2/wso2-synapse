@@ -334,20 +334,17 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
 
         String callerId = null;
         boolean canAccess = true;
-        //remote ip of the caller
-        String remoteIP = (String) axisMC.getPropertyNonReplicable(org.apache.axis2.context.MessageContext.REMOTE_ADDR);
         //domain name of the caller
         String domainName = (String) axisMC.getPropertyNonReplicable(NhttpConstants.REMOTE_HOST);
-
         Map headers = (Map) axisMC.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
 
         if (headers != null) {
-            String xForwardHeader = (String) headers.get(NhttpConstants.HEADER_X_FORWARDED_FOR);
             String xForwardHost = (String) headers.get(NhttpConstants.HEADER_X_FORWARDED_HOST);
-
-            remoteIP = (xForwardHeader != null) ? xForwardHeader : remoteIP;
             domainName = (xForwardHost != null) ? xForwardHost : domainName;
         }
+
+        // Get Remote IP
+        String remoteIP = getIp(headers, synCtx);
 
         // Using a unique key to identify each api, proxy and inbound endpoint
         String uniqueKey;
@@ -781,5 +778,32 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
             onRejectMediator.setComponentStatisticsId(holder);
         }
         StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR, holder);
+    }
+
+    /**
+     * Extracts the remote IP from Message Context.
+     *
+     * @param transportHeaderMap    Message context
+     * @param messageContext        Axis2 Message Context.
+     * @return IP as a String.
+     */
+    public static String getIp(Map<String, String> transportHeaderMap, MessageContext messageContext) {
+
+        String remoteIP = "";
+        // Check whether headers map is null and x forwarded for header is present.
+        if (transportHeaderMap != null) {
+            remoteIP = transportHeaderMap.get(NhttpConstants.HEADER_X_FORWARDED_FOR);
+        }
+
+        //Setting IP of the client by looking at x forded for header and  if it's empty get remote address.
+        if (remoteIP != null && !remoteIP.isEmpty()) {
+            if (remoteIP.indexOf(",") > 0) {
+                remoteIP = remoteIP.substring(0, remoteIP.indexOf(","));
+            }
+        } else {
+            remoteIP = (String) messageContext.getProperty(org.apache.axis2.context.MessageContext.REMOTE_ADDR);
+        }
+
+        return remoteIP;
     }
 }
