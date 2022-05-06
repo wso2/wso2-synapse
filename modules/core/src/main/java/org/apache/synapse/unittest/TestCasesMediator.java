@@ -187,7 +187,9 @@ public class TestCasesMediator {
 
         String url;
         if (currentTestCase.getRequestPath() != null) {
-            if (currentTestCase.getRequestPath().startsWith("/")) {
+            if (currentTestCase.getRequestPath().equals("/")) {
+                url = urlPrefix + context;
+            } else if (currentTestCase.getRequestPath().startsWith("/")) {
                 url = urlPrefix + context + currentTestCase.getRequestPath();
             } else {
                 url = urlPrefix + context + "/" + currentTestCase.getRequestPath();
