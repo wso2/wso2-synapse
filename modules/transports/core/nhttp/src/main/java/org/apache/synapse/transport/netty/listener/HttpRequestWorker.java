@@ -338,7 +338,12 @@ public class HttpRequestWorker implements Runnable {
 
         HttpCarbonMessage outboundResponse;
         try {
-            outboundResponse = new HttpCarbonMessage(new DefaultHttpResponse(HttpVersion.HTTP_1_1, responseStatus));
+            HttpVersion version = HttpVersion.HTTP_1_1;
+            if (sourceConfiguration.getProtocol().equals(BridgeConstants.HTTP_2_0_VERSION)) {
+                version = new HttpVersion(BridgeConstants.HTTP_2_0, true);
+                disableKeepAlive = false;
+            }
+            outboundResponse = new HttpCarbonMessage(new DefaultHttpResponse(version, responseStatus));
             outboundResponse.setHttpStatusCode(statusCode);
             if (disableKeepAlive) {
                 outboundResponse.setKeepAlive(false);

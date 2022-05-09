@@ -84,8 +84,9 @@ public class TargetRequestHandler {
                                                              TargetConfiguration targetConfiguration)
             throws AxisFault {
 
-        HttpCarbonMessage outboundRequest = new HttpCarbonMessage(
-                new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, ""));
+        HttpCarbonMessage outboundRequest =
+                new HttpCarbonMessage(new DefaultHttpRequest(new HttpVersion(BridgeConstants.HTTP_2_0, Boolean.TRUE),
+                        HttpMethod.GET, ""));
         prepareOutboundRequest(url, outboundRequest, msgContext, targetConfiguration);
         return outboundRequest;
     }

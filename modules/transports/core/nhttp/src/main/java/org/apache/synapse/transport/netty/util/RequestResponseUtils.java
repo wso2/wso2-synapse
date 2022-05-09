@@ -18,6 +18,7 @@
  */
 package org.apache.synapse.transport.netty.util;
 
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAP11Constants;
@@ -99,8 +100,9 @@ public class RequestResponseUtils {
 
         //TODO: set correlation id here
 
-        msgCtx.setProperty(BaseConstants.INTERNAL_TRANSACTION_COUNTED, incomingCarbonMsg.getSourceContext().channel()
-                .attr(AttributeKey.valueOf(BaseConstants.INTERNAL_TRANSACTION_COUNTED)).get());
+        msgCtx.setProperty(BaseConstants.INTERNAL_TRANSACTION_COUNTED,
+                ((ChannelHandlerContext) incomingCarbonMsg.getProperty(BridgeConstants.CHANNEL_HANDLER_CONTEXT))
+                        .channel().attr(AttributeKey.valueOf(BaseConstants.INTERNAL_TRANSACTION_COUNTED)).get());
 
         msgCtx.setProperty(Constants.Configuration.TRANSPORT_IN_URL, incomingCarbonMsg.getProperty(BridgeConstants.TO));
         msgCtx.setProperty(MessageContext.CLIENT_API_NON_BLOCKING, Boolean.FALSE);

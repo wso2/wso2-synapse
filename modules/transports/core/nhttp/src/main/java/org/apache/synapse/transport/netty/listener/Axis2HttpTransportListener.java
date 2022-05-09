@@ -79,6 +79,13 @@ public class Axis2HttpTransportListener implements TransportListener {
     public void start() throws AxisFault {
         ServerConnectorFuture serverConnectorFuture = serverConnector.start();
         serverConnectorFuture.setHttpConnectorListener(new Axis2HttpConnectorListener(sourceConfiguration));
+        if (LOG.isDebugEnabled()) {
+            if (sourceConfiguration.getProtocol().equals("2.0")) {
+                LOG.debug("HTTP/2 server is started on port " + sourceConfiguration.getPort());
+            } else {
+                LOG.debug("HTTP/1.1 server is started on port " + sourceConfiguration.getPort());
+            }
+        }
         try {
             serverConnectorFuture.sync();
         } catch (InterruptedException e) {
