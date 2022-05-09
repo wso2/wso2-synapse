@@ -344,7 +344,7 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
         }
 
         // Get Remote IP
-        String remoteIP = getIp(headers, synCtx);
+        String remoteIP = getIp(headers, axisMC);
 
         // Using a unique key to identify each api, proxy and inbound endpoint
         String uniqueKey;
@@ -784,10 +784,10 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
      * Extracts the remote IP from Message Context.
      *
      * @param transportHeaderMap    Message context
-     * @param messageContext        Axis2 Message Context.
+     * @param axisMC                org.apache.axis2.context.MessageContext - Axis2 Message Context.
      * @return IP as a String.
      */
-    public static String getIp(Map<String, String> transportHeaderMap, MessageContext messageContext) {
+    public static String getIp(Map<String, String> transportHeaderMap, org.apache.axis2.context.MessageContext axisMC) {
 
         String remoteIP = "";
         // Check whether headers map is null and x forwarded for header is present.
@@ -801,7 +801,7 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                 remoteIP = remoteIP.substring(0, remoteIP.indexOf(","));
             }
         } else {
-            remoteIP = (String) messageContext.getProperty(org.apache.axis2.context.MessageContext.REMOTE_ADDR);
+            remoteIP = (String) axisMC.getPropertyNonReplicable(org.apache.axis2.context.MessageContext.REMOTE_ADDR);
         }
 
         return remoteIP;
