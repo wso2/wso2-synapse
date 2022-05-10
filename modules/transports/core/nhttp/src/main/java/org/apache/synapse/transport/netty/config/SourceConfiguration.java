@@ -43,7 +43,7 @@ public class SourceConfiguration extends BaseConfiguration {
     private int port;
     private String host;
     private Scheme scheme;
-    private String protocol = "1.1";
+    private String protocol = "2.0";
 
     private final TransportInDescription inDescription;
 
