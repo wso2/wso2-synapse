@@ -68,7 +68,7 @@ public class SourceResponseHandler {
             throws AxisFault {
 
         HttpVersion version = new HttpVersion(BridgeConstants.HTTP_2_0, true);
-        if (((SourceConfiguration) msgCtx.getProperty(BridgeConstants.HTTP_SOURCE_CONFIGURATION)).getProtocol().equals(BridgeConstants.HTTP_1_1_VERSION)) {
+        if (BridgeConstants.HTTP_1_1_VERSION.equals(((SourceConfiguration) msgCtx.getProperty(BridgeConstants.HTTP_SOURCE_CONFIGURATION)).getProtocol())) {
             version = HttpVersion.HTTP_1_1;
         }
         HttpCarbonMessage outboundResponseMsg = new HttpCarbonMessage(new DefaultHttpResponse(version,
