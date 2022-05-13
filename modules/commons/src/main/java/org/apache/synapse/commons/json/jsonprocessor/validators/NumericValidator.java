@@ -145,7 +145,9 @@ public class NumericValidator {
                 return new JsonPrimitive(DataTypeConverter.convertToInt(value));
             } else {
                 // this condition address both type number and empty json schemas
-                return new JsonPrimitive(new BigDecimal(doubleValue.toString()));
+                int scale = value.length() - (value.indexOf(".") + 1);
+                BigDecimal bigDecimalValue = new BigDecimal(value).setScale(scale);
+                return new JsonPrimitive(bigDecimalValue);
             }
         }
         throw new ParserException("\"" + value + "\"" + " is not a number. " +
