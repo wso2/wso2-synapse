@@ -364,9 +364,7 @@ public class RequestResponseUtils {
         ListenerConfiguration listenerConfiguration = new ListenerConfiguration();
         listenerConfiguration.setPort(sourceConfiguration.getPort());
         listenerConfiguration.setHost(sourceConfiguration.getHost());
-        String[] protocols = sourceConfiguration.getProtocol().split(",");
-        String protocol;
-        protocol = Arrays.stream(protocols).sorted().collect(Collectors.toList()).get(protocols.length - 1);
+        String protocol = getProtocolVersion(sourceConfiguration);
         listenerConfiguration.setVersion(protocol);
         NettyConfiguration globalConfig = NettyConfiguration.getInstance();
 
@@ -399,6 +397,13 @@ public class RequestResponseUtils {
         }
 
         return listenerConfiguration;
+    }
+
+    public static String getProtocolVersion(SourceConfiguration sourceConfiguration) {
+
+        String[] protocols = sourceConfiguration.getProtocol().split(",");
+        String protocol = Arrays.stream(protocols).sorted().collect(Collectors.toList()).get(protocols.length - 1);
+        return protocol;
     }
 
     public static boolean isHTTPTraceLoggerEnabled() {
