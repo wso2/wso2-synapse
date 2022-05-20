@@ -365,6 +365,7 @@ public class RequestResponseUtils {
         listenerConfiguration.setPort(sourceConfiguration.getPort());
         listenerConfiguration.setHost(sourceConfiguration.getHost());
         String protocol = getProtocolVersion(sourceConfiguration);
+        sourceConfiguration.setProtocol(protocol);
         listenerConfiguration.setVersion(protocol);
         NettyConfiguration globalConfig = NettyConfiguration.getInstance();
 
