@@ -28,7 +28,6 @@ public class BridgeConstants {
 
     public static final String PORT_PARAM = "port";
     public static final String HOSTNAME_PARAM = "hostname";
-    public static final String HTTP_PROTOCOL_VERSION_PARAM = "protocolVersion";
     public static final String HTTP_PROTOCOL_VERSIONS_PARAM = "protocolVersions";
     public static final String BRIDGE_LOG_PREFIX = "[Bridge] ";
 

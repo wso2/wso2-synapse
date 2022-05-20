@@ -289,7 +289,7 @@ public class SourceResponseHandler {
 
         if (msgContext.isPropertyTrue(BridgeConstants.FORCE_HTTP_1_0)) {
             return "1.0";
-        } else if (((HttpCarbonMessage) msgContext.getProperty(BridgeConstants.HTTP_CARBON_MESSAGE)).getHttpVersion() == "2.0") {
+        } else if (((HttpCarbonMessage) msgContext.getProperty(BridgeConstants.HTTP_CARBON_MESSAGE)).getHttpVersion() == BridgeConstants.HTTP_2_0_VERSION) {
             return "2.0";
         }
         return "1.1";

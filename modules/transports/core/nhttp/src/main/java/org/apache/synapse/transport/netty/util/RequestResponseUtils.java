@@ -362,14 +362,12 @@ public class RequestResponseUtils {
             throws AxisFault {
 
         ListenerConfiguration listenerConfiguration = new ListenerConfiguration();
-
         listenerConfiguration.setPort(sourceConfiguration.getPort());
         listenerConfiguration.setHost(sourceConfiguration.getHost());
-        String[] protocols=sourceConfiguration.getProtocol().split(",");
+        String[] protocols = sourceConfiguration.getProtocol().split(",");
         String protocol;
-        protocol=Arrays.stream(protocols).sorted().collect(Collectors.toList()).get(protocols.length-1);
+        protocol = Arrays.stream(protocols).sorted().collect(Collectors.toList()).get(protocols.length - 1);
         listenerConfiguration.setVersion(protocol);
-
         NettyConfiguration globalConfig = NettyConfiguration.getInstance();
 
         // Set Request validation limits.
