@@ -288,11 +288,11 @@ public class SourceResponseHandler {
     private static String determineHttpVersion(MessageContext msgContext) {
 
         if (msgContext.isPropertyTrue(BridgeConstants.FORCE_HTTP_1_0)) {
-            return "1.0";
+            return BridgeConstants.HTTP_1_0_VERSION;
         } else if (BridgeConstants.HTTP_2_0_VERSION.equals(((HttpCarbonMessage) msgContext.getProperty(BridgeConstants.HTTP_CARBON_MESSAGE)).getHttpVersion())) {
-            return "2.0";
+            return BridgeConstants.HTTP_2_0_VERSION;
         }
-        return "1.1";
+        return BridgeConstants.HTTP_1_1_VERSION;
     }
 
     /**
