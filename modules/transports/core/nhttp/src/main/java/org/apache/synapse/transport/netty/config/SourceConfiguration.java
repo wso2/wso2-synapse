@@ -105,7 +105,7 @@ public class SourceConfiguration extends BaseConfiguration {
     }
 
     private void populateHTTPProtocol() {
-        Parameter protocolParameter = inDescription.getParameter(BridgeConstants.HTTP_PROTOCOL_VERSION_PARAM);
+        Parameter protocolParameter = inDescription.getParameter(BridgeConstants.HTTP_PROTOCOL_VERSIONS_PARAM);
         if (Objects.nonNull(protocolParameter) && Objects.nonNull(protocolParameter.getValue())) {
             String protocol = ((String) protocolParameter.getValue()).trim();
             if (!protocol.isEmpty()) {

@@ -36,6 +36,7 @@ import org.apache.axis2.transport.RequestResponseTransport;
 import org.apache.axis2.transport.TransportUtils;
 import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.http.HTTPConstants;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.transport.netty.BridgeConstants;
@@ -54,11 +55,13 @@ import org.wso2.transport.http.netty.message.HttpCarbonMessage;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.xml.namespace.QName;
 
 /**
@@ -362,7 +365,10 @@ public class RequestResponseUtils {
 
         listenerConfiguration.setPort(sourceConfiguration.getPort());
         listenerConfiguration.setHost(sourceConfiguration.getHost());
-        listenerConfiguration.setVersion(sourceConfiguration.getProtocol());
+        String[] protocols=sourceConfiguration.getProtocol().split(",");
+        String protocol;
+        protocol=Arrays.stream(protocols).sorted().collect(Collectors.toList()).get(protocols.length-1);
+        listenerConfiguration.setVersion(protocol);
 
         NettyConfiguration globalConfig = NettyConfiguration.getInstance();
 

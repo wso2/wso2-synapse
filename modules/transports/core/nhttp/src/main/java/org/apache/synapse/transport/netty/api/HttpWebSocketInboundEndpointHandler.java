@@ -139,7 +139,7 @@ public class HttpWebSocketInboundEndpointHandler {
         // populate parameters
         addParameter(transportInDescription, BridgeConstants.PORT_PARAM, httpWebSocketConfig.getPort());
         addParameter(transportInDescription, BridgeConstants.HOSTNAME_PARAM, httpWebSocketConfig.getHostname());
-        addParameter(transportInDescription, BridgeConstants.HTTP_PROTOCOL_VERSION_PARAM,
+        addParameter(transportInDescription, BridgeConstants.HTTP_PROTOCOL_VERSIONS_PARAM,
                 httpWebSocketConfig.getHttpProtocolVersion());
 
         SSLConfiguration sslConfiguration = httpWebSocketConfig.getSslConfiguration();
