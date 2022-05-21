@@ -29,6 +29,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.handlers.MessagingHandler;
 import org.apache.synapse.transport.http.conn.Scheme;
+import org.apache.synapse.transport.netty.BridgeConstants;
 import org.apache.synapse.transport.netty.config.SourceConfiguration;
 import org.apache.synapse.transport.netty.util.RequestResponseUtils;
 import org.wso2.transport.http.netty.contract.HttpWsConnectorFactory;
@@ -79,6 +80,13 @@ public class Axis2HttpTransportListener implements TransportListener {
     public void start() throws AxisFault {
         ServerConnectorFuture serverConnectorFuture = serverConnector.start();
         serverConnectorFuture.setHttpConnectorListener(new Axis2HttpConnectorListener(sourceConfiguration));
+        if (LOG.isDebugEnabled()) {
+            if (BridgeConstants.HTTP_2_0_VERSION.equals(sourceConfiguration.getProtocol())) {
+                LOG.debug("HTTP/2 server is started on port " + sourceConfiguration.getPort());
+            } else {
+                LOG.debug("HTTP/1.1 server is started on port " + sourceConfiguration.getPort());
+            }
+        }
         try {
             serverConnectorFuture.sync();
         } catch (InterruptedException e) {

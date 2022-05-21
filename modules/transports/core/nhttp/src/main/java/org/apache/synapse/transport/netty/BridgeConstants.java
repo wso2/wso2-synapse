@@ -28,8 +28,7 @@ public class BridgeConstants {
 
     public static final String PORT_PARAM = "port";
     public static final String HOSTNAME_PARAM = "hostname";
-    public static final String HTTP_PROTOCOL_VERSION_PARAM = "protocolVersion";
-
+    public static final String HTTP_PROTOCOL_VERSIONS_PARAM = "protocolVersions";
     public static final String BRIDGE_LOG_PREFIX = "[Bridge] ";
 
     public static final String VALUE_TRUE = "true";
@@ -97,7 +96,7 @@ public class BridgeConstants {
     public static final String DEFAULT_VERSION_HTTP_1_1 = "HTTP/1.1";
     public static final float HTTP_1_1 = 1.1f;
     public static final float HTTP_1_0 = 1.0f;
-    public static final String HTTP_2_0 = "2.0";
+    public static final String HTTP_2_0 = "HTTP/2.0";
     public static final String HTTP_VERSION_PREFIX = "HTTP/";
     public static final String HTTP_1_0_VERSION = "1.0";
     public static final String HTTP_1_1_VERSION = "1.1";
@@ -109,6 +108,7 @@ public class BridgeConstants {
 
     public static final String PROTOCOL_HTTP = "http";
     public static final String PROTOCOL_HTTPS = "https";
+    public static final String CHANNEL_HANDLER_CONTEXT = "CHNL_HNDLR_CTX";
 
     private static final String LOCAL_HOST = "localhost";
     public static final String HTTP_DEFAULT_HOST = "0.0.0.0";
