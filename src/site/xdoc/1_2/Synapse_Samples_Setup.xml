@@ -785,8 +785,8 @@ synapse.datasources.lookupds.maxIdle=20
 synapse.datasources.lookupds.maxWait=10000
 
 synapse.datasources.reportds.type=PerUserPoolDataSource
-synapse.datasources.reportds.cpdsadapter.factory=org.apache.commons.dbcp.cpdsadapter.DriverAdapterCPDS
-synapse.datasources.reportds.cpdsadapter.className=org.apache.commons.dbcp.cpdsadapter.DriverAdapterCPDS
+synapse.datasources.reportds.cpdsadapter.factory=org.apache.commons.dbcp2.cpdsadapter.DriverAdapterCPDS
+synapse.datasources.reportds.cpdsadapter.className=org.apache.commons.dbcp2.cpdsadapter.DriverAdapterCPDS
 synapse.datasources.reportds.cpdsadapter.name=cpds
 synapse.datasources.reportds.dsName=reportdb
 synapse.datasources.reportds.driverClassName=org.apache.derby.jdbc.ClientDriver

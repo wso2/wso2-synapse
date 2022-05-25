@@ -132,7 +132,7 @@ public class JNDIBasedDataSourceRepository implements DataSourceRepository {
         if (DataSourceInformation.BASIC_DATA_SOURCE.equals(dsType)) {
 
             Reference ref = new Reference("javax.sql.DataSource",
-                    "org.apache.commons.dbcp.BasicDataSourceFactory", null);
+                    "org.apache.commons.dbcp2.BasicDataSourceFactory", null);
 
             ref.add(new StringRefAddr(DataSourceConstants.PROP_DRIVER_CLS_NAME,
                     driver));
@@ -197,8 +197,8 @@ public class JNDIBasedDataSourceRepository implements DataSourceRepository {
 
             // Construct PerUserPoolDataSource reference
             Reference ref =
-                    new Reference("org.apache.commons.dbcp.datasources.PerUserPoolDataSource",
-                            "org.apache.commons.dbcp.datasources.PerUserPoolDataSourceFactory",
+                    new Reference("org.apache.commons.dbcp2.datasources.PerUserPoolDataSource",
+                            "org.apache.commons.dbcp2.datasources.PerUserPoolDataSourceFactory",
                             null);
 
             ref.add(new BinaryRefAddr(

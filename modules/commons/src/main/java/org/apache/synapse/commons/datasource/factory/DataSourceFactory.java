@@ -18,14 +18,15 @@
  */
 package org.apache.synapse.commons.datasource.factory;
 
-import org.apache.commons.dbcp.BasicDataSource;
-import org.apache.commons.dbcp.cpdsadapter.DriverAdapterCPDS;
-import org.apache.commons.dbcp.datasources.PerUserPoolDataSource;
+import org.apache.commons.dbcp2.BasicDataSource;
+import org.apache.commons.dbcp2.cpdsadapter.DriverAdapterCPDS;
+import org.apache.commons.dbcp2.datasources.PerUserPoolDataSource;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.SynapseCommonsException;
 import org.apache.synapse.commons.datasource.DataSourceInformation;
 
+import java.time.Duration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.sql.DataSource;
@@ -93,9 +94,9 @@ public class DataSourceFactory {
                 basicDataSource.setPassword(password);
             }
 
-            basicDataSource.setMaxActive(dataSourceInformation.getMaxActive());
+            basicDataSource.setMaxTotal(dataSourceInformation.getMaxActive() + dataSourceInformation.getMaxIdle());
             basicDataSource.setMaxIdle(dataSourceInformation.getMaxIdle());
-            basicDataSource.setMaxWait(dataSourceInformation.getMaxWait());
+            basicDataSource.setMaxWaitMillis(dataSourceInformation.getMaxWait());
             basicDataSource.setMinIdle(dataSourceInformation.getMinIdle());
             basicDataSource.setDefaultAutoCommit(dataSourceInformation.isDefaultAutoCommit());
             basicDataSource.setDefaultReadOnly(dataSourceInformation.isDefaultReadOnly());
@@ -161,19 +162,20 @@ public class DataSourceFactory {
             PerUserPoolDataSource perUserPoolDataSource = new PerUserPoolDataSource();
             perUserPoolDataSource.setConnectionPoolDataSource(adapterCPDS);
 
-            perUserPoolDataSource.setDefaultMaxActive(dataSourceInformation.getMaxActive());
+            perUserPoolDataSource
+                    .setDefaultMaxTotal(dataSourceInformation.getMaxActive() + dataSourceInformation.getMaxIdle());
             perUserPoolDataSource.setDefaultMaxIdle(dataSourceInformation.getMaxIdle());
-            perUserPoolDataSource.setDefaultMaxWait((int) dataSourceInformation.getMaxWait());
+            perUserPoolDataSource.setDefaultMaxWait(Duration.ofMillis((int) dataSourceInformation.getMaxWait()));
             perUserPoolDataSource.setDefaultAutoCommit(dataSourceInformation.isDefaultAutoCommit());
             perUserPoolDataSource.setDefaultReadOnly(dataSourceInformation.isDefaultReadOnly());
-            perUserPoolDataSource.setTestOnBorrow(dataSourceInformation.isTestOnBorrow());
-            perUserPoolDataSource.setTestOnReturn(dataSourceInformation.isTestOnReturn());
-            perUserPoolDataSource.setTestWhileIdle(dataSourceInformation.isTestWhileIdle());
-            perUserPoolDataSource.setMinEvictableIdleTimeMillis(
+            perUserPoolDataSource.setDefaultTestOnBorrow(dataSourceInformation.isTestOnBorrow());
+            perUserPoolDataSource.setDefaultTestOnReturn(dataSourceInformation.isTestOnReturn());
+            perUserPoolDataSource.setDefaultTestWhileIdle(dataSourceInformation.isTestWhileIdle());
+            perUserPoolDataSource.setDefaultMinEvictableIdleTimeMillis(
                     (int) dataSourceInformation.getMinEvictableIdleTimeMillis());
-            perUserPoolDataSource.setTimeBetweenEvictionRunsMillis(
+            perUserPoolDataSource.setDefaultTimeBetweenEvictionRunsMillis(
                     (int) dataSourceInformation.getTimeBetweenEvictionRunsMillis());
-            perUserPoolDataSource.setNumTestsPerEvictionRun(
+            perUserPoolDataSource.setDefaultNumTestsPerEvictionRun(
                     dataSourceInformation.getNumTestsPerEvictionRun());
 
             if (defaultTransactionIsolation != -1) {
