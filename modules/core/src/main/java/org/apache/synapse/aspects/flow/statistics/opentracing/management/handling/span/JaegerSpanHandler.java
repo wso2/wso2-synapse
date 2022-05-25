@@ -23,8 +23,7 @@ import io.jaegertracing.internal.JaegerTracer;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.propagation.Format;
-import io.opentracing.propagation.TextMapExtractAdapter;
-import io.opentracing.propagation.TextMapInjectAdapter;
+import io.opentracing.propagation.TextMapAdapter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ContinuationState;
@@ -155,7 +154,7 @@ public class JaegerSpanHandler implements OpenTracingSpanHandler {
         // We only need to extract span context from headers when there are trp headers available
         if (isOuterLevelSpan(statisticDataUnit, spanStore) && headersMap != null) {
             // Extract span context from headers
-            spanContext = tracer.extract(Format.Builtin.HTTP_HEADERS, new TextMapExtractAdapter(headersMap));
+            spanContext = tracer.extract(Format.Builtin.HTTP_HEADERS, new TextMapAdapter(headersMap));
             span = tracer.buildSpan(statisticDataUnit.getComponentName()).asChildOf(spanContext).start();
         } else {
             span = tracer.buildSpan(statisticDataUnit.getComponentName()).asChildOf(parentSpan).start();
@@ -164,7 +163,7 @@ public class JaegerSpanHandler implements OpenTracingSpanHandler {
         //Fix null pointer issue occurs when spanContext become null
         if (spanContext != null) {
             // Set tracing headers
-            tracer.inject(spanContext, Format.Builtin.HTTP_HEADERS, new TextMapInjectAdapter(tracerSpecificCarrier));
+            tracer.inject(spanContext, Format.Builtin.HTTP_HEADERS, new TextMapAdapter(tracerSpecificCarrier));
             synCtx.setProperty(SynapseConstants.JAEGER_TRACE_ID, ((JaegerSpanContext) spanContext).getTraceId());
             synCtx.setProperty(SynapseConstants.JAEGER_SPAN_ID, Long.toHexString(((JaegerSpanContext) spanContext).getSpanId()));
             if (logger.isDebugEnabled()) {
