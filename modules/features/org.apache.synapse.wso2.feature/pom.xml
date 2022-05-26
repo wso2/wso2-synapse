@@ -52,7 +52,7 @@
             <artifactId>synapse-samples</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.quartz-scheduler.wso2</groupId>
+            <groupId>org.wso2.orbit.org.quartz-scheduler</groupId>
             <artifactId>quartz</artifactId>
         </dependency>
         <dependency>
@@ -141,7 +141,7 @@
                                 <bundleDef>org.apache.synapse:synapse-extensions</bundleDef>
                                 <bundleDef>org.apache.synapse:synapse-tasks</bundleDef>
                                 <bundleDef>net.sf.saxon.wso2:saxon</bundleDef>
-                                <bundleDef>org.quartz-scheduler.wso2:quartz</bundleDef>
+                                <bundleDef>org.wso2.orbit.org.quartz-scheduler:quartz</bundleDef>
                                 <bundleDef>com.google.code.gson:gson:${com.google.code.gson.version}</bundleDef>
                                 <bundleDef>org.wso2.caching:wso2caching-core</bundleDef>
                                 <bundleDef>com.damnhandy.wso2:handy-uri-templates</bundleDef>
