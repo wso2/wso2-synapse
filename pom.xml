@@ -348,8 +348,8 @@
              <scope>test</scope>
          </dependency>
          <dependency>
-             <groupId>rhino.wso2</groupId>
-             <artifactId>js</artifactId>
+             <groupId>org.wso2.orbit.org.mozilla</groupId>
+             <artifactId>rhino</artifactId>
              <version>${js.version}</version>
          </dependency>
          <dependency>
@@ -1477,7 +1477,7 @@
       <xmlsec.version>1.4.2</xmlsec.version>
       <xalan.version>2.7.2</xalan.version>
       <xerces.version>2.8.1</xerces.version>
-      <js.version>1.7.0.R4.wso2v1</js.version>
+      <js.version>1.7.14.wso2v1</js.version>
       <!-- startup, quartz -->
       <commons-collections.version>3.2.1</commons-collections.version>
       <quartz.version>2.3.2</quartz.version>
@@ -1534,7 +1534,7 @@
       <powermock.version>1.7.1</powermock.version>
       <dataprovider.version>1.13.1</dataprovider.version>
       <activemq.version>5.2.0</activemq.version>
-      <rhino.version>1.7R4</rhino.version>
+      <rhino.version>1.7.14</rhino.version>
       <jetty.version>7.2.0.v20101020</jetty.version>
        <xml.apis.version>1.4.01</xml.apis.version>
       <!-- The Java version used to execute maven-antrun-plugin in the integration module.
