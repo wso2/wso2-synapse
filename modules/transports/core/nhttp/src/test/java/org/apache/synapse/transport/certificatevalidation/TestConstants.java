@@ -34,8 +34,8 @@ public interface TestConstants {
      * CAUTION: Replace the certificates if they expire or are marked as revoked by their issuers. At the moment they are
      * valid. The expiry dates of the certificates are as follows:
      *
-     * github.com                    : 5/10/2022
-     * DigiCertHighAssuranceEVCA-1   : 10/22/2028
+     * github.com                    : 3/15/2023
+     * DigiCertHighAssuranceEVCA-1   : 9/22/2030
      * DigiCertHighAssuranceEVRootCA : 11/10/2031
      */
     final static String REAL_PEER_CERT = "/org/apache/synapse/transport/certificatevalidation" +
