@@ -84,8 +84,9 @@ public class TargetRequestHandler {
                                                              TargetConfiguration targetConfiguration)
             throws AxisFault {
 
-        HttpCarbonMessage outboundRequest = new HttpCarbonMessage(
-                new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, ""));
+        HttpCarbonMessage outboundRequest =
+                new HttpCarbonMessage(new DefaultHttpRequest(new HttpVersion(BridgeConstants.HTTP_2_0, Boolean.TRUE),
+                        HttpMethod.GET, ""));
         prepareOutboundRequest(url, outboundRequest, msgContext, targetConfiguration);
         return outboundRequest;
     }
@@ -350,7 +351,7 @@ public class TargetRequestHandler {
         String scheme = url.getProtocol() != null ? url.getProtocol() : BridgeConstants.PROTOCOL_HTTP;
         senderConfiguration.setScheme(scheme);
 
-        String httpVersion = BridgeConstants.HTTP_1_1_VERSION;
+        String httpVersion = BridgeConstants.HTTP_2_0_VERSION;
         String forceHttp10 = (String) msgContext.getProperty(PassThroughConstants.FORCE_HTTP_1_0);
         if (BridgeConstants.VALUE_TRUE.equalsIgnoreCase(forceHttp10)) {
             httpVersion = BridgeConstants.HTTP_1_0_VERSION;

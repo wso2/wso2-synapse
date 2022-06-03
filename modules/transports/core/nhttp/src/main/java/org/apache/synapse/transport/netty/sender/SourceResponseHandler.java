@@ -67,8 +67,12 @@ public class SourceResponseHandler {
     public static HttpCarbonMessage createOutboundResponseMsg(MessageContext msgCtx, HttpCarbonMessage clientRequest)
             throws AxisFault {
 
-        HttpCarbonMessage outboundResponseMsg = new HttpCarbonMessage(
-                new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK));
+        HttpVersion version = new HttpVersion(BridgeConstants.HTTP_2_0, true);
+        if (BridgeConstants.HTTP_1_1_VERSION.equals(((SourceConfiguration) msgCtx.getProperty(BridgeConstants.HTTP_SOURCE_CONFIGURATION)).getProtocol())) {
+            version = HttpVersion.HTTP_1_1;
+        }
+        HttpCarbonMessage outboundResponseMsg = new HttpCarbonMessage(new DefaultHttpResponse(version,
+                HttpResponseStatus.OK));
         try {
             handleMTOM(msgCtx);
             handleETAGCaching(clientRequest, outboundResponseMsg, msgCtx);
@@ -284,9 +288,11 @@ public class SourceResponseHandler {
     private static String determineHttpVersion(MessageContext msgContext) {
 
         if (msgContext.isPropertyTrue(BridgeConstants.FORCE_HTTP_1_0)) {
-            return "1.0";
+            return BridgeConstants.HTTP_1_0_VERSION;
+        } else if (BridgeConstants.HTTP_2_0_VERSION.equals(((HttpCarbonMessage) msgContext.getProperty(BridgeConstants.HTTP_CARBON_MESSAGE)).getHttpVersion())) {
+            return BridgeConstants.HTTP_2_0_VERSION;
         }
-        return "1.1";
+        return BridgeConstants.HTTP_1_1_VERSION;
     }
 
     /**

@@ -18,6 +18,7 @@
  */
 package org.apache.synapse.transport.netty.util;
 
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAP11Constants;
@@ -35,6 +36,7 @@ import org.apache.axis2.transport.RequestResponseTransport;
 import org.apache.axis2.transport.TransportUtils;
 import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.http.HTTPConstants;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.transport.netty.BridgeConstants;
@@ -53,11 +55,13 @@ import org.wso2.transport.http.netty.message.HttpCarbonMessage;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.xml.namespace.QName;
 
 /**
@@ -99,8 +103,9 @@ public class RequestResponseUtils {
 
         //TODO: set correlation id here
 
-        msgCtx.setProperty(BaseConstants.INTERNAL_TRANSACTION_COUNTED, incomingCarbonMsg.getSourceContext().channel()
-                .attr(AttributeKey.valueOf(BaseConstants.INTERNAL_TRANSACTION_COUNTED)).get());
+        msgCtx.setProperty(BaseConstants.INTERNAL_TRANSACTION_COUNTED,
+                ((ChannelHandlerContext) incomingCarbonMsg.getProperty(BridgeConstants.CHANNEL_HANDLER_CONTEXT))
+                        .channel().attr(AttributeKey.valueOf(BaseConstants.INTERNAL_TRANSACTION_COUNTED)).get());
 
         msgCtx.setProperty(Constants.Configuration.TRANSPORT_IN_URL, incomingCarbonMsg.getProperty(BridgeConstants.TO));
         msgCtx.setProperty(MessageContext.CLIENT_API_NON_BLOCKING, Boolean.FALSE);
@@ -357,11 +362,11 @@ public class RequestResponseUtils {
             throws AxisFault {
 
         ListenerConfiguration listenerConfiguration = new ListenerConfiguration();
-
         listenerConfiguration.setPort(sourceConfiguration.getPort());
         listenerConfiguration.setHost(sourceConfiguration.getHost());
-        listenerConfiguration.setVersion(sourceConfiguration.getProtocol());
-
+        String protocol = getProtocolVersion(sourceConfiguration);
+        sourceConfiguration.setProtocol(protocol);
+        listenerConfiguration.setVersion(protocol);
         NettyConfiguration globalConfig = NettyConfiguration.getInstance();
 
         // Set Request validation limits.
@@ -393,6 +398,13 @@ public class RequestResponseUtils {
         }
 
         return listenerConfiguration;
+    }
+
+    public static String getProtocolVersion(SourceConfiguration sourceConfiguration) {
+
+        String[] protocols = sourceConfiguration.getProtocol().split(",");
+        String protocol = Arrays.stream(protocols).sorted().collect(Collectors.toList()).get(protocols.length - 1);
+        return protocol;
     }
 
     public static boolean isHTTPTraceLoggerEnabled() {
