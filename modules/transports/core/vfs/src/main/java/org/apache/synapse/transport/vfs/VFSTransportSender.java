@@ -315,15 +315,9 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
             } finally {
                 if (replyFile != null) {
                     try {
-                        if (fsManager!= null && replyFile.getParent() != null && replyFile.getParent().getFileSystem() != null) {
-                            if (fsManager != null && replyFile.getName() != null &&
-                                    replyFile.getName().getScheme() != null) {
-                                fsManager.closeFileSystem(replyFile.getParent().getFileSystem());
-                            }
-                        }
                         replyFile.close();
                     } catch (Exception ex) {
-                        log.warn("File system manager already closed", ex);
+                        log.warn("Error on closing the reply file", ex);
                     }
                 }
             }
@@ -381,12 +375,14 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                 VFSUtils.releaseLock(fsManager, responseFile, fso);
             }
             metrics.incrementFaultsSending();
+            closeFileSystem(responseFile);
             handleException("IO Error while creating response file : " + VFSUtils.maskURLPassword(responseFile.getName().getURI()), e);
         } catch (IOException e) {
             if (lockingEnabled) {
                 VFSUtils.releaseLock(fsManager, responseFile, fso);
             }
             metrics.incrementFaultsSending();
+            closeFileSystem(responseFile);
             handleException("IO Error while creating response file : " + VFSUtils.maskURLPassword(responseFile.getName().getURI()), e);
         }
     }
@@ -440,6 +436,18 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
     private void setOutOnlyMep(MessageContext msgCtx) {
         if (msgCtx.getAxisOperation() != null && msgCtx.getAxisOperation().getMessageExchangePattern() != null) {
             msgCtx.getAxisOperation().setMessageExchangePattern("http://www.w3.org/ns/wsdl/out-only");
+        }
+    }
+
+    private void closeFileSystem(FileObject fileObject) {
+        try {
+            //Close the File system if it is not already closed
+            if (fileObject != null && fsManager != null && fileObject.getParent() != null  && fileObject.getParent().getFileSystem() != null) {
+                fsManager.closeFileSystem(fileObject.getParent().getFileSystem());
+                fileObject.close();
+            }
+        } catch (FileSystemException warn) {
+            log.warn("Error on closing the file: " + fileObject.getName().getPath(), warn);
         }
     }
 }
