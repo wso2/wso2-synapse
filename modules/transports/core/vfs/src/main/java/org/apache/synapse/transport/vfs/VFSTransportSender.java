@@ -71,6 +71,8 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
      */
     private static final ConcurrentHashMap<String,WriteLockObject> lockingObjects = new ConcurrentHashMap<>();
 
+    private boolean isFileSystemClosed = false;
+
     /**
      * The public constructor
      */
@@ -205,6 +207,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
     private void writeFile(MessageContext msgCtx, VFSOutTransportInfo vfsOutInfo) throws AxisFault {
 
         FileSystemOptions fso = null;
+        setFileSystemClosed(false);
         try {
             fso = VFSUtils.attachFileSystemOptions(vfsOutInfo.getOutFileSystemOptionsMap(), fsManager);
         } catch (Exception e) {
@@ -310,20 +313,15 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                     }
                 }
             } catch (FileSystemException e) {
+                closeFileSystem(replyFile);
                 handleException("Error resolving reply file : " +
                 		VFSUtils.maskURLPassword(vfsOutInfo.getOutFileURI()), e);
             } finally {
                 if (replyFile != null) {
                     try {
-                        if (fsManager!= null && replyFile.getParent() != null && replyFile.getParent().getFileSystem() != null) {
-                            if (fsManager != null && replyFile.getName() != null &&
-                                    replyFile.getName().getScheme() != null) {
-                                fsManager.closeFileSystem(replyFile.getParent().getFileSystem());
-                            }
-                        }
                         replyFile.close();
                     } catch (Exception ex) {
-                        log.warn("File system manager already closed", ex);
+                        log.warn("Error when closing the reply file", ex);
                     }
                 }
             }
@@ -381,12 +379,14 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                 VFSUtils.releaseLock(fsManager, responseFile, fso);
             }
             metrics.incrementFaultsSending();
+            closeFileSystem(responseFile);
             handleException("IO Error while creating response file : " + VFSUtils.maskURLPassword(responseFile.getName().getURI()), e);
         } catch (IOException e) {
             if (lockingEnabled) {
                 VFSUtils.releaseLock(fsManager, responseFile, fso);
             }
             metrics.incrementFaultsSending();
+            closeFileSystem(responseFile);
             handleException("IO Error while creating response file : " + VFSUtils.maskURLPassword(responseFile.getName().getURI()), e);
         }
     }
@@ -441,5 +441,26 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
         if (msgCtx.getAxisOperation() != null && msgCtx.getAxisOperation().getMessageExchangePattern() != null) {
             msgCtx.getAxisOperation().setMessageExchangePattern("http://www.w3.org/ns/wsdl/out-only");
         }
+    }
+
+    private void closeFileSystem(FileObject fileObject) {
+        try {
+            //Close the File system if it is not already closed
+            if (fileObject != null && !isFileSystemClosed() && fsManager != null && fileObject.getParent() != null  && fileObject.getParent().getFileSystem() != null) {
+                fsManager.closeFileSystem(fileObject.getParent().getFileSystem());
+                fileObject.close();
+                setFileSystemClosed(true);
+            }
+        } catch (FileSystemException warn) {
+            log.warn("Error on closing the file: " + fileObject.getName().getPath(), warn);
+        }
+    }
+
+    public boolean isFileSystemClosed() {
+        return isFileSystemClosed;
+    }
+
+    public void setFileSystemClosed(boolean fileSystemClosed) {
+        isFileSystemClosed = fileSystemClosed;
     }
 }
