@@ -23,6 +23,11 @@ package org.apache.synapse.endpoints.auth;
  */
 public class AuthException extends Exception {
 
+    public AuthException(String message, Throwable e) {
+
+        super(message, e);
+    }
+
     public AuthException(String message) {
 
         super(message);

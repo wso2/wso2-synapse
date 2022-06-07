@@ -90,7 +90,7 @@ public class PassThroughConstants {
     public static final String SERVICE_PREFIX = "SERVICE_PREFIX";
     public static final String NO_ENTITY_BODY = "NO_ENTITY_BODY";
 
-    protected static final String PASS_THROUGH_TRANSPORT_WORKER_POOL =
+    public static final String PASS_THROUGH_TRANSPORT_WORKER_POOL =
             "PASS_THROUGH_TRANSPORT_WORKER_POOL";
     protected static final String PASS_THROUGH_SOURCE_CONFIGURATION =
             "PASS_THROUGH_SOURCE_CONFIGURATION";
