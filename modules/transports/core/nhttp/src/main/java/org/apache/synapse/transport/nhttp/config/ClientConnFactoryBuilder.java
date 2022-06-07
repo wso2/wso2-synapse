@@ -549,4 +549,12 @@ public class ClientConnFactoryBuilder {
         }
         return null;
     }
+
+    public Map<String, SSLContext> getSslByHostMap() {
+        return sslByHostMap;
+    }
+
+    public SSLContextDetails getSsl() {
+        return ssl;
+    }
 }
