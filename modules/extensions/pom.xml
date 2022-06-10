@@ -296,8 +296,8 @@
   	        <artifactId>commons-vfs2</artifactId>
   	    </dependency>
         <dependency>
-            <groupId>rhino.wso2</groupId>
-            <artifactId>js</artifactId>
+            <groupId>org.wso2.orbit.org.mozilla</groupId>
+            <artifactId>rhino</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.axis2</groupId>
