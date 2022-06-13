@@ -21,6 +21,7 @@ package org.apache.synapse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTelemetryManagerHolder;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.mediators.eip.EIPUtils;
@@ -444,6 +445,7 @@ public class ServerManager {
 
             // mark as destroyed
             changeState(ServerState.UNDETERMINED);
+            OpenTelemetryManagerHolder.getOpenTelemetryManager().close();
         } else {
             // if the server cannot be destroyed just set the current state as the server state
             changeState(serverState);

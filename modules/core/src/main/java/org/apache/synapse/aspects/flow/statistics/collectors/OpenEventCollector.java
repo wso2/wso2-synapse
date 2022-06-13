@@ -28,8 +28,7 @@ import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.templates.AsynchronousExecutionEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.ParentReopenEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsOpenEvent;
-import org.apache.synapse.aspects.flow.statistics.opentracing.OpenTracingManagerHolder;
-import org.apache.synapse.aspects.flow.statistics.opentracing.stores.ArtifactHolderStore;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTelemetryManagerHolder;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
@@ -108,9 +107,9 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
             addEventAndIncrementCount(messageContext, openEvent);
 
-            if (isOpenTracingEnabled()) {
-            	OpenTracingManagerHolder.getOpenTracingManager().getHandler()
-		            .handleOpenEntryEvent(statisticDataUnit, messageContext);
+            if (isOpenTelemetryEnabled()) {
+				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
+						.handleOpenEntryEvent(statisticDataUnit, messageContext);
 			}
 
 			return statisticDataUnit.getCurrentIndex();
@@ -140,8 +139,8 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
 
-			if (isOpenTracingEnabled()) {
-				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
+			if (isOpenTelemetryEnabled()) {
+				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
 						.handleOpenChildEntryEvent(statisticDataUnit, messageContext);
 			}
 
@@ -174,8 +173,8 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
 
-			if (isOpenTracingEnabled()) {
-				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
+			if (isOpenTelemetryEnabled()) {
+				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
 						.handleOpenFlowContinuableEvent(statisticDataUnit, messageContext);
 			}
 
@@ -209,8 +208,8 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
 
-			if (isOpenTracingEnabled()) {
-				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
+			if (isOpenTelemetryEnabled()) {
+				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
 						.handleOpenFlowSplittingEvent(statisticDataUnit, messageContext);
 			}
 
@@ -243,8 +242,8 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
 
-			if (isOpenTracingEnabled()) {
-				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
+			if (isOpenTelemetryEnabled()) {
+				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
 						.handleOpenFlowAggregateEvent(statisticDataUnit, messageContext);
 			}
 
@@ -266,8 +265,8 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 			AsynchronousExecutionEvent asynchronousExecutionEvent = new AsynchronousExecutionEvent(dataUnit);
 
-			if (isOpenTracingEnabled()) {
-				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
+			if (isOpenTelemetryEnabled()) {
+				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
 						.handleOpenFlowAsynchronousEvent(dataUnit, messageContext);
 			}
 
@@ -313,8 +312,8 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
             ParentReopenEvent parentReopenEvent = new ParentReopenEvent(basicStatisticDataUnit);
 			addEvent(synCtx, parentReopenEvent);
 
-			if (isOpenTracingEnabled()) {
-				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
+			if (isOpenTelemetryEnabled()) {
+				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
 						.handleOpenContinuationEvents(basicStatisticDataUnit, synCtx);
 			}
 		}

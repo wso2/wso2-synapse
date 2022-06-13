@@ -27,8 +27,8 @@ import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.opentracing.OpenTracingManagerHolder;
-import org.apache.synapse.aspects.flow.statistics.opentracing.management.OpenTracingManager;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.OpenTelemetryManager;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTelemetryManagerHolder;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.MediatorFaultHandler;
@@ -66,10 +66,10 @@ public class ContinuationStackManager {
         if (synCtx.isContinuationEnabled() && !SequenceType.ANON.equals(seqType)) {
             //ignore Anonymous type sequences
             synCtx.pushContinuationState(new SeqContinuationState(seqType, seqName));
-            if (RuntimeStatisticCollector.isOpenTracingEnabled()) {
-                OpenTracingManager openTracingManager = OpenTracingManagerHolder.getOpenTracingManager();
-                if (openTracingManager != null) {
-                    openTracingManager.getHandler().handleStateStackInsertion(synCtx, seqName, seqType);
+            if (RuntimeStatisticCollector.isOpenTelemetryEnabled()) {
+                OpenTelemetryManager openTelemetryManager = OpenTelemetryManagerHolder.getOpenTelemetryManager();
+                if (openTelemetryManager != null) {
+                    openTelemetryManager.getHandler().handleStateStackInsertion(synCtx, seqName, seqType);
                 }
             }
         }
@@ -215,10 +215,10 @@ public class ContinuationStackManager {
         if (synCtx.isContinuationEnabled()) {
             synchronized (continuationStack){
                 continuationStack.clear();
-                if (RuntimeStatisticCollector.isOpenTracingEnabled()) {
-                    OpenTracingManager openTracingManager = OpenTracingManagerHolder.getOpenTracingManager();
-                    if (openTracingManager != null) {
-                        openTracingManager.getHandler().handleStateStackClearance(synCtx);
+                if (RuntimeStatisticCollector.isOpenTelemetryEnabled()) {
+                    OpenTelemetryManager openTelemetryManager = OpenTelemetryManagerHolder.getOpenTelemetryManager();
+                    if (openTelemetryManager != null) {
+                        openTelemetryManager.getHandler().handleStateStackClearance(synCtx);
                     }
                 }
             }
@@ -248,10 +248,10 @@ public class ContinuationStackManager {
         synchronized (continuationStack) {
             if (!continuationStack.isEmpty()) {
                 ContinuationState poppedContinuationState = continuationStack.pop();
-                if (RuntimeStatisticCollector.isOpenTracingEnabled()) {
-                    OpenTracingManager openTracingManager = OpenTracingManagerHolder.getOpenTracingManager();
-                    if (openTracingManager != null) {
-                        openTracingManager.getHandler()
+                if (RuntimeStatisticCollector.isOpenTelemetryEnabled()) {
+                    OpenTelemetryManager openTelemetryManager = OpenTelemetryManagerHolder.getOpenTelemetryManager();
+                    if (openTelemetryManager != null) {
+                        openTelemetryManager.getHandler()
                                 .handleStateStackRemoval(poppedContinuationState, synCtx);
                     }
                 }

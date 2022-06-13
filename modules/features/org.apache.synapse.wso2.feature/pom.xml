@@ -156,7 +156,16 @@
                                 <bundleDef>com.google.guava:guava:${google.guava.version}</bundleDef>
                                 <bundleDef>com.google.guava:failureaccess:${failureaccess.version}</bundleDef>
                                 <bundleDef>org.wso2.orbit.com.github.fge:json-schema-validator-all</bundleDef>
-                                <bundleDef>org.wso2.orbit.io.jaeger:jaeger-client:${jaeger-client.version}</bundleDef>
+                                <bundleDef>
+                                    org.wso2.orbit.io.opentelemetry:opentelemetry-all:${opentelemetry.all.version}
+                                </bundleDef>
+                                <bundleDef>org.wso2.orbit.com.squareup.okhttp:okhttp:${okhttp.wso2.version}</bundleDef>
+                                <bundleDef>org.wso2.orbit.com.squareup.okio:okio:${okio.wso2.version}</bundleDef>
+                                <bundleDef>io.zipkin.reporter2:zipkin-sender-okhttp3:${zipkin.sender.okhttp3.version}
+                                </bundleDef>
+                                <bundleDef>io.zipkin.reporter2:zipkin-reporter:${zipkin.sender.okhttp3.version}
+                                </bundleDef>
+                                <bundleDef>io.zipkin.zipkin2:zipkin:${zipkin.version}</bundleDef>
                                 <bundleDef>javax.annotation:javax.annotation-api</bundleDef>
                             </bundles>
                             <importBundles>

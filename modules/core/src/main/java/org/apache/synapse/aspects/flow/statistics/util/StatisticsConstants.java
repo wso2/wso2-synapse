@@ -28,11 +28,6 @@ public class StatisticsConstants {
 	 */
 	public final static String STATISTICS_ENABLE = "mediation.flow.statistics.enable";
 
-	/**
-	 * Enable OpenTracing.
-	 */
-	public static final String OPENTRACING_ENABLE = "opentracing.enable";
-
 	public static final String EI_ANALYTICS_ENABLE = "ei.analytics.enable";
 
 	/**
@@ -88,12 +83,12 @@ public class StatisticsConstants {
 	/**
 	 * Enable Zipkin client.
 	 */
-	public static final String ENABLE_ZIPKIN = "opentracing.zipkin.enable";
+	public static final String ENABLE_ZIPKIN = "opentelemetry.zipkin.enable";
 
 	/**
 	 * Agent URL for Zipkin backend.
 	 */
-	public static final String ZIPKIN_BACKEND_URL = "opentracing.zipkin.backend.url";
+	public static final String ZIPKIN_BACKEND_URL = "opentelemetry.zipkin.backend.url";
 
 	/**
 	 * Flow statistic queue size.
