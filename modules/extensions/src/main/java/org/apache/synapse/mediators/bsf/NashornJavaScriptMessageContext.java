@@ -19,7 +19,7 @@
 package org.apache.synapse.mediators.bsf;
 
 import com.sun.org.apache.xerces.internal.parsers.DOMParser;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import org.openjdk.nashorn.api.scripting.ScriptObjectMirror;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMException;

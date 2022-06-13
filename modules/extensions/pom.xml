@@ -112,6 +112,7 @@
                             !org.apache.synapse.protocol.*,                            
                             !javax.xml.namespace,
                             com.sun.phobos.script.*;resolution:=optional,
+                            org.openjdk.nashorn.*,
                             javax.xml.namespace; version=0.0.0,
                             org.apache.commons.io; version=0.0.0,
                             *;resolution:=optional
@@ -167,6 +168,10 @@
         <dependency>
             <groupId>org.apache.bsf.wso2</groupId>
             <artifactId>bsf-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.orbit.openjdk.nashorn</groupId>
+            <artifactId>openjdk-nashorn</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jruby</groupId>

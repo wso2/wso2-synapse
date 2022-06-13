@@ -530,6 +530,11 @@
              <artifactId>bsf-all</artifactId>
              <version>${bsf.version}</version>
          </dependency>
+          <dependency>
+              <groupId>org.wso2.orbit.openjdk.nashorn</groupId>
+              <artifactId>openjdk-nashorn</artifactId>
+              <version>${openjdk.nashorn.version}</version>
+          </dependency>
          <dependency>
              <groupId>xmlbeans</groupId>
              <artifactId>xbean</artifactId>
@@ -1512,6 +1517,7 @@
       <wso2eventing-api.version>2.1</wso2eventing-api.version>
       <xbean.version>2.2.0</xbean.version>
       <bsf.version>3.0.0.wso2v5</bsf.version>
+      <openjdk.nashorn.version>15.3.wso2v1</openjdk.nashorn.version>
       <groovy.version>1.1-rc-1</groovy.version>
       <servlet-api.version>2.3</servlet-api.version>
       <commons-lang.version>2.4</commons-lang.version>
