@@ -44,52 +44,7 @@ public class StatisticsConstants {
 	 * Enable statistics collecting for all artifacts
 	 */
 	public final static String COLLECT_ALL_STATISTICS = "mediation.flow.statistics.collect.all";
-
-	/**
-	 * Manager Host of Jaeger Sampler.
-	 */
-	public static final String JAEGER_SAMPLER_MANAGER_HOST = "jaeger.sampler.manager.host";
-
-	/**
-	 * Manager Port of Jaeger Sampler.
-	 */
-	public static final String JAEGER_SAMPLER_MANAGER_PORT = "jaeger.sampler.manager.port";
-
-	/**
-	 * Agent Host of Jaeger Sender.
-	 */
-	public static final String JAEGER_SENDER_AGENT_HOST = "jaeger.sender.agent.host";
-
-	/**
-	 * Agent Port of Jaeger Sender.
-	 */
-	public static final String JAEGER_SENDER_AGENT_PORT = "jaeger.sender.agent.port";
-
-	/**
-	 * Log spans in Jaeger Reporter.
-	 */
-	public static final String JAEGER_REPORTER_LOG_SPANS = "jaeger.reporter.log.spans";
-
-	/**
-	 * Max queue size of Jaeger Reporter.
-	 */
-	public static final String JAEGER_REPORTER_MAX_QUEUE_SIZE = "jaeger.reporter.max.queue.size";
-
-	/**
-	 * Flush interval of Jaeger Reporter.
-	 */
-	public static final String JAEGER_REPORTER_FLUSH_INTERVAL = "jaeger.reporter.flush.interval";
-
-	/**
-	 * Enable Zipkin client.
-	 */
-	public static final String ENABLE_ZIPKIN = "opentelemetry.zipkin.enable";
-
-	/**
-	 * Agent URL for Zipkin backend.
-	 */
-	public static final String ZIPKIN_BACKEND_URL = "opentelemetry.zipkin.backend.url";
-
+	
 	/**
 	 * Flow statistic queue size.
 	 */
