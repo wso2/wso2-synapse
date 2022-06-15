@@ -24,7 +24,7 @@ import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.manageme
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.event.OpenEventHandler;
 
 /**
- * Interface for the controller which handles OpenTracing compatible spans, with respect to various events received
+ * Interface for the controller which handles OpenTelemetry compatible spans, with respect to various events received
  * during Synapse message flow.
  */
 public interface OpenTelemetrySpanHandler

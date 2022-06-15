@@ -23,7 +23,7 @@ import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUni
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 
 /**
- * Contains utility methods related to OpenTracing.
+ * Contains utility methods related to OpenTelemetry.
  */
 public class TracingUtils {
 

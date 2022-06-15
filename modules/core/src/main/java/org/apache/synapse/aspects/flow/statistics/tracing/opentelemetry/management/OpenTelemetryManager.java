@@ -22,7 +22,7 @@ import io.opentelemetry.api.trace.Tracer;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.OpenTelemetrySpanHandler;
 
 /**
- * The interface for the manager, which coordinates OpenTracing.
+ * The interface for the manager, which coordinates OpenTelemetry.
  */
 public interface OpenTelemetryManager {
 
@@ -49,13 +49,13 @@ public interface OpenTelemetryManager {
     String getServiceName();
 
     /**
-     * Resolves the OpenTracing compatible span handler.
+     * Resolves the OpenTelemetry compatible span handler.
      */
     void resolveHandler();
 
     /**
-     * Returns the OpenTracing compatible span handler.
-     * @return An OpenTracing compatible span handler.
+     * Returns the OpenTelemetry compatible span handler.
+     * @return An OpenTelemetry compatible span handler.
      */
     OpenTelemetrySpanHandler getHandler();
 
