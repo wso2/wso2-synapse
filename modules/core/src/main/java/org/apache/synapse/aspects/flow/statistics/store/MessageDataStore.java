@@ -21,6 +21,8 @@ package org.apache.synapse.aspects.flow.statistics.store;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
+import org.apache.synapse.config.SynapseConfiguration;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -37,8 +39,15 @@ public class MessageDataStore {
      */
     private Queue<StatisticsReportingEventHolder> queue;
 
-    public MessageDataStore() {
+    private String queueEvictionPolicy;
+    private long maxStaticsReportingQueueSize;
+
+    public MessageDataStore(SynapseConfiguration synCfg) {
         queue = new ConcurrentLinkedQueue<>();
+        queueEvictionPolicy = synCfg.getProperty(StatisticsConstants.STATISTIC_REPORTING_QUEUE_EVICTION_POLICY,
+                                                 StatisticsConstants.QUEUE_EVICTION_POLICY_NEW_MESSAGES);
+        maxStaticsReportingQueueSize = synCfg.getProperty(StatisticsConstants.STATISTIC_REPORTING_QUEUE_SIZE,
+                                                          StatisticsConstants.MAX_STATISTIC_REPORTING_QUEUE_SIZE);
     }
 
     /**
@@ -47,6 +56,17 @@ public class MessageDataStore {
      * @param statisticsReportingEventHolder StatisticReportingLog to be stored in the queue
      */
     public void enqueue(StatisticsReportingEventHolder statisticsReportingEventHolder) {
+        if (queue.size() > maxStaticsReportingQueueSize) {
+            // This will does not add anymore
+            if (queueEvictionPolicy.equals(StatisticsConstants.QUEUE_EVICTION_POLICY_NEW_MESSAGES)) {
+                log.warn("Dropping new statistic messages since the queue is full");
+                return;
+            } else if (queueEvictionPolicy.equals(StatisticsConstants.QUEUE_EVICTION_POLICY_OLD_MESSAGES)) {
+                // This will dequeue old messages and enqueue new messages
+                log.warn("Dropping old statistic messages since the queue is full");
+                queue.poll();
+            }
+        }
         try {
             if (log.isDebugEnabled()) {
                 log.debug("Adding eventHolder: " + statisticsReportingEventHolder);

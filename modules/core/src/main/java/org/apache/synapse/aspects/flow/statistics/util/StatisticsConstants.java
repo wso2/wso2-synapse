@@ -208,4 +208,13 @@ public class StatisticsConstants {
 
     public static final String CONTINUE_STATISTICS_FLOW = "CONTINUE_STATISTICS_FLOW";
 
+	public static final long MAX_STATISTIC_REPORTING_QUEUE_SIZE = 10000;
+
+	public static final String STATISTIC_REPORTING_QUEUE_EVICTION_POLICY = "statistics.queue.eviction.policy";
+
+	public static final String STATISTIC_REPORTING_QUEUE_SIZE = "statistics.queue.eviction.size";
+
+	public static final String QUEUE_EVICTION_POLICY_OLD_MESSAGES = "old-messages-first";
+
+	public static final String QUEUE_EVICTION_POLICY_NEW_MESSAGES = "new-messages-first";
 }
