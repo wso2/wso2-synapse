@@ -43,6 +43,8 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.rest.RESTConstants;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -696,5 +698,31 @@ public class Axis2MessageContext implements MessageContext {
     @Override
     public void setMessageFlowTracingState(int messageFlowTracingState) {
         this.messageFlowTracingState = messageFlowTracingState;
+    }
+
+    /**
+     * Stores the value provided in the message context which will be published with analytics
+     * @param key key for the analytic
+     * @param value analytic value
+     */
+    public void setAnalyticsMetadata(String key, Object value) {
+        HashMap<String, Object> analyticsMap = getAnalyticsMetadata();
+        if (analyticsMap == null) {
+            analyticsMap = new HashMap<>();
+            setProperty(SynapseConstants.ANALYTICS_METADATA, analyticsMap);
+        }
+        analyticsMap.put(key, value);
+    }
+
+    public void removeAnalyticsMetadata(String key) {
+        HashMap<String, Object> analyticsMap = getAnalyticsMetadata();
+        if (analyticsMap != null) {
+            analyticsMap.remove(key);
+        }
+    }
+
+    public HashMap<String, Object> getAnalyticsMetadata() {
+        //noinspection unchecked
+        return (HashMap<String, Object>) getProperty(SynapseConstants.ANALYTICS_METADATA);
     }
 }

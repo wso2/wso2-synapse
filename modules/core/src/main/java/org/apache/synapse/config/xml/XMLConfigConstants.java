@@ -57,6 +57,8 @@ public class XMLConfigConstants {
     public static final String SCOPE_FILE = "file";
     /** The scope name for properties used for tracing */
     public static final String SCOPE_TRACE = "trace";
+    /** The scope name for analytics */
+    public static final String SCOPE_ANALYTICS = "analytics";
     public static final String KEY = "key";
     public static final String NAME = "name";
     public static final String LOCATION = "location";

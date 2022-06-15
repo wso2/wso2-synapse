@@ -18,6 +18,7 @@
 
 package org.apache.synapse.aspects.flow.statistics.data.raw;
 
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.endpoints.Endpoint;
@@ -163,6 +164,11 @@ public class StatisticsLog {
 	 */
 	private String statusDescription;
 
+	/**
+	 * MessageContext of the component.
+	 */
+	private MessageContext messageContext;
+
 	public StatisticsLog(StatisticDataUnit statisticDataUnit) {
 		this.parentIndex = statisticDataUnit.getParentIndex();
 		this.currentIndex = statisticDataUnit.getCurrentIndex();
@@ -209,24 +215,7 @@ public class StatisticsLog {
 	}
 
 	public String getComponentTypeToString() {
-		switch (componentType) {
-			case PROXYSERVICE:
-				return StatisticsConstants.FLOW_STATISTICS_PROXYSERVICE;
-			case ENDPOINT:
-				return StatisticsConstants.FLOW_STATISTICS_ENDPOINT;
-			case INBOUNDENDPOINT:
-				return StatisticsConstants.FLOW_STATISTICS_INBOUNDENDPOINT;
-			case SEQUENCE:
-				return StatisticsConstants.FLOW_STATISTICS_SEQUENCE;
-			case MEDIATOR:
-				return StatisticsConstants.FLOW_STATISTICS_MEDIATOR;
-			case API:
-				return StatisticsConstants.FLOW_STATISTICS_API;
-			case RESOURCE:
-				return StatisticsConstants.FLOW_STATISTICS_RESOURCE;
-			default:
-				return StatisticsConstants.FLOW_STATISTICS_ANY;
-		}
+		return StatisticsConstants.getComponentTypeToString(componentType);
 	}
 
 	public void setEndTime(long endTime) {
@@ -419,5 +408,13 @@ public class StatisticsLog {
 
 	public void setStatusDescription(String statusDescription) {
 		this.statusDescription = statusDescription;
+	}
+
+	public MessageContext getMessageContext() {
+		return messageContext;
+	}
+
+	public void setMessageContext(MessageContext messageContext) {
+		this.messageContext = messageContext;
 	}
 }
