@@ -42,6 +42,7 @@ import org.apache.synapse.api.dispatch.RESTDispatcher;
 import org.apache.synapse.api.version.DefaultStrategy;
 import org.apache.synapse.api.version.URLBasedVersionStrategy;
 import org.apache.synapse.api.version.VersionStrategy;
+import org.apache.synapse.analytics.AnalyticsPublisher;
 import org.apache.synapse.rest.Handler;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
@@ -338,6 +339,7 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
 
     public void process(MessageContext synCtx) {
 
+        synCtx.recordLatency();
         auditDebug("Processing message with ID: " + synCtx.getMessageID() + " through the " +
                     "API: " + name);
         synCtx.setProperty(RESTConstants.PROCESSED_API, this);
@@ -404,6 +406,7 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
             }
 
             if (!proceed) {
+                synCtx.getLatency();
                 return;
             }
         }
@@ -418,6 +421,8 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
             } else if (log.isDebugEnabled()) {
                 auditDebug("No resource information on the response: " + synCtx.getMessageID());
             }
+
+            synCtx.getLatency();
             return;
         }
 
@@ -475,6 +480,7 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
 
                     }
                     resource.process(synCtx);
+                    AnalyticsPublisher.publishApiAnalytics(synCtx);
                     return;
                 }
             }

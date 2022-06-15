@@ -243,6 +243,12 @@ public class PropertyMediator extends AbstractMediator {
                 if (resultValue != null ) {
                     System.setProperty(name, resultValue.toString());
                 }
+            } else if (XMLConfigConstants.SCOPE_ANALYTICS.equals(scope)
+                && synCtx instanceof Axis2MessageContext) {
+                Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+                if (resultValue != null ) {
+                    axis2smc.setAnalyticsMetadata(name, resultValue);
+                }
             }
 
         } else {
@@ -300,6 +306,10 @@ public class PropertyMediator extends AbstractMediator {
                         axis2smc.getAxis2MessageContext();
                 OperationContext axis2oc = axis2MessageCtx.getOperationContext();
                 axis2oc.removeProperty(name);
+            } else if (XMLConfigConstants.SCOPE_ANALYTICS.equals(scope)
+                    && synCtx instanceof Axis2MessageContext) {
+                Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+                axis2smc.removeAnalyticsMetadata(name);
             }
         }
         synLog.traceOrDebug("End : Property mediator");

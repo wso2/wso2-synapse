@@ -383,6 +383,12 @@ public class TestMessageContext implements MessageContext {
     public void setMessageFlowTracingState(int tracingState){
     }
 
+    @Override
+    public void recordLatency() {}
+
+    @Override
+    public long getLatency() { return -1; }
+
     public int getMessageFlowTracingState(){
         return SynapseConstants.TRACING_OFF;
     }

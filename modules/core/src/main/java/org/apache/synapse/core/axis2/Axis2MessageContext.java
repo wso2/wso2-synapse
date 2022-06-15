@@ -43,6 +43,8 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.rest.RESTConstants;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -76,6 +78,16 @@ public class Axis2MessageContext implements MessageContext {
      * Fault Handler stack which will be popped and called the handleFault in error states
      */
     private final Stack<FaultHandler> faultStack = new Stack<FaultHandler>();
+
+    /**
+     * Latency Stack is used to calculate latencies at different mediation stages.
+     */
+    private final Stack<Instant> latencyStack = new Stack<Instant>();
+
+    /**
+     * Maintains data which needs to be published with analytics AnalyticsPublisher.
+     */
+    private final Map<String, Object> analyticsMetadata = new HashMap<String, Object>();
 
     /**
      * ContinuationState stack which is used to store ContinuationStates of mediation flow
@@ -696,5 +708,46 @@ public class Axis2MessageContext implements MessageContext {
     @Override
     public void setMessageFlowTracingState(int messageFlowTracingState) {
         this.messageFlowTracingState = messageFlowTracingState;
+    }
+
+    @Override
+    public void recordLatency() {
+        latencyStack.push(Instant.now());
+    }
+
+    @Override
+    public long getLatency() {
+        if (latencyStack.isEmpty()) {
+            return -1;
+        }
+
+        return Duration.between(latencyStack.pop(), Instant.now()).toMillis();
+    }
+
+    /**
+     * Stores the value provided in the message context which will be published with analytics
+     * @param key key for the analytic
+     * @param value analytic value
+     */
+    public void setAnalyticsMetadata(String key, Object value) {
+        while (true) {  // Same implementation from org.apache.axis2.context
+            try {
+                this.analyticsMetadata.put(key, value);
+                break;
+            } catch (ConcurrentModificationException ignored) {}
+        }
+    }
+
+    public void removeAnalyticsMetadata(String key) {
+        while (true) {  // Same implementation from org.apache.axis2.context
+            try {
+                this.analyticsMetadata.remove(key);
+                break;
+            } catch (ConcurrentModificationException ignored) {}
+        }
+    }
+
+    public Map<String, Object> getAnalyticsMetadata() {
+        return this.analyticsMetadata;
     }
 }

@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.SynapsePropertiesLoader;
+import org.apache.synapse.analytics.AnalyticsPublisher;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.wso2.securevault.PasswordManager;
 import org.wso2.securevault.SecurityConstants;
@@ -111,6 +112,7 @@ public class ServerManager {
         doInit();
         initialized = true;
         RuntimeStatisticCollector.init();
+        AnalyticsPublisher.init(serverConfigurationInformation);
 
         return this.serverContextInformation.getServerState();
     }

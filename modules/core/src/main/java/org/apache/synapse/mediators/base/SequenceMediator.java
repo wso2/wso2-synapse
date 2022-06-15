@@ -32,6 +32,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.analytics.AnalyticsPublisher;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -93,7 +94,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
      * @return as per standard mediator result
      */
     public boolean mediate(MessageContext synCtx) {
-
+        synCtx.recordLatency();
         if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
                 return true;
@@ -193,6 +194,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                     reportCloseStatistics(synCtx, statisticReportingIndex);
                 }
+                AnalyticsPublisher.publishSequenceMediatorAnalytics(synCtx, this);
             }
 
         } else {
@@ -520,5 +522,12 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         if (sequenceType != SequenceType.ANON) {
             StatisticIdentityGenerator.reportingFlowContinuableEndEvent(sequenceId, ComponentType.SEQUENCE, holder);
         }
+    }
+
+    /**
+     * @return the SequenceType
+     */
+    public SequenceType getSequenceType() {
+        return sequenceType;
     }
 }

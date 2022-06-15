@@ -39,6 +39,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCol
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
+import org.apache.synapse.analytics.AnalyticsPublisher;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
@@ -318,6 +319,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     public void send(MessageContext synCtx) {
 
+        synCtx.recordLatency();
         logSetter();
 
         Integer statisticReportingIndex = null;
@@ -413,6 +415,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
             CloseEventCollector.closeEntryEvent(synCtx, getReportingName(), ComponentType.ENDPOINT,
                     statisticReportingIndex, false);
         }
+
+        AnalyticsPublisher.publishEndpointAnalytics(synCtx, definition);
     }
 
     /**

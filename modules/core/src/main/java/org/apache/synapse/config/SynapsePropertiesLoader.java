@@ -116,4 +116,25 @@ public class SynapsePropertiesLoader {
         }
         return Boolean.valueOf(val);
     }
+
+    /**
+     * Get the Integer value of the property from the synapse properties.
+     *
+     * @param name name of the config property
+     * @param def  default value to return if the property is not set
+     * @return the value of the property to be used
+     */
+    public static Integer getIntegerProperty(String name, int def) {
+        String val = getPropertyValue(name, String.valueOf(def));
+        if (val == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Parameter : " + name + " is not defined in the synapse.properties file.");
+            }
+            return def;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("synapse.properties parameter : " + name + " = " + val);
+        }
+        return Integer.valueOf(val);
+    }
 }
