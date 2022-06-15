@@ -103,7 +103,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     private SynapseDebugManager synapseDebugManager;
 
     /** The MessageDataStore object*/
-    private MessageDataStore messageDataStore = new MessageDataStore();
+    private MessageDataStore messageDataStore;
 
     private ServerContextInformation contextInformation;
 
@@ -151,6 +151,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     public static final String JSON_TYPE = "application/json";
 
     public Axis2SynapseEnvironment(SynapseConfiguration synCfg) {
+        messageDataStore = new MessageDataStore(synCfg);
 
         int coreThreads = SynapseThreadPool.SYNAPSE_CORE_THREADS;
         int maxThreads  = SynapseThreadPool.SYNAPSE_MAX_THREADS;
