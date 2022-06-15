@@ -23,7 +23,7 @@ public class TelemetryConstants {
     /**
      * Enable OpenTelemetry.
      */
-    public static final String OPENTRACING_ENABLE = "opentelemetry.enable";
+    public static final String OPENTELEMETRY_ENABLE = "opentelemetry.enable";
 
     /**
      * Get the required URL.

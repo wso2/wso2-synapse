@@ -44,7 +44,7 @@ public class StatisticsConstants {
 	 * Enable statistics collecting for all artifacts
 	 */
 	public final static String COLLECT_ALL_STATISTICS = "mediation.flow.statistics.collect.all";
-	
+
 	/**
 	 * Flow statistic queue size.
 	 */

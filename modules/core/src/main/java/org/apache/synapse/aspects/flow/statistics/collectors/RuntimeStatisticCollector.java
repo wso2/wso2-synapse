@@ -73,7 +73,7 @@ public abstract class RuntimeStatisticCollector {
         isMediationFlowStatisticsEnabled =
             SynapsePropertiesLoader.getBooleanProperty(StatisticsConstants.STATISTICS_ENABLE, false);
         isOpenTelemetryEnabled =
-            SynapsePropertiesLoader.getBooleanProperty(TelemetryConstants.OPENTRACING_ENABLE, false);
+            SynapsePropertiesLoader.getBooleanProperty(TelemetryConstants.OPENTELEMETRY_ENABLE, false);
         isStatisticsEnabled = isMediationFlowStatisticsEnabled || isOpenTelemetryEnabled;
         if (isStatisticsEnabled) {
             if (log.isDebugEnabled()) {
