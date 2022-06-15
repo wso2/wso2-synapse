@@ -18,6 +18,8 @@
 
 package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryConstants;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.OpenTelemetryManager;
 import org.apache.synapse.config.SynapsePropertiesLoader;
@@ -26,6 +28,8 @@ import org.apache.synapse.config.SynapsePropertiesLoader;
  * Holds the OpenTelemetry Manager, and configurations related to it.
  */
 public class OpenTelemetryManagerHolder {
+
+    private static Log logger = LogFactory.getLog(OpenTelemetryManagerHolder.class);
     private static boolean isCollectingPayloads;
     private static boolean isCollectingProperties;
     private static OpenTelemetryManager openTelemetryManager;
@@ -46,7 +50,7 @@ public class OpenTelemetryManagerHolder {
             openTelemetryManager = (OpenTelemetryManager) Class.forName(classpath).newInstance();
             openTelemetryManager.init();
         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException exception) {
-            System.out.println(exception);
+            logger.debug(exception);
         }
     }
 
