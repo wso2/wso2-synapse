@@ -21,6 +21,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpRequest;
 import org.apache.http.nio.NHttpConnection;
 import org.apache.synapse.commons.logger.ContextAwareLogger;
+import org.apache.synapse.transport.passthru.config.PassThroughCorrelationConfigDataHolder;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.util.ControlledByteBuffer;
 
@@ -156,7 +157,7 @@ public class SourceContext {
         conn.getContext().setAttribute(CONNECTION_INFORMATION, sourceContext);
         sourceContext.setState(state);
 
-        if (sourceContext.getSourceConfiguration().isCorrelationLoggingEnabled()) {
+        if (PassThroughCorrelationConfigDataHolder.isEnable()) {
             sourceContext.updateLastStateUpdatedTime();
         }
     }
@@ -168,7 +169,7 @@ public class SourceContext {
             if(sourceContext.getState() == state) {
                 return;
             }
-            if (sourceContext.getSourceConfiguration().isCorrelationLoggingEnabled()) {
+            if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 long lastStateUpdateTime = sourceContext.getLastStateUpdatedTime();
                 String url = "", method = "";
                 if (sourceContext.getRequest() != null) {
