@@ -50,17 +50,20 @@ public class JaegerTelemetryManager implements OpenTelemetryManager {
     public void init() {
 
         String endPointURL = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_URL, null);
+        String endPointHost = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_HOST,
+                TelemetryConstants.DEFAULT_JAEGER_HOST);
+        String endPointPort = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_PORT,
+                TelemetryConstants.DEFAULT_JAEGER_PORT);
         JaegerGrpcSpanExporter jaegerExporter;
         if (endPointURL == null) {
-            String jaegerExporterEndpoint = String.format("http://%s:%s", SynapsePropertiesLoader.
-                            getPropertyValue(TelemetryConstants.OPENTELEMETRY_HOST,
-                                    TelemetryConstants.DEFAULT_JAEGER_HOST),
-                    SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_PORT,
-                            TelemetryConstants.DEFAULT_JAEGER_PORT));
-            jaegerExporter =
-                    JaegerGrpcSpanExporter.builder().setEndpoint(jaegerExporterEndpoint).setTimeout(30,
-                                    TimeUnit.SECONDS).build();
+            String jaegerExporterEndpoint = String.format("http://%s:%s", endPointHost, endPointPort);
+            jaegerExporter = JaegerGrpcSpanExporter.builder().setEndpoint(jaegerExporterEndpoint).setTimeout(30,
+                    TimeUnit.SECONDS).build();
         } else {
+            if (endPointHost != null && endPointPort != null){
+                logger.info("Disregarding " + endPointHost + " and " + endPointPort + ", and using the provided " +
+                        SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_CLASS, null));
+            }
             jaegerExporter =
                     JaegerGrpcSpanExporter.builder().setEndpoint(endPointURL).setTimeout(30, TimeUnit.SECONDS)
                             .build();

@@ -48,17 +48,20 @@ public class ZipkinTelemetryManager implements OpenTelemetryManager {
     public void init() {
 
         String endPointURL = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_URL, null);
+        String endPointHost = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_HOST,
+                TelemetryConstants.DEFAULT_ZIPKIN_HOST);
+        String endPointPort = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_PORT,
+                TelemetryConstants.DEFAULT_ZIPKIN_PORT);
         ZipkinSpanExporter zipkinExporter;
         if (endPointURL == null) {
-            String zipkinExporterEndpoint = String.format("http://%s:%s", SynapsePropertiesLoader.
-                            getPropertyValue(TelemetryConstants.OPENTELEMETRY_HOST,
-                                    TelemetryConstants.DEFAULT_ZIPKIN_HOST),
-                    SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_PORT,
-                            TelemetryConstants.DEFAULT_ZIPKIN_PORT));
+            String zipkinExporterEndpoint = String.format("http://%s:%s", endPointHost, endPointPort);
             zipkinExporter = ZipkinSpanExporter.builder()
-                    .setEndpoint(zipkinExporterEndpoint + TelemetryConstants.ZIPKIN_API_CONTEXT)
-                    .build();
+                    .setEndpoint(zipkinExporterEndpoint + TelemetryConstants.ZIPKIN_API_CONTEXT).build();
         } else {
+            if (endPointHost != null && endPointPort != null){
+                logger.info("Disregarding " + endPointHost + " and " + endPointPort + ", and using the provided " +
+                        SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_CLASS, null));
+            }
             zipkinExporter = ZipkinSpanExporter.builder().setEndpoint(endPointURL).build();
         }
 
