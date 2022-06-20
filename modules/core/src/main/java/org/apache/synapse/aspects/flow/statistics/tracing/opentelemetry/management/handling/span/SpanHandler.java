@@ -110,7 +110,7 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
                 new TextMapGetter<Map<String, String>>() {
                     public String get(Map<String, String> tracerSpecificCarrier, String key) {
 
-                        if (tracerSpecificCarrier != null && tracerSpecificCarrier.containsKey(key)) {
+                        if (tracerSpecificCarrier != null) {
                             return tracerSpecificCarrier.get(key);
                         }
                         return null;
@@ -196,6 +196,7 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
     private void startSpan(StatisticDataUnit statisticDataUnit, MessageContext synCtx, SpanStore spanStore) {
         SpanWrapper parentSpanWrapper = ParentResolver.resolveParent(statisticDataUnit, spanStore, synCtx);
         Span parentSpan = null;
+        Context context = null;
         if (parentSpanWrapper != null) {
             parentSpan = parentSpanWrapper.getSpan();
         }
@@ -209,12 +210,11 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         // We only need to extract span context from headers when there are trp headers available
         if (isOuterLevelSpan(statisticDataUnit, spanStore) && headersMap != null) {
             // Extract span context from headers
-            Context context = extract(headersMap);
-            span = tracer.spanBuilder(statisticDataUnit.getComponentName()).setParent(context).startSpan();
+            context = extract(headersMap);
         } else {
-            span = tracer.spanBuilder(statisticDataUnit.getComponentName()).setParent(Context.current()
-                    .with(parentSpan)).startSpan();
+            context = Context.current().with(parentSpan);
         }
+        span = tracer.spanBuilder(statisticDataUnit.getComponentName()).setParent(context).startSpan();
 
         // Set tracing headers
         inject(span, tracerSpecificCarrier);
