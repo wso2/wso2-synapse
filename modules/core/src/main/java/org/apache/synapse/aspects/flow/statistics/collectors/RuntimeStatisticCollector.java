@@ -167,9 +167,9 @@ public abstract class RuntimeStatisticCollector {
     }
 
     /**
-     * Returns whether Tracing has been enabled.
+     * Returns whether OpenTelemetry has been enabled.
      *
-     * @return true if open tracing has been enabled.
+     * @return true if open telemetry has been enabled.
      */
     public static boolean isOpenTelemetryEnabled() {
         return isOpenTelemetryEnabled;
