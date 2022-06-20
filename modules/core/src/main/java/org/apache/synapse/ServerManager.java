@@ -445,7 +445,9 @@ public class ServerManager {
 
             // mark as destroyed
             changeState(ServerState.UNDETERMINED);
-            OpenTelemetryManagerHolder.getOpenTelemetryManager().close();
+            if(OpenTelemetryManagerHolder.getOpenTelemetryManager() != null) {
+                OpenTelemetryManagerHolder.getOpenTelemetryManager().close();
+            }
         } else {
             // if the server cannot be destroyed just set the current state as the server state
             changeState(serverState);
