@@ -80,7 +80,7 @@ public abstract class RuntimeStatisticCollector {
                 if (isMediationFlowStatisticsEnabled) {
                     log.debug("Mediation statistics collection is enabled.");
                 } else if (isOpenTelemetryEnabled) {
-                    log.debug("Tracing is enabled.");
+                    log.debug("OpenTelemetry based tracing is enabled.");
                 }
             }
 
