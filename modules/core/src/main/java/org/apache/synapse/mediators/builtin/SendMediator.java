@@ -183,9 +183,13 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
             if (endpoint instanceof IndirectEndpoint && !StringUtils.isEmpty(((IndirectEndpoint) endpoint).getKey()) &&
                     isDynamicEndpoint(((IndirectEndpoint) endpoint).getKey())) {
                 Endpoint realEndpoint = ((IndirectEndpoint) endpoint).getRealEndpoint();
-                realEndpoint.setComponentStatisticsId(holder);
-                ((AbstractEndpoint) realEndpoint).getDefinition().getAspectConfiguration()
-                        .setHashCode(holder.getHashCodeAsString());
+                if (realEndpoint != null) {
+                    realEndpoint.setComponentStatisticsId(holder);
+                    ((AbstractEndpoint) realEndpoint).getDefinition().getAspectConfiguration()
+                            .setHashCode(holder.getHashCodeAsString());
+                } else {
+                    log.warn("Real endpoint of " + ((IndirectEndpoint) endpoint).getKey() +" has not been initialized. Statistics Id could not be set.");
+                }
             } else {
                 endpoint.setComponentStatisticsId(holder);
             }
