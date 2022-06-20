@@ -50,14 +50,14 @@ public class ZipkinTelemetryManager implements OpenTelemetryManager {
     @Override
     public void init() {
 
-        String endPointURL = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.TRACE_TYPE_URL, null);
+        String endPointURL = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_URL, null);
         ZipkinSpanExporter zipkinExporter;
         if (endPointURL == null){
             zipkinExporter = ZipkinSpanExporter.builder()
                     .setEndpoint("http://" + SynapsePropertiesLoader
-                            .getPropertyValue(TelemetryConstants.TRACE_TYPE_HOST, TelemetryConstants.DEFAULT_ZIPKIN_HOST)
+                            .getPropertyValue(TelemetryConstants.OPENTELEMETRY_HOST, TelemetryConstants.DEFAULT_ZIPKIN_HOST)
                             + ":" + Integer.parseInt(SynapsePropertiesLoader
-                            .getPropertyValue(TelemetryConstants.TRACE_TYPE_PORT,
+                            .getPropertyValue(TelemetryConstants.OPENTELEMETRY_PORT,
                                     TelemetryConstants.DEFAULT_ZIPKIN_PORT)) + TelemetryConstants.ZIPKIN_API_CONTEXT)
                     .build();
         } else {

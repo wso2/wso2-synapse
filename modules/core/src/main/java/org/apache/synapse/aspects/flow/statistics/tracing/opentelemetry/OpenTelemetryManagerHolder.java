@@ -44,8 +44,8 @@ public class OpenTelemetryManagerHolder {
      */
     public static void loadTracerConfigurations() {
 
-        String classpath = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.TRACE_TYPE_CLASS,
-                TelemetryConstants.DEFAULT_TRACE_CLASS);
+        String classpath = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_CLASS,
+                TelemetryConstants.DEFAULT_OPENTELEMETRY_CLASS);
         try {
             openTelemetryManager = (OpenTelemetryManager) Class.forName(classpath).newInstance();
             openTelemetryManager.init();

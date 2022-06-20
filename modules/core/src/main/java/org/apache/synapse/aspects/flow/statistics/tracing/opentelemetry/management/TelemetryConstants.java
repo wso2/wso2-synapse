@@ -28,23 +28,23 @@ public class TelemetryConstants {
     /**
      * Get the required OpenTelemetry endpoint URL.
      */
-    public static final String TRACE_TYPE_URL = "opentelemetry.url";
+    public static final String OPENTELEMETRY_URL = "opentelemetry.url";
 
     /**
      * Fully qualified class name of the OpenTelemetry manager.
      */
-    public static final String TRACE_TYPE_CLASS = "opentelemetry.class";
+    public static final String OPENTELEMETRY_CLASS = "opentelemetry.class";
 
     /**
      * Get the required OpenTelemetry host.
      */
-    public static final String TRACE_TYPE_HOST = "opentelemetry.host";
+    public static final String OPENTELEMETRY_HOST = "opentelemetry.host";
 
     /**
      * OpenTelemetry port.
      */
-    public static final String TRACE_TYPE_PORT = "opentelemetry.port";
-    public static final String DEFAULT_TRACE_CLASS = "org.apache.synapse.aspects.flow.statistics.tracing" +
+    public static final String OPENTELEMETRY_PORT = "opentelemetry.port";
+    public static final String DEFAULT_OPENTELEMETRY_CLASS = "org.apache.synapse.aspects.flow.statistics.tracing" +
             ".opentelemetry.management.JaegerTelemetryManager";
     public static final String USER_DEFINED_NAME = System.getenv("SERVICE_NAME");
     public static final String SERVICE_NAME =

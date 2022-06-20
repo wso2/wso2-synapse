@@ -52,15 +52,15 @@ public class JaegerTelemetryManager implements OpenTelemetryManager {
     @Override
     public void init() {
 
-        String endPointURL = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.TRACE_TYPE_URL, null);
+        String endPointURL = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_URL, null);
         JaegerGrpcSpanExporter jaegerExporter;
         if (endPointURL == null) {
             jaegerExporter =
                     JaegerGrpcSpanExporter.builder().setEndpoint("http://" + SynapsePropertiesLoader
-                                    .getPropertyValue(TelemetryConstants.TRACE_TYPE_HOST,
+                                    .getPropertyValue(TelemetryConstants.OPENTELEMETRY_HOST,
                                             TelemetryConstants.DEFAULT_JAEGER_HOST)
                                     + ":" + Integer.parseInt(SynapsePropertiesLoader
-                                    .getPropertyValue(TelemetryConstants.TRACE_TYPE_PORT,
+                                    .getPropertyValue(TelemetryConstants.OPENTELEMETRY_PORT,
                                             TelemetryConstants.DEFAULT_JAEGER_PORT))).setTimeout(30, TimeUnit.SECONDS)
                             .build();
         } else {
