@@ -50,7 +50,7 @@ public class OpenTelemetryManagerHolder {
             openTelemetryManager = (OpenTelemetryManager) Class.forName(classpath).newInstance();
             openTelemetryManager.init();
         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException exception) {
-            logger.debug(exception);
+            logger.error("Failed to initialize OpenTelemetryManager for class name: " + classpath, exception);
         }
     }
 
