@@ -59,8 +59,9 @@ public class ZipkinTelemetryManager implements OpenTelemetryManager {
                     .setEndpoint(zipkinExporterEndpoint + TelemetryConstants.ZIPKIN_API_CONTEXT).build();
         } else {
             if (endPointHost != null && endPointPort != null){
-                logger.info("Disregarding " + endPointHost + " and " + endPointPort + ", and using the provided " +
-                        SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_CLASS, null));
+                logger.info("Disregarding " + TelemetryConstants.OPENTELEMETRY_HOST + " and " +
+                        TelemetryConstants.OPENTELEMETRY_PORT + ", and using the provided " +
+                        TelemetryConstants.OPENTELEMETRY_CLASS);
             }
             zipkinExporter = ZipkinSpanExporter.builder().setEndpoint(endPointURL).build();
         }

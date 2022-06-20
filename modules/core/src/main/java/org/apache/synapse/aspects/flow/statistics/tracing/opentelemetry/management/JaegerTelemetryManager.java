@@ -61,8 +61,9 @@ public class JaegerTelemetryManager implements OpenTelemetryManager {
                     TimeUnit.SECONDS).build();
         } else {
             if (endPointHost != null && endPointPort != null){
-                logger.info("Disregarding " + endPointHost + " and " + endPointPort + ", and using the provided " +
-                        SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_CLASS, null));
+                logger.info("Disregarding " + TelemetryConstants.OPENTELEMETRY_HOST + " and " +
+                        TelemetryConstants.OPENTELEMETRY_PORT + ", and using the provided " +
+                        TelemetryConstants.OPENTELEMETRY_CLASS);
             }
             jaegerExporter =
                     JaegerGrpcSpanExporter.builder().setEndpoint(endPointURL).setTimeout(30, TimeUnit.SECONDS)
