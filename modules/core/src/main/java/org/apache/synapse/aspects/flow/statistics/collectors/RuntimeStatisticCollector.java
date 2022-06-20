@@ -113,7 +113,7 @@ public abstract class RuntimeStatisticCollector {
 
             if (isOpenTelemetryEnabled) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Tracing is enabled");
+                    log.debug("OpenTelemetry based tracing is enabled");
                 }
                 OpenTelemetryManagerHolder.loadTracerConfigurations();
                 OpenTelemetryManagerHolder.setCollectingFlags(isCollectingPayloads, isCollectingProperties);
