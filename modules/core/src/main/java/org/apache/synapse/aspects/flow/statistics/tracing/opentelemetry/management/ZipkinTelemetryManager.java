@@ -31,11 +31,8 @@ import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.OpenTelemetryManager;
-import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryConstants;
-import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryTracer;
-import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.SpanHandler;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.OpenTelemetrySpanHandler;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.SpanHandler;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.scoping.TracingScopeManager;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 
@@ -52,13 +49,14 @@ public class ZipkinTelemetryManager implements OpenTelemetryManager {
 
         String endPointURL = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_URL, null);
         ZipkinSpanExporter zipkinExporter;
-        if (endPointURL == null){
+        if (endPointURL == null) {
+            String zipkinExporterEndpoint = String.format("http://%s:%s", SynapsePropertiesLoader.
+                            getPropertyValue(TelemetryConstants.OPENTELEMETRY_HOST,
+                                    TelemetryConstants.DEFAULT_ZIPKIN_HOST),
+                    SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_PORT,
+                            TelemetryConstants.DEFAULT_ZIPKIN_PORT));
             zipkinExporter = ZipkinSpanExporter.builder()
-                    .setEndpoint("http://" + SynapsePropertiesLoader
-                            .getPropertyValue(TelemetryConstants.OPENTELEMETRY_HOST, TelemetryConstants.DEFAULT_ZIPKIN_HOST)
-                            + ":" + Integer.parseInt(SynapsePropertiesLoader
-                            .getPropertyValue(TelemetryConstants.OPENTELEMETRY_PORT,
-                                    TelemetryConstants.DEFAULT_ZIPKIN_PORT)) + TelemetryConstants.ZIPKIN_API_CONTEXT)
+                    .setEndpoint(zipkinExporterEndpoint + TelemetryConstants.ZIPKIN_API_CONTEXT)
                     .build();
         } else {
             zipkinExporter = ZipkinSpanExporter.builder().setEndpoint(endPointURL).build();
@@ -67,7 +65,7 @@ public class ZipkinTelemetryManager implements OpenTelemetryManager {
         if (logger.isDebugEnabled()) {
             logger.debug("Zipkin exporter: " + zipkinExporter + " is configured");
         }
-        
+
         Resource serviceNameResource = Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME,
                 TelemetryConstants.SERVICE_NAME));
 
@@ -96,6 +94,7 @@ public class ZipkinTelemetryManager implements OpenTelemetryManager {
 
     @Override
     public void close() {
+
         if (sdkTracerProvider != null) {
             sdkTracerProvider.close();
         }

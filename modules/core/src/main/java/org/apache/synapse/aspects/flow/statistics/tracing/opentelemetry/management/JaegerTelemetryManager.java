@@ -31,12 +31,9 @@ import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.OpenTelemetryManager;
-import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryConstants;
-import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryTracer;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.OpenTelemetrySpanHandler;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.SpanHandler;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.scoping.TracingScopeManager;
-import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.OpenTelemetrySpanHandler;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 
 import java.util.concurrent.TimeUnit;
@@ -55,14 +52,14 @@ public class JaegerTelemetryManager implements OpenTelemetryManager {
         String endPointURL = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_URL, null);
         JaegerGrpcSpanExporter jaegerExporter;
         if (endPointURL == null) {
+            String jaegerExporterEndpoint = String.format("http://%s:%s", SynapsePropertiesLoader.
+                            getPropertyValue(TelemetryConstants.OPENTELEMETRY_HOST,
+                                    TelemetryConstants.DEFAULT_JAEGER_HOST),
+                    SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_PORT,
+                            TelemetryConstants.DEFAULT_JAEGER_PORT));
             jaegerExporter =
-                    JaegerGrpcSpanExporter.builder().setEndpoint("http://" + SynapsePropertiesLoader
-                                    .getPropertyValue(TelemetryConstants.OPENTELEMETRY_HOST,
-                                            TelemetryConstants.DEFAULT_JAEGER_HOST)
-                                    + ":" + Integer.parseInt(SynapsePropertiesLoader
-                                    .getPropertyValue(TelemetryConstants.OPENTELEMETRY_PORT,
-                                            TelemetryConstants.DEFAULT_JAEGER_PORT))).setTimeout(30, TimeUnit.SECONDS)
-                            .build();
+                    JaegerGrpcSpanExporter.builder().setEndpoint(jaegerExporterEndpoint).setTimeout(30,
+                                    TimeUnit.SECONDS).build();
         } else {
             jaegerExporter =
                     JaegerGrpcSpanExporter.builder().setEndpoint(endPointURL).setTimeout(30, TimeUnit.SECONDS)
