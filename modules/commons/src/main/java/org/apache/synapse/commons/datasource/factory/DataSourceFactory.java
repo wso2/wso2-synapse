@@ -18,9 +18,9 @@
  */
 package org.apache.synapse.commons.datasource.factory;
 
-import org.apache.commons.dbcp2.BasicDataSource;
-import org.apache.commons.dbcp2.cpdsadapter.DriverAdapterCPDS;
-import org.apache.commons.dbcp2.datasources.PerUserPoolDataSource;
+import org.apache.tomcat.dbcp.dbcp2.BasicDataSource;
+import org.apache.tomcat.dbcp.dbcp2.cpdsadapter.DriverAdapterCPDS;
+import org.apache.tomcat.dbcp.dbcp2.datasources.PerUserPoolDataSource;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.SynapseCommonsException;
