@@ -26,22 +26,22 @@ public class TelemetryConstants {
     public static final String OPENTELEMETRY_ENABLE = "opentelemetry.enable";
 
     /**
-     * Get the required URL.
+     * Get the required OpenTelemetry endpoint URL.
      */
     public static final String TRACE_TYPE_URL = "opentelemetry.url";
 
     /**
-     * Get the required classpath.
+     * Fully qualified class name of the OpenTelemetry manager.
      */
     public static final String TRACE_TYPE_CLASS = "opentelemetry.class";
 
     /**
-     * Get the required host.
+     * Get the required OpenTelemetry host.
      */
     public static final String TRACE_TYPE_HOST = "opentelemetry.host";
 
     /**
-     * Get the required port.
+     * OpenTelemetry port.
      */
     public static final String TRACE_TYPE_PORT = "opentelemetry.port";
     public static final String DEFAULT_TRACE_CLASS = "org.apache.synapse.aspects.flow.statistics.tracing" +
