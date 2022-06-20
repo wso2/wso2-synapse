@@ -56,4 +56,19 @@ public class TelemetryConstants {
     public static final String DEFAULT_ZIPKIN_PORT = "9411";
     public static final String ZIPKIN_API_CONTEXT = "/api/v2/spans";
 
+    //span attributes
+    public static final String BEFORE_PAYLOAD_ATTRIBUTE_KEY = "beforePayload";
+    public static final String AFTER_PAYLOAD_ATTRIBUTE_KEY = "afterPayload";
+    public static final String BEFORE_CONTEXT_PROPERTY_MAP_ATTRIBUTE_KEY = "beforeContextPropertyMap";
+    public static final String AFTER_CONTEXT_PROPERTY_MAP_ATTRIBUTE_KEY = "afterContextPropertyMap";
+    public static final String PROPERTY_MEDIATOR_VALUE_ATTRIBUTE_KEY = "propertyMediatorValue";
+    public static final String COMPONENT_NAME_ATTRIBUTE_KEY = "componentName";
+    public static final String COMPONENT_TYPE_ATTRIBUTE_KEY = "componentType";
+    public static final String COMPONENT_ID_ATTRIBUTE_KEY = "componentId";
+    public static final String THREAD_ID_ATTRIBUTE_KEY = "threadId";
+    public static final String HASHCODE_ATTRIBUTE_KEY = "hashcode";
+    public static final String TRANSPORT_HEADERS_ATTRIBUTE_KEY = "Transport Headers";
+    public static final String STATUS_CODE_ATTRIBUTE_KEY = "Status code";
+    public static final String STATUS_DESCRIPTION_ATTRIBUTE_KEY = "Status description";
+    public static final String ENDPOINT_ATTRIBUTE_KEY = "Endpoint";
 }

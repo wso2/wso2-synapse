@@ -22,6 +22,7 @@ import io.opentelemetry.api.trace.Span;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTelemetryManagerHolder;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryConstants;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.models.SpanWrapper;
 
 /**
@@ -45,64 +46,72 @@ public class SpanTagger {
         if (OpenTelemetryManagerHolder.isCollectingPayloads() || OpenTelemetryManagerHolder.isCollectingProperties()) {
             if (OpenTelemetryManagerHolder.isCollectingPayloads()) {
                 if(openStatisticsLog.getBeforePayload() != null) {
-                    span.setAttribute("beforePayload", openStatisticsLog.getBeforePayload());
+                    span.setAttribute(TelemetryConstants.BEFORE_PAYLOAD_ATTRIBUTE_KEY,
+                            openStatisticsLog.getBeforePayload());
                 }
                 StatisticDataUnit statisticDataUnit = spanWrapper.getCloseEventStatisticDataUnit();
                 if (statisticDataUnit != null) {
                     if (statisticDataUnit.getPayload() != null) {
-                        span.setAttribute("afterPayload", statisticDataUnit.getPayload());
+                        span.setAttribute(TelemetryConstants.AFTER_PAYLOAD_ATTRIBUTE_KEY,
+                                statisticDataUnit.getPayload());
                     }
                 } else if (openStatisticsLog.getBeforePayload() !=null){
                     //This means a close event hasn't been triggered so payload is equal to before payload
-                    span.setAttribute("afterPayload", openStatisticsLog.getBeforePayload());
+                    span.setAttribute(TelemetryConstants.AFTER_PAYLOAD_ATTRIBUTE_KEY,
+                            openStatisticsLog.getBeforePayload());
                 }
             }
 
             if (OpenTelemetryManagerHolder.isCollectingProperties()) {
                 if (spanWrapper.getStatisticDataUnit().getContextPropertyMap() != null) {
-                    span.setAttribute("beforeContextPropertyMap",
+                    span.setAttribute(TelemetryConstants.BEFORE_CONTEXT_PROPERTY_MAP_ATTRIBUTE_KEY,
                             spanWrapper.getStatisticDataUnit().getContextPropertyMap().toString());
                 }
                 if (spanWrapper.getCloseEventStatisticDataUnit() != null) {
                     if (spanWrapper.getCloseEventStatisticDataUnit().getContextPropertyMap() != null) {
-                        span.setAttribute("afterContextPropertyMap",
+                        span.setAttribute(TelemetryConstants.AFTER_CONTEXT_PROPERTY_MAP_ATTRIBUTE_KEY,
                                 spanWrapper.getCloseEventStatisticDataUnit().getContextPropertyMap().toString());
                     }
                 } else if (openStatisticsLog.getContextPropertyMap() != null) {
-                    span.setAttribute("afterContextPropertyMap", openStatisticsLog.getContextPropertyMap().toString());
+                    span.setAttribute(TelemetryConstants.AFTER_CONTEXT_PROPERTY_MAP_ATTRIBUTE_KEY,
+                            openStatisticsLog.getContextPropertyMap().toString());
                 }
                 if (spanWrapper.getCloseEventStatisticDataUnit() != null &&
                         spanWrapper.getCloseEventStatisticDataUnit().getPropertyValue() != null) {
-                    span.setAttribute("propertyMediatorValue",
+                    span.setAttribute(TelemetryConstants.PROPERTY_MEDIATOR_VALUE_ATTRIBUTE_KEY,
                             spanWrapper.getCloseEventStatisticDataUnit().getPropertyValue());
                 }
             }
         }
         if (openStatisticsLog.getComponentName() != null) {
-            span.setAttribute("componentName", openStatisticsLog.getComponentName());
+            span.setAttribute(TelemetryConstants.COMPONENT_NAME_ATTRIBUTE_KEY, openStatisticsLog.getComponentName());
         }
         if(openStatisticsLog.getComponentTypeToString() != null){
-            span.setAttribute("componentType", openStatisticsLog.getComponentTypeToString());
+            span.setAttribute(TelemetryConstants.COMPONENT_TYPE_ATTRIBUTE_KEY,
+                    openStatisticsLog.getComponentTypeToString());
         }
-        span.setAttribute("threadId", Thread.currentThread().getId());
+        span.setAttribute(TelemetryConstants.THREAD_ID_ATTRIBUTE_KEY, Thread.currentThread().getId());
         if(openStatisticsLog.getComponentId() != null){
-            span.setAttribute("componentId", openStatisticsLog.getComponentId());
+            span.setAttribute(TelemetryConstants.COMPONENT_ID_ATTRIBUTE_KEY, openStatisticsLog.getComponentId());
         }
         if(openStatisticsLog.getHashCode() != null){
-            span.setAttribute("hashcode", openStatisticsLog.getHashCode());
+            span.setAttribute(TelemetryConstants.HASHCODE_ATTRIBUTE_KEY, openStatisticsLog.getHashCode());
         }
         if (openStatisticsLog.getTransportHeaderMap() != null) {
-            span.setAttribute("Transport Headers", openStatisticsLog.getTransportHeaderMap().toString());
+            span.setAttribute(TelemetryConstants.TRANSPORT_HEADERS_ATTRIBUTE_KEY,
+                    openStatisticsLog.getTransportHeaderMap().toString());
         }
 
         if (openStatisticsLog.getStatusCode() != null) {
-            span.setAttribute("Status code", openStatisticsLog.getStatusCode());
+            span.setAttribute(TelemetryConstants.STATUS_CODE_ATTRIBUTE_KEY, openStatisticsLog.getStatusCode());
         }
         if (openStatisticsLog.getStatusDescription() != null) {
-            span.setAttribute("Status description", openStatisticsLog.getStatusDescription());
+            span.setAttribute(TelemetryConstants.STATUS_DESCRIPTION_ATTRIBUTE_KEY,
+                    openStatisticsLog.getStatusDescription());
         }
         if (openStatisticsLog.getEndpoint() != null) {
-            span.setAttribute("Endpoint", String.valueOf(openStatisticsLog.getEndpoint().getJsonRepresentation()));
+            span.setAttribute(TelemetryConstants.ENDPOINT_ATTRIBUTE_KEY,
+                    String.valueOf(openStatisticsLog.getEndpoint().getJsonRepresentation()));
         }
     }
 }
