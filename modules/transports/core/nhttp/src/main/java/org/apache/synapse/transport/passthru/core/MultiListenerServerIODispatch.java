@@ -50,18 +50,17 @@ public class MultiListenerServerIODispatch extends ServerIODispatch {
         int localPort = defaultNHttpServerConnection.getLocalPort();
         NHttpServerEventHandler handler = handlers.get(localPort);
         if (handler == null) {
-            log.error("Listener has not started yet on " + localPort + ". Hence shutting down the connection");
+            log.error("The request to the port " + localPort + " cannot be processed further as the Listener has not started yet on port " + localPort);
             try {
                 defaultNHttpServerConnection.shutdown();
-            } catch (IOException ex) {
-                log.error("Error shutting down the connection", ex);
+            } catch (IOException ignored) {
             }
-        } else {
-            try {
-                handler.connected(defaultNHttpServerConnection);
-            } catch (final Exception ex) {
-                handler.exception(defaultNHttpServerConnection, ex);
-            }
+            return;
+        }
+        try {
+            handler.connected(defaultNHttpServerConnection);
+        } catch (final Exception ex) {
+            handler.exception(defaultNHttpServerConnection, ex);
         }
     }
 
@@ -70,18 +69,17 @@ public class MultiListenerServerIODispatch extends ServerIODispatch {
         int localPort = defaultNHttpServerConnection.getLocalPort();
         NHttpServerEventHandler handler = handlers.get(localPort);
         if (handler == null) {
-            log.error("Listener has not started yet on " + localPort + ". Hence shutting down the connection");
+            log.error("The request to the port " + localPort + " cannot be processed further as the Listener has not started yet on port " + localPort);
             try {
                 defaultNHttpServerConnection.shutdown();
-            } catch (IOException ex) {
-                log.error("Error shutting down the connection", ex);
+            } catch (IOException ignored) {
             }
-        } else {
-            try {
-                handler.closed(defaultNHttpServerConnection);
-            } catch (final Exception ex) {
-                handler.exception(defaultNHttpServerConnection, ex);
-            }
+            return;
+        }
+        try {
+            handler.closed(defaultNHttpServerConnection);
+        } catch (final Exception ex) {
+            handler.exception(defaultNHttpServerConnection, ex);
         }
     }
 
@@ -90,18 +88,17 @@ public class MultiListenerServerIODispatch extends ServerIODispatch {
         int localPort = defaultNHttpServerConnection.getLocalPort();
         NHttpServerEventHandler handler = handlers.get(localPort);
         if (handler == null) {
-            log.error("Listener has not started yet on " + localPort + ". Hence shutting down the connection");
+            log.error("The request to the port " + localPort + " cannot be processed further as the Listener has not started yet on port " + localPort);
             try {
                 defaultNHttpServerConnection.shutdown();
-            } catch (IOException ex) {
-                log.error("Error shutting down the connection", ex);
+            } catch (IOException ignored) {
             }
-        } else {
-            try {
-                handler.exception(defaultNHttpServerConnection, e);
-            } catch (final Exception ex) {
-                handler.exception(defaultNHttpServerConnection, ex);
-            }
+            return;
+        }
+        try {
+            handler.exception(defaultNHttpServerConnection, e);
+        } catch (final Exception ex) {
+            handler.exception(defaultNHttpServerConnection, ex);
         }
     }
 
@@ -132,18 +129,17 @@ public class MultiListenerServerIODispatch extends ServerIODispatch {
         int localPort = defaultNHttpServerConnection.getLocalPort();
         NHttpServerEventHandler handler = handlers.get(localPort);
         if (handler == null) {
-            log.error("Listener has not started yet on " + localPort + ". Hence shutting down the connection");
+            log.error("The request to the port " + localPort + " cannot be processed further as the Listener has not started yet on port " + localPort);
             try {
                 defaultNHttpServerConnection.shutdown();
-            } catch (IOException ex) {
-                log.error("Error shutting down the connection", ex);
+            } catch (IOException ignored) {
             }
-        } else {
-            try {
-                handler.timeout(defaultNHttpServerConnection);
-            } catch (final Exception ex) {
-                handler.exception(defaultNHttpServerConnection, ex);
-            }
+            return;
+        }
+        try {
+            handler.timeout(defaultNHttpServerConnection);
+        } catch (final Exception ex) {
+            handler.exception(defaultNHttpServerConnection, ex);
         }
     }
 
