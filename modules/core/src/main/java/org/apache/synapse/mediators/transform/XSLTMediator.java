@@ -463,8 +463,9 @@ public class XSLTMediator extends AbstractMediator {
         // Set an error listener (SYNAPSE-307).
         transFact.setErrorListener(new ErrorListenerImpl(synLog, STYLESHEET_PARSING_ACTIVITY));
         // Allow xsl:import and xsl:include resolution
-        transFact.setURIResolver(new CustomJAXPURIResolver(resourceMap, synCtx.getConfiguration(), synCtx));
-
+        CustomJAXPURIResolver customJAXPURIResolver = new CustomJAXPURIResolver(resourceMap, synCtx.getConfiguration());
+        transFact.setURIResolver(customJAXPURIResolver);
+        if (resourceMap != null) customJAXPURIResolver.setMessageContext(synCtx);
         try {
             cachedTemplates = transFact.newTemplates(
                     SynapseConfigUtils.getStreamSource(synCtx.getEntry(generatedXsltKey)));
@@ -480,6 +481,8 @@ public class XSLTMediator extends AbstractMediator {
         } catch (Exception e) {
             handleException("Error creating XSLT transformer using : " + xsltKey, e, synCtx);
         }
+        // Release the message context variable
+        customJAXPURIResolver.setMessageContext(null);
         return cachedTemplates;
     }
 
