@@ -100,8 +100,8 @@
             <artifactId>asm</artifactId>
         </dependency>
         <dependency>
-            <groupId>commons-dbcp.wso2</groupId>
-            <artifactId>commons-dbcp</artifactId>
+            <groupId>org.wso2.orbit.org.apache.tomcat</groupId>
+            <artifactId>tomcat</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-pool.wso2</groupId>
@@ -160,7 +160,7 @@
                                 <bundleDef>javax.annotation:javax.annotation-api</bundleDef>
                             </bundles>
                             <importBundles>
-                                <importBundleDef>commons-dbcp.wso2:commons-dbcp</importBundleDef>
+                                <importBundleDef>org.wso2.orbit.org.apache.tomcat:tomcat</importBundleDef>
                                 <importBundleDef>commons-pool.wso2:commons-pool</importBundleDef>
                                 <importBundleDef>org.antlr.wso2:antlr-runtime</importBundleDef>
                             </importBundles>

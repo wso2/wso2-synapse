@@ -124,7 +124,7 @@ public class DataSourceConstants {
     public static final String PROP_CLASS_NAME = "className";
 
     public static final String PROP_CPDS_ADAPTER_DRIVER
-            = "org.apache.commons.dbcp.cpdsadapter.DriverAdapterCPDS";
+            = "org.apache.tomcat.dbcp.dbcp2.cpdsadapter.DriverAdapterCPDS";
 
     public static final String PROP_FACTORY = "factory";
 
