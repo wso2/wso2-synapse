@@ -82,9 +82,7 @@ public abstract class OAuthHandler implements AuthHandler {
             return TokenCache.getInstance().getToken(id, new Callable<String>() {
                 @Override
                 public String call() throws AuthException, IOException {
-
-                    OAuthClient oAuthClient = new OAuthClient();
-                    return oAuthClient.generateToken(OAuthUtils.resolveExpression(tokenApiUrl, messageContext),
+                    return OAuthClient.generateToken(OAuthUtils.resolveExpression(tokenApiUrl, messageContext),
                             buildTokenRequestPayload(messageContext), getEncodedCredentials(messageContext),
                                                      messageContext);
                 }

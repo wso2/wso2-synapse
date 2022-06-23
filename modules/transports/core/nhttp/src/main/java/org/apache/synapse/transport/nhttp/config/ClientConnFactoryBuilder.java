@@ -554,7 +554,7 @@ public class ClientConnFactoryBuilder {
         return sslByHostMap;
     }
 
-    public SSLContextDetails getSsl() {
+    public SSLContextDetails getSSLContextDetails() {
         return ssl;
     }
 }
