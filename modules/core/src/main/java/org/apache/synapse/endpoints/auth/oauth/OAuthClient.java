@@ -85,14 +85,6 @@ public class OAuthClient {
     private static final String HTTPS_CONNECTION = "https";
     private static final String ALL_HOSTS = "*";
 
-    private CloseableHttpClient httpClient;
-
-    public OAuthClient() {
-        // preserving the previous behaviour in case there is a scenario to invoke
-        // the client without the message context
-        httpClient = getDefaultHttpClient();
-    }
-
     /**
      * Method to generate the access token from an OAuth server
      *
@@ -104,9 +96,9 @@ public class OAuthClient {
      *                        key missing in the response payload
      * @throws IOException    In the event of a problem parsing the response from the server
      */
-    public String generateToken(String tokenApiUrl, String payload, String credentials, MessageContext messageContext)
-            throws AuthException, IOException {
-        httpClient = getSecureClient(tokenApiUrl, messageContext);
+    public static String generateToken(String tokenApiUrl, String payload, String credentials,
+                                       MessageContext messageContext) throws AuthException, IOException {
+        CloseableHttpClient httpClient = getSecureClient(tokenApiUrl, messageContext);
         if (log.isDebugEnabled()) {
             log.debug("Initializing token generation request: [token-endpoint] " + tokenApiUrl);
         }
@@ -176,7 +168,8 @@ public class OAuthClient {
      * @return Secure CloseableHttpClient
      * @throws AuthException
      */
-    private CloseableHttpClient getSecureClient(String tokenUrl, MessageContext messageContext) throws AuthException {
+    private static CloseableHttpClient getSecureClient(String tokenUrl, MessageContext messageContext)
+            throws AuthException {
         SSLContext sslContext;
         ConfigurationContext configurationContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext().
                 getConfigurationContext();
@@ -186,7 +179,7 @@ public class OAuthClient {
                     new ClientConnFactoryBuilder(transportOut, configurationContext).parseSSL();
 
             sslContext = getSSLContextWithUrl(tokenUrl, clientConnFactoryBuilder.getSslByHostMap(),
-                                              clientConnFactoryBuilder.getSsl());
+                                              clientConnFactoryBuilder.getSSLContextDetails());
         } catch (AxisFault e) {
             throw new AuthException("Error while reading SSL configs. Using default Keystore and Truststore", e);
         }
@@ -286,8 +279,8 @@ public class OAuthClient {
         return builder.build();
     }
 
-    private SSLContext getSSLContextWithUrl(String urlPath, Map<String, SSLContext> sslByHostMap,
-                                            SSLContextDetails ssl) {
+    private static SSLContext getSSLContextWithUrl(String urlPath, Map<String, SSLContext> sslByHostMap,
+                                                   SSLContextDetails ssl) throws AuthException {
         try {
             URL url = new URL(urlPath);
             SSLContext customContext = null;
@@ -305,7 +298,7 @@ public class OAuthClient {
                 return ssl != null ? ssl.getContext() : null;
             }
         } catch (MalformedURLException e) {
-            return null;
+            throw new AuthException("OAuth token URL is invalid", e);
         }
     }
 }
