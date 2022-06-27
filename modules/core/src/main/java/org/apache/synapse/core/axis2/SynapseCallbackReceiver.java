@@ -263,8 +263,10 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
         // get the original message context that went through the OAuth Configured HTTP endpoint
         // this is used to retry the call when there is any oauth related issue
-        org.apache.synapse.MessageContext originalMC =
-                MessageCache.getInstance().removeMessageContext(synapseOutMsgCtx.getMessageID());
+        org.apache.synapse.MessageContext originalMC = null;
+        if (synapseOutMsgCtx.getMessageID() != null) {
+            originalMC = MessageCache.getInstance().removeMessageContext(synapseOutMsgCtx.getMessageID());
+        }
 
         Object o = response.getProperty(SynapseConstants.SENDING_FAULT);
         if (o != null && Boolean.TRUE.equals(o)) {
