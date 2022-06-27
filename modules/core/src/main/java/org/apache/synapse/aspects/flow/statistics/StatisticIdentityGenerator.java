@@ -25,7 +25,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCol
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.aspects.flow.statistics.structuring.StructuringArtifact;
 import org.apache.synapse.aspects.flow.statistics.structuring.StructuringElement;
-import org.apache.synapse.aspects.flow.statistics.opentracing.stores.ArtifactHolderStore;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.stores.ArtifactHolderStore;
 import org.apache.synapse.config.SynapseConfiguration;
 
 public class StatisticIdentityGenerator {
@@ -51,7 +51,7 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Adding Component : " + idString);
         }
-        if (RuntimeStatisticCollector.isOpenTracingEnabled()) {
+        if (RuntimeStatisticCollector.isOpenTelemetryEnabled()) {
             ArtifactHolderStore.addStructuringElementStack(idString, holder);
         }
         process(idString, componentType, holder);
@@ -67,7 +67,7 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Adding Referencing Component  : " + idString);
         }
-        if (RuntimeStatisticCollector.isOpenTracingEnabled()) {
+        if (RuntimeStatisticCollector.isOpenTelemetryEnabled()) {
             ArtifactHolderStore.addStructuringElementStack(idString, holder);
         }
         process(idString, componentType, holder);
@@ -87,7 +87,7 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Adding Flow Continuable Mediator : " + idString);
         }
-        if (RuntimeStatisticCollector.isOpenTracingEnabled()) {
+        if (RuntimeStatisticCollector.isOpenTelemetryEnabled()) {
             ArtifactHolderStore.addStructuringElementStack(idString, holder);
         }
         process(idString, componentType, holder);

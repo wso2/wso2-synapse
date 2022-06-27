@@ -26,7 +26,7 @@ import org.apache.synapse.aspects.flow.statistics.log.templates.CallbackCompleti
 import org.apache.synapse.aspects.flow.statistics.log.templates.CallbackHandledEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.CallbackReceivedEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.CallbackSentEvent;
-import org.apache.synapse.aspects.flow.statistics.opentracing.OpenTracingManagerHolder;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTelemetryManagerHolder;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 
 public class CallbackStatisticCollector extends RuntimeStatisticCollector {
@@ -50,9 +50,9 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			CallbackSentEvent callbackSentEvent = new CallbackSentEvent(dataUnit);
             addEventAndIncrementCallbackCount(messageContext, callbackSentEvent);
 
-            if (isOpenTracingEnabled()) {
-				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
-					.handleAddCallback(messageContext, callbackId);
+            if (isOpenTelemetryEnabled()) {
+				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
+						.handleAddCallback(messageContext, callbackId);
 			}
 		}
 	}
@@ -77,9 +77,9 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			CallbackCompletionEvent callbackCompletionEvent = new CallbackCompletionEvent(dataUnit);
             addEventAndDecrementCallbackCount(oldMessageContext, callbackCompletionEvent);
 
-            if (isOpenTracingEnabled()) {
-				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
-					.handleCallbackCompletionEvent(oldMessageContext, callbackId);
+            if (isOpenTelemetryEnabled()) {
+				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
+						.handleCallbackCompletionEvent(oldMessageContext, callbackId);
 			}
 		}
 	}
@@ -103,9 +103,9 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			CallbackReceivedEvent callbackReceivedEvent = new CallbackReceivedEvent(dataUnit);
             addEvent(oldMessageContext, callbackReceivedEvent);
 
-            if (isOpenTracingEnabled()) {
-				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
-					.handleUpdateParentsForCallback(oldMessageContext, callbackId);
+            if (isOpenTelemetryEnabled()) {
+				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
+						.handleUpdateParentsForCallback(oldMessageContext, callbackId);
 			}
 		}
 	}
@@ -129,9 +129,9 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			CallbackHandledEvent callbackHandledEvent = new CallbackHandledEvent(dataUnit);
             addEventAndDecrementCallbackCount(synapseOutMsgCtx, callbackHandledEvent);
 
-			if (isOpenTracingEnabled()) {
-				OpenTracingManagerHolder.getOpenTracingManager().getHandler()
-					.handleReportCallbackHandlingCompletion(synapseOutMsgCtx, callbackId);
+			if (isOpenTelemetryEnabled()) {
+				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
+						.handleReportCallbackHandlingCompletion(synapseOutMsgCtx, callbackId);
 			}
 
 		}
