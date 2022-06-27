@@ -35,7 +35,7 @@ import org.xml.sax.InputSource;
 public class CustomJAXPURIResolver implements URIResolver {
     private final ResourceMap resourceMap;
     private final SynapseConfiguration synCfg;
-    private final MessageContext messageContext;
+    private MessageContext messageContext;
 
     /**
      * Constructor.
@@ -43,10 +43,9 @@ public class CustomJAXPURIResolver implements URIResolver {
      * @param resourceMap the resource map; may be null if no resource map is configured
      * @param synCfg the Synapse configuration
      */
-    public CustomJAXPURIResolver(ResourceMap resourceMap, SynapseConfiguration synCfg, MessageContext messageContext) {
+    public CustomJAXPURIResolver(ResourceMap resourceMap, SynapseConfiguration synCfg) {
         this.resourceMap = resourceMap;
         this.synCfg = synCfg;
-        this.messageContext = messageContext;
     }
 
     /**
@@ -69,5 +68,9 @@ public class CustomJAXPURIResolver implements URIResolver {
             result = new StreamSource(SynapseConfigUtils.resolveRelativeURI(base, href));
         }
         return result;
+    }
+
+    public void setMessageContext(MessageContext messageContext) {
+        this.messageContext = messageContext;
     }
 }
