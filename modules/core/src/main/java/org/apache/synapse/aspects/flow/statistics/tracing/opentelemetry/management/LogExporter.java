@@ -47,16 +47,16 @@ public class LogExporter implements SpanExporter {
     @Override
     public CompletableResultCode export(Collection<SpanData> spans) {
 
-        Iterator var3 = spans.iterator();
-        while (var3.hasNext()) {
+        Iterator iterator = spans.iterator();
+        while (iterator.hasNext()) {
             try {
                 StringWriter writer = new StringWriter();
                 JsonGenerator generator = this.jsonFactory.createGenerator(writer);
                 generator.writeStartObject();
-                SpanData span = (SpanData) var3.next();
+                SpanData span = (SpanData) iterator.next();
                 generator.writeStringField(TelemetryConstants.SPAN_ID, span.getSpanId());
-                generator.writeStringField(TelemetryConstants.TRACER_ID, span.getTraceId());
-                generator.writeStringField(TelemetryConstants.OPERATION_NAME, span.getName());
+                generator.writeStringField(TelemetryConstants.TRACE_ID, span.getTraceId());
+                generator.writeStringField(TelemetryConstants.SPAN_NAME, span.getName());
                 generator.writeStringField(TelemetryConstants.LATENCY,
                         ((int) (span.getEndEpochNanos() - span.getStartEpochNanos()) / 1000000) + "ms");
                 generator.writeStringField(TelemetryConstants.ATTRIBUTES, String.valueOf(span.getAttributes()));
