@@ -32,7 +32,7 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * This class used to generate log telemetry tracer related logs.
+ * This class is used to generate logs representing OpenTelemetry spans.
  */
 public class LogExporter implements SpanExporter {
 
