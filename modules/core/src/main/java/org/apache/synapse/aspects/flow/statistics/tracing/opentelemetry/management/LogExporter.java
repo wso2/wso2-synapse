@@ -49,13 +49,17 @@ public class LogExporter implements SpanExporter {
 
         Iterator iterator = spans.iterator();
         while (iterator.hasNext()) {
+            String traceId = null;
+            String spanId = null;
+            SpanData span = (SpanData) iterator.next();
             try {
                 StringWriter writer = new StringWriter();
                 JsonGenerator generator = this.jsonFactory.createGenerator(writer);
                 generator.writeStartObject();
-                SpanData span = (SpanData) iterator.next();
-                generator.writeStringField(TelemetryConstants.SPAN_ID, span.getSpanId());
-                generator.writeStringField(TelemetryConstants.TRACE_ID, span.getTraceId());
+                traceId = span.getTraceId();
+                spanId = span.getSpanId();
+                generator.writeStringField(TelemetryConstants.SPAN_ID, spanId);
+                generator.writeStringField(TelemetryConstants.TRACE_ID, traceId);
                 generator.writeStringField(TelemetryConstants.SPAN_NAME, span.getName());
                 generator.writeStringField(TelemetryConstants.LATENCY,
                         ((int) (span.getEndEpochNanos() - span.getStartEpochNanos()) / 1000000) + "ms");
@@ -65,7 +69,8 @@ public class LogExporter implements SpanExporter {
                 writer.close();
                 log.trace(writer.toString());
             } catch (IOException e) {
-                log.error("Error in structured message when exporting", e);
+                log.error("Error while structuring the log message when exporting Trace ID: " + traceId + ", Span ID:" +
+                        " " + spanId, e);
             }
         }
 
