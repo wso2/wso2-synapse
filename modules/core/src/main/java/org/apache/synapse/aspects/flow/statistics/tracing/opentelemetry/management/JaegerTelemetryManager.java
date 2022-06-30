@@ -91,7 +91,7 @@ public class JaegerTelemetryManager implements OpenTelemetryManager {
         if (logger.isDebugEnabled()) {
             logger.debug("Tracer: " + this.tracer + " is configured");
         }
-        resolveHandler();
+        this.handler = new SpanHandler(tracer, openTelemetry, new TracingScopeManager());
     }
 
     @Override
@@ -112,12 +112,6 @@ public class JaegerTelemetryManager implements OpenTelemetryManager {
     public String getServiceName() {
 
         return TelemetryConstants.SERVICE_NAME;
-    }
-
-    @Override
-    public void resolveHandler() {
-
-        this.handler = new SpanHandler(tracer, openTelemetry, new TracingScopeManager());
     }
 
     @Override
