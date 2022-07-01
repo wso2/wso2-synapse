@@ -1424,7 +1424,7 @@
       <com.oopsconsultancy.version>1.14</com.oopsconsultancy.version>
       <maven.artifact.version>2.0.8</maven.artifact.version>
       <maven.archiver.version>2.2</maven.archiver.version>
-      <plexus.utils.version>1.5.4</plexus.utils.version>
+      <plexus.utils.version>3.0.16</plexus.utils.version>
       <com.google.code.gson.version>2.9.0</com.google.code.gson.version>
       <org.codehaus.jettison.wso2.version>1.1.wso2v1</org.codehaus.jettison.wso2.version>
       <com.damnhandy.version>2.1.6</com.damnhandy.version>
