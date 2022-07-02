@@ -118,6 +118,8 @@ public class SourceRequest {
         } else {
             // this request is completed, there is nothing more to read
             SourceContext.updateState(conn, ProtocolState.REQUEST_DONE);
+            // No httpRequest content expected. Suspend client input
+            conn.suspendInput();
         }
     }
 
