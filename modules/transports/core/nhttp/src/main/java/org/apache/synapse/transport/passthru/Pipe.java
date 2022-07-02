@@ -16,7 +16,7 @@
 
 package org.apache.synapse.transport.passthru;
 
-import org.apache.http.MalformedChunkCodingException;
+import org.apache.http.TruncatedChunkException;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.IOControl;
@@ -248,9 +248,7 @@ public class Pipe {
             int bytesRead;
             try {
                 bytesRead = decoder.read(buffer.getByteBuffer());
-            } catch (MalformedChunkCodingException ignore) {
-                // we assume that this is a truncated chunk, hence simply ignore the exception
-                // https://issues.apache.org/jira/browse/HTTPCORE-195
+            } catch (TruncatedChunkException ignore) {
                 // we should add the EoF character
                 buffer.putInt(-1);
                 // now the buffer's position should give us the bytes read.
@@ -291,9 +289,7 @@ public class Pipe {
                 if (bytesRead > 0) {
                     duplicate.position(position - bytesRead);
                 }
-            } catch (MalformedChunkCodingException ignore) {
-                // we assume that this is a truncated chunk, hence simply ignore the exception
-                // https://issues.apache.org/jira/browse/HTTPCORE-195
+            } catch (TruncatedChunkException ignore) {
                 // we should add the EoF character
                 buffer.putInt(-1);
                 duplicate.putInt(-1);
