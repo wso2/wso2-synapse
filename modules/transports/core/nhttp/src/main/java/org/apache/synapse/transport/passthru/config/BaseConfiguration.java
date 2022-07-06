@@ -105,7 +105,7 @@ public abstract class BaseConfiguration {
         httpParams = buildHttpParams();
         ioReactorConfig = buildIOReactorConfig();
         String sysCorrelationStatus = System.getProperty(PassThroughConstants.CORRELATION_LOGS_SYS_PROPERTY);
-        if (sysCorrelationStatus != null) {
+        if (sysCorrelationStatus != null && !PassThroughCorrelationConfigDataHolder.isEnable()) {
             PassThroughCorrelationConfigDataHolder.setEnable(Boolean.parseBoolean(sysCorrelationStatus));
         }
 
