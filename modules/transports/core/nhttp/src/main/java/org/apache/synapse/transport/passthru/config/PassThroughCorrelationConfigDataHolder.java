@@ -17,6 +17,7 @@ package org.apache.synapse.transport.passthru.config;
 
 public class PassThroughCorrelationConfigDataHolder {
     private static boolean enable;
+    private static boolean toggled;
 
     private PassThroughCorrelationConfigDataHolder() {
     }
@@ -25,7 +26,18 @@ public class PassThroughCorrelationConfigDataHolder {
         return enable;
     }
 
+    public static boolean isToggled() {
+        return toggled;
+    }
+
+    public static void resetToggled(){
+        toggled = false;
+    }
+
     public static void setEnable(boolean enable) {
+        if(PassThroughCorrelationConfigDataHolder.enable != enable){
+            toggled = true;
+        }
         PassThroughCorrelationConfigDataHolder.enable = enable;
     }
 }

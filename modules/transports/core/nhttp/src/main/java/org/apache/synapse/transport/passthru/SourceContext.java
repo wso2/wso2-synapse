@@ -171,6 +171,10 @@ public class SourceContext {
             }
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 long lastStateUpdateTime = sourceContext.getLastStateUpdatedTime();
+                if (PassThroughCorrelationConfigDataHolder.isToggled()) {
+                    lastStateUpdateTime = sourceContext.updateLastStateUpdatedTime();
+                    PassThroughCorrelationConfigDataHolder.resetToggled();
+                }
                 String url = "", method = "";
                 if (sourceContext.getRequest() != null) {
                     url = sourceContext.getRequest().getUri();
