@@ -55,6 +55,12 @@ public class TelemetryConstants {
     public static final String DEFAULT_ZIPKIN_HOST = "localhost";
     public static final String DEFAULT_ZIPKIN_PORT = "9411";
     public static final String ZIPKIN_API_CONTEXT = "/api/v2/spans";
+    static final String LATENCY = "Latency";
+    static final String SPAN_NAME = "Span Name";
+    static final String ATTRIBUTES = "Tags";
+    static final String TRACE_ID = "Trace Id";
+    static final String SPAN_ID = "Span Id";
+    static final String TRACER = "tracer";
 
     //span attributes
     public static final String BEFORE_PAYLOAD_ATTRIBUTE_KEY = "beforePayload";
