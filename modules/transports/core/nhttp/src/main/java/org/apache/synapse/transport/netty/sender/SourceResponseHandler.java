@@ -41,6 +41,7 @@ import org.apache.synapse.transport.netty.util.RequestResponseUtils;
 import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
 import org.wso2.caching.CachingConstants;
 import org.wso2.transport.http.netty.contract.config.ChunkConfig;
+import org.wso2.transport.http.netty.message.Http2PushPromise;
 import org.wso2.transport.http.netty.message.HttpCarbonMessage;
 
 import java.io.IOException;
@@ -84,6 +85,22 @@ public class SourceResponseHandler {
             RequestResponseUtils.handleException("Error while creating the outbound response!", e);
         }
         return outboundResponseMsg;
+    }
+
+    /**
+     * Retrieve the push promise received from the backend server.
+     *
+     * @param msgCtx axis2 message context
+     * @return htttp2PushPromise Http2PushPromise
+     * @throws AxisFault if push promise is not available
+     */
+    public static Http2PushPromise getPushPromise(MessageContext msgCtx) throws AxisFault {
+
+        Http2PushPromise http2PushPromise = (Http2PushPromise) msgCtx.getProperty(BridgeConstants.PUSH_PROMISE);
+        if (http2PushPromise == null) {
+            RequestResponseUtils.handleException("Error while retrieving push promise.");
+        }
+        return http2PushPromise;
     }
 
     private static void handleMTOM(MessageContext msgCtx) throws AxisFault {
@@ -417,6 +434,34 @@ public class SourceResponseHandler {
 
         HttpUtils.sendOutboundResponse(inboundRequestMsg, outboundResponseMsg);
         serializeData(msgCtx, outboundResponseMsg);
+    }
+
+    /**
+     * Send the server push promise to the client.
+     *
+     * @param http2PushPromise Http2PushPromise
+     * @param clientRequest    HttpCarbonMessage
+     * @throws AxisFault if error occurred while pushing responses.
+     */
+    public static void pushPromise(Http2PushPromise http2PushPromise, HttpCarbonMessage clientRequest) throws AxisFault {
+
+        HttpUtils.pushPromise(http2PushPromise, clientRequest);
+    }
+
+    /**
+     * Send the server pushes to the client.
+     *
+     * @param msgCtx           axis2 message context
+     * @param http2PushPromise Http2PushPromise
+     * @param outboundPushMsg  HttpCarbonMessage
+     * @param clientRequest    HttpCarbonMessage
+     * @throws AxisFault if error occurred while pushing responses.
+     */
+    public static void pushResponse(MessageContext msgCtx, Http2PushPromise http2PushPromise,
+                                    HttpCarbonMessage outboundPushMsg, HttpCarbonMessage clientRequest) throws AxisFault {
+
+        HttpUtils.pushResponse(http2PushPromise, outboundPushMsg, clientRequest);
+        serializeData(msgCtx, outboundPushMsg);
     }
 
     private static void serializeData(MessageContext msgCtx, HttpCarbonMessage responseMsg)

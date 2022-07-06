@@ -52,6 +52,7 @@ import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.rest.RESTConstants;
+import org.apache.synapse.transport.netty.BridgeConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
@@ -442,6 +443,12 @@ public class Axis2FlexibleMEPClient {
 
             if (endpoint.isUseSeparateListener()) {
                 axisOutMsgCtx.getOptions().setUseSeparateListener(true);
+            }
+
+            //Set server push sequence in axis message context if available.
+            if (endpoint.isHTTPEndpoint() && synapseOutMessageContext.getProperty(BridgeConstants.SERVER_PUSH_SEQUENCE) != null) {
+                axisOutMsgCtx.setProperty(BridgeConstants.SERVER_PUSH_SEQUENCE,
+                        synapseOutMessageContext.getProperty(BridgeConstants.SERVER_PUSH_SEQUENCE));
             }
         } else {
             processWSDL2RESTRequestMessageType(originalInMsgCtx, axisOutMsgCtx);

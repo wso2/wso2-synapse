@@ -55,6 +55,8 @@ import org.apache.synapse.endpoints.dispatch.Dispatcher;
 import org.apache.synapse.endpoints.auth.oauth.MessageCache;
 import org.apache.synapse.endpoints.auth.oauth.OAuthUtils;
 import org.apache.synapse.mediators.MediatorFaultHandler;
+import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.transport.netty.BridgeConstants;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
@@ -125,6 +127,15 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
     public void receive(MessageContext messageCtx) throws AxisFault {
 
         String messageID = null;
+
+        /**
+         * If the client receives HTTP/2 server push, the server push message context will be mediated through the
+         * server push sequence.
+         */
+        if (messageCtx.isPropertyTrue(BridgeConstants.SERVER_PUSH)) {
+            handleHttp2ServerPush(messageCtx);
+            return;
+        }
 
         /**
          * In an Out-only scenario if the client receives a HTTP 202 accepted we need to
@@ -777,5 +788,37 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         log.warn("Synapse received a response for the request with message Id : " +
                 messageID + " and correlation_id : " + messageCtx.getProperty(CorrelationConstants
                 .CORRELATION_ID) + " But a callback is not registered (anymore) to process this response");
+    }
+
+    /**
+     * Handle the HTTP/2 server push received for an outgoing request.
+     *
+     * @param messageCtx
+     * @throws AxisFault
+     */
+    private void handleHttp2ServerPush(MessageContext messageCtx) throws AxisFault {
+
+        org.apache.synapse.MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(messageCtx);
+        // get service log for this message and attach to the message context.
+        Log serviceLog =
+                LogFactory.getLog(SynapseConstants.SERVICE_LOGGER_PREFIX + SynapseConstants.SYNAPSE_SERVICE_NAME);
+        ((Axis2MessageContext) synCtx).setServiceLog(serviceLog);
+        synCtx.setProperty(SynapseConstants.IS_CLIENT_DOING_REST, messageCtx.isDoingREST());
+        synCtx.setProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11, messageCtx.isSOAP11());
+        synCtx.setProperty(CorrelationConstants.CORRELATION_ID,
+                messageCtx.getProperty(CorrelationConstants.CORRELATION_ID));
+        synCtx.setProperty(BridgeConstants.SERVER_PUSH, Boolean.TRUE);
+        synCtx.setProperty(BridgeConstants.IS_PUSH_PROMISE, messageCtx.getProperty(BridgeConstants.IS_PUSH_PROMISE));
+        synCtx.setProperty(BridgeConstants.SERVER_PUSH_RESOURCE_PATH,
+                messageCtx.getProperty(BridgeConstants.SERVER_PUSH_RESOURCE_PATH));
+        TenantInfoConfigurator configurator = synCtx.getEnvironment().getTenantInfoConfigurator();
+        if (configurator != null) {
+            configurator.extractTenantInfo(synCtx);
+        }
+        SequenceMediator serverPushSequence =
+                (SequenceMediator) messageCtx.getProperty(BridgeConstants.SERVER_PUSH_SEQUENCE);
+        if (serverPushSequence != null) {
+            serverPushSequence.mediate(synCtx);
+        }
     }
 }
