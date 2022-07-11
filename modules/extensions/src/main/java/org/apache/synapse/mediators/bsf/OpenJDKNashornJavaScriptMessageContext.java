@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2022, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -18,20 +18,9 @@
 
 package org.apache.synapse.mediators.bsf;
 
-import org.apache.xerces.parsers.DOMParser;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
-import org.apache.axiom.om.OMAttribute;
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMException;
-import org.apache.axiom.om.OMNode;
-import org.apache.axiom.om.OMXMLBuilderFactory;
-import org.apache.axiom.om.OMXMLParserWrapper;
+import org.apache.axiom.om.*;
 import org.apache.axiom.om.xpath.AXIOMXPath;
-import org.apache.axiom.soap.SOAPBody;
-import org.apache.axiom.soap.SOAPEnvelope;
-import org.apache.axiom.soap.SOAPFactory;
-import org.apache.axiom.soap.SOAPHeader;
-import org.apache.axiom.soap.SOAPHeaderBlock;
+import org.apache.axiom.soap.*;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.addressing.RelatesTo;
@@ -40,50 +29,51 @@ import org.apache.bsf.xml.XMLHelper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
-import org.apache.synapse.ContinuationState;
-import org.apache.synapse.FaultHandler;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.*;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.Endpoint;
+import org.apache.xerces.parsers.DOMParser;
 import org.jaxen.JaxenException;
+import org.openjdk.nashorn.api.scripting.ScriptObjectMirror;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
+import java.util.*;
 
 /**
  * NashornJavaScriptMessageContext implements the ScriptMessageContext specific to Nashorn java script engine.
  */
 @SuppressWarnings({"UnusedDeclaration"})
-public class NashornJavaScriptMessageContext implements ScriptMessageContext {
-    private static final Log logger = LogFactory.getLog(NashornJavaScriptMessageContext.class.getName());
+public class OpenJDKNashornJavaScriptMessageContext implements ScriptMessageContext {
+    private static final Log logger = LogFactory.getLog(OpenJDKNashornJavaScriptMessageContext.class.getName());
 
     private static final String JSON_OBJECT = "JSON_OBJECT";
     private static final String JSON_TEXT = "JSON_TEXT";
 
-    /** The actual Synapse message context reference. */
+    /**
+     * The actual Synapse message context reference.
+     */
     private final MessageContext mc;
 
-    /** The OMElement to scripting language object converter for the selected language. */
+    /**
+     * The OMElement to scripting language object converter for the selected language.
+     */
     private final XMLHelper xmlHelper;
 
-    /** To keep Script Engine instance. */
+    /**
+     * To keep Script Engine instance.
+     */
     private ScriptEngine scriptEngine;
 
     /**
@@ -96,18 +86,15 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
      */
     private ScriptObjectMirror jsonSerializer;
 
-    /**
-     * Call the JSON Serializer call member method of ScriptMirrorObject
-     */
-    public Object jsonSerializerCallMember(String key, String value) {
-        return jsonSerializer.callMember(key, value);
-    }
-
-    public NashornJavaScriptMessageContext(MessageContext mc, XMLHelper xmlHelper, ScriptEngine engine) throws ScriptException {
+    public OpenJDKNashornJavaScriptMessageContext(MessageContext mc, XMLHelper xmlHelper, ScriptEngine engine) throws ScriptException {
         this.mc = mc;
         this.xmlHelper = xmlHelper;
         this.emptyJsonObject = (ScriptObjectMirror) engine.eval("({})");
         this.jsonSerializer = (ScriptObjectMirror) engine.eval("JSON");
+    }
+
+    public Object jsonSerializerCallMember(String key, String value) {
+        return jsonSerializer.callMember(key, value);
     }
 
     /**
@@ -149,6 +136,25 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     }
 
     /**
+     * Saves the payload of this message context as a JSON payload.
+     *
+     * @param jsonPayload Javascript native object to be set as the message body
+     * @throws ScriptException in case of creating a JSON object out of the javascript native object.
+     */
+    public void setPayloadJSON(Object jsonPayload) throws ScriptException {
+        try {
+            String jsonString = (String) jsonSerializer.callMember("stringify", jsonPayload);
+            InputStream stream = new ByteArrayInputStream(jsonString.getBytes(StandardCharsets.UTF_8));
+            org.apache.axis2.context.MessageContext messageContext;
+            messageContext = ((Axis2MessageContext) mc).getAxis2MessageContext();
+            JsonUtil.getNewJsonPayload(messageContext, stream, true, true);
+            messageContext.setProperty(JSON_OBJECT, jsonPayload);
+        } catch (AxisFault axisFault) {
+            throw new ScriptException(axisFault);
+        }
+    }
+
+    /**
      * Get the Message Payload as a text.
      *
      * @return Payload as text
@@ -176,9 +182,9 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Saves the JavaScript Object to the message context.
-     * 
+     *
      * @param messageContext The message context of the sequence
-     * @param jsonObject JavaScript Object which is passed to be saved in message context
+     * @param jsonObject     JavaScript Object which is passed to be saved in message context
      * @return true
      */
     public boolean setJsonObject(MessageContext messageContext, Object jsonObject) {
@@ -190,7 +196,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
      * Saves the JSON String to the message context.
      *
      * @param messageContext The message context of the sequence
-     * @param jsonObject JavaScript string which is passed to be saved in message context
+     * @param jsonObject     JavaScript string which is passed to be saved in message context
      * @return false if messageContext is null return true otherwise
      */
     public boolean setJsonText(MessageContext messageContext, Object jsonObject) {
@@ -275,7 +281,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
      * Add a new SOAP header to the message.
      *
      * @param mustUnderstand the value for the <code>soapenv:mustUnderstand</code> attribute
-     * @param content the XML for the new header
+     * @param content        the XML for the new header
      * @throws ScriptException if an error occurs when converting the XML to OM
      */
     public void addHeader(boolean mustUnderstand, Object content) throws ScriptException {
@@ -308,47 +314,11 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
      *
      * @return return an object that represents the payload in the current scripting language
      * @throws ScriptException in-case of an error in getting
-     * the XML representation of SOAP envelope
+     *                         the XML representation of SOAP envelope
      */
     public Object getEnvelopeXML() throws ScriptException {
         SOAPEnvelope envelope = mc.getEnvelope();
         return envelope.toString();
-    }
-
-    /**
-     * This is used to set the value which specifies the receiver of the message.
-     *
-     * @param reference specifies the receiver of the message
-     */
-    public void setTo(String reference) {
-        mc.setTo(new EndpointReference(reference));
-    }
-
-    /**
-     * This is used to set the value which specifies the receiver of the faults relating to the message.
-     *
-     * @param reference specifies the receiver of the faults relating to the message
-     */
-    public void setFaultTo(String reference) {
-        mc.setFaultTo(new EndpointReference(reference));
-    }
-
-    /**
-     * This is used to set the value which specifies the sender of the message.
-     *
-     * @param reference specifies the sender of the message
-     */
-    public void setFrom(String reference) {
-        mc.setFrom(new EndpointReference(reference));
-    }
-
-    /**
-     * This is used to set the value which specifies the receiver of the replies to the message.
-     *
-     * @param reference specifies the receiver of the replies to the message
-     */
-    public void setReplyTo(String reference) {
-        mc.setReplyTo(new EndpointReference(reference));
     }
 
     /**
@@ -417,7 +387,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     /**
      * Add a new property to the message.
      *
-     * @param key unique identifier of property
+     * @param key   unique identifier of property
      * @param value value of property
      */
     public void setProperty(String key, Object value) {
@@ -434,7 +404,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     /**
      * Add a new property to the message.
      *
-     * @param key unique identifier of property
+     * @param key   unique identifier of property
      * @param value value of property
      * @param scope scope of the property
      */
@@ -473,7 +443,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     /**
      * Remove property from the message.
      *
-     * @param key unique identifier of property
+     * @param key   unique identifier of property
      * @param scope scope of the property
      */
     public void removeProperty(String key, String scope) {
@@ -510,8 +480,8 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     /**
      * Add special properties such as content type to the message context.
      *
-     * @param key unique identifier of property
-     * @param value value of property
+     * @param key            unique identifier of property
+     * @param value          value of property
      * @param messageContext Axis2 message context
      */
     private void handleSpecialProperties(String key, Object value,
@@ -558,7 +528,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
      * {@inheritDoc}
      */
     public OMElement getFormat(String s) {
-       return mc.getFormat(s);
+        return mc.getFormat(s);
     }
 
     /**
@@ -590,6 +560,15 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     }
 
     /**
+     * This is used to set the value which specifies the receiver of the faults relating to the message.
+     *
+     * @param reference specifies the receiver of the faults relating to the message
+     */
+    public void setFaultTo(String reference) {
+        mc.setFaultTo(new EndpointReference(reference));
+    }
+
+    /**
      * {@inheritDoc}
      */
     public void setFaultTo(EndpointReference reference) {
@@ -601,6 +580,15 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
      */
     public EndpointReference getFrom() {
         return mc.getFrom();
+    }
+
+    /**
+     * This is used to set the value which specifies the sender of the message.
+     *
+     * @param reference specifies the sender of the message
+     */
+    public void setFrom(String reference) {
+        mc.setFrom(new EndpointReference(reference));
     }
 
     /**
@@ -646,6 +634,15 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     }
 
     /**
+     * This is used to set the value which specifies the receiver of the replies to the message.
+     *
+     * @param reference specifies the receiver of the replies to the message
+     */
+    public void setReplyTo(String reference) {
+        mc.setReplyTo(new EndpointReference(reference));
+    }
+
+    /**
      * {@inheritDoc}
      */
     public void setReplyTo(EndpointReference reference) {
@@ -660,6 +657,15 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     }
 
     /**
+     * This is used to set the value which specifies the receiver of the message.
+     *
+     * @param reference specifies the receiver of the message
+     */
+    public void setTo(String reference) {
+        mc.setTo(new EndpointReference(reference));
+    }
+
+    /**
      * {@inheritDoc}
      */
     public void setTo(EndpointReference reference) {
@@ -669,15 +675,15 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     /**
      * {@inheritDoc}
      */
-    public void setWSAAction(String actionURI) {
-        mc.setWSAAction(actionURI);
+    public String getWSAAction() {
+        return mc.getWSAAction();
     }
 
     /**
      * {@inheritDoc}
      */
-    public String getWSAAction() {
-        return mc.getWSAAction();
+    public void setWSAAction(String actionURI) {
+        mc.setWSAAction(actionURI);
     }
 
     /**
@@ -697,15 +703,15 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     /**
      * {@inheritDoc}
      */
-    public void setWSAMessageID(String messageID) {
-        mc.setWSAMessageID(messageID);
+    public String getWSAMessageID() {
+        return mc.getWSAMessageID();
     }
 
     /**
      * {@inheritDoc}
      */
-    public String getWSAMessageID() {
-        return mc.getWSAMessageID();
+    public void setWSAMessageID(String messageID) {
+        mc.setWSAMessageID(messageID);
     }
 
     /**
@@ -718,15 +724,15 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     /**
      * {@inheritDoc}
      */
-    public boolean isDoingSWA() {
-        return mc.isDoingSWA();
+    public void setDoingMTOM(boolean b) {
+        mc.setDoingMTOM(b);
     }
 
     /**
      * {@inheritDoc}
      */
-    public void setDoingMTOM(boolean b) {
-        mc.setDoingMTOM(b);
+    public boolean isDoingSWA() {
+        return mc.isDoingSWA();
     }
 
     /**
@@ -774,13 +780,6 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     /**
      * {@inheritDoc}
      */
-    public void setResponse(boolean b) {
-        mc.setResponse(b);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public boolean isResponse() {
         return mc.isResponse();
     }
@@ -788,8 +787,8 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     /**
      * {@inheritDoc}
      */
-    public void setFaultResponse(boolean b) {
-        mc.setFaultResponse(b);
+    public void setResponse(boolean b) {
+        mc.setResponse(b);
     }
 
     /**
@@ -797,6 +796,13 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
      */
     public boolean isFaultResponse() {
         return mc.isFaultResponse();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setFaultResponse(boolean b) {
+        mc.setFaultResponse(b);
     }
 
     /**
@@ -858,7 +864,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
      * {@inheritDoc}
      */
     public Log getServiceLog() {
-        return LogFactory.getLog(NashornJavaScriptMessageContext.class);
+        return LogFactory.getLog(OpenJDKNashornJavaScriptMessageContext.class);
     }
 
     /**
@@ -866,25 +872,6 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
      */
     public Mediator getSequenceTemplate(String key) {
         return mc.getSequenceTemplate(key);
-    }
-
-     /**
-     * Saves the payload of this message context as a JSON payload.
-     *
-     * @param jsonPayload Javascript native object to be set as the message body
-     * @throws ScriptException in case of creating a JSON object out of the javascript native object.
-     */
-    public void setPayloadJSON(Object jsonPayload) throws ScriptException {
-        try {
-            String jsonString = (String) jsonSerializer.callMember("stringify", jsonPayload);
-            InputStream stream = new ByteArrayInputStream(jsonString.getBytes(StandardCharsets.UTF_8));
-            org.apache.axis2.context.MessageContext messageContext;
-            messageContext = ((Axis2MessageContext) mc).getAxis2MessageContext();
-            JsonUtil.getNewJsonPayload(messageContext, stream, true, true);
-            messageContext.setProperty(JSON_OBJECT, jsonPayload);
-        } catch (AxisFault axisFault) {
-            throw new ScriptException(axisFault);
-        }
     }
 
     /**
@@ -904,15 +891,14 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     /**
      * {@inheritDoc}
      */
-    public void setMessageFlowTracingState(int state) {
-        mc.setMessageFlowTracingState(state);
+    public int getMessageFlowTracingState() {
+        return SynapseConstants.TRACING_OFF;
     }
 
     /**
      * {@inheritDoc}
      */
-    public int getMessageFlowTracingState() {
-        return SynapseConstants.TRACING_OFF;
+    public void setMessageFlowTracingState(int state) {
+        mc.setMessageFlowTracingState(state);
     }
 }
-

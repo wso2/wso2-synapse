@@ -22,8 +22,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.securevault.commons.MiscellaneousUtil;
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
+import java.util.Base64;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -54,7 +53,7 @@ public final class EncodingHelper {
                 if (log.isDebugEnabled()) {
                     log.debug("base64 encoding on output ");
                 }
-                return new BASE64Encoder().encode(baos.toByteArray()).getBytes();
+                return Base64.getEncoder().encode(baos.toByteArray());
             case BIGINTEGER16:
                 if (log.isDebugEnabled()) {
                     log.debug("BigInteger 16 encoding on output ");
@@ -84,7 +83,7 @@ public final class EncodingHelper {
                     log.debug("base64 decoding on input  ");
                 }
                 decodedInputStream = new ByteArrayInputStream(
-                         new BASE64Decoder().decodeBuffer(inputStream));
+                        Base64.getDecoder().decode(String.valueOf(inputStream)));
                 break;
             case BIGINTEGER16:
                 if (log.isDebugEnabled()) {

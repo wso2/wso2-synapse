@@ -23,7 +23,6 @@ import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import com.sun.script.groovy.GroovyScriptEngineFactory;
 import com.sun.script.jruby.JRubyScriptEngineFactory;
 import com.sun.script.jython.JythonScriptEngineFactory;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMText;
 import org.apache.bsf.xml.XMLHelper;
@@ -40,18 +39,13 @@ import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.mozilla.javascript.Context;
+
 import javax.activation.DataHandler;
-import javax.script.Bindings;
-import javax.script.Compilable;
-import javax.script.CompiledScript;
-import javax.script.Invocable;
-import javax.script.ScriptContext;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
+import javax.script.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
@@ -98,6 +92,12 @@ public class ScriptMediator extends AbstractMediator {
      * Name of the nashorn java script engine.
      */
     private static final String NASHORN = "nashorn";
+
+    /**
+     * Factory Name for Oracle Nashorn Engine. Built-in Nashorn engine in JDK 8 to JDK 11
+     */
+    private static final String ORACLE_NASHORN_NAME = "Oracle Nashorn";
+
     /**
      * The registry entry key for a script loaded from the registry
      * Handle both static and dynamic(Xpath) Keys
@@ -131,15 +131,6 @@ public class ScriptMediator extends AbstractMediator {
      * Does the ScriptEngine support multi-threading
      */
     private boolean multiThreadedEngine;
-    /**
-     * Reference to an empty JSON object.
-     */
-    private ScriptObjectMirror emptyJsonObject;
-
-    /**
-     * Reference to JSON object which is used to serialize json.
-     */
-    private ScriptObjectMirror jsonSerializer;
     /**
      * The compiled script. Only used for inline scripts
      */
@@ -364,12 +355,15 @@ public class ScriptMediator extends AbstractMediator {
         ScriptMessageContext scriptMC;
         if (language.equals(NASHORN_JAVA_SCRIPT)) {
             try {
-                emptyJsonObject = (ScriptObjectMirror) scriptEngine.eval("({})");
-                jsonSerializer = (ScriptObjectMirror) scriptEngine.eval("JSON");
+                if(isJDKContainNashorn()) {
+                    scriptMC = new NashornJavaScriptMessageContext(synCtx, helper, jsEngine);
+                } else {
+                    scriptMC = new OpenJDKNashornJavaScriptMessageContext(synCtx, helper, jsEngine);
+                }
             } catch (ScriptException e) {
                 throw new SynapseException("Error occurred while evaluating empty json object", e);
             }
-            scriptMC = new NashornJavaScriptMessageContext(synCtx, helper, emptyJsonObject, jsonSerializer);
+
         } else {
             scriptMC = new CommonScriptMessageContext(synCtx, helper);
         }
@@ -411,7 +405,11 @@ public class ScriptMediator extends AbstractMediator {
             try {
                 String jsonPayload = JsonUtil.jsonPayloadToString(messageContext);
                 if (NASHORN_JAVA_SCRIPT.equals(language)) {
-                    jsonObject = jsonSerializer.callMember("parse", jsonPayload);
+                    if(isJDKContainNashorn()) {
+                        jsonObject = ((NashornJavaScriptMessageContext) scriptMC).jsonSerializerCallMember("parse", jsonPayload);
+                    } else {
+                        jsonObject = ((OpenJDKNashornJavaScriptMessageContext) scriptMC).jsonSerializerCallMember("parse", jsonPayload);
+                    }
                 } else {
                     String scriptWithJsonParser = "JSON.parse(JSON.stringify(" + jsonPayload + "))";
                     jsonObject = this.jsEngine.eval('(' + scriptWithJsonParser + ')');
@@ -598,6 +596,13 @@ public class ScriptMediator extends AbstractMediator {
         engineManager.registerEngineExtension("rb", new JRubyScriptEngineFactory());
         engineManager.registerEngineExtension("py", new JythonScriptEngineFactory());
         if (language.equals(NASHORN_JAVA_SCRIPT)) {
+            if (isJDKContainNashorn()) {
+                engineManager.registerEngineName(NASHORN, getOracleNashornFactory());
+            } else {
+                engineManager.registerEngineName(NASHORN, OpenJDKNashornFactoryWrapper.getOpenJDKNashornFactory());
+            }
+        }
+        if (language.equals(NASHORN_JAVA_SCRIPT)) {
             this.scriptEngine = engineManager.getEngineByName(NASHORN);
         } else {
             this.scriptEngine = engineManager.getEngineByExtension(language);
@@ -686,6 +691,24 @@ public class ScriptMediator extends AbstractMediator {
 
     public boolean isContentAltering() {
         return true;
+    }
+
+    private boolean isJDKContainNashorn() {
+        return getOracleNashornFactory() != null;
+    }
+
+    private ScriptEngineFactory getOracleNashornFactory() {
+        ScriptEngineManager engineManager = new ScriptEngineManager();
+        List<ScriptEngineFactory> engineFactories = engineManager.getEngineFactories();
+        for (ScriptEngineFactory engineFactory : engineFactories) {
+            if (engineFactory.getEngineName().equals(ORACLE_NASHORN_NAME)) {
+                return engineFactory;
+            }
+        }
+        if (engineManager.getEngineByName(NASHORN) != null) {
+            return engineManager.getEngineByName(NASHORN).getFactory();
+        }
+        return null;
     }
 
 }

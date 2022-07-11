@@ -1334,6 +1334,31 @@
               <artifactId>json</artifactId>
               <version>${org.wso2.json.version}</version>
           </dependency>
+          <dependency>
+              <groupId>javax.xml.bind</groupId>
+              <artifactId>jaxb-api</artifactId>
+              <version>${jaxb.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>com.sun.xml.bind</groupId>
+              <artifactId>jaxb-core</artifactId>
+              <version>${jaxb.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>com.sun.xml.bind</groupId>
+              <artifactId>jaxb-impl</artifactId>
+              <version>${jaxb.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>xerces.wso2</groupId>
+              <artifactId>xercesImpl</artifactId>
+              <version>${xerces.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.openjdk.nashorn</groupId>
+              <artifactId>nashorn-core</artifactId>
+              <version>${nashorn.core.version}</version>
+          </dependency>
       </dependencies>
    </dependencyManagement>
     <reporting>
@@ -1403,7 +1428,7 @@
       <maven.surefire.plugin.version.2.2>2.2</maven.surefire.plugin.version.2.2>
       <maven.jacoco.plugin.version>0.8.6</maven.jacoco.plugin.version>
       <maven.assembly.plugin.version>2.2-beta-2</maven.assembly.plugin.version>
-      <maven.bundle.plugin.version>3.2.0</maven.bundle.plugin.version>
+      <maven.bundle.plugin.version>3.3.0</maven.bundle.plugin.version>
       <maven.dependency.plugin.version>2.0</maven.dependency.plugin.version>
       <antlr3.maven.plugin.version>3.4</antlr3.maven.plugin.version>
       <maven.antrun.plugin.version>1.8</maven.antrun.plugin.version>
@@ -1461,7 +1486,7 @@
       <jms-1.1-spec.version>1.1</jms-1.1-spec.version>
       <!-- Axis2 and its dependencies -->
       <axis2.version>1.6.1-wso2v80</axis2.version>
-      <axis2.transport.version>2.0.0-wso2v65</axis2.transport.version>
+      <axis2.transport.version>2.0.0-wso2v66</axis2.transport.version>
       <axiom.version>1.2.11-wso2v21</axiom.version>
       <xml_schema.version>1.4.7</xml_schema.version>
       <xml_apis.version>1.3.04</xml_apis.version>
@@ -1476,7 +1501,7 @@
       <jruby.version>1.3.0</jruby.version>
       <xmlsec.version>1.4.2</xmlsec.version>
       <xalan.version>2.7.2</xalan.version>
-      <xerces.version>2.8.1</xerces.version>
+      <xerces.version>2.8.1.wso2v2</xerces.version>
       <js.version>1.7.14.wso2v1</js.version>
       <!-- startup, quartz -->
       <commons-collections.version>3.2.1</commons-collections.version>
@@ -1489,7 +1514,7 @@
       <java-cup.version>0.0</java-cup.version>
       <JLex.version>0.0</JLex.version>
       <!-- misc -->
-      <junit.version>4.8.2</junit.version>
+      <junit.version>4.12</junit.version>
       <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>
       <jcifs.wso2.version>1.3.17.wso2v1</jcifs.wso2.version>
       <net.minidev.accessors-smart.version>2.4.7</net.minidev.accessors-smart.version>
@@ -1522,7 +1547,7 @@
       <project.scm.id>wso2-scm-server</project.scm.id>
       <javax.cache.version>0.5</javax.cache.version>
       <javax.servlet.version>3.0.1</javax.servlet.version>
-      <powermock.version>1.7.1</powermock.version>
+      <powermock.version>2.0.9</powermock.version>
       <fge.json.schema.validator.version>2.2.6.wso2v8</fge.json.schema.validator.version>
       <fasterxml.jackson.version>2.13.3</fasterxml.jackson.version>
       <google.guava.version>31.0.1-jre</google.guava.version>
@@ -1531,7 +1556,6 @@
       <com.googlecode.libphonenumber.version>7.4.2.wso2v1</com.googlecode.libphonenumber.version>
       <jacoco.agent.version>0.8.6</jacoco.agent.version>
       <jacoco.ant.version>0.8.6</jacoco.ant.version>
-      <powermock.version>1.7.1</powermock.version>
       <dataprovider.version>1.13.1</dataprovider.version>
       <activemq.version>5.2.0</activemq.version>
       <rhino.version>1.7.14</rhino.version>
@@ -1565,6 +1589,8 @@
 
        <freemarker.version>2.3.30</freemarker.version>
        <awaitility.version>3.1.2</awaitility.version>
+       <jaxb.version>2.3.0</jaxb.version>
+       <nashorn.core.version>15.4</nashorn.core.version>
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->
