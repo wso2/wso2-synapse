@@ -55,7 +55,7 @@ public class TelemetryConstants {
     public static final String DEFAULT_ZIPKIN_HOST = "localhost";
     public static final String DEFAULT_ZIPKIN_PORT = "9411";
     public static final String ZIPKIN_API_CONTEXT = "/api/v2/spans";
-    public static final String OPENTELEMETRY_PROPERTIES = "opentelemetry.otlp.header_properties.";
+    public static final String OPENTELEMETRY_PROPERTIES_PREFIX = "opentelemetry.otlp.header_properties.";
     static final String LATENCY = "Latency";
     static final String SPAN_NAME = "Span Name";
     static final String ATTRIBUTES = "Tags";

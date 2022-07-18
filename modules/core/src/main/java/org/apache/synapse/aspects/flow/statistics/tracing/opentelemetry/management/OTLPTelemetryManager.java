@@ -1,3 +1,21 @@
+/*
+ *  Copyright (c) 2022, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+
 package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management;
 
 import io.opentelemetry.api.OpenTelemetry;
@@ -33,7 +51,10 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
     public void init() {
 
         String headerProperty = getHeaderKeyProperty();
-        String headerKey = headerProperty.substring(TelemetryConstants.OPENTELEMETRY_PROPERTIES.length());
+        if (headerProperty == null) {
+            logger.error("opentelemetry.otlp.header_properties not found");
+        }
+        String headerKey = headerProperty.substring(TelemetryConstants.OPENTELEMETRY_PROPERTIES_PREFIX.length());
         String endPointURL = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_URL, null);
         String headerValue = SynapsePropertiesLoader.getPropertyValue(headerProperty, null);
         OtlpGrpcSpanExporterBuilder otlpGrpcSpanExporterBuilder = OtlpGrpcSpanExporter.builder()
@@ -97,7 +118,7 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
         Enumeration<?> synapsePropertyKeys = SynapsePropertiesLoader.loadSynapseProperties().propertyNames();
         while (synapsePropertyKeys.hasMoreElements()) {
             String property = (String) synapsePropertyKeys.nextElement();
-            if (property.startsWith(TelemetryConstants.OPENTELEMETRY_PROPERTIES)) {
+            if (property.startsWith(TelemetryConstants.OPENTELEMETRY_PROPERTIES_PREFIX)) {
                 return property;
             }
         }
