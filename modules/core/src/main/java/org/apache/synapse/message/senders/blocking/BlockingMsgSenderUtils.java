@@ -337,6 +337,7 @@ public class BlockingMsgSenderUtils {
                                                  "setCharacterEncoding",
                                                  NhttpConstants.DISTRIBUTED_TRANSACTION,
                                                  NhttpConstants.DISTRIBUTED_TRANSACTION_MANAGER,
+                                                 Constants.Configuration.ENABLE_REST,
                                                  Constants.Configuration.HTTP_METHOD,
                                                  Constants.Configuration.MESSAGE_TYPE,
                                                  Constants.Configuration.CONTENT_TYPE,
