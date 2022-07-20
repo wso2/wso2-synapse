@@ -17,13 +17,14 @@ package org.apache.synapse.transport.passthru.config;
 
 public class PassThroughCorrelationConfigDataHolder {
     private static boolean enable;
+    private static boolean systemEnable;
     private static boolean toggled;
 
     private PassThroughCorrelationConfigDataHolder() {
     }
 
     public static boolean isEnable() {
-        return enable;
+        return (enable || systemEnable);
     }
 
     public static boolean isToggled() {
@@ -39,5 +40,13 @@ public class PassThroughCorrelationConfigDataHolder {
             toggled = true;
         }
         PassThroughCorrelationConfigDataHolder.enable = enable;
+    }
+
+    public static boolean isSystemEnable() {
+        return systemEnable;
+    }
+
+    public static void setSystemEnable(boolean systemEnable) {
+        PassThroughCorrelationConfigDataHolder.systemEnable = systemEnable;
     }
 }

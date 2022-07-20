@@ -106,7 +106,7 @@ public abstract class BaseConfiguration {
         ioReactorConfig = buildIOReactorConfig();
         String sysCorrelationStatus = System.getProperty(PassThroughConstants.CORRELATION_LOGS_SYS_PROPERTY);
         if (sysCorrelationStatus != null && !PassThroughCorrelationConfigDataHolder.isEnable()) {
-            PassThroughCorrelationConfigDataHolder.setEnable(Boolean.parseBoolean(sysCorrelationStatus));
+            PassThroughCorrelationConfigDataHolder.setSystemEnable(Boolean.parseBoolean(sysCorrelationStatus));
         }
 
         bufferFactory = new BufferFactory(iOBufferSize, new HeapByteBufferAllocator(), 512);
