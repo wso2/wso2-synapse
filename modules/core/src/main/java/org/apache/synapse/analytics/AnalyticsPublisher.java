@@ -63,17 +63,17 @@ public class AnalyticsPublisher {
 
     private static void loadConfigurations() {
         analyticsDisabledForAPI = !SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.SynapseConfiguration.API_ANALYTICS_ENABLED, true);
+                AnalyticsConstants.SynapseConfigKeys.API_ANALYTICS_ENABLED, true);
         analyticsDisabledForSequences = !SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.SynapseConfiguration.SEQUENCE_ANALYTICS_ENABLED, true);
+                AnalyticsConstants.SynapseConfigKeys.SEQUENCE_ANALYTICS_ENABLED, true);
         analyticsDisabledForProxyServices = !SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.SynapseConfiguration.PROXY_SERVICE_ANALYTICS_ENABLED, true);
+                AnalyticsConstants.SynapseConfigKeys.PROXY_SERVICE_ANALYTICS_ENABLED, true);
         analyticsDisabledForEndpoints = !SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.SynapseConfiguration.ENDPOINT_ANALYTICS_ENABLED, true);
+                AnalyticsConstants.SynapseConfigKeys.ENDPOINT_ANALYTICS_ENABLED, true);
         analyticsDisabledForInboundEndpoints = !SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.SynapseConfiguration.INBOUND_ENDPOINT_ANALYTICS_ENABLED, true);
+                AnalyticsConstants.SynapseConfigKeys.INBOUND_ENDPOINT_ANALYTICS_ENABLED, true);
         AnalyticsPublisher.setNamedSequencesOnly(SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.SynapseConfiguration.NAMED_SEQUENCES_ONLY, false));
+                AnalyticsConstants.SynapseConfigKeys.NAMED_SEQUENCES_ONLY, false));
     }
 
     private static void prepareAnalyticServices() {

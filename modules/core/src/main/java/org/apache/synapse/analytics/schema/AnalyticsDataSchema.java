@@ -47,7 +47,7 @@ public class AnalyticsDataSchema {
         serverName = serverInfo.getServerName();
         ipAddress = serverInfo.getIpAddress();
         publisherId = SynapsePropertiesLoader.getPropertyValue(
-                AnalyticsConstants.SynapseConfiguration.IDENTIFIER, serverInfo.getHostName());
+                AnalyticsConstants.SynapseConfigKeys.IDENTIFIER, serverInfo.getHostName());
     }
 
     public void setPayload(AnalyticsDataSchemaElement payload) {
@@ -65,7 +65,7 @@ public class AnalyticsDataSchema {
         exportingAnalytic.add(AnalyticsConstants.EnvelopDef.SERVER_INFO, serverMetadata);
         exportingAnalytic.addProperty(AnalyticsConstants.EnvelopDef.TIMESTAMP, timestamp.toString());
         exportingAnalytic.addProperty(AnalyticsConstants.EnvelopDef.SCHEMA_VERSION,
-                AnalyticsConstants.SynapseConfiguration.SCHEMA_VERSION);
+                AnalyticsConstants.SynapseConfigKeys.SCHEMA_VERSION);
         exportingAnalytic.add(AnalyticsConstants.EnvelopDef.PAYLOAD, payload.toJsonObject());
 
         return exportingAnalytic;

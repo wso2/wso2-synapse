@@ -23,7 +23,7 @@ public class AnalyticsConstants {
     /**
      * Synapse Configurations
      */
-    public static class SynapseConfiguration {
+    public static class SynapseConfigKeys {
         /**
          * Schema version of the analytic.
          */
