@@ -126,12 +126,6 @@ public class SynapsePropertiesLoader {
      */
     public static Integer getIntegerProperty(String name, int def) {
         String val = getPropertyValue(name, String.valueOf(def));
-        if (val == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Parameter : " + name + " is not defined in the synapse.properties file.");
-            }
-            return def;
-        }
         if (log.isDebugEnabled()) {
             log.debug("synapse.properties parameter : " + name + " = " + val);
         }
