@@ -272,6 +272,10 @@ public class HeaderMediator extends AbstractMediator {
                 log.error("Unable to convert to SoapHeader Block", e);
             }
         }
+        if (XMLConfigConstants.SCOPE_DEFAULT.equals(scope) || scope == null) {
+            //This build is added to fix soap body getting deformed in API manager scenarios.
+            synCtx.getEnvelope().build();
+        }
     }
 
     private void removeFromHeaderList(List headersList) {
