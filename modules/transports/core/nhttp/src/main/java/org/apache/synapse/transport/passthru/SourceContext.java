@@ -171,6 +171,7 @@ public class SourceContext {
             }
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 long lastStateUpdateTime = sourceContext.getLastStateUpdatedTime();
+                // If the Correlation Logs are toggled (off -> on) during runtime, we need to reset the last state updated time.
                 if (PassThroughCorrelationConfigDataHolder.isToggled()) {
                     lastStateUpdateTime = sourceContext.updateLastStateUpdatedTime();
                     PassThroughCorrelationConfigDataHolder.resetToggled();

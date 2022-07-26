@@ -147,7 +147,7 @@ public class ServerWorker implements Runnable {
             ThreadContext.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
             /* Subsequent to removing the correlation id MDC thread local value, a new value is put in case
                there is one */
-            if ( PassThroughCorrelationConfigDataHolder.isEnable() && StringUtils.isNotEmpty(correlationId)) {
+            if (PassThroughCorrelationConfigDataHolder.isEnable() && StringUtils.isNotEmpty(correlationId)) {
                 ThreadContext.put(CorrelationConstants.CORRELATION_MDC_PROPERTY, correlationId);
                 /* Log the time taken to switch from the previous thread to this thread */
                 if (initiationTimestamp != 0) {
