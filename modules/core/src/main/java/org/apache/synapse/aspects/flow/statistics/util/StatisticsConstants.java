@@ -18,6 +18,8 @@
 
 package org.apache.synapse.aspects.flow.statistics.util;
 
+import org.apache.synapse.aspects.ComponentType;
+
 /**
  * This class holds constants related to  mediation flow statistics collection.
  */
@@ -207,5 +209,27 @@ public class StatisticsConstants {
     public static final String STAT_COLLECTOR_PROPERTY = "STATISTIC_COLLECTOR";
 
     public static final String CONTINUE_STATISTICS_FLOW = "CONTINUE_STATISTICS_FLOW";
+
+
+	public static String getComponentTypeToString(ComponentType componentType) {
+		switch (componentType) {
+			case PROXYSERVICE:
+				return StatisticsConstants.FLOW_STATISTICS_PROXYSERVICE;
+			case ENDPOINT:
+				return StatisticsConstants.FLOW_STATISTICS_ENDPOINT;
+			case INBOUNDENDPOINT:
+				return StatisticsConstants.FLOW_STATISTICS_INBOUNDENDPOINT;
+			case SEQUENCE:
+				return StatisticsConstants.FLOW_STATISTICS_SEQUENCE;
+			case MEDIATOR:
+				return StatisticsConstants.FLOW_STATISTICS_MEDIATOR;
+			case API:
+				return StatisticsConstants.FLOW_STATISTICS_API;
+			case RESOURCE:
+				return StatisticsConstants.FLOW_STATISTICS_RESOURCE;
+			default:
+				return StatisticsConstants.FLOW_STATISTICS_ANY;
+		}
+	}
 
 }

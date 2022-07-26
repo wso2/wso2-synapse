@@ -37,7 +37,6 @@ import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
-import org.apache.synapse.analytics.AnalyticsPublisher;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
@@ -1059,14 +1058,13 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         String inboundName = null;
         boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         Integer statisticReportingIndex = null;
-        InboundEndpoint inboundEndpoint = null;
 
         /*
          * If the method is invoked by the inbound endpoint
          * Then check for the endpoint name and then set the Log Appender Content
          */
         if (smc.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME) != null) {
-            inboundEndpoint = smc.getConfiguration().
+            InboundEndpoint inboundEndpoint = smc.getConfiguration().
                     getInboundEndpoint((String) smc.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME));
             if (inboundEndpoint != null) {
                 CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
@@ -1091,7 +1089,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             return false;
         }
         try {
-            smc.recordLatency();
             if (isStatisticsEnabled && inboundName != null) {
                 statisticReportingIndex = OpenEventCollector.reportEntryEvent(smc, inboundName, inboundAspectConfiguration,
                         ComponentType.INBOUNDENDPOINT);
@@ -1131,7 +1128,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                 CloseEventCollector.tryEndFlow(smc, inboundName, ComponentType.INBOUNDENDPOINT,
                         statisticReportingIndex, false);
             }
-            AnalyticsPublisher.publishInboundEndpointAnalytics(smc, inboundEndpoint);
         }
     }
 

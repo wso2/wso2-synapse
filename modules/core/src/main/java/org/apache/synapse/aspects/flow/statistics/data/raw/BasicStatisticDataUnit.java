@@ -18,6 +18,7 @@
 
 package org.apache.synapse.aspects.flow.statistics.data.raw;
 
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.SynapseEnvironment;
 
 /**
@@ -54,6 +55,11 @@ public class BasicStatisticDataUnit {
 	 * Synapse environment of the message context.
 	 */
 	private SynapseEnvironment synapseEnvironment;
+
+	/**
+	 * MessageContext for the component.
+	 */
+	private MessageContext messageContext;
 
 	public String getStatisticId() {
 		return statisticId;
@@ -101,5 +107,13 @@ public class BasicStatisticDataUnit {
 
 	public void setIsOutOnlyFlow(boolean isOutOnlyFlow) {
 		this.isOutOnlyFlow = isOutOnlyFlow;
+	}
+
+	public MessageContext getMessageContext() {
+		return messageContext;
+	}
+
+	public void setMessageContext(MessageContext messageContext) {
+		this.messageContext = messageContext;
 	}
 }

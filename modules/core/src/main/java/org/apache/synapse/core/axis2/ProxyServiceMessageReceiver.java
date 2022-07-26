@@ -33,7 +33,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.commons.CorrelationConstants;
-import org.apache.synapse.analytics.AnalyticsPublisher;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -102,7 +102,6 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         }
 
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
-        synCtx.recordLatency();
         Integer statisticReportingIndex = null;
         //Statistic reporting
         boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
@@ -273,7 +272,6 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                 debugManager.releaseMediationFlowLock();
             }
             doPostInjectUpdates(synCtx);
-            AnalyticsPublisher.publishProxyServiceAnalytics(synCtx, this.proxy);
         }
     }
 

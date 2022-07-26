@@ -18,7 +18,9 @@
 
 package org.apache.synapse.aspects.flow.statistics.publishing;
 
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,6 +53,8 @@ public class PublishingEvent {
 	private int faultCount;
 	private Integer hashCode;
 
+	private MessageContext messageContext;
+
 	public  PublishingEvent(){}
 
 	public PublishingEvent(String flowId, int componentIndex, StatisticsLog statisticsLog, String entryPoint, Integer entryPointHashcode) {
@@ -77,6 +81,7 @@ public class PublishingEvent {
 		this.entryPointHashcode = entryPointHashcode;
 		this.faultCount = statisticsLog.getNoOfFaults();
 		this.hashCode = statisticsLog.getHashCode();
+		this.messageContext = statisticsLog.getMessageContext();
 	}
 
 	public String getFlowId() {
@@ -292,5 +297,13 @@ public class PublishingEvent {
 		objectList.add(String.valueOf(this.hashCode));
 
 		return objectList;
+	}
+
+	public MessageContext getMessageContext() {
+		return messageContext;
+	}
+
+	public void setMessageContext(MessageContext messageContext) {
+		this.messageContext = messageContext;
 	}
 }

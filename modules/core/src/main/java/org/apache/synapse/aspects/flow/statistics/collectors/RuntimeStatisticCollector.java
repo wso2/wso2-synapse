@@ -329,6 +329,7 @@ public abstract class RuntimeStatisticCollector {
             handleError(eventHolder, event);
             return;
         }
+        event.getDataUnit().setMessageContext(messageContext);
         eventHolder.addEvent(event);
 
         if (eventHolder.countHolder.decrementAndGetStatCount() <= 0 &&
@@ -395,6 +396,7 @@ public abstract class RuntimeStatisticCollector {
             handleError(eventHolder, event);
             return;
         }
+        event.getDataUnit().setMessageContext(messageContext);
         eventHolder.addEvent(event);
 
         if (eventHolder.countHolder.decrementAndGetCallbackCount() <= 0 && eventHolder.countHolder.getStatCount() <= 0) {
@@ -439,6 +441,7 @@ public abstract class RuntimeStatisticCollector {
             eventHolder.setPublishMediationFlowStatistics(isMediationFlowStatisticsEnabled);
             messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
         }
+        event.getDataUnit().setMessageContext(messageContext);
 
         synchronized (eventHolder) {
             if (eventHolder.isEvenCollectionFinished()) {

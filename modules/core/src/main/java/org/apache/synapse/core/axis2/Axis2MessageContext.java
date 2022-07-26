@@ -80,16 +80,6 @@ public class Axis2MessageContext implements MessageContext {
     private final Stack<FaultHandler> faultStack = new Stack<FaultHandler>();
 
     /**
-     * Latency Stack is used to calculate latencies at different mediation stages.
-     */
-    private final Stack<Instant> latencyStack = new Stack<Instant>();
-
-    /**
-     * Maintains data which needs to be published with analytics AnalyticsPublisher.
-     */
-    private final Map<String, Object> analyticsMetadata = new HashMap<String, Object>();
-
-    /**
      * ContinuationState stack which is used to store ContinuationStates of mediation flow
      */
     private final Stack<ContinuationState> continuationStateStack = new Stack<ContinuationState>();
@@ -710,44 +700,29 @@ public class Axis2MessageContext implements MessageContext {
         this.messageFlowTracingState = messageFlowTracingState;
     }
 
-    @Override
-    public void recordLatency() {
-        latencyStack.push(Instant.now());
-    }
-
-    @Override
-    public long getLatency() {
-        if (latencyStack.isEmpty()) {
-            return -1;
-        }
-
-        return Duration.between(latencyStack.pop(), Instant.now()).toMillis();
-    }
-
     /**
      * Stores the value provided in the message context which will be published with analytics
      * @param key key for the analytic
      * @param value analytic value
      */
     public void setAnalyticsMetadata(String key, Object value) {
-        while (true) {  // Same implementation from org.apache.axis2.context
-            try {
-                this.analyticsMetadata.put(key, value);
-                break;
-            } catch (ConcurrentModificationException ignored) {}
+        HashMap<String, Object> analyticsMap = getAnalyticsMetadata();
+        if (analyticsMap == null) {
+            analyticsMap = new HashMap<>();
+            setProperty(SynapseConstants.ANALYTICS_METADATA, analyticsMap);
         }
+        analyticsMap.put(key, value);
     }
 
     public void removeAnalyticsMetadata(String key) {
-        while (true) {  // Same implementation from org.apache.axis2.context
-            try {
-                this.analyticsMetadata.remove(key);
-                break;
-            } catch (ConcurrentModificationException ignored) {}
+        HashMap<String, Object> analyticsMap = getAnalyticsMetadata();
+        if (analyticsMap != null) {
+            analyticsMap.remove(key);
         }
     }
 
-    public Map<String, Object> getAnalyticsMetadata() {
-        return this.analyticsMetadata;
+    public HashMap<String, Object> getAnalyticsMetadata() {
+        //noinspection unchecked
+        return (HashMap<String, Object>) getProperty(SynapseConstants.ANALYTICS_METADATA);
     }
 }
