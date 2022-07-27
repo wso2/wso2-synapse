@@ -612,4 +612,6 @@ public final class SynapseConstants {
     //Jaeger SpanID tracerID constants
     public static final String JAEGER_TRACE_ID = "jaeger_trace_id";
     public static final String JAEGER_SPAN_ID = "jaeger_span_id";
+
+    public static final String ANALYTICS_METADATA = "ANALYTICS_METADATA";
 }
