@@ -256,4 +256,28 @@ public class BridgeConstants {
 
     public static final String DEFAULT_OUTBOUND_USER_AGENT = "WSO2-HTTP-Synapse-Transport";
 
+    /**
+     * A message context property that stores the sequence that process server pushes.
+     */
+    public static final String SERVER_PUSH_SEQUENCE = "SERVER_PUSH_SEQUENCE";
+
+    /**
+     * A message context property that has the push promise from backend server if it is a server push response.
+     */
+    public static final String PUSH_PROMISE = "PUSH_PROMISE";
+
+    /**
+     * A synapse message context property that defines the resource path of the push response.
+     */
+    public static final String SERVER_PUSH_RESOURCE_PATH = "SERVER_PUSH_RESOURCE_PATH";
+
+    /**
+     * A message context property indicating "TRUE" means the response is a server push.
+     */
+    public static final String SERVER_PUSH = "SERVER_PUSH";
+
+    /**
+     * A message context property indicating "TRUE" means the response is a server push promise.
+     */
+    public static final String IS_PUSH_PROMISE = "IS_PUSH_PROMISE";
 }
