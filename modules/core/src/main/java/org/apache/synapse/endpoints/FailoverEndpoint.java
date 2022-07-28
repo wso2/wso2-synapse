@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import javax.xml.stream.XMLStreamException;
 
 /**
@@ -160,6 +161,14 @@ public class FailoverEndpoint extends AbstractEndpoint {
             boolean foundEndpoint = false;
             for (Endpoint endpoint : getChildren()) {
                 if (endpoint.readyToSend()) {
+                    // remove the ERROR properties set by previous attempts of the same request
+                    Set properties = synCtx.getPropertyKeySet();
+                    if (properties != null) {
+                        properties.remove(PassThroughConstants.ERROR_CODE);
+                        properties.remove(PassThroughConstants.ERROR_MESSAGE);
+                        properties.remove(PassThroughConstants.ERROR_EXCEPTION);
+                        properties.remove(PassThroughConstants.ERROR_DETAIL);
+                    }
                     foundEndpoint = true;
                     if (isARetry && metricsMBean != null) {
                         metricsMBean.reportSendingFault(SynapseConstants.ENDPOINT_FO_FAIL_OVER);
