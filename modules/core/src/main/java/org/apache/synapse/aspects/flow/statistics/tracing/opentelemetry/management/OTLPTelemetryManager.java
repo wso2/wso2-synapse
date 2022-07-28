@@ -53,7 +53,7 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
 
         String headerProperty = getHeaderKeyProperty();
         if (headerProperty == null) {
-            throw new SynapseException("No properties found starting with opentelemetry.otlp.header_properties");
+            throw new SynapseException("No properties found starting with opentelemetry.properties");
         }
         String headerKey = headerProperty.substring(TelemetryConstants.OPENTELEMETRY_PROPERTIES_PREFIX.length());
         String endPointURL = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_URL, null);
