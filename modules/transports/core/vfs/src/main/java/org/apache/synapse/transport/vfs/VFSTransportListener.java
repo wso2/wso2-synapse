@@ -583,7 +583,6 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 // The file object is not readable. Clean the cached connection to trigger
                 // the retry mechanism
                 closeFileSystem(fileObject);
-                fsManager.getFilesCache().clear(fileObject.getParent().getFileSystem());
                 if (log.isDebugEnabled()) {
                     log.debug("Unable to access or read file or directory : "
                             + VFSUtils.maskURLPassword(fileURI)
