@@ -20,6 +20,7 @@ package org.apache.synapse.aspects.flow.statistics.data.raw;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.elasticsearch.ElasticMetadata;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.endpoints.Endpoint;
 
@@ -165,9 +166,9 @@ public class StatisticsLog {
 	private String statusDescription;
 
 	/**
-	 * MessageContext of the component.
+	 * Elastic analytics metadata holder.
 	 */
-	private MessageContext messageContext;
+	private ElasticMetadata elasticMetadata;
 
 	public StatisticsLog(StatisticDataUnit statisticDataUnit) {
 		this.parentIndex = statisticDataUnit.getParentIndex();
@@ -410,11 +411,11 @@ public class StatisticsLog {
 		this.statusDescription = statusDescription;
 	}
 
-	public MessageContext getMessageContext() {
-		return messageContext;
+	public ElasticMetadata getElasticMetadata() {
+		return elasticMetadata;
 	}
 
-	public void setMessageContext(MessageContext messageContext) {
-		this.messageContext = messageContext;
+	public void setElasticMetadata(ElasticMetadata elasticMetadata) {
+		this.elasticMetadata = elasticMetadata;
 	}
 }

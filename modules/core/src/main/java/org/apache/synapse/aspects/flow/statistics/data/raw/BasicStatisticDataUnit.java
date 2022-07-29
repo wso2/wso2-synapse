@@ -19,6 +19,7 @@
 package org.apache.synapse.aspects.flow.statistics.data.raw;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.aspects.flow.statistics.elasticsearch.ElasticMetadata;
 import org.apache.synapse.core.SynapseEnvironment;
 
 /**
@@ -57,9 +58,9 @@ public class BasicStatisticDataUnit {
 	private SynapseEnvironment synapseEnvironment;
 
 	/**
-	 * MessageContext for the component.
+	 * Elastic analytics metadata holder.
 	 */
-	private MessageContext messageContext;
+	private ElasticMetadata elasticMetadata;
 
 	public String getStatisticId() {
 		return statisticId;
@@ -109,11 +110,11 @@ public class BasicStatisticDataUnit {
 		this.isOutOnlyFlow = isOutOnlyFlow;
 	}
 
-	public MessageContext getMessageContext() {
-		return messageContext;
+	public void collectMetadataForElastic(MessageContext messageContext) {
+		this.elasticMetadata = new ElasticMetadata(messageContext);
 	}
 
-	public void setMessageContext(MessageContext messageContext) {
-		this.messageContext = messageContext;
+	public ElasticMetadata getElasticMetadata() {
+		return elasticMetadata;
 	}
 }

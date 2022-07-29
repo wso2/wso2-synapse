@@ -20,6 +20,7 @@ package org.apache.synapse.aspects.flow.statistics.publishing;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
+import org.apache.synapse.aspects.flow.statistics.elasticsearch.ElasticMetadata;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 import java.util.ArrayList;
@@ -53,7 +54,7 @@ public class PublishingEvent {
 	private int faultCount;
 	private Integer hashCode;
 
-	private MessageContext messageContext;
+	private ElasticMetadata elasticMetadata;
 
 	public  PublishingEvent(){}
 
@@ -81,7 +82,7 @@ public class PublishingEvent {
 		this.entryPointHashcode = entryPointHashcode;
 		this.faultCount = statisticsLog.getNoOfFaults();
 		this.hashCode = statisticsLog.getHashCode();
-		this.messageContext = statisticsLog.getMessageContext();
+		this.elasticMetadata = statisticsLog.getElasticMetadata();
 	}
 
 	public String getFlowId() {
@@ -299,11 +300,11 @@ public class PublishingEvent {
 		return objectList;
 	}
 
-	public MessageContext getMessageContext() {
-		return messageContext;
+	public ElasticMetadata getElasticMetadata() {
+		return elasticMetadata;
 	}
 
-	public void setMessageContext(MessageContext messageContext) {
-		this.messageContext = messageContext;
+	public void setElasticMetadata(ElasticMetadata elasticMetadata) {
+		this.elasticMetadata = elasticMetadata;
 	}
 }
