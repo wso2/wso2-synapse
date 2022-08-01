@@ -20,6 +20,7 @@ package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryConstants;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.OpenTelemetryManager;
 import org.apache.synapse.config.SynapsePropertiesLoader;
@@ -49,8 +50,8 @@ public class OpenTelemetryManagerHolder {
         try {
             openTelemetryManager = (OpenTelemetryManager) Class.forName(classpath).newInstance();
             openTelemetryManager.init();
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException exception) {
-            logger.error("Failed to initialize OpenTelemetryManager for class name: " + classpath, exception);
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | SynapseException e) {
+            logger.error("Failed to initialize OpenTelemetryManager for class name: " + classpath, e);
         }
     }
 
