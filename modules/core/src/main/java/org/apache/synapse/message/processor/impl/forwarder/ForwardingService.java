@@ -124,6 +124,8 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	 */
 	private String[] nonRetryStatusCodes = null;
 
+	private String[] nonRetryStoreCodes = null;
+
 	/*
 	 * These two maintain the state of service. For each iteration these should
 	 * be reset
@@ -415,6 +417,9 @@ public class ForwardingService implements Task, ManagedLifecycle {
 		nonRetryStatusCodes =
 				(String[]) parametersMap.get(ForwardingProcessorConstants.NON_RETRY_STATUS_CODES);
 
+		nonRetryStoreCodes =
+				(String[]) parametersMap.get(ForwardingProcessorConstants.NON_RETRY_STORE_STATUS_CODES);
+
 		// Default to FALSE.
 		if (parametersMap.get(ForwardingProcessorConstants.MAX_DELIVERY_DROP) != null &&
 				parametersMap.get(ForwardingProcessorConstants.MAX_DELIVERY_DROP).toString()
@@ -665,6 +670,9 @@ public class ForwardingService implements Task, ManagedLifecycle {
 					// This Means we have invoked an out only operation
 					// remove the message and reset the count
 					onForwardSuccess(endpoint);
+				} else if (isNonRetryErrorAndStore(messageToDispatch)) {
+					getFreshCopyOfOriginalMessage(outCtx, originalEnvelop, originalJsonInputStream);
+					storeMessageToBackupStoreAndContinue(outCtx, failMessageStore);
 				} else {
 					// This means some error has occurred in out only scenario.
 					isSuccessful = false;
@@ -689,6 +697,12 @@ public class ForwardingService implements Task, ManagedLifecycle {
 					if (sendThroughReplySeq(outCtx)) {
 						onForwardSuccess(endpoint);
 					}
+				} else if (isNonRetryErrorAndStore(outCtx)) {
+					// if the response SC belonged to the successful SC family or
+					// is defined in the non-retry, it will not reach here.
+					// this is only for unsuccessful SC's that need not retry but has to be stored.
+					getFreshCopyOfOriginalMessage(outCtx, originalEnvelop, originalJsonInputStream);
+					storeMessageToBackupStoreAndContinue(outCtx, failMessageStore);
 				} else {
 					isSuccessful = false;
 					handleFailedInvocations(outCtx);
@@ -746,14 +760,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	 * @return true if it is a successful invocation
 	 */
 	private boolean validateResponse(MessageContext responseMessage) {
-		String responseSc = "";
-		Object httpSc = ((Axis2MessageContext) responseMessage).
-				getAxis2MessageContext().getProperty(SynapseConstants.HTTP_SC);
-		// Some events where response code is null (i.e. sender socket timeout
-		// when there is no response from endpoint)
-		if (httpSc != null) {
-			responseSc = httpSc.toString();
-		}
+		String responseSc = getHttpSCAsString(responseMessage);
 		int sc = 0;
 		try {
 			sc = Integer.parseInt(responseSc.trim());
@@ -963,16 +970,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	}
 
 	private boolean isNonRetryErrorCode(final String responseHttpSc) {
-		boolean isNonRetryErrCode = false;
-		if (nonRetryStatusCodes != null) {
-			for (String nonretrySc : nonRetryStatusCodes) {
-				if (nonretrySc.trim().contains(responseHttpSc.trim())) {
-					isNonRetryErrCode = true;
-					break;
-				}
-			}
-		}
-		return isNonRetryErrCode;
+		return hasHttpSc(responseHttpSc, nonRetryStatusCodes);
 	}
 
 	private boolean isRunningUnderCronExpression() {
@@ -1101,6 +1099,34 @@ public class ForwardingService implements Task, ManagedLifecycle {
 		INFORMATIONAL, SUCCESSFUL, REDIRECTION, CLIENT_ERROR, SERVER_ERROR, OTHER
 	}
 
+	private boolean isNonRetryErrorAndStore(MessageContext responseMessage) {
+		String responseSc = getHttpSCAsString(responseMessage);
+		return hasHttpSc(responseSc, nonRetryStoreCodes);
+	}
+
+	private boolean hasHttpSc(String statusCode, String[] scList) {
+		boolean hasStatusCode = false;
+		if (nonRetryStoreCodes != null) {
+			for (String sc : scList) {
+				if (sc.trim().contains(statusCode.trim())) {
+					hasStatusCode = true;
+					break;
+				}
+			}
+		}
+		return hasStatusCode;
+	}
+	private String getHttpSCAsString(MessageContext messageContext) {
+		String responseSc = "";
+		Object httpSc = ((Axis2MessageContext) messageContext).
+				getAxis2MessageContext().getProperty(SynapseConstants.HTTP_SC);
+		// Some events where response code is null (i.e. sender socket timeout
+		// when there is no response from endpoint)
+		if (httpSc != null) {
+			responseSc = httpSc.toString();
+		}
+		return responseSc;
+	}
 	private void setSoapHeaderBlock(MessageContext synCtx) {
 		// Send the SOAP Header Blocks to support WS-Addressing
 		if (synCtx.getEnvelope().getHeader() != null) {

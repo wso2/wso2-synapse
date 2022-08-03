@@ -101,6 +101,9 @@ public class MessageProcessorSerializer {
                 if (ForwardingProcessorConstants.NON_RETRY_STATUS_CODES.equals(name)) {
                     Object statusCode = processor.getParameters().get(ForwardingProcessorConstants.NON_RETRY_STATUS_CODES);
                     value = StringUtils.join((String[]) statusCode, ",");
+                } else if (ForwardingProcessorConstants.NON_RETRY_STORE_STATUS_CODES.equals(name)) {
+                    Object statusCode = processor.getParameters().get(ForwardingProcessorConstants.NON_RETRY_STORE_STATUS_CODES);
+                    value = StringUtils.join((String[]) statusCode, ",");
                 } else {
                     value = (String) processor.getParameters().get(name);
                 }
