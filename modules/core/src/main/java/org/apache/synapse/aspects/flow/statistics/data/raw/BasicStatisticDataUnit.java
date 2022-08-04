@@ -110,7 +110,7 @@ public class BasicStatisticDataUnit {
 		this.isOutOnlyFlow = isOutOnlyFlow;
 	}
 
-	public void collectMetadataForElastic(MessageContext messageContext) {
+	public void generateElasticMetadata(MessageContext messageContext) {
 		this.elasticMetadata = new ElasticMetadata(messageContext);
 	}
 
