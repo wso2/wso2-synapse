@@ -18,8 +18,6 @@
 */
 package org.apache.synapse.transport.vfs;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
@@ -203,20 +201,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         if (entry.isClusterAware()) {
             boolean leader = true;
             ClusteringAgent agent = getConfigurationContext().getAxisConfiguration().getClusteringAgent();
-            if (agent != null && agent.getParameter("domain") != null) {
-                //hazelcast clustering instance name
-                String hazelcastInstanceName = agent.getParameter("domain").getValue() + ".instance";
-                HazelcastInstance instance = Hazelcast.getHazelcastInstanceByName(hazelcastInstanceName);
-                if (instance != null) {
-                    // dirty leader election
-                    leader = instance.getCluster().getMembers().iterator().next().localMember();
-                } else {
-                    log.warn("Clustering error, running the polling task in this node");
-                }
-            } else {
-                log.warn("Although proxy is cluster aware, clustering config are not present, hence running the" +
+            log.warn("Although proxy is cluster aware, clustering config are not present, hence running the" +
                          " the polling task in this node");
-            }
             if (!leader) {
                 if (log.isDebugEnabled()) {
                     log.debug("This Member is not the leader");
