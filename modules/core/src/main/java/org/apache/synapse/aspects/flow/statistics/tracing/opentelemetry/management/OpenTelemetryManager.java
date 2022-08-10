@@ -33,6 +33,7 @@ public interface OpenTelemetryManager {
 
     /**
      * Return the OpenTelemetry tracer from the initialized openTelemetry instance.
+     *
      * @return OpenTelemetry tracer.
      */
     Tracer getTelemetryTracer();
@@ -44,17 +45,14 @@ public interface OpenTelemetryManager {
 
     /**
      * Return the service name.
+     *
      * @return service name.
      */
     String getServiceName();
 
     /**
-     * Resolves the OpenTelemetry compatible span handler.
-     */
-    void resolveHandler();
-
-    /**
      * Returns the OpenTelemetry compatible span handler.
+     *
      * @return An OpenTelemetry compatible span handler.
      */
     OpenTelemetrySpanHandler getHandler();

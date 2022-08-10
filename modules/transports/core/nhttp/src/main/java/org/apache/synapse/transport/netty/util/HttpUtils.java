@@ -38,6 +38,7 @@ import org.wso2.transport.http.netty.contract.HttpResponseFuture;
 import org.wso2.transport.http.netty.contract.exceptions.ServerConnectorException;
 import org.wso2.transport.http.netty.contractimpl.sender.channel.pool.ConnectionManager;
 import org.wso2.transport.http.netty.contractimpl.sender.channel.pool.PoolConfiguration;
+import org.wso2.transport.http.netty.message.Http2PushPromise;
 import org.wso2.transport.http.netty.message.HttpCarbonMessage;
 import org.wso2.transport.http.netty.message.HttpMessageDataStreamer;
 import org.wso2.transport.http.netty.message.PooledDataStreamerFactory;
@@ -182,6 +183,46 @@ public class HttpUtils {
             responseFuture = requestMsg.respond(responseMsg);
         } catch (ServerConnectorException e) {
             throw new AxisFault("Error occurred while submitting the response to the client", e);
+        }
+        return responseFuture;
+    }
+
+    /**
+     * Send the server push promises to the client.
+     *
+     * @param pushPromise Http2PushPromise
+     * @param requestMsg  HttpCarbonMessage
+     * @return HttpResponseFuture
+     * @throws AxisFault if error occurred while sending server pushes
+     */
+    public static HttpResponseFuture pushPromise(Http2PushPromise pushPromise, HttpCarbonMessage requestMsg) throws AxisFault {
+
+        HttpResponseFuture responseFuture;
+        try {
+            responseFuture = requestMsg.pushPromise(pushPromise);
+        } catch (ServerConnectorException e) {
+            throw new AxisFault("Error occurred while sending push promise", e);
+        }
+        return responseFuture;
+    }
+
+    /**
+     * Send the promised server push responses to the client.
+     *
+     * @param http2PushPromise Http2PushPromise
+     * @param outboundPushMsg  HttpCarbonMessage
+     * @param requestMsg       HttpCarbonMessage
+     * @return HttpResponseFuture
+     * @throws AxisFault if error occurred while sending the server push responses
+     */
+    public static HttpResponseFuture pushResponse(Http2PushPromise http2PushPromise,
+                                                  HttpCarbonMessage outboundPushMsg, HttpCarbonMessage requestMsg) throws AxisFault {
+
+        HttpResponseFuture responseFuture;
+        try {
+            responseFuture = requestMsg.pushResponse(outboundPushMsg, http2PushPromise);
+        } catch (ServerConnectorException e) {
+            throw new AxisFault("Error occurred while sending server push", e);
         }
         return responseFuture;
     }

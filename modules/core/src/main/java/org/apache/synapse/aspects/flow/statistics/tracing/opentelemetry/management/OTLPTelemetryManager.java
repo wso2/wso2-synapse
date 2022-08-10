@@ -21,9 +21,10 @@ package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.managem
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.ContextPropagators;
-import io.opentelemetry.exporter.jaeger.JaegerGrpcSpanExporter;
-import io.opentelemetry.extension.trace.propagation.JaegerPropagator;
+import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
+import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporterBuilder;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
@@ -31,16 +32,17 @@ import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.OpenTelemetrySpanHandler;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.SpanHandler;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.scoping.TracingScopeManager;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 
-import java.util.concurrent.TimeUnit;
+import java.util.Enumeration;
 
-public class JaegerTelemetryManager implements OpenTelemetryManager {
+public class OTLPTelemetryManager implements OpenTelemetryManager {
 
-    private Log logger = LogFactory.getLog(JaegerTelemetryManager.class);
+    private Log logger = LogFactory.getLog(OTLPTelemetryManager.class);
     private SdkTracerProvider sdkTracerProvider;
     private OpenTelemetry openTelemetry;
     private TelemetryTracer tracer;
@@ -49,42 +51,29 @@ public class JaegerTelemetryManager implements OpenTelemetryManager {
     @Override
     public void init() {
 
+        String headerProperty = getHeaderKeyProperty();
+        if (headerProperty == null) {
+            throw new SynapseException("No properties found starting with opentelemetry.properties");
+        }
+        String headerKey = headerProperty.substring(TelemetryConstants.OPENTELEMETRY_PROPERTIES_PREFIX.length());
         String endPointURL = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_URL, null);
-        String endPointHost = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_HOST,
-                TelemetryConstants.DEFAULT_JAEGER_HOST);
-        String endPointPort = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_PORT,
-                TelemetryConstants.DEFAULT_JAEGER_PORT);
-        JaegerGrpcSpanExporter jaegerExporter;
-        if (endPointURL == null) {
-            String jaegerExporterEndpoint = String.format("http://%s:%s", endPointHost, endPointPort);
-            jaegerExporter = JaegerGrpcSpanExporter.builder().setEndpoint(jaegerExporterEndpoint).setTimeout(30,
-                    TimeUnit.SECONDS).build();
-        } else {
-            if (endPointHost != null && endPointPort != null){
-                logger.info("Disregarding " + TelemetryConstants.OPENTELEMETRY_HOST + " and " +
-                        TelemetryConstants.OPENTELEMETRY_PORT + ", and using the provided " +
-                        TelemetryConstants.OPENTELEMETRY_CLASS);
-            }
-            jaegerExporter =
-                    JaegerGrpcSpanExporter.builder().setEndpoint(endPointURL).setTimeout(30, TimeUnit.SECONDS)
-                            .build();
-        }
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("Jaeger exporter: " + jaegerExporter + " is configured");
-        }
+        String headerValue = SynapsePropertiesLoader.getPropertyValue(headerProperty, null);
+        OtlpGrpcSpanExporterBuilder otlpGrpcSpanExporterBuilder = OtlpGrpcSpanExporter.builder()
+                .setEndpoint(endPointURL)
+                .setCompression("gzip")
+                .addHeader(headerKey, headerValue);
 
         Resource serviceNameResource = Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME,
                 TelemetryConstants.SERVICE_NAME));
 
         sdkTracerProvider = SdkTracerProvider.builder()
-                .addSpanProcessor(BatchSpanProcessor.builder(jaegerExporter).build())
+                .addSpanProcessor(BatchSpanProcessor.builder(otlpGrpcSpanExporterBuilder.build()).build())
                 .setResource(Resource.getDefault().merge(serviceNameResource))
                 .build();
 
         openTelemetry = OpenTelemetrySdk.builder()
                 .setTracerProvider(sdkTracerProvider)
-                .setPropagators(ContextPropagators.create(JaegerPropagator.getInstance()))
+                .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
                 .build();
 
         this.tracer = new TelemetryTracer(getTelemetryTracer());
@@ -118,5 +107,22 @@ public class JaegerTelemetryManager implements OpenTelemetryManager {
     public OpenTelemetrySpanHandler getHandler() {
 
         return this.handler;
+    }
+
+    /**
+     * Return the header key from synapse.properties file for specific OTLP based APM.
+     *
+     * @return Header key.
+     */
+    public String getHeaderKeyProperty() {
+
+        Enumeration<?> synapsePropertyKeys = SynapsePropertiesLoader.loadSynapseProperties().propertyNames();
+        while (synapsePropertyKeys.hasMoreElements()) {
+            String property = (String) synapsePropertyKeys.nextElement();
+            if (property.startsWith(TelemetryConstants.OPENTELEMETRY_PROPERTIES_PREFIX)) {
+                return property;
+            }
+        }
+        return null;
     }
 }

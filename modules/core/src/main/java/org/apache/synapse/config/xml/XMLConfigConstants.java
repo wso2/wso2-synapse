@@ -135,4 +135,8 @@ public class XMLConfigConstants {
     public static final String XPATH_ENVELOPE_RELATIVE = "envelope";
     
     public static final String CONFIG_REF = "configKey";
+    /**
+     * The server push processing sequence name.
+     */
+    public static final String SERVER_PUSH_SEQUENCE = "serverPushSequence";
 }

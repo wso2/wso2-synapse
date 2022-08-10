@@ -24,12 +24,13 @@ import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCol
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTelemetryManagerHolder;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.SynapsePropertiesLoader;
+import org.apache.synapse.data.ConfigDataHolder;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.wso2.securevault.PasswordManager;
 import org.wso2.securevault.SecurityConstants;
 
-import javax.management.NotCompliantMBeanException;
 import java.util.Date;
+import javax.management.NotCompliantMBeanException;
 
 /**
  * This is the core class that starts up a Synapse instance.
@@ -182,6 +183,9 @@ public class ServerManager {
             // creates the Synapse Configuration using the SynapseController
             serverContextInformation.setSynapseConfiguration(
                     synapseController.createSynapseConfiguration());
+
+            ConfigDataHolder.getInstance().setRegistry(serverContextInformation.
+                    getSynapseConfiguration().getRegistry());
 
             // creates the Synapse Environment using the SynapseController
             serverContextInformation.setSynapseEnvironment(
