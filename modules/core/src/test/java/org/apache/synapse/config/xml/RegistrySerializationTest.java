@@ -20,7 +20,6 @@
 package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.impl.exception.XMLComparisonException;
 import org.apache.synapse.registry.Registry;
 
 import java.util.Properties;
@@ -31,12 +30,9 @@ public class RegistrySerializationTest extends AbstractTestCase {
     }
 
     public void testRegistrySerialization() {
-
-        String regitryConfiguration = "<syn:registry xmlns:syn=\"http://ws.apache.org/ns/synapse\" " +
-                "provider=\"org.apache.synapse.registry.url.SimpleURLRegistry\">" +
-                "<syn:parameter name=\"root\">file:./../../repository/</syn:parameter>" +
-                "<syn:parameter name=\"cachableDuration\">15000</syn:parameter>" +
-                "</syn:registry>";
+        String regitryConfiguration = "<registry xmlns=\"http://ws.apache.org/ns/synapse\" provider=\"org.apache.synapse.registry.url" +
+                ".SimpleURLRegistry\"><parameter name=\"cachableDuration\">15000</parameter><parameter name=\"root\">file:./../." +
+                "./repository/</parameter></registry>";
 
         OMElement registryElement = createOMElement(regitryConfiguration);
         Registry registry = RegistryFactory.createRegistry(registryElement, new Properties());

@@ -52,7 +52,8 @@ import static org.mockito.ArgumentMatchers.any;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(AxisEngine.class)
-@PowerMockIgnore("javax.management.*")
+@PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "javax.management.*", "javax.xml.parsers.*", "org.apache" +
+        ".xerces.jaxp.*", "javax.naming.spi.*", "javax.naming.*"})
 public class RequestResponseTest {
     private static final String HOST = "127.0.0.1";
     private static final int PORT = 8286;
@@ -83,8 +84,6 @@ public class RequestResponseTest {
     @Test
     public void testRequestAck() throws Exception {
         PowerMockito.mockStatic(AxisEngine.class);
-        PowerMockito.doNothing().doThrow(new RuntimeException()).when(AxisEngine.class);
-
         HttpClient client = new HttpClient();
         PostMethod method = new PostMethod(ServiceUtils.getServiceEndpoint("myservice", HOST, PORT));
         method.setRequestHeader("Content-Type", "application/xml");

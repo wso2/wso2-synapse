@@ -35,7 +35,6 @@ import org.apache.http.nio.reactor.IOSession;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.util.BufferFactory;
-import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
 import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,15 +46,18 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.caching.digest.DigestGenerator;
+
 import java.util.HashMap;
 import java.util.Map;
+
 import static org.mockito.ArgumentMatchers.any;
 
 /**
  * Test class for PassThroughHttpSender
  */
 @RunWith(PowerMockRunner.class)
-@PowerMockIgnore("javax.management.*")
+@PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "javax.management.*", "javax.xml.parsers.*", "org.apache" +
+        ".xerces.jaxp.*", "javax.naming.spi.*", "javax.naming.*", "jdk.internal.reflect.*"})
 @PrepareForTest({ PassThroughHttpSender.class, SourceContext.class, SourceResponseFactory.class})
 public class PassThroughHttpSenderTest extends TestCase {
 
