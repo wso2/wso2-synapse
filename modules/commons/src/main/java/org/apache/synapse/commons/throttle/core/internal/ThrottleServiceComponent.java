@@ -17,9 +17,11 @@
 */
 package org.apache.synapse.commons.throttle.core.internal;
 
+import com.hazelcast.core.HazelcastInstance;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.throttle.core.DistributedCounterManager;
+import org.apache.synapse.commons.throttle.core.HazelcastDistributedCounterManager;
 import org.apache.synapse.commons.throttle.core.ThrottleUtil;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;

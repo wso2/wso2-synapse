@@ -215,7 +215,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 }
             } else {
                 log.warn("Although proxy is cluster aware, clustering config are not present, hence running the" +
-                        " the polling task in this node");
+                         " the polling task in this node");
             }
             if (!leader) {
                 if (log.isDebugEnabled()) {
