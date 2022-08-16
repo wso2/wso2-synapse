@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Set;
 
 /**
  * A Load balance endpoint contains multiple child endpoints. It routes messages according to the
@@ -203,6 +204,14 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
         evaluateProperties(synCtx);
 
         if (endpoint != null) {
+            // remove the ERROR properties set by previous attempts of the same request
+            Set properties = synCtx.getPropertyKeySet();
+            if (properties != null) {
+                properties.remove(PassThroughConstants.ERROR_CODE);
+                properties.remove(PassThroughConstants.ERROR_MESSAGE);
+                properties.remove(PassThroughConstants.ERROR_EXCEPTION);
+                properties.remove(PassThroughConstants.ERROR_DETAIL);
+            }
             // if this is not a retry
             if (synCtx.getProperty(SynapseConstants.LAST_ENDPOINT) == null) {
                 // We have to build the envelop when we are supporting failover, as we
