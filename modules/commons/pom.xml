@@ -162,10 +162,6 @@
             <artifactId>activation</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.orbit.com.hazelcast</groupId>
-            <artifactId>hazelcast</artifactId>
-        </dependency>
-        <dependency>
           <groupId>org.apache.axis2</groupId>
           <artifactId>axis2-transport-base</artifactId>
         </dependency>
