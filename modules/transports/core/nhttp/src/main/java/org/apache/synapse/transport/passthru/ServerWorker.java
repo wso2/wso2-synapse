@@ -549,7 +549,7 @@ public class ServerWorker implements Runnable {
                 && msgContext.getTransportIn().getParameter(NhttpConstants.SSL_VERIFY_CLIENT) != null) {
                 try {
                     msgContext.setProperty(NhttpConstants.SSL_CLIENT_AUTH_CERT_X509,
-                                           ssliosession.getSSLSession().getPeerCertificateChain());
+                                           ssliosession.getSSLSession().getPeerCertificates());
                 } catch (SSLPeerUnverifiedException e) {
                     //Peer Certificate Chain may not be available always.(in case of Mutual SSL is not enabled)
                     if (log.isTraceEnabled()) {
