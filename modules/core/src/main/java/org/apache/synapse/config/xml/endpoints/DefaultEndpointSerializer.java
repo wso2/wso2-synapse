@@ -69,6 +69,9 @@ public class DefaultEndpointSerializer extends EndpointSerializer {
             element.addAttribute(fac.createOMAttribute("format", null, "soap11"));
         } else if (SynapseConstants.FORMAT_SOAP12.equals(endpointDefinition.getFormat())) {
             element.addAttribute(fac.createOMAttribute("format", null, "soap12"));
+        } else if (SynapseConstants.ADDRESS_ENDPOINT_FORMAT_REST.equals(endpointDefinition.getFormat())) {
+            // To support integration studio address endpoints with format 'rest'
+            element.addAttribute(fac.createOMAttribute("format", null, "rest"));
         } else if (SynapseConstants.FORMAT_REST.equals(endpointDefinition.getFormat())) {
             element.addAttribute(fac.createOMAttribute("format", null, "api"));
 

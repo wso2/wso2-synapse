@@ -365,7 +365,7 @@ public final class SynapseConstants {
     public static final String FORMAT_SOAP11 = "soap11";
     public static final String FORMAT_SOAP12 = "soap12";    
     public static final String FORMAT_REST = "api";
-
+    public static final String ADDRESS_ENDPOINT_FORMAT_REST = "rest";
     // - Blocking Message Sender Constants
     public static final String BLOCKING_SENDER_ERROR = "blocking.sender.error";
     public static final String SET_ROLLBACK_ONLY = "SET_ROLLBACK_ONLY";
