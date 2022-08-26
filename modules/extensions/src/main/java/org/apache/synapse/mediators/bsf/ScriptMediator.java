@@ -171,6 +171,11 @@ public class ScriptMediator extends AbstractMediator {
     private ClassLoader loader;
 
     /**
+     * Store the Oracle Nashorn Factory if available in the JDK
+     */
+    private ScriptEngineFactory oracleNashornFactory;
+
+    /**
      * Create a script mediator for the given language and given script source.
      *
      * @param language         the BSF language
@@ -595,9 +600,10 @@ public class ScriptMediator extends AbstractMediator {
         engineManager.registerEngineExtension("groovy", new GroovyScriptEngineFactory());
         engineManager.registerEngineExtension("rb", new JRubyScriptEngineFactory());
         engineManager.registerEngineExtension("py", new JythonScriptEngineFactory());
+        oracleNashornFactory = getOracleNashornFactory();
         if (language.equals(NASHORN_JAVA_SCRIPT)) {
             if (isJDKContainNashorn()) {
-                engineManager.registerEngineName(NASHORN, getOracleNashornFactory());
+                engineManager.registerEngineName(NASHORN, oracleNashornFactory);
             } else {
                 engineManager.registerEngineName(NASHORN, OpenJDKNashornFactoryWrapper.getOpenJDKNashornFactory());
             }
@@ -694,7 +700,7 @@ public class ScriptMediator extends AbstractMediator {
     }
 
     private boolean isJDKContainNashorn() {
-        return getOracleNashornFactory() != null;
+        return oracleNashornFactory != null;
     }
 
     private ScriptEngineFactory getOracleNashornFactory() {
