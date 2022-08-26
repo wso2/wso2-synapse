@@ -121,7 +121,10 @@ public class DefaultEndpointFactory extends EndpointFactory {
             } else if (SynapseConstants.FORMAT_REST.equals(forceValue)) {
                 definition.setForceREST(true);
                 definition.setFormat(SynapseConstants.FORMAT_REST);
-
+            // To support integration studio address endpoints with format 'rest'
+            } else if (SynapseConstants.ADDRESS_ENDPOINT_FORMAT_REST.equals(forceValue)) {
+                definition.setForceREST(true);
+                definition.setFormat(SynapseConstants.ADDRESS_ENDPOINT_FORMAT_REST);
             } /*else if(!TemplateMappingsPopulator.populateMapping(definition, EndpointDefinition.EndpointDefKey.format, forceValue)) {
                 handleException("force value -\"" + forceValue + "\" not yet implemented");
             }*/
