@@ -16,7 +16,8 @@ Welcome to the WSO2-Synapse source repository. This repository contains the WSO2
 
 # How to Contribute
 
-* Please report issues at [Github](https://github.com/wso2/product-ei/issues)
+* Please report issues at [Github](https://github.com/wso2/api-manager/issues)
+
 * Send your pull requests to [wso2-synapse](https://github.com/wso2/wso2-synapse) repository
 
 # Contact us

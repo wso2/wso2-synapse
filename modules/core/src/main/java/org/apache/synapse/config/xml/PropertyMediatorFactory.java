@@ -149,6 +149,7 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
             String valueStr = scope.getAttributeValue();
             if (!XMLConfigConstants.SCOPE_AXIS2.equals(valueStr) &&
                     !XMLConfigConstants.SCOPE_TRANSPORT.equals(valueStr) &&
+                    !XMLConfigConstants.SCOPE_ANALYTICS.equals(valueStr) &&
                     !XMLConfigConstants.SCOPE_OPERATION.equals(valueStr) &&
                     !XMLConfigConstants.SCOPE_DEFAULT.equals(valueStr) &&
                     !XMLConfigConstants.SCOPE_CLIENT.equals(valueStr) &&
@@ -164,6 +165,7 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
                              "' or '" + XMLConfigConstants.SCOPE_REGISTRY +
                              "' or '" + XMLConfigConstants.SCOPE_TRACE +
                              "' or '" + XMLConfigConstants.SCOPE_SYSTEM +
+                             "' or '" + XMLConfigConstants.SCOPE_ANALYTICS +
                              "' values are allowed for attribute scope for a property mediator" +
                              ", Unsupported scope " + valueStr;
                 log.error(msg);

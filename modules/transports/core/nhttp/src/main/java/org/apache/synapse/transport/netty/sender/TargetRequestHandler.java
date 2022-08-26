@@ -434,7 +434,9 @@ public class TargetRequestHandler {
         HttpResponseFuture future = clientConnector.send(outboundRequestMsg);
         future.setHttpConnectorListener(new Axis2HttpTargetRespListener(targetConfiguration.getWorkerPool(),
                 msgContext, targetConfiguration));
-
+        //Set listener to receive server pushes from the backend server.
+        future.setPromiseAvailabilityListener(new Axis2ServerPushListener(future, msgContext,
+                targetConfiguration.getWorkerPool()));
     }
 
     private static void serializeData(MessageContext msgCtx, HttpCarbonMessage responseMsg)

@@ -19,20 +19,38 @@
 package org.apache.synapse.endpoints.auth.oauth;
 
 import junit.framework.TestCase;
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.description.TransportOutDescription;
+import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.http.HttpEntity;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.synapse.ContinuationState;
+import org.apache.synapse.FaultHandler;
+import org.apache.synapse.Mediator;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
+import org.apache.synapse.mediators.TestUtils;
+import org.apache.synapse.transport.passthru.PassThroughHttpSender;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.powermock.api.mockito.PowerMockito.mock;
@@ -43,6 +61,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
  */
 
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore({"javax.net.ssl.*", "javax.security.*" })
 public class OAuthClientTest extends TestCase {
 
     @PrepareForTest(HttpClientBuilder.class)
@@ -63,6 +82,8 @@ public class OAuthClientTest extends TestCase {
         PowerMockito.mockStatic(HttpClientBuilder.class);
 
         PowerMockito.when(HttpClientBuilder.class, "create").thenReturn(mockClientBuilder);
+        PowerMockito.when(mockClientBuilder.setConnectionManager(any(HttpClientConnectionManager.class))).thenReturn(mockClientBuilder);
+        PowerMockito.when(mockClientBuilder.setSSLSocketFactory(any())).thenReturn(mockClientBuilder);
         PowerMockito.when(mockClientBuilder.build()).thenReturn(mockHttpClient);
         PowerMockito.when(mockHttpClient.execute(any(HttpPost.class))).thenReturn(mockResponse);
 
@@ -76,7 +97,17 @@ public class OAuthClientTest extends TestCase {
                         "\"expires_in\" : 3600 }").getBytes());
         when(entity.getContent()).thenReturn(stream);
 
-        String token = new OAuthClient().generateToken("uri", "body", "credentials");
+        org.apache.axis2.context.MessageContext messageContext = new org.apache.axis2.context.MessageContext();
+        AxisConfiguration axisConfiguration = new AxisConfiguration();
+        TransportOutDescription transportOutDescription = new TransportOutDescription("https");
+        transportOutDescription.setSender(new PassThroughHttpSender());
+        axisConfiguration.addTransportOut(transportOutDescription);
+        ConfigurationContext configurationContext = new ConfigurationContext(axisConfiguration);
+        messageContext.setConfigurationContext(configurationContext);
+        SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
+        SynapseEnvironment synapseEnvironment = new Axis2SynapseEnvironment(synapseConfiguration);
+        String token = OAuthClient.generateToken("https://localhost:8280/token1/1.0.0", "body", "credentials",
+                                                 new Axis2MessageContext(messageContext, new SynapseConfiguration(), synapseEnvironment));
 
         assertEquals("abc123", token);
     }

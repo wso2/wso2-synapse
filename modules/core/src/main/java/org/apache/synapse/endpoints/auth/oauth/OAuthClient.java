@@ -21,8 +21,10 @@ package org.apache.synapse.endpoints.auth.oauth;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.axiom.om.OMElement;
+import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.Parameter;
+import org.apache.axis2.description.TransportOutDescription;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -47,6 +49,8 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
+import org.apache.synapse.transport.http.conn.SSLContextDetails;
+import org.apache.synapse.transport.nhttp.config.ClientConnFactoryBuilder;
 import org.apache.synapse.transport.nhttp.util.SecureVaultValueReader;
 import org.wso2.securevault.SecretResolver;
 import org.wso2.securevault.SecretResolverFactory;
@@ -57,10 +61,13 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.util.Map;
 
 /**
  * This class represents the client used to request and retrieve OAuth tokens
@@ -76,17 +83,7 @@ public class OAuthClient {
     private static final String STORE_PASSWORD = "Password";
     private static final String HTTP_CONNECTION = "http";
     private static final String HTTPS_CONNECTION = "https";
-
-    private CloseableHttpClient httpClient;
-
-    public OAuthClient(MessageContext messageContext) throws AuthException {
-        httpClient = getSecureClient(messageContext);
-    }
-    public OAuthClient() {
-        // preserving the previous behaviour in case there is a scenario to invoke
-        // the client without the message context
-        httpClient = getDefaultHttpClient();
-    }
+    private static final String ALL_HOSTS = "*";
 
     /**
      * Method to generate the access token from an OAuth server
@@ -99,9 +96,9 @@ public class OAuthClient {
      *                        key missing in the response payload
      * @throws IOException    In the event of a problem parsing the response from the server
      */
-    public String generateToken(String tokenApiUrl, String payload, String credentials)
-            throws AuthException, IOException {
-
+    public static String generateToken(String tokenApiUrl, String payload, String credentials,
+                                       MessageContext messageContext) throws AuthException, IOException {
+        CloseableHttpClient httpClient = getSecureClient(tokenApiUrl, messageContext);
         if (log.isDebugEnabled()) {
             log.debug("Initializing token generation request: [token-endpoint] " + tokenApiUrl);
         }
@@ -171,9 +168,21 @@ public class OAuthClient {
      * @return Secure CloseableHttpClient
      * @throws AuthException
      */
-    private CloseableHttpClient getSecureClient(MessageContext messageContext) throws AuthException {
-        SSLContext sslContext = getSSLContext(messageContext);
+    private static CloseableHttpClient getSecureClient(String tokenUrl, MessageContext messageContext)
+            throws AuthException {
+        SSLContext sslContext;
+        ConfigurationContext configurationContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext().
+                getConfigurationContext();
+        TransportOutDescription transportOut = configurationContext.getAxisConfiguration().getTransportOut("https");
+        try {
+            ClientConnFactoryBuilder clientConnFactoryBuilder =
+                    new ClientConnFactoryBuilder(transportOut, configurationContext).parseSSL();
 
+            sslContext = getSSLContextWithUrl(tokenUrl, clientConnFactoryBuilder.getSslByHostMap(),
+                                              clientConnFactoryBuilder.getSSLContextDetails());
+        } catch (AxisFault e) {
+            throw new AuthException("Error while reading SSL configs. Using default Keystore and Truststore", e);
+        }
         SSLConnectionSocketFactory sslConnectionFactory =
                 new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
         Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create().
@@ -268,5 +277,28 @@ public class OAuthClient {
         HttpClientBuilder builder = HttpClientBuilder.create();
         builder.setConnectionReuseStrategy(new NoConnectionReuseStrategy());
         return builder.build();
+    }
+
+    private static SSLContext getSSLContextWithUrl(String urlPath, Map<String, SSLContext> sslByHostMap,
+                                                   SSLContextDetails ssl) throws AuthException {
+        try {
+            URL url = new URL(urlPath);
+            SSLContext customContext = null;
+            if (sslByHostMap != null) {
+                String host = url.getHost() + ":" + url.getPort();
+                // See if there's a custom SSL profile configured for this server
+                customContext = sslByHostMap.get(host);
+                if (customContext == null) {
+                    customContext = sslByHostMap.get(ALL_HOSTS);
+                }
+            }
+            if (customContext != null) {
+                return customContext;
+            } else {
+                return ssl != null ? ssl.getContext() : null;
+            }
+        } catch (MalformedURLException e) {
+            throw new AuthException("OAuth token URL is invalid", e);
+        }
     }
 }

@@ -39,6 +39,7 @@ import org.wso2.transport.http.netty.contract.HttpWsConnectorFactory;
 import org.wso2.transport.http.netty.contractimpl.DefaultHttpWsConnectorFactory;
 import org.wso2.transport.http.netty.contractimpl.sender.channel.BootstrapConfiguration;
 import org.wso2.transport.http.netty.contractimpl.sender.channel.pool.ConnectionManager;
+import org.wso2.transport.http.netty.message.Http2PushPromise;
 import org.wso2.transport.http.netty.message.HttpCarbonMessage;
 
 import java.io.IOException;
@@ -104,13 +105,19 @@ public class Axis2HttpTransportSender extends AbstractHandler implements Transpo
                 LOG.warn("Unable to find the original client request to send the response");
                 return InvocationResponse.ABORT;
             }
-            try {
-                sendResponseToClient(msgCtx, clientRequest);
-                if (msgCtx.getOperationContext() != null) {
-                    msgCtx.getOperationContext().setProperty(Constants.RESPONSE_WRITTEN, Constants.VALUE_TRUE);
+            if (isPushPromise(msgCtx)) {
+                pushPromiseToClient(msgCtx, clientRequest);
+            } else if (isServerPush(msgCtx)) {
+                pushResponseToClient(msgCtx, clientRequest);
+            } else {
+                try {
+                    sendResponseToClient(msgCtx, clientRequest);
+                    if (msgCtx.getOperationContext() != null) {
+                        msgCtx.getOperationContext().setProperty(Constants.RESPONSE_WRITTEN, Constants.VALUE_TRUE);
+                    }
+                } catch (IOException e) {
+                    handleException("Error occurred while sending a response to the client", e);
                 }
-            } catch (IOException e) {
-                handleException("Error occurred while sending a response to the client", e);
             }
         }
 
@@ -129,6 +136,28 @@ public class Axis2HttpTransportSender extends AbstractHandler implements Transpo
     }
 
     /**
+     * Checks whether the message is a response or server push response.
+     *
+     * @param msgCtx axis2 message context
+     * @return boolean
+     */
+    private boolean isServerPush(MessageContext msgCtx) {
+
+        return msgCtx.isPropertyTrue(BridgeConstants.SERVER_PUSH);
+    }
+
+    /**
+     * Checks whether the message is a response or server push promise.
+     *
+     * @param msgCtx axis2 message context
+     * @return boolean
+     */
+    private boolean isPushPromise(MessageContext msgCtx) {
+
+        return msgCtx.isPropertyTrue(BridgeConstants.IS_PUSH_PROMISE);
+    }
+
+    /**
      * Submits a response back to the client.
      *
      * @param msgCtx        axis2 message context
@@ -139,6 +168,33 @@ public class Axis2HttpTransportSender extends AbstractHandler implements Transpo
 
         HttpCarbonMessage outboundResponseMsg = SourceResponseHandler.createOutboundResponseMsg(msgCtx, clientRequest);
         SourceResponseHandler.sendResponse(msgCtx, clientRequest, outboundResponseMsg);
+    }
+
+    /**
+     * Send the server push promise to client.
+     *
+     * @param msgCtx        axis2 message context
+     * @param clientRequest HttpCarbonMessage
+     * @throws AxisFault throws if error occurred while sending server pushes
+     */
+    private void pushPromiseToClient(MessageContext msgCtx, HttpCarbonMessage clientRequest) throws AxisFault {
+
+        Http2PushPromise http2PushPromise = SourceResponseHandler.getPushPromise(msgCtx);
+        SourceResponseHandler.pushPromise(http2PushPromise, clientRequest);
+    }
+
+    /**
+     * Send the server push response to client.
+     *
+     * @param msgCtx        axis2 message context
+     * @param clientRequest HttpCarbonMessage
+     * @throws AxisFault throws if error occurred while sending server pushes
+     */
+    private void pushResponseToClient(MessageContext msgCtx, HttpCarbonMessage clientRequest) throws AxisFault {
+
+        Http2PushPromise http2PushPromise = SourceResponseHandler.getPushPromise(msgCtx);
+        HttpCarbonMessage outboundPushMsg = SourceResponseHandler.createOutboundResponseMsg(msgCtx, clientRequest);
+        SourceResponseHandler.pushResponse(msgCtx, http2PushPromise, outboundPushMsg, clientRequest);
     }
 
     /**

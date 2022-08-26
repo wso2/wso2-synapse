@@ -25,7 +25,9 @@ import org.apache.axis2.addressing.EndpointReference;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.mediators.MediatorProperty;
+import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.RESTConstants;
+import org.apache.synapse.transport.netty.BridgeConstants;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.json.JSONObject;
 
@@ -38,14 +40,21 @@ import java.util.Set;
 
 public class HTTPEndpoint extends AbstractEndpoint {
 
+    private final String DEFAULT_HTTP_VERSION = BridgeConstants.HTTP_1_1_VERSION;
     private UriTemplate uriTemplate;
 
+    private String httpVersion = DEFAULT_HTTP_VERSION;
     private String httpMethod;
     private SynapseXPath httpMethodExpression;
 
     private boolean legacySupport = false; // this is to support backward compatibility
 
     public static String legacyPrefix = "legacy-encoding:";
+
+    /**
+     * Name of the sequence to process the HTTP/2 server pushes. Only for HTTP/2 endpoints.
+     */
+    private String serverPushSequence;
 
     /*Todo*/
     /*Do we need HTTP Headers here?*/
@@ -105,6 +114,7 @@ public class HTTPEndpoint extends AbstractEndpoint {
     public void executeEpTypeSpecificFunctions(MessageContext synCtx) {
         processUrlTemplate(synCtx);
         processHttpMethod(synCtx);
+        processServerPushSequence(synCtx);
     }
 
     private void processHttpMethod(MessageContext synCtx) {
@@ -282,6 +292,21 @@ public class HTTPEndpoint extends AbstractEndpoint {
         }
     }
 
+    /**
+     * Set the SequenceMediator as a property in message context for HTTP/2 endpoint.
+     *
+     * @param synCtx synapse message context
+     */
+    private void processServerPushSequence(MessageContext synCtx) {
+
+        if (serverPushSequence != null) {
+            SequenceMediator serverPushSequenceMediator = (SequenceMediator) synCtx.getSequence(serverPushSequence);
+            if (serverPushSequenceMediator != null) {
+                synCtx.setProperty(BridgeConstants.SERVER_PUSH_SEQUENCE, serverPushSequenceMediator);
+            }
+        }
+    }
+
     public String getHttpMethod() {
         return httpMethod;
     }
@@ -314,4 +339,23 @@ public class HTTPEndpoint extends AbstractEndpoint {
         this.legacySupport = legacySupport;
     }
 
+    public String getHttpVersion() {
+
+        return httpVersion;
+    }
+
+    public void setHttpVersion(String httpVersion) {
+
+        this.httpVersion = httpVersion;
+    }
+
+    public String getServerPushSequence() {
+
+        return serverPushSequence;
+    }
+
+    public void setServerPushSequence(String serverPushSequence) {
+
+        this.serverPushSequence = serverPushSequence;
+    }
 }

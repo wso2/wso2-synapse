@@ -114,7 +114,8 @@ public class HostConnections {
                                                                                         CONNECTION_INIT_TIME);
                 long expiryTime = (Long) conn.getContext().getAttribute(PassThroughConstants.
                         CONNECTION_EXPIRY_TIME);
-                if (isMaximumLifeSpanExceeded(currentTime, connectionInitTime) ||  currentTime >= expiryTime ) {
+                if (isMaximumLifeSpanExceeded(currentTime, connectionInitTime) ||  currentTime >= expiryTime
+                        || conn.isStale()) {
                     freeConnections.remove(conn);
                     try {
                         conn.shutdown();

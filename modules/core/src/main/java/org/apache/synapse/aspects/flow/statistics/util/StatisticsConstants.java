@@ -18,20 +18,38 @@
 
 package org.apache.synapse.aspects.flow.statistics.util;
 
+import org.apache.synapse.aspects.ComponentType;
+
 /**
  * This class holds constants related to  mediation flow statistics collection.
  */
 public class StatisticsConstants {
 
+	public static String getComponentTypeToString(ComponentType componentType) {
+		switch (componentType) {
+			case PROXYSERVICE:
+				return StatisticsConstants.FLOW_STATISTICS_PROXYSERVICE;
+			case ENDPOINT:
+				return StatisticsConstants.FLOW_STATISTICS_ENDPOINT;
+			case INBOUNDENDPOINT:
+				return StatisticsConstants.FLOW_STATISTICS_INBOUNDENDPOINT;
+			case SEQUENCE:
+				return StatisticsConstants.FLOW_STATISTICS_SEQUENCE;
+			case MEDIATOR:
+				return StatisticsConstants.FLOW_STATISTICS_MEDIATOR;
+			case API:
+				return StatisticsConstants.FLOW_STATISTICS_API;
+			case RESOURCE:
+				return StatisticsConstants.FLOW_STATISTICS_RESOURCE;
+			default:
+				return StatisticsConstants.FLOW_STATISTICS_ANY;
+		}
+	}
+
 	/**
 	 * Statistics enabled globally.
 	 */
 	public final static String STATISTICS_ENABLE = "mediation.flow.statistics.enable";
-
-	/**
-	 * Enable OpenTracing.
-	 */
-	public static final String OPENTRACING_ENABLE = "opentracing.enable";
 
 	public static final String EI_ANALYTICS_ENABLE = "ei.analytics.enable";
 
@@ -49,51 +67,6 @@ public class StatisticsConstants {
 	 * Enable statistics collecting for all artifacts
 	 */
 	public final static String COLLECT_ALL_STATISTICS = "mediation.flow.statistics.collect.all";
-
-	/**
-	 * Manager Host of Jaeger Sampler.
-	 */
-	public static final String JAEGER_SAMPLER_MANAGER_HOST = "jaeger.sampler.manager.host";
-
-	/**
-	 * Manager Port of Jaeger Sampler.
-	 */
-	public static final String JAEGER_SAMPLER_MANAGER_PORT = "jaeger.sampler.manager.port";
-
-	/**
-	 * Agent Host of Jaeger Sender.
-	 */
-	public static final String JAEGER_SENDER_AGENT_HOST = "jaeger.sender.agent.host";
-
-	/**
-	 * Agent Port of Jaeger Sender.
-	 */
-	public static final String JAEGER_SENDER_AGENT_PORT = "jaeger.sender.agent.port";
-
-	/**
-	 * Log spans in Jaeger Reporter.
-	 */
-	public static final String JAEGER_REPORTER_LOG_SPANS = "jaeger.reporter.log.spans";
-
-	/**
-	 * Max queue size of Jaeger Reporter.
-	 */
-	public static final String JAEGER_REPORTER_MAX_QUEUE_SIZE = "jaeger.reporter.max.queue.size";
-
-	/**
-	 * Flush interval of Jaeger Reporter.
-	 */
-	public static final String JAEGER_REPORTER_FLUSH_INTERVAL = "jaeger.reporter.flush.interval";
-
-	/**
-	 * Enable Zipkin client.
-	 */
-	public static final String ENABLE_ZIPKIN = "opentracing.zipkin.enable";
-
-	/**
-	 * Agent URL for Zipkin backend.
-	 */
-	public static final String ZIPKIN_BACKEND_URL = "opentracing.zipkin.backend.url";
 
 	/**
 	 * Flow statistic queue size.

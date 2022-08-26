@@ -21,14 +21,16 @@ package org.apache.synapse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTelemetryManagerHolder;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.SynapsePropertiesLoader;
+import org.apache.synapse.data.ConfigDataHolder;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.wso2.securevault.PasswordManager;
 import org.wso2.securevault.SecurityConstants;
 
-import javax.management.NotCompliantMBeanException;
 import java.util.Date;
+import javax.management.NotCompliantMBeanException;
 
 /**
  * This is the core class that starts up a Synapse instance.
@@ -181,6 +183,9 @@ public class ServerManager {
             // creates the Synapse Configuration using the SynapseController
             serverContextInformation.setSynapseConfiguration(
                     synapseController.createSynapseConfiguration());
+
+            ConfigDataHolder.getInstance().setRegistry(serverContextInformation.
+                    getSynapseConfiguration().getRegistry());
 
             // creates the Synapse Environment using the SynapseController
             serverContextInformation.setSynapseEnvironment(
@@ -444,6 +449,9 @@ public class ServerManager {
 
             // mark as destroyed
             changeState(ServerState.UNDETERMINED);
+            if(OpenTelemetryManagerHolder.getOpenTelemetryManager() != null) {
+                OpenTelemetryManagerHolder.getOpenTelemetryManager().close();
+            }
         } else {
             // if the server cannot be destroyed just set the current state as the server state
             changeState(serverState);

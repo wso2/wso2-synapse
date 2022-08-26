@@ -38,6 +38,7 @@ import org.apache.synapse.endpoints.auth.AuthUtils;
 import org.apache.synapse.endpoints.auth.oauth.OAuthHandler;
 import org.apache.synapse.endpoints.auth.oauth.OAuthUtils;
 import org.apache.synapse.rest.RESTConstants;
+import org.apache.synapse.transport.netty.BridgeConstants;
 import org.apache.synapse.util.CommentListUtil;
 
 import javax.xml.namespace.QName;
@@ -143,6 +144,18 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
                               "Hence using the http method from incoming message");
                 }
             }
+            OMAttribute versionAttr = httpElement.getAttribute(new QName("version"));
+            if (versionAttr != null) {
+                setHttpVersion(httpEndpoint, versionAttr.getAttributeValue());
+            }
+            if (BridgeConstants.HTTP_2_0_VERSION.equals(httpEndpoint.getHttpVersion())) {
+                OMElement serverPushSequence =
+                        httpElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE,
+                                XMLConfigConstants.SERVER_PUSH_SEQUENCE));
+                if (serverPushSequence != null && serverPushSequence.getText() != null) {
+                    httpEndpoint.setServerPushSequence(serverPushSequence.getText().trim());
+                }
+            }
         }
 
         processProperties(httpEndpoint, epConfig);
@@ -172,6 +185,17 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
                               "Hence using the http method from incoming message");
                 }
             }
+        }
+    }
+
+    private void setHttpVersion(HTTPEndpoint httpEndpoint, String httpVersion) {
+
+        if (BridgeConstants.HTTP_2_0_VERSION.equals(httpVersion)) {
+            httpEndpoint.setHttpVersion(BridgeConstants.HTTP_2_0_VERSION);
+        } else if (BridgeConstants.HTTP_1_1_VERSION.equals(httpVersion)) {
+            httpEndpoint.setHttpVersion(BridgeConstants.HTTP_1_1_VERSION);
+        } else {
+            handleException("Invalid http version [" + httpVersion + "] specified in the HTTP endpoint");
         }
     }
 
