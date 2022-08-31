@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.util.base64.Base64Utils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
@@ -49,6 +50,7 @@ public abstract class OAuthHandler implements AuthHandler {
     private final String clientId;
     private final String clientSecret;
     private Map<String, String> requestParametersMap;
+    private Map<String, String> customHeadersMap;
     private final String authMode;
 
     protected OAuthHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode) {
@@ -84,7 +86,7 @@ public abstract class OAuthHandler implements AuthHandler {
                 public String call() throws AuthException, IOException {
                     return OAuthClient.generateToken(OAuthUtils.resolveExpression(tokenApiUrl, messageContext),
                             buildTokenRequestPayload(messageContext), getEncodedCredentials(messageContext),
-                                                     messageContext);
+                                                     messageContext, customHeadersMap);
                 }
             });
         } catch (ExecutionException e) {
@@ -188,12 +190,35 @@ public abstract class OAuthHandler implements AuthHandler {
             OMElement requestParameters = OAuthUtils.createOMRequestParams(omFactory, requestParametersMap);
             oauthCredentials.addChild(requestParameters);
         }
+        if (getCustomHeadersMap() != null &&
+                !getCustomHeadersMap().isEmpty()) {
+            OMElement customHeaders = createOMCustomHeaders(getCustomHeadersMap(), omFactory);
+            oauthCredentials.addChild(customHeaders);
+        }
         if (!StringUtils.isEmpty(getAuthMode())) {
             oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory,
                     AuthConstants.OAUTH_AUTHENTICATION_MODE, getAuthMode()));
         }
 
         return oauthCredentials;
+    }
+
+    /**
+     * Create an OMElement for custom headers map.
+     *
+     * @param customHeadersMap input parameter map.
+     * @return OMElement of parameter map.
+     */
+    private OMElement createOMCustomHeaders(Map<String, String> customHeadersMap, OMFactory fac) {
+        OMElement customHeaders =
+                fac.createOMElement(AuthConstants.CUSTOM_HEADERS, SynapseConstants.SYNAPSE_OMNAMESPACE);
+        for (Map.Entry<String, String> entry : customHeadersMap.entrySet()) {
+            OMElement header = fac.createOMElement(AuthConstants.CUSTOM_HEADER, SynapseConstants.SYNAPSE_OMNAMESPACE);
+            header.addAttribute("name", entry.getKey(), null);
+            header.setText(entry.getValue());
+            customHeaders.addChild(header);
+        }
+        return customHeaders;
     }
 
     /**
@@ -249,5 +274,13 @@ public abstract class OAuthHandler implements AuthHandler {
 
     public String getAuthMode() {
         return authMode;
+    }
+
+    public Map<String, String> getCustomHeadersMap() {
+        return customHeadersMap;
+    }
+
+    public void setCustomHeaders(Map<String, String> customHeadersMap) {
+        this.customHeadersMap = customHeadersMap;
     }
 }

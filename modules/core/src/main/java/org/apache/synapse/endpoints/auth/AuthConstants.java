@@ -38,6 +38,8 @@ public class AuthConstants {
     public static final String OAUTH_REFRESH_TOKEN = "refreshToken";
     public static final String REQUEST_PARAMETERS = "requestParameters";
     public static final String REQUEST_PARAMETER = "parameter";
+    public static final String CUSTOM_HEADERS = "customHeaders";
+    public static final String CUSTOM_HEADER = "header";
     public static final String NAME = "name";
 
     public static final String AUTHORIZATION_HEADER = "Authorization";
