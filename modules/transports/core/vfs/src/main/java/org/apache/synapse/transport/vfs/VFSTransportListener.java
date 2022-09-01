@@ -255,10 +255,10 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 wasError = false;
 
             } catch (FileSystemException e) {
+                closeCachedFileSystem(fileURI, fso);
                 if (retryCount >= maxRetryCount) {
                     processFailure("Repeatedly failed to resolve the file URI: " +
                             VFSUtils.maskURLPassword(fileURI), e, entry);
-                    closeFileSystem(fileObject);
                     return;
                 } else {
                     log.warn("Failed to resolve the file URI: " +
@@ -268,7 +268,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 }
             } catch (Exception e) {
                 log.warn("Runtime error may have occurred. ", e);
-                closeFileSystem(fileObject);
+                closeCachedFileSystem(fileURI, fso);
             }
 
             if (wasError) {
@@ -314,6 +314,11 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                     runPostProcess = false;
                                 }
 
+                            } catch (FileSystemException fse) {
+                                log.warn("Error processing File URI : " +
+                                        VFSUtils.maskURLPassword(fileObject.getName().toString()) +
+                                        ". This can be due to file moved from another process.");
+                                closeFileSystem(fileObject);
                             } catch (AxisFault e) {
                                 if (e.getCause() instanceof FileNotFoundException) {
                                     log.warn("Error processing File URI : " +
@@ -618,6 +623,14 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         }
     }
 
+    private void closeCachedFileSystem(String uri, FileSystemOptions fso) {
+        try {
+            fsManager.closeCachedFileSystem(uri, fso);
+        } catch (Exception e1) {
+            log.debug("Unable to clear file system", e1);
+        }
+    }
+
     private boolean acquireLock(FileSystemManager fsManager, FileObject fileObject, final PollTableEntry entry,
                                 FileSystemOptions fso, boolean isListener){
         VFSParamDTO vfsParamDTO = new VFSParamDTO();
@@ -709,6 +722,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     }
                     fileObject.moveTo(dest);
                 } catch (FileSystemException e) {
+                    closeFileSystem(fileObject);
                     handleException("Error moving file : " + VFSUtils.maskURLPassword(fileObject.toString()) + " to " +
                                     VFSUtils.maskURLPassword(moveToDirectoryURI), e);
                 }finally{
@@ -871,16 +885,13 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             }
 
         } catch (FileSystemException e) {
+            closeFileSystem(file);
             handleException("Error reading file content or attributes : "
             		+ VFSUtils.maskURLPassword(file.toString()), e);
 
         } finally {
             try {
                 if (file != null) {
-                    if (fsManager != null && file.getName() != null && file.getName().getScheme() != null &&
-                            file.getName().getScheme().startsWith("file")) {
-                        fsManager.closeFileSystem(file.getParent().getFileSystem());
-                    }
                     file.close();
                 }
             } catch (FileSystemException warn) {
@@ -1059,6 +1070,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 try {
                     fileObject.moveTo(dest);  // FIXME - when an exception occurs here it causes the in folder to vanish
                 } catch (FileSystemException e) {
+                    closeFileSystem(fileObject);
                     handleException("Error moving the failed file : " 
                     		+ VFSUtils.maskURLPassword(fileObject.toString()) + " to " + moveToDirectoryURI, e);
                 }

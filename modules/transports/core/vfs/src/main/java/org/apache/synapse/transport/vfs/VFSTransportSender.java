@@ -18,28 +18,33 @@
 */
 package org.apache.synapse.transport.vfs;
 
-import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMOutputFormat;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportOutDescription;
-import org.apache.axis2.format.BinaryFormatter;
-import org.apache.axis2.format.PlainTextFormatter;
 import org.apache.axis2.transport.MessageFormatter;
 import org.apache.axis2.transport.OutTransportInfo;
-import org.apache.axis2.transport.base.*;
+import org.apache.axis2.transport.base.AbstractTransportSender;
+import org.apache.axis2.transport.base.BaseTransportException;
+import org.apache.axis2.transport.base.BaseUtils;
+import org.apache.axis2.transport.base.ManagementSupport;
 import org.apache.axis2.util.MessageProcessorSelector;
 import org.apache.commons.io.output.CountingOutputStream;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.vfs2.*;
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
+import org.apache.commons.vfs2.FileSystemManager;
+import org.apache.commons.vfs2.FileSystemOptions;
+import org.apache.commons.vfs2.FileType;
+import org.apache.commons.vfs2.impl.DefaultFileSystemManager;
 import org.apache.commons.vfs2.impl.StandardFileSystemManager;
 import org.apache.commons.vfs2.provider.UriParser;
 import org.apache.synapse.commons.vfs.VFSConstants;
+import org.apache.synapse.commons.vfs.VFSOutTransportInfo;
 import org.apache.synapse.commons.vfs.VFSParamDTO;
 import org.apache.synapse.commons.vfs.VFSUtils;
-import org.apache.synapse.commons.vfs.VFSOutTransportInfo ;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -71,7 +76,6 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
      */
     private static final ConcurrentHashMap<String,WriteLockObject> lockingObjects = new ConcurrentHashMap<>();
 
-    private boolean isFileSystemClosed = false;
 
     /**
      * The public constructor
@@ -207,7 +211,6 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
     private void writeFile(MessageContext msgCtx, VFSOutTransportInfo vfsOutInfo) throws AxisFault {
 
         FileSystemOptions fso = null;
-        setFileSystemClosed(false);
         try {
             fso = VFSUtils.attachFileSystemOptions(vfsOutInfo.getOutFileSystemOptionsMap(), fsManager);
         } catch (Exception e) {
@@ -229,15 +232,22 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                     try {
                         retryCount++;
                         replyFile = fsManager.resolveFile(vfsOutInfo.getOutFileURI(), fso);
-                    
                         if (replyFile == null) {
                             log.error("replyFile is null");
                             throw new FileSystemException("replyFile is null");
                         }
+                        // Retry if actual filesystem is corrupted, Otherwise first file after connection reset
+                        // will be lost
+                        replyFile.exists();
                         wasError = false;
                                         
                     } catch (FileSystemException e) {
                         log.error("cannot resolve replyFile", e);
+                        if (replyFile != null) {
+                            closeFileSystem(replyFile);
+                        } else {
+                            closeCachedFileSystem(vfsOutInfo, fso);
+                        }
                         if(maxRetryCount <= retryCount) {
                             handleException("cannot resolve replyFile repeatedly: "
                                     + e.getMessage(), e);
@@ -313,14 +323,18 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                     }
                 }
             } catch (FileSystemException e) {
-                closeFileSystem(replyFile);
+                if (replyFile != null) {
+                    closeFileSystem(replyFile);
+                } else {
+                    closeCachedFileSystem(vfsOutInfo, fso);
+                }
                 handleException("Error resolving reply file : " +
                 		VFSUtils.maskURLPassword(vfsOutInfo.getOutFileURI()), e);
             } finally {
                 if (replyFile != null) {
                     try {
-                        replyFile.close();
                         fsManager.getFilesCache().clear(replyFile.getParent().getFileSystem());
+                        replyFile.close();
                     } catch (Exception ex) {
                         log.warn("Error when closing the reply file", ex);
                     }
@@ -375,20 +389,14 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
             metrics.incrementMessagesSent(msgContext);
             metrics.incrementBytesSent(msgContext, os.getByteCount());
             
-        } catch (FileSystemException e) {
-            if (lockingEnabled) {
-                VFSUtils.releaseLock(fsManager, responseFile, fso);
-            }
-            metrics.incrementFaultsSending();
-            closeFileSystem(responseFile);
-            handleException("IO Error while creating response file : " + VFSUtils.maskURLPassword(responseFile.getName().getURI()), e);
         } catch (IOException e) {
             if (lockingEnabled) {
                 VFSUtils.releaseLock(fsManager, responseFile, fso);
             }
             metrics.incrementFaultsSending();
+            String responseFileURI = responseFile.getName().getURI();
             closeFileSystem(responseFile);
-            handleException("IO Error while creating response file : " + VFSUtils.maskURLPassword(responseFile.getName().getURI()), e);
+            handleException("IO Error while creating response file : " + VFSUtils.maskURLPassword(responseFileURI), e);
         }
     }
 
@@ -447,21 +455,20 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
     private void closeFileSystem(FileObject fileObject) {
         try {
             //Close the File system if it is not already closed
-            if (fileObject != null && !isFileSystemClosed() && fsManager != null && fileObject.getParent() != null  && fileObject.getParent().getFileSystem() != null) {
-                fsManager.closeFileSystem(fileObject.getParent().getFileSystem());
-                fileObject.close();
-                setFileSystemClosed(true);
+            if (fileObject != null && fsManager != null && fileObject.getParent() != null && fileObject.getParent().getFileSystem() != null) {
+                fsManager.closeFileSystem(fileObject.getFileSystem());
             }
+            fileObject.close();
         } catch (FileSystemException warn) {
             log.warn("Error on closing the file: " + fileObject.getName().getPath(), warn);
         }
     }
 
-    public boolean isFileSystemClosed() {
-        return isFileSystemClosed;
-    }
-
-    public void setFileSystemClosed(boolean fileSystemClosed) {
-        isFileSystemClosed = fileSystemClosed;
+    private void closeCachedFileSystem(VFSOutTransportInfo vfsOutInfo, FileSystemOptions fso) {
+        try {
+            ((DefaultFileSystemManager) fsManager).closeCachedFileSystem(vfsOutInfo.getOutFileURI(), fso);
+        } catch (Exception e1) {
+            log.debug("Unable to clear file system", e1);
+        }
     }
 }
