@@ -585,6 +585,12 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             : "The file does not exists!"));
                 }
             }
+            // If the polling directory is not exist or not readable, refresh the parent file to trigger scan the cached
+            // child directories
+            FileObject parent = fileObject.getParent();
+            if (parent != null && parent.exists()) {
+                parent.refresh();
+            }
             onPollCompletion(entry);
         } catch (FileSystemException e) {
             closeFileSystem(fileObject);
