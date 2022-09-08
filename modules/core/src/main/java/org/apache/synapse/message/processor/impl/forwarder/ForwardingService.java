@@ -540,6 +540,10 @@ public class ForwardingService implements Task, ManagedLifecycle {
 					ByteArrayOutputStream baos = new ByteArrayOutputStream();
 					originalInputStream = (InputStream) o;
 					try {
+						// Reset the input Stream to bring the buffer pos back to 0
+						if (originalInputStream.markSupported()) {
+							originalInputStream.reset();
+						}
 						IOUtils.copy(originalInputStream, baos);
 						originalByteArrayInputStream = new ByteArrayInputStream(baos.toByteArray());
 					} catch (IOException e) {
@@ -596,6 +600,10 @@ public class ForwardingService implements Task, ManagedLifecycle {
 		if (originalJsonInputStream != null) {
 			org.apache.axis2.context.MessageContext origAxis2Ctx =
 					((Axis2MessageContext) messageToDispatch).getAxis2MessageContext();
+			// Reset the input Stream to bring the buffer pos back to 0
+			if (originalJsonInputStream.markSupported()) {
+				originalJsonInputStream.reset();
+			}
 			JsonUtil.getNewJsonPayload(origAxis2Ctx, originalJsonInputStream, true, true);
 		}
 	}
