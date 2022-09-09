@@ -314,11 +314,6 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                     runPostProcess = false;
                                 }
 
-                            } catch (FileSystemException fse) {
-                                log.warn("Error processing File URI : " +
-                                        VFSUtils.maskURLPassword(fileObject.getName().toString()) +
-                                        ". This can be due to file moved from another process.");
-                                closeFileSystem(fileObject);
                             } catch (AxisFault e) {
                                 if (e.getCause() instanceof FileNotFoundException) {
                                     log.warn("Error processing File URI : " +
@@ -331,6 +326,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                     entry.setLastPollState(PollTableEntry.FAILED);
                                     metrics.incrementFaultsReceiving();
                                 }
+                                closeFileSystem(fileObject);
                             }
                             if (runPostProcess) {
                                 try {
