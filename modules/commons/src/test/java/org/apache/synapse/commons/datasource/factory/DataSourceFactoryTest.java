@@ -39,6 +39,22 @@ public class DataSourceFactoryTest extends TestCase {
     }
 
     /**
+     * Test create DataSource from DataSourceInformation object
+     */
+    public void testCreateInvalidUrlDatasource() {
+        DataSourceInformation dataSourceInformation = createDataSourceInformation();
+        DataSource dataSource = DataSourceFactory.createDataSource(dataSourceInformation);
+        dataSourceInformation.setUrl("jdbc:h2:repository/database/test_db;init=RUNSCRIPT FROM '~/create.sql'");
+        try {
+            DataSourceFactory.createDataSource(dataSourceInformation);
+            fail("SynapseCommonsException expected");
+        } catch (SynapseCommonsException e) {
+            assertEquals("Invalid exception message",
+                    "INIT expressions are not allowed in the connection URL due to security reasons.", e.getMessage());
+        }
+    }
+
+    /**
      * Test create DataSource from DataSourceInformation object with null url
      */
     public void testCreateDatasourceUrlNull() {
