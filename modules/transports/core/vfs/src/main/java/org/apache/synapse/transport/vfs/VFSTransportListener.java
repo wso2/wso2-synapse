@@ -251,7 +251,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     log.error("fileObject is null");
                     throw new FileSystemException("fileObject is null");
                 }
-
+                // Make sure that the actual file object is error free, otherwise exists() will throw exceptions
+                fileObject.exists();
                 wasError = false;
 
             } catch (FileSystemException e) {
@@ -580,12 +581,12 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             : "The file can not be read!")
                             : "The file does not exists!"));
                 }
-            }
-            // If the polling directory is not exist or not readable, refresh the parent file to trigger scan the cached
-            // child directories
-            FileObject parent = fileObject.getParent();
-            if (parent != null && parent.exists()) {
-                parent.refresh();
+                // If the polling directory is not exist or not readable, refresh the parent file to trigger scan the cached
+                // child directories
+                FileObject parent = fileObject.getParent();
+                if (parent != null && parent.exists()) {
+                    parent.refresh();
+                }
             }
             onPollCompletion(entry);
         } catch (FileSystemException e) {
