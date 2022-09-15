@@ -19,11 +19,13 @@
 
 package org.apache.synapse.config.xml;
 
+import java.io.StringReader;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMComment;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.om.OMNamespace;
+import org.apache.axiom.om.OMXMLBuilderFactory;
 import org.apache.axiom.om.xpath.AXIOMXPath;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -241,6 +243,13 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
      * @param m      Comment mediator instance which contains comment information
      */
     protected OMElement serializeComments(OMElement parent, Mediator m) {
+        String comment = ((CommentMediator) m).getCommentText();
+        if (comment.startsWith("<CUSTOM_")) {
+            StringReader xmlText = new StringReader(comment);
+            OMElement elementNode = OMXMLBuilderFactory.createOMBuilder(xmlText).getDocumentElement();
+            parent.addChild(elementNode);
+            return parent;
+        }
         OMComment commendNode = fac.createOMComment(parent, "comment");
         commendNode.setValue(((CommentMediator) m).getCommentText());
         parent.addChild(commendNode);
