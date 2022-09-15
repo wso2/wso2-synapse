@@ -291,6 +291,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     children = fileObject.getChildren();
                 } catch (FileNotFolderException ignored) {
                 } catch (FileSystemException ex) {
+                    closeFileSystem(fileObject);
                     log.error(ex.getMessage(), ex);
                 }
 
@@ -608,6 +609,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         try {
             fileObject.close();
         } catch (FileSystemException e) {
+            closeFileSystem(fileObject);
             log.debug("Error occurred while closing file.", e);
         }
     }
@@ -615,7 +617,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
     private void closeFileSystem(FileObject fileObject) {
         try {
             //Close the File system if it is not already closed by the finally block of processFile method
-            if (fileObject != null && !isFileSystemClosed() && fsManager != null && fileObject.getParent() != null  && fileObject.getParent().getFileSystem() != null) {
+            if (fileObject != null && fsManager != null && fileObject.getParent() != null  && fileObject.getParent().getFileSystem() != null) {
                 fsManager.closeFileSystem(fileObject.getParent().getFileSystem());
                 fileObject.close();
                 setFileSystemClosed(true);
@@ -732,6 +734,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 	                try {
 	                	fileObject.close();
 	                } catch (FileSystemException ignore) {
+                        closeFileSystem(fileObject);
 	                }
                 }
             } else {
@@ -748,12 +751,14 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                         throw new AxisFault(msg);
                     }
                 } catch (FileSystemException e) {
+                    closeFileSystem(fileObject);
                     log.error("Error deleting file : "
                     		+ VFSUtils.maskURLPassword(fileObject.toString()), e);
                 }
             }
 
         } catch (FileSystemException e) {
+            closeFileSystem(fileObject);
             handleException("Error resolving directory to move after processing : "
                     + VFSUtils.maskURLPassword(moveToDirectoryURI), e);
         }
@@ -783,7 +788,9 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             try {
                 transportHeaders.put(VFSConstants.FILE_LENGTH, content.getSize());
                 transportHeaders.put(VFSConstants.LAST_MODIFIED, content.getLastModifiedTime());
-            } catch (FileSystemException ignore) {}
+            } catch (FileSystemException ignore) {
+                closeFileSystem(file);
+            }
 
             MessageContext msgContext = entry.createMessageContext();
 
@@ -891,6 +898,10 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             closeFileSystem(file);
             handleException("Error reading file content or attributes : "
             		+ VFSUtils.maskURLPassword(file.toString()), e);
+
+        } catch (Exception e) {
+            closeFileSystem(file);
+            throw e;
 
         } finally {
             try {
