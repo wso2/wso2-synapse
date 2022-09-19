@@ -44,10 +44,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.ArrayList;
 
 
 
@@ -55,6 +57,8 @@ import java.util.ArrayList;
  * Unit tests for class RecipientListEndpoint
  */
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "javax.management.*", "javax.xml.parsers.*", "org.apache" +
+        ".xerces.jaxp.*", "javax.naming.spi.*", "javax.naming.*", "javax.xml.stream.*"})
 public class RecipientListEndpointTest {
 
     /**

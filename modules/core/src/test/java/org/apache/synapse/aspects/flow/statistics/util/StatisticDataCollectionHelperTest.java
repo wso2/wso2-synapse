@@ -29,6 +29,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -45,6 +46,8 @@ import static org.mockito.ArgumentMatchers.any;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(RuntimeStatisticCollector.class)
+@PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "javax.management.*", "javax.xml.parsers.*", "org.apache" +
+        ".xerces.jaxp.*", "javax.naming.spi.*", "javax.naming.*"})
 public class StatisticDataCollectionHelperTest {
 
     private static Axis2MessageContext messageContext;

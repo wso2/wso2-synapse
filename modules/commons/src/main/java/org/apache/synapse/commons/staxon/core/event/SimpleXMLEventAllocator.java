@@ -378,8 +378,10 @@ public class SimpleXMLEventAllocator implements XMLEventAllocator {
         }
 
         @Override
-        public Iterator<?> getNamespaces() {
-            return namespaces.iterator();
+        public Iterator<Namespace> getNamespaces() {
+            @SuppressWarnings("unchecked")
+            List<Namespace> namespaceList = (List<Namespace>)(List<?>) namespaces;
+            return namespaceList.iterator();
         }
 
         @Override
@@ -614,8 +616,10 @@ public class SimpleXMLEventAllocator implements XMLEventAllocator {
         }
 
         @Override
-        public Iterator<?> getAttributes() {
-            return attributes.iterator();
+        public Iterator<Attribute> getAttributes() {
+            @SuppressWarnings("unchecked")
+            List<Attribute> attributeList = (List<Attribute>)(List<?>) attributes;
+            return attributeList.iterator();
         }
 
         @Override
@@ -629,8 +633,10 @@ public class SimpleXMLEventAllocator implements XMLEventAllocator {
         }
 
         @Override
-        public Iterator<?> getNamespaces() {
-            return namespaces.iterator();
+        public Iterator<Namespace> getNamespaces() {
+            @SuppressWarnings("unchecked")
+            List<Namespace> namespaceList = (List<Namespace>)(List<?>) namespaces;
+            return namespaceList.iterator();
         }
 
         @Override

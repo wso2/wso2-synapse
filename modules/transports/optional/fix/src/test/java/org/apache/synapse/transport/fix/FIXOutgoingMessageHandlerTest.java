@@ -36,8 +36,7 @@ import quickfix.field.SenderCompID;
 import quickfix.field.TargetCompID;
 import quickfix.fix41.NewOrderSingle;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 @RunWith(PowerMockRunner.class)
@@ -67,7 +66,6 @@ public class FIXOutgoingMessageHandlerTest extends TestCase {
                 new TargetCompID("BANZAI"), "FIX.4.1:SYNAPSE->BANZAI");
 
         spy.sendMessage(message, id, SESSION_ID, SEQ_NUM, msgCtx, "fix://sample");
-        PowerMockito.verifyStatic(times(1));
     }
 
 }

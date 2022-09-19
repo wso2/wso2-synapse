@@ -31,12 +31,11 @@ import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.bean.BeanUtils;
 import org.apache.synapse.mediators.bean.enterprise.EJBMediator;
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -51,6 +50,8 @@ import static org.mockito.ArgumentMatchers.any;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({BeanUtils.class, EnterpriseBeanstalk.class})
+@PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "javax.management.*", "javax.xml.parsers.*", "org.apache" +
+        ".xerces.jaxp.*", "javax.naming.spi.*", "javax.naming.*"})
 public class EJBMediatorTest {
 
     private static final String BEANSTALK_NAME = "testBeansTalk";

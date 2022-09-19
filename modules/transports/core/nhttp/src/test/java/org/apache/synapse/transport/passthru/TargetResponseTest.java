@@ -185,7 +185,8 @@ public class TargetResponseTest extends TestCase {
 
         try {
             targetResponse.start(conn);
-            PowerMockito.verifyStatic( Mockito.times(1)); // Verify that the following mock method was called exactly 1 time
+            // Verify that the following mock method was called exactly 1 time
+            PowerMockito.verifyStatic(TargetContext.class, Mockito.times(1));
             TargetContext.updateState(conn, ProtocolState.RESPONSE_DONE);
 
 
