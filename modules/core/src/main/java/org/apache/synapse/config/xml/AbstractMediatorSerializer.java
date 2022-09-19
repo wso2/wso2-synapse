@@ -57,6 +57,7 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
         = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "property");
     protected static final QName DESCRIPTION_Q
         = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "description");
+    private static final String CUSTOM_MEDIATOR_START_TAG = "<CUSTOM_";
     /**
      * A constructor that makes subclasses pick up the correct logger
      */
@@ -244,7 +245,7 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
      */
     protected OMElement serializeComments(OMElement parent, Mediator m) {
         String comment = ((CommentMediator) m).getCommentText();
-        if (comment.startsWith("<CUSTOM_")) {
+        if (comment.startsWith(CUSTOM_MEDIATOR_START_TAG)) {
             StringReader xmlText = new StringReader(comment);
             OMElement elementNode = OMXMLBuilderFactory.createOMBuilder(xmlText).getDocumentElement();
             parent.addChild(elementNode);
