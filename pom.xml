@@ -84,13 +84,19 @@
                   <artifactId>maven-javadoc-plugin</artifactId>
                   <version>${maven.javadoc.plugin.version}</version>
                   <executions>
-                     <execution>
-                        <goals>
-                           <goal>jar</goal>
-                        </goals>
-                     </execution>
+                      <execution>
+                          <id>attach-javadocs</id>
+                          <goals>
+                              <goal>jar</goal>
+                          </goals>
+                          <configuration>
+                              <!--This parameter disables doclint-->
+                              <doclint>none</doclint>
+                          </configuration>
+                      </execution>
                   </executions>
                   <configuration>
+                     <source>1.8</source>
                      <attach>true</attach>
                   </configuration>
                </plugin>
@@ -1395,8 +1401,9 @@
          <plugin>
             <inherited>false</inherited>
             <artifactId>maven-javadoc-plugin</artifactId>
-            <version>2.1</version>
+            <version>${maven.javadoc.plugin.version}</version>
             <configuration>
+               <source>1.8</source>
                <links>
                   <link>http://java.sun.com/j2se/1.5.0/docs/api/</link>
                   <link>http://java.sun.com/j2ee/1.4/docs/api/</link>
@@ -1445,7 +1452,7 @@
       <module>modules/coverage-report</module>
    </modules>
    <properties>
-      <maven.javadoc.plugin.version>2.1</maven.javadoc.plugin.version>
+      <maven.javadoc.plugin.version>3.4.1</maven.javadoc.plugin.version>
       <wagon.ssh.version>2.1</wagon.ssh.version>
       <version.equinox.osgi>3.8.1.v20120830-144521</version.equinox.osgi>
       <version.equinox.osgi.services>3.3.100.v20120522-1822</version.equinox.osgi.services>
