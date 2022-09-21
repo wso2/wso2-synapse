@@ -108,6 +108,7 @@
                     </case>
                     <case regex="withCustomParams">
                         <property name="clientID" value="my_client_id"/>
+                        <property name="account_token" value="zxy@123"/>
                         <payloadFactory media-type="json">
                             <format>{"account_id" : "$1"}</format>
                             <args>
@@ -127,6 +128,10 @@
                                                     <parameter name="account_id">{json-eval($.account_id)}</parameter>
                                                     <parameter name="user_role">tester</parameter>
                                                 </requestParameters>
+                                                <customHeaders>
+                                                    <header name="user_token">abc#123</header>
+                                                    <header name="account_token">{$ctx:account_token}</header>
+                                                </customHeaders>
                                             </clientCredentials>
                                         </oauth>
                                     </authentication>

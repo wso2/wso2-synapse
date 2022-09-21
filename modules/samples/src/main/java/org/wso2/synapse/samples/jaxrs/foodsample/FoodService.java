@@ -66,7 +66,7 @@ public class FoodService {
 
         String basicHeader = httpHeaders.getHeaderString("Authorization");
 
-        if (validateBasicAuthHeader(basicHeader) && validateCustomParams(tokenRequestParams)) {
+        if (validateBasicAuthHeader(basicHeader) && validateCustomHeader(httpHeaders) && validateCustomParams(tokenRequestParams)) {
             return Response.status(Response.Status.OK).entity(new Token(Constants.accessToken, Constants.expiresIn,
                     Constants.tokenType)).build();
         }
@@ -154,5 +154,12 @@ public class FoodService {
         String userRole = tokenRequestParams.getFirst("user_role");
 
         return accountId.equals("1234") && userRole.equals("tester");
+    }
+
+    private boolean validateCustomHeader(HttpHeaders httpHeaders) {
+        String userTokenHeader = httpHeaders.getHeaderString("user_token");
+        String accountTokenHeader = httpHeaders.getHeaderString("account_token");
+
+        return userTokenHeader.equals("abc#123") && accountTokenHeader.equals("zxy@123");
     }
 }
