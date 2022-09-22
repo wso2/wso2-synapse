@@ -133,6 +133,13 @@ public class OAuthUtils {
             }
             handler.setRequestParameters(requestParameters);
         }
+        if (hasCustomHeaders(authCodeElement)) {
+            Map<String, String> customHeaders = getCustomHeaders(authCodeElement);
+            if (customHeaders == null) {
+                return null;
+            }
+            handler.setCustomHeaders(customHeaders);
+        }
         return handler;
     }
 
@@ -161,6 +168,13 @@ public class OAuthUtils {
                 return null;
             }
             handler.setRequestParameters(requestParameters);
+        }
+        if (hasCustomHeaders(clientCredentialsElement)) {
+            Map<String, String> customHeaders = getCustomHeaders(clientCredentialsElement);
+            if (customHeaders == null) {
+                return null;
+            }
+            handler.setCustomHeaders(customHeaders);
         }
         return handler;
     }
@@ -193,6 +207,13 @@ public class OAuthUtils {
                 return null;
             }
             handler.setRequestParameters(requestParameters);
+        }
+        if (hasCustomHeaders(passwordCredentialsElement)) {
+            Map<String, String> customHeaders = getCustomHeaders(passwordCredentialsElement);
+            if (customHeaders == null) {
+                return null;
+            }
+            handler.setCustomHeaders(customHeaders);
         }
         return handler;
     }
@@ -230,6 +251,42 @@ public class OAuthUtils {
     }
 
     /**
+     * Method to return custom headers as a Map
+     *
+     * @param oauthElement OAuth config OMElement
+     * @return Map<String, String> containing custom headers
+     */
+    private static Map<String, String> getCustomHeaders(OMElement oauthElement) {
+
+        HashMap<String, String> headersMap = new HashMap<>();
+
+        OMElement customHeadersElement = oauthElement.getFirstChildWithName(
+                new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
+                        AuthConstants.CUSTOM_HEADERS));
+
+        Iterator headers =
+                customHeadersElement.getChildrenWithName(
+                        new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, AuthConstants.CUSTOM_HEADER));
+
+        while (headers.hasNext()) {
+            OMElement header = (OMElement) headers.next();
+            String headerName = header.getAttributeValue(new QName(AuthConstants.NAME));
+            String headerValue = header.getText().trim();
+            if (StringUtils.isBlank(headerName) || StringUtils.isBlank(headerValue)) {
+                if (log.isDebugEnabled()) {
+                    log.error("Invalid custom header in OAuth configuration");
+                }
+                return null;
+            }
+            headerValue = ResolverFactory.getInstance().getResolver(headerValue).resolve();
+            headersMap.put(headerName, headerValue);
+        }
+        return headersMap;
+    }
+
+
+
+    /**
      * Method to check whether there are request parameters are defined in the OAuth config.
      *
      * @param oauthElement OAuth config OMElement
@@ -243,6 +300,21 @@ public class OAuthUtils {
         return (requestParametersElement != null && requestParametersElement.getChildrenWithName(
                 new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
                         AuthConstants.REQUEST_PARAMETER)).hasNext());
+    }
+
+    /**
+     * Method to check whether there are custom headers defined in the OAuth config
+     *
+     * @param oauthElement OAuth config OMElement
+     * @return true if there are custom headers defined in the oauth element
+     */
+    private static boolean hasCustomHeaders(OMElement oauthElement) {
+        OMElement customHeadersElement = oauthElement.getFirstChildWithName(
+                new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
+                        AuthConstants.CUSTOM_HEADERS));
+        return (customHeadersElement != null && customHeadersElement.getChildrenWithName(
+                new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
+                        AuthConstants.CUSTOM_HEADER)).hasNext());
     }
 
     /**

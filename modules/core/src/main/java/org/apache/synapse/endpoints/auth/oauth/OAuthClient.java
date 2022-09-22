@@ -97,7 +97,7 @@ public class OAuthClient {
      * @throws IOException    In the event of a problem parsing the response from the server
      */
     public static String generateToken(String tokenApiUrl, String payload, String credentials,
-                                       MessageContext messageContext) throws AuthException, IOException {
+                                       MessageContext messageContext, Map<String, String> customHeaders) throws AuthException, IOException {
         CloseableHttpClient httpClient = getSecureClient(tokenApiUrl, messageContext);
         if (log.isDebugEnabled()) {
             log.debug("Initializing token generation request: [token-endpoint] " + tokenApiUrl);
@@ -105,6 +105,11 @@ public class OAuthClient {
 
         HttpPost httpPost = new HttpPost(tokenApiUrl);
         httpPost.setHeader(AuthConstants.CONTENT_TYPE_HEADER, AuthConstants.APPLICATION_X_WWW_FORM_URLENCODED);
+        if (!(customHeaders == null || customHeaders.isEmpty())) {
+            for (Map.Entry<String, String> entry : customHeaders.entrySet()) {
+                httpPost.setHeader(entry.getKey(), entry.getValue());
+            }
+        }
         if (credentials != null) {
             httpPost.setHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.BASIC + credentials);
         }

@@ -107,7 +107,8 @@ public class OAuthClientTest extends TestCase {
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
         SynapseEnvironment synapseEnvironment = new Axis2SynapseEnvironment(synapseConfiguration);
         String token = OAuthClient.generateToken("https://localhost:8280/token1/1.0.0", "body", "credentials",
-                                                 new Axis2MessageContext(messageContext, new SynapseConfiguration(), synapseEnvironment));
+                                                 new Axis2MessageContext(messageContext, new SynapseConfiguration(),
+                                                         synapseEnvironment), null);
 
         assertEquals("abc123", token);
     }
