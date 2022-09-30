@@ -31,6 +31,7 @@ import org.apache.synapse.endpoints.auth.AuthHandler;
 
 import java.io.IOException;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
@@ -86,7 +87,7 @@ public abstract class OAuthHandler implements AuthHandler {
                 public String call() throws AuthException, IOException {
                     return OAuthClient.generateToken(OAuthUtils.resolveExpression(tokenApiUrl, messageContext),
                             buildTokenRequestPayload(messageContext), getEncodedCredentials(messageContext),
-                                                     messageContext, customHeadersMap);
+                            messageContext, getResolvedCustomHeadersMap(customHeadersMap, messageContext));
                 }
             });
         } catch (ExecutionException e) {
@@ -282,5 +283,27 @@ public abstract class OAuthHandler implements AuthHandler {
 
     public void setCustomHeaders(Map<String, String> customHeadersMap) {
         this.customHeadersMap = customHeadersMap;
+    }
+
+    /**
+     * This method will resolve the dynamic expressions used in custom headers and return a new map containing the
+     * resolved expressions.
+     *
+     * @param customHeadersMap The custom headers map
+     * @param messageContext   Message Context of the request which will be used to resolve dynamic expressions
+     * @return Map<String, String> Resolved custom headers
+     */
+    private Map<String, String> getResolvedCustomHeadersMap(Map<String, String> customHeadersMap,
+                                                            MessageContext messageContext) throws AuthException {
+
+        Map<String, String> resolvedCustomHeadersMap = null;
+        if (!(customHeadersMap == null || customHeadersMap.isEmpty())) {
+            resolvedCustomHeadersMap = new HashMap<>();
+            for (Map.Entry<String, String> entry : customHeadersMap.entrySet()) {
+                resolvedCustomHeadersMap.put(entry.getKey(), OAuthUtils.resolveExpression(entry.getValue(),
+                        messageContext));
+            }
+        }
+        return resolvedCustomHeadersMap;
     }
 }
