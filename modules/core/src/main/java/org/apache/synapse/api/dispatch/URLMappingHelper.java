@@ -44,14 +44,14 @@ public class URLMappingHelper implements DispatcherHelper {
     }
 
     public boolean isExactMatch(String url) {
-        if (!"/".equals(url)) {
-            url = ApiUtils.trimTrailingSlashes(url);
-        }
         int index = url.indexOf('?');
         if (index > 0) {
             url = url.substring(0, index);
         } else if (index == 0) {
             url = "/";
+        }
+        if (!"/".equals(url)) {
+            url = ApiUtils.trimTrailingSlashes(url);
         }
         return exactMatch != null && exactMatch.equals(url);
     }
