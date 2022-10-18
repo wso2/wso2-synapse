@@ -251,14 +251,15 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     log.error("fileObject is null");
                     throw new FileSystemException("fileObject is null");
                 }
-
+                // Make sure that the actual file object is error free, otherwise exists() will throw exceptions
+                fileObject.exists();
                 wasError = false;
 
             } catch (FileSystemException e) {
+                closeCachedFileSystem(fileURI, fso);
                 if (retryCount >= maxRetryCount) {
                     processFailure("Repeatedly failed to resolve the file URI: " +
                             VFSUtils.maskURLPassword(fileURI), e, entry);
-                    closeFileSystem(fileObject);
                     return;
                 } else {
                     log.warn("Failed to resolve the file URI: " +
@@ -268,7 +269,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 }
             } catch (Exception e) {
                 log.warn("Runtime error may have occurred. ", e);
-                closeFileSystem(fileObject);
+                closeCachedFileSystem(fileURI, fso);
             }
 
             if (wasError) {
@@ -290,6 +291,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     children = fileObject.getChildren();
                 } catch (FileNotFolderException ignored) {
                 } catch (FileSystemException ex) {
+                    closeFileSystem(fileObject);
                     log.error(ex.getMessage(), ex);
                 }
 
@@ -326,6 +328,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                     entry.setLastPollState(PollTableEntry.FAILED);
                                     metrics.incrementFaultsReceiving();
                                 }
+                                closeFileSystem(fileObject);
                             }
                             if (runPostProcess) {
                                 try {
@@ -579,6 +582,12 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             : "The file can not be read!")
                             : "The file does not exists!"));
                 }
+                // If the polling directory is not exist or not readable, refresh the parent file to trigger scan the cached
+                // child directories
+                FileObject parent = fileObject.getParent();
+                if (parent != null && parent.exists()) {
+                    parent.refresh();
+                }
             }
             onPollCompletion(entry);
         } catch (FileSystemException e) {
@@ -600,6 +609,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         try {
             fileObject.close();
         } catch (FileSystemException e) {
+            closeFileSystem(fileObject);
             log.debug("Error occurred while closing file.", e);
         }
     }
@@ -607,7 +617,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
     private void closeFileSystem(FileObject fileObject) {
         try {
             //Close the File system if it is not already closed by the finally block of processFile method
-            if (fileObject != null && !isFileSystemClosed() && fsManager != null && fileObject.getParent() != null  && fileObject.getParent().getFileSystem() != null) {
+            if (fileObject != null && fsManager != null && fileObject.getParent() != null  && fileObject.getParent().getFileSystem() != null) {
                 fsManager.closeFileSystem(fileObject.getParent().getFileSystem());
                 fileObject.close();
                 setFileSystemClosed(true);
@@ -615,6 +625,14 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         } catch (FileSystemException warn) {
             //  log.warn("Cannot close file after processing : " + file.getName().getPath(), warn);
             // ignore the warning, since we handed over the stream close job to AutocloseInputstream..
+        }
+    }
+
+    private void closeCachedFileSystem(String uri, FileSystemOptions fso) {
+        try {
+            fsManager.closeCachedFileSystem(uri, fso);
+        } catch (Exception e1) {
+            log.debug("Unable to clear file system", e1);
         }
     }
 
@@ -709,12 +727,14 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     }
                     fileObject.moveTo(dest);
                 } catch (FileSystemException e) {
+                    closeFileSystem(fileObject);
                     handleException("Error moving file : " + VFSUtils.maskURLPassword(fileObject.toString()) + " to " +
                                     VFSUtils.maskURLPassword(moveToDirectoryURI), e);
                 }finally{
 	                try {
 	                	fileObject.close();
 	                } catch (FileSystemException ignore) {
+                        closeFileSystem(fileObject);
 	                }
                 }
             } else {
@@ -731,12 +751,14 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                         throw new AxisFault(msg);
                     }
                 } catch (FileSystemException e) {
+                    closeFileSystem(fileObject);
                     log.error("Error deleting file : "
                     		+ VFSUtils.maskURLPassword(fileObject.toString()), e);
                 }
             }
 
         } catch (FileSystemException e) {
+            closeFileSystem(fileObject);
             handleException("Error resolving directory to move after processing : "
                     + VFSUtils.maskURLPassword(moveToDirectoryURI), e);
         }
@@ -766,7 +788,9 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             try {
                 transportHeaders.put(VFSConstants.FILE_LENGTH, content.getSize());
                 transportHeaders.put(VFSConstants.LAST_MODIFIED, content.getLastModifiedTime());
-            } catch (FileSystemException ignore) {}
+            } catch (FileSystemException ignore) {
+                closeFileSystem(file);
+            }
 
             MessageContext msgContext = entry.createMessageContext();
 
@@ -871,16 +895,17 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             }
 
         } catch (FileSystemException e) {
+            closeFileSystem(file);
             handleException("Error reading file content or attributes : "
             		+ VFSUtils.maskURLPassword(file.toString()), e);
+
+        } catch (Exception e) {
+            closeFileSystem(file);
+            throw e;
 
         } finally {
             try {
                 if (file != null) {
-                    if (fsManager != null && file.getName() != null && file.getName().getScheme() != null &&
-                            file.getName().getScheme().startsWith("file")) {
-                        fsManager.closeFileSystem(file.getParent().getFileSystem());
-                    }
                     file.close();
                 }
             } catch (FileSystemException warn) {
@@ -1059,6 +1084,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 try {
                     fileObject.moveTo(dest);  // FIXME - when an exception occurs here it causes the in folder to vanish
                 } catch (FileSystemException e) {
+                    closeFileSystem(fileObject);
                     handleException("Error moving the failed file : " 
                     		+ VFSUtils.maskURLPassword(fileObject.toString()) + " to " + moveToDirectoryURI, e);
                 }

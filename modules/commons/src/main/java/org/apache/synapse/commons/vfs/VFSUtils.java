@@ -32,6 +32,7 @@ import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.FileSystemOptions;
+import org.apache.commons.vfs2.impl.DefaultFileSystemManager;
 import org.apache.commons.vfs2.provider.UriParser;
 import org.apache.commons.vfs2.provider.ftps.FtpsDataChannelProtectionLevel;
 import org.apache.commons.vfs2.provider.ftps.FtpsFileSystemConfigBuilder;
@@ -193,12 +194,12 @@ public class VFSUtils {
         String strLockValue = getLockValue();
         byte[] lockValue = strLockValue.getBytes();
         FileObject lockObject = null;
+        String fullPath = getFullPath(fo);
 
         try {
             // check whether there is an existing lock for this item, if so it is assumed
             // to be processed by an another listener (downloading) or a sender (uploading)
             // lock file is derived by attaching the ".lock" second extension to the file name
-            String fullPath = getFullPath(fo);
             lockObject = fsManager.resolveFile(fullPath + LOCK_FILE_SUFFIX, fso);
             if (lockObject.exists()) {
                 log.debug("There seems to be an external lock, aborting the processing of the file "
@@ -239,6 +240,12 @@ public class VFSUtils {
                     fsManager.closeFileSystem(lockObject.getParent().getFileSystem());
                 } catch (FileSystemException e) {
                     log.warn("Unable to close the lockObject parent file system");
+                }
+            } else {
+                try {
+                    ((DefaultFileSystemManager) fsManager).closeCachedFileSystem(fullPath + LOCK_FILE_SUFFIX, fso);
+                } catch (Exception e1) {
+                    log.warn("Unable to clear file system", e1);
                 }
             }
         }
@@ -310,20 +317,26 @@ public class VFSUtils {
      * @param fso represents file system options used when resolving file from file system manager.
      */
     public static void releaseLock(FileSystemManager fsManager, FileObject fo, FileSystemOptions fso) {
-        String fullPath = fo.getName().getURI();    
-        
-        try {	    
+        String fullPath = fo.getName().getURI();
+        FileObject lockObject;
+
+        try {
             int pos = fullPath.indexOf('?');
             if (pos > -1) {
                 fullPath = fullPath.substring(0, pos);
             }
-            FileObject lockObject = fsManager.resolveFile(fullPath + LOCK_FILE_SUFFIX, fso);
+            lockObject = fsManager.resolveFile(fullPath + LOCK_FILE_SUFFIX, fso);
             if (lockObject.exists()) {
                 lockObject.delete();
             }
         } catch (FileSystemException e) {
             log.error("Couldn't release the lock for the file : "
                     + maskURLPassword(fo.getName().getURI()) + " after processing");
+            try {
+                ((DefaultFileSystemManager) fsManager).closeCachedFileSystem(fullPath + LOCK_FILE_SUFFIX, fso);
+            } catch (Exception e1){
+                log.warn("Unable to clear file system", e1);
+            }
         }
     }
 
