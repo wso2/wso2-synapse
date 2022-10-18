@@ -234,7 +234,13 @@ public class NhttpConstants {
     /**
      * X509 certificate chain for Mutual SSL connections
      */
+    @Deprecated
     public static final String SSL_CLIENT_AUTH_CERT_X509 = "ssl.client.auth.cert.X509";
+
+    /**
+     * Certificates for Mutual SSL connections
+     */
+    public static final String SSL_CLIENT_AUTH_CERT = "ssl.client.auth.cert";
 
     /**
      * axis2 configuration to enable Mutual SSL - verify client's certificate
