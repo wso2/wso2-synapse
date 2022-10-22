@@ -56,6 +56,7 @@ import org.apache.synapse.debug.SynapseDebugManager;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
 import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.inbound.InboundEndpointStatisticsCloseEventListener;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.MediatorWorker;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -457,12 +458,15 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                     statisticReportingIndex = OpenEventCollector.reportEntryEvent(synCtx, inboundName,
                             inboundAspectConfiguration, ComponentType.INBOUNDENDPOINT);
                 }
-                executorServiceInbound.execute(new MediatorWorker(seq, synCtx));
+                InboundEndpointStatisticsCloseEventListener statisticsCloseEventListener
+                        = new InboundEndpointStatisticsCloseEventListener(inboundName, statisticReportingIndex);
+                MediatorWorker mediatorWorker = new MediatorWorker(seq, synCtx);
+                mediatorWorker.setStatisticsCloseEventListener(statisticsCloseEventListener);
+                this.executorServiceInbound.execute(mediatorWorker);
                 return true;
             } catch (RejectedExecutionException re) {
                 // If the pool is full complete the execution with the same thread
                 log.warn("Inbound worker pool has reached the maximum capacity and will be processing current message sequentially.");
-            } finally {
                 if (isStatisticsEnabled) {
                     CloseEventCollector.tryEndFlow(synCtx, inboundName, ComponentType.INBOUNDENDPOINT,
                             statisticReportingIndex, false);
