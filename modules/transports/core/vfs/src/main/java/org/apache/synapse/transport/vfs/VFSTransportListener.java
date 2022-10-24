@@ -169,7 +169,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             fsm.setConfiguration(getClass().getClassLoader().getResource("providers.xml"));
             fsm.init();
             this.workerPool = super.workerPool;
-            fsManager = fsm;
+            setFsManager(fsm);
             Parameter lockFlagParam = getTransportInDescription().getParameter(VFSConstants.TRANSPORT_FILE_LOCKING);
             if (lockFlagParam != null) {
                 String strLockingFlag = lockFlagParam.getValue().toString();
@@ -195,7 +195,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
      * @param entry the poll table entry for the scan
      * @param fileURI the file or directory to be scanned
      */
-    private void scanFileOrDirectory(final PollTableEntry entry, String fileURI) {
+    protected void scanFileOrDirectory(final PollTableEntry entry, String fileURI) {
         if (log.isDebugEnabled()) {
             log.debug("Polling: " + VFSUtils.maskURLPassword(fileURI));
         }
@@ -222,7 +222,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         FileSystemOptions fso = null;
         setFileSystemClosed(false);
         try {
-            fso = VFSUtils.attachFileSystemOptions(entry.getVfsSchemeProperties(), fsManager);
+            fso = VFSUtils.attachFileSystemOptions(entry.getVfsSchemeProperties(), getFsManager());
         } catch (Exception e) {
             log.error("Error while attaching VFS file system properties. " + e.getMessage());
         }
@@ -246,7 +246,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         while (wasError) {
             try {
                 retryCount++;
-                fileObject = fsManager.resolveFile(fileURI, fso);
+                fileObject = getFsManager().resolveFile(fileURI, fso);
 
                 if (fileObject == null) {
                     log.error("fileObject is null");
@@ -307,7 +307,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             !isFailedRecord) {
                         boolean runPostProcess = true;
                         if (!entry.isFileLockingEnabled() || (entry.isFileLockingEnabled() &&
-                                acquireLock(fsManager, fileObject, entry, fso, true))) {
+                                acquireLock(getFsManager(), fileObject, entry, fso, true))) {
                             try {
                                 if (fileObject.getType() == FileType.FILE) {
                                     boolean status = processFile(entry, fileObject);
@@ -348,7 +348,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                 }
                             }
                             if (entry.isFileLockingEnabled()) {
-                                VFSUtils.releaseLock(fsManager, fileObject, fso);
+                                VFSUtils.releaseLock(getFsManager(), fileObject, fso);
                                 if (log.isDebugEnabled()) {
                                     log.debug("Removed the lock file '"
                                     		+ VFSUtils.maskURLPassword(fileObject.toString())
@@ -361,10 +361,10 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                     + VFSUtils.maskURLPassword(fileObject.getName().getURI()));
                         } else if (isFailedRecord) {
                             if (entry.isFileLockingEnabled()) {
-                                VFSUtils.releaseLock(fsManager, fileObject, fso);
+                                VFSUtils.releaseLock(getFsManager(), fileObject, fso);
                             }
                             // schedule a cleanup task if the file is there
-                            if (fsManager.resolveFile(fileObject.getURL().toString(), fso) != null &&
+                            if (getFsManager().resolveFile(fileObject.getURL().toString(), fso) != null &&
                                     removeTaskState == STATE_STOPPED && entry.getMoveAfterMoveFailure() != null) {
                                 workerPool.execute(new FileRemoveTask(entry, fileObject, fso));
                             }
@@ -463,7 +463,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             boolean runPostProcess = true;
                             if((!entry.isFileLockingEnabled()
                                     || (entry.isFileLockingEnabled()
-                                        && acquireLock(fsManager, child, entry, fso, true)))
+                                        && acquireLock(getFsManager(), child, entry, fso, true)))
                                     && !isFailedRecord){
                                 //process the file
                                 try {
@@ -481,8 +481,6 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                         } else {
                                             entry.setLastPollState(PollTableEntry.FAILED);
                                         }
-
-
                                         metrics.incrementMessagesReceived();
                                     } else {
                                         runPostProcess = false;
@@ -521,7 +519,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                 }
                                 // if there is a failure or not we'll try to release the lock
                                 if (entry.isFileLockingEnabled() && !skipUnlock) {
-                                    VFSUtils.releaseLock(fsManager, child, fso);
+                                    VFSUtils.releaseLock(getFsManager(), child, fso);
                                 }
                             }
                         }else if(entry.getFileNamePattern()!=null &&
@@ -533,10 +531,10 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                         } else if(isFailedRecord){
                             //it is a failed record
                             if (entry.isFileLockingEnabled()) {
-                                VFSUtils.releaseLock(fsManager, child, fso);
-                                VFSUtils.releaseLock(fsManager, fileObject, fso);
+                                VFSUtils.releaseLock(getFsManager(), child, fso);
+                                VFSUtils.releaseLock(getFsManager(), fileObject, fso);
                             }
-                            if (fsManager.resolveFile(child.getURL().toString(), fso) != null &&
+                            if (getFsManager().resolveFile(child.getURL().toString(), fso) != null &&
                                     removeTaskState == STATE_STOPPED && entry.getMoveAfterMoveFailure() != null) {
                                 workerPool.execute(new FileRemoveTask(entry, child, fso));
                             }
@@ -612,7 +610,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
     @Override
     public void destroy() {
         super.destroy();
-        fsManager.close();
+        getFsManager().close();
     }
 
     private void close(FileObject fileObject) {
@@ -627,8 +625,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
     private void closeFileSystem(FileObject fileObject) {
         try {
             //Close the File system if it is not already closed by the finally block of processFile method
-            if (fileObject != null && fsManager != null && fileObject.getParent() != null  && fileObject.getParent().getFileSystem() != null) {
-                fsManager.closeFileSystem(fileObject.getParent().getFileSystem());
+            if (fileObject != null && getFsManager() != null && fileObject.getParent() != null  && fileObject.getParent().getFileSystem() != null) {
+                getFsManager().closeFileSystem(fileObject.getParent().getFileSystem());
                 fileObject.close();
                 setFileSystemClosed(true);
             }
@@ -640,13 +638,13 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 
     private void closeCachedFileSystem(String uri, FileSystemOptions fso) {
         try {
-            fsManager.closeCachedFileSystem(uri, fso);
+            getFsManager().closeCachedFileSystem(uri, fso);
         } catch (Exception e1) {
             log.debug("Unable to clear file system", e1);
         }
     }
 
-    private boolean acquireLock(FileSystemManager fsManager, FileObject fileObject, final PollTableEntry entry,
+    protected boolean acquireLock(FileSystemManager fsManager, FileObject fileObject, final PollTableEntry entry,
                                 FileSystemOptions fso, boolean isListener){
         VFSParamDTO vfsParamDTO = new VFSParamDTO();
         vfsParamDTO.setAutoLockRelease(entry.getAutoLockRelease());
@@ -660,7 +658,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
      * @param entry the PollTableEntry for the file that has been processed
      * @param fileObject the FileObject representing the file to be moved or deleted
      */
-    private void moveOrDeleteAfterProcessing(final PollTableEntry entry, FileObject fileObject, FileSystemOptions fso)
+    protected void moveOrDeleteAfterProcessing(final PollTableEntry entry, FileObject fileObject, FileSystemOptions fso)
             throws AxisFault {
 
         String moveToDirectoryURI = null;
@@ -710,11 +708,11 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 FileSystemOptions destinationFSO = null;
                 try {
                     destinationFSO = VFSUtils.attachFileSystemOptions(
-                            VFSUtils.parseSchemeFileOptions(moveToDirectoryURI, entry.getParams()), fsManager);
+                            VFSUtils.parseSchemeFileOptions(moveToDirectoryURI, entry.getParams()), getFsManager());
                 } catch (Exception e) {
                     log.warn("Unable to set options for processed file location ", e);
                 }
-                FileObject moveToDirectory = fsManager.resolveFile(moveToDirectoryURI, destinationFSO);
+                FileObject moveToDirectory = getFsManager().resolveFile(moveToDirectoryURI, destinationFSO);
                 String prefix;
                 if(entry.getMoveTimestampFormat() != null) {
                     prefix = entry.getMoveTimestampFormat().format(new Date());
@@ -781,7 +779,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
      * @return boolean the status of the operation
      * @throws AxisFault on error
      */
-    private boolean processFile(PollTableEntry entry, FileObject file) throws AxisFault {
+    protected boolean processFile(PollTableEntry entry, FileObject file) throws AxisFault {
         boolean processFileStatus = true;
         try {
             FileContent content = file.getContent();
@@ -973,7 +971,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         return properties;
     }
 
-    private synchronized void addFailedRecord(PollTableEntry pollTableEntry,
+    protected synchronized void addFailedRecord(PollTableEntry pollTableEntry,
                                               FileObject failedObject,
                                               String timeString) {
         try {
@@ -1002,7 +1000,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         }
     }
 
-    private boolean isFailedRecord(FileObject fileObject, PollTableEntry entry) {
+    protected boolean isFailedRecord(FileObject fileObject, PollTableEntry entry) {
         String failedFile = entry.getFailedRecordFileDestination() +
                 entry.getFailedRecordFileName();
         File file = new File(failedFile);
@@ -1025,6 +1023,14 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             }
         }
         return false;
+    }
+
+    public DefaultFileSystemManager getFsManager() {
+        return fsManager;
+    }
+
+    public void setFsManager(DefaultFileSystemManager fsManager) {
+        this.fsManager = fsManager;
     }
 
     private class FileRemoveTask implements Runnable {
@@ -1083,7 +1089,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             try {
 
                 String moveToDirectoryURI = entry.getMoveAfterMoveFailure();
-                FileObject moveToDirectory = fsManager.resolveFile(moveToDirectoryURI, fso);
+                FileObject moveToDirectory = getFsManager().resolveFile(moveToDirectoryURI, fso);
                 if (!moveToDirectory.exists()) {
                     moveToDirectory.createFolder();
                 }
