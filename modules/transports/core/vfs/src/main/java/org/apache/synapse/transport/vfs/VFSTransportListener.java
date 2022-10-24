@@ -19,6 +19,8 @@
 package org.apache.synapse.transport.vfs;
 
 import org.apache.axiom.om.OMAttribute;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
@@ -40,6 +42,7 @@ import org.apache.axis2.transport.base.ManagementSupport;
 import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.AutoCloseInputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileContent;
 import org.apache.commons.vfs2.FileNotFolderException;
 import org.apache.commons.vfs2.FileNotFoundException;
@@ -50,7 +53,6 @@ import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.FileType;
 import org.apache.commons.vfs2.impl.DefaultFileSystemManager;
 import org.apache.commons.vfs2.impl.StandardFileSystemManager;
-import org.apache.synapse.commons.crypto.CryptoConstants;
 import org.apache.synapse.commons.vfs.FileObjectDataSource;
 import org.apache.synapse.commons.vfs.VFSConstants;
 import org.apache.synapse.commons.vfs.VFSOutTransportInfo;
@@ -74,7 +76,6 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
-import javax.xml.namespace.QName;
 
 /**
  * The "vfs" transport is a polling based transport - i.e. it gets kicked off at
@@ -309,8 +310,12 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                 acquireLock(fsManager, fileObject, entry, fso, true))) {
                             try {
                                 if (fileObject.getType() == FileType.FILE) {
-                                    processFile(entry, fileObject);
-                                    entry.setLastPollState(PollTableEntry.SUCCSESSFUL);
+                                    boolean status = processFile(entry, fileObject);
+                                    if (status) {
+                                        entry.setLastPollState(PollTableEntry.SUCCSESSFUL);
+                                    } else {
+                                        entry.setLastPollState(PollTableEntry.FAILED);
+                                    }
                                     metrics.incrementMessagesReceived();
                                 } else {
                                     runPostProcess = false;
@@ -469,10 +474,15 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                     processCount++;
 
                                     if (child.getType() == FileType.FILE) {
-                                        processFile(entry, child);
-                                        successCount++;
-                                        // tell moveOrDeleteAfterProcessing() file was success
-                                        entry.setLastPollState(PollTableEntry.SUCCSESSFUL);
+                                        boolean status = processFile(entry, child);
+                                        if (status) {
+                                            successCount++;
+                                            entry.setLastPollState(PollTableEntry.SUCCSESSFUL);
+                                        } else {
+                                            entry.setLastPollState(PollTableEntry.FAILED);
+                                        }
+
+
                                         metrics.incrementMessagesReceived();
                                     } else {
                                         runPostProcess = false;
@@ -768,10 +778,11 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
      * Process a single file through Axis2
      * @param entry the PollTableEntry for the file (or its parent directory or archive)
      * @param file the file that contains the actual message pumped into Axis2
+     * @return boolean the status of the operation
      * @throws AxisFault on error
      */
-    private void processFile(PollTableEntry entry, FileObject file) throws AxisFault {
-
+    private boolean processFile(PollTableEntry entry, FileObject file) throws AxisFault {
+        boolean processFileStatus = true;
         try {
             FileContent content = file.getContent();
             String fileName = file.getName().getBaseName();
@@ -881,6 +892,12 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     null, //* SOAP Action - not applicable *//
                     contentType
                 );
+                //Check if the sender was successful or not
+                String errorCode = (String) transportHeaders.get(VFSConstants.ERROR_CODE);
+                if (StringUtils.isNotEmpty(errorCode)) {
+                    // Mark sender is failed so that we can set entry status accordingly
+                    processFileStatus = false;
+                }
             }
             finally {
              if(dataSource != null) {
@@ -913,6 +930,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 // AutocloseInputstream..
             }
         }
+        return processFileStatus;
     }
 
     @Override

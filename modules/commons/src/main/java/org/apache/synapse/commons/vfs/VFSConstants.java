@@ -107,6 +107,11 @@ public final class VFSConstants {
             "transport.vfs.FailedRecordsFileDestination";
 
     /**
+     * The error code of the transport sender side
+     */
+    public static final String ERROR_CODE = "ERROR_CODE";
+
+    /**
      * The default location to place the record file
      */
     public static final String DEFAULT_FAILED_RECORDS_FILE_DESTINATION = "repository/conf/";
