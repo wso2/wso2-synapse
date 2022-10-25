@@ -98,7 +98,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
             StandardFileSystemManager fsm = new StandardFileSystemManager();
             fsm.setConfiguration(getClass().getClassLoader().getResource("providers.xml"));
             fsm.init();
-            fsManager = fsm;
+            setFsManager(fsm);
             Parameter lckFlagParam = transportOut.getParameter(VFSConstants.TRANSPORT_FILE_LOCKING);
             if (lckFlagParam != null) {
                 String strLockingFlag = lckFlagParam.getValue().toString();
@@ -208,11 +208,11 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
         }
     }
 
-    private void writeFile(MessageContext msgCtx, VFSOutTransportInfo vfsOutInfo) throws AxisFault {
+    protected void writeFile(MessageContext msgCtx, VFSOutTransportInfo vfsOutInfo) throws AxisFault {
 
         FileSystemOptions fso = null;
         try {
-            fso = VFSUtils.attachFileSystemOptions(vfsOutInfo.getOutFileSystemOptionsMap(), fsManager);
+            fso = VFSUtils.attachFileSystemOptions(vfsOutInfo.getOutFileSystemOptionsMap(), getFsManager());
         } catch (Exception e) {
             log.error("Error while attaching VFS file system properties. " + e.getMessage());
         }
@@ -231,7 +231,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                     
                     try {
                         retryCount++;
-                        replyFile = fsManager.resolveFile(vfsOutInfo.getOutFileURI(), fso);
+                        replyFile = getFsManager().resolveFile(vfsOutInfo.getOutFileURI(), fso);
                         if (replyFile == null) {
                             log.error("replyFile is null");
                             throw new FileSystemException("replyFile is null");
@@ -274,7 +274,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                     if(!strPath.endsWith("/") || !strPath.endsWith("\\")){
                         strPath += "/";
                     }
-                    FileObject replyFolder = fsManager.resolveFile(strPath, fso);
+                    FileObject replyFolder = getFsManager().resolveFile(strPath, fso);
                     if(!replyFolder.exists()){
                         replyFile.createFolder();
                     }
@@ -283,7 +283,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                 if (replyFile.exists()) {
                     if (replyFile.getType() == FileType.FOLDER) {
                         // we need to write a file containing the message to this folder
-                        FileObject responseFile = fsManager.resolveFile(replyFile,
+                        FileObject responseFile = getFsManager().resolveFile(replyFile,
                                 VFSUtils.getFileName(msgCtx, vfsOutInfo));
 
                         // if file locking is not disabled acquire the lock
@@ -291,7 +291,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                         if (vfsOutInfo.isFileLockingEnabled()) {
                             acquireLockForSending(responseFile, vfsOutInfo, fso);
                             populateResponseFile(responseFile, msgCtx,append, true, fso);
-                            VFSUtils.releaseLock(fsManager, responseFile, fso);
+                            VFSUtils.releaseLock(getFsManager(), responseFile, fso);
                         } else {
                             populateResponseFile(responseFile, msgCtx,append, false, fso);
                         }
@@ -303,7 +303,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                         if (vfsOutInfo.isFileLockingEnabled()) {
                             acquireLockForSending(replyFile, vfsOutInfo, fso);
                             populateResponseFile(replyFile, msgCtx, append, true, fso);
-                            VFSUtils.releaseLock(fsManager, replyFile, fso);
+                            VFSUtils.releaseLock(getFsManager(), replyFile, fso);
                         } else {
                             populateResponseFile(replyFile, msgCtx, append, false, fso);
                         }
@@ -317,7 +317,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                     if (vfsOutInfo.isFileLockingEnabled()) {
                         acquireLockForSending(replyFile, vfsOutInfo, fso);
                         populateResponseFile(replyFile, msgCtx, append, true, fso);
-                        VFSUtils.releaseLock(fsManager, replyFile, fso);
+                        VFSUtils.releaseLock(getFsManager(), replyFile, fso);
                     } else {
                         populateResponseFile(replyFile, msgCtx, append, false, fso);
                     }
@@ -333,7 +333,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
             } finally {
                 if (replyFile != null) {
                     try {
-                        fsManager.getFilesCache().clear(replyFile.getParent().getFileSystem());
+                        getFsManager().getFilesCache().clear(replyFile.getParent().getFileSystem());
                         replyFile.close();
                     } catch (Exception ex) {
                         log.warn("Error when closing the reply file", ex);
@@ -355,7 +355,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
 
     }
 
-    private void populateResponseFile(FileObject responseFile, MessageContext msgContext,
+    protected void populateResponseFile(FileObject responseFile, MessageContext msgContext,
                                       boolean append, boolean lockingEnabled, FileSystemOptions fso) throws AxisFault {
         MessageFormatter messageFormatter = getMessageFormatter(msgContext);
         OMOutputFormat format = BaseUtils.getOMOutputFormat(msgContext);
@@ -391,7 +391,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
             
         } catch (IOException e) {
             if (lockingEnabled) {
-                VFSUtils.releaseLock(fsManager, responseFile, fso);
+                VFSUtils.releaseLock(getFsManager(), responseFile, fso);
             }
             metrics.incrementFaultsSending();
             String responseFileURI = responseFile.getName().getURI();
@@ -400,12 +400,12 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
         }
     }
 
-    private void acquireLockForSending(FileObject responseFile, VFSOutTransportInfo vfsOutInfo, FileSystemOptions fso)
+    protected void acquireLockForSending(FileObject responseFile, VFSOutTransportInfo vfsOutInfo, FileSystemOptions fso)
             throws AxisFault {
         
         int tryNum = 0;
         // wait till we get the lock
-        while (!VFSUtils.acquireLock(fsManager, responseFile, fso, false)) {
+        while (!VFSUtils.acquireLock(getFsManager(), responseFile, fso, false)) {
             if (vfsOutInfo.getMaxRetryCount() == tryNum++) {
                 handleException("Couldn't send the message to file : "
                         + VFSUtils.maskURLPassword(responseFile.getName().getURI()) + ", unable to acquire the " +
@@ -455,8 +455,8 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
     private void closeFileSystem(FileObject fileObject) {
         try {
             //Close the File system if it is not already closed
-            if (fileObject != null && fsManager != null && fileObject.getParent() != null && fileObject.getParent().getFileSystem() != null) {
-                fsManager.closeFileSystem(fileObject.getFileSystem());
+            if (fileObject != null && getFsManager() != null && fileObject.getParent() != null && fileObject.getParent().getFileSystem() != null) {
+                getFsManager().closeFileSystem(fileObject.getFileSystem());
             }
             fileObject.close();
         } catch (FileSystemException warn) {
@@ -466,9 +466,18 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
 
     private void closeCachedFileSystem(VFSOutTransportInfo vfsOutInfo, FileSystemOptions fso) {
         try {
-            ((DefaultFileSystemManager) fsManager).closeCachedFileSystem(vfsOutInfo.getOutFileURI(), fso);
+            ((DefaultFileSystemManager) getFsManager()).closeCachedFileSystem(vfsOutInfo.getOutFileURI(), fso);
         } catch (Exception e1) {
             log.debug("Unable to clear file system", e1);
         }
+    }
+
+    /** The VFS file system manager */
+    public FileSystemManager getFsManager() {
+        return fsManager;
+    }
+
+    public void setFsManager(FileSystemManager fsManager) {
+        this.fsManager = fsManager;
     }
 }
