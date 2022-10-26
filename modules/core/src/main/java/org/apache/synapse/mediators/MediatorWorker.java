@@ -22,8 +22,7 @@ package org.apache.synapse.mediators;
 import org.apache.synapse.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
-import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.StatisticsCloseEventListener;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.debug.SynapseDebugManager;
@@ -43,6 +42,9 @@ public class MediatorWorker implements Runnable {
 
     /** MessageContext to be mediated using the mediator */
     private MessageContext synCtx = null;
+
+    /** StatisticsCloseEventListener to be used to close the statistics events at the end of the flow. */
+    private StatisticsCloseEventListener statisticsCloseEventListener = new StatisticsCloseEventListener();
 
     /**
      * Constructor of the MediatorWorker which sets the sequence and the message context
@@ -124,7 +126,7 @@ public class MediatorWorker implements Runnable {
                 debugManager.releaseMediationFlowLock();
             }
             if (RuntimeStatisticCollector.isStatisticsEnabled()) {
-                CloseEventCollector.closeFlowForcefully(synCtx, false);
+                this.statisticsCloseEventListener.invokeCloseEventEntry(synCtx);
             }
         }
         synCtx = null;
@@ -145,4 +147,7 @@ public class MediatorWorker implements Runnable {
         }
     }
 
+    public void setStatisticsCloseEventListener(StatisticsCloseEventListener statisticsCloseEventListener) {
+        this.statisticsCloseEventListener = statisticsCloseEventListener;
+    }
 }
