@@ -26,6 +26,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.SynapseCommonsException;
 import org.apache.synapse.commons.datasource.DataSourceInformation;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.sql.DataSource;
 
 /**
@@ -35,7 +37,7 @@ public class DataSourceFactory {
 
     private final static Log log = LogFactory.getLog(DataSourceFactory.class);
 
-    private final static String H2_INIT = ";init=";
+    private static Pattern h2InitPattern = Pattern.compile("\\s*;\\s*init\\s*=\\s*", Pattern.CASE_INSENSITIVE);
 
     private DataSourceFactory() {
     }
@@ -62,8 +64,13 @@ public class DataSourceFactory {
 
         if (url == null || "".equals(url)) {
             handleException("Database connection URL cannot be found.");
-        } else if (url.toLowerCase().contains(H2_INIT)) {
-            handleException("INIT expressions are not allowed in the connection URL due to security reasons.");
+        } else {
+            String validationConnectionString = url.toLowerCase().replace("\\", "");
+            Matcher matcher = h2InitPattern.matcher(validationConnectionString);
+
+            if (matcher.find()) {
+                handleException("INIT expressions are not allowed in the connection URL due to security reasons.");
+            }
         }
 
         String user = dataSourceInformation.getSecretInformation().getUser();
