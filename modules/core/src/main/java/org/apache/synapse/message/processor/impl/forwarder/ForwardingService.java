@@ -18,6 +18,7 @@
 
 package org.apache.synapse.message.processor.impl.forwarder;
 
+import com.damnhandy.uri.template.MalformedUriTemplateException;
 import com.damnhandy.uri.template.UriTemplate;
 import com.damnhandy.uri.template.VariableExpansionException;
 import org.apache.axiom.om.OMAbstractFactory;
@@ -61,12 +62,12 @@ import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.task.Task;
 import org.apache.synapse.util.MessageHelper;
+import org.apache.synapse.util.UriTemplateUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -530,7 +531,8 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			String endpointReferenceValue;
 			if (endpointDefinition.getAddress() != null) {
 				endpointReferenceValue = endpointDefinition.getAddress();
-				String evaluatedEndpointReferenceValue = getUriFromUriTemplate(messageContext, endpointReferenceValue);
+				String evaluatedEndpointReferenceValue = getUriFromUriTemplate(messageContext, endpointReferenceValue,
+						endpoint.getName());
 				//we only validate response for certain protocols (i.e HTTP/HTTPS)
 				isResponseValidationNotRequired = !isResponseValidationRequiredEndpoint(evaluatedEndpointReferenceValue);
 			}
@@ -593,58 +595,46 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 	/**
 	 * Returns the string of actual URI for the URI template.
-	 * @param messageContext        Synapse message context
-	 * @param uriTemplateString     URI template
-	 * @return                      URI string
+	 *
+	 * @param messageContext    Synapse message context
+	 * @param uriTemplateString URI template
+	 * @param endpointName      Endpoint name
+	 * @return URI string
 	 */
-	private String getUriFromUriTemplate (MessageContext messageContext, String uriTemplateString) {
+	private String getUriFromUriTemplate(MessageContext messageContext, String uriTemplateString, String endpointName) {
 
-		String evaluatedUri;
-		UriTemplate template = UriTemplate.fromTemplate(uriTemplateString);
-		Map<String, Object> variables = new HashMap<>();
-		Set propertySet = messageContext.getPropertyKeySet();
+		String evaluatedUri = uriTemplateString;
+		try {
+			UriTemplate template = UriTemplate.fromTemplate(uriTemplateString);
+			Map<String, Object> variables = new HashMap<>();
+			Set propertySet = messageContext.getPropertyKeySet();
 
-		for (Object propertyKey : propertySet) {
-			if (propertyKey.toString() != null && (
-					propertyKey.toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX) || propertyKey.toString()
-							.startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX))) {
-				Object objProperty = messageContext.getProperty(propertyKey.toString());
+			for (Object propertyKey : propertySet) {
+				if (propertyKey.toString() != null && (
+						propertyKey.toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX)
+								|| propertyKey.toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX))) {
+					Object objProperty = messageContext.getProperty(propertyKey.toString());
 
-				if (objProperty instanceof String) {
-					variables.put(propertyKey.toString(), messageContext.getProperty(propertyKey.toString()));
-				} else if (objProperty != null) {
-					variables.put(propertyKey.toString(),
-							String.valueOf(messageContext.getProperty(propertyKey.toString())));
+					if (objProperty instanceof String) {
+						variables.put(propertyKey.toString(), messageContext.getProperty(propertyKey.toString()));
+					} else if (objProperty != null) {
+						variables.put(propertyKey.toString(),
+								String.valueOf(messageContext.getProperty(propertyKey.toString())));
+					}
 				}
 			}
-		}
-		String uriTemplateFirstPart;
-		// This is a special case as we want handle {uri.var.variable} having full URL (except as a path param or query param)
-		// this was used in connectors Eg:- uri-template="{uri.var.variable}"
-		if (template.getTemplate().charAt(0) == '{'
-				&& template.getTemplate().charAt(1) != '+') {
-			uriTemplateFirstPart = "{+" + template.getTemplate().substring(1);
-			template = UriTemplate.fromTemplate(uriTemplateFirstPart);
-		}
-		template.set(variables);
-
-		if (variables.isEmpty()) {
-			evaluatedUri = template.getTemplate();
-		} else {
-			try {
-				URI uri = new URI(template.expand());
-				evaluatedUri = uri.toString();
-				if (log.isDebugEnabled()) {
-					log.debug("Expanded URL : " + evaluatedUri);
-				}
-			} catch (URISyntaxException e) {
-				if (log.isDebugEnabled()) {
-					log.debug("Invalid URL syntax for HTTP Endpoint: " + uriTemplateString, e);
-				}
-				evaluatedUri = template.getTemplate();
-			} catch (VariableExpansionException e) {
-				log.debug("No URI Template variables defined in HTTP Endpoint: " + uriTemplateString, e);
-				evaluatedUri = template.getTemplate();
+			evaluatedUri = UriTemplateUtils.getUriString(variables, template);
+		} catch (MalformedUriTemplateException e) {
+			if (log.isDebugEnabled()) {
+				log.debug("Invalid URI Template: " + uriTemplateString, e);
+			}
+		} catch (URISyntaxException e) {
+			if (log.isDebugEnabled()) {
+				log.debug("Invalid URL syntax for HTTP Endpoint: " + endpointName, e);
+			}
+		} catch (VariableExpansionException e) {
+			if (log.isDebugEnabled()) {
+				log.debug("No URI Template variables defined in HTTP Endpoint: " + endpointName, e);
 			}
 		}
 		return evaluatedUri;
