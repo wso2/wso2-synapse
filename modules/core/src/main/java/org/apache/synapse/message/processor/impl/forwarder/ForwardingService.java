@@ -18,6 +18,9 @@
 
 package org.apache.synapse.message.processor.impl.forwarder;
 
+import com.damnhandy.uri.template.MalformedUriTemplateException;
+import com.damnhandy.uri.template.UriTemplate;
+import com.damnhandy.uri.template.VariableExpansionException;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMException;
@@ -56,15 +59,19 @@ import org.apache.synapse.message.processor.MessageProcessorUtils;
 import org.apache.synapse.message.processor.impl.ScheduledMessageProcessor;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.message.store.MessageStore;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.task.Task;
 import org.apache.synapse.util.MessageHelper;
+import org.apache.synapse.util.UriTemplateUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -524,8 +531,10 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			String endpointReferenceValue;
 			if (endpointDefinition.getAddress() != null) {
 				endpointReferenceValue = endpointDefinition.getAddress();
+				String evaluatedEndpointReferenceValue = getUriFromUriTemplate(messageContext, endpointReferenceValue,
+						endpoint.getName());
 				//we only validate response for certain protocols (i.e HTTP/HTTPS)
-				isResponseValidationNotRequired = !isResponseValidationRequiredEndpoint(endpointReferenceValue);
+				isResponseValidationNotRequired = !isResponseValidationRequiredEndpoint(evaluatedEndpointReferenceValue);
 			}
 			SOAPEnvelope originalEnvelop = messageContext.getEnvelope();
 			InputStream originalInputStream;
@@ -585,7 +594,54 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	}
 
 	/**
-	 * Get a fresh copy of the original message
+	 * Returns the string of actual URI for the URI template.
+	 *
+	 * @param messageContext    Synapse message context
+	 * @param uriTemplateString URI template
+	 * @param endpointName      Endpoint name
+	 * @return URI string
+	 */
+	private String getUriFromUriTemplate(MessageContext messageContext, String uriTemplateString, String endpointName) {
+
+		String evaluatedUri = uriTemplateString;
+		try {
+			UriTemplate template = UriTemplate.fromTemplate(uriTemplateString);
+			Map<String, Object> variables = new HashMap<>();
+			Set propertySet = messageContext.getPropertyKeySet();
+
+			for (Object propertyKey : propertySet) {
+				if (propertyKey.toString() != null && (
+						propertyKey.toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX)
+								|| propertyKey.toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX))) {
+					Object objProperty = messageContext.getProperty(propertyKey.toString());
+
+					if (objProperty instanceof String) {
+						variables.put(propertyKey.toString(), messageContext.getProperty(propertyKey.toString()));
+					} else if (objProperty != null) {
+						variables.put(propertyKey.toString(),
+								String.valueOf(messageContext.getProperty(propertyKey.toString())));
+					}
+				}
+			}
+			evaluatedUri = UriTemplateUtils.getUriString(variables, template);
+		} catch (MalformedUriTemplateException e) {
+			if (log.isDebugEnabled()) {
+				log.debug("Invalid URI Template: " + uriTemplateString, e);
+			}
+		} catch (URISyntaxException e) {
+			if (log.isDebugEnabled()) {
+				log.debug("Invalid URL syntax for HTTP Endpoint: " + endpointName, e);
+			}
+		} catch (VariableExpansionException e) {
+			if (log.isDebugEnabled()) {
+				log.debug("No URI Template variables defined in HTTP Endpoint: " + endpointName, e);
+			}
+		}
+		return evaluatedUri;
+	}
+
+	/**
+	 * Get a fresh copy of the original message.
 	 *
 	 * @param messageToDispatch MessageContext containing current message
 	 * @param originalEnvelop MessageContext containing message to forward (original message)
