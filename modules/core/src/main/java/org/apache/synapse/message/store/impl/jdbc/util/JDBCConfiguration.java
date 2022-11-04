@@ -35,6 +35,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Class <code>JDBCUtil</code> provides the Utility functions to create JDBC resources
@@ -46,7 +48,7 @@ public class JDBCConfiguration {
      */
     private static final Log log = LogFactory.getLog(JDBCConfiguration.class);
 
-    private static final String H2_INIT = ";init=";
+    private static Pattern h2InitPattern = Pattern.compile("\\s*;\\s*init\\s*=\\s*", Pattern.CASE_INSENSITIVE);
 
     /**
      * Information about datasource
@@ -81,8 +83,13 @@ public class JDBCConfiguration {
     public void buildDataSource(Map<String, Object> parameters) {
         try {
             Object connectionUrl = parameters.get(JDBCMessageStoreConstants.JDBC_CONNECTION_URL);
-            if (connectionUrl != null && connectionUrl.toString().toLowerCase().contains(H2_INIT)) {
-                throw new Exception("INIT expressions are not allowed in the connection URL due to security reasons.");
+            if (connectionUrl != null) {
+                String validationConnectionString = connectionUrl.toString().toLowerCase().replace("\\", "");
+                Matcher matcher = h2InitPattern.matcher(validationConnectionString);
+                if (matcher.find()) {
+                    throw new Exception(
+                            "INIT expressions are not allowed in the connection URL due to security reasons.");
+                }
             }
             // Get datasource information
             if ((parameters.get(JDBCMessageStoreConstants.JDBC_DSNAME)) != null) {
