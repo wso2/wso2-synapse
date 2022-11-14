@@ -18,6 +18,7 @@
 
 package org.apache.synapse.commons.templates.uri.parser;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.commons.templates.uri.URITemplateException;
 
 import java.util.Map;
@@ -25,9 +26,19 @@ import java.util.regex.Pattern;
 
 public class SimpleStringExpression extends Expression {
 
-    private static final char[] reserved = new char[] {
-            ':', '/', '?', '#', '[', ']', '@', '!', '$', '&', '\'', '(', ')', '*', '+', ',', ';', '='
-    };
+    private static final String ESCAPE_GEN_DELIMS_ONLY = "synapse.allow.subdelims";
+    private static final char[] reserved;
+
+    static {
+        String genDelimsOnly = System.getProperty(ESCAPE_GEN_DELIMS_ONLY);
+        if (!StringUtils.isEmpty(genDelimsOnly) && (Boolean.parseBoolean(genDelimsOnly))) {
+            reserved = new char[]{':', '/', '?', '#', '[', ']', '@'};
+        } else {
+            reserved = new char[]{
+                    ':', '/', '?', '#', '[', ']', '@', '!', '$', '&', '\'', '(', ')', '*', '+', ',', ';', '='
+            };
+        }
+    }
 
     public SimpleStringExpression(String token) throws URITemplateException {
         super(token);
