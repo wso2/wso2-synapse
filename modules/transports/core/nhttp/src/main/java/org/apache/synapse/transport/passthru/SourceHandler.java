@@ -685,6 +685,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         sourceConfiguration.getSourceConnections().shutDownConnection(conn, isFault);
 		if (isFault) {
 			rollbackTransaction(conn);
+            metrics.exceptionOccured();
 		}        
     }
 
