@@ -33,11 +33,14 @@ import org.apache.http.annotation.ThreadingBehavior;
 import org.apache.http.annotation.Contract;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.methods.HttpOptions;
+import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -67,6 +70,7 @@ import javax.xml.namespace.QName;
 import static org.apache.synapse.unittest.Constants.DELETE_METHOD;
 import static org.apache.synapse.unittest.Constants.EMPTY_VALUE;
 import static org.apache.synapse.unittest.Constants.GET_METHOD;
+import static org.apache.synapse.unittest.Constants.HEAD_METHOD;
 import static org.apache.synapse.unittest.Constants.HTTPS_KEY;
 import static org.apache.synapse.unittest.Constants.HTTPS_LOCALHOST_URL;
 import static org.apache.synapse.unittest.Constants.HTTP_KEY;
@@ -75,6 +79,8 @@ import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_SCOPE_AXIS2;
 import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_SCOPE_DEFAULT;
 import static org.apache.synapse.unittest.Constants.INPUT_PROPERTY_SCOPE_TRANSPORT;
 import static org.apache.synapse.unittest.Constants.JSON_FORMAT;
+import static org.apache.synapse.unittest.Constants.OPTIONS_METHOD;
+import static org.apache.synapse.unittest.Constants.PATCH_METHOD;
 import static org.apache.synapse.unittest.Constants.POST_METHOD;
 import static org.apache.synapse.unittest.Constants.PROXY_INVOKE_PREFIX_URL;
 import static org.apache.synapse.unittest.Constants.PUT_METHOD;
@@ -148,14 +154,11 @@ public class TestCasesMediator {
 
         HttpClient clientConnector = HttpClientBuilder.create().build();
         HttpResponse response;
-        HttpPost httpPost = setPostHeaders(currentTestCase, url);
+        HttpPost httpPost = new HttpPost(url);
+        setTransportHeaders(httpPost, currentTestCase);
+        setBody(httpPost, currentTestCase);
 
         try {
-            if (currentTestCase.getInputPayload() != null) {
-                StringEntity postEntity = new StringEntity(currentTestCase.getInputPayload().trim());
-                httpPost.setEntity(postEntity);
-            }
-
             response = clientConnector.execute(httpPost);
         } catch (IOException e) {
             throw new IOException("Proxy service invoked URL - " + url + "\n" + e);
@@ -209,40 +212,54 @@ public class TestCasesMediator {
         try {
             switch (resourceHTTPMethod) {
                 case GET_METHOD:
-                    //set headers and execute
-                    response = clientConnector.execute(setGetHeaders(currentTestCase, url));
+                    //GET - entity non-enclosing
+                    HttpGet httpGet = new HttpGet(url);
+                    setTransportHeaders(httpGet, currentTestCase);
+                    response = clientConnector.execute(httpGet);
                     break;
 
                 case POST_METHOD:
-                    //set headers
-                    HttpPost httpPost = setPostHeaders(currentTestCase, url);
-                    String postPayload = currentTestCase.getInputPayload();
-
-                    if (postPayload == null) {
-                        postPayload = EMPTY_VALUE;
-                    }
-
-                    StringEntity postEntity = new StringEntity(postPayload, getCharSetEncoding(currentTestCase));
-                    httpPost.setEntity(postEntity);
+                    //POST - entity enclosing
+                    HttpPost httpPost = new HttpPost(url);
+                    setTransportHeaders(httpPost, currentTestCase);
+                    setBody(httpPost, currentTestCase);
                     response = clientConnector.execute(httpPost);
                     break;
 
                 case PUT_METHOD:
-                    //set headers
-                    HttpPut httpPut = setPutHeaders(currentTestCase, url);
-                    String putPayload = currentTestCase.getInputPayload();
-
-                    if (putPayload == null) {
-                        putPayload = EMPTY_VALUE;
-                    }
-                    StringEntity putEntity = new StringEntity(putPayload, getCharSetEncoding(currentTestCase));
-                    httpPut.setEntity(putEntity);
+                    //PUT - entity enclosing
+                    HttpPut httpPut = new HttpPut(url);
+                    setTransportHeaders(httpPut, currentTestCase);
+                    setBody(httpPut, currentTestCase);
                     response = clientConnector.execute(httpPut);
                     break;
 
                 case DELETE_METHOD:
+                    //DELETE - entity enclosing
                     HttpDeleteWithBody httpDelete = setDeleteWithBody(currentTestCase, url);
                     response = clientConnector.execute(httpDelete);
+                    break;
+
+                case OPTIONS_METHOD:
+                    //OPTIONS - entity non-enclosing
+                    HttpOptions httpOptions = new HttpOptions(url);
+                    setTransportHeaders(httpOptions, currentTestCase);
+                    response = clientConnector.execute(httpOptions);
+                    break;
+
+                case HEAD_METHOD:
+                    //HEAD - entity non-enclosing
+                    HttpHead httpHead = new HttpHead(url);
+                    setTransportHeaders(httpHead, currentTestCase);
+                    response = clientConnector.execute(httpHead);
+                    break;
+
+                case PATCH_METHOD:
+                    //PATCH - entity enclosing
+                    HttpPatch httpPatch = new HttpPatch(url);
+                    setTransportHeaders(httpPatch, currentTestCase);
+                    setBody(httpPatch, currentTestCase);
+                    response = clientConnector.execute(httpPatch);
                     break;
 
                 default:
@@ -255,74 +272,37 @@ public class TestCasesMediator {
         return new AbstractMap.SimpleEntry<>(invokeUrlWithMethod, response);
     }
 
-
     /**
-     * Set headers for get client.
+     * Set a payload to Entity Enclosing Request.
      *
-     * @param currentTestCase testcase data
-     * @param url             Url of the service
-     * @return get client with headers
+     * @param request HttpEntityEnclosingRequestBase
+     * @param currentTestCase current test case
      */
-    private static HttpGet setGetHeaders(TestCase currentTestCase, String url) {
-        HttpGet httpGet = new HttpGet(url);
-
-        for (Map<String, String> property : currentTestCase.getPropertyMap()) {
-            String scope = property.get(TEST_CASE_INPUT_PROPERTY_SCOPE);
-
-            //Setting Synapse properties
-            if (scope.equals(INPUT_PROPERTY_SCOPE_TRANSPORT)) {
-                httpGet.setHeader(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
-                        property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
-            }
+    public static void setBody(HttpEntityEnclosingRequestBase request, TestCase currentTestCase) {
+        String patchPayload = currentTestCase.getInputPayload();
+        if (patchPayload == null) {
+            patchPayload = EMPTY_VALUE;
         }
-
-        return httpGet;
+        StringEntity patchEntity = new StringEntity(patchPayload, getCharSetEncoding(currentTestCase));
+        request.setEntity(patchEntity);
     }
 
     /**
-     * Set headers for post client.
+     * Propagate transport properties of the test case as headers in the Http request.
      *
-     * @param currentTestCase testcase data
-     * @param url             Url of the service
-     * @return post client with headers
+     * @param request Http request
+     * @param currentTestCase current test case
      */
-    private static HttpPost setPostHeaders(TestCase currentTestCase, String url) {
-        HttpPost httpPost = new HttpPost(url);
-        //set headers
+    private static void setTransportHeaders(HttpRequestBase request, TestCase currentTestCase) {
+
         for (Map<String, String> property : currentTestCase.getPropertyMap()) {
             String scope = property.get(TEST_CASE_INPUT_PROPERTY_SCOPE);
-
             //Setting Synapse properties
             if (scope.equals(INPUT_PROPERTY_SCOPE_TRANSPORT)) {
-                httpPost.setHeader(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
+                request.setHeader(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
                         property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
             }
         }
-
-        return httpPost;
-    }
-
-    /**
-     * Set headers for put client.
-     *
-     * @param currentTestCase testcase data
-     * @param url             Url of the service
-     * @return put client with headers
-     */
-    private static HttpPut setPutHeaders(TestCase currentTestCase, String url) {
-        HttpPut httpPut = new HttpPut(url);
-        //set headers
-        for (Map<String, String> property : currentTestCase.getPropertyMap()) {
-            String scope = property.get(TEST_CASE_INPUT_PROPERTY_SCOPE);
-
-            //Setting Synapse properties
-            if (scope.equals(INPUT_PROPERTY_SCOPE_TRANSPORT)) {
-                httpPut.setHeader(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
-                        property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
-            }
-        }
-
-        return httpPut;
     }
 
     /**
@@ -335,25 +315,8 @@ public class TestCasesMediator {
      */
     private static HttpDeleteWithBody setDeleteWithBody(TestCase currentTestCase, String url) throws IOException {
         HttpDeleteWithBody httpDelete = new HttpDeleteWithBody(url);
-        //set headers
-        for (Map<String, String> property : currentTestCase.getPropertyMap()) {
-            String scope = property.get(TEST_CASE_INPUT_PROPERTY_SCOPE);
-
-            //Setting Synapse properties
-            if (scope.equals(INPUT_PROPERTY_SCOPE_TRANSPORT)) {
-                httpDelete.setHeader(property.get(TEST_CASE_INPUT_PROPERTY_NAME),
-                        property.get(TEST_CASE_INPUT_PROPERTY_VALUE));
-            }
-        }
-
-        String deletePayload = currentTestCase.getInputPayload();
-
-        if (deletePayload == null) {
-            deletePayload = EMPTY_VALUE;
-        }
-        StringEntity deleteEntity = new StringEntity(deletePayload, getCharSetEncoding(currentTestCase));
-        httpDelete.setEntity(deleteEntity);
-
+        setTransportHeaders(httpDelete, currentTestCase);
+        setBody(httpDelete, currentTestCase);
         return httpDelete;
     }
 

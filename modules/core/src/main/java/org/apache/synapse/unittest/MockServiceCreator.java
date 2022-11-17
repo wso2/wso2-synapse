@@ -42,8 +42,10 @@ import java.util.Map;
 
 import static org.apache.synapse.commons.emulator.http.dsl.dto.consumer.IncomingMessage.request;
 import static org.apache.synapse.commons.emulator.http.dsl.dto.consumer.OutgoingMessage.response;
-import static org.apache.synapse.unittest.Constants.GET_METHOD;
+import static org.apache.synapse.unittest.Constants.HEAD_METHOD;
+import static org.apache.synapse.unittest.Constants.OPTIONS_METHOD;
 import static org.apache.synapse.unittest.Constants.POST_METHOD;
+import static org.apache.synapse.unittest.Constants.PATCH_METHOD;
 
 
 /**
@@ -120,73 +122,50 @@ class MockServiceCreator {
             responseHeaders = resource.getResponseHeaders();
         }
 
+        IncomingMessage incomingMessage;
 
         switch (serviceMethod.toUpperCase()) {
-            case GET_METHOD:
-                //adding headers of request
-                IncomingMessage incomingMessage =
-                        request().withMethod(HttpMethod.GET).withPath(serviceSubContext);
-                for (Map.Entry<String, String> queryParam : queryParams.entrySet()) {
-                    incomingMessage.withQueryParameter(queryParam.getKey(), queryParam.getValue());
-                }
-                for (Map.Entry<String, String> header : requestHeaders) {
-                    incomingMessage.withHeader(header.getKey(), header.getValue());
-                }
-                emulator.when(incomingMessage);
-
-                //adding headers of response
-                OutgoingMessage outGoingMessage =
-                        response().withBody(serviceResponsePayload).withStatusCode(responseStatus);
-                for (Map.Entry<String, String> header : responseHeaders) {
-                    outGoingMessage.withHeader(header.getKey(), header.getValue());
-                }
-
-                emulator.respond(outGoingMessage);
-                break;
 
             case POST_METHOD:
-                //adding headers of request
                 incomingMessage = request().withMethod(HttpMethod.POST)
                         .withBody(serviceRequestPayload).withPath(serviceSubContext);
-                for (Map.Entry<String, String> queryParam : queryParams.entrySet()) {
-                    incomingMessage.withQueryParameter(queryParam.getKey(), queryParam.getValue());
-                }
-                for (Map.Entry<String, String> header : requestHeaders) {
-                    incomingMessage.withHeader(header.getKey(), header.getValue());
-                }
-                emulator.when(incomingMessage);
+                break;
 
-                //adding headers of response
-                outGoingMessage =
-                        response().withBody(serviceResponsePayload).withStatusCode(responseStatus);
-                for (Map.Entry<String, String> header : responseHeaders) {
-                    outGoingMessage.withHeader(header.getKey(), header.getValue());
-                }
+            case PATCH_METHOD:
+                incomingMessage = request().withMethod(HttpMethod.PATCH)
+                                           .withBody(serviceRequestPayload).withPath(serviceSubContext);
+                break;
 
-                emulator.respond(outGoingMessage);
+            case OPTIONS_METHOD:
+                incomingMessage = request().withMethod(HttpMethod.OPTIONS)
+                                           .withBody(serviceRequestPayload).withPath(serviceSubContext);
+                break;
+
+            case HEAD_METHOD:
+                incomingMessage = request().withMethod(HttpMethod.HEAD)
+                                           .withBody(serviceRequestPayload).withPath(serviceSubContext);
                 break;
 
             default:
-                //adding headers of request
                 incomingMessage = request().withMethod(HttpMethod.GET).withPath(serviceSubContext);
-                for (Map.Entry<String, String> queryParam : queryParams.entrySet()) {
-                    incomingMessage.withQueryParameter(queryParam.getKey(), queryParam.getValue());
-                }
-                for (Map.Entry<String, String> header : requestHeaders) {
-                    incomingMessage.withHeader(header.getKey(), header.getValue());
-                }
-                emulator.when(incomingMessage);
-
-                //adding headers of response
-                outGoingMessage =
-                        response().withBody(serviceResponsePayload).withStatusCode(responseStatus);
-                for (Map.Entry<String, String> header : responseHeaders) {
-                    outGoingMessage.withHeader(header.getKey(), header.getValue());
-                }
-
-                emulator.respond(outGoingMessage);
                 break;
         }
+
+        for (Map.Entry<String, String> queryParam : queryParams.entrySet()) {
+            incomingMessage.withQueryParameter(queryParam.getKey(), queryParam.getValue());
+        }
+        for (Map.Entry<String, String> header : requestHeaders) {
+            incomingMessage.withHeader(header.getKey(), header.getValue());
+        }
+        emulator.when(incomingMessage);
+
+        //adding headers of response
+        OutgoingMessage outGoingMessage =
+                response().withBody(serviceResponsePayload).withStatusCode(responseStatus);
+        for (Map.Entry<String, String> header : responseHeaders) {
+            outGoingMessage.withHeader(header.getKey(), header.getValue());
+        }
+        emulator.respond(outGoingMessage);
     }
 
     /**

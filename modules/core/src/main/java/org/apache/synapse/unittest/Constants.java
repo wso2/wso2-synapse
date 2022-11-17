@@ -109,6 +109,9 @@ public class Constants {
     static final String POST_METHOD = "POST";
     static final String PUT_METHOD = "PUT";
     static final String DELETE_METHOD = "DELETE";
+    static final String PATCH_METHOD = "PATCH";
+    static final String OPTIONS_METHOD = "OPTIONS";
+    static final String HEAD_METHOD = "HEAD";
 
     //api/proxy invoke constants
     static final String HTTP_LOCALHOST_URL = "http://localhost:";
