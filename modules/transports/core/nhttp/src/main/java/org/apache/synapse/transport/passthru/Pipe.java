@@ -30,6 +30,7 @@ import org.apache.synapse.transport.passthru.util.ControlledByteBuffer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -245,17 +246,27 @@ public class Pipe {
         lock.lock();
         try {
             setInputMode(buffer);
+            int totalBytesRead = 0;
             int bytesRead;
             try {
-                bytesRead = decoder.read(buffer.getByteBuffer());
-            } catch (TruncatedChunkException ignore) {
-                // we should add the EoF character
-                buffer.putInt(-1);
-                // now the buffer's position should give us the bytes read.
-                bytesRead = buffer.position();
+                // Drain the decoder until the end of the underlying stream is found or until the Pipe#buffer is full.
+                // bytesRead = -1 means reached out to the end of underlying stream.
+                // bytesRead = 0 means Pipe's input buffer is full.
+                while ((bytesRead = decoder.read(buffer.getByteBuffer())) > 0) {
+                    totalBytesRead += bytesRead;
+                }
+            } catch (TruncatedChunkException ex) {
+                try {
+                    // we should add the EoF character
+                    buffer.putInt(-1);
+                    // now the buffer's position should give us the bytes read.
+                    totalBytesRead = buffer.position();
+                } catch (BufferOverflowException ignore) {
+                    // ignore
+                }
             }
             producePostActions(decoder);
-            return bytesRead;
+            return totalBytesRead;
         } finally {
             lock.unlock();
         }
@@ -277,22 +288,33 @@ public class Pipe {
         try {
             ByteBuffer duplicate = null;
             setInputMode(buffer);
+            int totalBytesRead = 0;
             int bytesRead;
             try {
                 // clone original buffer
                 ByteBuffer originalBuffer = buffer.getByteBuffer();
-                bytesRead = decoder.read(originalBuffer);
+
+                // Drain the decoder until the end of stream is found or until the Pipe#buffer is full.
+                // bytesRead = -1 means reached out to the end of stream.
+                // bytesRead = 0 means Pipe's input buffer is full.
+                while ((bytesRead = decoder.read(buffer.getByteBuffer())) > 0) {
+                    totalBytesRead += bytesRead;
+                }
                 duplicate = originalBuffer.duplicate();
                 // replicate positions of original buffer in duplicated buffer
                 int position = originalBuffer.position();
                 duplicate.limit(position);
-                if (bytesRead > 0) {
-                    duplicate.position(position - bytesRead);
+                if (totalBytesRead > 0) {
+                    duplicate.position(position - totalBytesRead);
                 }
-            } catch (TruncatedChunkException ignore) {
-                // we should add the EoF character
-                buffer.putInt(-1);
-                duplicate.putInt(-1);
+            } catch (TruncatedChunkException ex) {
+                try {
+                    // we should add the EoF character
+                    buffer.putInt(-1);
+                    duplicate.putInt(-1);
+                } catch (BufferOverflowException ignore) {
+                    // ignore
+                }
             }
             producePostActions(decoder);
             return duplicate;
