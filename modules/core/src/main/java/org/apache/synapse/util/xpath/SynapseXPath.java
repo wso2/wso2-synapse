@@ -424,7 +424,14 @@ public class SynapseXPath extends SynapsePath {
                     if (o == null && list.size() == 1) {
                         return null;
                     }
-
+                    if (list.size() == 1 && getExpression().contains("node()")) {
+                        // when debugging found out that jaxen library itself return just the
+                        // text content of this node by default so to keep backward compatibility return parent only
+                        // when Expression contains the node()
+                        if (o instanceof OMTextImpl && ((OMTextImpl) o).getParent() != null) {
+                            o = ((OMTextImpl) o).getParent();
+                        }
+                    }
                     if (o instanceof OMTextImpl) {
                         textValue.append(((OMTextImpl) o).getText());
                     } else if (o instanceof OMElementImpl) {

@@ -106,13 +106,13 @@ public class PayloadFactoryMediatorTest extends TestCase {
         payloadFactoryMediator.setFormat(format);
         //prepare arguments
         Argument argument1 = new Argument();
-        argument1.setExpression(new SynapseXPath("//name"));
+        argument1.setExpression(new SynapseXPath("//name/node()"));
         Argument argument2 = new Argument();
         argument2.setExpression(new SynapseXPath("get-property('SYSTEM_DATE', 'yyyy.MM.dd')"));
         Argument argument3 = new Argument();
         argument3.setExpression(new SynapseXPath("//tpNumber"));
         Argument argument4 = new Argument();
-        argument4.setExpression(new SynapseXPath("//address"));
+        argument4.setExpression(new SynapseXPath("//address/text()"));
 
         //add arguments
         payloadFactoryMediator.getTemplateProcessor().addPathArgument(argument1);
@@ -126,7 +126,7 @@ public class PayloadFactoryMediatorTest extends TestCase {
 
         String expectedEnvelope = "<soapenv:Body xmlns:soapenv=\"http://schemas.xmlsoap"
                 + ".org/soap/envelope/\"><p:addCustomer xmlns:p=\"http://ws.wso2.org/dataservice\">\n"
-                + " <xs:name xmlns:xs=\"http://ws.wso2.org/dataservice\">Smith</xs:name>\n"
+                + " <xs:name xmlns:xs=\"http://ws.wso2.org/dataservice\"><name>Smith</name></xs:name>\n"
                 + " <xs:request_time xmlns:xs=\"http://ws.wso2.org/dataservice\">"
                 + new SimpleDateFormat("yyyy.MM.dd").format(Calendar.getInstance().getTime())
                 + "</xs:request_time>\n"
