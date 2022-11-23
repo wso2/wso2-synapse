@@ -246,27 +246,27 @@ public class Pipe {
         lock.lock();
         try {
             setInputMode(buffer);
-            int totalRead = 0;
+            int totalBytesRead = 0;
             int bytesRead;
             try {
                 // Drain the decoder until the end of the underlying stream is found or until the Pipe#buffer is full.
                 // bytesRead = -1 means reached out to the end of underlying stream.
                 // bytesRead = 0 means Pipe's input buffer is full.
                 while ((bytesRead = decoder.read(buffer.getByteBuffer())) > 0) {
-                    totalRead += bytesRead;
+                    totalBytesRead += bytesRead;
                 }
-            } catch (TruncatedChunkException ignore) {
+            } catch (TruncatedChunkException ex) {
                 try {
                     // we should add the EoF character
                     buffer.putInt(-1);
                     // now the buffer's position should give us the bytes read.
-                    totalRead = buffer.position();
-                } catch (BufferOverflowException e) {
+                    totalBytesRead = buffer.position();
+                } catch (BufferOverflowException ignore) {
                     // ignore
                 }
             }
             producePostActions(decoder);
-            return totalRead;
+            return totalBytesRead;
         } finally {
             lock.unlock();
         }
@@ -288,7 +288,7 @@ public class Pipe {
         try {
             ByteBuffer duplicate = null;
             setInputMode(buffer);
-            int totalRead = 0;
+            int totalBytesRead = 0;
             int bytesRead;
             try {
                 // clone original buffer
@@ -298,21 +298,21 @@ public class Pipe {
                 // bytesRead = -1 means reached out to the end of stream.
                 // bytesRead = 0 means Pipe's input buffer is full.
                 while ((bytesRead = decoder.read(buffer.getByteBuffer())) > 0) {
-                    totalRead += bytesRead;
+                    totalBytesRead += bytesRead;
                 }
                 duplicate = originalBuffer.duplicate();
                 // replicate positions of original buffer in duplicated buffer
                 int position = originalBuffer.position();
                 duplicate.limit(position);
-                if (totalRead > 0) {
-                    duplicate.position(position - totalRead);
+                if (totalBytesRead > 0) {
+                    duplicate.position(position - totalBytesRead);
                 }
-            } catch (TruncatedChunkException ignore) {
+            } catch (TruncatedChunkException ex) {
                 try {
                     // we should add the EoF character
                     buffer.putInt(-1);
                     duplicate.putInt(-1);
-                } catch (BufferOverflowException e) {
+                } catch (BufferOverflowException ignore) {
                     // ignore
                 }
             }
