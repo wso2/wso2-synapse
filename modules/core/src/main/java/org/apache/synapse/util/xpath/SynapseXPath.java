@@ -57,18 +57,18 @@ import org.jaxen.JaxenException;
 import org.jaxen.UnresolvableException;
 import org.jaxen.util.SingletonList;
 
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -428,28 +428,24 @@ public class SynapseXPath extends SynapsePath {
                     if (o instanceof OMTextImpl) {
                         textValue.append(((OMTextImpl) o).getText());
                     } else if (o instanceof OMElementImpl) {
-                        if (list.size() == 1) {
-                            String s = ((OMElementImpl) o).getText();
+                        //If the instance is OMElementImpl we should not take the ((OMElementImpl) o).getText();
+                        // since /text() is covered by the OMTextImpl instance
+                        String tmp = ((OMElementImpl) o).getText();
 
-                            // We use StringUtils.trim as String.trim does not remove U+00A0 (int 160) (No-break space)
-                            if (s.replace(String.valueOf((char) 160), " ").trim().length() == 0) {
-                                s = o.toString();
-                            }
-                            textValue.append(s);
-                        } else {
-                            String tmp = ((OMElementImpl) o).getText();
-                            String trimmedText = tmp.replace(String.valueOf((char) 160), " ").trim();
-                            String s = o.toString();
-                            s = s.replace(tmp, trimmedText);
-                            // We use StringUtils.trim as String.trim does not remove U+00A0 (int 160) (No-break space)
-                            if (trimmedText.length() == 0) {
-                                s = o.toString();
-                            }
-                            textValue.append(s);
+                        //Alter the text part of the OM element
+                        String trimmedText = tmp.replace(String.valueOf((char) 160), " ").trim();
+                        String s = o.toString();
+                        //We are giving support for node() selector only since we have to keep backward compatibility
+                        if (list.size() == 1 && !getExpression().contains("node()")) {
+                            s = tmp;
                         }
-
+                        //Replace the text part of OmElement with altered text
+                        s = s.replace(tmp, trimmedText);
+                        if (trimmedText.length() == 0) {
+                            s = o.toString();
+                        }
+                        textValue.append(s);
                     } else if (o instanceof OMDocumentImpl) {
-
                         textValue.append(
                                 ((OMDocumentImpl) o).getOMDocumentElement().toString());
                     } else if (o instanceof OMAttribute) {
