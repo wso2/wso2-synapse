@@ -43,6 +43,7 @@ import org.apache.synapse.config.xml.OMElementUtils;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.endpoints.AddressEndpoint;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
@@ -465,6 +466,14 @@ public class SynapseXPath extends SynapsePath {
                         // Xpath evaluation can return a JSON Elements since property mediator
                         // can store JSON payloads
                         textValue.append(o.toString());
+                    } else if (o instanceof AddressEndpoint) {
+                        // Xpath evaluation can return a AddressEndpoint since call mediator
+                        // can store AddressEndpoint payloads
+                        if (((AddressEndpoint) o).getValue() != null) {
+                            Object tmp = ((AddressEndpoint) o).getValue();
+                            String value = tmp.toString();
+                            textValue.append(value);
+                        }
                     }
                 }
 

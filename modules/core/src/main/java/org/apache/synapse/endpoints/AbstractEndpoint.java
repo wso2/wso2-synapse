@@ -74,6 +74,9 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     /** Hold the logical name of an endpoint */
     private String endpointName = null;
 
+    /** Hold the value of the registry entry of an endpoint */
+    private Object value = null;
+
     /** Hold the description of an endpoint */
     private String description = null;
 
@@ -150,6 +153,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         return endpointName;
     }
 
+    public Object getValue() { return value; }
+
     public boolean isInitialized() {
         return initialized;
     }
@@ -225,6 +230,14 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
             MBeanRegistrar.getInstance().registerMBean(metricsMBean, "Endpoint", endpointName);
         }
+    }
+
+    /**
+     * Set the value of the registry entry of an endpoint
+     * @param value
+     */
+    public void setValue(Object value) {
+        this.value = value;
     }
 
     /**

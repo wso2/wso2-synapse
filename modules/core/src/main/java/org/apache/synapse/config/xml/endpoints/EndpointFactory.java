@@ -146,6 +146,11 @@ public abstract class EndpointFactory implements XMLToObjectMapper {
             ep.setDescription(descriptionElem.getText());
         }
 
+        //include the config of local entries in the endpoint object
+        if (ep instanceof AbstractEndpoint && epConfig != null){
+            ((AbstractEndpoint) ep).setValue(epConfig);
+        }
+
         // if the endpoint doesn't have a name we will generate a unique name.
         if (anonymousEndpoint && ep.getName() == null) {
 //            String uuid = UIDGenerator.generateUID();
