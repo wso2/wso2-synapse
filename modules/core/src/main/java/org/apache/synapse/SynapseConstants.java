@@ -139,6 +139,7 @@ public final class SynapseConstants {
      * Content-Type property of Axis2MessageContext
      */
     public static final String AXIS2_PROPERTY_CONTENT_TYPE = "ContentType";
+    public static final String SET_JMS_SVC_PARAMS_AS_MSG_CTX_PARAM = "SET_JMS_SVC_PARAMS_AS_MSG_CTX";
 
     /** Parameter names in the axis2.xml that can be used to configure the synapse */
     public static final class Axis2Param {

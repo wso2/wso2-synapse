@@ -20,6 +20,7 @@
 package org.apache.synapse.core.axis2;
 
 import org.apache.axis2.AxisFault;
+import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -102,6 +103,17 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         }
 
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
+        // Read parameters from the axis2 service and set into the synapseMessageCtx
+        if (mc != null && mc.getAxisService() != null) {
+            Parameter setJmsSvcParamsAsMsgCtxParam = mc.getAxisService()
+                    .getParameter(SynapseConstants.SET_JMS_SVC_PARAMS_AS_MSG_CTX_PARAM);
+            if (setJmsSvcParamsAsMsgCtxParam != null && "true".equals(setJmsSvcParamsAsMsgCtxParam.getValue())) {
+                for (Parameter parameter : mc.getAxisService().getParameters()) {
+                    synCtx.setProperty(parameter.getName(), parameter.getValue());
+                }
+            }
+        }
+
         Integer statisticReportingIndex = null;
         //Statistic reporting
         boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
