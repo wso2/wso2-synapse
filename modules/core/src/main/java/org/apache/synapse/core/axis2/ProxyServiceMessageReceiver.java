@@ -104,11 +104,13 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
 
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
         // Read parameters from the axis2 service and set into the synapseMessageCtx
-        Parameter setJmsSvcParamsAsMsgCtxParam = mc.getAxisService()
-                .getParameter(SynapseConstants.SET_JMS_SVC_PARAMS_AS_MSG_CTX_PARAM);
-        if (setJmsSvcParamsAsMsgCtxParam != null && "true".equals(setJmsSvcParamsAsMsgCtxParam.getValue())) {
-            for (Parameter parameter : mc.getAxisService().getParameters()) {
-                synCtx.setProperty(parameter.getName(), parameter.getValue());
+        if (mc != null && mc.getAxisService() != null) {
+            Parameter setJmsSvcParamsAsMsgCtxParam = mc.getAxisService()
+                    .getParameter(SynapseConstants.SET_JMS_SVC_PARAMS_AS_MSG_CTX_PARAM);
+            if (setJmsSvcParamsAsMsgCtxParam != null && "true".equals(setJmsSvcParamsAsMsgCtxParam.getValue())) {
+                for (Parameter parameter : mc.getAxisService().getParameters()) {
+                    synCtx.setProperty(parameter.getName(), parameter.getValue());
+                }
             }
         }
 
