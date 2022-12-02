@@ -44,7 +44,7 @@
             <artifactId>httpcore</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.orbit.httpcomponents</groupId>
+            <groupId>org.apache.httpcomponents.wso2</groupId>
             <artifactId>httpcore-nio</artifactId>
         </dependency>
         <dependency>
@@ -78,7 +78,7 @@
                                 <bundleDef>org.apache.synapse:synapse-commons</bundleDef>
                                 <bundleDef>org.apache.synapse:synapse-nhttp-transport</bundleDef>
                                 <bundleDef>org.apache.httpcomponents.wso2:httpcore</bundleDef>
-                                <bundleDef>org.wso2.orbit.httpcomponents:httpcore-nio</bundleDef>
+                                <bundleDef>org.apache.httpcomponents.wso2:httpcore-nio</bundleDef>
                                 <bundleDef>org.wso2.orbit.org.apache.httpcomponents:httpclient</bundleDef>
                             </bundles>
                         </configuration>
