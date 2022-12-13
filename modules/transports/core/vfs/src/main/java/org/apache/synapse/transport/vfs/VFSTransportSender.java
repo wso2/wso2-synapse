@@ -34,6 +34,7 @@ import org.apache.axis2.util.MessageProcessorSelector;
 import org.apache.commons.io.output.CountingOutputStream;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystem;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.FileSystemOptions;
@@ -333,7 +334,13 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
             } finally {
                 if (replyFile != null) {
                     try {
-                        getFsManager().getFilesCache().clear(replyFile.getParent().getFileSystem());
+                        FileSystem fileSystem;
+                        if (replyFile.getParent() == null) {
+                            fileSystem = replyFile.getFileSystem();
+                        } else {
+                            fileSystem = replyFile.getParent().getFileSystem();
+                        }
+                        getFsManager().getFilesCache().clear(fileSystem);
                         replyFile.close();
                     } catch (Exception ex) {
                         log.warn("Error when closing the reply file", ex);
