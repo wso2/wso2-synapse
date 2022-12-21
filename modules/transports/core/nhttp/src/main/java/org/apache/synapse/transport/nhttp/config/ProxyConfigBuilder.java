@@ -28,6 +28,10 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.ProxyProfileConfig;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.SecretResolverFactory;
+import org.wso2.securevault.SecureVaultException;
+import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import javax.xml.namespace.QName;
 import java.util.HashMap;
@@ -104,8 +108,13 @@ public class ProxyConfigBuilder {
                 Parameter proxyUsernameParam = transportOut.getParameter(PassThroughConstants.HTTP_PROXY_USERNAME);
                 Parameter proxyPasswordParam = transportOut.getParameter(PassThroughConstants.HTTP_PROXY_PASSWORD);
                 if (proxyUsernameParam != null) {
-                    proxyCredentials = new UsernamePasswordCredentials((String) proxyUsernameParam.getValue(),
-                            proxyPasswordParam != null ? (String) proxyPasswordParam.getValue() : "");
+                    String proxyPassword = "";
+                    if (proxyPasswordParam != null) {
+                        OMElement passwordElement = proxyPasswordParam.getParameterElement();
+                        SecretResolver secretResolver =SecretResolverFactory.create(passwordElement, true);
+                        proxyPassword = getSecureVaultValue(secretResolver, passwordElement);
+                    }
+                    proxyCredentials = new UsernamePasswordCredentials((String) proxyUsernameParam.getValue(), proxyPassword);
                 }
             }
         }
@@ -148,7 +157,8 @@ public class ProxyConfigBuilder {
         if (proxyProfilesParam == null) {
             return null;
         }
-
+        OMElement proxyProfilesElt = proxyProfilesParam.getParameterElement();
+        SecretResolver secretResolver = SecretResolverFactory.create(proxyProfilesElt, true);
         if (log.isDebugEnabled()) {
             log.debug(name + " Loading proxy profiles for the HTTP/S sender");
         }
@@ -169,7 +179,7 @@ public class ProxyConfigBuilder {
 
             HttpHost proxy = getHttpProxy(profile, targetHostsEle.getText());
 
-            UsernamePasswordCredentials proxyCredentials = getUsernamePasswordCredentials(profile);
+            UsernamePasswordCredentials proxyCredentials = getUsernamePasswordCredentials(secretResolver, profile);
 
             Set<String> proxyBypass = getProxyBypass(profile);
 
@@ -227,13 +237,19 @@ public class ProxyConfigBuilder {
      * @param profile profile element
      * @return usernamePasswordCredentials if username, password is configured, null otherwise
      */
-    private UsernamePasswordCredentials getUsernamePasswordCredentials(OMElement profile) {
+    private UsernamePasswordCredentials getUsernamePasswordCredentials(SecretResolver secretResolver, OMElement profile) {
         UsernamePasswordCredentials proxyCredentials = null;
         OMElement proxyUserNameEle = profile.getFirstChildWithName(Q_PROXY_USER);
         if (proxyUserNameEle != null) {
             String proxyUserName = proxyUserNameEle.getText();
             OMElement proxyPasswordEle = profile.getFirstChildWithName(Q_PROXY_PASSWORD);
-            String proxyPassword = proxyPasswordEle != null ? proxyPasswordEle.getText() : "";
+            String proxyPassword;
+            if (proxyPasswordEle != null) {
+                proxyPassword = getSecureVaultValue(secretResolver, proxyPasswordEle);
+            } else {
+                proxyPassword = "";
+            }
+
             proxyCredentials = new UsernamePasswordCredentials(proxyUserName,
                     proxyPassword != null ? proxyPassword : "");
         }
@@ -257,5 +273,15 @@ public class ProxyConfigBuilder {
         }
         return bypassSet;
     }
-
+    private String getSecureVaultValue(SecretResolver secretResolver, OMElement paramElement) {
+        String value = null;
+        if (paramElement != null) {
+            if (secretResolver == null) {
+                throw new SecureVaultException("Cannot resolve secret password because axis2 secret resolver " +
+                        "is null");
+            }
+            value = MiscellaneousUtil.resolve(paramElement, secretResolver);
+        }
+        return value;
+    }
 }
