@@ -286,9 +286,7 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                         inAxisMsgCtx.setProperty(SynapseConstants.HTTP_SC,
                                 resultAxisMsgCtx.getProperty(SynapseConstants.HTTP_SC));
                         if ("false".equals(synCtx.getProperty(SynapseConstants.BLOCKING_SENDER_PRESERVE_REQ_HEADERS))) {
-                            inAxisMsgCtx.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
-                                    resultAxisMsgCtx
-                                            .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
+                            MessageHelper.copyResponseMessageHeaders(resultAxisMsgCtx, inAxisMsgCtx);
                         }
                     } else {
                         synLog.traceOrDebug("Service returned a null response");

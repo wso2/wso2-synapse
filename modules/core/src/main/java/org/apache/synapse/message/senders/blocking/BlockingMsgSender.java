@@ -248,9 +248,7 @@ public class BlockingMsgSender {
                 axisInMsgCtx.setProperty(SynapseConstants.HTTP_SC, statusCode);
                 if ("false".equals(synapseInMsgCtx.getProperty(
                         SynapseConstants.BLOCKING_SENDER_PRESERVE_REQ_HEADERS))) {
-                    axisInMsgCtx.setProperty(
-                            org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
-                            result.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
+                    MessageHelper.copyResponseMessageHeaders(result, axisInMsgCtx);
                 }
 
                 synapseInMsgCtx.setProperty(SynapseConstants.BLOCKING_SENDER_ERROR, "false");
@@ -407,9 +405,7 @@ public class BlockingMsgSender {
                 axisInMsgCtx.setProperty(SynapseConstants.HTTP_SC, statusCode);
                 if ("false".equals(synapseInMsgCtx.getProperty(
                         SynapseConstants.BLOCKING_SENDER_PRESERVE_REQ_HEADERS))) {
-                    axisInMsgCtx.setProperty(
-                            org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
-                            result.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
+                    MessageHelper.copyResponseMessageHeaders(result, axisInMsgCtx);
                 }
                 synapseInMsgCtx.setProperty(SynapseConstants.BLOCKING_SENDER_ERROR, "false");
                 this.invokeHandlers(synapseInMsgCtx);
