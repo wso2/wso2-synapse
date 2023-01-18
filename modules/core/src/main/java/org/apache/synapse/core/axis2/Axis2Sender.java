@@ -36,12 +36,14 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
+import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.inbound.InboundResponseSender;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.MediatorPropertyUtils;
 import org.apache.synapse.util.MessageHelper;
@@ -57,6 +59,8 @@ import java.util.Map;
 public class Axis2Sender {
 
     private static final Log log = LogFactory.getLog(Axis2Sender.class);
+
+    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
     /**
      * Content type header name.
      */
@@ -78,8 +82,16 @@ public class Axis2Sender {
                     synapseInMessageContext.getEnvironment().getSynapseHandlers().iterator();
             while (iterator.hasNext()) {
                 SynapseHandler handler = iterator.next();
+                long startTime = System.currentTimeMillis();
                 if (!handler.handleRequestOutFlow(synapseInMessageContext)) {
                     return;
+                }
+                if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
+                    ContextAwareLogger.getLogger(((Axis2MessageContext) synapseInMessageContext).getAxis2MessageContext(),
+                                    correlationLog, false)
+                            .info((System.currentTimeMillis() - startTime) + "|METHOD|handleRequestOutFlow|"
+                                    + LoggingUtils.getSynapseHandlerClassName(handler) + "|" +
+                                    "SYNAPSE HANDLER");
                 }
             }
 
@@ -189,8 +201,16 @@ public class Axis2Sender {
             Iterator<SynapseHandler> iterator = smc.getEnvironment().getSynapseHandlers().iterator();
             while (iterator.hasNext()) {
                 SynapseHandler handler = iterator.next();
+                long startTime = System.currentTimeMillis();
                 if (!handler.handleResponseOutFlow(smc)) {
                     return;
+                }
+                if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
+                    ContextAwareLogger.getLogger(((Axis2MessageContext) smc).getAxis2MessageContext(),
+                                    correlationLog, false)
+                            .info((System.currentTimeMillis() - startTime) + "|METHOD|handleResponseOutFlow|"
+                                    + LoggingUtils.getSynapseHandlerClassName(handler) +  "|"
+                                    + "SYNAPSE HANDLER");
                 }
             }
 

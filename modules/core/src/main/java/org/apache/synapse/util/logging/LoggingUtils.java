@@ -20,6 +20,8 @@ package org.apache.synapse.util.logging;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseHandler;
+import org.apache.synapse.rest.Handler;
 
 /**
  * Util class to get formatted logs for audit purposes.
@@ -63,5 +65,18 @@ public class LoggingUtils {
 
         String message = msg != null ? msg.toString() : "";
         return OPEN_BRACKETS.concat(name).concat(CLOSE_BRACKETS).concat(" ").concat(message);
+    }
+
+    public static String getClassName(Handler handler) {
+        String cls = handler.getClass().getName();
+        return cls.substring(cls.lastIndexOf(".") + 1);
+    }
+
+    public static String getSynapseHandlerClassName(SynapseHandler handler) {
+        if (handler.getName() != null) {
+            return handler.getName();
+        }
+        String cls = handler.getClass().getName();
+        return cls.substring(cls.lastIndexOf(".") + 1);
     }
 }

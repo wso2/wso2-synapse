@@ -112,6 +112,15 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
         }
     }
 
+    @Override
+    public String getMediatorName() {
+        if (mediator != null) {
+            String cls = mediator.getClass().getName();
+            return cls.substring(cls.lastIndexOf(".") + 1);
+        }
+        return super.getMediatorName();
+    }
+
     public void init(SynapseEnvironment se) {
         if (log.isDebugEnabled()) {
             log.debug("Initializing class mediator instance for : " + mediator.getClass());

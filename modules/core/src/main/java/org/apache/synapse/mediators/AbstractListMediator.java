@@ -23,6 +23,8 @@ import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.AxisFault;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
@@ -31,6 +33,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -50,6 +53,7 @@ import java.util.regex.Pattern;
 public abstract class AbstractListMediator extends AbstractMediator
         implements ListMediator {
 
+    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
     private static final String MSG_BUILD_FAILURE_EXCEPTION_PATTERN = ".*(Wstx)(.*Exception)" +
             "|.*MalformedJsonException|.*(synapse\\.commons\\.staxon\\.core)|.*(com\\.fasterxml\\.jackson\\.core)";
 
@@ -94,10 +98,11 @@ public abstract class AbstractListMediator extends AbstractMediator
                         (!Boolean.TRUE.equals(synCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)))) {
                     buildMessage(synCtx, synLog);
                 }
-
+                long startTime;
                 if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                     Integer statisticReportingIndex = mediator.reportOpenStatistics(synCtx, i == mediatorPosition);
                     synCtx.setTracingState(myEffectiveTraceState);
+                    startTime = System.currentTimeMillis();
                     if (!mediator.mediate(synCtx)) {
                         mediator.reportCloseStatistics(synCtx, statisticReportingIndex);
                         returnVal = false;
@@ -106,10 +111,17 @@ public abstract class AbstractListMediator extends AbstractMediator
                     mediator.reportCloseStatistics(synCtx, statisticReportingIndex);
                 } else {
                     synCtx.setTracingState(myEffectiveTraceState);
+                    startTime = System.currentTimeMillis();
                     if (!mediator.mediate(synCtx)) {
                         returnVal = false;
                         break;
                     }
+                }
+                if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
+                    ContextAwareLogger.getLogger(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
+                                    correlationLog, false)
+                            .info((System.currentTimeMillis() - startTime) + "|METHOD|mediate|"
+                                    + mediator.getMediatorName() + "|" + "MEDIATOR");
                 }
             }
         } catch (SynapseException synEx) {

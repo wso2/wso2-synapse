@@ -44,6 +44,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
+import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -62,6 +63,7 @@ import org.apache.synapse.mediators.MediatorWorker;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.RESTRequestHandler;
 import org.apache.synapse.task.SynapseTaskManager;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.unittest.UnitTestingExecutor;
 import org.apache.synapse.util.concurrent.InboundThreadPool;
@@ -87,6 +89,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     private static final Log log = LogFactory.getLog(Axis2SynapseEnvironment.class);
     private static final Log trace = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
+
+    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
 
     private SynapseConfiguration synapseConfig;
     private ConfigurationContext configContext;
@@ -1110,15 +1114,30 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             if (synCtx.isResponse() || (isContinuationCall != null && isContinuationCall)) {
                 while (iterator.hasNext()) {
                     SynapseHandler handler = iterator.next();
+                    long startTime = System.currentTimeMillis();
                     if (!handler.handleResponseInFlow(synCtx)) {
                         return false;
+                    }
+                    if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
+                        ContextAwareLogger.getLogger(
+                                ((Axis2MessageContext) synCtx).getAxis2MessageContext(), correlationLog, false)
+                                .info((System.currentTimeMillis() - startTime) + "|METHOD|handleResponseInFlow|"
+                                        + LoggingUtils.getSynapseHandlerClassName(handler) + "|"
+                                        + "SYNAPSE HANDLER");
                     }
                 }
             } else {
                 while (iterator.hasNext()) {
                     SynapseHandler handler = iterator.next();
+                    long startTime = System.currentTimeMillis();
                     if (!handler.handleRequestInFlow(synCtx)) {
                         return false;
+                    }
+                    if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
+                        ContextAwareLogger.getLogger(((Axis2MessageContext) synCtx).getAxis2MessageContext(), correlationLog, false)
+                                .info((System.currentTimeMillis() - startTime) + "|METHOD|handleRequestInFlow|"
+                                        + LoggingUtils.getSynapseHandlerClassName(handler) + "|"
+                                        + "SYNAPSE HANDLER");
                     }
                 }
             }

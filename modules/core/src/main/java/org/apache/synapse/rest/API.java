@@ -34,6 +34,7 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -80,6 +81,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
 
     private  Log apiLog;
     private static final Log trace = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
+    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
 
     private int traceState = SynapseConstants.TRACING_UNSET;
 
@@ -380,9 +382,21 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
 
             boolean proceed;
             if (synCtx.isResponse()) {
+                long startTime = System.currentTimeMillis();
                 proceed = handler.handleResponse(synCtx);
+                ContextAwareLogger.getLogger(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
+                                correlationLog, false)
+                        .info((System.currentTimeMillis() - startTime) + "|METHOD|handleResponse|"
+                                + LoggingUtils.getClassName(handler) +  "|" + "API HANDLER");
             } else {
+                long startTime = System.currentTimeMillis();
                 proceed = handler.handleRequest(synCtx);
+                if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
+                    ContextAwareLogger.getLogger(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
+                                    correlationLog, false)
+                            .info((System.currentTimeMillis() - startTime) + "|METHOD|handleRequest|"
+                                    + LoggingUtils.getClassName(handler) + "|" + "API HANDLER");
+                }
             }
 
             if (!proceed) {
