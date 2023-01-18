@@ -25,6 +25,7 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.addressing.AddressingConstants;
 import org.apache.axis2.client.Options;
+import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.neethi.Policy;
@@ -47,6 +48,8 @@ import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 
+import javax.mail.internet.ContentType;
+import javax.mail.internet.ParseException;
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -844,6 +847,44 @@ public class MessageHelper {
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * Copy the response message headers received from the back-end response to the axis2 message context.
+     *
+     * @param resultAxisMsgCtx axis2 message context of the response received from the backend
+     * @param axisInMsgCtx axis2 message context of the response to be sent to the client
+     */
+    public static void copyResponseMessageHeaders(org.apache.axis2.context.MessageContext resultAxisMsgCtx,
+                                                  org.apache.axis2.context.MessageContext axisInMsgCtx) {
+        Object transportHeadersObj = resultAxisMsgCtx.getProperty(
+                org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        axisInMsgCtx.setProperty(
+                org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, transportHeadersObj);
+        if (transportHeadersObj instanceof Map) {
+            Map transportHeaders = (Map) transportHeadersObj;
+            String headerContentType = (String) transportHeaders.get(HTTPConstants.HEADER_CONTENT_TYPE);
+            if (headerContentType != null) {
+                // In case the Content-Type header comes with a different case (ex: Content-type), we are removing it
+                // from the transport headers and putting it again with the key = "Content-Type" to avoid duplicate
+                //  headers in the response.
+                transportHeaders.remove(HTTPConstants.HEADER_CONTENT_TYPE);
+                transportHeaders.put(HTTPConstants.HEADER_CONTENT_TYPE, headerContentType);
+                try {
+                    String mimeType = new ContentType(headerContentType).getBaseType();
+                    axisInMsgCtx.setProperty(Constants.Configuration.CONTENT_TYPE, mimeType);
+                    axisInMsgCtx.setProperty(Constants.Configuration.MESSAGE_TYPE, mimeType);
+                } catch (ParseException e) {
+                    String defaultContentType = (String) axisInMsgCtx.getProperty(
+                            Constants.Configuration.CONTENT_TYPE);
+                    String defaultMessageType = (String) axisInMsgCtx.getProperty(
+                            Constants.Configuration.MESSAGE_TYPE);
+                    log.error("Error occurred while parsing ContentType header: " + headerContentType
+                            + ". in the response. Therefore, using the default ContentType: "
+                            + defaultContentType + " and MessageType: " + defaultMessageType, e);
                 }
             }
         }
