@@ -480,8 +480,9 @@ public class SynapseXPath extends SynapsePath {
             if ("true".equals(domXpathConfig)) {
 
                 if (log.isDebugEnabled()) {
-                    log.debug("AXIOM xpath evaluation failed with UnresolvableException, " +
-                            "trying to perform DOM based XPATH", ex);
+                    log.debug("AXIOM xpath evaluation failed with UnresolvableException: "
+                            + ex.getMessage()
+                            + ". Trying to perform DOM based XPATH.");
                 }
 
                 try {
