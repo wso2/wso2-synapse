@@ -20,7 +20,6 @@
 package org.apache.synapse.mediators.bsf.javascript;
 
 import junit.framework.TestCase;
-
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.mediators.TestUtils;
 import org.apache.synapse.mediators.bsf.ScriptMediator;
@@ -51,5 +50,17 @@ public class JavaScriptMediatorTest extends TestCase {
 
         mc = TestUtils.getTestContext("<a><b>petra</b></a>", null);
         assertTrue(mediator.mediate(mc));
+    }
+
+    public void testInlineMediatorWithImports() throws Exception {
+
+        String scriptSourceCode = "importClass(Packages.java.util.UUID);\n" +
+                "var uuid = java.util.UUID.randomUUID().toString().replace('-','');\n";
+
+        MessageContext mc = TestUtils.getTestContext("<foo/>", null);
+        ScriptMediator mediator = new ScriptMediator("js", scriptSourceCode, null);
+
+        boolean response = mediator.mediate(mc);
+        assertTrue(response);
     }
 }
