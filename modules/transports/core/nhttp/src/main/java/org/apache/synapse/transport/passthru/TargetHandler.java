@@ -45,6 +45,7 @@ import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
 import org.apache.synapse.transport.http.conn.ProxyTunnelHandler;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.transport.passthru.config.PassThroughCorrelationConfigDataHolder;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.HostConnections;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
@@ -324,7 +325,7 @@ public class TargetHandler implements NHttpClientEventHandler {
             context.setAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME, System.currentTimeMillis());
             connState = TargetContext.getState(conn);
             //check correlation logs enabled
-            if (targetConfiguration.isCorrelationLoggingEnabled()
+            if (PassThroughCorrelationConfigDataHolder.isEnable()
                     && TargetContext.isCorrelationIdAvailable(conn)) {
                 long startTime = (long) context.getAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME);
                 ContextAwareLogger.getLogger(context, correlationLog, false)
@@ -743,7 +744,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                         + "CONNECTION = " + conn + ", SOCKET_TIMEOUT = " + conn.getSocketTimeout() + ", CORRELATION_ID"
                         + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
 
-                if (targetConfiguration.isCorrelationLoggingEnabled()) {
+                if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                     logHttpRequestErrorInCorrelationLog(conn, "Timeout in " + state);
                 }
                 if (requestMsgCtx != null) {
@@ -888,7 +889,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         if (ex instanceof IOException) {
 
             logIOException(conn, (IOException) ex);
-            if (targetConfiguration.isCorrelationLoggingEnabled()){
+            if (PassThroughCorrelationConfigDataHolder.isEnable()){
                 logHttpRequestErrorInCorrelationLog(conn, "IO Exception in " + state.name());
             }
             if (requestMsgCtx != null) {
@@ -905,7 +906,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         } else if (ex instanceof HttpException) {
             String message = getErrorMessage("HTTP protocol violation : " + ex.getMessage(), conn);
             log.error(message, ex);
-            if (targetConfiguration.isCorrelationLoggingEnabled()){
+            if (PassThroughCorrelationConfigDataHolder.isEnable()){
                 logHttpRequestErrorInCorrelationLog(conn, "HTTP Exception in " + state.name());
             }
             if (requestMsgCtx != null) {
@@ -925,7 +926,7 @@ public class TargetHandler implements NHttpClientEventHandler {
             } else {
                 log.error("Unexpected error.");
             }
-            if (targetConfiguration.isCorrelationLoggingEnabled()) {
+            if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "Unexpected error");
             }
             TargetContext.updateState(conn, ProtocolState.CLOSED);

@@ -41,6 +41,7 @@ import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.transport.http.conn.LoggingNHttpServerConnection;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
+import org.apache.synapse.transport.passthru.config.PassThroughCorrelationConfigDataHolder;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.jmx.LatencyCollector;
 import org.apache.synapse.transport.passthru.jmx.LatencyView;
@@ -128,7 +129,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         try {
             HttpContext httpContext = conn.getContext();
             setCorrelationId(conn);
-            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+            if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 SourceContext sourceContext = (SourceContext)
                         conn.getContext().getAttribute(TargetContext.CONNECTION_INFORMATION);
                 sourceContext.updateLastStateUpdatedTime();
@@ -335,7 +336,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                 if (!response.hasEntity()) {
                    // Update stats as outputReady will not be triggered for no entity responses
                     HttpContext context = conn.getContext();
-                    if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+                    if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                         logCorrelationRoundTrip(context,request);
                     }
                     updateMetricsView(context);
@@ -408,7 +409,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                 context.setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_END_TIME,departure);
                 context.setAttribute(PassThroughConstants.RES_DEPARTURE_TIME,departure);
 
-                if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+                if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                     logCorrelationRoundTrip(context, request);
                 }
                 updateMetricsView(context);
@@ -486,7 +487,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = " + conn
                     .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
-            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+            if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
         } else if (state == ProtocolState.RESPONSE_BODY || state == ProtocolState.RESPONSE_HEAD) {
@@ -499,7 +500,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = " + conn
                     .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
-            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+            if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
         } else if (state == ProtocolState.REQUEST_DONE) {
@@ -514,7 +515,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                             + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
                             + ", SOCKET_TIMEOUT = " + conn.getSocketTimeout() + ", CLIENT_ADDRESS = "
                             + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
-            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+            if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
         }
@@ -546,7 +547,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = "
                     + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
 
-            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+            if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "Connection Closed in " + state.name());
             }
         } else if (state == ProtocolState.RESPONSE_BODY || state == ProtocolState.RESPONSE_HEAD) {
@@ -557,7 +558,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + "CAUSE_OF_ERROR = Connection between EI and the Client has been closed, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = "
                     + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
-            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+            if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "Connection Closed in " + state.name());
             }
         } else if (state == ProtocolState.REQUEST_DONE) {
@@ -568,7 +569,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + "CAUSE_OF_ERROR = Connection between EI and the Client has been closed, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = "
                     + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
-            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+            if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "Connection Closed in " + state.name());
             }
         }
@@ -590,7 +591,7 @@ public class SourceHandler implements NHttpServerEventHandler {
     	boolean isFault = false;
         if (ex instanceof IOException) {
             logIOException(conn, (IOException) ex);
-            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+            if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "IO Exception");
             }
             metrics.incrementFaultsReceiving();
@@ -612,7 +613,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
         } else if (ex instanceof HttpException) {
             log.error("HttpException occurred ", ex);
-            if (sourceConfiguration.isCorrelationLoggingEnabled()) {
+            if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "HTTP Exception");
             }
             try {
