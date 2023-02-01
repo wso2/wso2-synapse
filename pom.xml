@@ -1492,7 +1492,7 @@
       <commons.pool.wso2.version>1.5.0.wso2v1</commons.pool.wso2.version>
       <commons.vfs.version>2.2.0-wso2v15</commons.vfs.version>
       <truezip.version>6.6</truezip.version>
-      <commons.net.version>3.4</commons.net.version>
+      <commons.net.version>3.9.0</commons.net.version>
       <commons.net.wso2.version>${commons.net.version}.wso2v1</commons.net.wso2.version>
       <jsch.version>0.1.55</jsch.version>
       <jsch.wso2.version>0.1.55.wso2v1</jsch.wso2.version>
