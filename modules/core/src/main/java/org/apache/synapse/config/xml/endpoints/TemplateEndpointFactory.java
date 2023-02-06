@@ -39,8 +39,10 @@ public class TemplateEndpointFactory extends EndpointFactory {
         OMAttribute endpointNameAttribute = endpointElement.getAttribute(
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "name"));
         if (endpointNameAttribute != null) {
-            templateEndpoint.addParameter("name", endpointNameAttribute.getAttributeValue());
-            templateEndpoint.setName(endpointNameAttribute.getAttributeValue());
+            String endpointName = endpointNameAttribute.getAttributeValue();
+            endpointName = ResolverFactory.getInstance().getResolver(endpointName).resolve();
+            templateEndpoint.addParameter("name", endpointName);
+            templateEndpoint.setName(endpointName);
         } /*else {
             handleException("Error loading the configuration from Template " +
                     "Endpoint, name attribute is missing");
@@ -84,8 +86,9 @@ public class TemplateEndpointFactory extends EndpointFactory {
             assert paramName != null;
             assert paramValue != null;
 
-            templateEndpoint.addParameter(paramName.getAttributeValue(),
-                    paramValue.getAttributeValue());
+            String paramAttributeValue = paramValue.getAttributeValue();
+            paramAttributeValue = ResolverFactory.getInstance().getResolver(paramAttributeValue).resolve();
+            templateEndpoint.addParameter(paramName.getAttributeValue(), paramAttributeValue);
         }
         CommentListUtil.populateComments(endpointElement, templateEndpoint.getCommentsList());
         return templateEndpoint;
