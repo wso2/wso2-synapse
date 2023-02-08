@@ -187,7 +187,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     /**
      * The URI for the base WSDL, if defined as a URL
      */
-    private URI wsdlURI;
+    private String wsdlURI;
     /**
      * The in-lined representation of the service WSDL, if defined inline
      */
@@ -370,8 +370,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             wsdlFound = true;
         } else if (wsdlURI != null) {
             try {
-            	URL url = wsdlURI.toURL();
-                publishWSDL = url.toString();
+                publishWSDL = wsdlURI;
 
                 OMNode node = SynapseConfigUtils.getOMElementFromURL(publishWSDL, synapseHome);
                 if (node instanceof OMElement) {
@@ -1157,11 +1156,11 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
         this.inLineWSDL = inLineWSDL;
     }
 
-    public URI getWsdlURI() {
+    public String getWsdlURI() {
         return wsdlURI;
     }
 
-    public void setWsdlURI(URI wsdlURI) {
+    public void setWsdlURI(String wsdlURI) {
         this.wsdlURI = wsdlURI;
     }
 

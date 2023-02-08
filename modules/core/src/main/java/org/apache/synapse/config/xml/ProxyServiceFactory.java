@@ -244,13 +244,7 @@ public class ProxyServiceFactory {
                 OMAttribute wsdlURI = wsdl.getAttribute(
                         new QName(XMLConfigConstants.NULL_NAMESPACE, "uri"));
                 if (wsdlURI != null) {
-                    try {
-                        proxy.setWsdlURI(new URI(wsdlURI.getAttributeValue()));
-                    } catch (URISyntaxException e) {
-                        String msg = "Error creating uri for proxy service wsdl";
-                        log.error(msg);
-                        handleException(msg, e);
-                    }
+                    proxy.setWsdlURI(wsdlURI.getAttributeValue());
                 } else {
                     OMElement wsdl11 = wsdl.getFirstChildWithName(
                             new QName(WSDLConstants.WSDL1_1_NAMESPACE, "definitions"));
