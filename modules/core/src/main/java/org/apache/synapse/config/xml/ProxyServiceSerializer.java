@@ -33,6 +33,7 @@ import org.apache.synapse.util.CommentListUtil;
 import org.apache.synapse.util.PolicyInfo;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -153,7 +154,7 @@ public class ProxyServiceSerializer {
         String wsdlKey = service.getWSDLKey();
         String wsdlEndpoint = service.getPublishWSDLEndpoint();
         String preservePolicy = service.getPreservePolicy();
-        URI wsdlUri = service.getWsdlURI();
+        String wsdlUri = service.getWsdlURI();
         Object inLineWSDL = service.getInLineWSDL();
         if (wsdlKey != null || wsdlUri != null || inLineWSDL != null || wsdlEndpoint != null) {
             OMElement wsdl = fac.createOMElement("publishWSDL", synNS);
