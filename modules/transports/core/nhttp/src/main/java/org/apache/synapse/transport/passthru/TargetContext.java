@@ -23,6 +23,7 @@ import org.apache.http.HttpRequest;
 import org.apache.http.nio.NHttpConnection;
 import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.commons.logger.ContextAwareLogger;
+import org.apache.synapse.transport.passthru.config.PassThroughCorrelationConfigDataHolder;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.util.ControlledByteBuffer;
 
@@ -144,7 +145,7 @@ public class TargetContext {
         TargetContext targetContext = new TargetContext(configuration);
         conn.getContext().setAttribute(CONNECTION_INFORMATION, targetContext);
         targetContext.setState(state);
-        if (targetContext.getTargetConfiguration().isCorrelationLoggingEnabled()) {
+        if (PassThroughCorrelationConfigDataHolder.isEnable()) {
             targetContext.updateLastStateUpdatedTime();
         }
     }
@@ -155,7 +156,7 @@ public class TargetContext {
                 conn.getContext().getAttribute(CONNECTION_INFORMATION);
         if (targetContext != null) {
             targetContext.setState(state);
-            if (targetContext.getTargetConfiguration().isCorrelationLoggingEnabled() && isCorrelationIdAvailable(conn)) {
+            if (PassThroughCorrelationConfigDataHolder.isEnable() && isCorrelationIdAvailable(conn)) {
                 long lastStateUpdateTime = targetContext.getLastStateUpdatedTime();
                 String url = "", method = "";
                 if (targetContext.getRequest() != null) {
