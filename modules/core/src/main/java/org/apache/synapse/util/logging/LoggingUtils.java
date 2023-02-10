@@ -96,4 +96,24 @@ public class LoggingUtils {
                             + "SYNAPSE HANDLER");
         }
     }
+
+    public static void printAPIHandlerCorrelationLog(org.apache.synapse.MessageContext smc, String method,
+                                                  long startTime, Handler handler) {
+        if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
+            ContextAwareLogger.getLogger(((Axis2MessageContext) smc).getAxis2MessageContext(),
+                            correlationLog, false)
+                    .info((System.currentTimeMillis() - startTime) + "|METHOD|" + method + "|"
+                            + LoggingUtils.getClassName(handler) +  "|" + "API HANDLER");
+        }
+    }
+
+    public static void printMediatorCorrelationLog(org.apache.synapse.MessageContext smc,
+                                                     long startTime, String mediator) {
+        if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
+            ContextAwareLogger.getLogger(((Axis2MessageContext) smc).getAxis2MessageContext(),
+                            correlationLog, false)
+                    .info((System.currentTimeMillis() - startTime) + "|METHOD|mediate|"
+                            + mediator + "|" + "MEDIATOR");
+        }
+    }
 }

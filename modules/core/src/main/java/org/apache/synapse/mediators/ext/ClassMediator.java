@@ -34,6 +34,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.synapse.util.logging.LoggingUtils.printMediatorCorrelationLog;
+
 /**
  * The class mediator delegates the mediation to a single instance of a specified
  * class. The specified class must implement the Mediator interface and optionally
@@ -91,7 +93,9 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
                             mediator);
                 }
             }
+            long startTime = System.currentTimeMillis();
             result = mediator.mediate(synCtx);
+            printMediatorCorrelationLog(synCtx, startTime, getMediatorName());
         } catch (Exception e) {
             // throw Synapse Exception for any exception in class meditor
             // so that the fault handler will be invoked

@@ -579,7 +579,6 @@ public class BlockingMsgSender {
                 SynapseHandler handler = iterator.next();
                 long startTime = System.currentTimeMillis();
                 if (!handler.handleResponseInFlow(synCtx)) {
-                    printHandlerCorrelationLog(synCtx, "handleResponseInFlow", startTime, handler);
                     log.warn("Synapse not executed in the response in path");
                 }
                 printHandlerCorrelationLog(synCtx, "handleResponseInFlow", startTime, handler);

@@ -59,6 +59,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Arrays;
 
+import static org.apache.synapse.util.logging.LoggingUtils.printAPIHandlerCorrelationLog;
+
 public class API extends AbstractRESTProcessor implements ManagedLifecycle, AspectConfigurable, SynapseArtifact {
 
     private String host;
@@ -81,7 +83,6 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
 
     private  Log apiLog;
     private static final Log trace = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
-    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
 
     private int traceState = SynapseConstants.TRACING_UNSET;
 
@@ -384,19 +385,11 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
             if (synCtx.isResponse()) {
                 long startTime = System.currentTimeMillis();
                 proceed = handler.handleResponse(synCtx);
-                ContextAwareLogger.getLogger(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
-                                correlationLog, false)
-                        .info((System.currentTimeMillis() - startTime) + "|METHOD|handleResponse|"
-                                + LoggingUtils.getClassName(handler) +  "|" + "API HANDLER");
+                printAPIHandlerCorrelationLog(synCtx, "handleResponse", startTime, handler);
             } else {
                 long startTime = System.currentTimeMillis();
                 proceed = handler.handleRequest(synCtx);
-                if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
-                    ContextAwareLogger.getLogger(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
-                                    correlationLog, false)
-                            .info((System.currentTimeMillis() - startTime) + "|METHOD|handleRequest|"
-                                    + LoggingUtils.getClassName(handler) + "|" + "API HANDLER");
-                }
+                printAPIHandlerCorrelationLog(synCtx, "handleRequest", startTime, handler);
             }
 
             if (!proceed) {
