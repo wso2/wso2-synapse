@@ -36,14 +36,12 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
-import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.inbound.InboundResponseSender;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
-import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.MediatorPropertyUtils;
 import org.apache.synapse.util.MessageHelper;
@@ -53,14 +51,14 @@ import org.apache.synapse.util.logging.LoggingUtils;
 import java.util.Iterator;
 import java.util.Map;
 
+import static org.apache.synapse.util.logging.LoggingUtils.printHandlerCorrelationLog;
+
 /**
  * This class helps the Axis2SynapseEnvironment implement the send method
  */
 public class Axis2Sender {
 
     private static final Log log = LogFactory.getLog(Axis2Sender.class);
-
-    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
     /**
      * Content type header name.
      */
@@ -84,15 +82,10 @@ public class Axis2Sender {
                 SynapseHandler handler = iterator.next();
                 long startTime = System.currentTimeMillis();
                 if (!handler.handleRequestOutFlow(synapseInMessageContext)) {
+                    printHandlerCorrelationLog(synapseInMessageContext, "handleRequestOutFlow", startTime, handler);
                     return;
                 }
-                if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
-                    ContextAwareLogger.getLogger(((Axis2MessageContext) synapseInMessageContext).getAxis2MessageContext(),
-                                    correlationLog, false)
-                            .info((System.currentTimeMillis() - startTime) + "|METHOD|handleRequestOutFlow|"
-                                    + LoggingUtils.getSynapseHandlerClassName(handler) + "|" +
-                                    "SYNAPSE HANDLER");
-                }
+                printHandlerCorrelationLog(synapseInMessageContext, "handleRequestOutFlow", startTime, handler);
             }
 
             Axis2FlexibleMEPClient.send(
@@ -203,15 +196,10 @@ public class Axis2Sender {
                 SynapseHandler handler = iterator.next();
                 long startTime = System.currentTimeMillis();
                 if (!handler.handleResponseOutFlow(smc)) {
+                    printHandlerCorrelationLog(smc, "handleResponseOutFlow", startTime, handler);
                     return;
                 }
-                if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
-                    ContextAwareLogger.getLogger(((Axis2MessageContext) smc).getAxis2MessageContext(),
-                                    correlationLog, false)
-                            .info((System.currentTimeMillis() - startTime) + "|METHOD|handleResponseOutFlow|"
-                                    + LoggingUtils.getSynapseHandlerClassName(handler) +  "|"
-                                    + "SYNAPSE HANDLER");
-                }
+                printHandlerCorrelationLog(smc, "handleResponseOutFlow", startTime, handler);
             }
 
             doSOAPFormatConversion(smc);

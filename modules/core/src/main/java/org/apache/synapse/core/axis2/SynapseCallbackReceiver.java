@@ -43,7 +43,6 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCo
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.commons.CorrelationConstants;
-import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -60,11 +59,12 @@ import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.ConcurrencyThrottlingUtils;
 import org.apache.synapse.util.ResponseAcceptEncodingProcessor;
-import org.apache.synapse.util.logging.LoggingUtils;
 
 import java.util.Iterator;
 import java.util.Stack;
 import java.util.Timer;
+
+import static org.apache.synapse.util.logging.LoggingUtils.printHandlerCorrelationLog;
 
 /**
  * This is the message receiver that receives the responses for outgoing messages sent out
@@ -77,7 +77,6 @@ import java.util.Timer;
 public class SynapseCallbackReceiver extends CallbackReceiver {
 
     private static final Log log = LogFactory.getLog(SynapseCallbackReceiver.class);
-    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
 
     /**
      * Create the *single* instance of this class that would be used by all anonymous services
@@ -693,29 +692,21 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     SynapseHandler handler = iterator.next();
                     long startTime = System.currentTimeMillis();
                     if (!handler.handleResponseInFlow(synCtx)) {
+                        printHandlerCorrelationLog(synCtx, "handleResponseInFlow", startTime, handler);
                         return false;
                     }
-                    if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
-                        ContextAwareLogger.getLogger(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
-                                        correlationLog, false)
-                                .info((System.currentTimeMillis() - startTime) + "|METHOD|handleResponseInFlow|"
-                                        + LoggingUtils.getSynapseHandlerClassName(handler)
-                                        + "|" + "SYNAPSE HANDLER");
-                    }
+                    printHandlerCorrelationLog(synCtx, "handleResponseInFlow", startTime, handler);
                 }
             } else {
                 while (iterator.hasNext()) {
                     SynapseHandler handler = iterator.next();
                     long startTime = System.currentTimeMillis();
                     if (!handler.handleRequestInFlow(synCtx)) {
+                        printHandlerCorrelationLog(synCtx, "handleRequestInFlow", startTime, handler);
                         return false;
                     }
-                    if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
-                        ContextAwareLogger.getLogger(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
-                                        correlationLog, false)
-                                .info((System.currentTimeMillis() - startTime) + "|METHOD|handleRequestInFlow|"
-                                        + LoggingUtils.getSynapseHandlerClassName(handler) + "|" + "SYNAPSE HANDLER");
-                    }
+                    printHandlerCorrelationLog(synCtx, "handleRequestInFlow", startTime, handler);
+
                 }
             }
         }

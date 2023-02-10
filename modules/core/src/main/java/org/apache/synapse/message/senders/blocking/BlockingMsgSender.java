@@ -40,9 +40,6 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.commons.json.JsonUtil;
-import org.apache.synapse.commons.logger.ContextAwareLogger;
-import org.apache.synapse.continuation.ContinuationStackManager;
-import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.axis2.AnonymousServiceFactory;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.AbstractEndpoint;
@@ -51,9 +48,7 @@ import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.IndirectEndpoint;
 import org.apache.synapse.endpoints.ResolvingEndpoint;
 import org.apache.synapse.endpoints.TemplateEndpoint;
-import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.util.MessageHelper;
-import org.apache.synapse.util.logging.LoggingUtils;
 import org.apache.synapse.util.xpath.SynapseXPath;
 
 import javax.xml.namespace.QName;
@@ -66,6 +61,8 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.apache.synapse.util.logging.LoggingUtils.printHandlerCorrelationLog;
 
 public class BlockingMsgSender {
     public final static String DEFAULT_CLIENT_REPO = "./repository/deployment/client";
@@ -83,7 +80,6 @@ public class BlockingMsgSender {
     }
 
     private static Log log = LogFactory.getLog(BlockingMsgSender.class);
-    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
     private String clientRepository = null;
     private String axis2xml = null;
     private ConfigurationContext configurationContext = null;
@@ -583,14 +579,10 @@ public class BlockingMsgSender {
                 SynapseHandler handler = iterator.next();
                 long startTime = System.currentTimeMillis();
                 if (!handler.handleResponseInFlow(synCtx)) {
+                    printHandlerCorrelationLog(synCtx, "handleResponseInFlow", startTime, handler);
                     log.warn("Synapse not executed in the response in path");
                 }
-                if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
-                    ContextAwareLogger.getLogger(((Axis2MessageContext) synCtx).getAxis2MessageContext(), correlationLog, false)
-                            .info((System.currentTimeMillis() - startTime) + "|METHOD|handleResponseInFlow|"
-                                    + LoggingUtils.getSynapseHandlerClassName(handler) + "|"
-                                    + "SYNAPSE HANDLER");
-                }
+                printHandlerCorrelationLog(synCtx, "handleResponseInFlow", startTime, handler);
             } while (iterator.hasNext());
         }
     }

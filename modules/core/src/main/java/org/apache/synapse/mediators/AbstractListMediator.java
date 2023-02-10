@@ -37,6 +37,7 @@ import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.mediators.ext.ClassMediator;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 
@@ -117,7 +118,7 @@ public abstract class AbstractListMediator extends AbstractMediator
                         break;
                     }
                 }
-                if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
+                if (ContextAwareLogger.isCorrelationLoggingEnabled() && mediator instanceof ClassMediator) {
                     ContextAwareLogger.getLogger(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
                                     correlationLog, false)
                             .info((System.currentTimeMillis() - startTime) + "|METHOD|mediate|"
