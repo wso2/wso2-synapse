@@ -18,8 +18,15 @@
 
 package org.apache.synapse.util.logging;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseHandler;
+import org.apache.synapse.commons.logger.ContextAwareLogger;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.rest.Handler;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 
 /**
  * Util class to get formatted logs for audit purposes.
@@ -28,6 +35,7 @@ public class LoggingUtils {
 
     private static final String OPEN_BRACKETS = "{";
     private static final String CLOSE_BRACKETS = "}";
+    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
 
     private LoggingUtils() {
         // do nothing
@@ -63,5 +71,49 @@ public class LoggingUtils {
 
         String message = msg != null ? msg.toString() : "";
         return OPEN_BRACKETS.concat(name).concat(CLOSE_BRACKETS).concat(" ").concat(message);
+    }
+
+    public static String getClassName(Handler handler) {
+        String cls = handler.getClass().getName();
+        return cls.substring(cls.lastIndexOf(".") + 1);
+    }
+
+    private static String getSynapseHandlerClassName(SynapseHandler handler) {
+        if (handler.getName() != null) {
+            return handler.getName();
+        }
+        String cls = handler.getClass().getName();
+        return cls.substring(cls.lastIndexOf(".") + 1);
+    }
+
+    public static void printHandlerCorrelationLog(org.apache.synapse.MessageContext smc, String method,
+                                                  long startTime, SynapseHandler handler) {
+        if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
+            ContextAwareLogger.getLogger(((Axis2MessageContext) smc).getAxis2MessageContext(),
+                            correlationLog, false)
+                    .info((System.currentTimeMillis() - startTime) + "|METHOD|" + method + "|"
+                            + LoggingUtils.getSynapseHandlerClassName(handler) +  "|"
+                            + "SYNAPSE HANDLER");
+        }
+    }
+
+    public static void printAPIHandlerCorrelationLog(org.apache.synapse.MessageContext smc, String method,
+                                                  long startTime, Handler handler) {
+        if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
+            ContextAwareLogger.getLogger(((Axis2MessageContext) smc).getAxis2MessageContext(),
+                            correlationLog, false)
+                    .info((System.currentTimeMillis() - startTime) + "|METHOD|" + method + "|"
+                            + LoggingUtils.getClassName(handler) +  "|" + "API HANDLER");
+        }
+    }
+
+    public static void printMediatorCorrelationLog(org.apache.synapse.MessageContext smc,
+                                                     long startTime, String mediator) {
+        if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
+            ContextAwareLogger.getLogger(((Axis2MessageContext) smc).getAxis2MessageContext(),
+                            correlationLog, false)
+                    .info((System.currentTimeMillis() - startTime) + "|METHOD|mediate|"
+                            + mediator + "|" + "MEDIATOR");
+        }
     }
 }

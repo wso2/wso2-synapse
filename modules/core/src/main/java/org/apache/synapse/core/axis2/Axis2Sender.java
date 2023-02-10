@@ -51,6 +51,8 @@ import org.apache.synapse.util.logging.LoggingUtils;
 import java.util.Iterator;
 import java.util.Map;
 
+import static org.apache.synapse.util.logging.LoggingUtils.printHandlerCorrelationLog;
+
 /**
  * This class helps the Axis2SynapseEnvironment implement the send method
  */
@@ -78,9 +80,12 @@ public class Axis2Sender {
                     synapseInMessageContext.getEnvironment().getSynapseHandlers().iterator();
             while (iterator.hasNext()) {
                 SynapseHandler handler = iterator.next();
+                long startTime = System.currentTimeMillis();
                 if (!handler.handleRequestOutFlow(synapseInMessageContext)) {
+                    printHandlerCorrelationLog(synapseInMessageContext, "handleRequestOutFlow", startTime, handler);
                     return;
                 }
+                printHandlerCorrelationLog(synapseInMessageContext, "handleRequestOutFlow", startTime, handler);
             }
 
             Axis2FlexibleMEPClient.send(
@@ -189,9 +194,12 @@ public class Axis2Sender {
             Iterator<SynapseHandler> iterator = smc.getEnvironment().getSynapseHandlers().iterator();
             while (iterator.hasNext()) {
                 SynapseHandler handler = iterator.next();
+                long startTime = System.currentTimeMillis();
                 if (!handler.handleResponseOutFlow(smc)) {
+                    printHandlerCorrelationLog(smc, "handleResponseOutFlow", startTime, handler);
                     return;
                 }
+                printHandlerCorrelationLog(smc, "handleResponseOutFlow", startTime, handler);
             }
 
             doSOAPFormatConversion(smc);

@@ -64,6 +64,8 @@ import java.util.Iterator;
 import java.util.Stack;
 import java.util.Timer;
 
+import static org.apache.synapse.util.logging.LoggingUtils.printHandlerCorrelationLog;
+
 /**
  * This is the message receiver that receives the responses for outgoing messages sent out
  * by Synapse. It holds a callbackStore that maps the [unique] messageID of each message to
@@ -688,16 +690,23 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             if (synCtx.isResponse() || (isContinuationCall != null && isContinuationCall)) {
                 while (iterator.hasNext()) {
                     SynapseHandler handler = iterator.next();
+                    long startTime = System.currentTimeMillis();
                     if (!handler.handleResponseInFlow(synCtx)) {
+                        printHandlerCorrelationLog(synCtx, "handleResponseInFlow", startTime, handler);
                         return false;
                     }
+                    printHandlerCorrelationLog(synCtx, "handleResponseInFlow", startTime, handler);
                 }
             } else {
                 while (iterator.hasNext()) {
                     SynapseHandler handler = iterator.next();
+                    long startTime = System.currentTimeMillis();
                     if (!handler.handleRequestInFlow(synCtx)) {
+                        printHandlerCorrelationLog(synCtx, "handleRequestInFlow", startTime, handler);
                         return false;
                     }
+                    printHandlerCorrelationLog(synCtx, "handleRequestInFlow", startTime, handler);
+
                 }
             }
         }

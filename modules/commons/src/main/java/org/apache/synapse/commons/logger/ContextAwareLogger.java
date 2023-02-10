@@ -80,4 +80,8 @@ public class ContextAwareLogger {
 
         ContextAwareLogger.correlationLoggingEnabled = correlationLoggingEnabled;
     }
+
+    public static boolean isCorrelationLoggingEnabled() {
+        return correlationLoggingEnabled;
+    }
 }

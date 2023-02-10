@@ -34,6 +34,7 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -57,6 +58,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Arrays;
+
+import static org.apache.synapse.util.logging.LoggingUtils.printAPIHandlerCorrelationLog;
 
 public class API extends AbstractRESTProcessor implements ManagedLifecycle, AspectConfigurable, SynapseArtifact {
 
@@ -380,9 +383,13 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
 
             boolean proceed;
             if (synCtx.isResponse()) {
+                long startTime = System.currentTimeMillis();
                 proceed = handler.handleResponse(synCtx);
+                printAPIHandlerCorrelationLog(synCtx, "handleResponse", startTime, handler);
             } else {
+                long startTime = System.currentTimeMillis();
                 proceed = handler.handleRequest(synCtx);
+                printAPIHandlerCorrelationLog(synCtx, "handleRequest", startTime, handler);
             }
 
             if (!proceed) {

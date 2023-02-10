@@ -94,7 +94,6 @@ public abstract class AbstractListMediator extends AbstractMediator
                         (!Boolean.TRUE.equals(synCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)))) {
                     buildMessage(synCtx, synLog);
                 }
-
                 if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                     Integer statisticReportingIndex = mediator.reportOpenStatistics(synCtx, i == mediatorPosition);
                     synCtx.setTracingState(myEffectiveTraceState);

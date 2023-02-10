@@ -62,6 +62,7 @@ import org.apache.synapse.mediators.MediatorWorker;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.RESTRequestHandler;
 import org.apache.synapse.task.SynapseTaskManager;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.unittest.UnitTestingExecutor;
 import org.apache.synapse.util.concurrent.InboundThreadPool;
@@ -80,6 +81,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 
+import static org.apache.synapse.util.logging.LoggingUtils.printHandlerCorrelationLog;
+
 /**
  * This is the Axis2 implementation of the SynapseEnvironment
  */
@@ -87,6 +90,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     private static final Log log = LogFactory.getLog(Axis2SynapseEnvironment.class);
     private static final Log trace = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
+
+    private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
 
     private SynapseConfiguration synapseConfig;
     private ConfigurationContext configContext;
@@ -1110,16 +1115,22 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             if (synCtx.isResponse() || (isContinuationCall != null && isContinuationCall)) {
                 while (iterator.hasNext()) {
                     SynapseHandler handler = iterator.next();
+                    long startTime = System.currentTimeMillis();
                     if (!handler.handleResponseInFlow(synCtx)) {
+                        printHandlerCorrelationLog(synCtx, "handleResponseInFlow", startTime, handler);
                         return false;
                     }
+                    printHandlerCorrelationLog(synCtx, "handleResponseInFlow", startTime, handler);
                 }
             } else {
                 while (iterator.hasNext()) {
                     SynapseHandler handler = iterator.next();
+                    long startTime = System.currentTimeMillis();
                     if (!handler.handleRequestInFlow(synCtx)) {
+                        printHandlerCorrelationLog(synCtx, "handleRequestInFlow", startTime, handler);
                         return false;
                     }
+                    printHandlerCorrelationLog(synCtx, "handleRequestInFlow", startTime, handler);
                 }
             }
         }
