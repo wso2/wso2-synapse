@@ -328,7 +328,8 @@ public class TargetHandler implements NHttpClientEventHandler {
             if (PassThroughCorrelationConfigDataHolder.isEnable()
                     && TargetContext.isCorrelationIdAvailable(conn)) {
                 long startTime = (long) context.getAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME);
-                ContextAwareLogger.getLogger(context, correlationLog, false)
+                ContextAwareLogger.getLogger(PassThroughCorrelationConfigDataHolder.isEnable(),
+                                context, correlationLog, false)
                         .info((System.currentTimeMillis() - startTime) + "|HTTP|"
                         + TargetContext.getRequest(conn).getUrl().toString() + "|BACKEND LATENCY");
             }
@@ -1069,7 +1070,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                 if (requestStartTime != null) {
                     startTime = (long) requestStartTime;
                 }
-                ContextAwareLogger.getLogger(conn.getContext(), correlationLog, false)
+                ContextAwareLogger.getLogger(PassThroughCorrelationConfigDataHolder.isEnable(),
+                                conn.getContext(), correlationLog, false)
                         .info((System.currentTimeMillis() - startTime) + "|HTTP|"
                                 + conn.getContext().getAttribute("http.connection") + "|" + method + "|" + url
                                 + "|" + state);

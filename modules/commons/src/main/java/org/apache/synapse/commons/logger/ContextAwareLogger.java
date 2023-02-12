@@ -46,7 +46,26 @@ public class ContextAwareLogger {
      */
     public static Log getLogger(MessageContext axis2MessageContext, Log log, boolean removeFromMDC) {
 
-        return getLogger(axis2MessageContext.getProperty(CorrelationConstants.CORRELATION_ID), log, removeFromMDC);
+        return getLogger(correlationLoggingEnabled,
+                axis2MessageContext.getProperty(CorrelationConstants.CORRELATION_ID), log, removeFromMDC);
+    }
+
+    /**
+     * Provides a wrapper implementation for the given logger according to the availability of the correlation id in
+     * the axis2 and based on the expected behavior of the Correlation-ID MDC property.
+     * Accepts the configuration value for correlation logs, since correlation logs can be enabled without restart.
+     *
+     * @param correlationLoggingEnabled Set dynamic correlation log value
+     * @param axis2MessageContext       Axis2MessageContext
+     * @param log                       Log
+     * @param removeFromMDC             whether to remove the Correlation-ID property from MDC after logging
+     * @return log wrapper
+     */
+    public static Log getLogger(boolean correlationLoggingEnabled,
+                                MessageContext axis2MessageContext, Log log, boolean removeFromMDC) {
+
+        return getLogger(correlationLoggingEnabled,
+                axis2MessageContext.getProperty(CorrelationConstants.CORRELATION_ID), log, removeFromMDC);
     }
 
     /**
@@ -60,10 +79,30 @@ public class ContextAwareLogger {
      */
     public static Log getLogger(HttpContext httpContext, Log log, boolean removeFromMDC) {
 
-        return getLogger(httpContext.getAttribute(CorrelationConstants.CORRELATION_ID), log, removeFromMDC);
+        return getLogger(correlationLoggingEnabled,
+                httpContext.getAttribute(CorrelationConstants.CORRELATION_ID), log, removeFromMDC);
     }
 
-    private static Log getLogger(Object correlationId, Log log, boolean removeFromMDC) {
+    /**
+     * Provides a wrapper implementation for the given logger according to the availability of the correlation id in
+     * the httpcontext and based on the expected behavior of the Correlation-ID MDC property.
+     * Accepts the configuration value for correlation logs, since correlation logs can be enabled without restart.
+     *
+     * @param correlationLoggingEnabled Set dynamic correlation log value
+     * @param httpContext               HttpContext
+     * @param log                       Log
+     * @param removeFromMDC             whether to remove the Correlation-ID property from MDC after logging
+     * @return  log wrapper
+     */
+    public static Log getLogger(boolean correlationLoggingEnabled,
+                                HttpContext httpContext, Log log, boolean removeFromMDC) {
+
+        return getLogger(correlationLoggingEnabled,
+                httpContext.getAttribute(CorrelationConstants.CORRELATION_ID), log, removeFromMDC);
+    }
+
+    private static Log getLogger(boolean correlationLoggingEnabled, Object correlationId,
+                                 Log log, boolean removeFromMDC) {
 
         if (correlationLoggingEnabled) {
             if (correlationId != null) {

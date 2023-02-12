@@ -27,6 +27,7 @@ import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.Handler;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.config.PassThroughCorrelationConfigDataHolder;
 
 /**
  * Util class to get formatted logs for audit purposes.
@@ -88,9 +89,9 @@ public class LoggingUtils {
 
     public static void printHandlerCorrelationLog(org.apache.synapse.MessageContext smc, String method,
                                                   long startTime, SynapseHandler handler) {
-        if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
-            ContextAwareLogger.getLogger(((Axis2MessageContext) smc).getAxis2MessageContext(),
-                            correlationLog, false)
+        if (PassThroughCorrelationConfigDataHolder.isEnable()) {
+            ContextAwareLogger.getLogger(true,
+                            ((Axis2MessageContext) smc).getAxis2MessageContext(), correlationLog, false)
                     .info((System.currentTimeMillis() - startTime) + "|METHOD|" + method + "|"
                             + LoggingUtils.getSynapseHandlerClassName(handler) +  "|"
                             + "SYNAPSE HANDLER");
@@ -99,9 +100,9 @@ public class LoggingUtils {
 
     public static void printAPIHandlerCorrelationLog(org.apache.synapse.MessageContext smc, String method,
                                                   long startTime, Handler handler) {
-        if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
-            ContextAwareLogger.getLogger(((Axis2MessageContext) smc).getAxis2MessageContext(),
-                            correlationLog, false)
+        if (PassThroughCorrelationConfigDataHolder.isEnable()) {
+            ContextAwareLogger.getLogger(true,
+                            ((Axis2MessageContext) smc).getAxis2MessageContext(), correlationLog, false)
                     .info((System.currentTimeMillis() - startTime) + "|METHOD|" + method + "|"
                             + LoggingUtils.getClassName(handler) +  "|" + "API HANDLER");
         }
@@ -109,9 +110,9 @@ public class LoggingUtils {
 
     public static void printMediatorCorrelationLog(org.apache.synapse.MessageContext smc,
                                                      long startTime, String mediator) {
-        if (ContextAwareLogger.isCorrelationLoggingEnabled()) {
-            ContextAwareLogger.getLogger(((Axis2MessageContext) smc).getAxis2MessageContext(),
-                            correlationLog, false)
+        if (PassThroughCorrelationConfigDataHolder.isEnable()) {
+            ContextAwareLogger.getLogger(true,
+                            ((Axis2MessageContext) smc).getAxis2MessageContext(), correlationLog, false)
                     .info((System.currentTimeMillis() - startTime) + "|METHOD|mediate|"
                             + mediator + "|" + "MEDIATOR");
         }

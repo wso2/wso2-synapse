@@ -34,6 +34,7 @@ import org.apache.synapse.endpoints.dispatch.SALSessions;
 import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.config.PassThroughCorrelationConfigDataHolder;
 import org.apache.synapse.util.ConcurrencyThrottlingUtils;
 
 import java.util.ArrayList;
@@ -175,7 +176,8 @@ public class TimeoutHandler extends TimerTask {
                             try {
                                 msgContext.setEnvelope(soapEnvelope);
                             } catch (Throwable ex) {
-                                ContextAwareLogger.getLogger(axis2MessageContext, log, true)
+                                ContextAwareLogger.getLogger(PassThroughCorrelationConfigDataHolder.isEnable(),
+                                                axis2MessageContext, log, true)
                                         .error("Exception or Error occurred resetting SOAP Envelope", ex);
                                 continue;
                             }
@@ -187,7 +189,8 @@ public class TimeoutHandler extends TimerTask {
                                     try {
                                         faultHandler.handleFault(msgContext);
                                     } catch (Throwable ex) {
-                                        ContextAwareLogger.getLogger(axis2MessageContext, log, true)
+                                        ContextAwareLogger.getLogger(PassThroughCorrelationConfigDataHolder.isEnable(),
+                                                        axis2MessageContext, log, true)
                                                 .warn("Exception or Error occurred while "
                                                         + "executing the fault handler", ex);
                                         continue;
@@ -209,7 +212,8 @@ public class TimeoutHandler extends TimerTask {
                     org.apache.axis2.context.MessageContext axis2MessageContext = callback.getAxis2OutMsgCtx();
 
                     if (!"true".equals(callback.getSynapseOutMsgCtx().getProperty(SynapseConstants.OUT_ONLY))) {
-                        ContextAwareLogger.getLogger(axis2MessageContext, log, true)
+                        ContextAwareLogger.getLogger(PassThroughCorrelationConfigDataHolder.isEnable(),
+                                        axis2MessageContext, log, true)
                                 .warn("Expiring message ID : " + key + "; dropping message after "
                                         + callback.getTimeoutType().toString() + " of : "
                                         + (callback.getTimeoutDuration() / 1000) + " seconds for "
