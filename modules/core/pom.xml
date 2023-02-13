@@ -286,7 +286,7 @@
 			<artifactId>commons-text</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.codehaus.jettison.wso2</groupId>
+			<groupId>org.codehaus.jettison</groupId>
 			<artifactId>jettison</artifactId>
 		</dependency>
 		<!--dependency>
