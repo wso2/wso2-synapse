@@ -429,7 +429,8 @@ public class SourceHandler implements NHttpServerEventHandler {
     private void logCorrelationRoundTrip(HttpContext context, SourceRequest request) {
 
         long startTime = (long) context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME);
-        ContextAwareLogger.getLogger(context, correlationLog, false)
+        ContextAwareLogger.getLogger(PassThroughCorrelationConfigDataHolder.isEnable(),
+                        context, correlationLog, false)
                 .info((System.currentTimeMillis() - startTime) + "|HTTP|" + context.getAttribute("http.connection")
                         + "|" + request.getMethod() + "|" + request.getUri() + "|ROUND-TRIP LATENCY ");
     }
@@ -885,7 +886,8 @@ public class SourceHandler implements NHttpServerEventHandler {
             }
             if ((method.length() != 0) && (url.length() != 0)) {
                 long startTime = (long) conn.getContext().getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME);
-                ContextAwareLogger.getLogger(conn.getContext(), correlationLog, false)
+                ContextAwareLogger.getLogger(PassThroughCorrelationConfigDataHolder.isEnable(),
+                                conn.getContext(), correlationLog, false)
                         .info((System.currentTimeMillis() - startTime) + "|HTTP|"
                                 + conn.getContext().getAttribute("http.connection") + "|" + method + "|" + url
                                 + "|" + state);

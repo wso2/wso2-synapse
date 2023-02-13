@@ -185,7 +185,8 @@ public class SourceContext {
                     }
                 }
                 if ((method.length() != 0) && (url.length() != 0)) {
-                    ContextAwareLogger.getLogger(conn.getContext(), correlationLog, false)
+                    ContextAwareLogger.getLogger(PassThroughCorrelationConfigDataHolder.isEnable(),
+                                    conn.getContext(), correlationLog, false)
                             .info((sourceContext.updateLastStateUpdatedTime() - lastStateUpdateTime)
                                     + "|HTTP State Transition|"
                                     + conn.getContext().getAttribute("http.connection") + "|"
