@@ -1,7 +1,9 @@
 name: Micro Integrator Build with Tests
 
-on: [push, pull_request]
-
+on:
+  pull_request:
+    branches:
+      - master
 
 concurrency:
   group: ${{ github.event.number }}
