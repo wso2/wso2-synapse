@@ -2,6 +2,10 @@ name: Micro Integrator Build with Tests
 
 on: [push, pull_request]
 
+
+concurrency:
+  group: ${{ github.event.number }}
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-latest
