@@ -38,6 +38,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntityEnclosingRequest;
 import static org.apache.synapse.commons.json.Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM;
+import org.apache.http.HttpRequest;
+import org.apache.http.nio.NHttpServerConnection;
+import org.apache.http.nio.reactor.IOSession;
+import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.transport.http.conn.LoggingNHttpServerConnection;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
@@ -521,7 +526,36 @@ public class RelayUtils {
         if (outTransportInfo instanceof ServerWorker) {
             requestContext = ((ServerWorker) outTransportInfo).getRequestContext();
         }
+        log.warn("Server encountered an error, the request message will be consumed and discarded, " +
+                getRequestInfoForLogging(requestContext) + ", Correlation ID = " +
+                requestContext.getProperty(CorrelationConstants.CORRELATION_ID));
         discardMessage(requestContext);
+    }
+
+    /**
+     * Generate a log message containing the request information for the given message context.
+     *
+     * @param msgContext Axis2 Message context which contains the data
+     * @return a log message containing the request information
+     */
+    private static String getRequestInfoForLogging(MessageContext msgContext) {
+
+        NHttpServerConnection conn = (NHttpServerConnection) msgContext.getProperty(
+                PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
+        if (conn instanceof LoggingNHttpServerConnection) {
+            StringBuilder requestInfo = new StringBuilder();
+            HttpRequest httpRequest = conn.getHttpRequest();
+            if (httpRequest != null) {
+                requestInfo.append("HTTP_URL = ").append(httpRequest.getRequestLine().getUri()).append(", ")
+                        .append("HTTP_METHOD = ").append(httpRequest.getRequestLine().getMethod());
+            }
+            IOSession session = ((LoggingNHttpServerConnection) conn).getIOSession();
+            if (session != null && session.getRemoteAddress() != null) {
+                requestInfo.append(", CLIENT_ADDRESS = ").append(session.getRemoteAddress().toString());
+            }
+            return requestInfo.toString();
+        }
+        return "";
     }
 
     /**

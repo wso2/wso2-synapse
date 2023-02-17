@@ -92,7 +92,7 @@ public class PassThroughConstants {
             "PASS_THROUGH_TRANSPORT_WORKER_POOL";
     protected static final String PASS_THROUGH_SOURCE_CONFIGURATION =
             "PASS_THROUGH_SOURCE_CONFIGURATION";
-    protected static final String PASS_THROUGH_SOURCE_CONNECTION = "pass-through.Source-Connection";
+    public static final String PASS_THROUGH_SOURCE_CONNECTION = "pass-through.Source-Connection";
     protected static final String PASS_THROUGH_SOURCE_REQUEST = "pass-through.Source-Request";
 
     protected static final String PASS_THROUGH_TARGET_CONNECTION = "pass-through.Target-Connection";
