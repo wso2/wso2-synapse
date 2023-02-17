@@ -278,4 +278,9 @@ public class TargetResponse {
         }
         return keepAliveTimeout;
     }
+
+    public boolean isForceShutdownConnectionOnComplete() {
+
+        return forceShutdownConnectionOnComplete;
+    }
 }
