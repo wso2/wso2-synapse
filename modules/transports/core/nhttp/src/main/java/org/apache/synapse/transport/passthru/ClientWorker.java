@@ -41,6 +41,7 @@ import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -222,6 +223,11 @@ public class ClientWorker implements Runnable {
                        getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_START_TIME, System.currentTimeMillis());
         }
         try {
+            // If an error has happened in the request processing, consumes the data in pipe completely and discard it
+            if (response.isForceShutdownConnectionOnComplete()) {
+                RelayUtils.discardRequestMessage(requestMessageContext);
+            }
+
             if (expectEntityBody) {
             	  String cType = response.getHeader(HTTP.CONTENT_TYPE);
                   if(cType == null){
