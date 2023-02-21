@@ -46,7 +46,8 @@ public abstract class AbstractApiHandler {
 
     protected boolean dispatchToAPI(Collection<API> apiSet, MessageContext synCtx) {
         //Since swapping elements are not possible with sets, Collection is converted to a List
-        List<API> defaultStrategyApiSet = new ArrayList<API>(apiSet);
+        List<API> defaultStrategyApiSet = new ArrayList<>(apiSet);
+        List<API> apiSetAsArray = new ArrayList<>(apiSet);
         API defaultAPI = null;
 
         Object apiObject = synCtx.getProperty(RESTConstants.PROCESSED_API);
@@ -55,7 +56,7 @@ public abstract class AbstractApiHandler {
                 return true;
             }
         } else {
-            for (API api : apiSet) {
+            for (API api : apiSetAsArray) {
                 if (identifyAPI(api, synCtx, defaultStrategyApiSet)) {
                     return true;
                 }
