@@ -65,6 +65,11 @@ public interface CryptoConstants {
      */
     public final static String BOUNCY_CASTLE_PROVIDER = "BC";
 
+    /**
+     * BouncyCastle FIPS provider "BCFIPS"
+     */
+    public final static String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+
 
     /**
      * Secure vault namespace to be used when resolving axis2 config passwords.
