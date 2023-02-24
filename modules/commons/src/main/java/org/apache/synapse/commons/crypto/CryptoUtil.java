@@ -20,7 +20,6 @@ package org.apache.synapse.commons.crypto;
 import org.apache.axis2.AxisFault;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.wso2.securevault.CipherFactory;
 import org.wso2.securevault.CipherOperationMode;
 import org.wso2.securevault.DecryptionProvider;
@@ -30,6 +29,7 @@ import org.wso2.securevault.definition.IdentityKeyStoreInformation;
 import org.wso2.securevault.definition.KeyStoreInformationFactory;
 import org.wso2.securevault.keystore.IdentityKeyStoreWrapper;
 
+import java.security.Provider;
 import java.security.Security;
 import java.util.Properties;
 
@@ -55,7 +55,7 @@ public class CryptoUtil {
     }
 
     /**
-     * Method to initialise crypto util. which will generate the required chiper etc.
+     * Method to initialise crypto util. which will generate the required cipher etc.
      *
      * @param secureVaultProperties
      * @throws org.apache.axis2.AxisFault
@@ -106,10 +106,20 @@ public class CryptoUtil {
         cipherInformation.setInType(null); //skipping decoding encoding in securevault
         cipherInformation.setOutType(null); //skipping decoding encoding in securevault
         if (provider != null && !provider.isEmpty()) {
+            String providerClass;
             if (CryptoConstants.BOUNCY_CASTLE_PROVIDER.equals(provider)) {
-                Security.addProvider(new BouncyCastleProvider());
-                cipherInformation.setProvider(provider);
+                providerClass = "org.bouncycastle.jce.provider.BouncyCastleProvider";
+            } else if (CryptoConstants.BOUNCY_CASTLE_FIPS_PROVIDER.equals(provider)) {
+                providerClass = "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider";
+            } else {
+                throw new AxisFault("Unsupported JCE Provider: " + provider);
             }
+            try {
+                Security.addProvider((Provider) Class.forName(providerClass).getDeclaredConstructor().newInstance());
+            } catch (Exception e) {
+                throw new AxisFault("Error while initializing the JCE Provider: " + provider, e);
+            }
+            cipherInformation.setProvider(provider);
             //todo need to add other providers if there are any.
         }
         baseCipher = CipherFactory.createCipher(cipherInformation, identityKeyStoreWrapper);
