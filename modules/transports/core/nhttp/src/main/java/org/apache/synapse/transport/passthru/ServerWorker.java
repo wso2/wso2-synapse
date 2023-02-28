@@ -71,14 +71,12 @@ import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.security.cert.CertificateException;
-import javax.security.cert.X509Certificate;
 import javax.xml.parsers.FactoryConfigurationError;
 
 /**
@@ -555,10 +553,8 @@ public class ServerWorker implements Runnable {
                     Certificate[] certificates = ssliosession.getSSLSession().getPeerCertificates();
                     X509Certificate[] x509Certificates = new X509Certificate[certificates.length];
                     for (int i = 0; i < certificates.length; i++) {
-                        try {
-                            x509Certificates[i] = X509Certificate.getInstance(certificates[i].getEncoded());
-                        } catch (CertificateException | CertificateEncodingException e) {
-                            log.error("Error while converting client certificate", e);
+                        if (certificates[i] instanceof X509Certificate) {
+                            x509Certificates[i] = (X509Certificate) certificates[i];
                         }
                     }
                     msgContext.setProperty(NhttpConstants.SSL_CLIENT_AUTH_CERT_X509, x509Certificates);
