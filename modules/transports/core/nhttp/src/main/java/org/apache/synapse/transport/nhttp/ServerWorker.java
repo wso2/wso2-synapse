@@ -49,6 +49,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.*;
 
 /**
@@ -166,8 +168,16 @@ public class ServerWorker implements Runnable {
             if (session != null && msgContext.getTransportIn() != null
                 && msgContext.getTransportIn().getParameter(NhttpConstants.SSL_VERIFY_CLIENT) != null) {
                 try {
-                    msgContext.setProperty(NhttpConstants.SSL_CLIENT_AUTH_CERT_X509,
-                                           session.getSSLSession().getPeerCertificateChain());
+                    Certificate[] certificates = session.getSSLSession().getPeerCertificates();
+                    X509Certificate[] x509Certificates = new X509Certificate[certificates.length];
+                    for (int i = 0; i < certificates.length; i++) {
+                        if (certificates[i] instanceof X509Certificate) {
+                            x509Certificates[i] = (X509Certificate) certificates[i];
+                        }
+                    }
+                    msgContext.setProperty(NhttpConstants.SSL_CLIENT_AUTH_CERT_X509, x509Certificates);
+                    msgContext.setProperty(NhttpConstants.SSL_CLIENT_AUTH_CERT,
+                            session.getSSLSession().getPeerCertificates());
                 } catch (SSLPeerUnverifiedException e) {
                     //Peer Certificate Chain may not be available always.(in case of verify client is optional)
                     if (log.isTraceEnabled()) {
