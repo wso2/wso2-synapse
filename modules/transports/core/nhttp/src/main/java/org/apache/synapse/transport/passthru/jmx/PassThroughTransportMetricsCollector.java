@@ -37,12 +37,16 @@ public class PassThroughTransportMetricsCollector extends MetricsCollector {
 
     private ConnectionsView view;
     private boolean listener;
+    private static final String PASSTHROUGH_METRICS_COLLECTION_DISABLED = "passthrough.metrics.collection.disabled";
+    private boolean metricsCollectionDisabled;
 
     public PassThroughTransportMetricsCollector(boolean listener, String schemeName)
             throws AxisFault {
         this.listener = listener;
         String name = schemeName + "-" + (listener ? "listener" : "sender");
         this.view = new ConnectionsView(name);
+        this.metricsCollectionDisabled =
+                Boolean.parseBoolean(System.getProperty(PASSTHROUGH_METRICS_COLLECTION_DISABLED));
     }
 
     public void destroy() {
@@ -50,42 +54,58 @@ public class PassThroughTransportMetricsCollector extends MetricsCollector {
     }
 
     public void connected() {
-        view.connected();
+        if (!metricsCollectionDisabled) {
+            view.connected();
+        }
     }
 
     public void disconnected() {
-        view.disconnected();
+        if (!metricsCollectionDisabled) {
+            view.disconnected();
+        }
     }
 
     public void requestReceived() {
-        view.requestReceived();
+        if (!metricsCollectionDisabled) {
+            view.requestReceived();
+        }
     }
 
     public void requestServed() {
-        view.requestServed();
+        if (!metricsCollectionDisabled) {
+            view.requestServed();
+        }
     }
 
     public void timeoutOccured() {
-        view.timeoutOccured();
+        if (!metricsCollectionDisabled) {
+            view.timeoutOccured();
+        }
     }
 
     public void exceptionOccured() {
-        view.exceptionOccured();
+        if (!metricsCollectionDisabled) {
+            view.exceptionOccured();
+        }
     }
 
     @Override
     public void notifyReceivedMessageSize(long l) {
         super.notifyReceivedMessageSize(l);
-        if (l > 0) {
-            view.notifyMessageSize(l, listener);
+        if (!metricsCollectionDisabled) {
+            if (l > 0) {
+                view.notifyMessageSize(l, listener);
+            }
         }
     }
 
     @Override
     public void notifySentMessageSize(long l) {
         super.notifySentMessageSize(l);
-        if (l > 0) {
-            view.notifyMessageSize(l, !listener);
+        if (!metricsCollectionDisabled) {
+            if (l > 0) {
+                view.notifyMessageSize(l, !listener);
+            }
         }
     }
 
