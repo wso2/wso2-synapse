@@ -524,4 +524,6 @@ public abstract class TemplateProcessor {
         throw new TemplateProcessorException(msg);
     }
 
+    public abstract boolean getTemplateStatus();
+
 }

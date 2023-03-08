@@ -97,4 +97,15 @@ public class RegexTemplateProcessor extends TemplateProcessor {
         replacement = argValues[argIndex - 1];
         return replacement;
     }
+
+    /**
+     * Get whether the template format was received
+     *
+     * @return Status of the format of the template
+     */
+    public boolean getTemplateStatus(){
+        // since this method is added to the freemarker template, it is here for consistency
+        return true;
+    }
+
 }

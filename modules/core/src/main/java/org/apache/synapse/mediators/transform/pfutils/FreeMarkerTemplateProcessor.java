@@ -90,6 +90,7 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
     private boolean usingArgs;
 
     private static final Log log = LogFactory.getLog(FreeMarkerTemplateProcessor.class);
+    private boolean templateLoaded = false;
 
     private static final String DEFAULT_FREEMARKER_BASE_PATH_CONF = "conf:/";
     private static final String DEFAULT_FREEMARKER_BASE_PATH_GOV = "gov:/";
@@ -116,6 +117,7 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
         String format = getFormat();
         if (format != null) {
             compileFreeMarkerTemplate(format, getMediaType());
+            templateLoaded = true;
         }
     }
 
@@ -491,4 +493,14 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
 
         return NOT_SUPPORTING_PAYLOAD_TYPE;
     }
+
+    /**
+     * Get whether the template format was received
+     *
+     * @return Status of the format of the template
+     */
+    public boolean getTemplateStatus(){
+        return templateLoaded;
+    }
+
 }

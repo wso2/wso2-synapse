@@ -189,7 +189,8 @@ public class PayloadFactoryMediator extends AbstractMediator {
             } else if (entry instanceof String) {
                 text = (String) entry;
             }
-            if (reCreate) {
+            boolean templateLoaded = templateProcessor.getTemplateStatus();
+            if (reCreate || !templateLoaded) {
                 templateProcessor.setFormat(text);
                 templateProcessor.init();
             }
