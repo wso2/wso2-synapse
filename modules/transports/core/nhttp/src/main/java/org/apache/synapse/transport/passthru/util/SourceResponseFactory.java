@@ -153,11 +153,32 @@ public class SourceResponseFactory {
 	private static void addResponseHeader(SourceResponse sourceResponse, Map transportHeaders) {
 	    for (Object entryObj : transportHeaders.entrySet()) {
 	        Map.Entry entry = (Map.Entry) entryObj;
-	        if (entry.getValue() != null && entry.getKey() instanceof String &&
-	                entry.getValue() instanceof String) {
-	            sourceResponse.addHeader((String) entry.getKey(), (String) entry.getValue());
+	        String headerValue = getHeaderValueAsString(entry.getValue());
+	        if (entry.getKey() instanceof String && headerValue != null) {
+	            sourceResponse.addHeader((String) entry.getKey(), headerValue);
 	        }
 	    }
+    }
+
+    /**
+     * Get the header value as a string.
+     * <p>
+     * If the header value is a string, return it
+     * If the header value is null, return empty string. otherwise the header will get dropped
+     * Else return null to drop the header
+     * </p>
+     *
+     * @param value the header value
+     * @return the header value as a string
+     */
+    private static String getHeaderValueAsString(Object value) {
+
+        if (value instanceof String) {
+            return (String) value;
+        } else if (value == null) {
+            return "";
+        }
+        return null;
     }
 
     private static boolean isPayloadOptionalMethod(String httpMethod) {
