@@ -20,9 +20,11 @@ package org.apache.synapse.api.cors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpStatus;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.RESTConstants;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 
 import java.util.Map;
 import java.util.Set;
@@ -82,6 +84,12 @@ public class CORSHelper {
                         corsConfiguration.getAllowedHeaders());
                 synCtx.setProperty(RESTConstants.INTERNAL_CORS_HEADER_ORIGIN,
                         transportHeaders.get(RESTConstants.CORS_HEADER_ORIGIN));
+
+                // If the request origin is not allowed, set the status code to 403
+                if (isOptionsRequest(synCtx) && allowedOrigin == null) {
+                    ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                            .setProperty(PassThroughConstants.HTTP_SC, HttpStatus.SC_FORBIDDEN);
+                }
             }
         }
 
@@ -123,4 +131,9 @@ public class CORSHelper {
         }
     }
 
+    private static boolean isOptionsRequest(MessageContext synCtx) {
+
+        String method = (String) synCtx.getProperty(RESTConstants.REST_METHOD);
+        return RESTConstants.METHOD_OPTIONS.equals(method);
+    }
 }
