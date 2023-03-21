@@ -55,7 +55,9 @@ public abstract class AbstractApiHandler {
                 return true;
             }
         } else {
-            for (API api : apiSet) {
+            //To avoid apiSet being modified concurrently
+            List<API> duplicateApiSet = new ArrayList<API>(apiSet);
+            for (API api : duplicateApiSet) {
                 if (identifyAPI(api, synCtx, defaultStrategyApiSet)) {
                     return true;
                 }
