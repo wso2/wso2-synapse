@@ -22,6 +22,7 @@ import java.util.Collection;
 import org.apache.synapse.api.API;
 
 import junit.framework.TestCase;
+import org.apache.synapse.endpoints.HTTPEndpoint;
 
 public class SynapseConfigurationTest extends TestCase {
 
@@ -63,5 +64,60 @@ public class SynapseConfigurationTest extends TestCase {
 		API[] apisArray2 = apis.toArray(new API[apis.size()]);
 		//api3 with context /context/test/ctx should be first in the list
 		assertEquals("Order is not correct", api3, apisArray2[0]);	
+	}
+
+	/**
+	 * Test concurrent access of entry definition.
+	 */
+	public void testConcurrentAccessOfEntryDefinition() {
+		// One thread deletes an endpoint and creates the same endpoint again. This simulates API re-deployment.
+		// Another thread tries to get the entry definition of the endpoint. This simulates Send mediator behavior
+		// during API invocation.
+		SynapseConfiguration config = new SynapseConfiguration();
+		HTTPEndpoint endpoint = new HTTPEndpoint();
+		endpoint.setName("endpoint1");
+		config.addEndpoint("endpoint1", endpoint);
+
+		Thread apiReDeploymentThread = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				Thread apiInvocationThread = new Thread(new Runnable() {
+					@Override
+					public void run() {
+						Entry entry = config.getEntryDefinition("endpoint1");
+						assertNull("An Endpoint type Entry does not exist already", entry);
+					}
+				});
+				synchronized (config) {
+					config.removeEndpoint("endpoint1");
+					apiInvocationThread.start();
+					// Wait until the thread is in blocked state.
+					while (apiInvocationThread.getState() != Thread.State.BLOCKED) {
+						try {
+							Thread.sleep(100);
+						} catch (InterruptedException e) {
+							throw new RuntimeException(e);
+						}
+					}
+					assertEquals("API invocation thread should be in BLOCKED state",
+							Thread.State.BLOCKED, apiInvocationThread.getState());
+					config.addEndpoint("endpoint1", endpoint);
+				}
+				try {
+					apiInvocationThread.join();
+				} catch (InterruptedException e) {
+					throw new RuntimeException(e);
+				}
+				assertFalse("API invocation thread should not be live", apiInvocationThread.isAlive());
+				Entry entry = config.getEntryDefinition("endpoint1");
+				assertNull("An Endpoint type Entry does not exist already", entry);
+			}
+		});
+		apiReDeploymentThread.start();
+		try {
+			apiReDeploymentThread.join();
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }
