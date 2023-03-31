@@ -170,6 +170,9 @@ public class ClientWorker implements Runnable {
         });
 
         for (Map.Entry<String, String> headerEntry : headerEntries) {
+            if (headerMap.containsKey(headerEntry.getKey())) {
+                excessHeaders.put(headerEntry.getKey(), headerMap.get(headerEntry.getKey()));
+            }
             headerMap.put(headerEntry.getKey(), headerEntry.getValue());
         }
         responseMsgCtx.setProperty(MessageContext.TRANSPORT_HEADERS, headerMap);
