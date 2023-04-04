@@ -28,12 +28,13 @@ import java.util.regex.Pattern;
  */
 public class ResolverFactory {
 
+    private static final Log LOG = LogFactory.getLog(ResolverFactory.class);
     private static final int RESOLVER_INDEX = 2;
     private static ResolverFactory resolverFactory = new ResolverFactory();
-    private final Pattern rePattern = Pattern.compile("(\\$)([a-zA-Z0-9]+):([_a-zA-Z0-9]+)");
-    private static final Log LOG = LogFactory.getLog(ResolverFactory.class);
+    private final Pattern rePattern = Pattern.compile("(\\$)([_a-zA-Z0-9]+):([_a-zA-Z0-9]+)");
     private static final String SYSTEM_VARIABLE_PREFIX = "$SYSTEM";
     private static final String FILE_PROPERTY_VARIABLE_PREFIX = "$FILE";
+    private static final String CUSTOM_PROPERTY_VARIABLE_PREFIX = "$CUSTOM_";
 
     private Map<String, Class<? extends Resolver>> resolverMap = new HashMap<>();
 
@@ -95,6 +96,25 @@ public class ResolverFactory {
                     throw new ResolverException("Resolver could not be found");
                 }
             }
+        } else if(input.startsWith(CUSTOM_PROPERTY_VARIABLE_PREFIX)) {
+            Matcher matcher = rePattern.matcher(input);
+            Resolver resolverObject = null;
+            if (matcher.find()){
+                String nameWithPlaceholder = matcher.group(RESOLVER_INDEX).toLowerCase();
+                String className = nameWithPlaceholder.substring(CUSTOM_PROPERTY_VARIABLE_PREFIX.length() - 1);
+                Class<? extends Resolver> resolverClass = resolverMap.get(className);
+                if (resolverClass != null) {
+                    try {
+                        resolverObject = resolverClass.newInstance();
+                        resolverObject.setVariable(matcher.group(3));
+                        return resolverObject;
+                    } catch (IllegalAccessException | InstantiationException e) {
+                        throw new ResolverException("Resolver could not be initialized", e);
+                    }
+                } else {
+                    throw new ResolverException("Resolver could not be found");
+                }
+            }
         }
 
         Resolver resolver = new DefaultResolver();
@@ -112,7 +132,7 @@ public class ResolverFactory {
         ServiceLoader<Resolver> loaders = ServiceLoader.load(Resolver.class);
         for (Resolver resolver : loaders) {
             String className = resolver.getClass().getName();
-            String[] packageList = className.split(".");
+            String[] packageList = className.split("\\.");
             className = packageList[packageList.length - 1];
             if (resolverMap.get(className.toLowerCase()) == null) {
                 resolverMap.put(className.toLowerCase(), resolver.getClass());
