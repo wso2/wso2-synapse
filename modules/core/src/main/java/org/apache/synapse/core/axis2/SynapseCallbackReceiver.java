@@ -190,7 +190,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             }
 
             if (callback != null) {
-                messageCtx.removeProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN);
                 org.apache.synapse.MessageContext SynapseOutMsgCtx = callback.getSynapseOutMsgCtx();
                 ConcurrencyThrottlingUtils.decrementConcurrencyThrottleAccessController(SynapseOutMsgCtx);
                 boolean isMarkedForRemoval = false;
@@ -207,7 +206,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     handleNoCallback(messageID, messageCtx);
                     return;
                 }
-
+                messageCtx.removeProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN);
                 if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                     CallbackStatisticCollector.updateParentsForCallback(SynapseOutMsgCtx, messageID);
                     handleMessage(messageID, messageCtx, SynapseOutMsgCtx, (AsyncCallback) callback);
@@ -791,9 +790,12 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
      * @param messageCtx messageContext
      */
     private void handleNoCallback(String messageID, MessageContext messageCtx){
-        log.warn("Synapse received a response for the request with message Id : " +
-                messageID + " and correlation_id : " + messageCtx.getProperty(CorrelationConstants
-                .CORRELATION_ID) + " But a callback is not registered (anymore) to process this response");
+        if (!PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER
+                .equals(messageCtx.getProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN))) {
+            log.warn("Synapse received a response for the request with message Id : " +
+                    messageID + " and correlation_id : " + messageCtx.getProperty(CorrelationConstants
+                    .CORRELATION_ID) + " But a callback is not registered (anymore) to process this response");
+        }
     }
 
     /**
