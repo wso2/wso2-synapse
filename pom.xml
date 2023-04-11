@@ -622,7 +622,7 @@
              <version>${oro.version}</version>
          </dependency>
          <dependency>
-             <groupId>com.jcraft</groupId>
+             <groupId>com.github.mwiede</groupId>
              <artifactId>jsch</artifactId>
              <version>${jsch.version}</version>
          </dependency>
@@ -1494,8 +1494,8 @@
       <truezip.version>6.6</truezip.version>
       <commons.net.version>3.9.0</commons.net.version>
       <commons.net.wso2.version>${commons.net.version}.wso2v1</commons.net.wso2.version>
-      <jsch.version>0.1.55</jsch.version>
-      <jsch.wso2.version>0.1.55.wso2v1</jsch.wso2.version>
+      <jsch.version>0.2.4</jsch.version>
+      <jsch.wso2.version>0.2.4.wso2v1</jsch.wso2.version>
       <oro.version>2.0.8</oro.version>
       <slf4j.version>1.5.6</slf4j.version>
       <mina.version>2.1.6</mina.version>
