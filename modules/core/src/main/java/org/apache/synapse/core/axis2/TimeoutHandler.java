@@ -233,6 +233,8 @@ public class TimeoutHandler extends TimerTask {
                     if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                         CallbackStatisticCollector.callbackCompletionEvent(callback.getSynapseOutMsgCtx(), (String) key);
                     }
+                    // Call the TransportSender's onAppError method to release any resources
+                    callback.getAxis2OutMsgCtx().getTransportOut().getSender().onAppError(callback.getAxis2OutMsgCtx());
                 }
             }
         }
