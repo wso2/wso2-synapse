@@ -21,6 +21,7 @@ package org.apache.synapse.core.axis2;
 
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.axis2.description.TransportOutDescription;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.FaultHandler;
@@ -233,8 +234,11 @@ public class TimeoutHandler extends TimerTask {
                     if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                         CallbackStatisticCollector.callbackCompletionEvent(callback.getSynapseOutMsgCtx(), (String) key);
                     }
-                    // Call the TransportSender's onAppError method to release any resources
-                    callback.getAxis2OutMsgCtx().getTransportOut().getSender().onAppError(callback.getAxis2OutMsgCtx());
+                    TransportOutDescription transportOut = callback.getAxis2OutMsgCtx().getTransportOut();
+                    if (transportOut != null && transportOut.getSender() != null) {
+                        // Call the TransportSender's onAppError method to release any resources
+                        transportOut.getSender().onAppError(callback.getAxis2OutMsgCtx());
+                    }
                 }
             }
         }
