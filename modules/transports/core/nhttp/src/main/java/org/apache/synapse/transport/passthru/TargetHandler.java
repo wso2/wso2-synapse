@@ -65,6 +65,7 @@ public class TargetHandler implements NHttpClientEventHandler {
 
     /** log for correlation.log */
     private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
+    private static final Log transportLatencyLog = LogFactory.getLog(PassThroughConstants.TRANSPORT_LATENCY_LOGGER);
 
     /** Delivery agent */
     private final DeliveryAgent deliveryAgent;
@@ -87,6 +88,7 @@ public class TargetHandler implements NHttpClientEventHandler {
     public static final String PROPERTY_FILE = "passthru-http.properties";
     public static final String MESSAGE_SIZE_VALIDATION = "message.size.validation.enabled";
     public static final String VALID_MAX_MESSAGE_SIZE = "valid.max.message.size.in.bytes";
+    public static final String CONNECTION_POOL = "CONNECTION_POOL";
 
     public TargetHandler(DeliveryAgent deliveryAgent,
                          ClientConnFactory connFactory,
@@ -113,6 +115,10 @@ public class TargetHandler implements NHttpClientEventHandler {
     }
 
     public void connected(NHttpClientConnection conn, Object o) {
+        long connectionCreationTimestamp = 0;
+        if (transportLatencyLog.isDebugEnabled()) {
+            connectionCreationTimestamp = System.currentTimeMillis();
+        }
         assert o instanceof HostConnections : "Attachment should be a HostConnections";
         HostConnections pool = (HostConnections) o;
         conn.getContext().setAttribute(PassThroughConstants.CONNECTION_POOL, pool);
@@ -135,6 +141,10 @@ public class TargetHandler implements NHttpClientEventHandler {
             // Requires a proxy tunnel
             ProxyTunnelHandler tunnelHandler = new ProxyTunnelHandler(route, connFactory);
             context.setAttribute(PassThroughConstants.TUNNEL_HANDLER, tunnelHandler);
+        }
+        if (transportLatencyLog.isDebugEnabled()) {
+            transportLatencyLog.debug(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                    "Connection established at time stamp: " + connectionCreationTimestamp + " for route: " + route);
         }
     }
 
@@ -179,6 +189,13 @@ public class TargetHandler implements NHttpClientEventHandler {
                 request.start(conn);
                 targetConfiguration.getMetrics().incrementMessagesSent();
             }
+
+            if (transportLatencyLog.isDebugEnabled()) {
+                String route = request == null ? "null" : request.getRoute().toString();
+                transportLatencyLog.debug(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                        "Request writing started at time stamp: " + System.currentTimeMillis() + " and route: " +
+                        route);
+            }
             context.setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME, System.currentTimeMillis());
             context.setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
         } catch (IOException e) {
@@ -217,6 +234,14 @@ public class TargetHandler implements NHttpClientEventHandler {
     public void outputReady(NHttpClientConnection conn, ContentEncoder encoder) {
         ProtocolState connState = null;
         MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
+        if (transportLatencyLog.isDebugEnabled()) {
+            HttpContext context = conn.getContext();
+            HostConnections pool = (HostConnections) context.getAttribute(CONNECTION_POOL);
+            String route = pool == null ? "null" : pool.getRoute().toString();
+            transportLatencyLog.debug(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                    "Writing request chunk to Backend at time stamp: " + System.currentTimeMillis() +
+                    " and route: " + route);
+        }
         try {
             connState = TargetContext.getState(conn);
             if (connState != ProtocolState.REQUEST_HEAD &&
@@ -281,6 +306,13 @@ public class TargetHandler implements NHttpClientEventHandler {
 
     public void responseReceived(NHttpClientConnection conn) {
         HttpContext context = conn.getContext();
+        if (transportLatencyLog.isDebugEnabled()) {
+            HostConnections pool = (HostConnections) context.getAttribute(CONNECTION_POOL);
+            String route = pool == null ? "null" : pool.getRoute().toString();
+            transportLatencyLog.debug(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                    "Received Response headers from Backend at time stamp: " + System.currentTimeMillis() +
+                    " and route: " + route);
+        }
         if (isMessageSizeValidationEnabled) {
             context.setAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
         }
@@ -486,6 +518,14 @@ public class TargetHandler implements NHttpClientEventHandler {
     public void inputReady(NHttpClientConnection conn, ContentDecoder decoder) {
         ProtocolState connState;
         MessageContext msgCtx = TargetContext.get(conn).getRequestMsgCtx();
+        if (transportLatencyLog.isDebugEnabled()) {
+            HttpContext context = conn.getContext();
+            HostConnections pool = (HostConnections) context.getAttribute(CONNECTION_POOL);
+            String route = pool == null ? "null" : pool.getRoute().toString();
+            transportLatencyLog.debug(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                    "Response chunk received from Backend at time stamp: " + System.currentTimeMillis() +
+                    " and route: " + route);
+        }
         try {
             connState = TargetContext.getState(conn);
             if (connState.compareTo(ProtocolState.RESPONSE_HEAD) < 0) {

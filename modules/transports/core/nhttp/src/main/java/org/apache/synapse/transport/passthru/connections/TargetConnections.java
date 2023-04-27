@@ -22,6 +22,8 @@ import org.apache.http.HttpHost;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.nio.reactor.ConnectingIOReactor;
+import org.apache.log4j.MDC;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.transport.passthru.ConnectCallback;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.TargetContext;
@@ -41,6 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class TargetConnections {
     private static final Log log = LogFactory.getLog(TargetConnections.class);
+    private static final Log transportLatencyLog = LogFactory.getLog(PassThroughConstants.TRANSPORT_LATENCY_LOGGER);
 
     /** map to hold the ConnectionPools. The key is host:port */
     private final Map<HttpRoute, HostConnections> poolMap =
@@ -103,11 +106,22 @@ public class TargetConnections {
             if (pool.canHaveMoreConnections()) {
                 HttpHost host = route.getProxyHost() != null ? route.getProxyHost() : route.getTargetHost();
                 ioReactor.connect(new InetSocketAddress(host.getHostName(), host.getPort()), null, pool, callback);
+
+                if (transportLatencyLog.isDebugEnabled()) {
+                    transportLatencyLog.debug(MDC.get(CorrelationConstants.CORRELATION_MDC_PROPERTY) + "|" +
+                            "Requested connection at time stamp: " + System.currentTimeMillis() +
+                            " and route: " + route);
+                }
             } else {
                 log.warn("Connection pool reached maximum allowed connections for route "
                         + route + ". Target server may have become slow");
             }
         } else {
+            if (transportLatencyLog.isDebugEnabled()) {
+                transportLatencyLog.debug(MDC.get(CorrelationConstants.CORRELATION_MDC_PROPERTY) + "|" +
+                        "Connection fetched from pool at: " + System.currentTimeMillis() +
+                        " and route: " + route);
+            }
             return connection;
         }
 

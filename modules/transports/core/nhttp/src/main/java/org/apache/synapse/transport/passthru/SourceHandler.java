@@ -65,6 +65,7 @@ public class SourceHandler implements NHttpServerEventHandler {
     private static Log log = LogFactory.getLog(SourceHandler.class);
     /** logger for correlation.log */
     private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
+    private static final Log transportLatencyLog = LogFactory.getLog(PassThroughConstants.TRANSPORT_LATENCY_LOGGER);
 
     private final SourceConfiguration sourceConfiguration;
 
@@ -127,6 +128,10 @@ public class SourceHandler implements NHttpServerEventHandler {
 
     public void requestReceived(NHttpServerConnection conn) {
         try {
+            long requestArrivalTimestamp = 0L;
+            if (transportLatencyLog.isDebugEnabled()) {
+                requestArrivalTimestamp = System.currentTimeMillis();
+            }
             HttpContext httpContext = conn.getContext();
             setCorrelationId(conn);
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
@@ -140,6 +145,13 @@ public class SourceHandler implements NHttpServerEventHandler {
                 httpContext.setAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
             }
             SourceRequest request = getSourceRequest(conn);
+            if (transportLatencyLog.isDebugEnabled()) {
+                String method = request == null ? "null" : request.getMethod();
+                String uri = request == null ? "null" : request.getUri();
+                transportLatencyLog.debug(httpContext.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                        "Received Request from Client at time stamp: " + requestArrivalTimestamp +
+                        " and Method/URL: " + method + "/" +uri);
+            }
             if (request == null) {
                 return;
             }
@@ -330,12 +342,20 @@ public class SourceHandler implements NHttpServerEventHandler {
                 }
             
                 response.start(conn);
-                conn.getContext().setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_START_TIME,
+                HttpContext context = conn.getContext();
+                if (transportLatencyLog.isDebugEnabled()) {
+                    String method = request == null ? "null" : request.getMethod();
+                    String uri = request == null ? "null" : request.getUri();
+                    transportLatencyLog.debug(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                            "Response writing started at timestamp: " + System.currentTimeMillis() +
+                            " and Method/URL: " + method + "/" +uri);
+                }
+                context.setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_START_TIME,
                         System.currentTimeMillis());
                 metrics.incrementMessagesSent();
                 if (!response.hasEntity()) {
                    // Update stats as outputReady will not be triggered for no entity responses
-                    HttpContext context = conn.getContext();
+                    context = conn.getContext();
                     if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                         logCorrelationRoundTrip(context,request);
                     }
@@ -406,6 +426,13 @@ public class SourceHandler implements NHttpServerEventHandler {
 			if (encoder.isCompleted()) {
                 HttpContext context = conn.getContext();
                 long departure = System.currentTimeMillis();
+                if (transportLatencyLog.isDebugEnabled()) {
+                    String method = request == null ? "null" : request.getMethod();
+                    String uri = request == null ? "null" : request.getUri();
+                    transportLatencyLog.debug(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                            "Response writing completed at timestamp: " + departure + " and Method/URL: " +
+                            method + "/" +uri);
+                }
                 context.setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_END_TIME,departure);
                 context.setAttribute(PassThroughConstants.RES_DEPARTURE_TIME,departure);
 

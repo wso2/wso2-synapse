@@ -24,12 +24,15 @@ import org.apache.axis2.transport.base.threads.NativeWorkerPool;
 import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
+import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
+import org.apache.synapse.transport.passthru.connections.HostConnections;
 import org.apache.synapse.transport.passthru.connections.TargetConnections;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 import org.junit.Test;
@@ -126,6 +129,10 @@ public class TargetResponseTest extends TestCase {
         WorkerPool workerPool = new NativeWorkerPool(3, 4, 5, 5, "name", "id");
         PassThroughTransportMetricsCollector metrics = new PassThroughTransportMetricsCollector(true, "testScheme");
 
+        HostConnections pool = new HostConnections(new HttpRoute(new HttpHost("localhost")), 1024);
+        HttpContext context = PowerMockito.mock(HttpContext.class);
+        context.setAttribute("CONNECTION_POOL", pool);
+
         TargetConfiguration targetConfiguration = new TargetConfiguration(configurationContext, null, workerPool,
                 metrics, null);
         targetConfiguration.build();
@@ -141,6 +148,7 @@ public class TargetResponseTest extends TestCase {
         PowerMockito.when(TargetContext.get(any(NHttpClientConnection.class))).thenReturn(cntxt);
         PowerMockito.when(decoder.read(any(ByteBuffer.class))).thenReturn(12);
         PowerMockito.when(decoder.isCompleted()).thenReturn(true);
+        PowerMockito.when(conn.getContext()).thenReturn(context);
 
         TargetResponse targetResponse = new TargetResponse(targetConfiguration, response, conn, true, false);
         targetResponse.start(conn);

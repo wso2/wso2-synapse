@@ -25,12 +25,15 @@ import org.apache.axis2.transport.base.threads.NativeWorkerPool;
 import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpHost;
+import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
+import org.apache.synapse.transport.passthru.connections.HostConnections;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -80,6 +83,9 @@ public class TargetHandlerTest extends TestCase {
     @Test
     public void testOutputReady() throws Exception {
         DeliveryAgent deliveryAgent = mock(DeliveryAgent.class);
+        HostConnections pool = new HostConnections(new HttpRoute(new HttpHost("localhost")), 1024);
+        HttpContext context = mock(HttpContext.class);
+        context.setAttribute("CONNECTION_POOL", pool);
         ClientConnFactory connFactory = mock(ClientConnFactory.class);
         ConfigurationContext configurationContext = new ConfigurationContext(new AxisConfiguration());
         WorkerPool workerPool = new NativeWorkerPool(3, 4, 5, 5, "name", "id");
@@ -98,6 +104,7 @@ public class TargetHandlerTest extends TestCase {
         when(TargetContext.getState(conn)).thenReturn(ProtocolState.REQUEST_HEAD);
         when(TargetContext.getRequest(conn)).thenReturn(request);
         when(request.hasEntityBody()).thenReturn(true);
+        when(conn.getContext()).thenReturn(context);
         when(request.write(conn, encoder)).thenReturn(12);
         when(encoder.isCompleted()).thenReturn(true);
         targetHandler.outputReady(conn, encoder);
@@ -113,6 +120,9 @@ public class TargetHandlerTest extends TestCase {
     public void testInputReady() throws Exception {
         DeliveryAgent deliveryAgent = mock(DeliveryAgent.class);
         ClientConnFactory connFactory = mock(ClientConnFactory.class);
+        HostConnections pool = new HostConnections(new HttpRoute(new HttpHost("localhost")), 1024);
+        HttpContext context = mock(HttpContext.class);
+        context.setAttribute("CONNECTION_POOL", pool);
         ConfigurationContext configurationContext = new ConfigurationContext(new AxisConfiguration());
         WorkerPool workerPool = new NativeWorkerPool(3, 4, 5, 5, "name", "id");
         PassThroughTransportMetricsCollector metrics = new PassThroughTransportMetricsCollector(true, "testScheme");
@@ -127,6 +137,7 @@ public class TargetHandlerTest extends TestCase {
         ContentDecoder decoder = mock(ContentDecoder.class);
         mockStatic(TargetContext.class);
         when(TargetContext.get(conn)).thenReturn(targetContext);
+        when(conn.getContext()).thenReturn(context);
         when(TargetContext.getState(conn)).thenReturn(ProtocolState.RESPONSE_HEAD);
         when(TargetContext.getResponse(conn)).thenReturn(response);
         when(decoder.isCompleted()).thenReturn(true);
