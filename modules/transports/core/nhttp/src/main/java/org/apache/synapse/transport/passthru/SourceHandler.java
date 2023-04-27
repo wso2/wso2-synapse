@@ -213,6 +213,10 @@ public class SourceHandler implements NHttpServerEventHandler {
     public void inputReady(NHttpServerConnection conn,
                            ContentDecoder decoder) {
         try {
+            long chunkReadStartTime = System.currentTimeMillis();
+            if (conn.getContext().getAttribute(PassThroughConstants.REQ_FROM_CLIENT_BODY_READ_START_TIME) == null) {
+                conn.getContext().setAttribute(PassThroughConstants.REQ_FROM_CLIENT_BODY_READ_START_TIME, chunkReadStartTime);
+            }
             ProtocolState protocolState = SourceContext.getState(conn);
 
             if (protocolState != ProtocolState.REQUEST_HEAD
@@ -226,6 +230,30 @@ public class SourceHandler implements NHttpServerEventHandler {
             SourceRequest request = SourceContext.getRequest(conn);
 
             int readBytes = request.read(conn, decoder);
+
+            long chunkReadEndTime = System.currentTimeMillis();
+            if (transportLatencyLog.isTraceEnabled()) {
+                String method = conn.getHttpRequest().getRequestLine().getMethod().toUpperCase();
+                String uri = conn.getHttpRequest().getRequestLine().getUri();
+                transportLatencyLog.trace(conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                        "Request chunk from Client with Method/URL: " + method + "/" + uri +
+                        " reading completed at time stamp: " + System.currentTimeMillis() +
+                        " and the time taken to read the chunk: " + (chunkReadEndTime - chunkReadStartTime));
+            }
+            if (decoder.isCompleted()) {
+                if (transportLatencyLog.isDebugEnabled()) {
+                    String method = conn.getHttpRequest().getRequestLine().getMethod().toUpperCase();
+                    String uri = conn.getHttpRequest().getRequestLine().getUri();
+                    long requestReadTime = chunkReadEndTime - (long) conn.getContext()
+                            .getAttribute(PassThroughConstants.REQ_FROM_CLIENT_BODY_READ_START_TIME);
+                    transportLatencyLog.debug(conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                            "Request from Client with Method/URL: " + method + "/" + uri +
+                            " has been completely read at time stamp: " + chunkReadEndTime +
+                            " and the time taken to read the request: " + requestReadTime);
+                }
+                conn.getContext().removeAttribute(PassThroughConstants.REQ_FROM_CLIENT_BODY_READ_START_TIME);
+            }
+
             if (isMessageSizeValidationEnabled) {
                 HttpContext httpContext = conn.getContext();
                 //this is introduced as some transports which extends passthrough source handler which have overloaded
@@ -382,6 +410,10 @@ public class SourceHandler implements NHttpServerEventHandler {
     public void outputReady(NHttpServerConnection conn,
                             ContentEncoder encoder) {
         try {
+            long chunkWriteStartTime = System.currentTimeMillis();
+            if (conn.getContext().getAttribute(PassThroughConstants.RES_TO_CLIENT_BODY_WRITE_START_TIME) == null) {
+                conn.getContext().setAttribute(PassThroughConstants.RES_TO_CLIENT_BODY_WRITE_START_TIME, chunkWriteStartTime);
+            }
             ProtocolState protocolState = SourceContext.getState(conn);
             
             //special case to handle WSDLs
@@ -422,26 +454,38 @@ public class SourceHandler implements NHttpServerEventHandler {
             SourceResponse response = SourceContext.getResponse(conn);
 
             int bytesSent = response.write(conn, encoder);
-            
-			if (encoder.isCompleted()) {
+
+            long chunkWriteEndTime = System.currentTimeMillis();
+            if (transportLatencyLog.isTraceEnabled()) {
+                String method = request == null ? "null" : request.getMethod();
+                String uri = request == null ? "null" : request.getUri();
+                transportLatencyLog.trace(conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                        "Response chunk to Client with Method/URL: " + method + "/" + uri +
+                        " writing completed at timestamp: " + chunkWriteEndTime +
+                        " and the time taken to write chunk:" + (chunkWriteEndTime - chunkWriteStartTime));
+            }
+            if (encoder.isCompleted()) {
                 HttpContext context = conn.getContext();
-                long departure = System.currentTimeMillis();
                 if (transportLatencyLog.isDebugEnabled()) {
                     String method = request == null ? "null" : request.getMethod();
                     String uri = request == null ? "null" : request.getUri();
+                    long responseWriteTime = chunkWriteEndTime - (long) context.getAttribute(PassThroughConstants.RES_TO_CLIENT_BODY_WRITE_START_TIME);
                     transportLatencyLog.debug(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
-                            "Response writing completed at timestamp: " + departure + " and Method/URL: " +
-                            method + "/" +uri);
+                            "Response writing completed at timestamp: " + chunkWriteEndTime + " and Method/URL: " +
+                            "Response with Method/URL: " + method + "/" + uri +
+                            " has been completely written at timestamp: " + chunkWriteEndTime +
+                            " and the time taken to write response:" + responseWriteTime);
                 }
-                context.setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_END_TIME,departure);
-                context.setAttribute(PassThroughConstants.RES_DEPARTURE_TIME,departure);
+                context.removeAttribute(PassThroughConstants.RES_TO_CLIENT_BODY_WRITE_START_TIME);
+                context.setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_END_TIME, chunkWriteEndTime);
+                context.setAttribute(PassThroughConstants.RES_DEPARTURE_TIME, chunkWriteEndTime);
 
                 if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                     logCorrelationRoundTrip(context, request);
                 }
                 updateMetricsView(context);
-			}
-			endTransaction(conn);
+            }
+            endTransaction(conn);
             metrics.incrementBytesSent(bytesSent);
         } catch (IOException e) {
             logIOException(conn, e);
