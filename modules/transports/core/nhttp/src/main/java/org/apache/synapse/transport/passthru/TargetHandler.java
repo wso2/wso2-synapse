@@ -234,11 +234,11 @@ public class TargetHandler implements NHttpClientEventHandler {
     public void outputReady(NHttpClientConnection conn, ContentEncoder encoder) {
         ProtocolState connState = null;
         MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
-        if (transportLatencyLog.isDebugEnabled()) {
+        if (transportLatencyLog.isTraceEnabled()) {
             HttpContext context = conn.getContext();
             HostConnections pool = (HostConnections) context.getAttribute(CONNECTION_POOL);
             String route = pool == null ? "null" : pool.getRoute().toString();
-            transportLatencyLog.debug(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+            transportLatencyLog.trace(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
                     "Writing request chunk to Backend at time stamp: " + System.currentTimeMillis() +
                     " and route: " + route);
         }
@@ -518,11 +518,11 @@ public class TargetHandler implements NHttpClientEventHandler {
     public void inputReady(NHttpClientConnection conn, ContentDecoder decoder) {
         ProtocolState connState;
         MessageContext msgCtx = TargetContext.get(conn).getRequestMsgCtx();
-        if (transportLatencyLog.isDebugEnabled()) {
+        if (transportLatencyLog.isTraceEnabled()) {
             HttpContext context = conn.getContext();
             HostConnections pool = (HostConnections) context.getAttribute(CONNECTION_POOL);
             String route = pool == null ? "null" : pool.getRoute().toString();
-            transportLatencyLog.debug(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+            transportLatencyLog.trace(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
                     "Response chunk received from Backend at time stamp: " + System.currentTimeMillis() +
                     " and route: " + route);
         }
