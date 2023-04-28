@@ -523,7 +523,7 @@ public class SourceHandler implements NHttpServerEventHandler {
 
         SourceContext.updateState(conn, ProtocolState.CLOSED);
    
-        sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
+        sourceConfiguration.getSourceConnections().closeConnection(conn, true);
 		if (isTimeoutOccurred) {
 			rollbackTransaction(conn);
 		}        
@@ -578,7 +578,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         metrics.disconnected();
 
         SourceContext.updateState(conn, ProtocolState.CLOSED);
-        sourceConfiguration.getSourceConnections().shutDownConnection(conn, isFault);
+        sourceConfiguration.getSourceConnections().closeConnection(conn, isFault);
 		if (isFault) {
 			rollbackTransaction(conn);
 		}        
