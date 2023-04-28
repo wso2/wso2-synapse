@@ -234,6 +234,9 @@ public class DeliveryAgent {
                 MessageContext messageContext = queue.poll();
 
                 if (messageContext != null) {
+                    messageContext.setProperty(PassThroughConstants.PASS_THROUGH_TARGET_CONNECTION, conn);
+                    messageContext.setProperty(PassThroughConstants.PASS_THROUGH_TARGET_CONFIGURATION,
+                            targetConfiguration);
                     tryNextMessage(messageContext, route, conn);
                     conn = null;
                 }
