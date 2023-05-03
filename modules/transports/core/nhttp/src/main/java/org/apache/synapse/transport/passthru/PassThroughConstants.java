@@ -96,7 +96,7 @@ public class PassThroughConstants {
             "PASS_THROUGH_SOURCE_CONFIGURATION";
     public static final String PASS_THROUGH_SOURCE_CONNECTION = "pass-through.Source-Connection";
     protected static final String PASS_THROUGH_SOURCE_REQUEST = "pass-through.Source-Request";
-
+    protected static final String PASS_THROUGH_TARGET_CONFIGURATION = "PASS_THROUGH_TARGET_CONFIGURATION";
     protected static final String PASS_THROUGH_TARGET_CONNECTION = "pass-through.Target-Connection";
     protected static final String PASS_THROUGH_TARGET_RESPONSE = "pass-through.Target-Response";
 

@@ -41,6 +41,7 @@ import org.apache.http.HttpException;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
+import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.nio.reactor.IOReactorExceptionHandler;
@@ -622,6 +623,29 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
             SourceContext.updateState(conn, ProtocolState.CLOSED);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
         }
+    }
+
+    /**
+     * This method will close the target connection upon endpoint timeout.
+     *
+     * @param msgContext The outgoing message context sent via the sender
+     */
+    @Override
+    public void onAppError(MessageContext msgContext) {
+
+        NHttpClientConnection targetConn = (NHttpClientConnection) msgContext.getProperty(
+                PassThroughConstants.PASS_THROUGH_TARGET_CONNECTION);
+
+        TargetConfiguration targetConfiguration = (TargetConfiguration) msgContext.getProperty(
+                PassThroughConstants.PASS_THROUGH_TARGET_CONFIGURATION);
+
+        if (targetConn == null || targetConfiguration == null) {
+            log.warn("Unable to update target connection state to CLOSED upon endpoint timeout.");
+            return;
+        }
+        TargetContext.updateState(targetConn, ProtocolState.CLOSED);
+        targetConfiguration.getConnections().shutdownConnection(targetConn, true);
+        log.warn("Disconnected the target connection upon endpoint timeout.");
     }
 
     public void pause() throws AxisFault {
