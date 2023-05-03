@@ -185,7 +185,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + "Expected: 100-receive, INTERNAL_STATE = " + protocolState + ", DIRECTION = " + logDetails
                     .get("direction") + ", " + "CAUSE_OF_ERROR = " + e.getMessage() + ", HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = "
-                    + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
+                    + getClientConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION " + conn);
             logIOException(conn, e);
 
             informReaderError(conn);
@@ -287,7 +289,8 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + "INTERNAL_STATE" + " = " + protocolState + ", DIRECTION = " + logDetails.get("direction") + ", "
                     + "CAUSE_OF_ERROR = " + e.getMessage() + ", HTTP_URL = " + logDetails.get("url") + ", "
                     + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = " + getClientConnectionInfo(
-                    conn) + ", CONNECTION " + conn);
+                    conn) + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn);
 
             logIOException(conn, e);
 
@@ -515,8 +518,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                 e.getMessage().toLowerCase().contains("connection reset by peer") ||
                 e.getMessage().toLowerCase().contains("forcibly closed")))) {
             if (log.isDebugEnabled()) {
-                log.debug(conn + ": I/O error (Probably the keepalive connection " +
-                        "was closed):" + e.getMessage());
+                log.debug(conn + ": I/O error (Probably the keepalive connection "
+                        + "was closed):" + e.getMessage()
+                        + "CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
             }
         } else if (e instanceof SSLException) {
             log.warn("I/O error: " + e.getMessage());
@@ -524,15 +528,18 @@ public class SourceHandler implements NHttpServerEventHandler {
         else if (e.getMessage() != null) {
             String msg = e.getMessage().toLowerCase();
             if (msg.indexOf("broken") != -1) {
-                log.warn("I/O error (Probably the connection " +
-                        "was closed by the remote party):" + e.getMessage());
+                log.warn("I/O error (Probably the connection "
+                        + "was closed by the remote party):" + e.getMessage()
+                        + "CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
             } else {
-                log.error("I/O error: " + e.getMessage(), e);
+                log.error("I/O error: " + e.getMessage() + "CORRELATION_ID = "
+                        + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID), e);
             }
 
             metrics.incrementFaultsReceiving();
         } else {
-            log.error("Unexpected I/O error: " + e.getClass().getName(), e);
+            log.error("Unexpected I/O error: " + e.getClass().getName()
+                    + "CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID), e);
 
             metrics.incrementFaultsReceiving();
         }
@@ -558,7 +565,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                     .get("direction") + ", "
                     + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = " + conn
-                    .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
+                    .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn);
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
@@ -571,7 +580,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + ", DIRECTION = " + logDetails.get("direction") + ", "
                     + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = " + conn
-                    .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
+                    .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn);
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
@@ -586,7 +597,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                             + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = "
                             + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
                             + ", SOCKET_TIMEOUT = " + conn.getSocketTimeout() + ", CLIENT_ADDRESS = "
-                            + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
+                            + getClientConnectionInfo(conn)
+                            + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                            + ", CONNECTION = " + conn);
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
@@ -617,7 +630,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                     .get("direction") + ", "
                     + "CAUSE_OF_ERROR = Connection between EI and the Client has been closed, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = "
-                    + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
+                    + getClientConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn);
 
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "Connection Closed in " + state.name());
@@ -629,7 +644,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + "INTERNAL_STATE = " + state + ", DIRECTION = " + logDetails.get("direction") + ", "
                     + "CAUSE_OF_ERROR = Connection between EI and the Client has been closed, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = "
-                    + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
+                    + getClientConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION " + conn);
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "Connection Closed in " + state.name());
             }
@@ -640,7 +657,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + "request body, INTERNAL_STATE = " + state + ", DIRECTION = " + logDetails.get("direction") + ", "
                     + "CAUSE_OF_ERROR = Connection between EI and the Client has been closed, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = "
-                    + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
+                    + getClientConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION " + conn);
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "Connection Closed in " + state.name());
             }

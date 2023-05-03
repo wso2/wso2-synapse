@@ -219,7 +219,8 @@ public class TimeoutHandler extends TimerTask {
                                         + (callback.getTimeoutDuration() / 1000) + " seconds for "
                                         + getEndpointLogMessage(callback.getSynapseOutMsgCtx(),
                                         callback.getAxis2OutMsgCtx()) + ", "
-                                        + getServiceLogMessage(callback.getSynapseOutMsgCtx()));
+                                        + getServiceLogMessage(callback.getSynapseOutMsgCtx())
+                                        + ", CORRELATION_ID = " + axis2MessageContext.getLogCorrelationID());
                     }
                     org.apache.synapse.MessageContext synapseOutMsgCtx = callback.getSynapseOutMsgCtx();
                     ConcurrencyThrottlingUtils.decrementConcurrencyThrottleAccessController(synapseOutMsgCtx);
