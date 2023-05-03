@@ -46,6 +46,7 @@ import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.nio.reactor.IOReactorExceptionHandler;
 import org.apache.http.protocol.HTTP;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.transport.exceptions.InvalidConfigurationException;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
@@ -679,7 +680,14 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         }
         TargetContext.updateState(targetConn, ProtocolState.CLOSED);
         targetConfiguration.getConnections().shutdownConnection(targetConn, true);
-        log.warn("Disconnected the target connection upon endpoint timeout.");
+        log.warn("STATE_DESCRIPTION = Disconnected the target connection upon endpoint timeout"
+                + ", TARGET_HOST = " + msgContext.getProperty(NhttpConstants.REMOTE_HOST)
+                + ", TARGET_CONTEXT = " + msgContext.getProperty(NhttpConstants.ENDPOINT_PREFIX)
+                + ", HTTP_METHOD = " + msgContext.getProperty(HTTPConstants.HTTP_METHOD)
+                + ", TRIGGER_TYPE = " + msgContext.getProperty(PassThroughConstants.INTERNAL_TRIGGER_TYPE)
+                + ", TRIGGER_NAME = " + msgContext.getProperty(PassThroughConstants.INTERNAL_TRIGGER_NAME)
+                + ", SEND_TIMEOUT = " + msgContext.getProperty(NhttpConstants.SEND_TIMEOUT)
+                + ", CORRELATION_ID = " + msgContext.getProperty(CorrelationConstants.CORRELATION_ID));
     }
 
     public void pause() throws AxisFault {
