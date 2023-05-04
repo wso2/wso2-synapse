@@ -139,7 +139,7 @@ public class TargetResponseTest extends TestCase {
 
         TargetContext cntxt = new TargetContext(targetConfiguration);
         PowerMockito.when(TargetContext.get(any(NHttpClientConnection.class))).thenReturn(cntxt);
-        PowerMockito.when(decoder.read(any(ByteBuffer.class))).thenReturn(12);
+        PowerMockito.when(decoder.read(any(ByteBuffer.class))).thenReturn(12).thenReturn(-1);
         PowerMockito.when(decoder.isCompleted()).thenReturn(true);
 
         TargetResponse targetResponse = new TargetResponse(targetConfiguration, response, conn, true, false);
