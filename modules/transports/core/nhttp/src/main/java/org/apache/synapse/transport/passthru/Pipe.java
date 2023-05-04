@@ -16,7 +16,6 @@
 
 package org.apache.synapse.transport.passthru;
 
-import org.apache.http.MalformedChunkCodingException;
 import org.apache.http.TruncatedChunkException;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.ContentEncoder;
