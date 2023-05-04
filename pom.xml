@@ -24,7 +24,7 @@
    </parent>
    <groupId>org.apache.synapse</groupId>
    <artifactId>Apache-Synapse</artifactId>
-   <version>2.1.7-wso2v183.29</version>
+   <version>2.1.7-wso2v183.30-SNAPSHOT</version>
    <name>Apache Synapse</name>
    <description>Apache Synapse</description>
    <packaging>pom</packaging>
@@ -1617,5 +1617,5 @@
          <url>https://maven.wso2.org/nexus/service/local/staging/deploy/maven2/</url>
       </repository>
    </distributionManagement>
-<scm><url>https://github.com/wso2-support/wso2-synapse</url><developerConnection>scm:git:https://github.com/wso2-support/wso2-synapse</developerConnection><connection>scm:git:https://github.com/wso2-support/wso2-synapse</connection>  <tag>v2.1.7-wso2v183.29</tag>
+<scm><url>https://github.com/wso2-support/wso2-synapse</url><developerConnection>scm:git:https://github.com/wso2-support/wso2-synapse</developerConnection><connection>scm:git:https://github.com/wso2-support/wso2-synapse</connection>  <tag>HEAD</tag>
   </scm></project>
