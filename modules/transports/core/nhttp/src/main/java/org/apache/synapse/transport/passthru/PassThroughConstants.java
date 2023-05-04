@@ -148,6 +148,7 @@ public class PassThroughConstants {
 
     public static final String REQ_FROM_CLIENT_READ_START_TIME = "REQ_FROM_CLIENT_READ_START_TIME";
     public static final String REQ_FROM_CLIENT_READ_END_TIME = "REQ_FROM_CLIENT_READ_END_TIME";
+    public static final String REQ_FROM_CLIENT_BODY_READ_START_TIME = "REQ_FROM_CLIENT_BODY_READ_START_TIME";
 
     public static final String REQ_TO_BACKEND_WRITE_START_TIME = "REQ_TO_BACKEND_WRITE_START_TIME";
     public static final String REQ_TO_BACKEND_WRITE_END_TIME = "REQ_TO_BACKEND_WRITE_END_TIME";
@@ -157,6 +158,7 @@ public class PassThroughConstants {
 
     public static final String RES_TO_CLIENT_WRITE_START_TIME = "RES_TO_CLIENT_WRITE_START_TIME";
     public static final String RES_TO_CLIENT_WRITE_END_TIME = "RES_TO_CLIENT_WRITE_END_TIME";
+    public static final String RES_TO_CLIENT_BODY_WRITE_START_TIME = "RES_TO_CLIENT_BODY_WRITE_START_TIME";
 
     public static final String SERVER_WORKER_INIT_TIME = "SERVER_WORKER_INIT_TIME";
 
