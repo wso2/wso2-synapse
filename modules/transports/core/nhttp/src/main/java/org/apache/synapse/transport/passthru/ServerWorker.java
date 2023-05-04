@@ -108,7 +108,7 @@ public class ServerWorker implements Runnable {
     private boolean isRestDispatching = true;
 
     private PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
-    
+
     private OutputStream os; //only used for WSDL  requests..
   
     public ServerWorker(final SourceRequest request,
@@ -169,10 +169,10 @@ public class ServerWorker implements Runnable {
             ThreadContext.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
             /* Subsequent to removing the correlation id MDC thread local value, a new value is put in case
                there is one */
-            if (PassThroughCorrelationConfigDataHolder.isEnable() && StringUtils.isNotEmpty(correlationId)) {
+            if (StringUtils.isNotEmpty(correlationId)) {
                 ThreadContext.put(CorrelationConstants.CORRELATION_MDC_PROPERTY, correlationId);
                 /* Log the time taken to switch from the previous thread to this thread */
-                if (initiationTimestamp != 0) {
+                if (PassThroughCorrelationConfigDataHolder.isEnable() && initiationTimestamp != 0) {
                     correlationLog.info((System.currentTimeMillis() - initiationTimestamp) +
                             "|Thread switch latency");
                 }

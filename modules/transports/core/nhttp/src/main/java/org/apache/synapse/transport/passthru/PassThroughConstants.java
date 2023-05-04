@@ -270,4 +270,5 @@ public class PassThroughConstants {
     public static final String CORRELATION_LOGGER = "correlation";
     //default header that carries the correlation ID. Header name is configurable at passthru-http.properties
     public static final String CORRELATION_DEFAULT_HEADER = "activityid";
+    public static final String TRANSPORT_LATENCY_LOGGER = "transport-latency";
 }
