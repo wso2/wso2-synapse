@@ -17,6 +17,7 @@
 package org.apache.synapse.transport.passthru;
 
 import org.apache.http.MalformedChunkCodingException;
+import org.apache.http.TruncatedChunkException;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.IOControl;
@@ -30,6 +31,7 @@ import org.apache.synapse.transport.passthru.util.ControlledByteBuffer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.BufferOverflowException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -201,17 +203,24 @@ public class Pipe {
         lock.lock();
         try {
             setInputMode(buffer);
+            int totalBytesRead = 0;
             int bytesRead=0;
             try{
-                bytesRead = decoder.read(buffer.getByteBuffer());
-            } catch(MalformedChunkCodingException ignore) {
-                // we assume that this is a truncated chunk, hence simply ignore the exception
-                // https://issues.apache.org/jira/browse/HTTPCORE-195
-                // we should add the EoF character
-                buffer.putInt(-1);
-                // now the buffer's position should give us the bytes read.
-                bytesRead = buffer.position();
-
+                // Drain the decoder until the end of the underlying stream is found or until the Pipe#buffer is full.
+                // bytesRead = -1 means reached out to the end of underlying stream.
+                // bytesRead = 0 means Pipe's input buffer is full.
+                while ((bytesRead = decoder.read(buffer.getByteBuffer())) > 0) {
+                    totalBytesRead += bytesRead;
+                }
+            } catch (TruncatedChunkException ex) {
+                try {
+                    // we should add the EoF character
+                    buffer.putInt(-1);
+                    // now the buffer's position should give us the bytes read.
+                    totalBytesRead = buffer.position();
+                } catch (BufferOverflowException ignore) {
+                    // ignore
+                }
             }
 
             // if consumer is at error we have to let the producer complete
@@ -236,7 +245,7 @@ public class Pipe {
             if (decoder.isCompleted()) {
                 producerCompleted = true;
             }
-            return bytesRead;
+            return totalBytesRead;
         } finally {
             lock.unlock();
         }
