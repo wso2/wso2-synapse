@@ -52,11 +52,11 @@ public class FilePropertyResolver implements Resolver {
         String PropertyValue = propertyLoader.getValue(input);
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Resolving File Property value " + PropertyValue);
+            LOG.debug("Resolving File parameter key: "+ input + " value: " + PropertyValue);
         }
 
         if (PropertyValue == null) {
-            throw new ResolverException("File Property variable could not be found");
+            throw new ResolverException("File parameter key: " + input + " could not be found");
         }
         return PropertyValue;
     }
