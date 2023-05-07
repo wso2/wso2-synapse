@@ -223,9 +223,15 @@ public class SourceHandler implements NHttpServerEventHandler {
                 conn.getContext().setAttribute(PassThroughConstants.REQ_FROM_CLIENT_BODY_READ_START_TIME, chunkReadStartTime);
             }
             ProtocolState protocolState = SourceContext.getState(conn);
-
             if (protocolState != ProtocolState.REQUEST_HEAD
                     && protocolState != ProtocolState.REQUEST_BODY) {
+                // This logic is added specifically here to avoid a race condition that can occur when
+                // inputReady is already called prior to suspendInput method is called in TargetHandler.
+                SourceContext sourceContext = (SourceContext)
+                        conn.getContext().getAttribute(TargetContext.CONNECTION_INFORMATION);
+                if (sourceContext != null && sourceContext.isPipeMarkedToBeConsumed()) {
+                    return;
+                }
                 handleInvalidState(conn, "Request message body data received");
                 return;
             }

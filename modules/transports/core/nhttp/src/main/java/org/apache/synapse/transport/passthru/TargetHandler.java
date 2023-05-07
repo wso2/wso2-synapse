@@ -388,6 +388,12 @@ public class TargetHandler implements NHttpClientEventHandler {
                             NHttpServerConnection sourceConn = (NHttpServerConnection) requestMsgContext.getProperty(
                                     PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
                             if (sourceConn != null) {
+                                //Suspend input to avoid invoking input ready method.
+                                sourceConn.suspendInput();
+                                SourceContext sourceContext = (SourceContext)sourceConn.getContext().getAttribute(TargetContext.CONNECTION_INFORMATION);
+                                if (sourceContext != null) {
+                                    sourceContext.setPipeMarkedToBeConsumed(true);
+                                }
                                 SourceContext.updateState(sourceConn, ProtocolState.REQUEST_DONE);
                                 SourceContext.get(sourceConn).setShutDown(true);
                             }
