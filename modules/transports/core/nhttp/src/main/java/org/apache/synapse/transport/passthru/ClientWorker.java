@@ -239,10 +239,6 @@ public class ClientWorker implements Runnable {
                        getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_START_TIME, System.currentTimeMillis());
         }
         try {
-            // If an error has happened in the request processing, consumes the data in pipe completely and discard it
-            if (response.isForceShutdownConnectionOnComplete()) {
-                RelayUtils.discardRequestMessage(requestMessageContext);
-            }
 
             if (expectEntityBody) {
             	  String cType = response.getHeader(HTTP.CONTENT_TYPE);
