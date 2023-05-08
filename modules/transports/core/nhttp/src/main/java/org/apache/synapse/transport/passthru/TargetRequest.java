@@ -42,6 +42,7 @@ import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.nhttp.util.MessageFormatterDecoratorFactory;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
@@ -91,6 +92,7 @@ public class TargetRequest {
     private boolean keepAlive = true;
     /** logger for correlation.log */
     private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
+    private static final Log transportLatencyLog = LogFactory.getLog(PassThroughConstants.TRANSPORT_LATENCY_LOGGER);
 
 
     /**
@@ -378,8 +380,15 @@ public class TargetRequest {
         }
 
         if (encoder.isCompleted()) {
-          conn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
-          conn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,System.currentTimeMillis());
+            HttpContext context = conn.getContext();
+            long reqBodyWriteEndTime = System.currentTimeMillis();
+            if (transportLatencyLog.isDebugEnabled()) {
+                transportLatencyLog.debug(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                        "Request body writing completed at time stamp: " + reqBodyWriteEndTime + " and route: " +
+                        route);
+            }
+            conn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, reqBodyWriteEndTime);
+            conn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME, reqBodyWriteEndTime);
             targetConfiguration.getMetrics().
                     notifySentMessageSize(conn.getMetrics().getSentBytesCount());
 

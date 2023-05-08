@@ -65,6 +65,7 @@ public class SourceHandler implements NHttpServerEventHandler {
     private static Log log = LogFactory.getLog(SourceHandler.class);
     /** logger for correlation.log */
     private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
+    private static final Log transportLatencyLog = LogFactory.getLog(PassThroughConstants.TRANSPORT_LATENCY_LOGGER);
 
     private final SourceConfiguration sourceConfiguration;
 
@@ -127,6 +128,10 @@ public class SourceHandler implements NHttpServerEventHandler {
 
     public void requestReceived(NHttpServerConnection conn) {
         try {
+            long requestArrivalTimestamp = 0L;
+            if (transportLatencyLog.isDebugEnabled()) {
+                requestArrivalTimestamp = System.currentTimeMillis();
+            }
             HttpContext httpContext = conn.getContext();
             setCorrelationId(conn);
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
@@ -140,6 +145,13 @@ public class SourceHandler implements NHttpServerEventHandler {
                 httpContext.setAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
             }
             SourceRequest request = getSourceRequest(conn);
+            if (transportLatencyLog.isDebugEnabled()) {
+                String method = request == null ? "null" : request.getMethod();
+                String uri = request == null ? "null" : request.getUri();
+                transportLatencyLog.debug(httpContext.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                        "Received Request from Client at time stamp: " + requestArrivalTimestamp +
+                        " and Method/URL: " + method + "/" +uri);
+            }
             if (request == null) {
                 return;
             }
@@ -173,7 +185,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + "Expected: 100-receive, INTERNAL_STATE = " + protocolState + ", DIRECTION = " + logDetails
                     .get("direction") + ", " + "CAUSE_OF_ERROR = " + e.getMessage() + ", HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = "
-                    + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
+                    + getClientConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION " + conn);
             logIOException(conn, e);
 
             informReaderError(conn);
@@ -201,6 +215,13 @@ public class SourceHandler implements NHttpServerEventHandler {
     public void inputReady(NHttpServerConnection conn,
                            ContentDecoder decoder) {
         try {
+            long chunkReadStartTime = 0L;
+            if (transportLatencyLog.isDebugEnabled()) {
+                chunkReadStartTime = System.currentTimeMillis();
+            }
+            if (conn.getContext().getAttribute(PassThroughConstants.REQ_FROM_CLIENT_BODY_READ_START_TIME) == null) {
+                conn.getContext().setAttribute(PassThroughConstants.REQ_FROM_CLIENT_BODY_READ_START_TIME, chunkReadStartTime);
+            }
             ProtocolState protocolState = SourceContext.getState(conn);
 
             if (protocolState != ProtocolState.REQUEST_HEAD
@@ -214,6 +235,32 @@ public class SourceHandler implements NHttpServerEventHandler {
             SourceRequest request = SourceContext.getRequest(conn);
 
             int readBytes = request.read(conn, decoder);
+
+            long chunkReadEndTime = 0L;
+            if (transportLatencyLog.isTraceEnabled()) {
+                chunkReadEndTime = System.currentTimeMillis();
+                String method = conn.getHttpRequest().getRequestLine().getMethod().toUpperCase();
+                String uri = conn.getHttpRequest().getRequestLine().getUri();
+                transportLatencyLog.trace(conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                        "Request chunk from Client with Method/URL: " + method + "/" + uri +
+                        " reading completed at time stamp: " + System.currentTimeMillis() +
+                        " and the time taken to read the chunk: " + (chunkReadEndTime - chunkReadStartTime));
+            }
+            if (decoder.isCompleted()) {
+                if (transportLatencyLog.isDebugEnabled()) {
+                    chunkReadEndTime = System.currentTimeMillis();
+                    String method = conn.getHttpRequest().getRequestLine().getMethod().toUpperCase();
+                    String uri = conn.getHttpRequest().getRequestLine().getUri();
+                    long requestReadTime = chunkReadEndTime - (long) conn.getContext()
+                            .getAttribute(PassThroughConstants.REQ_FROM_CLIENT_BODY_READ_START_TIME);
+                    transportLatencyLog.debug(conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                            "Request from Client with Method/URL: " + method + "/" + uri +
+                            " has been completely read at time stamp: " + chunkReadEndTime +
+                            " and the time taken to read the request: " + requestReadTime);
+                }
+                conn.getContext().removeAttribute(PassThroughConstants.REQ_FROM_CLIENT_BODY_READ_START_TIME);
+            }
+
             if (isMessageSizeValidationEnabled) {
                 HttpContext httpContext = conn.getContext();
                 //this is introduced as some transports which extends passthrough source handler which have overloaded
@@ -247,7 +294,8 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + "INTERNAL_STATE" + " = " + protocolState + ", DIRECTION = " + logDetails.get("direction") + ", "
                     + "CAUSE_OF_ERROR = " + e.getMessage() + ", HTTP_URL = " + logDetails.get("url") + ", "
                     + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = " + getClientConnectionInfo(
-                    conn) + ", CONNECTION " + conn);
+                    conn) + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn);
 
             logIOException(conn, e);
 
@@ -330,12 +378,20 @@ public class SourceHandler implements NHttpServerEventHandler {
                 }
             
                 response.start(conn);
-                conn.getContext().setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_START_TIME,
+                HttpContext context = conn.getContext();
+                if (transportLatencyLog.isDebugEnabled()) {
+                    String method = request == null ? "null" : request.getMethod();
+                    String uri = request == null ? "null" : request.getUri();
+                    transportLatencyLog.debug(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                            "Response writing started at timestamp: " + System.currentTimeMillis() +
+                            " and Method/URL: " + method + "/" +uri);
+                }
+                context.setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_START_TIME,
                         System.currentTimeMillis());
                 metrics.incrementMessagesSent();
                 if (!response.hasEntity()) {
                    // Update stats as outputReady will not be triggered for no entity responses
-                    HttpContext context = conn.getContext();
+                    context = conn.getContext();
                     if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                         logCorrelationRoundTrip(context,request);
                     }
@@ -362,6 +418,13 @@ public class SourceHandler implements NHttpServerEventHandler {
     public void outputReady(NHttpServerConnection conn,
                             ContentEncoder encoder) {
         try {
+            long chunkWriteStartTime = 0L;
+            if (transportLatencyLog.isDebugEnabled()) {
+                chunkWriteStartTime = System.currentTimeMillis();
+            }
+            if (conn.getContext().getAttribute(PassThroughConstants.RES_TO_CLIENT_BODY_WRITE_START_TIME) == null) {
+                conn.getContext().setAttribute(PassThroughConstants.RES_TO_CLIENT_BODY_WRITE_START_TIME, chunkWriteStartTime);
+            }
             ProtocolState protocolState = SourceContext.getState(conn);
             
             //special case to handle WSDLs
@@ -402,19 +465,40 @@ public class SourceHandler implements NHttpServerEventHandler {
             SourceResponse response = SourceContext.getResponse(conn);
 
             int bytesSent = response.write(conn, encoder);
-            
-			if (encoder.isCompleted()) {
+
+            long chunkWriteEndTime = 0L;
+            if (transportLatencyLog.isTraceEnabled()) {
+                chunkWriteEndTime = System.currentTimeMillis();
+                String method = request == null ? "null" : request.getMethod();
+                String uri = request == null ? "null" : request.getUri();
+                transportLatencyLog.trace(conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                        "Response chunk to Client with Method/URL: " + method + "/" + uri +
+                        " writing completed at timestamp: " + chunkWriteEndTime +
+                        " and the time taken to write chunk:" + (chunkWriteEndTime - chunkWriteStartTime));
+            }
+            if (encoder.isCompleted()) {
                 HttpContext context = conn.getContext();
-                long departure = System.currentTimeMillis();
-                context.setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_END_TIME,departure);
-                context.setAttribute(PassThroughConstants.RES_DEPARTURE_TIME,departure);
+                chunkWriteEndTime = System.currentTimeMillis();
+                if (transportLatencyLog.isDebugEnabled()) {
+                    String method = request == null ? "null" : request.getMethod();
+                    String uri = request == null ? "null" : request.getUri();
+                    long responseWriteTime = chunkWriteEndTime - (long) context.getAttribute(PassThroughConstants.RES_TO_CLIENT_BODY_WRITE_START_TIME);
+                    transportLatencyLog.debug(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                            "Response writing completed at timestamp: " + chunkWriteEndTime + " and Method/URL: " +
+                            "Response with Method/URL: " + method + "/" + uri +
+                            " has been completely written at timestamp: " + chunkWriteEndTime +
+                            " and the time taken to write response:" + responseWriteTime);
+                }
+                context.removeAttribute(PassThroughConstants.RES_TO_CLIENT_BODY_WRITE_START_TIME);
+                context.setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_END_TIME, chunkWriteEndTime);
+                context.setAttribute(PassThroughConstants.RES_DEPARTURE_TIME, chunkWriteEndTime);
 
                 if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                     logCorrelationRoundTrip(context, request);
                 }
                 updateMetricsView(context);
-			}
-			endTransaction(conn);
+            }
+            endTransaction(conn);
             metrics.incrementBytesSent(bytesSent);
         } catch (IOException e) {
             logIOException(conn, e);
@@ -444,8 +528,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                 e.getMessage().toLowerCase().contains("connection reset by peer") ||
                 e.getMessage().toLowerCase().contains("forcibly closed")))) {
             if (log.isDebugEnabled()) {
-                log.debug(conn + ": I/O error (Probably the keepalive connection " +
-                        "was closed):" + e.getMessage());
+                log.debug(conn + ": I/O error (Probably the keepalive connection "
+                        + "was closed):" + e.getMessage()
+                        + "CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
             }
         } else if (e instanceof SSLException) {
             log.warn("I/O error: " + e.getMessage());
@@ -453,15 +538,18 @@ public class SourceHandler implements NHttpServerEventHandler {
         else if (e.getMessage() != null) {
             String msg = e.getMessage().toLowerCase();
             if (msg.indexOf("broken") != -1) {
-                log.warn("I/O error (Probably the connection " +
-                        "was closed by the remote party):" + e.getMessage());
+                log.warn("I/O error (Probably the connection "
+                        + "was closed by the remote party):" + e.getMessage()
+                        + "CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
             } else {
-                log.error("I/O error: " + e.getMessage(), e);
+                log.error("I/O error: " + e.getMessage() + "CORRELATION_ID = "
+                        + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID), e);
             }
 
             metrics.incrementFaultsReceiving();
         } else {
-            log.error("Unexpected I/O error: " + e.getClass().getName(), e);
+            log.error("Unexpected I/O error: " + e.getClass().getName()
+                    + "CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID), e);
 
             metrics.incrementFaultsReceiving();
         }
@@ -487,7 +575,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                     .get("direction") + ", "
                     + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = " + conn
-                    .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
+                    .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn);
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
@@ -500,7 +590,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + ", DIRECTION = " + logDetails.get("direction") + ", "
                     + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = " + conn
-                    .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
+                    .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn);
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
@@ -515,7 +607,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                             + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = "
                             + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
                             + ", SOCKET_TIMEOUT = " + conn.getSocketTimeout() + ", CLIENT_ADDRESS = "
-                            + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
+                            + getClientConnectionInfo(conn)
+                            + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                            + ", CONNECTION = " + conn);
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
@@ -546,7 +640,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                     .get("direction") + ", "
                     + "CAUSE_OF_ERROR = Connection between EI and the Client has been closed, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = "
-                    + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
+                    + getClientConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn);
 
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "Connection Closed in " + state.name());
@@ -558,7 +654,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + "INTERNAL_STATE = " + state + ", DIRECTION = " + logDetails.get("direction") + ", "
                     + "CAUSE_OF_ERROR = Connection between EI and the Client has been closed, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = "
-                    + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
+                    + getClientConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION " + conn);
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "Connection Closed in " + state.name());
             }
@@ -569,7 +667,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + "request body, INTERNAL_STATE = " + state + ", DIRECTION = " + logDetails.get("direction") + ", "
                     + "CAUSE_OF_ERROR = Connection between EI and the Client has been closed, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = "
-                    + getClientConnectionInfo(conn) + ", CONNECTION " + conn);
+                    + getClientConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION " + conn);
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "Connection Closed in " + state.name());
             }

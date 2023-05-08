@@ -142,6 +142,7 @@ public class PassThroughConstants {
 
     public static final String REQ_FROM_CLIENT_READ_START_TIME = "REQ_FROM_CLIENT_READ_START_TIME";
     public static final String REQ_FROM_CLIENT_READ_END_TIME = "REQ_FROM_CLIENT_READ_END_TIME";
+    public static final String REQ_FROM_CLIENT_BODY_READ_START_TIME = "REQ_FROM_CLIENT_BODY_READ_START_TIME";
 
     public static final String REQ_TO_BACKEND_WRITE_START_TIME = "REQ_TO_BACKEND_WRITE_START_TIME";
     public static final String REQ_TO_BACKEND_WRITE_END_TIME = "REQ_TO_BACKEND_WRITE_END_TIME";
@@ -151,6 +152,7 @@ public class PassThroughConstants {
 
     public static final String RES_TO_CLIENT_WRITE_START_TIME = "RES_TO_CLIENT_WRITE_START_TIME";
     public static final String RES_TO_CLIENT_WRITE_END_TIME = "RES_TO_CLIENT_WRITE_END_TIME";
+    public static final String RES_TO_CLIENT_BODY_WRITE_START_TIME = "RES_TO_CLIENT_BODY_WRITE_START_TIME";
 
     public static final String SERVER_WORKER_INIT_TIME = "SERVER_WORKER_INIT_TIME";
     public static final String SERVER_WORKER_START_TIME = "SERVER_WORKER_START_TIME";
@@ -253,4 +255,5 @@ public class PassThroughConstants {
     public static final String CORRELATION_LOGGER = "correlation";
     //default header that carries the correlation ID. Header name is configurable at passthru-http.properties
     public static final String CORRELATION_DEFAULT_HEADER = "activityid";
+    public static final String TRANSPORT_LATENCY_LOGGER = "transport-latency";
 }

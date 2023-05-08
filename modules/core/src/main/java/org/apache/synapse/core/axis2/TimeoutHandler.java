@@ -30,6 +30,7 @@ import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.endpoints.dispatch.SALSessions;
 import org.apache.synapse.commons.logger.ContextAwareLogger;
@@ -220,7 +221,9 @@ public class TimeoutHandler extends TimerTask {
                                         + (callback.getTimeoutDuration() / 1000) + " seconds for "
                                         + getEndpointLogMessage(callback.getSynapseOutMsgCtx(),
                                         callback.getAxis2OutMsgCtx()) + ", "
-                                        + getServiceLogMessage(callback.getSynapseOutMsgCtx()));
+                                        + getServiceLogMessage(callback.getSynapseOutMsgCtx())
+                                        + ", CORRELATION_ID = " + axis2MessageContext.getProperty(
+                                        CorrelationConstants.CORRELATION_ID));
                     }
                     org.apache.synapse.MessageContext synapseOutMsgCtx = callback.getSynapseOutMsgCtx();
                     ConcurrencyThrottlingUtils.decrementConcurrencyThrottleAccessController(synapseOutMsgCtx);
