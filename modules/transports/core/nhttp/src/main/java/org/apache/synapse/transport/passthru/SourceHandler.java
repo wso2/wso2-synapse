@@ -215,7 +215,10 @@ public class SourceHandler implements NHttpServerEventHandler {
     public void inputReady(NHttpServerConnection conn,
                            ContentDecoder decoder) {
         try {
-            long chunkReadStartTime = System.currentTimeMillis();
+            long chunkReadStartTime = 0L;
+            if (transportLatencyLog.isDebugEnabled()) {
+                chunkReadStartTime = System.currentTimeMillis();
+            }
             if (conn.getContext().getAttribute(PassThroughConstants.REQ_FROM_CLIENT_BODY_READ_START_TIME) == null) {
                 conn.getContext().setAttribute(PassThroughConstants.REQ_FROM_CLIENT_BODY_READ_START_TIME, chunkReadStartTime);
             }
@@ -233,8 +236,9 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             int readBytes = request.read(conn, decoder);
 
-            long chunkReadEndTime = System.currentTimeMillis();
+            long chunkReadEndTime = 0L;
             if (transportLatencyLog.isTraceEnabled()) {
+                chunkReadEndTime = System.currentTimeMillis();
                 String method = conn.getHttpRequest().getRequestLine().getMethod().toUpperCase();
                 String uri = conn.getHttpRequest().getRequestLine().getUri();
                 transportLatencyLog.trace(conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
@@ -244,6 +248,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             }
             if (decoder.isCompleted()) {
                 if (transportLatencyLog.isDebugEnabled()) {
+                    chunkReadEndTime = System.currentTimeMillis();
                     String method = conn.getHttpRequest().getRequestLine().getMethod().toUpperCase();
                     String uri = conn.getHttpRequest().getRequestLine().getUri();
                     long requestReadTime = chunkReadEndTime - (long) conn.getContext()
@@ -413,7 +418,10 @@ public class SourceHandler implements NHttpServerEventHandler {
     public void outputReady(NHttpServerConnection conn,
                             ContentEncoder encoder) {
         try {
-            long chunkWriteStartTime = System.currentTimeMillis();
+            long chunkWriteStartTime = 0L;
+            if (transportLatencyLog.isDebugEnabled()) {
+                chunkWriteStartTime = System.currentTimeMillis();
+            }
             if (conn.getContext().getAttribute(PassThroughConstants.RES_TO_CLIENT_BODY_WRITE_START_TIME) == null) {
                 conn.getContext().setAttribute(PassThroughConstants.RES_TO_CLIENT_BODY_WRITE_START_TIME, chunkWriteStartTime);
             }
@@ -458,8 +466,9 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             int bytesSent = response.write(conn, encoder);
 
-            long chunkWriteEndTime = System.currentTimeMillis();
+            long chunkWriteEndTime = 0L;
             if (transportLatencyLog.isTraceEnabled()) {
+                chunkWriteEndTime = System.currentTimeMillis();
                 String method = request == null ? "null" : request.getMethod();
                 String uri = request == null ? "null" : request.getUri();
                 transportLatencyLog.trace(conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
@@ -469,6 +478,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             }
             if (encoder.isCompleted()) {
                 HttpContext context = conn.getContext();
+                chunkWriteEndTime = System.currentTimeMillis();
                 if (transportLatencyLog.isDebugEnabled()) {
                     String method = request == null ? "null" : request.getMethod();
                     String uri = request == null ? "null" : request.getUri();
