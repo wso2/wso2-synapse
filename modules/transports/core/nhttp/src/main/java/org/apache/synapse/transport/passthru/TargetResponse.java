@@ -263,7 +263,6 @@ public class TargetResponse {
     }
 
     public boolean isForceShutdownConnectionOnComplete() {
-
         return forceShutdownConnectionOnComplete;
     }
 }
