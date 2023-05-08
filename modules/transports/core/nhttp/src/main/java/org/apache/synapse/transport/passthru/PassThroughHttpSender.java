@@ -645,15 +645,17 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
             return;
         }
         TargetContext.updateState(targetConn, ProtocolState.CLOSED);
-        targetConfiguration.getConnections().shutdownConnection(targetConn, true);
-        log.warn("STATE_DESCRIPTION = Disconnected the target connection upon endpoint timeout"
-                + ", TARGET_HOST = " + msgContext.getProperty(NhttpConstants.REMOTE_HOST)
-                + ", TARGET_CONTEXT = " + msgContext.getProperty(NhttpConstants.ENDPOINT_PREFIX)
-                + ", HTTP_METHOD = " + msgContext.getProperty(HTTPConstants.HTTP_METHOD)
-                + ", TRIGGER_TYPE = " + msgContext.getProperty(PassThroughConstants.INTERNAL_TRIGGER_TYPE)
-                + ", TRIGGER_NAME = " + msgContext.getProperty(PassThroughConstants.INTERNAL_TRIGGER_NAME)
-                + ", SEND_TIMEOUT = " + msgContext.getProperty(NhttpConstants.SEND_TIMEOUT)
-                + ", CORRELATION_ID = " + msgContext.getProperty(CorrelationConstants.CORRELATION_ID));
+        targetConfiguration.getConnections().closeConnection(targetConn, true);
+        if (log.isDebugEnabled()) {
+            log.debug("STATE_DESCRIPTION = Disconnected the target connection upon endpoint timeout"
+                    + ", TARGET_HOST = " + msgContext.getProperty(NhttpConstants.REMOTE_HOST)
+                    + ", TARGET_CONTEXT = " + msgContext.getProperty(NhttpConstants.ENDPOINT_PREFIX)
+                    + ", HTTP_METHOD = " + msgContext.getProperty(HTTPConstants.HTTP_METHOD)
+                    + ", TRIGGER_TYPE = " + msgContext.getProperty(PassThroughConstants.INTERNAL_TRIGGER_TYPE)
+                    + ", TRIGGER_NAME = " + msgContext.getProperty(PassThroughConstants.INTERNAL_TRIGGER_NAME)
+                    + ", SEND_TIMEOUT = " + msgContext.getProperty(NhttpConstants.SEND_TIMEOUT)
+                    + ", CORRELATION_ID = " + msgContext.getProperty(CorrelationConstants.CORRELATION_ID));
+        }
     }
 
     public void pause() throws AxisFault {

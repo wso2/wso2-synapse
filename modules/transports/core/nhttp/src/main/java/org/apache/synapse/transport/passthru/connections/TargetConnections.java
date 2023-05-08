@@ -178,6 +178,36 @@ public class TargetConnections {
     }
 
     /**
+     * Close a connection gracefully if the connection is no longer valid.
+     *
+     * @param conn    connection to shutdownConnection
+     * @param isError whether an error is causing this shutdown of the connection.
+     *                It is very important to set this flag correctly.
+     *                When an error causing the shutdown of the connections we should not
+     *                release associated writer buffer to the pool as it might lead into
+     *                situations like same buffer is getting released to both source and target
+     *                buffer factories
+     */
+    public void closeConnection(NHttpClientConnection conn, boolean isError) {
+        HostConnections pool = (HostConnections) conn.getContext().getAttribute(
+                PassThroughConstants.CONNECTION_POOL);
+
+        TargetContext.get(conn).reset(isError);
+
+        if (pool != null) {
+            pool.forget(conn);
+        } else {
+            // we shouldn't get here
+            log.fatal("Connection without a pool. Something wrong. Need to fix.");
+        }
+
+        try {
+            conn.close();
+        } catch (IOException ignored) {
+        }
+    }
+
+    /**
      * Release an active connection to the pool
      *
      * @param conn connection to be released
