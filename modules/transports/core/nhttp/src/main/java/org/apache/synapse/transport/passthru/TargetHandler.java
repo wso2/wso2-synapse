@@ -400,38 +400,41 @@ public class TargetHandler implements NHttpClientEventHandler {
                 MessageContext requestMsgContext = TargetContext.get(conn).getRequestMsgCtx();
                 // State is not REQUEST_DONE. i.e the request is not completely written. But the response is started
                 // receiving, therefore informing a write error has occurred. So the thread which is
-                // waiting on writing the request out, will get notified.
+                // waiting on writing the request out, will get notified. And we will proceed with the response
+                // regardless of the http status code. But mark target and source connections to be closed.
                 informWriterError(conn);
                 StatusLine errorStatus = response.getStatusLine();
-                /* We might receive a 404 or a similar type, even before we write the request body. */
                 if (errorStatus != null) {
-                    if (errorStatus.getStatusCode() >= HttpStatus.SC_BAD_REQUEST) {
-                        TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
-                        conn.resetOutput();
-                        if (log.isDebugEnabled()) {
-                            log.debug(conn + ": Received response with status code : " + response.getStatusLine()
-                                    .getStatusCode() + " in invalid state : " + connState.name());
+                    TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
+                    conn.resetOutput();
+                    if (log.isDebugEnabled()) {
+                        log.debug(conn + ": Received response with status code : " + response.getStatusLine()
+                                .getStatusCode() + " in invalid state : " + connState.name());
+                    }
+                    if (errorStatus.getStatusCode() < HttpStatus.SC_BAD_REQUEST) {
+                        log.warn(conn + ": Received a response but request is not completely written to the backend"
+                                + "with status code : " + response.getStatusLine()
+                                .getStatusCode() + " in state : " + connState.name());
+                    }
+                    if (requestMsgContext != null) {
+                        NHttpServerConnection sourceConn = (NHttpServerConnection) requestMsgContext.getProperty(
+                                PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
+                        if (sourceConn != null) {
+                            //Suspend input to avoid invoking input ready method.
+                            sourceConn.suspendInput();
+                            SourceContext sourceContext = (SourceContext)sourceConn.getContext().getAttribute(TargetContext.CONNECTION_INFORMATION);
+                            if (sourceContext != null) {
+                                sourceContext.setPipeMarkedToBeConsumed(true);
+                            }
+                            SourceContext.updateState(sourceConn, ProtocolState.REQUEST_DONE);
+                            SourceContext.get(sourceConn).setShutDown(true);
                         }
-                        if (requestMsgContext != null) {
-                            NHttpServerConnection sourceConn = (NHttpServerConnection) requestMsgContext.getProperty(
-                                    PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
-                            if (sourceConn != null) {
-                                //Suspend input to avoid invoking input ready method.
-                                sourceConn.suspendInput();
-                                SourceContext sourceContext = (SourceContext)sourceConn.getContext().getAttribute(TargetContext.CONNECTION_INFORMATION);
-                                if (sourceContext != null) {
-                                    sourceContext.setPipeMarkedToBeConsumed(true);
-                                }
-                                SourceContext.updateState(sourceConn, ProtocolState.REQUEST_DONE);
-                                SourceContext.get(sourceConn).setShutDown(true);
-                            }
-                        } else {
-                            if (log.isDebugEnabled()) {
-                                log.debug(conn + ": has not started any request");
-                            }
-                            if (statusCode == HttpStatus.SC_REQUEST_TIMEOUT) {
-                                return; // ignoring the stale connection close
-                            }
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug(conn + ": has not started any request");
+                        }
+                        if (statusCode == HttpStatus.SC_REQUEST_TIMEOUT) {
+                            return; // ignoring the stale connection close
                         }
                     }
                 } else {
