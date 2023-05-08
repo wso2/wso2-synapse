@@ -53,6 +53,8 @@ public class PassThroughConfiguration {
     private static final int DEFAULT_CONNECTION_GRACE_TIME = 10000;
     private Boolean isKeepAliveDisabled = null;
 
+    private Boolean isConsumeAndDiscard = true;
+
     //additional rest dispatch handlers
     private static final String REST_DISPATCHER_SERVICE="rest.dispatcher.service";
     // URI configurations that determine if it requires custom rest dispatcher
@@ -125,6 +127,13 @@ public class PassThroughConfiguration {
     public boolean isCloseSocketOnEndpointTimeout() {
         return ConfigurationBuilderUtil.getBooleanProperty(PassThroughConfigPNames.CLOSE_SOCKET_ON_ENDPOINT_TIMEOUT
                 , CLOSE_SOCKET_ON_ENDPOINT_TIMEOUT, props);
+    }
+
+    public boolean isConsumeAndDiscard() {
+        isConsumeAndDiscard =
+                    ConfigurationBuilderUtil.getBooleanProperty(PassThroughConfigPNames.CONSUME_AND_DISCARD,
+                            true, props);
+        return isConsumeAndDiscard;
     }
 
     public int getMaxActiveConnections() {

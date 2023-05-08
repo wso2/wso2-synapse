@@ -50,7 +50,6 @@ import org.apache.synapse.transport.passthru.config.PassThroughCorrelationConfig
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.HostConnections;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -424,9 +423,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                             sourceConn.suspendInput();
                             SourceContext sourceContext = (SourceContext)sourceConn.getContext().getAttribute(TargetContext.CONNECTION_INFORMATION);
                             if (sourceContext != null) {
-                                sourceContext.setPipeMarkedToBeConsumed(true);
+                                sourceContext.setIsSourceRequestMarkedToBeDiscarded(true);
                             }
-                            SourceContext.updateState(sourceConn, ProtocolState.REQUEST_DONE);
                             SourceContext.get(sourceConn).setShutDown(true);
                         }
                     } else {

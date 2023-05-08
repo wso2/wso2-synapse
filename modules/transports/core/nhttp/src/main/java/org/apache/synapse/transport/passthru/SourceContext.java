@@ -40,7 +40,7 @@ public class SourceContext {
 
     private SourceConfiguration sourceConfiguration;
 
-    private boolean isPipeMarkedToBeConsumed = false;
+    private boolean isSourceRequestMarkedToBeDiscarded = false;
 
     private ProtocolState state = ProtocolState.REQUEST_READY;
 
@@ -72,12 +72,12 @@ public class SourceContext {
         return state;
     }
 
-    public boolean isPipeMarkedToBeConsumed() {
-        return isPipeMarkedToBeConsumed;
+    public boolean isSourceRequestMarkedToBeDiscarded() {
+        return isSourceRequestMarkedToBeDiscarded;
     }
 
-    public void setPipeMarkedToBeConsumed(boolean isPipeDiscarded) {
-        this.isPipeMarkedToBeConsumed = isPipeDiscarded;
+    public void setIsSourceRequestMarkedToBeDiscarded(boolean isPipeDiscarded) {
+        this.isSourceRequestMarkedToBeDiscarded = isPipeDiscarded;
     }
 
 
