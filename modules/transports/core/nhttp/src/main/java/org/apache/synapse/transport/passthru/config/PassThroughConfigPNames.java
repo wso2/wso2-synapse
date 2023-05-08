@@ -85,6 +85,13 @@ public interface PassThroughConfigPNames {
      */
     public String DISABLE_KEEPALIVE = "http.connection.disable.keepalive";
 
+
+    /**
+     * Define property to mark If an error has happened in the request processing,
+     * should consumes the data in pipe completely and discard.
+     */
+    public String CONSUME_AND_DISCARD = "consume_and_discard";
+
     /**
      * Defines the time interval for idle connection removal.
      */
