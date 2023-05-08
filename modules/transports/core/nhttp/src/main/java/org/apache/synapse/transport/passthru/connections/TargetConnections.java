@@ -23,8 +23,8 @@ import org.apache.http.HttpHost;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.nio.reactor.ConnectingIOReactor;
-import org.apache.log4j.MDC;
 import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.transport.passthru.ConnectCallback;
 import org.apache.synapse.transport.passthru.ErrorCodes;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
@@ -114,9 +114,10 @@ public class TargetConnections {
                 ioReactor.connect(new InetSocketAddress(host.getHostName(), host.getPort()), null, pool, callback);
 
                 if (transportLatencyLog.isDebugEnabled()) {
-                    transportLatencyLog.debug(MDC.get(CorrelationConstants.CORRELATION_MDC_PROPERTY) + "|" +
-                            "Requested connection at time stamp: " + System.currentTimeMillis() +
-                            " and route: " + route);
+                    ContextAwareLogger.getLogger(msgContext, transportLatencyLog, false)
+                            .debug("Requested connection at time stamp: " + System.currentTimeMillis() +
+                                    " and route: " + route);
+
                 }
             } else {
                 log.warn("Connection pool reached maximum allowed connections for route "
@@ -132,9 +133,9 @@ public class TargetConnections {
             }
         } else {
             if (transportLatencyLog.isDebugEnabled()) {
-                transportLatencyLog.debug(MDC.get(CorrelationConstants.CORRELATION_MDC_PROPERTY) + "|" +
-                        "Connection fetched from pool at: " + System.currentTimeMillis() +
-                        " and route: " + route);
+                ContextAwareLogger.getLogger(msgContext, transportLatencyLog, false)
+                        .debug("Connection fetched from pool at: " + System.currentTimeMillis() +
+                                " and route: " + route);
             }
             return connection;
         }
