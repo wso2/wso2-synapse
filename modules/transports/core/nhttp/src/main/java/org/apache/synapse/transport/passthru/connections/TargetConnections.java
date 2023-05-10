@@ -187,6 +187,8 @@ public class TargetConnections {
                 PassThroughConstants.CONNECTION_POOL);
 
         TargetContext.get(conn).reset(false);
+        //Set the event mask to Read since connection is released to the pool and should be ready to read
+        conn.requestInput();
 
         if (pool != null) {
             pool.release(conn);
