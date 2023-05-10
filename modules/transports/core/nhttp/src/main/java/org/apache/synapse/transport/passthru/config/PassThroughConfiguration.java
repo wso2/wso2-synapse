@@ -40,6 +40,7 @@ public class PassThroughConfiguration {
      * Default tuning parameter values
      */
     private static final int DEFAULT_WORKER_POOL_SIZE_CORE       = 40;
+    private static final boolean DEFAULT_CONSUME_AND_DISCARD        = true;
     private static final int DEFAULT_WORKER_POOL_SIZE_MAX        = 200;
     private static final int DEFAULT_WORKER_THREAD_KEEPALIVE_SEC = 60;
     private static final int DEFAULT_WORKER_POOL_QUEUE_LENGTH    = -1;
@@ -119,9 +120,7 @@ public class PassThroughConfiguration {
     }
 
     public boolean isConsumeAndDiscard() {
-        isConsumeAndDiscard =
-                    ConfigurationBuilderUtil.getBooleanProperty(PassThroughConfigPNames.CONSUME_AND_DISCARD,
-                            true, props);
+        isConsumeAndDiscard = getBooleanProperty(PassThroughConfigPNames.CONSUME_AND_DISCARD, DEFAULT_CONSUME_AND_DISCARD);
         return isConsumeAndDiscard;
     }
 
