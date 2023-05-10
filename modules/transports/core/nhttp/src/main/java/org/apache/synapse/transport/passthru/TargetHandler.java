@@ -714,7 +714,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         metrics.disconnected();
 
         TargetContext.updateState(conn, ProtocolState.CLOSED);
-        targetConfiguration.getConnections().shutdownConnection(conn, isFault);
+        targetConfiguration.getConnections().closeConnection(conn, isFault);
 
     }
 
@@ -818,7 +818,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         }
 
         TargetContext.updateState(conn, ProtocolState.CLOSED);
-        targetConfiguration.getConnections().shutdownConnection(conn, true);
+        targetConfiguration.getConnections().closeConnection(conn, true);
     }
 
     private boolean isResponseHaveBodyExpected(
