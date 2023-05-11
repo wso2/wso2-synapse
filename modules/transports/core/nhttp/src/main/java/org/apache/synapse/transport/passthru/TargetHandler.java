@@ -45,6 +45,7 @@ import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
 import org.apache.synapse.transport.http.conn.ProxyTunnelHandler;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.PassThroughCorrelationConfigDataHolder;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.HostConnections;
@@ -88,6 +89,8 @@ public class TargetHandler implements NHttpClientEventHandler {
     public static final String MESSAGE_SIZE_VALIDATION = "message.size.validation.enabled";
     public static final String VALID_MAX_MESSAGE_SIZE = "valid.max.message.size.in.bytes";
     public static final String CONNECTION_POOL = "CONNECTION_POOL";
+
+    private PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
 
     public TargetHandler(DeliveryAgent deliveryAgent,
                          ClientConnFactory connFactory,
@@ -383,19 +386,23 @@ public class TargetHandler implements NHttpClientEventHandler {
                                 .getStatusCode() + " in invalid state : " + connState.name());
                     }
                     if (errorStatus.getStatusCode() < HttpStatus.SC_BAD_REQUEST) {
-                        log.warn(conn + ": Received a response but request is not completely written to the backend"
-                                + "with status code : " + response.getStatusLine()
-                                .getStatusCode() + " in state : " + connState.name());
+                        log.warn(conn + ": Received a response with status code : "
+                                + response.getStatusLine().getStatusCode() + " in state : " + connState.name()
+                                + "but request is not completely written to the backend");
                     }
                     if (requestMsgContext != null) {
                         NHttpServerConnection sourceConn = (NHttpServerConnection) requestMsgContext.getProperty(
                                 PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
                         if (sourceConn != null) {
-                            //Suspend input to avoid invoking input ready method.
-                            sourceConn.suspendInput();
-                            SourceContext sourceContext = (SourceContext)sourceConn.getContext().getAttribute(TargetContext.CONNECTION_INFORMATION);
-                            if (sourceContext != null) {
-                                sourceContext.setIsSourceRequestMarkedToBeDiscarded(true);
+                            if (!conf.isConsumeAndDiscard()) {
+                                //Suspend input to avoid invoking input ready method and set this property here
+                                //to avoid invoking the input ready method, while response is mediating through the
+                                // mediation since we have set REQUEST_DONE state in SourceHandler responseReady method
+                                sourceConn.suspendInput();
+                                SourceContext sourceContext = (SourceContext)sourceConn.getContext().getAttribute(TargetContext.CONNECTION_INFORMATION);
+                                if (sourceContext != null) {
+                                    sourceContext.setIsSourceRequestMarkedToBeDiscarded(true);
+                                }
                             }
                             SourceContext.get(sourceConn).setShutDown(true);
                         }
@@ -721,9 +728,9 @@ public class TargetHandler implements NHttpClientEventHandler {
     private void logIOException(NHttpClientConnection conn, IOException e) {
         String message = getErrorMessage("I/O error : " + e.getMessage(), conn);
 
-        if (e instanceof ConnectionClosedException || (e.getMessage() != null &&
-                e.getMessage().toLowerCase().contains("connection reset by peer") ||
-                e.getMessage().toLowerCase().contains("forcibly closed"))) {
+        if (e.getMessage() != null && (e instanceof ConnectionClosedException
+                || e.getMessage().toLowerCase().contains("connection reset by peer")
+                || e.getMessage().toLowerCase().contains("forcibly closed"))) {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": I/O error (Probably the keep-alive connection "
                         + "was closed):" + e.getMessage()

@@ -78,6 +78,8 @@ public class RelayUtils {
 
     private static boolean forceJSONValidation = false;
 
+    private static PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
+
     static {
         if (forcePTBuild == null) {
             forcePTBuild = PassThroughConfiguration.getInstance().getBooleanProperty(
@@ -536,6 +538,12 @@ public class RelayUtils {
     }
 
     public static void discardSourceRequest(MessageContext msgContext) throws AxisFault {
+        //If consume_and_discard property is set to true, then we call the consumeAndDiscardMessage method
+        //to keep the backward compatibility.
+        if (conf.isConsumeAndDiscard()) {
+            consumeAndDiscardMessage(msgContext);
+            return;
+        }
         NHttpServerConnection sourceConn = (NHttpServerConnection) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
         if (sourceConn != null) {
             sourceConn.suspendInput();
