@@ -549,7 +549,7 @@
              <version>${spring.version}</version>
          </dependency>
          <dependency>
-             <groupId>com.jayway.jsonpath</groupId>
+             <groupId>org.wso2.orbit.com.jayway.jsonpath</groupId>
              <artifactId>json-path</artifactId>
              <version>${com.jayway.jsonpath.version}</version>
          </dependency>
@@ -1468,7 +1468,7 @@
       <javax.jms.version>1.1</javax.jms.version>
       <org.antlr.version>3.4</org.antlr.version>
       <antlr.wso2.version>3.2.0.wso2v1</antlr.wso2.version>
-      <com.jayway.jsonpath.version>2.7.0</com.jayway.jsonpath.version>
+      <com.jayway.jsonpath.version>2.4.0.wso2v3</com.jayway.jsonpath.version>
       <qfj.version>1.5.3</qfj.version>
        <quickfixj.version>2.3.1</quickfixj.version>
       <org.bouncycastle.version>1.69.0.wso2v1</org.bouncycastle.version>
