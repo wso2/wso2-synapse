@@ -371,7 +371,8 @@ public class TargetHandler implements NHttpClientEventHandler {
             if (connState != ProtocolState.REQUEST_DONE) {
                 isError = true;
                 MessageContext requestMsgContext = TargetContext.get(conn).getRequestMsgCtx();
-                log.warn("Response received before the request is sent to the backend completely");
+                log.warn("Response received before the request is sent to the backend completely , CORRELATION_ID = "
+                        + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
                 // State is not REQUEST_DONE. i.e the request is not completely written. But the response is started
                 // receiving, therefore informing a write error has occurred. So the thread which is
                 // waiting on writing the request out, will get notified. And we will proceed with the response
@@ -388,7 +389,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                     if (errorStatus.getStatusCode() < HttpStatus.SC_BAD_REQUEST) {
                         log.warn(conn + ": Received a response with status code : "
                                 + response.getStatusLine().getStatusCode() + " in state : " + connState.name()
-                                + "but request is not completely written to the backend");
+                                + " but request is not completely written to the backend, CORRELATION_ID = "
+                                + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
                     }
                     if (requestMsgContext != null) {
                         NHttpServerConnection sourceConn = (NHttpServerConnection) requestMsgContext.getProperty(
