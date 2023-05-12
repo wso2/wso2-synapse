@@ -45,11 +45,11 @@ import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
 import org.apache.synapse.transport.http.conn.ProxyTunnelHandler;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.PassThroughCorrelationConfigDataHolder;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.HostConnections;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -89,6 +89,8 @@ public class TargetHandler implements NHttpClientEventHandler {
     public static final String MESSAGE_SIZE_VALIDATION = "message.size.validation.enabled";
     public static final String VALID_MAX_MESSAGE_SIZE = "valid.max.message.size.in.bytes";
     public static final String CONNECTION_POOL = "CONNECTION_POOL";
+
+    private PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
 
     public TargetHandler(DeliveryAgent deliveryAgent,
                          ClientConnFactory connFactory,
@@ -369,35 +371,49 @@ public class TargetHandler implements NHttpClientEventHandler {
             if (connState != ProtocolState.REQUEST_DONE) {
                 isError = true;
                 MessageContext requestMsgContext = TargetContext.get(conn).getRequestMsgCtx();
-                log.warn("Response received before the request is sent to the backend completely");
+                log.warn("Response received before the request is sent to the backend completely , CORRELATION_ID = "
+                        + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
                 // State is not REQUEST_DONE. i.e the request is not completely written. But the response is started
                 // receiving, therefore informing a write error has occurred. So the thread which is
-                // waiting on writing the request out, will get notified.
+                // waiting on writing the request out, will get notified. And we will proceed with the response
+                // regardless of the http status code. But mark target and source connections to be closed.
                 informWriterError(conn);
                 StatusLine errorStatus = response.getStatusLine();
-                /* We might receive a 404 or a similar type, even before we write the request body. */
                 if (errorStatus != null) {
-                    if (errorStatus.getStatusCode() >= HttpStatus.SC_BAD_REQUEST) {
-                        TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
-                        conn.resetOutput();
-                        if (log.isDebugEnabled()) {
-                            log.debug(conn + ": Received response with status code : " + response.getStatusLine()
-                                    .getStatusCode() + " in invalid state : " + connState.name());
+                    TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
+                    conn.resetOutput();
+                    if (log.isDebugEnabled()) {
+                        log.debug(conn + ": Received response with status code : " + response.getStatusLine()
+                                .getStatusCode() + " in invalid state : " + connState.name());
+                    }
+                    if (errorStatus.getStatusCode() < HttpStatus.SC_BAD_REQUEST) {
+                        log.warn(conn + ": Received a response with status code : "
+                                + response.getStatusLine().getStatusCode() + " in state : " + connState.name()
+                                + " but request is not completely written to the backend, CORRELATION_ID = "
+                                + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
+                    }
+                    if (requestMsgContext != null) {
+                        NHttpServerConnection sourceConn = (NHttpServerConnection) requestMsgContext.getProperty(
+                                PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
+                        if (sourceConn != null) {
+                            if (!conf.isConsumeAndDiscard()) {
+                                //Suspend input to avoid invoking input ready method and set this property here
+                                //to avoid invoking the input ready method, while response is mediating through the
+                                // mediation since we have set REQUEST_DONE state in SourceHandler responseReady method
+                                sourceConn.suspendInput();
+                                SourceContext sourceContext = (SourceContext)sourceConn.getContext().getAttribute(TargetContext.CONNECTION_INFORMATION);
+                                if (sourceContext != null) {
+                                    sourceContext.setIsSourceRequestMarkedToBeDiscarded(true);
+                                }
+                            }
+                            SourceContext.get(sourceConn).setShutDown(true);
                         }
-                        if (requestMsgContext != null) {
-                            NHttpServerConnection sourceConn = (NHttpServerConnection) requestMsgContext.getProperty(
-                                    PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
-                            if (sourceConn != null) {
-                                SourceContext.updateState(sourceConn, ProtocolState.REQUEST_DONE);
-                                SourceContext.get(sourceConn).setShutDown(true);
-                            }
-                        } else {
-                            if (log.isDebugEnabled()) {
-                                log.debug(conn + ": has not started any request");
-                            }
-                            if (statusCode == HttpStatus.SC_REQUEST_TIMEOUT) {
-                                return; // ignoring the stale connection close
-                            }
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug(conn + ": has not started any request");
+                        }
+                        if (statusCode == HttpStatus.SC_REQUEST_TIMEOUT) {
+                            return; // ignoring the stale connection close
                         }
                     }
                 } else {
@@ -707,16 +723,16 @@ public class TargetHandler implements NHttpClientEventHandler {
         metrics.disconnected();
 
         TargetContext.updateState(conn, ProtocolState.CLOSED);
-        targetConfiguration.getConnections().shutdownConnection(conn, isFault);
+        targetConfiguration.getConnections().closeConnection(conn, isFault);
 
     }
 
     private void logIOException(NHttpClientConnection conn, IOException e) {
         String message = getErrorMessage("I/O error : " + e.getMessage(), conn);
 
-        if (e instanceof ConnectionClosedException || (e.getMessage() != null &&
-                e.getMessage().toLowerCase().contains("connection reset by peer") ||
-                e.getMessage().toLowerCase().contains("forcibly closed"))) {
+        if (e.getMessage() != null && (e instanceof ConnectionClosedException
+                || e.getMessage().toLowerCase().contains("connection reset by peer")
+                || e.getMessage().toLowerCase().contains("forcibly closed"))) {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": I/O error (Probably the keep-alive connection "
                         + "was closed):" + e.getMessage()
@@ -811,7 +827,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         }
 
         TargetContext.updateState(conn, ProtocolState.CLOSED);
-        targetConfiguration.getConnections().shutdownConnection(conn, true);
+        targetConfiguration.getConnections().closeConnection(conn, true);
     }
 
     private boolean isResponseHaveBodyExpected(

@@ -46,7 +46,10 @@ import org.apache.synapse.transport.http.conn.LoggingNHttpServerConnection;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
+import org.apache.synapse.transport.passthru.ProtocolState;
 import org.apache.synapse.transport.passthru.ServerWorker;
+import org.apache.synapse.transport.passthru.SourceContext;
+import org.apache.synapse.transport.passthru.TargetContext;
 import org.apache.synapse.transport.passthru.TargetRequest;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 
@@ -74,6 +77,8 @@ public class RelayUtils {
     private static boolean forceXmlValidation = false;
 
     private static boolean forceJSONValidation = false;
+
+    private static PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
 
     static {
         if (forcePTBuild == null) {
@@ -530,6 +535,30 @@ public class RelayUtils {
                 getRequestInfoForLogging(requestContext) + ", Correlation ID = " +
                 requestContext.getProperty(CorrelationConstants.CORRELATION_ID));
         discardMessage(requestContext);
+    }
+
+    public static void discardSourceRequest(MessageContext msgContext) throws AxisFault {
+        //If consume_and_discard property is set to true, then we call the consumeAndDiscardMessage method
+        //to keep the backward compatibility.
+        if (conf.isConsumeAndDiscard()) {
+            consumeAndDiscardMessage(msgContext);
+            return;
+        }
+        NHttpServerConnection sourceConn = (NHttpServerConnection) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
+        if (sourceConn != null) {
+            sourceConn.suspendInput();
+            SourceContext sourceContext = (SourceContext)sourceConn.getContext().getAttribute(TargetContext.CONNECTION_INFORMATION);
+            if (sourceContext != null) {
+                sourceContext.setIsSourceRequestMarkedToBeDiscarded(true);
+            }
+            SourceContext.get(sourceConn).setShutDown(true);
+        }
+        Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+        if (pipe != null) {
+            pipe.getBuffer().clear();
+            pipe.resetOutputStream();
+            msgContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
+        }
     }
 
     /**

@@ -177,7 +177,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             }
 
             if (callback != null) {
-                messageCtx.removeProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN);
                 org.apache.synapse.MessageContext SynapseOutMsgCtx = callback.getSynapseOutMsgCtx();
                 ConcurrencyThrottlingUtils.decrementConcurrencyThrottleAccessController(SynapseOutMsgCtx);
 
@@ -187,7 +186,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     }
                     callback.setMarkedForRemoval();
                 }
-
+                messageCtx.removeProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN);
                 if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                     CallbackStatisticCollector.updateParentsForCallback(SynapseOutMsgCtx, messageID);
                     handleMessage(messageID, messageCtx, SynapseOutMsgCtx, (AsyncCallback) callback);
@@ -206,7 +205,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                             + " and correlation_id : " + messageCtx.getProperty(CorrelationConstants.CORRELATION_ID)
                             + " But a callback is not registered (anymore) to process " + "this response");
                 }
-                messageCtx.removeProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN);
             }
 
         } else if (!messageCtx.isPropertyTrue(NhttpConstants.SC_ACCEPTED)){
@@ -519,7 +517,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     		failOver =true;
                     	}
                     }
-                    
+
                  // set the properties of the original MC to the new MC
 
                     for (Object key : synapseOutMsgCtx.getPropertyKeySet()) {

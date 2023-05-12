@@ -40,6 +40,8 @@ public class SourceContext {
 
     private SourceConfiguration sourceConfiguration;
 
+    private boolean isSourceRequestMarkedToBeDiscarded = false;
+
     private ProtocolState state = ProtocolState.REQUEST_READY;
 
     private SourceRequest request;
@@ -69,6 +71,15 @@ public class SourceContext {
     public ProtocolState getState() {
         return state;
     }
+
+    public boolean isSourceRequestMarkedToBeDiscarded() {
+        return isSourceRequestMarkedToBeDiscarded;
+    }
+
+    public void setIsSourceRequestMarkedToBeDiscarded(boolean isPipeDiscarded) {
+        this.isSourceRequestMarkedToBeDiscarded = isPipeDiscarded;
+    }
+
 
     public void setState(ProtocolState state) {
         this.state = state;

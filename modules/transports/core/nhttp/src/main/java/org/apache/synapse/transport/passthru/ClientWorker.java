@@ -40,6 +40,7 @@ import org.apache.synapse.commons.util.ext.TenantInfoInitiatorProvider;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 
@@ -62,6 +63,8 @@ public class ClientWorker implements Runnable {
     private boolean expectEntityBody = true;
     /** the axis2 message context of the request */
     private MessageContext requestMessageContext;
+
+    private PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
 
     public ClientWorker(TargetConfiguration targetConfiguration,
                         MessageContext outMsgCtx,
@@ -224,10 +227,10 @@ public class ClientWorker implements Runnable {
         }
         try {
             // If an error has happened in the request processing, consumes the data in pipe completely and discard it
-            if (response.isForceShutdownConnectionOnComplete()) {
+            // If the consumeAndDiscard property is set to true
+            if (response.isForceShutdownConnectionOnComplete() && conf.isConsumeAndDiscard()) {
                 RelayUtils.discardRequestMessage(requestMessageContext);
             }
-
             if (expectEntityBody) {
             	  String cType = response.getHeader(HTTP.CONTENT_TYPE);
                   if(cType == null){
