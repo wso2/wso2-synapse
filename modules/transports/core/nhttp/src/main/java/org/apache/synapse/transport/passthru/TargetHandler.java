@@ -415,7 +415,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                     if (errorStatus.getStatusCode() < HttpStatus.SC_BAD_REQUEST) {
                         log.warn(conn + ": Received a response with status code : "
                                 + response.getStatusLine().getStatusCode() + " in state : " + connState.name()
-                                + "but request is not completely written to the backend");
+                                + " but request is not completely written to the backend, CORRELATION_ID = "
+                                + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
                     }
                     if (requestMsgContext != null) {
                         NHttpServerConnection sourceConn = (NHttpServerConnection) requestMsgContext.getProperty(
