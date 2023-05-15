@@ -134,7 +134,7 @@ public class TargetResponse {
                 try {
                     // this is a connection we should not re-use
                     TargetContext.updateState(conn, ProtocolState.CLOSING);
-                    targetConfiguration.getConnections().shutdownConnection(conn);
+                    targetConfiguration.getConnections().shutdownConnection(conn, forceShutdownConnectionOnComplete);
 
                 } catch (Exception ignore) {
 
@@ -183,7 +183,7 @@ public class TargetResponse {
             if (!this.connStrategy.keepAlive(response, conn.getContext())  || forceShutdownConnectionOnComplete) {
                 TargetContext.updateState(conn, ProtocolState.CLOSED);
 
-                targetConfiguration.getConnections().shutdownConnection(conn);
+                targetConfiguration.getConnections().shutdownConnection(conn, forceShutdownConnectionOnComplete);
             } else {
                 if (conn instanceof LoggingNHttpClientConnection) {
                     ((LoggingNHttpClientConnection) conn).setReleaseConn(true);
