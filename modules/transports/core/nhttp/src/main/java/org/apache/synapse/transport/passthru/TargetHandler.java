@@ -399,6 +399,14 @@ public class TargetHandler implements NHttpClientEventHandler {
             if (connState != ProtocolState.REQUEST_DONE) {
                 isError = true;
                 MessageContext requestMsgContext = TargetContext.get(conn).getRequestMsgCtx();
+                if (conf.isConsumeAndDiscard()) {
+                    log.warn("Response received before the request is sent to the backend completely , CORRELATION_ID = "
+                            + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID) + ". Consuming the " +
+                            "pipe and discarding the data completely");
+                } else {
+                    log.warn("Response received before the request is sent to the backend completely , CORRELATION_ID = "
+                            + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
+                }
                 // State is not REQUEST_DONE. i.e the request is not completely written. But the response is started
                 // receiving, therefore informing a write error has occurred. So the thread which is
                 // waiting on writing the request out, will get notified. And we will proceed with the response
