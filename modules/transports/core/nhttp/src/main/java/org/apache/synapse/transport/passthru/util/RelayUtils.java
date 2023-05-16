@@ -531,9 +531,6 @@ public class RelayUtils {
         if (outTransportInfo instanceof ServerWorker) {
             requestContext = ((ServerWorker) outTransportInfo).getRequestContext();
         }
-        log.warn("Server encountered an error, the request message will be consumed and discarded, " +
-                getRequestInfoForLogging(requestContext) + ", Correlation ID = " +
-                requestContext.getProperty(CorrelationConstants.CORRELATION_ID));
         discardMessage(requestContext);
     }
 
