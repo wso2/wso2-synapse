@@ -541,7 +541,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": I/O error (Probably the keepalive connection "
                         + "was closed):" + e.getMessage()
-                        + "CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
+                        + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
             }
         } else if (e instanceof SSLException) {
             log.warn("I/O error: " + e.getMessage());
@@ -551,7 +551,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             if (msg.indexOf("broken") != -1) {
                 log.warn("I/O error (Probably the connection "
                         + "was closed by the remote party):" + e.getMessage()
-                        + "CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
+                        + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
             } else {
                 log.error("I/O error: " + e.getMessage() + "CORRELATION_ID = "
                         + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID), e);
@@ -560,7 +560,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             metrics.incrementFaultsReceiving();
         } else {
             log.error("Unexpected I/O error: " + e.getClass().getName()
-                    + "CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID), e);
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID), e);
 
             metrics.incrementFaultsReceiving();
         }
@@ -584,7 +584,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             log.warn("STATE_DESCRIPTION = Socket Timeout occurred after reading the request headers but Server is "
                     + "still reading the request body, INTERNAL_STATE = " + state + ", DIRECTION = " + logDetails
                     .get("direction") + ", "
-                    + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = " + logDetails
+                    + "CAUSE_OF_ERROR = Connection between the client and the WSO2 server timeouts, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = " + conn
                     .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn)
                     + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
@@ -597,9 +597,9 @@ public class SourceHandler implements NHttpServerEventHandler {
             isTimeoutOccurred = true;
             metrics.timeoutOccured();
             log.warn("STATE_DESCRIPTION = Socket Timeout occurred after server writing the response headers to the "
-                    + "client" + "but Server is still writing the response body, INTERNAL_STATE = " + state
+                    + "client but Server is still writing the response body, INTERNAL_STATE = " + state
                     + ", DIRECTION = " + logDetails.get("direction") + ", "
-                    + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = " + logDetails
+                    + "CAUSE_OF_ERROR = Connection between the client and the WSO2 server timeouts, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = " + conn
                     .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn)
                     + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
@@ -615,7 +615,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                     "STATE_DESCRIPTION = Socket Timeout occurred after accepting the request headers and the request "
                             + "body, INTERNAL_STATE = "
                             + state + ", DIRECTION = " + logDetails.get("direction") + ", "
-                            + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = "
+                            + "CAUSE_OF_ERROR = Connection between the client and the WSO2 server timeouts, HTTP_URL = "
                             + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
                             + ", SOCKET_TIMEOUT = " + conn.getSocketTimeout() + ", CLIENT_ADDRESS = "
                             + getClientConnectionInfo(conn)

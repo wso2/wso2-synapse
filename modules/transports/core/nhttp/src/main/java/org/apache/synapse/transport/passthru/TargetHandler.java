@@ -739,17 +739,17 @@ public class TargetHandler implements NHttpClientEventHandler {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": I/O error (Probably the keep-alive connection "
                         + "was closed):" + e.getMessage()
-                        + "CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
+                        + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
             }
         } else if (e.getMessage() != null) {
             String msg = e.getMessage().toLowerCase();
             if (msg.indexOf("broken") != -1) {
                 log.warn("I/O error (Probably the connection "
-                        + "was closed by the remote party):" + e.getMessage() + "CORRELATION_ID = "
+                        + "was closed by the remote party):" + e.getMessage() + ", CORRELATION_ID = "
                         + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
             } else {
                 log.error("I/O error: " + e.getMessage()
-                        + "CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID), e);
+                        + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID), e);
             }
         } else {
             log.error(message, e);

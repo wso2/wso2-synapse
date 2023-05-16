@@ -511,7 +511,8 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 //already submitted response for this case, hence return
                 return;
             }
-            log.warn("Trying to submit a response to an already closed connection : " + conn);
+            log.warn("Trying to submit a response to an already closed connection : " + conn +
+                    ", CORRELATION_ID = " + msgContext.getProperty(CorrelationConstants.CORRELATION_ID));
             return;
         }
 
