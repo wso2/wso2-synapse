@@ -387,6 +387,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                 // waiting on writing the request out, will get notified. And we will proceed with the response
                 // regardless of the http status code. But mark target and source connections to be closed.
                 informWriterError(conn);
+                requestMsgContext.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                        PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
                 StatusLine errorStatus = response.getStatusLine();
                 if (errorStatus != null) {
                     TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
