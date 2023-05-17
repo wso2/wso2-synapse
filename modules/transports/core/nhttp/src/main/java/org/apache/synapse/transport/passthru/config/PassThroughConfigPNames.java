@@ -125,4 +125,9 @@ public interface PassThroughConfigPNames {
      * Defines the header name set for correlation logs
      */
     public String CORRELATION_HEADER_NAME_PROPERTY = "correlation_header_name";
+
+    /**
+     * Defines max waiting time for a request to be queued for a worker thread
+     */
+    public String EXPECTED_MAX_QUEUEING_TIME = "expected_max_queueing_time";
 }

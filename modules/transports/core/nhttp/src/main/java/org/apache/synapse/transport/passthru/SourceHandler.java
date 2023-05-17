@@ -16,6 +16,7 @@
 
 package org.apache.synapse.transport.passthru;
 
+import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.*;
@@ -63,6 +64,8 @@ import java.util.UUID;
  */
 public class SourceHandler implements NHttpServerEventHandler {
     private static Log log = LogFactory.getLog(SourceHandler.class);
+    private PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
+
     /** logger for correlation.log */
     private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
     private static final Log transportLatencyLog = LogFactory.getLog(PassThroughConstants.TRANSPORT_LATENCY_LOGGER);
@@ -164,10 +167,20 @@ public class SourceHandler implements NHttpServerEventHandler {
             OutputStream os = getOutputStream(method, request);
             Object correlationId = conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID);
             if (correlationId != null) {
-                sourceConfiguration.getWorkerPool().execute(new ServerWorker(request, sourceConfiguration, os,
+                WorkerPool workerPool = sourceConfiguration.getWorkerPool();
+                workerPool.execute(new ServerWorker(request, sourceConfiguration, os,
                         System.currentTimeMillis(), correlationId.toString()));
+                if (workerPool.getActiveCount() >= conf.getWorkerPoolCoreSize()) {
+                    conn.getContext().setAttribute(PassThroughConstants.SERVER_WORKER_SIDE_QUEUED_TIME,
+                            System.currentTimeMillis());
+                }
             } else {
-                sourceConfiguration.getWorkerPool().execute(new ServerWorker(request, sourceConfiguration, os));
+                WorkerPool workerPool = sourceConfiguration.getWorkerPool();
+                workerPool.execute(new ServerWorker(request, sourceConfiguration, os));
+                if (workerPool.getActiveCount() >= conf.getWorkerPoolCoreSize()) {
+                    conn.getContext().setAttribute(PassThroughConstants.SERVER_WORKER_SIDE_QUEUED_TIME,
+                            System.currentTimeMillis());
+                }
             }
             //increasing the input request metric
             metrics.requestReceived();
@@ -571,6 +584,12 @@ public class SourceHandler implements NHttpServerEventHandler {
         ProtocolState state = SourceContext.getState(conn);
         Map<String, String> logDetails = getLoggingInfo(conn, state);
 
+        if (!PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
+                (PassThroughConstants.SERVER_WORKER_THREAD_STATUS))) {
+            log.warn("Source Handler Socket Timeout occurred while the worker pool exhausted, " +
+                    "INTERNAL_STATE = " + state + ", CORRELATION_ID = "
+                    + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
+        }
         if (state == ProtocolState.REQUEST_READY || state == ProtocolState.RESPONSE_DONE) {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": Keep-Alive connection was time out: ");

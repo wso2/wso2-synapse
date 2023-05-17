@@ -18,6 +18,7 @@ package org.apache.synapse.transport.passthru.connections;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.nio.NHttpServerConnection;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.SourceContext;
 
 import java.io.IOException;
@@ -89,6 +90,7 @@ public class SourceConnections {
     public void releaseConnection(NHttpServerConnection conn) {
         lock.lock();
         try {
+            conn.getContext().removeAttribute(PassThroughConstants.CLIENT_WORKER_THREAD_STATUS);
             SourceContext.get(conn).reset();
 
             if (busyConnections.remove(conn)) {
