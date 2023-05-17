@@ -137,6 +137,11 @@ public interface PassThroughConfigPNames {
     public String CORRELATION_HEADER_NAME_PROPERTY = "correlation_header_name";
 
     /**
+     * Defines max waiting time for a request to be queued for a worker thread
+     */
+    public String EXPECTED_MAX_QUEUEING_TIME = "expected_max_queueing_time";
+
+    /**
      * Defines whether viewing services are enabled or not
      */
     public String BLOCK_SERVICE_LIST = "http.block_service_list";

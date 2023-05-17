@@ -51,6 +51,8 @@ public class PassThroughConfiguration {
     private static final int DEFAULT_MAX_ACTIVE_CON = -1;
     private static final int DEFAULT_LISTENER_SHUTDOWN_WAIT_TIME = 0;
     private static final int DEFAULT_CONNECTION_GRACE_TIME = 10000;
+
+    private static final String EXPECTED_MAX_QUEUEING_TIME_DEFAULT = "1000";
     private Boolean isKeepAliveDisabled = null;
 
     private Boolean isConsumeAndDiscard = true;
@@ -217,6 +219,11 @@ public class PassThroughConfiguration {
     public String getCorrelationHeaderName() {
         return ConfigurationBuilderUtil.getStringProperty(PassThroughConfigPNames.CORRELATION_HEADER_NAME_PROPERTY,
                 PassThroughConstants.CORRELATION_DEFAULT_HEADER, props);
+    }
+
+    public String getExpectedMaxQueueingTime() {
+        return getStringProperty(PassThroughConfigPNames.EXPECTED_MAX_QUEUEING_TIME,
+                EXPECTED_MAX_QUEUEING_TIME_DEFAULT);
     }
 
     /**

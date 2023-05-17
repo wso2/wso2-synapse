@@ -159,6 +159,17 @@ public class PassThroughConstants {
     public static final String RES_TO_CLIENT_WRITE_END_TIME = "RES_TO_CLIENT_WRITE_END_TIME";
 
     public static final String SERVER_WORKER_INIT_TIME = "SERVER_WORKER_INIT_TIME";
+
+    public static final String SERVER_WORKER_THREAD_STATUS = "SERVER_WORKER_THREAD_STATUS";
+
+    public static final String CLIENT_WORKER_THREAD_STATUS = "CLIENT_WORKER_THREAD_STATUS";
+
+    public static final String SERVER_WORKER_SIDE_QUEUED_TIME = "SERVER_WORKER_SIDE_QUEUED_TIME";
+
+    public static final String CLIENT_WORKER_SIDE_QUEUED_TIME = "CLIENT_WORKER_SIDE_QUEUED_TIME";
+
+    public static final String THREAD_STATUS_RUNNING = "RUNNING";
+
     public static final String SERVER_WORKER_START_TIME = "SERVER_WORKER_START_TIME";
 
     public static final String CLIENT_WORKER_INIT_TIME = "CLIENT_WORKER_INIT_TIME";
