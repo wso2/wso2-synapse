@@ -235,7 +235,7 @@ public class ClientWorker implements Runnable {
             if (clientWorkerQueuedTime >= expectedMaxQueueingTime) {
                 log.warn("Client worker thread queued time exceeds the expected max queueing time. Expected max "
                         + "queueing time : " + expectedMaxQueueingTime + "ms. Actual queued time : "
-                        + clientWorkerQueuedTime + "ms"+ ", Correlation Id : "
+                        + clientWorkerQueuedTime + "ms"+ ", CORRELATION_ID : "
                         + requestMessageContext.getProperty(CorrelationConstants.CORRELATION_ID));
             }
 

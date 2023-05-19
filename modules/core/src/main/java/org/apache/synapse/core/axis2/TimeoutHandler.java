@@ -216,16 +216,24 @@ public class TimeoutHandler extends TimerTask {
                     org.apache.axis2.context.MessageContext axis2MessageContext = callback.getAxis2OutMsgCtx();
 
                     if (!"true".equals(callback.getSynapseOutMsgCtx().getProperty(SynapseConstants.OUT_ONLY))) {
-                        ContextAwareLogger.getLogger(PassThroughCorrelationConfigDataHolder.isEnable(),
-                                        axis2MessageContext, log, true)
-                                .warn("Expiring message ID : " + key + "; dropping message after "
-                                        + callback.getTimeoutType().toString() + " of : "
-                                        + (callback.getTimeoutDuration() / 1000) + " seconds for "
-                                        + getEndpointLogMessage(callback.getSynapseOutMsgCtx(),
-                                        callback.getAxis2OutMsgCtx()) + ", "
-                                        + getServiceLogMessage(callback.getSynapseOutMsgCtx())
-                                        + ", CORRELATION_ID = " + axis2MessageContext.getProperty(
-                                        CorrelationConstants.CORRELATION_ID));
+                        String timeoutWarnLog = "Expiring message ID : " + key + "; dropping message after "
+                                + callback.getTimeoutType().toString() + " of : "
+                                + (callback.getTimeoutDuration() / 1000) + " seconds for "
+                                + getEndpointLogMessage(callback.getSynapseOutMsgCtx(),
+                                callback.getAxis2OutMsgCtx()) + ", "
+                                + getServiceLogMessage(callback.getSynapseOutMsgCtx())
+                                + ", CORRELATION_ID = " + axis2MessageContext.getProperty(
+                                CorrelationConstants.CORRELATION_ID);
+                        if (conf.isCloseSocketOnEndpointTimeout()) {
+                            ContextAwareLogger.getLogger(PassThroughCorrelationConfigDataHolder.isEnable(),
+                                            axis2MessageContext, log, true)
+                                    .warn(timeoutWarnLog + " ,Closing the Target Connection");
+
+                        } else {
+                            ContextAwareLogger.getLogger(PassThroughCorrelationConfigDataHolder.isEnable(),
+                                            axis2MessageContext, log, true)
+                                    .warn(timeoutWarnLog);
+                        }
                     }
                     org.apache.synapse.MessageContext synapseOutMsgCtx = callback.getSynapseOutMsgCtx();
                     ConcurrencyThrottlingUtils.decrementConcurrencyThrottleAccessController(synapseOutMsgCtx);
