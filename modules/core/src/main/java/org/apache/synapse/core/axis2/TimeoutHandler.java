@@ -36,6 +36,7 @@ import org.apache.synapse.endpoints.dispatch.SALSessions;
 import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.PassThroughCorrelationConfigDataHolder;
 import org.apache.synapse.util.ConcurrencyThrottlingUtils;
 
@@ -70,6 +71,7 @@ public class TimeoutHandler extends TimerTask {
     private long globalTimeout = SynapseConstants.DEFAULT_GLOBAL_TIMEOUT;
     private static final String SEND_TIMEOUT_MESSAGE = "Send timeout";
     private ServerContextInformation contextInfo = null;
+    private PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
 
     public TimeoutHandler(Map callbacks, ServerContextInformation contextInfo) {
         this.callbackStore = callbacks;
@@ -231,10 +233,12 @@ public class TimeoutHandler extends TimerTask {
                     if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                         CallbackStatisticCollector.callbackCompletionEvent(callback.getSynapseOutMsgCtx(), (String) key);
                     }
-                    TransportOutDescription transportOut = callback.getAxis2OutMsgCtx().getTransportOut();
-                    if (transportOut != null && transportOut.getSender() != null) {
-                        // Call the TransportSender's onAppError method to release any resources
-                        transportOut.getSender().onAppError(callback.getAxis2OutMsgCtx());
+                    if (conf.isCloseSocketOnEndpointTimeout()) {
+                        TransportOutDescription transportOut = callback.getAxis2OutMsgCtx().getTransportOut();
+                        if (transportOut != null && transportOut.getSender() != null) {
+                            // Call the TransportSender's onAppError method to release any resources
+                            transportOut.getSender().onAppError(callback.getAxis2OutMsgCtx());
+                        }
                     }
                 }
             }

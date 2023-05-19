@@ -41,6 +41,7 @@ public class PassThroughConfiguration {
      */
     private static final int DEFAULT_WORKER_POOL_SIZE_CORE       = 40;
     private static final boolean DEFAULT_CONSUME_AND_DISCARD        = true;
+    private static final boolean CLOSE_SOCKET_ON_ENDPOINT_TIMEOUT = false;
     private static final int DEFAULT_WORKER_POOL_SIZE_MAX        = 200;
     private static final int DEFAULT_WORKER_THREAD_KEEPALIVE_SEC = 60;
     private static final int DEFAULT_WORKER_POOL_QUEUE_LENGTH    = -1;
@@ -124,6 +125,11 @@ public class PassThroughConfiguration {
     public boolean isConsumeAndDiscard() {
         isConsumeAndDiscard = getBooleanProperty(PassThroughConfigPNames.CONSUME_AND_DISCARD, DEFAULT_CONSUME_AND_DISCARD);
         return isConsumeAndDiscard;
+    }
+
+    public boolean isCloseSocketOnEndpointTimeout() {
+        return getBooleanProperty(PassThroughConfigPNames.CLOSE_SOCKET_ON_ENDPOINT_TIMEOUT
+                , CLOSE_SOCKET_ON_ENDPOINT_TIMEOUT);
     }
 
     public int getMaxActiveConnections() {

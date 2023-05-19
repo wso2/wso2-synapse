@@ -93,6 +93,11 @@ public interface PassThroughConfigPNames {
     public String CONSUME_AND_DISCARD = "consume_and_discard";
 
     /**
+     * Defines whether we should close target connection on endpoint timeout.
+     */
+    public String CLOSE_SOCKET_ON_ENDPOINT_TIMEOUT = "close_socket_on_endpoint_timeout";
+
+    /**
      * Defines the time interval for idle connection removal.
      */
     public String CONNECTION_IDLE_TIME = "transport.sender.connection.idle.time";
