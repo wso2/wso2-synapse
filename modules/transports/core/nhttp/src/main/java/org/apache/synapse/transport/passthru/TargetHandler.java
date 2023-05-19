@@ -378,7 +378,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                 if (conf.isConsumeAndDiscard()) {
                     log.warn("Response received before the request is sent to the backend completely , CORRELATION_ID = "
                             + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID) + ". Consuming the " +
-                            "pipe and discarding the data completely");
+                            "request message and discarding the data completely");
                 } else {
                     log.warn("Response received before the request is sent to the backend completely , CORRELATION_ID = "
                             + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
