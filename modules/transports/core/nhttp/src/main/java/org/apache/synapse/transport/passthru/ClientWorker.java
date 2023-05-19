@@ -229,13 +229,12 @@ public class ClientWorker implements Runnable {
         Object queuedTime =
                 response.getConnection().getContext().getAttribute(PassThroughConstants.CLIENT_WORKER_START_TIME);
 
-        String expectedMaxQueueingTime = conf.getExpectedMaxQueueingTime();
+        Long expectedMaxQueueingTime = conf.getExpectedMaxQueueingTime();
         if (queuedTime != null && expectedMaxQueueingTime != null) {
-            Long expectedMaxQueueingTimeInMillis = Long.parseLong(expectedMaxQueueingTime);
             Long clientWorkerQueuedTime = System.currentTimeMillis() - (Long) queuedTime;
-            if (clientWorkerQueuedTime >= expectedMaxQueueingTimeInMillis) {
+            if (clientWorkerQueuedTime >= expectedMaxQueueingTime) {
                 log.warn("Client worker thread queued time exceeds the expected max queueing time. Expected max " +
-                        "queueing time : " + expectedMaxQueueingTimeInMillis + "ms. Actual queued time : " +
+                        "queueing time : " + expectedMaxQueueingTime + "ms. Actual queued time : " +
                         clientWorkerQueuedTime + "ms"+ ", Correlation Id : "
                         + requestMessageContext.getProperty(CorrelationConstants.CORRELATION_ID));
             }

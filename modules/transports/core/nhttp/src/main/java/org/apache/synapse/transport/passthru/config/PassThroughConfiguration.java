@@ -51,7 +51,7 @@ public class PassThroughConfiguration {
     private static final int DEFAULT_LISTENER_SHUTDOWN_WAIT_TIME = 0;
     private static final int DEFAULT_CONNECTION_GRACE_TIME = 10000;
 
-    private static final String EXPECTED_MAX_QUEUEING_TIME_DEFAULT = "1000";
+    private static final String EXPECTED_MAX_QUEUEING_TIME_DEFAULT = "30000";
     private Boolean isKeepAliveDisabled = null;
 
     private Boolean isConsumeAndDiscard = true;
@@ -194,9 +194,18 @@ public class PassThroughConfiguration {
                 PassThroughConstants.CORRELATION_DEFAULT_HEADER);
     }
 
-    public String getExpectedMaxQueueingTime() {
-        return getStringProperty(PassThroughConfigPNames.EXPECTED_MAX_QUEUEING_TIME,
+    public Long getExpectedMaxQueueingTime() {
+        String expectedMaxQueuingTime = getStringProperty(PassThroughConfigPNames.EXPECTED_MAX_QUEUEING_TIME,
                 EXPECTED_MAX_QUEUEING_TIME_DEFAULT);
+        Long convertedExpectedMaxQueuingTime;
+        try {
+            convertedExpectedMaxQueuingTime = Long.parseLong(expectedMaxQueuingTime);
+        } catch (NumberFormatException exception) {
+            log.warn("Invalid value for the expected max queuing time. Expected max queuing time should be a long value. " +
+                    "Using the default value " + EXPECTED_MAX_QUEUEING_TIME_DEFAULT);
+            convertedExpectedMaxQueuingTime = Long.parseLong(EXPECTED_MAX_QUEUEING_TIME_DEFAULT);
+        }
+        return convertedExpectedMaxQueuingTime;
     }
 
     /**
