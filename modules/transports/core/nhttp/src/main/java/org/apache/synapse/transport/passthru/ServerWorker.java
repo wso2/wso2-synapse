@@ -147,7 +147,7 @@ public class ServerWorker implements Runnable {
             request.getConnection().getContext().setAttribute(PassThroughConstants.SERVER_WORKER_THREAD_STATUS,
                     PassThroughConstants.THREAD_STATUS_RUNNING);
             Object queuedTime =
-                    request.getConnection().getContext().getAttribute(PassThroughConstants.SERVER_WORKER_START_TIME);
+                    request.getConnection().getContext().getAttribute(PassThroughConstants.SERVER_WORKER_SIDE_QUEUED_TIME);
 
             Long expectedMaxQueueingTime = conf.getExpectedMaxQueueingTime();
             if (queuedTime != null && expectedMaxQueueingTime != null) {
