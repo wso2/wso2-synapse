@@ -160,7 +160,7 @@ public class ServerWorker implements Runnable {
                 if (serverWorkerQueuedTime >= expectedMaxQueueingTimeInMillis) {
                     log.warn("Server worker thread queued time exceeds the expected max queueing time. Expected max " +
                             "queueing time : " + expectedMaxQueueingTimeInMillis + "ms. Actual queued time : " +
-                            serverWorkerQueuedTime + "ms" + ", Correlation Id : " + correlationId);
+                            serverWorkerQueuedTime + "ms" + ", CORRELATION_ID : " + correlationId);
                 }
 
             }

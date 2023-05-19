@@ -37,7 +37,6 @@ import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
-import org.apache.synapse.transport.passthru.config.PassThroughCorrelationConfigDataHolder;
 import org.apache.synapse.util.ConcurrencyThrottlingUtils;
 
 import java.util.ArrayList;
@@ -230,6 +229,27 @@ public class TimeoutHandler extends TimerTask {
                     if (callback == null) {
                         // we will get here if we get a response from the Backend while clearing callbacks
                         continue;
+                    }
+
+                    org.apache.axis2.context.MessageContext axis2MessageContext = callback.getAxis2OutMsgCtx();
+
+                    if (!"true".equals(callback.getSynapseOutMsgCtx().getProperty(SynapseConstants.OUT_ONLY))) {
+                        String timeoutWarnLog = "Expiring message ID : " + key + "; dropping message after "
+                                + callback.getTimeoutType().toString() + " of : "
+                                + (callback.getTimeoutDuration() / 1000) + " seconds for "
+                                + getEndpointLogMessage(callback.getSynapseOutMsgCtx(),
+                                callback.getAxis2OutMsgCtx()) + ", "
+                                + getServiceLogMessage(callback.getSynapseOutMsgCtx())
+                                + ", CORRELATION_ID = " + axis2MessageContext.getProperty(
+                                CorrelationConstants.CORRELATION_ID);
+                        if (conf.isCloseSocketOnEndpointTimeout()) {
+                            ContextAwareLogger.getLogger(axis2MessageContext, log, true)
+                                    .warn(timeoutWarnLog + " ,Closing the Target Connection");
+
+                        } else {
+                            ContextAwareLogger.getLogger(axis2MessageContext, log, true)
+                                    .warn(timeoutWarnLog);
+                        }
                     }
                     org.apache.synapse.MessageContext synapseOutMsgCtx = callback.getSynapseOutMsgCtx();
                     ConcurrencyThrottlingUtils.decrementConcurrencyThrottleAccessController(synapseOutMsgCtx);
