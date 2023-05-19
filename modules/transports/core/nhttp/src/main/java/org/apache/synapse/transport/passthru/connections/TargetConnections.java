@@ -217,6 +217,8 @@ public class TargetConnections {
                 PassThroughConstants.CONNECTION_POOL);
 
         TargetContext.get(conn).reset(false);
+        conn.getContext().removeAttribute(PassThroughConstants.CLIENT_WORKER_THREAD_STATUS);
+        conn.getContext().removeAttribute(PassThroughConstants.CLIENT_WORKER_SIDE_QUEUED_TIME);
         //Set the event mask to Read since connection is released to the pool and should be ready to read
         conn.requestInput();
 
