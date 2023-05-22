@@ -1005,11 +1005,16 @@ public class SourceHandler implements NHttpServerEventHandler {
                 }
             }
             if ((method.length() != 0) && (url.length() != 0)) {
-                long startTime = (long) conn.getContext().getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME);
-                ContextAwareLogger.getLogger(conn.getContext(), correlationLog, false)
-                        .info((System.currentTimeMillis() - startTime) + "|HTTP|"
-                                + conn.getContext().getAttribute("http.connection") + "|" + method + "|" + url
-                                + "|" + state);
+                if (conn.getContext().getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME) != null) {
+                    long startTime = (long) conn.getContext().getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME);
+                    ContextAwareLogger.getLogger(conn.getContext(), correlationLog, false).info(
+                            (System.currentTimeMillis() - startTime) + "|HTTP|" + conn.getContext()
+                                    .getAttribute("http.connection") + "|" + method + "|" + url + "|" + state);
+                } else {
+                    ContextAwareLogger.getLogger(conn.getContext(), correlationLog, false).info(
+                            "|HTTP|" + conn.getContext().getAttribute("http.connection") + "|" + method + "|" + url
+                                    + "|" + state);
+                }
             }
         }
     }
