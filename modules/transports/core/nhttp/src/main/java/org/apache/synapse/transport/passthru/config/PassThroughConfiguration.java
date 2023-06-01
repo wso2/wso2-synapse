@@ -90,8 +90,8 @@ public class PassThroughConfiguration {
                 DEFAULT_WORKER_POOL_SIZE_CORE);
     }
     public int getSecondaryWorkerPoolCoreSize() {
-        return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.SECONDARY_WORKER_POOL_SIZE_CORE,
-                DEFAULT_WORKER_POOL_SIZE_CORE, props);
+        return getIntProperty(PassThroughConfigPNames.SECONDARY_WORKER_POOL_SIZE_CORE,
+                DEFAULT_WORKER_POOL_SIZE_CORE);
     }
 
     public int getWorkerPoolMaxSize() {
@@ -99,8 +99,8 @@ public class PassThroughConfiguration {
                 DEFAULT_WORKER_POOL_SIZE_MAX);
     }
     public int getSecondaryWorkerPoolMaxSize() {
-        return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.SECONDARY_WORKER_POOL_SIZE_MAX,
-                DEFAULT_WORKER_POOL_SIZE_MAX, props);
+        return getIntProperty(PassThroughConfigPNames.SECONDARY_WORKER_POOL_SIZE_MAX,
+                DEFAULT_WORKER_POOL_SIZE_MAX);
     }
 
     public int getWorkerThreadKeepaliveSec() {
@@ -109,8 +109,8 @@ public class PassThroughConfiguration {
     }
 
     public int getSecondaryWorkerThreadKeepaliveSec() {
-        return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.SECONDARY_WORKER_THREAD_KEEPALIVE_SEC,
-                DEFAULT_WORKER_THREAD_KEEPALIVE_SEC, props);
+        return getIntProperty(PassThroughConfigPNames.SECONDARY_WORKER_THREAD_KEEPALIVE_SEC,
+                DEFAULT_WORKER_THREAD_KEEPALIVE_SEC);
     }
 
     public int getWorkerPoolQueueLen() {
@@ -119,8 +119,8 @@ public class PassThroughConfiguration {
     }
 
     public int getSecondaryWorkerPoolQueueLen() {
-        return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.SECONDARY_WORKER_POOL_QUEUE_LENGTH,
-                DEFAULT_WORKER_POOL_QUEUE_LENGTH, props);
+        return getIntProperty(PassThroughConfigPNames.SECONDARY_WORKER_POOL_QUEUE_LENGTH,
+                DEFAULT_WORKER_POOL_QUEUE_LENGTH);
     }
 
     public int getIOThreadsPerReactor() {
