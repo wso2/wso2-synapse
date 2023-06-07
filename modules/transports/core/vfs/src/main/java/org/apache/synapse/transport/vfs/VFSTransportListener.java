@@ -581,7 +581,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 fileObject.close();
                 fsManager.getFilesCache().clear(fileObject.getParent().getFileSystem());
                 if (!fileObject.exists() && !entry.isFileNotFoundLogged()) {
-                    log.warn("File not found: " + fileObject.getName());
+                    log.warn("Provided file uri: " + fileURI + " is invalid. File does not exists");
                     entry.setFileNotFoundLogged(true);
                 }
                 if (log.isDebugEnabled()) {
