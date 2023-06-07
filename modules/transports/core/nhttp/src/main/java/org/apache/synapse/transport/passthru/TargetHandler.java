@@ -804,7 +804,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                 log.warn("ERROR_CODE = " + ErrorCodes.CONNECTION_TIMEOUT + ", STATE_DESCRIPTION = Socket Timeout "
                         + "occurred " + logDetails.get("state_description") + ", INTERNAL_STATE = " + state
                         + ", DIRECTION = " + logDetails.get("direction") + ", "
-                        + "CAUSE_OF_ERROR = Connection between the EI and the BackEnd timeouts, TARGET_HOST = "
+                        + "CAUSE_OF_ERROR = Connection between the WSO2 Server and the BackEnd timeouts, TARGET_HOST = "
                         + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port") + ", TARGET_CONTEXT = "
                         + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
                         + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
@@ -819,7 +819,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                 log.warn("ERROR_CODE = " + ErrorCodes.CONNECTION_TIMEOUT + ", STATE_DESCRIPTION = Socket Timeout "
                         + "occurred " + logDetails.get("state_description") + ", INTERNAL_STATE = " + state
                         + ", DIRECTION = " + logDetails.get("direction") + ", "
-                        + "CAUSE_OF_ERROR = Connection between the EI and the BackEnd timeouts, TARGET_HOST = "
+                        + "CAUSE_OF_ERROR = Connection between the WSO2 Server and the BackEnd timeouts, TARGET_HOST = "
                         + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port") + ", TARGET_CONTEXT = "
                         + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
                         + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
@@ -832,7 +832,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                 log.warn("ERROR_CODE = " + ErrorCodes.CONNECTION_TIMEOUT + ", STATE_DESCRIPTION = Socket Timeout "
                         + "occurred " + logDetails.get("state_description") + ", INTERNAL_STATE = " + state
                         + ", DIRECTION = " + logDetails.get("direction") + ", "
-                        + "CAUSE_OF_ERROR = Connection between the EI and the BackEnd timeouts, TARGET_HOST = "
+                        + "CAUSE_OF_ERROR = Connection between the WSO2 Server and the BackEnd timeouts, TARGET_HOST = "
                         + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port") + ", TARGET_CONTEXT = "
                         + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
                         + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails

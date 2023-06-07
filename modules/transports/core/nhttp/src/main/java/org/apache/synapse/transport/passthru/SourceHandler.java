@@ -668,7 +668,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             log.warn("STATE_DESCRIPTION = Connection closed while server accepting request headers but prior to "
                     + "finish reading the request body, INTERNAL_STATE = " + state + ", DIRECTION = " + logDetails
                     .get("direction") + ", "
-                    + "CAUSE_OF_ERROR = Connection between EI and the Client has been closed, HTTP_URL = " + logDetails
+                    + "CAUSE_OF_ERROR = Connection between WSO2 Server and the Client has been closed, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = "
                     + getClientConnectionInfo(conn)
                     + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
@@ -682,7 +682,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             informWriterError(conn);
             log.warn("STATE_DESCRIPTION = Connection closed while server writing the response headers or body, "
                     + "INTERNAL_STATE = " + state + ", DIRECTION = " + logDetails.get("direction") + ", "
-                    + "CAUSE_OF_ERROR = Connection between EI and the Client has been closed, HTTP_URL = " + logDetails
+                    + "CAUSE_OF_ERROR = Connection between WSO2 Server and the Client has been closed, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = "
                     + getClientConnectionInfo(conn)
                     + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
@@ -695,7 +695,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             informWriterError(conn);
             log.warn("STATE_DESCRIPTION = Connection closed after server accepting the request headers and the "
                     + "request body, INTERNAL_STATE = " + state + ", DIRECTION = " + logDetails.get("direction") + ", "
-                    + "CAUSE_OF_ERROR = Connection between EI and the Client has been closed, HTTP_URL = " + logDetails
+                    + "CAUSE_OF_ERROR = Connection between WSO2 Server and the Client has been closed, HTTP_URL = " + logDetails
                     .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", CLIENT_ADDRESS = "
                     + getClientConnectionInfo(conn)
                     + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
