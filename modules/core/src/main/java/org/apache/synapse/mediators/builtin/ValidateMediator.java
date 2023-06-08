@@ -416,14 +416,16 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                         // Generating a cached schema key
                         cachedSchemaKey.append(propName);
                     }
+                    SchemaResourceResolver schemaResourceResolver =
+                            new SchemaResourceResolver(synCtx.getConfiguration(), resourceMap);
                     // load the UserDefined SchemaURIResolver implementations
                     try {
                         SynapseConfiguration synCfg = synCtx.getConfiguration();
                         if (synCfg.getProperty(SynapseConstants.SYNAPSE_SCHEMA_RESOLVER) != null) {
                             setUserDefinedSchemaResourceResolver(synCtx);
                         } else {
-                            factory.setResourceResolver(
-                                    new SchemaResourceResolver(synCtx.getConfiguration(), resourceMap, synCtx));
+                            if (resourceMap != null) schemaResourceResolver.setMessageContext(synCtx);
+                            factory.setResourceResolver(schemaResourceResolver);
                         }
                         if (cacheSchema) {
                             cachedSchema = factory.newSchema(sources);
@@ -452,6 +454,8 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                     } catch (RuntimeException e) {
                         handleException("Error creating a new schema objects for " +
                                         "schemas : " + schemaKeys.toString(), e, synCtx);
+                    } finally {
+                        schemaResourceResolver.setMessageContext(null);
                     }
 
                     if (errorHandler.isValidationError()) {
