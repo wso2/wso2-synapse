@@ -41,6 +41,7 @@ import org.apache.synapse.commons.util.ext.TenantInfoInitiatorProvider;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 
@@ -65,6 +66,8 @@ public class ClientWorker implements Runnable {
     private boolean expectEntityBody = true;
     /** the axis2 message context of the request */
     private MessageContext requestMessageContext;
+
+    private PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
 
     public ClientWorker(TargetConfiguration targetConfiguration, MessageContext outMsgCtx, TargetResponse response) {
         this(targetConfiguration, outMsgCtx, response, Collections.emptyList());
@@ -148,6 +151,8 @@ public class ClientWorker implements Runnable {
                 outMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONFIGURATION));
         responseMsgCtx.setProperty(AddressingConstants.DISABLE_ADDRESSING_FOR_IN_MESSAGES,
                 outMsgCtx.getProperty(AddressingConstants.DISABLE_ADDRESSING_FOR_IN_MESSAGES));
+        responseMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                outMsgCtx.getProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN));
 
         responseMsgCtx.setServerSide(true);
         responseMsgCtx.setDoingREST(outMsgCtx.isDoingREST());
@@ -234,16 +239,35 @@ public class ClientWorker implements Runnable {
             cleanup();
             return;
         }
+        // Mark the start of the request at the beginning of the worker thread
+        response.getConnection().getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_THREAD_STATUS,
+                PassThroughConstants.THREAD_STATUS_RUNNING);
+        Object queuedTime =
+                response.getConnection().getContext().getAttribute(PassThroughConstants.CLIENT_WORKER_START_TIME);
+
+        String expectedMaxQueueingTime = conf.getExpectedMaxQueueingTime();
+        if (queuedTime != null && expectedMaxQueueingTime != null) {
+            Long expectedMaxQueueingTimeInMillis = Long.parseLong(expectedMaxQueueingTime);
+            Long clientWorkerQueuedTime = System.currentTimeMillis() - (Long) queuedTime;
+            if (clientWorkerQueuedTime >= expectedMaxQueueingTimeInMillis) {
+                log.warn("Client worker thread queued time exceeds the expected max queueing time. Expected max " +
+                        "queueing time : " + expectedMaxQueueingTimeInMillis + "ms. Actual queued time : " +
+                        clientWorkerQueuedTime + "ms"+ ", CORRELATION_ID : "
+                        + requestMessageContext.getProperty(CorrelationConstants.CORRELATION_ID));
+            }
+
+        }
+
         if (responseMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION) != null) {
             ((NHttpServerConnection) responseMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION)).
                        getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_START_TIME, System.currentTimeMillis());
         }
         try {
             // If an error has happened in the request processing, consumes the data in pipe completely and discard it
-            if (response.isForceShutdownConnectionOnComplete()) {
+            // If the consumeAndDiscard property is set to true
+            if (response.isForceShutdownConnectionOnComplete() && conf.isConsumeAndDiscard()) {
                 RelayUtils.discardRequestMessage(requestMessageContext);
             }
-
             if (expectEntityBody) {
             	  String cType = response.getHeader(HTTP.CONTENT_TYPE);
                   if(cType == null){

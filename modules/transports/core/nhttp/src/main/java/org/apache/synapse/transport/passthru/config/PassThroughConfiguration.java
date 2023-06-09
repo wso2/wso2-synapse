@@ -41,6 +41,7 @@ public class PassThroughConfiguration {
      * Default tuning parameter values
      */
     private static final int DEFAULT_WORKER_POOL_SIZE_CORE       = 40;
+    private static final boolean CLOSE_SOCKET_ON_ENDPOINT_TIMEOUT = false;
     private static final int DEFAULT_WORKER_POOL_SIZE_MAX        = 200;
     private static final int DEFAULT_WORKER_THREAD_KEEPALIVE_SEC = 60;
     private static final int DEFAULT_WORKER_POOL_QUEUE_LENGTH    = -1;
@@ -50,7 +51,11 @@ public class PassThroughConfiguration {
     private static final int DEFAULT_MAX_ACTIVE_CON = -1;
     private static final int DEFAULT_LISTENER_SHUTDOWN_WAIT_TIME = 0;
     private static final int DEFAULT_CONNECTION_GRACE_TIME = 10000;
+
+    private static final String EXPECTED_MAX_QUEUEING_TIME_DEFAULT = "1000";
     private Boolean isKeepAliveDisabled = null;
+
+    private Boolean isConsumeAndDiscard = true;
 
     //additional rest dispatch handlers
     private static final String REST_DISPATCHER_SERVICE="rest.dispatcher.service";
@@ -119,6 +124,18 @@ public class PassThroughConfiguration {
                             false, props);
         }
         return isKeepAliveDisabled;
+    }
+
+    public boolean isCloseSocketOnEndpointTimeout() {
+        return ConfigurationBuilderUtil.getBooleanProperty(PassThroughConfigPNames.CLOSE_SOCKET_ON_ENDPOINT_TIMEOUT
+                , CLOSE_SOCKET_ON_ENDPOINT_TIMEOUT, props);
+    }
+
+    public boolean isConsumeAndDiscard() {
+        isConsumeAndDiscard =
+                    ConfigurationBuilderUtil.getBooleanProperty(PassThroughConfigPNames.CONSUME_AND_DISCARD,
+                            true, props);
+        return isConsumeAndDiscard;
     }
 
     public int getMaxActiveConnections() {
@@ -202,6 +219,11 @@ public class PassThroughConfiguration {
     public String getCorrelationHeaderName() {
         return ConfigurationBuilderUtil.getStringProperty(PassThroughConfigPNames.CORRELATION_HEADER_NAME_PROPERTY,
                 PassThroughConstants.CORRELATION_DEFAULT_HEADER, props);
+    }
+
+    public String getExpectedMaxQueueingTime() {
+        return getStringProperty(PassThroughConfigPNames.EXPECTED_MAX_QUEUEING_TIME,
+                EXPECTED_MAX_QUEUEING_TIME_DEFAULT);
     }
 
     /**

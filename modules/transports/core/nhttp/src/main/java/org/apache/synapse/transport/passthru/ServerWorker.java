@@ -106,7 +106,9 @@ public class ServerWorker implements Runnable {
     
     /** Weather we should do rest dispatching or not */
     private boolean isRestDispatching = true;
-    
+
+    private PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
+
     private OutputStream os; //only used for WSDL  requests..
   
     public ServerWorker(final SourceRequest request,
@@ -144,15 +146,33 @@ public class ServerWorker implements Runnable {
 
     public void run() {
         try {
+
+            // Mark the start of the request at the beginning of the worker thread
+            request.getConnection().getContext().setAttribute(PassThroughConstants.SERVER_WORKER_THREAD_STATUS,
+                    PassThroughConstants.THREAD_STATUS_RUNNING);
+            Object queuedTime =
+                    request.getConnection().getContext().getAttribute(PassThroughConstants.SERVER_WORKER_START_TIME);
+
+            String expectedMaxQueueingTime = conf.getExpectedMaxQueueingTime();
+            if (queuedTime != null && expectedMaxQueueingTime != null) {
+                Long expectedMaxQueueingTimeInMillis = Long.parseLong(expectedMaxQueueingTime);
+                Long serverWorkerQueuedTime = System.currentTimeMillis() - (Long) queuedTime;
+                if (serverWorkerQueuedTime >= expectedMaxQueueingTimeInMillis) {
+                    log.warn("Server worker thread queued time exceeds the expected max queueing time. Expected max " +
+                            "queueing time : " + expectedMaxQueueingTimeInMillis + "ms. Actual queued time : " +
+                            serverWorkerQueuedTime + "ms" + ", CORRELATION_ID : " + correlationId);
+                }
+
+            }
              /* Remove correlation id MDC thread local value that can be persisting from the
                previous usage of this thread */
             ThreadContext.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
             /* Subsequent to removing the correlation id MDC thread local value, a new value is put in case
                there is one */
-            if (PassThroughCorrelationConfigDataHolder.isEnable() && StringUtils.isNotEmpty(correlationId)) {
+            if (StringUtils.isNotEmpty(correlationId)) {
                 ThreadContext.put(CorrelationConstants.CORRELATION_MDC_PROPERTY, correlationId);
                 /* Log the time taken to switch from the previous thread to this thread */
-                if (initiationTimestamp != 0) {
+                if (PassThroughCorrelationConfigDataHolder.isEnable() && initiationTimestamp != 0) {
                     correlationLog.info((System.currentTimeMillis() - initiationTimestamp) +
                             "|Thread switch latency");
                 }

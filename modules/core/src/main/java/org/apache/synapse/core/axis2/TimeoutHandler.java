@@ -21,6 +21,7 @@ package org.apache.synapse.core.axis2;
 
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.axis2.description.TransportOutDescription;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.FaultHandler;
@@ -35,6 +36,7 @@ import org.apache.synapse.endpoints.dispatch.SALSessions;
 import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.ConcurrencyThrottlingUtils;
 
 import java.util.ArrayList;
@@ -68,6 +70,7 @@ public class TimeoutHandler extends TimerTask {
     private long globalTimeout = SynapseConstants.DEFAULT_GLOBAL_TIMEOUT;
     private static final String SEND_TIMEOUT_MESSAGE = "Send timeout";
     private ServerContextInformation contextInfo = null;
+    private PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
 
     public TimeoutHandler(Map callbacks, ServerContextInformation contextInfo) {
         this.callbackStore = callbacks;
@@ -227,11 +230,39 @@ public class TimeoutHandler extends TimerTask {
                         // we will get here if we get a response from the Backend while clearing callbacks
                         continue;
                     }
+
+                    org.apache.axis2.context.MessageContext axis2MessageContext = callback.getAxis2OutMsgCtx();
+
+                    if (!"true".equals(callback.getSynapseOutMsgCtx().getProperty(SynapseConstants.OUT_ONLY))) {
+                        String timeoutWarnLog = "Expiring message ID : " + key + "; dropping message after "
+                                + callback.getTimeoutType().toString() + " of : "
+                                + (callback.getTimeoutDuration() / 1000) + " seconds for "
+                                + getEndpointLogMessage(callback.getSynapseOutMsgCtx(),
+                                callback.getAxis2OutMsgCtx()) + ", "
+                                + getServiceLogMessage(callback.getSynapseOutMsgCtx())
+                                + ", CORRELATION_ID = " + axis2MessageContext.getProperty(
+                                CorrelationConstants.CORRELATION_ID);
+                        if (conf.isCloseSocketOnEndpointTimeout()) {
+                            ContextAwareLogger.getLogger(axis2MessageContext, log, true)
+                                    .warn(timeoutWarnLog + " ,Closing the Target Connection");
+
+                        } else {
+                            ContextAwareLogger.getLogger(axis2MessageContext, log, true)
+                                    .warn(timeoutWarnLog);
+                        }
+                    }
                     org.apache.synapse.MessageContext synapseOutMsgCtx = callback.getSynapseOutMsgCtx();
                     ConcurrencyThrottlingUtils.decrementConcurrencyThrottleAccessController(synapseOutMsgCtx);
                     callbackStore.remove(key);
                     if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                         CallbackStatisticCollector.callbackCompletionEvent(callback.getSynapseOutMsgCtx(), (String) key);
+                    }
+                    if (conf.isCloseSocketOnEndpointTimeout()) {
+                        TransportOutDescription transportOut = callback.getAxis2OutMsgCtx().getTransportOut();
+                        if (transportOut != null && transportOut.getSender() != null) {
+                            // Call the TransportSender's onAppError method to release any resources
+                            transportOut.getSender().onAppError(callback.getAxis2OutMsgCtx());
+                        }
                     }
                 }
             }

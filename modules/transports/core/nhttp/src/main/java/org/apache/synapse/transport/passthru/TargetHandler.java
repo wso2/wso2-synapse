@@ -21,6 +21,7 @@ import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.WSDL2Constants;
 import org.apache.axis2.engine.MessageReceiver;
 import org.apache.axis2.transport.base.MetricsCollector;
+import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.ConnectionClosedException;
@@ -50,7 +51,6 @@ import org.apache.synapse.transport.passthru.config.PassThroughCorrelationConfig
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.HostConnections;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -69,6 +69,7 @@ public class TargetHandler implements NHttpClientEventHandler {
 
     /** log for correlation.log */
     private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
+    private static final Log transportLatencyLog = LogFactory.getLog(PassThroughConstants.TRANSPORT_LATENCY_LOGGER);
 
     /** Delivery agent */
     private final DeliveryAgent deliveryAgent;
@@ -91,11 +92,14 @@ public class TargetHandler implements NHttpClientEventHandler {
     public static final String PROPERTY_FILE = "passthru-http.properties";
     public static final String MESSAGE_SIZE_VALIDATION = "message.size.validation.enabled";
     public static final String VALID_MAX_MESSAGE_SIZE = "valid.max.message.size.in.bytes";
+    public static final String CONNECTION_POOL = "CONNECTION_POOL";
 
     private List<StreamInterceptor> streamInterceptors;
     private boolean interceptStream;
     private int noOfInterceptors;
     private static List<String> allowedResponseProperties = new ArrayList<>();
+
+    private PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
 
     public TargetHandler(DeliveryAgent deliveryAgent, ClientConnFactory connFactory,
                          TargetConfiguration configuration) {
@@ -139,6 +143,10 @@ public class TargetHandler implements NHttpClientEventHandler {
     }
 
     public void connected(NHttpClientConnection conn, Object o) {
+        long connectionCreationTimestamp = 0;
+        if (transportLatencyLog.isDebugEnabled()) {
+            connectionCreationTimestamp = System.currentTimeMillis();
+        }
         assert o instanceof HostConnections : "Attachment should be a HostConnections";
         HostConnections pool = (HostConnections) o;
         conn.getContext().setAttribute(PassThroughConstants.CONNECTION_POOL, pool);
@@ -161,6 +169,10 @@ public class TargetHandler implements NHttpClientEventHandler {
             // Requires a proxy tunnel
             ProxyTunnelHandler tunnelHandler = new ProxyTunnelHandler(route, connFactory);
             context.setAttribute(PassThroughConstants.TUNNEL_HANDLER, tunnelHandler);
+        }
+        if (transportLatencyLog.isDebugEnabled()) {
+            transportLatencyLog.debug(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                    "Connection established at time stamp: " + connectionCreationTimestamp + " for route: " + route);
         }
     }
 
@@ -205,6 +217,13 @@ public class TargetHandler implements NHttpClientEventHandler {
                 request.start(conn);
                 targetConfiguration.getMetrics().incrementMessagesSent();
             }
+
+            if (transportLatencyLog.isDebugEnabled()) {
+                String route = request == null ? "null" : request.getRoute().toString();
+                transportLatencyLog.debug(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                        "Request writing started at time stamp: " + System.currentTimeMillis() + " and route: " +
+                        route);
+            }
             context.setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME, System.currentTimeMillis());
             context.setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
         } catch (IOException e) {
@@ -243,6 +262,14 @@ public class TargetHandler implements NHttpClientEventHandler {
     public void outputReady(NHttpClientConnection conn, ContentEncoder encoder) {
         ProtocolState connState = null;
         MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
+        if (transportLatencyLog.isTraceEnabled()) {
+            HttpContext context = conn.getContext();
+            HostConnections pool = (HostConnections) context.getAttribute(CONNECTION_POOL);
+            String route = pool == null ? "null" : pool.getRoute().toString();
+            transportLatencyLog.trace(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                    "Writing request chunk to Backend at time stamp: " + System.currentTimeMillis() +
+                    " and route: " + route);
+        }
         try {
             connState = TargetContext.getState(conn);
             if (connState != ProtocolState.REQUEST_HEAD &&
@@ -340,6 +367,13 @@ public class TargetHandler implements NHttpClientEventHandler {
 
     public void responseReceived(NHttpClientConnection conn) {
         HttpContext context = conn.getContext();
+        if (transportLatencyLog.isDebugEnabled()) {
+            HostConnections pool = (HostConnections) context.getAttribute(CONNECTION_POOL);
+            String route = pool == null ? "null" : pool.getRoute().toString();
+            transportLatencyLog.debug(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                    "Received Response headers from Backend at time stamp: " + System.currentTimeMillis() +
+                    " and route: " + route);
+        }
         if (isMessageSizeValidationEnabled) {
             context.setAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
         }
@@ -398,34 +432,57 @@ public class TargetHandler implements NHttpClientEventHandler {
             if (connState != ProtocolState.REQUEST_DONE) {
                 isError = true;
                 MessageContext requestMsgContext = TargetContext.get(conn).getRequestMsgCtx();
+                if (conf.isConsumeAndDiscard()) {
+                    log.warn("Response received before the request is sent to the backend completely , CORRELATION_ID = "
+                            + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID) + ". Consuming the " +
+                            "request message and discarding the data completely");
+                } else {
+                    log.warn("Response received before the request is sent to the backend completely , CORRELATION_ID = "
+                            + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
+                }
                 // State is not REQUEST_DONE. i.e the request is not completely written. But the response is started
                 // receiving, therefore informing a write error has occurred. So the thread which is
-                // waiting on writing the request out, will get notified.
+                // waiting on writing the request out, will get notified. And we will proceed with the response
+                // regardless of the http status code. But mark target and source connections to be closed.
                 informWriterError(conn);
+                requestMsgContext.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                        PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
                 StatusLine errorStatus = response.getStatusLine();
-                /* We might receive a 404 or a similar type, even before we write the request body. */
                 if (errorStatus != null) {
-                    if (errorStatus.getStatusCode() >= HttpStatus.SC_BAD_REQUEST) {
-                        TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
-                        conn.resetOutput();
-                        if (log.isDebugEnabled()) {
-                            log.debug(conn + ": Received response with status code : " + response.getStatusLine()
-                                    .getStatusCode() + " in invalid state : " + connState.name());
+                    TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
+                    conn.resetOutput();
+                    if (log.isDebugEnabled()) {
+                        log.debug(conn + ": Received response with status code : " + response.getStatusLine()
+                                .getStatusCode() + " in invalid state : " + connState.name());
+                    }
+                    if (errorStatus.getStatusCode() < HttpStatus.SC_BAD_REQUEST) {
+                        log.warn(conn + ": Received a response with status code : "
+                                + response.getStatusLine().getStatusCode() + " in state : " + connState.name()
+                                + " but request is not completely written to the backend, CORRELATION_ID = "
+                                + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
+                    }
+                    if (requestMsgContext != null) {
+                        NHttpServerConnection sourceConn = (NHttpServerConnection) requestMsgContext.getProperty(
+                                PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
+                        if (sourceConn != null) {
+                            if (!conf.isConsumeAndDiscard()) {
+                                //Suspend input to avoid invoking input ready method and set this property here
+                                //to avoid invoking the input ready method, while response is mediating through the
+                                // mediation since we have set REQUEST_DONE state in SourceHandler responseReady method
+                                sourceConn.suspendInput();
+                                SourceContext sourceContext = (SourceContext)sourceConn.getContext().getAttribute(TargetContext.CONNECTION_INFORMATION);
+                                if (sourceContext != null) {
+                                    sourceContext.setIsSourceRequestMarkedToBeDiscarded(true);
+                                }
+                            }
+                            SourceContext.get(sourceConn).setShutDown(true);
                         }
-                        if (requestMsgContext != null) {
-                            NHttpServerConnection sourceConn = (NHttpServerConnection) requestMsgContext.getProperty(
-                                    PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
-                            if (sourceConn != null) {
-                                SourceContext.updateState(sourceConn, ProtocolState.REQUEST_DONE);
-                                SourceContext.get(sourceConn).setShutDown(true);
-                            }
-                        } else {
-                            if (log.isDebugEnabled()) {
-                                log.debug(conn + ": has not started any request");
-                            }
-                            if (statusCode == HttpStatus.SC_REQUEST_TIMEOUT) {
-                                return; // ignoring the stale connection close
-                            }
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug(conn + ": has not started any request");
+                        }
+                        if (statusCode == HttpStatus.SC_REQUEST_TIMEOUT) {
+                            return; // ignoring the stale connection close
                         }
                     }
                 } else {
@@ -458,10 +515,14 @@ public class TargetHandler implements NHttpClientEventHandler {
             if (statusCode == HttpStatus.SC_ACCEPTED && handle202(requestMsgContext)) {
                 return;
             }
-
-            targetConfiguration.getWorkerPool().execute(
+            WorkerPool workerPool = targetConfiguration.getWorkerPool();
+            workerPool.execute(
                     new ClientWorker(targetConfiguration, requestMsgContext, targetResponse,
                                      allowedResponseProperties));
+            if (workerPool.getActiveCount() >= conf.getWorkerPoolCoreSize()) {
+                conn.getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_SIDE_QUEUED_TIME,
+                        System.currentTimeMillis());
+            }
 
             targetConfiguration.getMetrics().incrementMessagesReceived();
 
@@ -547,6 +608,14 @@ public class TargetHandler implements NHttpClientEventHandler {
     public void inputReady(NHttpClientConnection conn, ContentDecoder decoder) {
         ProtocolState connState;
         MessageContext msgCtx = TargetContext.get(conn).getRequestMsgCtx();
+        if (transportLatencyLog.isTraceEnabled()) {
+            HttpContext context = conn.getContext();
+            HostConnections pool = (HostConnections) context.getAttribute(CONNECTION_POOL);
+            String route = pool == null ? "null" : pool.getRoute().toString();
+            transportLatencyLog.trace(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                    "Response chunk received from Backend at time stamp: " + System.currentTimeMillis() +
+                    " and route: " + route);
+        }
         try {
             connState = TargetContext.getState(conn);
             if (connState.compareTo(ProtocolState.RESPONSE_HEAD) < 0) {
@@ -696,8 +765,9 @@ public class TargetHandler implements NHttpClientEventHandler {
                     + ", TARGET_HOST = " + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port")
                     + ", TARGET_CONTEXT = " + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
                     + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
-                    .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn) + ", "
-                    + "CONNECTION = " + conn);
+                    .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn);
         }
     }
 
@@ -723,7 +793,9 @@ public class TargetHandler implements NHttpClientEventHandler {
                     + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port") + ", TARGET_CONTEXT = "
                     + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", TRIGGER_TYPE = "
                     + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails.get("trigger_name")
-                    + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn) + ", " + "CONNECTION = " + conn);
+                    + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn);
             isFault = true;
         } else if (state == ProtocolState.RESPONSE_HEAD || state == ProtocolState.RESPONSE_BODY) {
             informReaderError(conn);
@@ -734,7 +806,9 @@ public class TargetHandler implements NHttpClientEventHandler {
                     + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port") + ", TARGET_CONTEXT = "
                     + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", TRIGGER_TYPE = "
                     + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails.get("trigger_name")
-                    + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn) + ", " + "CONNECTION = " + conn);
+                    + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn);
             isFault = true;
         } else if (state == ProtocolState.REQUEST_DONE) {
             log.warn("ERROR_CODE = " + ErrorCodes.CONNECTION_CLOSED + ", STATE_DESCRIPTION = Connection closed by "
@@ -744,7 +818,9 @@ public class TargetHandler implements NHttpClientEventHandler {
                     + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port") + ", TARGET_CONTEXT = "
                     + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", TRIGGER_TYPE = "
                     + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails.get("trigger_name")
-                    + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn) + ", " + "CONNECTION = " + conn);
+                    + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn);
             isFault = true;
         }
 
@@ -763,27 +839,30 @@ public class TargetHandler implements NHttpClientEventHandler {
         metrics.disconnected();
 
         TargetContext.updateState(conn, ProtocolState.CLOSED);
-        targetConfiguration.getConnections().shutdownConnection(conn, isFault);
+        targetConfiguration.getConnections().closeConnection(conn, isFault);
 
     }
 
     private void logIOException(NHttpClientConnection conn, IOException e) {
         String message = getErrorMessage("I/O error : " + e.getMessage(), conn);
 
-        if (e instanceof ConnectionClosedException || (e.getMessage() != null &&
-                e.getMessage().toLowerCase().contains("connection reset by peer") ||
-                e.getMessage().toLowerCase().contains("forcibly closed"))) {
+        if (e.getMessage() != null && (e instanceof ConnectionClosedException
+                || e.getMessage().toLowerCase().contains("connection reset by peer")
+                || e.getMessage().toLowerCase().contains("forcibly closed"))) {
             if (log.isDebugEnabled()) {
-                log.debug(conn + ": I/O error (Probably the keep-alive connection " +
-                        "was closed):" + e.getMessage());
+                log.debug(conn + ": I/O error (Probably the keep-alive connection "
+                        + "was closed):" + e.getMessage()
+                        + "CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
             }
         } else if (e.getMessage() != null) {
             String msg = e.getMessage().toLowerCase();
             if (msg.indexOf("broken") != -1) {
-                log.warn("I/O error (Probably the connection " +
-                        "was closed by the remote party):" + e.getMessage());
+                log.warn("I/O error (Probably the connection "
+                        + "was closed by the remote party):" + e.getMessage() + "CORRELATION_ID = "
+                        + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
             } else {
-                log.error("I/O error: " + e.getMessage(), e);
+                log.error("I/O error: " + e.getMessage()
+                        + "CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID), e);
             }
         } else {
             log.error(message, e);
@@ -797,6 +876,12 @@ public class TargetHandler implements NHttpClientEventHandler {
 
         if (log.isDebugEnabled()) {
             log.debug(getErrorMessage("Connection timeout", conn) + " "+ getConnectionLoggingInfo(conn));
+        }
+        if (!PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
+                (PassThroughConstants.CLIENT_WORKER_THREAD_STATUS))) {
+            log.warn("Target Handler Socket Timeout occurred while the worker pool exhausted, " +
+                    "INTERNAL_STATE = " + state + ", CORRELATION_ID = "
+                    + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
         }
 
         if (state != null &&
@@ -812,7 +897,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                 log.warn("ERROR_CODE = " + ErrorCodes.CONNECTION_TIMEOUT + ", STATE_DESCRIPTION = Socket Timeout "
                         + "occurred " + logDetails.get("state_description") + ", INTERNAL_STATE = " + state
                         + ", DIRECTION = " + logDetails.get("direction") + ", "
-                        + "CAUSE_OF_ERROR = Connection between the EI and the BackEnd timeouts, TARGET_HOST = "
+                        + "CAUSE_OF_ERROR = Connection between the WSO2 Server and the BackEnd timeouts, TARGET_HOST = "
                         + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port") + ", TARGET_CONTEXT = "
                         + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
                         + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
@@ -827,7 +912,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                 log.warn("ERROR_CODE = " + ErrorCodes.CONNECTION_TIMEOUT + ", STATE_DESCRIPTION = Socket Timeout "
                         + "occurred " + logDetails.get("state_description") + ", INTERNAL_STATE = " + state
                         + ", DIRECTION = " + logDetails.get("direction") + ", "
-                        + "CAUSE_OF_ERROR = Connection between the EI and the BackEnd timeouts, TARGET_HOST = "
+                        + "CAUSE_OF_ERROR = Connection between the WSO2 Server and the BackEnd timeouts, TARGET_HOST = "
                         + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port") + ", TARGET_CONTEXT = "
                         + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
                         + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
@@ -840,7 +925,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                 log.warn("ERROR_CODE = " + ErrorCodes.CONNECTION_TIMEOUT + ", STATE_DESCRIPTION = Socket Timeout "
                         + "occurred " + logDetails.get("state_description") + ", INTERNAL_STATE = " + state
                         + ", DIRECTION = " + logDetails.get("direction") + ", "
-                        + "CAUSE_OF_ERROR = Connection between the EI and the BackEnd timeouts, TARGET_HOST = "
+                        + "CAUSE_OF_ERROR = Connection between the WSO2 Server and the BackEnd timeouts, TARGET_HOST = "
                         + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port") + ", TARGET_CONTEXT = "
                         + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
                         + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
@@ -864,7 +949,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         }
 
         TargetContext.updateState(conn, ProtocolState.CLOSED);
-        targetConfiguration.getConnections().shutdownConnection(conn, true);
+        targetConfiguration.getConnections().closeConnection(conn, true);
     }
 
     private boolean isResponseHaveBodyExpected(
@@ -958,8 +1043,9 @@ public class TargetHandler implements NHttpClientEventHandler {
                     + ", TARGET_HOST = " + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port")
                     + ", TARGET_CONTEXT = " + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
                     + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
-                    .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn) + ", "
-                    + "CONNECTION = " + conn);
+                    .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn)
+                    + ", CORRELATION_ID" + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn);
         } else if (state == ProtocolState.RESPONSE_HEAD || state == ProtocolState.RESPONSE_BODY) {
             informReaderError(conn);
             log.warn("ERROR_CODE = " + logDetails.get("error_code") + ", STATE_DESCRIPTION = Exception occurred "
@@ -968,8 +1054,9 @@ public class TargetHandler implements NHttpClientEventHandler {
                     + ", TARGET_HOST = " + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port")
                     + ", TARGET_CONTEXT = " + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
                     + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
-                    .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn) + ", "
-                    + "CONNECTION = " + conn);
+                    .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn)
+                    + ", CORRELATION_ID" + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn);
         } else if (state == ProtocolState.REQUEST_DONE) {
             log.warn("ERROR_CODE = " + logDetails.get("error_code") + ", STATE_DESCRIPTION = Exception occurred "
                     + logDetails.get("state_description") + ", INTERNAL_STATE = " + state + ", DIRECTION = "
@@ -977,8 +1064,9 @@ public class TargetHandler implements NHttpClientEventHandler {
                     + ", TARGET_HOST = " + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port")
                     + ", TARGET_CONTEXT = " + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
                     + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
-                    .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn) + ", "
-                    + "CONNECTION = " + conn);
+                    .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn)
+                    + ", CORRELATION_ID" + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn);
         } else if (state == ProtocolState.REQUEST_READY) {
             log.warn("ERROR_CODE = " + logDetails.get("error_code") + ", STATE_DESCRIPTION = Exception occurred "
                     + logDetails.get("state_description") + ", INTERNAL_STATE = " + state + ", DIRECTION = "
@@ -986,8 +1074,11 @@ public class TargetHandler implements NHttpClientEventHandler {
                     + ", TARGET_HOST = " + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port")
                     + ", TARGET_CONTEXT = " + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
                     + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
-                    .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn) + ", "
-                    + "CONNECTION = " + conn);
+                    .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn)
+                    + ", CORRELATION_ID" + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn);
+        } else if (state == ProtocolState.RESPONSE_DONE) {
+            return;
         }
         
         if (ex instanceof IOException) {

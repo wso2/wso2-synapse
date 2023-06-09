@@ -85,6 +85,18 @@ public interface PassThroughConfigPNames {
      */
     public String DISABLE_KEEPALIVE = "http.connection.disable.keepalive";
 
+
+    /**
+     * Define property to mark If an error has happened in the request processing,
+     * should consumes the data in pipe completely and discard.
+     */
+    public String CONSUME_AND_DISCARD = "consume_and_discard";
+
+    /**
+     * Defines whether we should close target connection on endpoint timeout.
+     */
+    public String CLOSE_SOCKET_ON_ENDPOINT_TIMEOUT = "close_socket_on_endpoint_timeout";
+
     /**
      * Defines the time interval for idle connection removal.
      */
@@ -123,6 +135,11 @@ public interface PassThroughConfigPNames {
      * Defines the header name set for correlation logs
      */
     public String CORRELATION_HEADER_NAME_PROPERTY = "correlation_header_name";
+
+    /**
+     * Defines max waiting time for a request to be queued for a worker thread
+     */
+    public String EXPECTED_MAX_QUEUEING_TIME = "expected_max_queueing_time";
 
     /**
      * Defines whether viewing services are enabled or not
