@@ -515,6 +515,14 @@ public class TargetHandler implements NHttpClientEventHandler {
             if (statusCode == HttpStatus.SC_ACCEPTED && handle202(requestMsgContext)) {
                 return;
             }
+            if (targetResponse.isForceShutdownConnectionOnComplete() && conf.isConsumeAndDiscard()) {
+                ClientWorker clientWorker = new ClientWorker(targetConfiguration, requestMsgContext, targetResponse,
+                        allowedResponseProperties);
+                targetConfiguration.getSecondaryWorkerPool().execute(new MessageDiscardWorker(requestMsgContext,
+                        targetResponse, targetConfiguration, clientWorker, conn));
+                return;
+            }
+
             WorkerPool workerPool = targetConfiguration.getWorkerPool();
             workerPool.execute(
                     new ClientWorker(targetConfiguration, requestMsgContext, targetResponse,

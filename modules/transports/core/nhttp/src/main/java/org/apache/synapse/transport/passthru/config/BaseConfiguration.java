@@ -49,6 +49,9 @@ public abstract class BaseConfiguration {
     /** The thread pool for executing the messages passing through */
     private WorkerPool workerPool = null;
 
+    /** The secondary thread pool for executing the messages passing through */
+    private WorkerPool secondaryWorkerPool = null;
+
     /** The Axis2 ConfigurationContext */
     protected ConfigurationContext configurationContext = null;
 
@@ -76,6 +79,10 @@ public abstract class BaseConfiguration {
     private static final String PASSTHROUGH_THREAD_GROUP = "Pass-through Message Processing Thread Group";
     private static final String PASSTHROUGH_THREAD_ID ="PassThroughMessageProcessor";
 
+    private static final String SECONDARY_PASSTHROUGH_THREAD_GROUP = "Secondary Pass-through Message Processing "
+            + "Thread Group";
+    private static final String SECONDARY_PASSTHROUGH_THREAD_ID = "PassThroughMessageSecondaryProcessor";
+
     private Integer socketTimeout = null;
     private Integer connectionTimeout = null;
 
@@ -100,6 +107,16 @@ public abstract class BaseConfiguration {
                             conf.getWorkerPoolQueueLen(),
                             PASSTHROUGH_THREAD_GROUP,
                             PASSTHROUGH_THREAD_ID);
+        }
+
+        if (secondaryWorkerPool == null) {
+            secondaryWorkerPool = WorkerPoolFactory.getWorkerPool(
+                    conf.getSecondaryWorkerPoolCoreSize(),
+                    conf.getSecondaryWorkerPoolMaxSize(),
+                    conf.getSecondaryWorkerThreadKeepaliveSec(),
+                    conf.getSecondaryWorkerPoolQueueLen(),
+                    SECONDARY_PASSTHROUGH_THREAD_GROUP,
+                    SECONDARY_PASSTHROUGH_THREAD_ID);
         }
 
         httpParams = buildHttpParams();
@@ -147,6 +164,9 @@ public abstract class BaseConfiguration {
 
     public WorkerPool getWorkerPool() {
         return workerPool;
+    }
+    public WorkerPool getSecondaryWorkerPool() {
+        return secondaryWorkerPool;
     }
 
     public ConfigurationContext getConfigurationContext() {
