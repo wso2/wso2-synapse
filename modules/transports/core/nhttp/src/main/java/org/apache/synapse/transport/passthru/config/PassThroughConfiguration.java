@@ -91,9 +91,17 @@ public class PassThroughConfiguration {
         return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.WORKER_POOL_SIZE_CORE,
                 DEFAULT_WORKER_POOL_SIZE_CORE, props);
     }
+    public int getSecondaryWorkerPoolCoreSize() {
+        return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.SECONDARY_WORKER_POOL_SIZE_CORE,
+                DEFAULT_WORKER_POOL_SIZE_CORE, props);
+    }
 
     public int getWorkerPoolMaxSize() {
         return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.WORKER_POOL_SIZE_MAX,
+                DEFAULT_WORKER_POOL_SIZE_MAX, props);
+    }
+    public int getSecondaryWorkerPoolMaxSize() {
+        return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.SECONDARY_WORKER_POOL_SIZE_MAX,
                 DEFAULT_WORKER_POOL_SIZE_MAX, props);
     }
 
@@ -102,8 +110,18 @@ public class PassThroughConfiguration {
                 DEFAULT_WORKER_THREAD_KEEPALIVE_SEC, props);
     }
 
+    public int getSecondaryWorkerThreadKeepaliveSec() {
+        return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.SECONDARY_WORKER_THREAD_KEEPALIVE_SEC,
+                DEFAULT_WORKER_THREAD_KEEPALIVE_SEC, props);
+    }
+
     public int getWorkerPoolQueueLen() {
         return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.WORKER_POOL_QUEUE_LENGTH,
+                DEFAULT_WORKER_POOL_QUEUE_LENGTH, props);
+    }
+
+    public int getSecondaryWorkerPoolQueueLen() {
+        return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.SECONDARY_WORKER_POOL_QUEUE_LENGTH,
                 DEFAULT_WORKER_POOL_QUEUE_LENGTH, props);
     }
 

@@ -50,6 +50,26 @@ public interface PassThroughConfigPNames {
     public String IO_THREADS_PER_REACTOR = "io_threads_per_reactor";
 
     /**
+     * Defines the core size (number of threads) of the secondary worker thread pool.
+     */
+    public String SECONDARY_WORKER_POOL_SIZE_CORE = "secondary_worker_pool_size_core";
+
+    /**
+     * Defines the maximum size (number of threads) of the secondary worker thread pool.
+     */
+    public String SECONDARY_WORKER_POOL_SIZE_MAX = "secondary_worker_pool_size_max";
+
+    /**
+     * Defines the keep-alive time for extra threads in the secondary worker pool.
+     */
+    public String SECONDARY_WORKER_THREAD_KEEPALIVE_SEC = "secondary_worker_thread_keepalive_sec";
+
+    /**
+     * Defines the length of the queue that is used to hold Runnable tasks to be executed by the
+     * secondary worker pool.
+     */
+    public String SECONDARY_WORKER_POOL_QUEUE_LENGTH = "secondary_worker_pool_queue_length";
+    /**
      * Defines the IO buffer size
      */
     public String IO_BUFFER_SIZE = "io_buffer_size";

@@ -663,16 +663,16 @@ public class SourceHandler implements NHttpServerEventHandler {
             if (msg.indexOf("broken") != -1) {
                 log.warn("I/O error (Probably the connection "
                         + "was closed by the remote party):" + e.getMessage()
-                        + "CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
+                        + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
             } else {
-                log.error("I/O error: " + e.getMessage() + "CORRELATION_ID = "
+                log.error("I/O error: " + e.getMessage() + ", CORRELATION_ID = "
                         + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID), e);
             }
 
             metrics.incrementFaultsReceiving();
         } else {
             log.error("Unexpected I/O error: " + e.getClass().getName()
-                    + "CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID), e);
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID), e);
 
             metrics.incrementFaultsReceiving();
         }
