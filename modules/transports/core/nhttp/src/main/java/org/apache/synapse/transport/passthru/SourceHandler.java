@@ -170,17 +170,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                 WorkerPool workerPool = sourceConfiguration.getWorkerPool();
                 workerPool.execute(new ServerWorker(request, sourceConfiguration, os,
                         System.currentTimeMillis(), correlationId.toString()));
-                if (workerPool.getActiveCount() >= conf.getWorkerPoolCoreSize()) {
-                    conn.getContext().setAttribute(PassThroughConstants.SERVER_WORKER_SIDE_QUEUED_TIME,
-                            System.currentTimeMillis());
-                }
             } else {
                 WorkerPool workerPool = sourceConfiguration.getWorkerPool();
                 workerPool.execute(new ServerWorker(request, sourceConfiguration, os));
-                if (workerPool.getActiveCount() >= conf.getWorkerPoolCoreSize()) {
-                    conn.getContext().setAttribute(PassThroughConstants.SERVER_WORKER_SIDE_QUEUED_TIME,
-                            System.currentTimeMillis());
-                }
             }
             //increasing the input request metric
             metrics.requestReceived();
@@ -584,12 +576,6 @@ public class SourceHandler implements NHttpServerEventHandler {
         ProtocolState state = SourceContext.getState(conn);
         Map<String, String> logDetails = getLoggingInfo(conn, state);
 
-        if (!PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
-                (PassThroughConstants.SERVER_WORKER_THREAD_STATUS))) {
-            log.warn("Source Handler Socket Timeout occurred while the worker pool exhausted, " +
-                    "INTERNAL_STATE = " + state + ", CORRELATION_ID = "
-                    + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
-        }
         if (state == ProtocolState.REQUEST_READY || state == ProtocolState.RESPONSE_DONE) {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": Keep-Alive connection was time out: ");
@@ -600,14 +586,21 @@ public class SourceHandler implements NHttpServerEventHandler {
             informReaderError(conn);
             isTimeoutOccurred = true;
 
-            log.warn("STATE_DESCRIPTION = Socket Timeout occurred after reading the request headers but Server is "
-                    + "still reading the request body, INTERNAL_STATE = " + state + ", DIRECTION = " + logDetails
-                    .get("direction") + ", "
-                    + "CAUSE_OF_ERROR = Connection between the client and the WSO2 server timeouts, HTTP_URL = " + logDetails
-                    .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = " + conn
-                    .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn)
+            String logMessage = "STATE_DESCRIPTION = Socket Timeout occurred after reading the request "
+                    + "headers but Server is "
+                    + "still reading the request body, INTERNAL_STATE = " + state + ", DIRECTION = "
+                    + logDetails.get("direction") + ", "
+                    + "CAUSE_OF_ERROR = Connection between the client and the WSO2 server timeouts, HTTP_URL = "
+                    + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = "
+                    + conn.getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn)
                     + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
-                    + ", CONNECTION = " + conn);
+                    + ", CONNECTION = " + conn;
+            if (!PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
+                    (PassThroughConstants.SERVER_WORKER_THREAD_STATUS))) {
+                log.warn(logMessage + ", WORKER_POOL_EXHAUSTED = TRUE");
+            } else {
+                log.warn(logMessage + secondaryWorkerPoolExhaustedErrorMessage(conn));
+            }
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
@@ -615,14 +608,22 @@ public class SourceHandler implements NHttpServerEventHandler {
             informWriterError(conn);
             isTimeoutOccurred = true;
             metrics.timeoutOccured();
-            log.warn("STATE_DESCRIPTION = Socket Timeout occurred after server writing the response headers to the "
+            String logMessage = "STATE_DESCRIPTION = Socket Timeout occurred after server writing the response"
+                    + " headers to the "
                     + "client but Server is still writing the response body, INTERNAL_STATE = " + state
                     + ", DIRECTION = " + logDetails.get("direction") + ", "
-                    + "CAUSE_OF_ERROR = Connection between the client and the WSO2 server timeouts, HTTP_URL = " + logDetails
-                    .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = " + conn
-                    .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn)
+                    + "CAUSE_OF_ERROR = Connection between the client and the WSO2 server timeouts, HTTP_URL = "
+                    + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = "
+                    + conn.getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn)
                     + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
-                    + ", CONNECTION = " + conn);
+                    + ", CONNECTION = " + conn;
+
+            if (!PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
+                    (PassThroughConstants.SERVER_WORKER_THREAD_STATUS))) {
+                log.warn(logMessage + ", WORKER_POOL_EXHAUSTED = TRUE");
+            } else {
+                log.warn(logMessage + secondaryWorkerPoolExhaustedErrorMessage(conn));
+            }
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
@@ -630,16 +631,22 @@ public class SourceHandler implements NHttpServerEventHandler {
             informWriterError(conn);
             isTimeoutOccurred = true;
             metrics.timeoutOccured();
-            log.warn(
-                    "STATE_DESCRIPTION = Socket Timeout occurred after accepting the request headers and the request "
-                            + "body, INTERNAL_STATE = "
-                            + state + ", DIRECTION = " + logDetails.get("direction") + ", "
-                            + "CAUSE_OF_ERROR = Connection between the client and the WSO2 server timeouts, HTTP_URL = "
-                            + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
-                            + ", SOCKET_TIMEOUT = " + conn.getSocketTimeout() + ", CLIENT_ADDRESS = "
-                            + getClientConnectionInfo(conn)
-                            + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
-                            + ", CONNECTION = " + conn);
+            String logMessage = "STATE_DESCRIPTION = Socket Timeout occurred after accepting the request"
+                    + " headers and the request "
+                    + "body, INTERNAL_STATE = "
+                    + state + ", DIRECTION = " + logDetails.get("direction") + ", "
+                    + "CAUSE_OF_ERROR = Connection between the client and the WSO2 server timeouts, HTTP_URL = "
+                    + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
+                    + ", SOCKET_TIMEOUT = " + conn.getSocketTimeout() + ", CLIENT_ADDRESS = "
+                    + getClientConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn;
+            if (!PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
+                    (PassThroughConstants.SERVER_WORKER_THREAD_STATUS))) {
+                log.warn(logMessage + ", WORKER_POOL_EXHAUSTED = TRUE");
+            } else {
+                log.warn(logMessage + secondaryWorkerPoolExhaustedErrorMessage(conn));
+            }
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
@@ -651,6 +658,21 @@ public class SourceHandler implements NHttpServerEventHandler {
         if (isTimeoutOccurred) {
             rollbackTransaction(conn);
         }
+    }
+
+    private String secondaryWorkerPoolExhaustedErrorMessage(NHttpServerConnection conn) {
+        String workerPoolExhaustedMessage = "";
+        if (PassThroughConstants.THREAD_STATUS_MARKED.equals(conn.getContext().getAttribute
+                (PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS))) {
+            workerPoolExhaustedMessage = ", SECONDARY_WORKER_POOL_EXHAUSTED = TRUE";
+            return workerPoolExhaustedMessage;
+        } else if (PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
+                (PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS))) {
+            workerPoolExhaustedMessage = ", SECONDARY_WORKER_POOL_THREAD was blocked in the ConsumeAndDiscard method. "
+                    + "The thread will be released now.";
+            return workerPoolExhaustedMessage;
+        }
+        return workerPoolExhaustedMessage;
     }
 
     public void closed(NHttpServerConnection conn) {

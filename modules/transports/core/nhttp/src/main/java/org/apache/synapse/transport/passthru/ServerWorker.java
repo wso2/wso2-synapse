@@ -107,6 +107,8 @@ public class ServerWorker implements Runnable {
     private PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
     
     private OutputStream os; //only used for WSDL  requests..
+
+    private Long queuedTime = null;
   
     public ServerWorker(final SourceRequest request,
                         final SourceConfiguration sourceConfiguration,final OutputStream os) {
@@ -130,6 +132,7 @@ public class ServerWorker implements Runnable {
                                request.getConnection().getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY));
         request.getConnection().getContext().setAttribute(NhttpConstants.SERVER_WORKER_INIT_TIME,
                 System.currentTimeMillis());
+        queuedTime = System.currentTimeMillis();
     }
 
     public ServerWorker(final SourceRequest request,
@@ -146,12 +149,10 @@ public class ServerWorker implements Runnable {
             // Mark the start of the request at the beginning of the worker thread
             request.getConnection().getContext().setAttribute(PassThroughConstants.SERVER_WORKER_THREAD_STATUS,
                     PassThroughConstants.THREAD_STATUS_RUNNING);
-            Object queuedTime =
-                    request.getConnection().getContext().getAttribute(PassThroughConstants.SERVER_WORKER_SIDE_QUEUED_TIME);
 
             Long expectedMaxQueueingTime = conf.getExpectedMaxQueueingTime();
             if (queuedTime != null && expectedMaxQueueingTime != null) {
-                Long serverWorkerQueuedTime = System.currentTimeMillis() - (Long) queuedTime;
+                Long serverWorkerQueuedTime = System.currentTimeMillis() - queuedTime;
                 if (serverWorkerQueuedTime >= expectedMaxQueueingTime) {
                     log.warn("Server worker thread queued time exceeds the expected max queueing time. Expected max " +
                             "queueing time : " + expectedMaxQueueingTime + "ms. Actual queued time : " +

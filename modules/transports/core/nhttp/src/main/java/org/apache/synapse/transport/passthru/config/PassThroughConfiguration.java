@@ -57,6 +57,8 @@ public class PassThroughConfiguration {
 
     private Boolean isConsumeAndDiscard = true;
 
+    private Boolean isConsumeAndDiscardBySecondaryWorkerPool = true;
+
     //additional rest dispatch handlers
     private static final String REST_DISPATCHER_SERVICE="rest.dispatcher.service";
     // URI configurations that determine if it requires custom rest dispatcher
@@ -145,6 +147,12 @@ public class PassThroughConfiguration {
         return isConsumeAndDiscard;
     }
 
+    public boolean isConsumeAndDiscardBySecondaryWorkerPool() {
+        isConsumeAndDiscardBySecondaryWorkerPool = getBooleanProperty(PassThroughConfigPNames.CONSUME_AND_DISCARD_BY_SECONDARY_POOL,
+                DEFAULT_CONSUME_AND_DISCARD);
+        return isConsumeAndDiscardBySecondaryWorkerPool;
+    }
+
     public boolean isCloseSocketOnEndpointTimeout() {
         return getBooleanProperty(PassThroughConfigPNames.CLOSE_SOCKET_ON_ENDPOINT_TIMEOUT
                 , CLOSE_SOCKET_ON_ENDPOINT_TIMEOUT);
@@ -227,6 +235,22 @@ public class PassThroughConfiguration {
         } catch (NumberFormatException exception) {
             log.warn("Invalid value for the expected max queuing time. Expected max queuing time should be a long value. " +
                     "Using the default value " + EXPECTED_MAX_QUEUEING_TIME_DEFAULT);
+            convertedExpectedMaxQueuingTime = Long.parseLong(EXPECTED_MAX_QUEUEING_TIME_DEFAULT);
+        }
+        return convertedExpectedMaxQueuingTime;
+    }
+
+    public Long getExpectedMaxQueueingTimeForMessageDiscardWorker() {
+        String expectedMaxQueuingTime = getStringProperty(
+                PassThroughConfigPNames.EXPECTED_MAX_QUEUEING_TIME_FOR_MESSAGE_DISCARD_WORKER,
+                EXPECTED_MAX_QUEUEING_TIME_DEFAULT);
+        Long convertedExpectedMaxQueuingTime;
+        try {
+            convertedExpectedMaxQueuingTime = Long.parseLong(expectedMaxQueuingTime);
+        } catch (NumberFormatException exception) {
+            log.warn("Invalid value for the expected max queuing time for message discard worker. Expected max "
+                    + "queuing time should be a long value. "
+                    + "Using the default value " + EXPECTED_MAX_QUEUEING_TIME_DEFAULT);
             convertedExpectedMaxQueuingTime = Long.parseLong(EXPECTED_MAX_QUEUEING_TIME_DEFAULT);
         }
         return convertedExpectedMaxQueuingTime;

@@ -64,11 +64,14 @@ public class ClientWorker implements Runnable {
     /** the axis2 message context of the request */
     private MessageContext requestMessageContext;
 
+    private Long queuedTime = null;
+
     private PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
 
     public ClientWorker(TargetConfiguration targetConfiguration,
                         MessageContext outMsgCtx,
                         TargetResponse response) {
+        this.queuedTime = System.currentTimeMillis();
         this.targetConfiguration = targetConfiguration;
         this.response = response;
         this.expectEntityBody = response.isExpectResponseBody();
@@ -226,12 +229,10 @@ public class ClientWorker implements Runnable {
         // Mark the start of the request at the beginning of the worker thread
         response.getConnection().getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_THREAD_STATUS,
                 PassThroughConstants.THREAD_STATUS_RUNNING);
-        Object queuedTime =
-                response.getConnection().getContext().getAttribute(PassThroughConstants.CLIENT_WORKER_SIDE_QUEUED_TIME);
 
         Long expectedMaxQueueingTime = conf.getExpectedMaxQueueingTime();
         if (queuedTime != null && expectedMaxQueueingTime != null) {
-            Long clientWorkerQueuedTime = System.currentTimeMillis() - (Long) queuedTime;
+            Long clientWorkerQueuedTime = System.currentTimeMillis() - queuedTime;
             if (clientWorkerQueuedTime >= expectedMaxQueueingTime) {
                 log.warn("Client worker thread queued time exceeds the expected max queueing time. Expected max "
                         + "queueing time : " + expectedMaxQueueingTime + "ms. Actual queued time : "

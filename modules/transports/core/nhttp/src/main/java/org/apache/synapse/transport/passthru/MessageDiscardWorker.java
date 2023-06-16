@@ -22,13 +22,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.nio.NHttpServerConnection;
+import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
+import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 public class MessageDiscardWorker implements Runnable {
 
     private Log log = LogFactory.getLog(MessageDiscardWorker.class);
-    private ClientWorker clientWorker = null;
 
     TargetConfiguration targetConfiguration = null;
 
@@ -38,16 +40,36 @@ public class MessageDiscardWorker implements Runnable {
 
     NHttpClientConnection conn = null;
 
+    private Long queuedTime = null;
+
+    private PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
+
     public MessageDiscardWorker(MessageContext requestMsgContext, TargetResponse response,
-                                TargetConfiguration targetConfiguration, ClientWorker clientWorker, NHttpClientConnection conn) {
+                                TargetConfiguration targetConfiguration, NHttpClientConnection conn) {
         this.response = response;
         this.requestMessageContext = requestMsgContext;
         this.targetConfiguration = targetConfiguration;
-        this.clientWorker = clientWorker;
         this.conn = conn;
+        this.queuedTime = System.currentTimeMillis();
     }
 
     public void run() {
+        NHttpServerConnection sourceConn = (NHttpServerConnection) requestMessageContext.getProperty(
+                PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
+
+        // Mark the start of the request message discard worker at the beginning of the worker thread
+        setThreadState(sourceConn, PassThroughConstants.THREAD_STATUS_RUNNING);
+        Long expectedMaxQueueingTime = conf.getExpectedMaxQueueingTimeForMessageDiscardWorker();
+        if (queuedTime != null && expectedMaxQueueingTime != null) {
+            Long messageDiscardWorkerQueuedTime = System.currentTimeMillis() - queuedTime;
+            if (messageDiscardWorkerQueuedTime >= expectedMaxQueueingTime) {
+                log.warn("Message discard worker queued time exceeds the expected max queueing time. Expected "
+                        + "max queueing time : " + expectedMaxQueueingTime + "ms. Actual queued time : "
+                        + messageDiscardWorkerQueuedTime + "ms"+ ", CORRELATION_ID : "
+                        + requestMessageContext.getProperty(CorrelationConstants.CORRELATION_ID));
+            }
+
+        }
 
         // If an error has happened in the request processing, consumes the data in pipe completely and discard it
         try {
@@ -56,42 +78,24 @@ public class MessageDiscardWorker implements Runnable {
             log.error("Fault discarding request message", af);
         }
 
-        targetConfiguration.getWorkerPool().execute(clientWorker);
+        // Mark the end of the request message discard worker at the end of the worker thread
+        setThreadState(sourceConn, PassThroughConstants.THREAD_STATUS_FINISHED);
+        targetConfiguration.getWorkerPool().execute(new ClientWorker(targetConfiguration, requestMessageContext, response));
 
         targetConfiguration.getMetrics().incrementMessagesReceived();
 
-        NHttpServerConnection sourceConn = (NHttpServerConnection) requestMessageContext.getProperty(
-                PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
         if (sourceConn != null) {
-            sourceConn.getContext().setAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME,
-                    conn.getContext()
-                            .getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME)
-            );
-            conn.getContext().removeAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME);
-
-            sourceConn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME,
-                    conn.getContext()
-                            .getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME)
-            );
-            conn.getContext().removeAttribute(PassThroughConstants.REQ_DEPARTURE_TIME);
-            sourceConn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME,
-                    conn.getContext()
-                            .getAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME)
-            );
-
-            conn.getContext().removeAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME);
-            sourceConn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,
-                    conn.getContext()
-                            .getAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME)
-            );
-            conn.getContext().removeAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME);
-            sourceConn.getContext().setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_START_TIME,
-                    conn.getContext()
-                            .getAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_START_TIME)
-            );
-            conn.getContext().removeAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_START_TIME);
-
+            PassThroughTransportUtils.setSourceConnectionContextAttributes(sourceConn, conn);
         }
 
+    }
+
+    private void setThreadState(NHttpServerConnection sourceConn, String threadState) {
+        conn.getContext().setAttribute(PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS,
+                threadState);
+        if (sourceConn != null) {
+            sourceConn.getContext().setAttribute(PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS,
+                    threadState);
+        }
     }
 }
