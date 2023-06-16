@@ -67,7 +67,11 @@ public class ClientWorker implements Runnable {
     /** the axis2 message context of the request */
     private MessageContext requestMessageContext;
 
+    private Long queuedTime = null;
+
     private PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
+
+    private WorkerState state;
 
     public ClientWorker(TargetConfiguration targetConfiguration, MessageContext outMsgCtx, TargetResponse response) {
         this(targetConfiguration, outMsgCtx, response, Collections.emptyList());
@@ -75,6 +79,8 @@ public class ClientWorker implements Runnable {
 
     public ClientWorker(TargetConfiguration targetConfiguration, MessageContext outMsgCtx, TargetResponse response,
                         List<String> allowedResponseProperties) {
+        this.state = WorkerState.CREATED;
+        this.queuedTime = System.currentTimeMillis();
         this.targetConfiguration = targetConfiguration;
         this.response = response;
         this.expectEntityBody = response.isExpectResponseBody();
@@ -240,15 +246,12 @@ public class ClientWorker implements Runnable {
             return;
         }
         // Mark the start of the request at the beginning of the worker thread
-        response.getConnection().getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_THREAD_STATUS,
-                PassThroughConstants.THREAD_STATUS_RUNNING);
-        Object queuedTime =
-                response.getConnection().getContext().getAttribute(PassThroughConstants.CLIENT_WORKER_START_TIME);
+        setWorkerState(WorkerState.RUNNING);
 
         String expectedMaxQueueingTime = conf.getExpectedMaxQueueingTime();
         if (queuedTime != null && expectedMaxQueueingTime != null) {
             Long expectedMaxQueueingTimeInMillis = Long.parseLong(expectedMaxQueueingTime);
-            Long clientWorkerQueuedTime = System.currentTimeMillis() - (Long) queuedTime;
+            Long clientWorkerQueuedTime = System.currentTimeMillis() - queuedTime;
             if (clientWorkerQueuedTime >= expectedMaxQueueingTimeInMillis) {
                 log.warn("Client worker thread queued time exceeds the expected max queueing time. Expected max " +
                         "queueing time : " + expectedMaxQueueingTimeInMillis + "ms. Actual queued time : " +
@@ -261,6 +264,16 @@ public class ClientWorker implements Runnable {
         if (responseMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION) != null) {
             ((NHttpServerConnection) responseMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION)).
                        getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_START_TIME, System.currentTimeMillis());
+        }
+
+        if (response.isForceShutdownConnectionOnComplete() && !conf.isConsumeAndDiscardBySecondaryWorkerPool()
+                && conf.isConsumeAndDiscard()) {
+            // If an error has happened in the request processing, consumes the data in pipe completely and discard it
+            try {
+                RelayUtils.discardRequestMessage(requestMessageContext);
+            } catch (AxisFault af) {
+                log.error("Fault discarding request message", af);
+            }
         }
         try {
             if (expectEntityBody) {
@@ -346,6 +359,7 @@ public class ClientWorker implements Runnable {
             log.error("Fault creating response SOAP envelope", af);            
         } finally {
             cleanup();
+            setWorkerState(WorkerState.FINISHED);
         }
     }
 
@@ -415,6 +429,14 @@ public class ClientWorker implements Runnable {
 
         // Unable to determine the content type - Return default value
         return PassThroughConstants.DEFAULT_CONTENT_TYPE;
+    }
+
+    private void setWorkerState(WorkerState workerState) {
+        this.state = workerState;
+    }
+
+    public WorkerState getWorkerState() {
+        return this.state;
     }
 
     /**

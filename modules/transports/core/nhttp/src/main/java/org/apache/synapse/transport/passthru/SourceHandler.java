@@ -195,19 +195,15 @@ public class SourceHandler implements NHttpServerEventHandler {
             Object correlationId = conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID);
             if (correlationId != null) {
                 WorkerPool workerPool = sourceConfiguration.getWorkerPool();
-                workerPool.execute(new ServerWorker(request, sourceConfiguration, os,
-                        System.currentTimeMillis(), correlationId.toString()));
-                if (workerPool.getActiveCount() >= conf.getWorkerPoolCoreSize()) {
-                    conn.getContext().setAttribute(PassThroughConstants.SERVER_WORKER_SIDE_QUEUED_TIME,
-                            System.currentTimeMillis());
-                }
+                ServerWorker serverWorker = new ServerWorker(request, sourceConfiguration, os,
+                        System.currentTimeMillis(), correlationId.toString());
+                conn.getContext().setAttribute(PassThroughConstants.SERVER_WORKER_REFERENCE, serverWorker);
+                workerPool.execute(serverWorker);
             } else {
                 WorkerPool workerPool = sourceConfiguration.getWorkerPool();
-                workerPool.execute(new ServerWorker(request, sourceConfiguration, os));
-                if (workerPool.getActiveCount() >= conf.getWorkerPoolCoreSize()) {
-                    conn.getContext().setAttribute(PassThroughConstants.SERVER_WORKER_SIDE_QUEUED_TIME,
-                            System.currentTimeMillis());
-                }
+                ServerWorker serverWorker = new ServerWorker(request, sourceConfiguration, os);
+                conn.getContext().setAttribute(PassThroughConstants.SERVER_WORKER_REFERENCE, serverWorker);
+                workerPool.execute(serverWorker);
             }
             //increasing the input request metric
             metrics.requestReceived();
@@ -682,13 +678,10 @@ public class SourceHandler implements NHttpServerEventHandler {
         boolean isTimeoutOccurred = false;
         ProtocolState state = SourceContext.getState(conn);
         Map<String, String> logDetails = getLoggingInfo(conn, state);
-
-        if (!PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
-                (PassThroughConstants.SERVER_WORKER_THREAD_STATUS))) {
-            log.warn("Source Handler Socket Timeout occurred while the worker pool exhausted, " +
-                    "INTERNAL_STATE = " + state + ", CORRELATION_ID = "
-                    + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
-        }
+        Object serverWorker = conn.getContext().getAttribute(
+                PassThroughConstants.SERVER_WORKER_REFERENCE);
+        Object messageDiscardWorker = conn.getContext().getAttribute(
+                PassThroughConstants.MESSAGE_DISCARD_WORKER_REFERENCE);
         if (state == ProtocolState.REQUEST_READY || state == ProtocolState.RESPONSE_DONE) {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": Keep-Alive connection was time out: ");
@@ -699,14 +692,21 @@ public class SourceHandler implements NHttpServerEventHandler {
             informReaderError(conn);
             isTimeoutOccurred = true;
 
-            log.warn("STATE_DESCRIPTION = Socket Timeout occurred after reading the request headers but Server is "
-                    + "still reading the request body, INTERNAL_STATE = " + state + ", DIRECTION = " + logDetails
-                    .get("direction") + ", "
-                    + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = " + logDetails
-                    .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = " + conn
-                    .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn) + ", CONNECTION " + conn
-                    + " Correlation ID : " + conn.getContext().getAttribute(
-                            CorrelationConstants.CORRELATION_ID).toString());
+            String logMessage = "STATE_DESCRIPTION = Socket Timeout occurred after reading the request "
+                    + "headers but Server is "
+                    + "still reading the request body, INTERNAL_STATE = " + state + ", DIRECTION = "
+                    + logDetails.get("direction") + ", "
+                    + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = "
+                    + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = "
+                    + conn.getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn;
+            if (isPrimaryWorkerPoolExhausted(serverWorker)) {
+                log.warn(logMessage + ", Could not get a  PassThroughMessageProcessor thread to process the "
+                        + "request message. The primary worker pool is exhausted.");
+            } else {
+                log.warn(logMessage + secondaryWorkerPoolExhaustedErrorMessage(messageDiscardWorker));
+            }
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
@@ -714,14 +714,22 @@ public class SourceHandler implements NHttpServerEventHandler {
             informWriterError(conn);
             isTimeoutOccurred = true;
             metrics.timeoutOccured();
-            log.warn("STATE_DESCRIPTION = Socket Timeout occurred after server writing the response headers to the "
+            String logMessage = "STATE_DESCRIPTION = Socket Timeout occurred after server writing the response"
+                    + " headers to the "
                     + "client" + "but Server is still writing the response body, INTERNAL_STATE = " + state
                     + ", DIRECTION = " + logDetails.get("direction") + ", "
-                    + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = " + logDetails
-                    .get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = " + conn
-                    .getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn) + ", CONNECTION " + conn
-                    +  " Correlation ID : " + conn.getContext().getAttribute(
-                    CorrelationConstants.CORRELATION_ID).toString());
+                    + "CAUSE_OF_ERROR = Connection between the client and the EI timeouts, HTTP_URL = "
+                    + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method") + ", SOCKET_TIMEOUT = "
+                    + conn.getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn;
+
+            if (isPrimaryWorkerPoolExhausted(serverWorker)) {
+                log.warn(logMessage + ", Could not get a  PassThroughMessageProcessor thread to process the "
+                        + "request message. The primary worker pool is exhausted.");
+            } else {
+                log.warn(logMessage + secondaryWorkerPoolExhaustedErrorMessage(messageDiscardWorker));
+            }
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
@@ -729,15 +737,22 @@ public class SourceHandler implements NHttpServerEventHandler {
             informWriterError(conn);
             isTimeoutOccurred = true;
             metrics.timeoutOccured();
-            log.warn(
-                    "STATE_DESCRIPTION = Socket Timeout occurred after accepting the request headers and the request "
-                            + "body, INTERNAL_STATE = "
-                            + state + ", DIRECTION = " + logDetails.get("direction") + ", "
-                            + "CAUSE_OF_ERROR = Connection between the client and the WSO2 server timeouts, HTTP_URL = "
-                            + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
-                            + ", SOCKET_TIMEOUT = " + conn.getSocketTimeout() + ", CLIENT_ADDRESS = "
-                            + getClientConnectionInfo(conn) + ", CONNECTION " + conn + " Correlation ID : "
-                            + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID).toString());
+            String logMessage = "STATE_DESCRIPTION = Socket Timeout occurred after accepting the request"
+                    + " headers and the request "
+                    + "body, INTERNAL_STATE = "
+                    + state + ", DIRECTION = " + logDetails.get("direction") + ", "
+                    + "CAUSE_OF_ERROR = Connection between the client and the WSO2 server timeouts, HTTP_URL = "
+                    + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
+                    + ", SOCKET_TIMEOUT = " + conn.getSocketTimeout() + ", CLIENT_ADDRESS = "
+                    + getClientConnectionInfo(conn)
+                    + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                    + ", CONNECTION = " + conn;
+            if (isPrimaryWorkerPoolExhausted(serverWorker)) {
+                log.warn(logMessage + ", Could not get a  PassThroughMessageProcessor thread to process the "
+                        + "request message. The primary worker pool is exhausted.");
+            } else {
+                log.warn(logMessage + secondaryWorkerPoolExhaustedErrorMessage(messageDiscardWorker));
+            }
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
             }
@@ -749,6 +764,31 @@ public class SourceHandler implements NHttpServerEventHandler {
         if (isTimeoutOccurred) {
             rollbackTransaction(conn);
         }
+    }
+
+    private String secondaryWorkerPoolExhaustedErrorMessage(Object messageDiscardWorker) {
+        String workerPoolExhaustedMessage = "";
+        if (messageDiscardWorker == null) {
+            return workerPoolExhaustedMessage;
+        }
+        MessageDiscardWorker msgDiscardWorker = (MessageDiscardWorker) messageDiscardWorker;
+        if (WorkerState.CREATED == msgDiscardWorker.getWorkerState()) {
+            workerPoolExhaustedMessage = ", Could not get a secondary worker thread to discard the request content. "
+                    + "The secondary worker pool is exhausted.";
+            return workerPoolExhaustedMessage;
+        } else if (WorkerState.RUNNING == msgDiscardWorker.getWorkerState()) {
+            workerPoolExhaustedMessage = ", The secondary worker thread which was discarding the request content"
+                    + " has been released.";
+            return workerPoolExhaustedMessage;
+        }
+        return workerPoolExhaustedMessage;
+    }
+
+    private boolean isPrimaryWorkerPoolExhausted(Object serverWorker) {
+        if (serverWorker == null) {
+            return false;
+        }
+        return WorkerState.RUNNING != ((ServerWorker)serverWorker).getWorkerState();
     }
 
     public void closed(NHttpServerConnection conn) {
@@ -881,7 +921,7 @@ public class SourceHandler implements NHttpServerEventHandler {
 
                 sourceConfiguration.getHttpProcessor().process(response, httpContext);
 
-                conn.submitResponse(response);            
+                conn.submitResponse(response);
                 SourceContext.updateState(conn, ProtocolState.CLOSED);
                 informWriterError(conn);
                 conn.close();

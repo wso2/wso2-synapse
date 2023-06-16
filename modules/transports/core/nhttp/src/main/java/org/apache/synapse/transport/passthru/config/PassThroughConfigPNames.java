@@ -113,6 +113,12 @@ public interface PassThroughConfigPNames {
     public String CONSUME_AND_DISCARD = "consume_and_discard";
 
     /**
+     * Define property to mark If an error has happened in the request processing,
+     * should consume the data in pipe completely and discard using secondary worker pool.
+     */
+    public String CONSUME_AND_DISCARD_BY_SECONDARY_POOL = "consume_and_discard_by_secondary_pool";
+
+    /**
      * Defines whether we should close target connection on endpoint timeout.
      */
     public String CLOSE_SOCKET_ON_ENDPOINT_TIMEOUT = "close_socket_on_endpoint_timeout";
@@ -160,6 +166,12 @@ public interface PassThroughConfigPNames {
      * Defines max waiting time for a request to be queued for a worker thread
      */
     public String EXPECTED_MAX_QUEUEING_TIME = "expected_max_queueing_time";
+
+    /**
+     * Defines max waiting time for a request to be queued for a worker thread
+     */
+    public String EXPECTED_MAX_QUEUEING_TIME_FOR_MESSAGE_DISCARD_WORKER
+            = "expected_max_queueing_time_for_message_discard_worker";
 
     /**
      * Defines whether viewing services are enabled or not

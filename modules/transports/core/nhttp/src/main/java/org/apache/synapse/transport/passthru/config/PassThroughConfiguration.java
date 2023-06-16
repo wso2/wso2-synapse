@@ -57,6 +57,8 @@ public class PassThroughConfiguration {
 
     private Boolean isConsumeAndDiscard = true;
 
+    private Boolean isConsumeAndDiscardBySecondaryWorkerPool = true;
+
     //additional rest dispatch handlers
     private static final String REST_DISPATCHER_SERVICE="rest.dispatcher.service";
     // URI configurations that determine if it requires custom rest dispatcher
@@ -156,6 +158,13 @@ public class PassThroughConfiguration {
         return isConsumeAndDiscard;
     }
 
+    public boolean isConsumeAndDiscardBySecondaryWorkerPool() {
+        isConsumeAndDiscardBySecondaryWorkerPool =
+                ConfigurationBuilderUtil.getBooleanProperty(
+                        PassThroughConfigPNames.CONSUME_AND_DISCARD_BY_SECONDARY_POOL, true, props);
+        return isConsumeAndDiscardBySecondaryWorkerPool;
+    }
+
     public int getMaxActiveConnections() {
         return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.C_MAX_ACTIVE, DEFAULT_MAX_ACTIVE_CON,
                 props);
@@ -242,6 +251,22 @@ public class PassThroughConfiguration {
     public String getExpectedMaxQueueingTime() {
         return getStringProperty(PassThroughConfigPNames.EXPECTED_MAX_QUEUEING_TIME,
                 EXPECTED_MAX_QUEUEING_TIME_DEFAULT);
+    }
+
+    public Long getExpectedMaxQueueingTimeForMessageDiscardWorker() {
+        String expectedMaxQueuingTime = getStringProperty(
+                PassThroughConfigPNames.EXPECTED_MAX_QUEUEING_TIME_FOR_MESSAGE_DISCARD_WORKER,
+                EXPECTED_MAX_QUEUEING_TIME_DEFAULT);
+        Long convertedExpectedMaxQueuingTime;
+        try {
+            convertedExpectedMaxQueuingTime = Long.parseLong(expectedMaxQueuingTime);
+        } catch (NumberFormatException exception) {
+            log.warn("Invalid value for the expected max queuing time for message discard worker. Expected max "
+                    + "queuing time should be a long value. "
+                    + "Using the default value " + EXPECTED_MAX_QUEUEING_TIME_DEFAULT);
+            convertedExpectedMaxQueuingTime = Long.parseLong(EXPECTED_MAX_QUEUEING_TIME_DEFAULT);
+        }
+        return convertedExpectedMaxQueuingTime;
     }
 
     /**
