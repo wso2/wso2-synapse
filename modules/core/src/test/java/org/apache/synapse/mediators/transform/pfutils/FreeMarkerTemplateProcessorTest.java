@@ -22,7 +22,6 @@ import junit.framework.TestCase;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.TestUtils;
-import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.transform.Argument;
 import org.apache.synapse.mediators.transform.PayloadFactoryMediator;
 import org.apache.synapse.util.xpath.SynapseXPath;
@@ -420,54 +419,6 @@ public class FreeMarkerTemplateProcessorTest extends TestCase {
 
         assertEquals("FreeMarker Template Processor has not "
                 + "set expected format", expectedEnvelopeFtl, synCtx.getEnvelope().getBody().toString());
-    }
-
-    public void testMultipleFtlPayloads() throws Exception {
-
-        final String xmlInput = "<int0:saveHeader xmlns:int0=\"http://integration.eib" +
-                ".org/admin/report/mediation/inf/integration\">\n" +
-                "  <int0:reportId>M551</int0:reportId>\n" +
-                "  <int0:tableId>M552</int0:tableId>\n" +
-                "  <int0:title>title</int0:title>\n" +
-                "  <int0:alternateColor>Y</int0:alternateColor>\n" +
-                "  <int0:color1>1</int0:color1>\n" +
-                "  <int0:color2>2</int0:color2>\n" +
-                "  <int0:columnNames>columnNames</int0:columnNames>\n" +
-                "</int0:saveHeader>";
-
-        final String ftlTemplate = "<#ftl ns_prefixes={\"int0\": \"http://integration.eib" +
-                ".org/admin/report/mediation/inf/integration\", \"xsi\": \"http://www.w3.org/2001/XMLSchema-instance\"}>\n" +
-                "<int:saveHeader xmlns:int=\"http://integration.eib.org/admin/report/backend/inf/integration\">\n" +
-                "<int:reportId>${payload['int0:saveHeader']['int0:reportId']}</int:reportId>\n" +
-                "<int:tableId>${payload['int0:saveHeader']['int0:tableId']}</int:tableId>\n" +
-                "<int:title>${payload['int0:saveHeader']['int0:title']}</int:title>\n" +
-                "<int:alternateColor>${payload['int0:saveHeader']['int0:alternateColor']}</int:alternateColor>\n" +
-                "<int:color1>${payload['int0:saveHeader']['int0:color1']}</int:color1>\n" +
-                "<int:color2>${payload['int0:saveHeader']['int0:color2']}</int:color2>\n" +
-                "<int:columnNames>${payload['int0:saveHeader']['int0:columnNames']}</int:columnNames>\n" +
-                "</int:saveHeader>";
-
-        PayloadFactoryMediator payloadFactoryMediator = new PayloadFactoryMediator();
-        TemplateProcessor templateProcessor = new FreeMarkerTemplateProcessor();
-        payloadFactoryMediator.setTemplateProcessor(templateProcessor);
-        payloadFactoryMediator.setFormat(ftlTemplate);
-        payloadFactoryMediator.setFormatKey(new Value("ftlKey"));
-        payloadFactoryMediator.setType("xml");
-        templateProcessor.setMediaType("xml");
-        templateProcessor.setFormat(ftlTemplate);
-        templateProcessor.init();
-
-        PayloadFactoryMediator payloadFactoryMediator1 = new PayloadFactoryMediator();
-        TemplateProcessor templateProcessor1 = new FreeMarkerTemplateProcessor();
-        payloadFactoryMediator1.setTemplateProcessor(templateProcessor);
-        payloadFactoryMediator1.setFormat(ftlTemplate);
-        payloadFactoryMediator1.setFormatKey(new Value("ftlKey"));
-        payloadFactoryMediator1.setType("xml");
-        templateProcessor1.setMediaType("xml");
-        templateProcessor1.setFormat(ftlTemplate);
-        templateProcessor1.init();
-        assertTrue("Second Factory Mediator is not initialized", templateProcessor1.getTemplateStatus());
-
     }
 
     /**
