@@ -35,12 +35,13 @@ public class URITemplateBasedDispatcher implements RESTDispatcher {
             DispatcherHelper helper = r.getDispatcherHelper();
             if (helper instanceof URITemplateHelper) {
                 URITemplateHelper templateHelper = (URITemplateHelper) helper;
-                Map<String,String> variables = new HashMap<String,String>();
+                Map<String, String> variables = new HashMap<String, String>();
                 if (templateHelper.getUriTemplate().matches(url, variables)) {
-                    for (Map.Entry<String,String> entry : variables.entrySet()) {
+                    for (Map.Entry<String, String> entry : variables.entrySet()) {
                         synCtx.setProperty(RESTConstants.REST_URI_VARIABLE_PREFIX + entry.getKey(),
                                 entry.getValue());
                     }
+                    synCtx.setProperty(RESTConstants.SELECTED_RESOURCE, r);
                     return r;
                 }
             }
