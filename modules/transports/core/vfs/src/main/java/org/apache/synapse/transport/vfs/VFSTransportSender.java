@@ -41,7 +41,6 @@ import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.FileType;
 import org.apache.commons.vfs2.impl.DefaultFileSystemManager;
 import org.apache.commons.vfs2.impl.StandardFileSystemManager;
-import org.apache.commons.vfs2.provider.UriParser;
 import org.apache.synapse.commons.vfs.VFSConstants;
 import org.apache.synapse.commons.vfs.VFSOutTransportInfo;
 import org.apache.synapse.commons.vfs.VFSParamDTO;
@@ -227,6 +226,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                 int maxRetryCount = vfsOutInfo.getMaxRetryCount();
                 long reconnectionTimeout = vfsOutInfo.getReconnectTimeout();
                 boolean append = vfsOutInfo.isAppend();
+                boolean updateLastModified = vfsOutInfo.isUpdateLastModified();
                 
                 while (wasError) {
                     
@@ -291,10 +291,10 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                         // before uploading the file
                         if (vfsOutInfo.isFileLockingEnabled()) {
                             acquireLockForSending(responseFile, vfsOutInfo, fso);
-                            populateResponseFile(responseFile, msgCtx,append, true, fso);
+                            populateResponseFile(responseFile, msgCtx,append, true, updateLastModified, fso);
                             VFSUtils.releaseLock(getFsManager(), responseFile, fso);
                         } else {
-                            populateResponseFile(responseFile, msgCtx,append, false, fso);
+                            populateResponseFile(responseFile, msgCtx,append, false, updateLastModified, fso);
                         }
 
                     } else if (replyFile.getType() == FileType.FILE) {
@@ -303,10 +303,10 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                         // before uploading the file
                         if (vfsOutInfo.isFileLockingEnabled()) {
                             acquireLockForSending(replyFile, vfsOutInfo, fso);
-                            populateResponseFile(replyFile, msgCtx, append, true, fso);
+                            populateResponseFile(replyFile, msgCtx, append, true, updateLastModified, fso);
                             VFSUtils.releaseLock(getFsManager(), replyFile, fso);
                         } else {
-                            populateResponseFile(replyFile, msgCtx, append, false, fso);
+                            populateResponseFile(replyFile, msgCtx, append, false, updateLastModified, fso);
                         }
 
                     } else {
@@ -317,10 +317,10 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                     // if file locking is not disabled acquire the lock before uploading the file
                     if (vfsOutInfo.isFileLockingEnabled()) {
                         acquireLockForSending(replyFile, vfsOutInfo, fso);
-                        populateResponseFile(replyFile, msgCtx, append, true, fso);
+                        populateResponseFile(replyFile, msgCtx, append, true, updateLastModified, fso);
                         VFSUtils.releaseLock(getFsManager(), replyFile, fso);
                     } else {
-                        populateResponseFile(replyFile, msgCtx, append, false, fso);
+                        populateResponseFile(replyFile, msgCtx, append, false, updateLastModified, fso);
                     }
                 }
             } catch (FileSystemException e) {
@@ -363,7 +363,8 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
     }
 
     protected void populateResponseFile(FileObject responseFile, MessageContext msgContext,
-                                      boolean append, boolean lockingEnabled, FileSystemOptions fso) throws AxisFault {
+                                      boolean append, boolean lockingEnabled, boolean updateLastModified,
+                                        FileSystemOptions fso) throws AxisFault {
         MessageFormatter messageFormatter = getMessageFormatter(msgContext);
         OMOutputFormat format = BaseUtils.getOMOutputFormat(msgContext);
         
@@ -378,9 +379,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
 
             //setting last modified
             Long lastModified = VFSUtils.getLastModified(msgContext);
-            String updateLastModifiedParam = UriParser.extractQueryParams(responseFile.getName().getURI())
-                    .get(VFSConstants.UPDATE_LAST_MODIFIED);
-            responseFile.setUpdateLastModified(Boolean.parseBoolean(updateLastModifiedParam));
+            responseFile.setUpdateLastModified(updateLastModified);
             if (lastModified != null && responseFile.getUpdateLastModified()) {
                 try {
                     if (log.isDebugEnabled()) {
