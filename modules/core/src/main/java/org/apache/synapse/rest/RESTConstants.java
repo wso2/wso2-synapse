@@ -92,4 +92,6 @@ public class RESTConstants {
     public static final String IS_PROMETHEUS_ENGAGED = "IS_PROMETHEUS_ENGAGED";
     public static final String PROCESSED_API = "PROCESSED_API";
     public static final String IDENTIFIED_API = "IDENTIFIED_API";
+    public static final String SELECTED_RESOURCE = "SELECTED_RESOURCE";
+
 }

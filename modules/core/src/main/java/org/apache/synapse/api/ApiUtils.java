@@ -43,8 +43,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class ApiUtils {
 
@@ -180,6 +179,34 @@ public class ApiUtils {
         }
     }
 
+    /**
+     * Checks whether the provided resource is capable of processing the message from the provided message context.
+     * The resource becomes capable to do this when the it contains either the name of the api caller,
+     * or {@value ApiConstants#DEFAULT_BINDING_ENDPOINT_NAME}, in its binds-to.
+     *
+     * @param resource  Resource object
+     * @param synCtx    MessageContext object
+     * @return          Whether the provided resource is bound to the provided message context
+     */
+    public static boolean isBound(Resource resource, MessageContext synCtx) {
+        Collection<String> bindings = resource.getBindsTo();
+        Object apiCaller = synCtx.getProperty(ApiConstants.API_CALLER);
+        if (apiCaller != null) {
+            return bindings.contains(apiCaller.toString());
+        }
+        return bindings.contains(ApiConstants.DEFAULT_BINDING_ENDPOINT_NAME);
+    }
+
+    public static Set<Resource> getAcceptableResources(Map<String, Resource> resources, MessageContext synCtx) {
+        Set<Resource> acceptableResources = new LinkedHashSet<Resource>();
+        for (Resource r : resources.values()) {
+            if (isBound(r, synCtx) && r.canProcess(synCtx)) {
+                acceptableResources.add(r);
+            }
+        }
+        return acceptableResources;
+    }
+
     public static List<RESTDispatcher> getDispatchers() {
         return dispatchers;
     }
@@ -199,8 +226,8 @@ public class ApiUtils {
      * and false if the two values don't match
      */
     public static boolean matchApiPath(String path, String context) {
-        if (!path.startsWith(context + "/") && !path.startsWith(context + "?") &&
-                !context.equals(path) && !"/".equals(context)) {
+        if (!path.startsWith(context + "/") && !path.startsWith(context + "?")
+                && !context.equals(path) && !"/".equals(context)) {
             return false;
         }
         return true;
