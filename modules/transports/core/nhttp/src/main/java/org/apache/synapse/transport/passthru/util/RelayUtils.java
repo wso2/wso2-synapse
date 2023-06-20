@@ -44,7 +44,10 @@ import org.apache.synapse.transport.http.conn.LoggingNHttpServerConnection;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
+import org.apache.synapse.transport.passthru.ProtocolState;
 import org.apache.synapse.transport.passthru.ServerWorker;
+import org.apache.synapse.transport.passthru.SourceContext;
+import org.apache.synapse.transport.passthru.TargetContext;
 import org.apache.synapse.transport.passthru.TargetRequest;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 
@@ -53,7 +56,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -73,6 +75,8 @@ public class RelayUtils {
     private static boolean forceXmlValidation = false;
 
     private static boolean forceJSONValidation = false;
+
+    private static PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
 
     static {
         if (forcePTBuild == null) {
@@ -525,10 +529,39 @@ public class RelayUtils {
         if (outTransportInfo instanceof ServerWorker) {
             requestContext = ((ServerWorker) outTransportInfo).getRequestContext();
         }
-        log.warn("Server encountered an error, the request message will be consumed and discarded, " +
-                getRequestInfoForLogging(requestContext) + ", Correlation ID = " +
-                requestContext.getProperty(CorrelationConstants.CORRELATION_ID));
         discardMessage(requestContext);
+    }
+
+    /**
+     * Allocate a new buffer for the response
+     * Also, set suspendInput() state on connection so that when inputReady state hits it won't go for
+     * handleInvalidState and mark the source connection to be closed
+     *
+     * @param msgContext Axis2 Message context which contains the data
+     * @throws AxisFault AxisFault
+     */
+    public static void discardSourceRequest(MessageContext msgContext) throws AxisFault {
+        //If consume_and_discard property is set to true, then we call the consumeAndDiscardMessage method
+        //to keep the backward compatibility.
+        if (conf.isConsumeAndDiscard()) {
+            consumeAndDiscardMessage(msgContext);
+            return;
+        }
+        NHttpServerConnection sourceConn = (NHttpServerConnection) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
+        if (sourceConn != null) {
+            sourceConn.suspendInput();
+            SourceContext sourceContext = (SourceContext)sourceConn.getContext().getAttribute(TargetContext.CONNECTION_INFORMATION);
+            if (sourceContext != null) {
+                sourceContext.setIsSourceRequestMarkedToBeDiscarded(true);
+            }
+            SourceContext.get(sourceConn).setShutDown(true);
+        }
+        Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+        if (pipe != null) {
+            pipe.getBuffer().clear();
+            pipe.resetOutputStream();
+            msgContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
+        }
     }
 
     /**

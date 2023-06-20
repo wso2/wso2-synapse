@@ -1024,6 +1024,14 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                         entry.setType(Entry.REMOTE_ENTRY);
                         addEntry(key, entry);
                         return entry;
+                    } else {
+                        if (!(o instanceof Entry)) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("There is no local registry entry for key : " + key +
+                                        ", Object already exists of type :" + o.getClass().getName());
+                            }
+                            return null;
+                        }
                     }
                 }
             }

@@ -28,6 +28,11 @@ public class SchemaResourceResolver implements LSResourceResolver {
         this.messageContext = messageContext;
     }
 
+    public SchemaResourceResolver(SynapseConfiguration synCfg, ResourceMap resourceMap) {
+        this.resourceMap = resourceMap;
+        this.synCfg = synCfg;
+    }
+
     /**
      * Lookup in {@link org.apache.synapse.util.resolver.ResourceMap} and returns
      * {@link org.apache.synapse.util.jaxp.SchemaResourceLSInput}
@@ -58,6 +63,10 @@ public class SchemaResourceResolver implements LSResourceResolver {
         schemaResourceLSInput.setPublicId(publicId);
         schemaResourceLSInput.setBaseURI(baseURI);
         return schemaResourceLSInput;
+    }
+
+    public void setMessageContext(MessageContext messageContext) {
+        this.messageContext = messageContext;
     }
 }
 

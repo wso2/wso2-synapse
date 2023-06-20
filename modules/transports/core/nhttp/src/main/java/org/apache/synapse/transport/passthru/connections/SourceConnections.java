@@ -93,6 +93,7 @@ public class SourceConnections {
         removeAttributes(conn);
         lock.lock();
         try {
+            conn.getContext().removeAttribute(PassThroughConstants.CLIENT_WORKER_THREAD_STATUS);
             SourceContext.get(conn).reset();
 
             if (busyConnections.remove(conn)) {

@@ -29,8 +29,11 @@ import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.NHttpClientConnection;
+import org.apache.http.protocol.HttpContext;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
+import org.apache.synapse.transport.passthru.connections.HostConnections;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -69,6 +72,7 @@ public class TargetResponse {
     private boolean forceShutdownConnectionOnComplete = false;
     /** logger for correlation.log */
     private static final Log correlationLog = LogFactory.getLog(PassThroughConstants.CORRELATION_LOGGER);
+    private static final Log transportLatencyLog = LogFactory.getLog(PassThroughConstants.TRANSPORT_LATENCY_LOGGER);
 
     // Constants for honoring keep-alive header coming from backend
     private static final String KEEP_ALIVE_HEADER = "Keep-Alive";
@@ -192,9 +196,17 @@ public class TargetResponse {
     private void readPostActions(NHttpClientConnection conn, ContentDecoder decoder) {
 
         if (decoder.isCompleted()) {
-            conn.getContext().setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME,
-                                           System.currentTimeMillis());
-            conn.getContext().setAttribute(PassThroughConstants.RES_ARRIVAL_TIME, System.currentTimeMillis());
+            HttpContext httpContext = conn.getContext();
+            long responseReadEndTime = System.currentTimeMillis();
+            if (transportLatencyLog.isDebugEnabled()) {
+                HostConnections pool = (HostConnections) httpContext.getAttribute("CONNECTION_POOL");
+                String route = pool == null ? "null" : pool.getRoute().toString();
+                transportLatencyLog.debug(httpContext.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
+                        "Completed Reading Response from Backend at time stamp: " + responseReadEndTime +
+                        " and route: " + route);
+            }
+            httpContext.setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME, responseReadEndTime);
+            httpContext.setAttribute(PassThroughConstants.RES_ARRIVAL_TIME, responseReadEndTime);
             TargetContext.updateState(conn, ProtocolState.RESPONSE_DONE);
             targetConfiguration.getMetrics().notifyReceivedMessageSize(conn.getMetrics().getReceivedBytesCount());
 
@@ -280,7 +292,6 @@ public class TargetResponse {
     }
 
     public boolean isForceShutdownConnectionOnComplete() {
-
         return forceShutdownConnectionOnComplete;
     }
 }

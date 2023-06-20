@@ -50,6 +50,26 @@ public interface PassThroughConfigPNames {
     public String IO_THREADS_PER_REACTOR = "io_threads_per_reactor";
 
     /**
+     * Defines the core size (number of threads) of the secondary worker thread pool.
+     */
+    public String SECONDARY_WORKER_POOL_SIZE_CORE = "secondary_worker_pool_size_core";
+
+    /**
+     * Defines the maximum size (number of threads) of the secondary worker thread pool.
+     */
+    public String SECONDARY_WORKER_POOL_SIZE_MAX = "secondary_worker_pool_size_max";
+
+    /**
+     * Defines the keep-alive time for extra threads in the secondary worker pool.
+     */
+    public String SECONDARY_WORKER_THREAD_KEEPALIVE_SEC = "secondary_worker_thread_keepalive_sec";
+
+    /**
+     * Defines the length of the queue that is used to hold Runnable tasks to be executed by the
+     * secondary worker pool.
+     */
+    public String SECONDARY_WORKER_POOL_QUEUE_LENGTH = "secondary_worker_pool_queue_length";
+    /**
      * Defines the IO buffer size
      */
     public String IO_BUFFER_SIZE = "io_buffer_size";
@@ -84,6 +104,18 @@ public interface PassThroughConfigPNames {
      * Defines whether HTTP keep-alive is disabled
      */
     public String DISABLE_KEEPALIVE = "http.connection.disable.keepalive";
+
+
+    /**
+     * Define property to mark If an error has happened in the request processing,
+     * should consumes the data in pipe completely and discard.
+     */
+    public String CONSUME_AND_DISCARD = "consume_and_discard";
+
+    /**
+     * Defines whether we should close target connection on endpoint timeout.
+     */
+    public String CLOSE_SOCKET_ON_ENDPOINT_TIMEOUT = "close_socket_on_endpoint_timeout";
 
     /**
      * Defines the time interval for idle connection removal.
@@ -123,6 +155,11 @@ public interface PassThroughConfigPNames {
      * Defines the header name set for correlation logs
      */
     public String CORRELATION_HEADER_NAME_PROPERTY = "correlation_header_name";
+
+    /**
+     * Defines max waiting time for a request to be queued for a worker thread
+     */
+    public String EXPECTED_MAX_QUEUEING_TIME = "expected_max_queueing_time";
 
     /**
      * Defines whether viewing services are enabled or not

@@ -284,6 +284,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         try {
             if (fileObject.exists() && fileObject.isReadable()) {
 
+                entry.setFileNotFoundLogged(false);
                 entry.setLastPollState(PollTableEntry.NONE);
                 FileObject[] children = null;
                 try {
@@ -579,14 +580,17 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 // the retry mechanism
                 fileObject.close();
                 fsManager.getFilesCache().clear(fileObject.getParent().getFileSystem());
+                if (!fileObject.exists() && !entry.isFileNotFoundLogged()) {
+                    log.warn("Provided file uri: " + fileURI + " is invalid. File does not exists");
+                    entry.setFileNotFoundLogged(true);
+                }
                 if (log.isDebugEnabled()) {
                     log.debug("Unable to access or read file or directory : "
                             + VFSUtils.maskURLPassword(fileURI)
                             + "."
                             + " Reason: "
-                            + (fileObject.exists() ? (fileObject.isReadable() ? "Unknown reason"
-                            : "The file can not be read!")
-                            : "The file does not exists!"));
+                            + (fileObject.isReadable() ? "Unknown reason"
+                            : "The file can not be read!"));
                 }
                 // If the polling directory is not exist or not readable, refresh the parent file to trigger scan the cached
                 // child directories

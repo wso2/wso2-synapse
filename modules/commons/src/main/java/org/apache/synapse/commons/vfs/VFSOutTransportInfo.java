@@ -53,6 +53,7 @@ public class VFSOutTransportInfo implements OutTransportInfo {
     private boolean sendFileSynchronously = false;
     //When the folder structure does not exists forcefully create
     private boolean forceCreateFolder = false;
+    private boolean updateLastModified = true;
     
     private static final String[] uriParamsToDelete = {VFSConstants.APPEND+"=true", VFSConstants.APPEND+"=false"};
 
@@ -144,6 +145,11 @@ public class VFSOutTransportInfo implements OutTransportInfo {
         if (properties.containsKey(VFSConstants.APPEND)) {
             String strAppend = properties.get(VFSConstants.APPEND);
             append = Boolean.parseBoolean(strAppend);
+        }
+
+        if (properties.containsKey(VFSConstants.UPDATE_LAST_MODIFIED)) {
+            String strUpdateLastModified = properties.get(VFSConstants.UPDATE_LAST_MODIFIED);
+            updateLastModified = Boolean.parseBoolean(strUpdateLastModified);
         }
 
         if (log.isDebugEnabled()) {
@@ -286,5 +292,9 @@ public class VFSOutTransportInfo implements OutTransportInfo {
     public void setForceCreateFolder(boolean forceCreateFolder) {
         this.forceCreateFolder = forceCreateFolder;
     }
-    
+
+    public boolean isUpdateLastModified() {
+
+        return updateLastModified;
+    }
 }
