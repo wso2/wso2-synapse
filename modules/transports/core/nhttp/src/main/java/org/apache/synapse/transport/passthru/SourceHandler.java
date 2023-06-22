@@ -597,7 +597,8 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + ", CONNECTION = " + conn;
             if (!PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
                     (PassThroughConstants.SERVER_WORKER_THREAD_STATUS))) {
-                log.warn(logMessage + ", WORKER_POOL_EXHAUSTED = TRUE");
+                log.warn(logMessage + ", Could not get a  PassThroughMessageProcessor thread to process the "
+                        + "request message. The primary worker pool is exhausted.");
             } else {
                 log.warn(logMessage + secondaryWorkerPoolExhaustedErrorMessage(conn));
             }
@@ -620,7 +621,8 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             if (!PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
                     (PassThroughConstants.SERVER_WORKER_THREAD_STATUS))) {
-                log.warn(logMessage + ", WORKER_POOL_EXHAUSTED = TRUE");
+                log.warn(logMessage + ", Could not get a  PassThroughMessageProcessor thread to process the "
+                        + "request message. The primary worker pool is exhausted.");
             } else {
                 log.warn(logMessage + secondaryWorkerPoolExhaustedErrorMessage(conn));
             }
@@ -643,7 +645,8 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + ", CONNECTION = " + conn;
             if (!PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
                     (PassThroughConstants.SERVER_WORKER_THREAD_STATUS))) {
-                log.warn(logMessage + ", WORKER_POOL_EXHAUSTED = TRUE");
+                log.warn(logMessage + ", Could not get a  PassThroughMessageProcessor thread to process the "
+                        + "request message. The primary worker pool is exhausted.");
             } else {
                 log.warn(logMessage + secondaryWorkerPoolExhaustedErrorMessage(conn));
             }
@@ -664,12 +667,13 @@ public class SourceHandler implements NHttpServerEventHandler {
         String workerPoolExhaustedMessage = "";
         if (PassThroughConstants.THREAD_STATUS_MARKED.equals(conn.getContext().getAttribute
                 (PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS))) {
-            workerPoolExhaustedMessage = ", SECONDARY_WORKER_POOL_EXHAUSTED = TRUE";
+            workerPoolExhaustedMessage = ", Could not get a secondary worker thread to discard the request content. "
+                    + "The secondary worker pool is exhausted.";
             return workerPoolExhaustedMessage;
         } else if (PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
                 (PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS))) {
-            workerPoolExhaustedMessage = ", SECONDARY_WORKER_POOL_THREAD was blocked in the ConsumeAndDiscard method. "
-                    + "The thread will be released now.";
+            workerPoolExhaustedMessage = ", The secondary worker thread which was discarding the request content"
+                    + " has been released.";
             return workerPoolExhaustedMessage;
         }
         return workerPoolExhaustedMessage;

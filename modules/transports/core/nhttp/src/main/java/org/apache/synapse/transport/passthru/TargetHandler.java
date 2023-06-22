@@ -837,23 +837,26 @@ public class TargetHandler implements NHttpClientEventHandler {
         String workerPoolExhaustedMessage = "";
         if (PassThroughConstants.THREAD_STATUS_MARKED.equals(conn.getContext().getAttribute
                 (PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS))) {
-            workerPoolExhaustedMessage = ", SECONDARY_WORKER_POOL_EXHAUSTED = TRUE";
+            workerPoolExhaustedMessage = ", Could not get a secondary worker thread to discard the request content. "
+                    + "The secondary worker pool is exhausted.";
             return workerPoolExhaustedMessage;
         } else if (PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
                 (PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS))) {
-            workerPoolExhaustedMessage = ", SECONDARY_WORKER_POOL_THREAD was blocked in the ConsumeAndDiscard method. "
-                    + "The thread will be released now.";
+            workerPoolExhaustedMessage = ", The secondary worker thread which was discarding the request content"
+                    + " has been released.";
             return workerPoolExhaustedMessage;
         } else if (PassThroughConstants.THREAD_STATUS_FINISHED.equals(conn.getContext().getAttribute
                 (PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS))) {
             if (!PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
                     (PassThroughConstants.CLIENT_WORKER_THREAD_STATUS))) {
-                workerPoolExhaustedMessage = ", PRIMARY_WORKER_POOL_EXHAUSTED = TRUE";
+                workerPoolExhaustedMessage = ", Could not get a  PassThroughMessageProcessor thread to process the "
+                        + "response message. The primary worker pool is exhausted.";
                 return workerPoolExhaustedMessage;
             }
         } else if (!PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
                 (PassThroughConstants.CLIENT_WORKER_THREAD_STATUS))) {
-            workerPoolExhaustedMessage = ", PRIMARY_WORKER_POOL_EXHAUSTED = TRUE";
+            workerPoolExhaustedMessage = ", Could not get a  PassThroughMessageProcessor thread to process the "
+                    + "response message. The primary worker pool is exhausted.";
             return workerPoolExhaustedMessage;
         }
         return workerPoolExhaustedMessage;
