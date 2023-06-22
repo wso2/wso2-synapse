@@ -25,6 +25,9 @@ import org.apache.http.HttpStatus;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.api.version.ContextVersionStrategy;
+import org.apache.synapse.api.version.DefaultStrategy;
+import org.apache.synapse.api.version.URLBasedVersionStrategy;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.api.dispatch.DefaultDispatcher;
@@ -183,6 +186,66 @@ public class ApiUtils {
             }
         }
         return acceptableResources;
+    }
+
+    public static API getSelectedAPI(MessageContext synCtx) {
+        API selectedApi;
+        API defaultAPI = null;
+        //getting the API collection from the synapse configuration to find the invoked API
+        Collection<API> apiSet = synCtx.getEnvironment().getSynapseConfiguration().getAPIs();
+        //Since swapping elements are not possible with sets, Collection is converted to a List
+        List<API> defaultStrategyApiSet = new ArrayList<API>(apiSet);
+        //To avoid apiSet being modified concurrently
+        List<API> duplicateApiSet = new ArrayList<>(apiSet);
+        //identiy the api using canProcess method
+        for (API api : duplicateApiSet) {
+            if (identifySelectedAPI(api, synCtx, defaultStrategyApiSet)) {
+                selectedApi = api;
+                return selectedApi;
+            }
+        }
+        for (API api : defaultStrategyApiSet) {
+            api.setLogSetterValue();
+            if (api.canProcess(synCtx)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Located specific API: " + api.getName() + " for processing message");
+                }
+                selectedApi = api;
+                return selectedApi;
+            }
+        }
+        if (defaultAPI != null && defaultAPI.canProcess(synCtx)) {
+            defaultAPI.setLogSetterValue();
+            return defaultAPI;
+        }
+        return null;
+    }
+
+    public static boolean identifySelectedAPI(API api, MessageContext synCtx, List defaultStrategyApiSet) {
+        API defaultAPI = null;
+        api.setLogSetterValue();
+        if ("/".equals(api.getContext())) {
+            defaultAPI = api;
+        } else if (api.getVersionStrategy().getClass().getName().equals(DefaultStrategy.class.getName())) {
+            //APIs whose VersionStrategy is bound to an instance of DefaultStrategy, should be skipped and processed at
+            // last.Otherwise they will be always chosen to process the request without matching the version.
+            defaultStrategyApiSet.add(api);
+        } else if (api.getVersionStrategy().getClass().getName().equals(ContextVersionStrategy.class.getName())
+                || api.getVersionStrategy().getClass().getName().equals(URLBasedVersionStrategy.class.getName())) {
+            api.setLogSetterValue();
+            if (api.canProcess(synCtx)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Located specific API: " + api.getName() + " for processing message");
+                }
+                return true;
+            }
+        } else if (api.canProcess(synCtx)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Located specific API: " + api.getName() + " for processing message");
+            }
+            return true;
+        }
+        return false;
     }
 
     public static List<RESTDispatcher> getDispatchers() {
