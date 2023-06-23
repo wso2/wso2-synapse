@@ -51,6 +51,7 @@ import org.apache.synapse.transport.passthru.config.PassThroughCorrelationConfig
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.HostConnections;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
+import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -458,54 +459,31 @@ public class TargetHandler implements NHttpClientEventHandler {
             if (statusCode == HttpStatus.SC_ACCEPTED && handle202(requestMsgContext)) {
                 return;
             }
-            if (targetResponse.isForceShutdownConnectionOnComplete() && conf.isConsumeAndDiscard()) {
-                ClientWorker clientWorker = new ClientWorker(targetConfiguration, requestMsgContext, targetResponse);
+            if (targetResponse.isForceShutdownConnectionOnComplete() && conf.isConsumeAndDiscardBySecondaryWorkerPool()
+                    && conf.isConsumeAndDiscard()) {
+                NHttpServerConnection sourceConn = (NHttpServerConnection) requestMsgContext.getProperty(
+                        PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
+                if (sourceConn != null) {
+                    sourceConn.getContext().setAttribute(PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS,
+                            PassThroughConstants.THREAD_STATUS_MARKED);
+                }
+                conn.getContext().setAttribute(PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS,
+                        PassThroughConstants.THREAD_STATUS_MARKED);
                 targetConfiguration.getSecondaryWorkerPool().execute(new MessageDiscardWorker(requestMsgContext,
-                        targetResponse, targetConfiguration, clientWorker, conn));
+                        targetResponse, targetConfiguration, conn));
                 return;
             }
 
             WorkerPool workerPool = targetConfiguration.getWorkerPool();
             workerPool.execute(
                     new ClientWorker(targetConfiguration, requestMsgContext, targetResponse));
-                            if (workerPool.getActiveCount() >= conf.getWorkerPoolCoreSize()) {
-                conn.getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_SIDE_QUEUED_TIME,
-                        System.currentTimeMillis());
-            }
 
             targetConfiguration.getMetrics().incrementMessagesReceived();
 
             NHttpServerConnection sourceConn = (NHttpServerConnection) requestMsgContext.getProperty(
                     PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
             if (sourceConn != null) {
-                sourceConn.getContext().setAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME,
-                        conn.getContext()
-                                .getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME)
-                );
-                conn.getContext().removeAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME);
-
-                sourceConn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME,
-                        conn.getContext()
-                                .getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME)
-                );
-                conn.getContext().removeAttribute(PassThroughConstants.REQ_DEPARTURE_TIME);
-                sourceConn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME,
-                        conn.getContext()
-                                .getAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME)
-                );
-
-                conn.getContext().removeAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME);
-                sourceConn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,
-                        conn.getContext()
-                                .getAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME)
-                );
-                conn.getContext().removeAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME);
-                sourceConn.getContext().setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_START_TIME,
-                        conn.getContext()
-                                .getAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_START_TIME)
-                );
-                conn.getContext().removeAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_START_TIME);
-
+                PassThroughTransportUtils.setSourceConnectionContextAttributes(sourceConn, conn);
             }
 
         } catch (Exception ex) {
@@ -784,13 +762,6 @@ public class TargetHandler implements NHttpClientEventHandler {
         if (log.isDebugEnabled()) {
             log.debug(getErrorMessage("Connection timeout", conn) + " "+ getConnectionLoggingInfo(conn));
         }
-        if (!PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
-                (PassThroughConstants.CLIENT_WORKER_THREAD_STATUS))) {
-            log.warn("Target Handler Socket Timeout occurred while the worker pool exhausted, " +
-                    "INTERNAL_STATE = " + state + ", CORRELATION_ID = "
-                    + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
-        }
-
         if (state != null &&
                 (state == ProtocolState.REQUEST_READY || state == ProtocolState.RESPONSE_DONE)) {
             if (log.isDebugEnabled()) {
@@ -810,7 +781,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                         + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
                         .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn) + ", "
                         + "CONNECTION = " + conn + ", SOCKET_TIMEOUT = " + conn.getSocketTimeout() + ", CORRELATION_ID"
-                        + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
+                        + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                        + workerPoolExhaustedErrorMessage(conn));
             }
 
             if (state == ProtocolState.RESPONSE_BODY || state == ProtocolState.REQUEST_HEAD) {
@@ -825,7 +797,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                         + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
                         .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn) + ", "
                         + "CONNECTION = " + conn + ", SOCKET_TIMEOUT = " + conn.getSocketTimeout() + ", "
-                        + "CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
+                        + "CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                        + workerPoolExhaustedErrorMessage(conn));
             }
 
             if (state.compareTo(ProtocolState.REQUEST_DONE) <= 0) {
@@ -838,7 +811,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                         + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
                         .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn) + ", "
                         + "CONNECTION = " + conn + ", SOCKET_TIMEOUT = " + conn.getSocketTimeout() + ", CORRELATION_ID"
-                        + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID));
+                        + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                        + workerPoolExhaustedErrorMessage(conn));
 
                 if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                     logHttpRequestErrorInCorrelationLog(conn, "Timeout in " + state);
@@ -857,6 +831,35 @@ public class TargetHandler implements NHttpClientEventHandler {
 
         TargetContext.updateState(conn, ProtocolState.CLOSED);
         targetConfiguration.getConnections().closeConnection(conn, true);
+    }
+
+    private String workerPoolExhaustedErrorMessage(NHttpClientConnection conn) {
+        String workerPoolExhaustedMessage = "";
+        if (PassThroughConstants.THREAD_STATUS_MARKED.equals(conn.getContext().getAttribute
+                (PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS))) {
+            workerPoolExhaustedMessage = ", Could not get a secondary worker thread to discard the request content. "
+                    + "The secondary worker pool is exhausted.";
+            return workerPoolExhaustedMessage;
+        } else if (PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
+                (PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS))) {
+            workerPoolExhaustedMessage = ", The secondary worker thread which was discarding the request content"
+                    + " has been released.";
+            return workerPoolExhaustedMessage;
+        } else if (PassThroughConstants.THREAD_STATUS_FINISHED.equals(conn.getContext().getAttribute
+                (PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS))) {
+            if (!PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
+                    (PassThroughConstants.CLIENT_WORKER_THREAD_STATUS))) {
+                workerPoolExhaustedMessage = ", Could not get a  PassThroughMessageProcessor thread to process the "
+                        + "response message. The primary worker pool is exhausted.";
+                return workerPoolExhaustedMessage;
+            }
+        } else if (!PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
+                (PassThroughConstants.CLIENT_WORKER_THREAD_STATUS))) {
+            workerPoolExhaustedMessage = ", Could not get a  PassThroughMessageProcessor thread to process the "
+                    + "response message. The primary worker pool is exhausted.";
+            return workerPoolExhaustedMessage;
+        }
+        return workerPoolExhaustedMessage;
     }
 
     private boolean isResponseHaveBodyExpected(
