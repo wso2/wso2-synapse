@@ -246,6 +246,16 @@ public class ClientWorker implements Runnable {
             ((NHttpServerConnection) responseMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION)).
                        getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_START_TIME, System.currentTimeMillis());
         }
+
+        if (response.isForceShutdownConnectionOnComplete() && !conf.isConsumeAndDiscardBySecondaryWorkerPool()
+                && conf.isConsumeAndDiscard()) {
+            // If an error has happened in the request processing, consumes the data in pipe completely and discard it
+            try {
+                RelayUtils.discardRequestMessage(requestMessageContext);
+            } catch (AxisFault af) {
+                log.error("Fault discarding request message", af);
+            }
+        }
         try {
             if (expectEntityBody) {
             	  String cType = response.getHeader(HTTP.CONTENT_TYPE);
