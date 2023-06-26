@@ -168,11 +168,15 @@ public class SourceHandler implements NHttpServerEventHandler {
             Object correlationId = conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID);
             if (correlationId != null) {
                 WorkerPool workerPool = sourceConfiguration.getWorkerPool();
-                workerPool.execute(new ServerWorker(request, sourceConfiguration, os,
-                        System.currentTimeMillis(), correlationId.toString()));
+                ServerWorker serverWorker = new ServerWorker(request, sourceConfiguration, os,
+                        System.currentTimeMillis(), correlationId.toString());
+                conn.getContext().setAttribute(PassThroughConstants.SERVER_WORKER_REFERENCE, serverWorker);
+                workerPool.execute(serverWorker);
             } else {
                 WorkerPool workerPool = sourceConfiguration.getWorkerPool();
-                workerPool.execute(new ServerWorker(request, sourceConfiguration, os));
+                ServerWorker serverWorker = new ServerWorker(request, sourceConfiguration, os);
+                conn.getContext().setAttribute(PassThroughConstants.SERVER_WORKER_REFERENCE, serverWorker);
+                workerPool.execute(serverWorker);
             }
             //increasing the input request metric
             metrics.requestReceived();
@@ -575,7 +579,10 @@ public class SourceHandler implements NHttpServerEventHandler {
         boolean isTimeoutOccurred = false;
         ProtocolState state = SourceContext.getState(conn);
         Map<String, String> logDetails = getLoggingInfo(conn, state);
-
+        ServerWorker serverWorker = (ServerWorker) conn.getContext().getAttribute(
+                PassThroughConstants.SERVER_WORKER_REFERENCE);
+        MessageDiscardWorker messageDiscardWorker = (MessageDiscardWorker) conn.getContext().getAttribute(
+                PassThroughConstants.MESSAGE_DISCARD_WORKER_REFERENCE);
         if (state == ProtocolState.REQUEST_READY || state == ProtocolState.RESPONSE_DONE) {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": Keep-Alive connection was time out: ");
@@ -595,12 +602,11 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + conn.getSocketTimeout() + ", CLIENT_ADDRESS = " + getClientConnectionInfo(conn)
                     + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
                     + ", CONNECTION = " + conn;
-            if (!PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
-                    (PassThroughConstants.SERVER_WORKER_THREAD_STATUS))) {
+            if (isPrimaryWorkerPoolExhausted(serverWorker)) {
                 log.warn(logMessage + ", Could not get a  PassThroughMessageProcessor thread to process the "
                         + "request message. The primary worker pool is exhausted.");
             } else {
-                log.warn(logMessage + secondaryWorkerPoolExhaustedErrorMessage(conn));
+                log.warn(logMessage + secondaryWorkerPoolExhaustedErrorMessage(messageDiscardWorker));
             }
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
@@ -619,12 +625,11 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
                     + ", CONNECTION = " + conn;
 
-            if (!PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
-                    (PassThroughConstants.SERVER_WORKER_THREAD_STATUS))) {
+            if (isPrimaryWorkerPoolExhausted(serverWorker)) {
                 log.warn(logMessage + ", Could not get a  PassThroughMessageProcessor thread to process the "
                         + "request message. The primary worker pool is exhausted.");
             } else {
-                log.warn(logMessage + secondaryWorkerPoolExhaustedErrorMessage(conn));
+                log.warn(logMessage + secondaryWorkerPoolExhaustedErrorMessage(messageDiscardWorker));
             }
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
@@ -643,12 +648,11 @@ public class SourceHandler implements NHttpServerEventHandler {
                     + getClientConnectionInfo(conn)
                     + ", CORRELATION_ID = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
                     + ", CONNECTION = " + conn;
-            if (!PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
-                    (PassThroughConstants.SERVER_WORKER_THREAD_STATUS))) {
+            if (isPrimaryWorkerPoolExhausted(serverWorker)) {
                 log.warn(logMessage + ", Could not get a  PassThroughMessageProcessor thread to process the "
                         + "request message. The primary worker pool is exhausted.");
             } else {
-                log.warn(logMessage + secondaryWorkerPoolExhaustedErrorMessage(conn));
+                log.warn(logMessage + secondaryWorkerPoolExhaustedErrorMessage(messageDiscardWorker));
             }
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 logHttpRequestErrorInCorrelationLog(conn, "TIMEOUT in " + state.name());
@@ -663,20 +667,25 @@ public class SourceHandler implements NHttpServerEventHandler {
         }
     }
 
-    private String secondaryWorkerPoolExhaustedErrorMessage(NHttpServerConnection conn) {
+    private String secondaryWorkerPoolExhaustedErrorMessage(MessageDiscardWorker messageDiscardWorker) {
         String workerPoolExhaustedMessage = "";
-        if (PassThroughConstants.THREAD_STATUS_MARKED.equals(conn.getContext().getAttribute
-                (PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS))) {
+        if (messageDiscardWorker == null) {
+            return workerPoolExhaustedMessage;
+        }
+        if (WorkerState.MARKED == messageDiscardWorker.getWorkerState()) {
             workerPoolExhaustedMessage = ", Could not get a secondary worker thread to discard the request content. "
                     + "The secondary worker pool is exhausted.";
             return workerPoolExhaustedMessage;
-        } else if (PassThroughConstants.THREAD_STATUS_RUNNING.equals(conn.getContext().getAttribute
-                (PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS))) {
+        } else if (WorkerState.RUNNING == messageDiscardWorker.getWorkerState()) {
             workerPoolExhaustedMessage = ", The secondary worker thread which was discarding the request content"
                     + " has been released.";
             return workerPoolExhaustedMessage;
         }
         return workerPoolExhaustedMessage;
+    }
+
+    private boolean isPrimaryWorkerPoolExhausted(ServerWorker serverWorker) {
+        return serverWorker != null && (WorkerState.RUNNING != serverWorker.getWorkerState());
     }
 
     public void closed(NHttpServerConnection conn) {

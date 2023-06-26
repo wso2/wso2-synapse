@@ -44,8 +44,11 @@ public class MessageDiscardWorker implements Runnable {
 
     private PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
 
+    private WorkerState state;
+
     public MessageDiscardWorker(MessageContext requestMsgContext, TargetResponse response,
                                 TargetConfiguration targetConfiguration, NHttpClientConnection conn) {
+        this.state = WorkerState.MARKED;
         this.response = response;
         this.requestMessageContext = requestMsgContext;
         this.targetConfiguration = targetConfiguration;
@@ -54,11 +57,9 @@ public class MessageDiscardWorker implements Runnable {
     }
 
     public void run() {
-        NHttpServerConnection sourceConn = (NHttpServerConnection) requestMessageContext.getProperty(
-                PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
 
         // Mark the start of the request message discard worker at the beginning of the worker thread
-        setThreadState(sourceConn, PassThroughConstants.THREAD_STATUS_RUNNING);
+        setWorkerState(WorkerState.RUNNING);
         Long expectedMaxQueueingTime = conf.getExpectedMaxQueueingTimeForMessageDiscardWorker();
         if (queuedTime != null && expectedMaxQueueingTime != null) {
             Long messageDiscardWorkerQueuedTime = System.currentTimeMillis() - queuedTime;
@@ -79,23 +80,27 @@ public class MessageDiscardWorker implements Runnable {
         }
 
         // Mark the end of the request message discard worker at the end of the worker thread
-        setThreadState(sourceConn, PassThroughConstants.THREAD_STATUS_FINISHED);
-        targetConfiguration.getWorkerPool().execute(new ClientWorker(targetConfiguration, requestMessageContext, response));
+        setWorkerState(WorkerState.FINISHED);
+        ClientWorker clientWorker = new ClientWorker(targetConfiguration, requestMessageContext, response);
+        conn.getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_REFERENCE
+                , clientWorker);
+        targetConfiguration.getWorkerPool().execute(clientWorker);
 
         targetConfiguration.getMetrics().incrementMessagesReceived();
 
+        NHttpServerConnection sourceConn = (NHttpServerConnection) requestMessageContext.getProperty(
+                PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
         if (sourceConn != null) {
             PassThroughTransportUtils.setSourceConnectionContextAttributes(sourceConn, conn);
         }
 
     }
 
-    private void setThreadState(NHttpServerConnection sourceConn, String threadState) {
-        conn.getContext().setAttribute(PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS,
-                threadState);
-        if (sourceConn != null) {
-            sourceConn.getContext().setAttribute(PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS,
-                    threadState);
-        }
+    private void setWorkerState(WorkerState workerState) {
+        this.state = workerState;
+    }
+
+    public WorkerState getWorkerState() {
+        return this.state;
     }
 }
