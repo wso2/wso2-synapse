@@ -760,9 +760,9 @@ public class TargetHandler implements NHttpClientEventHandler {
         ProtocolState state = TargetContext.getState(conn);
         MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
         Map<String, String> logDetails = getLoggingInfo(conn, state, requestMsgCtx);
-        ClientWorker clientWorker = (ClientWorker) conn.getContext().getAttribute(
+        Object clientWorker = conn.getContext().getAttribute(
                 PassThroughConstants.CLIENT_WORKER_REFERENCE);
-        MessageDiscardWorker messageDiscardWorker = (MessageDiscardWorker) conn.getContext().getAttribute(
+        Object messageDiscardWorker = conn.getContext().getAttribute(
                 PassThroughConstants.MESSAGE_DISCARD_WORKER_REFERENCE);
 
         if (log.isDebugEnabled()) {
@@ -839,24 +839,28 @@ public class TargetHandler implements NHttpClientEventHandler {
         targetConfiguration.getConnections().closeConnection(conn, true);
     }
 
-    private String workerPoolExhaustedErrorMessage(ClientWorker clientWorker
-            , MessageDiscardWorker messageDiscardWorker) {
+    private String workerPoolExhaustedErrorMessage(Object clientWorker
+            , Object messageDiscardWorker) {
         String workerPoolExhaustedMessage = "";
-        if (messageDiscardWorker != null && WorkerState.MARKED == messageDiscardWorker.getWorkerState()) {
+        if (messageDiscardWorker != null
+                && WorkerState.CREATED == ((MessageDiscardWorker) messageDiscardWorker).getWorkerState()) {
             workerPoolExhaustedMessage = ", Could not get a secondary worker thread to discard the request content. "
                     + "The secondary worker pool is exhausted.";
             return workerPoolExhaustedMessage;
-        } else if (messageDiscardWorker != null && WorkerState.RUNNING == messageDiscardWorker.getWorkerState()) {
+        } else if (messageDiscardWorker != null
+                && WorkerState.RUNNING == ((MessageDiscardWorker) messageDiscardWorker).getWorkerState()) {
             workerPoolExhaustedMessage = ", The secondary worker thread which was discarding the request content"
                     + " has been released.";
             return workerPoolExhaustedMessage;
-        } else if (messageDiscardWorker != null && WorkerState.FINISHED == messageDiscardWorker.getWorkerState()) {
-            if (clientWorker != null && WorkerState.MARKED == clientWorker.getWorkerState()) {
+        } else if (messageDiscardWorker != null
+                && WorkerState.FINISHED == ((MessageDiscardWorker) messageDiscardWorker).getWorkerState()) {
+            if (clientWorker != null
+                    && WorkerState.CREATED == ((ClientWorker)clientWorker).getWorkerState()) {
                 workerPoolExhaustedMessage = ", Could not get a  PassThroughMessageProcessor thread to process the "
                         + "response message. The primary worker pool is exhausted.";
                 return workerPoolExhaustedMessage;
             }
-        } else if (clientWorker != null && WorkerState.MARKED == clientWorker.getWorkerState()) {
+        } else if (clientWorker != null && WorkerState.CREATED == ((ClientWorker)clientWorker).getWorkerState()) {
             workerPoolExhaustedMessage = ", Could not get a  PassThroughMessageProcessor thread to process the "
                     + "response message. The primary worker pool is exhausted.";
             return workerPoolExhaustedMessage;

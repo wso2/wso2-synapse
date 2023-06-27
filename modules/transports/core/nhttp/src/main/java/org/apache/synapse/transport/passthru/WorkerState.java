@@ -21,7 +21,7 @@ package org.apache.synapse.transport.passthru;
  */
 public enum WorkerState {
     /** Worker is marked for execution waiting for thread */
-    MARKED,
+    CREATED,
 
     /** Worker is executing */
     RUNNING,

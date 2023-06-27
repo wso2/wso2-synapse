@@ -73,7 +73,7 @@ public class ClientWorker implements Runnable {
     public ClientWorker(TargetConfiguration targetConfiguration,
                         MessageContext outMsgCtx,
                         TargetResponse response) {
-        this.state = WorkerState.MARKED;
+        this.state = WorkerState.CREATED;
         this.queuedTime = System.currentTimeMillis();
         this.targetConfiguration = targetConfiguration;
         this.response = response;

@@ -48,7 +48,7 @@ public class MessageDiscardWorker implements Runnable {
 
     public MessageDiscardWorker(MessageContext requestMsgContext, TargetResponse response,
                                 TargetConfiguration targetConfiguration, NHttpClientConnection conn) {
-        this.state = WorkerState.MARKED;
+        this.state = WorkerState.CREATED;
         this.response = response;
         this.requestMessageContext = requestMsgContext;
         this.targetConfiguration = targetConfiguration;

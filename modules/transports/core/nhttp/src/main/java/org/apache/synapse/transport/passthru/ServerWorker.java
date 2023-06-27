@@ -114,7 +114,7 @@ public class ServerWorker implements Runnable {
   
     public ServerWorker(final SourceRequest request,
                         final SourceConfiguration sourceConfiguration,final OutputStream os) {
-        this.state = WorkerState.MARKED;
+        this.state = WorkerState.CREATED;
         this.request = request;
         this.sourceConfiguration = sourceConfiguration;
 

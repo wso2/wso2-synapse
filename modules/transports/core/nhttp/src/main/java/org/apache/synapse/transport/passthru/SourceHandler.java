@@ -579,9 +579,9 @@ public class SourceHandler implements NHttpServerEventHandler {
         boolean isTimeoutOccurred = false;
         ProtocolState state = SourceContext.getState(conn);
         Map<String, String> logDetails = getLoggingInfo(conn, state);
-        ServerWorker serverWorker = (ServerWorker) conn.getContext().getAttribute(
+        Object serverWorker = conn.getContext().getAttribute(
                 PassThroughConstants.SERVER_WORKER_REFERENCE);
-        MessageDiscardWorker messageDiscardWorker = (MessageDiscardWorker) conn.getContext().getAttribute(
+        Object messageDiscardWorker = conn.getContext().getAttribute(
                 PassThroughConstants.MESSAGE_DISCARD_WORKER_REFERENCE);
         if (state == ProtocolState.REQUEST_READY || state == ProtocolState.RESPONSE_DONE) {
             if (log.isDebugEnabled()) {
@@ -667,16 +667,17 @@ public class SourceHandler implements NHttpServerEventHandler {
         }
     }
 
-    private String secondaryWorkerPoolExhaustedErrorMessage(MessageDiscardWorker messageDiscardWorker) {
+    private String secondaryWorkerPoolExhaustedErrorMessage(Object messageDiscardWorker) {
         String workerPoolExhaustedMessage = "";
         if (messageDiscardWorker == null) {
             return workerPoolExhaustedMessage;
         }
-        if (WorkerState.MARKED == messageDiscardWorker.getWorkerState()) {
+        MessageDiscardWorker msgDiscardWorker = (MessageDiscardWorker) messageDiscardWorker;
+        if (WorkerState.CREATED == msgDiscardWorker.getWorkerState()) {
             workerPoolExhaustedMessage = ", Could not get a secondary worker thread to discard the request content. "
                     + "The secondary worker pool is exhausted.";
             return workerPoolExhaustedMessage;
-        } else if (WorkerState.RUNNING == messageDiscardWorker.getWorkerState()) {
+        } else if (WorkerState.RUNNING == msgDiscardWorker.getWorkerState()) {
             workerPoolExhaustedMessage = ", The secondary worker thread which was discarding the request content"
                     + " has been released.";
             return workerPoolExhaustedMessage;
@@ -684,8 +685,11 @@ public class SourceHandler implements NHttpServerEventHandler {
         return workerPoolExhaustedMessage;
     }
 
-    private boolean isPrimaryWorkerPoolExhausted(ServerWorker serverWorker) {
-        return serverWorker != null && (WorkerState.RUNNING != serverWorker.getWorkerState());
+    private boolean isPrimaryWorkerPoolExhausted(Object serverWorker) {
+        if (serverWorker == null) {
+            return false;
+        }
+        return WorkerState.RUNNING != ((ServerWorker)serverWorker).getWorkerState();
     }
 
     public void closed(NHttpServerConnection conn) {
