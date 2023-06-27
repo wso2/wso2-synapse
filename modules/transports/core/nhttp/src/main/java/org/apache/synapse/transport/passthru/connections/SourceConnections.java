@@ -90,8 +90,8 @@ public class SourceConnections {
     public void releaseConnection(NHttpServerConnection conn) {
         lock.lock();
         try {
-            conn.getContext().removeAttribute(PassThroughConstants.SERVER_WORKER_THREAD_STATUS);
-            conn.getContext().removeAttribute(PassThroughConstants.MESSAGE_DISCARD_WORKER_THREAD_STATUS);
+            conn.getContext().removeAttribute(PassThroughConstants.SERVER_WORKER_REFERENCE);
+            conn.getContext().removeAttribute(PassThroughConstants.MESSAGE_DISCARD_WORKER_REFERENCE);
             SourceContext.get(conn).reset();
 
             if (busyConnections.remove(conn)) {

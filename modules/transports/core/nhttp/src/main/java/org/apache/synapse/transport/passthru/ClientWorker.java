@@ -68,9 +68,12 @@ public class ClientWorker implements Runnable {
 
     private PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
 
+    private WorkerState state;
+
     public ClientWorker(TargetConfiguration targetConfiguration,
                         MessageContext outMsgCtx,
                         TargetResponse response) {
+        this.state = WorkerState.CREATED;
         this.queuedTime = System.currentTimeMillis();
         this.targetConfiguration = targetConfiguration;
         this.response = response;
@@ -227,8 +230,7 @@ public class ClientWorker implements Runnable {
             return;
         }
         // Mark the start of the request at the beginning of the worker thread
-        response.getConnection().getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_THREAD_STATUS,
-                PassThroughConstants.THREAD_STATUS_RUNNING);
+        setWorkerState(WorkerState.RUNNING);
 
         Long expectedMaxQueueingTime = conf.getExpectedMaxQueueingTime();
         if (queuedTime != null && expectedMaxQueueingTime != null) {
@@ -326,6 +328,7 @@ public class ClientWorker implements Runnable {
             log.error("Fault creating response SOAP envelope", af);            
         } finally {
             cleanup();
+            setWorkerState(WorkerState.FINISHED);
         }
     }
 
@@ -395,6 +398,14 @@ public class ClientWorker implements Runnable {
 
         // Unable to determine the content type - Return default value
         return PassThroughConstants.DEFAULT_CONTENT_TYPE;
+    }
+
+    private void setWorkerState(WorkerState workerState) {
+        this.state = workerState;
+    }
+
+    public WorkerState getWorkerState() {
+        return this.state;
     }
 
     /**

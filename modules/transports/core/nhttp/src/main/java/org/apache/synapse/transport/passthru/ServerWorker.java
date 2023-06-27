@@ -109,9 +109,12 @@ public class ServerWorker implements Runnable {
     private OutputStream os; //only used for WSDL  requests..
 
     private Long queuedTime = null;
+
+    private WorkerState state;
   
     public ServerWorker(final SourceRequest request,
                         final SourceConfiguration sourceConfiguration,final OutputStream os) {
+        this.state = WorkerState.CREATED;
         this.request = request;
         this.sourceConfiguration = sourceConfiguration;
 
@@ -147,8 +150,7 @@ public class ServerWorker implements Runnable {
         try {
 
             // Mark the start of the request at the beginning of the worker thread
-            request.getConnection().getContext().setAttribute(PassThroughConstants.SERVER_WORKER_THREAD_STATUS,
-                    PassThroughConstants.THREAD_STATUS_RUNNING);
+            setWorkerState(WorkerState.RUNNING);
 
             Long expectedMaxQueueingTime = conf.getExpectedMaxQueueingTime();
             if (queuedTime != null && expectedMaxQueueingTime != null) {
@@ -614,6 +616,14 @@ public class ServerWorker implements Runnable {
                 new HttpCoreRequestResponseTransport(msgContext));
 
         return msgContext;
+    }
+
+    private void setWorkerState(WorkerState workerState) {
+        this.state = workerState;
+    }
+
+    public WorkerState getWorkerState() {
+        return this.state;
     }
 
     private void handleException(String msg, Exception e) {
