@@ -110,9 +110,13 @@ public class ServerWorker implements Runnable {
     private PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
 
     private OutputStream os; //only used for WSDL  requests..
-  
+
+    private Long queuedTime = null;
+private WorkerState state;
+
     public ServerWorker(final SourceRequest request,
                         final SourceConfiguration sourceConfiguration,final OutputStream os) {
+        this.state = WorkerState.CREATED;
         this.request = request;
         this.sourceConfiguration = sourceConfiguration;
 
@@ -134,6 +138,7 @@ public class ServerWorker implements Runnable {
         request.getConnection().getContext().setAttribute(NhttpConstants.SERVER_WORKER_INIT_TIME,
                 System.currentTimeMillis());
         request.getConnection().getContext().setAttribute(PassThroughConstants.REQUEST_MESSAGE_CONTEXT, msgContext);
+        queuedTime = System.currentTimeMillis();
     }
 
     public ServerWorker(final SourceRequest request,
@@ -148,15 +153,12 @@ public class ServerWorker implements Runnable {
         try {
 
             // Mark the start of the request at the beginning of the worker thread
-            request.getConnection().getContext().setAttribute(PassThroughConstants.SERVER_WORKER_THREAD_STATUS,
-                    PassThroughConstants.THREAD_STATUS_RUNNING);
-            Object queuedTime =
-                    request.getConnection().getContext().getAttribute(PassThroughConstants.SERVER_WORKER_START_TIME);
+            setWorkerState(WorkerState.RUNNING);
 
             String expectedMaxQueueingTime = conf.getExpectedMaxQueueingTime();
             if (queuedTime != null && expectedMaxQueueingTime != null) {
                 Long expectedMaxQueueingTimeInMillis = Long.parseLong(expectedMaxQueueingTime);
-                Long serverWorkerQueuedTime = System.currentTimeMillis() - (Long) queuedTime;
+                Long serverWorkerQueuedTime = System.currentTimeMillis() - queuedTime;
                 if (serverWorkerQueuedTime >= expectedMaxQueueingTimeInMillis) {
                     log.warn("Server worker thread queued time exceeds the expected max queueing time. Expected max " +
                             "queueing time : " + expectedMaxQueueingTimeInMillis + "ms. Actual queued time : " +
@@ -635,6 +637,14 @@ public class ServerWorker implements Runnable {
         msgContext.setProperty(PassThroughConstants.TRANSPORT_MESSAGE_HANDLER, new PassThroughMessageHandler());
 
         return msgContext;
+    }
+
+    private void setWorkerState(WorkerState workerState) {
+        this.state = workerState;
+    }
+
+    public WorkerState getWorkerState() {
+        return this.state;
     }
 
     private void handleException(String msg, Exception e) {

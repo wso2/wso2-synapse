@@ -26,6 +26,8 @@ import org.apache.axis2.util.JavaUtils;
 import org.apache.axis2.description.AxisService;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.AxisOperation;
+import org.apache.http.nio.NHttpClientConnection;
+import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.HttpStatus;
 import org.apache.commons.logging.Log;
@@ -126,6 +128,37 @@ public class PassThroughTransportUtils {
             removeUnwantedHeadersFromHeaderMap(excessHeaders, targetConfiguration);
         }
 
+    }
+
+    public static void setSourceConnectionContextAttributes(NHttpServerConnection sourceConn,
+                                                            NHttpClientConnection conn) {
+        sourceConn.getContext().setAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME,
+                conn.getContext()
+                        .getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME)
+        );
+        conn.getContext().removeAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME);
+
+        sourceConn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME,
+                conn.getContext()
+                        .getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME)
+        );
+        conn.getContext().removeAttribute(PassThroughConstants.REQ_DEPARTURE_TIME);
+        sourceConn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME,
+                conn.getContext()
+                        .getAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME)
+        );
+
+        conn.getContext().removeAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME);
+        sourceConn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,
+                conn.getContext()
+                        .getAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME)
+        );
+        conn.getContext().removeAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME);
+        sourceConn.getContext().setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_START_TIME,
+                conn.getContext()
+                        .getAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_START_TIME)
+        );
+        conn.getContext().removeAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_START_TIME);
     }
 
 
