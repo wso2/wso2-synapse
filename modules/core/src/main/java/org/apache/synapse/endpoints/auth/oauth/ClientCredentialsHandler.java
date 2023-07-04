@@ -31,9 +31,10 @@ import org.apache.synapse.endpoints.auth.AuthException;
  */
 public class ClientCredentialsHandler extends OAuthHandler {
 
-    public ClientCredentialsHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode) {
+    public ClientCredentialsHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode,
+                                    int connectionTimeout, int connectionRequestTimeout, int socketTimeout) {
 
-        super(tokenApiUrl, clientId, clientSecret, authMode);
+        super(tokenApiUrl, clientId, clientSecret, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout);
     }
 
     @Override

@@ -42,6 +42,12 @@ public class AuthConstants {
     public static final String CUSTOM_HEADER = "header";
     public static final String NAME = "name";
 
+    public static final String OAUTH_CONNECTION_TIMEOUT = "connectionTimeout";
+
+    public static final String OAUTH_CONNECTION_REQUEST_TIMEOUT = "connectionRequestTimeout";
+
+    public static final String OAUTH_SOCKET_TIMEOUT = "socketTimeout";
+
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String BEARER = "Bearer ";
     public static final String BASIC = "Basic ";

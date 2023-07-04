@@ -119,13 +119,17 @@ public class OAuthUtils {
         String refreshToken = getChildValue(authCodeElement, AuthConstants.OAUTH_REFRESH_TOKEN);
         String tokenApiUrl = getChildValue(authCodeElement, AuthConstants.TOKEN_API_URL);
         String authMode = getChildValue(authCodeElement, AuthConstants.OAUTH_AUTHENTICATION_MODE);
+        int connectionTimeout = getOauthTimeouts(authCodeElement, AuthConstants.OAUTH_CONNECTION_TIMEOUT);
+        int connectionRequestTimeout = getOauthTimeouts(authCodeElement,
+                AuthConstants.OAUTH_CONNECTION_REQUEST_TIMEOUT);
+        int socketTimeout = getOauthTimeouts(authCodeElement, AuthConstants.OAUTH_SOCKET_TIMEOUT);
 
         if (clientId == null || clientSecret == null || refreshToken == null || tokenApiUrl == null) {
             log.error("Invalid AuthorizationCode configuration");
             return null;
         }
         AuthorizationCodeHandler handler = new AuthorizationCodeHandler(tokenApiUrl, clientId, clientSecret,
-                refreshToken, authMode);
+                refreshToken, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout);
         if (hasRequestParameters(authCodeElement)) {
             Map<String, String> requestParameters = getRequestParameters(authCodeElement);
             if (requestParameters == null) {
@@ -156,12 +160,17 @@ public class OAuthUtils {
         String clientSecret = getChildValue(clientCredentialsElement, AuthConstants.OAUTH_CLIENT_SECRET);
         String tokenApiUrl = getChildValue(clientCredentialsElement, AuthConstants.TOKEN_API_URL);
         String authMode = getChildValue(clientCredentialsElement, AuthConstants.OAUTH_AUTHENTICATION_MODE);
+        int connectionTimeout = getOauthTimeouts(clientCredentialsElement, AuthConstants.OAUTH_CONNECTION_TIMEOUT);
+        int connectionRequestTimeout = getOauthTimeouts(clientCredentialsElement,
+                AuthConstants.OAUTH_CONNECTION_REQUEST_TIMEOUT);
+        int socketTimeout = getOauthTimeouts(clientCredentialsElement, AuthConstants.OAUTH_SOCKET_TIMEOUT);
 
         if (clientId == null || clientSecret == null || tokenApiUrl == null) {
             log.error("Invalid ClientCredentials configuration");
             return null;
         }
-        ClientCredentialsHandler handler = new ClientCredentialsHandler(tokenApiUrl, clientId, clientSecret, authMode);
+        ClientCredentialsHandler handler = new ClientCredentialsHandler(tokenApiUrl, clientId, clientSecret, authMode,
+                connectionTimeout, connectionRequestTimeout, socketTimeout);
         if (hasRequestParameters(clientCredentialsElement)) {
             Map<String, String> requestParameters = getRequestParameters(clientCredentialsElement);
             if (requestParameters == null) {
@@ -194,13 +203,17 @@ public class OAuthUtils {
         String password = getChildValue(passwordCredentialsElement, AuthConstants.OAUTH_PASSWORD);
         String tokenApiUrl = getChildValue(passwordCredentialsElement, AuthConstants.TOKEN_API_URL);
         String authMode = getChildValue(passwordCredentialsElement, AuthConstants.OAUTH_AUTHENTICATION_MODE);
+        int connectionTimeout = getOauthTimeouts(passwordCredentialsElement, AuthConstants.OAUTH_CONNECTION_TIMEOUT);
+        int connectionRequestTimeout = getOauthTimeouts(passwordCredentialsElement,
+                AuthConstants.OAUTH_CONNECTION_REQUEST_TIMEOUT);
+        int socketTimeout = getOauthTimeouts(passwordCredentialsElement, AuthConstants.OAUTH_SOCKET_TIMEOUT);
 
         if (username == null || password == null || tokenApiUrl == null || clientId == null || clientSecret == null) {
             log.error("Invalid PasswordCredentials configuration");
             return null;
         }
         PasswordCredentialsHandler handler = new PasswordCredentialsHandler(tokenApiUrl, clientId, clientSecret,
-                username, password, authMode);
+                username, password, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout);
         if (hasRequestParameters(passwordCredentialsElement)) {
             Map<String, String> requestParameters = getRequestParameters(passwordCredentialsElement);
             if (requestParameters == null) {
@@ -333,6 +346,20 @@ public class OAuthUtils {
             return ResolverFactory.getInstance().getResolver(childElement.getText().trim()).resolve();
         }
         return null;
+    }
+
+    public static int getOauthTimeouts(OMElement parentElement, String childName) {
+        String value = getChildValue(parentElement, childName);
+        try {
+            if (value == null) {
+                return -1;
+            } else {
+                return Integer.parseInt(value);
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while parsing the value of " + value + " as an integer. Using default timeout", e);
+            return -1;
+        }
     }
 
     /**

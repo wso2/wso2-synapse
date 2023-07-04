@@ -33,6 +33,11 @@ public class AuthException extends Exception {
         super(message);
     }
 
+    public AuthException(String message, Exception e) {
+
+        super(message, e);
+    }
+
     public AuthException(Throwable e) {
 
         super(e);
