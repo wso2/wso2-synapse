@@ -53,14 +53,21 @@ public abstract class OAuthHandler implements AuthHandler {
     private Map<String, String> requestParametersMap;
     private Map<String, String> customHeadersMap;
     private final String authMode;
+    protected final int connectionTimeout;
+    protected final int connectionRequestTimeout;
+    protected final int socketTimeout;
 
-    protected OAuthHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode) {
+    protected OAuthHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode,
+                           int connectionTimeout, int connectionRequestTimeout, int socketTimeout) {
 
         this.id = OAuthUtils.getRandomOAuthHandlerID();
         this.tokenApiUrl = tokenApiUrl;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
         this.authMode = authMode;
+        this.connectionTimeout = connectionTimeout;
+        this.connectionRequestTimeout = connectionRequestTimeout;
+        this.socketTimeout = socketTimeout;
     }
 
     @Override
@@ -87,7 +94,8 @@ public abstract class OAuthHandler implements AuthHandler {
                 public String call() throws AuthException, IOException {
                     return OAuthClient.generateToken(OAuthUtils.resolveExpression(tokenApiUrl, messageContext),
                             buildTokenRequestPayload(messageContext), getEncodedCredentials(messageContext),
-                            messageContext, getResolvedCustomHeadersMap(customHeadersMap, messageContext));
+                            messageContext, getResolvedCustomHeadersMap(customHeadersMap, messageContext), connectionTimeout,
+                            connectionRequestTimeout, socketTimeout);
                 }
             });
         } catch (ExecutionException e) {
@@ -200,6 +208,18 @@ public abstract class OAuthHandler implements AuthHandler {
             oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory,
                     AuthConstants.OAUTH_AUTHENTICATION_MODE, getAuthMode()));
         }
+        if (getConnectionTimeout() != -1) {
+            oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory,
+                    AuthConstants.OAUTH_CONNECTION_TIMEOUT, String.valueOf(getConnectionTimeout())));
+        }
+        if (getConnectionRequestTimeout() != -1) {
+            oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory,
+                    AuthConstants.OAUTH_CONNECTION_REQUEST_TIMEOUT, String.valueOf(getConnectionRequestTimeout())));
+        }
+        if (getSocketTimeout() != -1) {
+            oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory,
+                    AuthConstants.OAUTH_SOCKET_TIMEOUT, String.valueOf(getSocketTimeout())));
+        }
 
         return oauthCredentials;
     }
@@ -306,4 +326,17 @@ public abstract class OAuthHandler implements AuthHandler {
         }
         return resolvedCustomHeadersMap;
     }
+
+    public int getConnectionTimeout() {
+        return connectionTimeout;
+    }
+
+    public int getConnectionRequestTimeout() {
+        return connectionRequestTimeout;
+    }
+
+    public int getSocketTimeout() {
+        return socketTimeout;
+    }
+
 }

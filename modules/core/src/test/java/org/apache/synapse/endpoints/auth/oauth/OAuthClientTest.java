@@ -24,6 +24,7 @@ import org.apache.axis2.description.TransportOutDescription;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.http.HttpEntity;
 import org.apache.http.StatusLine;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.HttpClientConnectionManager;
@@ -41,6 +42,7 @@ import org.apache.synapse.mediators.TestUtils;
 import org.apache.synapse.transport.passthru.PassThroughHttpSender;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -82,6 +84,7 @@ public class OAuthClientTest extends TestCase {
         PowerMockito.mockStatic(HttpClientBuilder.class);
 
         PowerMockito.when(HttpClientBuilder.class, "create").thenReturn(mockClientBuilder);
+        PowerMockito.when(mockClientBuilder.setDefaultRequestConfig(Mockito.any(RequestConfig.class))).thenReturn(mockClientBuilder);
         PowerMockito.when(mockClientBuilder.setConnectionManager(any(HttpClientConnectionManager.class))).thenReturn(mockClientBuilder);
         PowerMockito.when(mockClientBuilder.setSSLSocketFactory(any())).thenReturn(mockClientBuilder);
         PowerMockito.when(mockClientBuilder.build()).thenReturn(mockHttpClient);
@@ -108,7 +111,7 @@ public class OAuthClientTest extends TestCase {
         SynapseEnvironment synapseEnvironment = new Axis2SynapseEnvironment(synapseConfiguration);
         String token = OAuthClient.generateToken("https://localhost:8280/token1/1.0.0", "body", "credentials",
                                                  new Axis2MessageContext(messageContext, new SynapseConfiguration(),
-                                                         synapseEnvironment), null);
+                                                         synapseEnvironment), null, -1, -1, -1);
 
         assertEquals("abc123", token);
     }

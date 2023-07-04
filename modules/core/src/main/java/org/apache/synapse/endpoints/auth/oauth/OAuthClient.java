@@ -29,6 +29,7 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.config.Registry;
@@ -97,8 +98,10 @@ public class OAuthClient {
      * @throws IOException    In the event of a problem parsing the response from the server
      */
     public static String generateToken(String tokenApiUrl, String payload, String credentials,
-                                       MessageContext messageContext, Map<String, String> customHeaders) throws AuthException, IOException {
-        CloseableHttpClient httpClient = getSecureClient(tokenApiUrl, messageContext);
+                                       MessageContext messageContext, Map<String, String> customHeaders,
+                                       int connectionTimeout, int connectionRequestTimeout, int socketTimeout) throws AuthException, IOException {
+        CloseableHttpClient httpClient = getSecureClient(tokenApiUrl, messageContext, connectionTimeout,
+                connectionRequestTimeout, socketTimeout);
         if (log.isDebugEnabled()) {
             log.debug("Initializing token generation request: [token-endpoint] " + tokenApiUrl);
         }
@@ -173,7 +176,8 @@ public class OAuthClient {
      * @return Secure CloseableHttpClient
      * @throws AuthException
      */
-    private static CloseableHttpClient getSecureClient(String tokenUrl, MessageContext messageContext)
+    private static CloseableHttpClient getSecureClient(String tokenUrl, MessageContext messageContext,
+                                                       int connectionTimeout, int connectionRequestTimeout, int socketTimeout)
             throws AuthException {
         SSLContext sslContext;
         ConfigurationContext configurationContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext().
@@ -190,13 +194,18 @@ public class OAuthClient {
         }
         SSLConnectionSocketFactory sslConnectionFactory =
                 new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
+        RequestConfig config = RequestConfig.custom()
+                .setConnectTimeout(connectionTimeout)
+                .setConnectionRequestTimeout(connectionRequestTimeout)
+                .setSocketTimeout(socketTimeout).build();
         Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create().
                 register(HTTPS_CONNECTION, sslConnectionFactory).register(HTTP_CONNECTION, new PlainConnectionSocketFactory())
                 .build();
 
         BasicHttpClientConnectionManager connManager = new BasicHttpClientConnectionManager(registry);
 
-        CloseableHttpClient client = HttpClients.custom().setConnectionManager(connManager)
+        CloseableHttpClient client = HttpClientBuilder.create().setDefaultRequestConfig(config)
+                .setConnectionManager(connManager)
                 .setSSLSocketFactory(sslConnectionFactory).build();
 
         return client;
