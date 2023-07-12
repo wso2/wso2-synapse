@@ -15,9 +15,14 @@ public class GetPropertyFunctionResolver implements XPathFunctionResolver {
     }
 
     public XPathFunction resolveFunction(QName functionName, int arity) {
+
         if (SynapseXPathConstants.GET_PROPERTY_FUNCTION.equals(functionName.getLocalPart())) {
             return new GetPropertyFunction(synCtx);
         }
         return null;
+    }
+
+    public void setSynCtx(MessageContext synCtx) {
+        this.synCtx = synCtx;
     }
 }

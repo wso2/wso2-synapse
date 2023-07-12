@@ -670,11 +670,18 @@ public class SynapseXPath extends SynapsePath {
             doomElement = convertToDOOM(element);
         }
         domXpath.setNamespaceContext(domNamespaceMap);
-        domXpath.setXPathFunctionResolver(new GetPropertyFunctionResolver(synCtx));
-        domXpath.setXPathVariableResolver(new DOMSynapseXPathVariableResolver(this.getVariableContext(), synCtx));
+        GetPropertyFunctionResolver getPropertyFunctionResolver = new GetPropertyFunctionResolver(synCtx);
+        DOMSynapseXPathVariableResolver domSynapseXPathVariableResolver =
+                new DOMSynapseXPathVariableResolver(this.getVariableContext(), synCtx);
+        domXpath.setXPathFunctionResolver(getPropertyFunctionResolver);
+        domXpath.setXPathVariableResolver(domSynapseXPathVariableResolver);
         /* Compile the original expression again with Saxon to be evaluated with XPath 2.0 */
         XPathExpression expr = domXpath.compile(getExpression());
         Object result = expr.evaluate(doomElement);
+
+        // Set message contexts in resolvers to null to avoid memory leaks. Resolvers are initialized for each evaluation
+        domSynapseXPathVariableResolver.setSynCtx(null);
+        getPropertyFunctionResolver.setSynCtx(null);
 
         if (result != null) {
             return result.toString();
