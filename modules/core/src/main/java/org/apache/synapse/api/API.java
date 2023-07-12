@@ -53,12 +53,12 @@ import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.logging.LoggingUtils;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.Collection;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -276,20 +276,11 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
                 return false;
             }
         } else {
-            String path = ApiUtils.getFullRequestPath(synCtx);
-            if (null == synCtx.getProperty(RESTConstants.IS_PROMETHEUS_ENGAGED) &&
-                    (!ApiUtils.matchApiPath(path, context))) {
-                auditDebug("API context: " + context + " does not match request URI: " + path);
-                return false;
+            if (ApiUtils.identifyApi(this, synCtx) == false) {
+                ApiUtils.getFullRequestPath(synCtx);
             }
-
-            if(!versionStrategy.isMatchingVersion(synCtx)){
-                return false;
-            }
-
             org.apache.axis2.context.MessageContext msgCtx =
                     ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-
             if (host != null || port != -1) {
                 String hostHeader = getHostHeader(msgCtx);
                 if (hostHeader != null) {

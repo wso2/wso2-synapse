@@ -25,6 +25,10 @@ import org.apache.http.HttpStatus;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.api.version.ContextVersionStrategy;
+import org.apache.synapse.api.version.DefaultStrategy;
+import org.apache.synapse.api.version.URLBasedVersionStrategy;
+import org.apache.synapse.api.version.VersionStrategy;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.api.dispatch.DefaultDispatcher;
@@ -156,6 +160,24 @@ public class ApiUtils {
 
     public static String getSubRequestPath(MessageContext synCtx) {
         return (String) synCtx.getProperty(RESTConstants.REST_SUB_REQUEST_PATH);
+    }
+
+    public static boolean identifyApi(API api, MessageContext synCtx) {
+        if (synCtx.getProperty(RESTConstants.IDENTIFIED_API) == null) {
+            String path = ApiUtils.getFullRequestPath(synCtx);
+            if (null == synCtx.getProperty(RESTConstants.IS_PROMETHEUS_ENGAGED) &&
+                    (!ApiUtils.matchApiPath(path, api.getContext()))) {
+                log.debug("API context: " + api.getContext() + " does not match request URI: " + path);
+                return false;
+            }
+            if (!api.getVersionStrategy().isMatchingVersion(synCtx)) {
+                return false;
+            }
+            synCtx.setProperty(RESTConstants.IDENTIFIED_API, api);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public static List<RESTDispatcher> getDispatchers() {

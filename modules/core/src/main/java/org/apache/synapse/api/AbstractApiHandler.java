@@ -51,15 +51,24 @@ public abstract class AbstractApiHandler {
 
         Object apiObject = synCtx.getProperty(RESTConstants.PROCESSED_API);
         if (apiObject != null) {
-            if (identifyAPI((API) apiObject, synCtx, defaultStrategyApiSet)) {
+            if (startProcess((API) apiObject, synCtx, defaultStrategyApiSet)) {
                 return true;
             }
         } else {
             //To avoid apiSet being modified concurrently
             List<API> duplicateApiSet = new ArrayList<API>(apiSet);
-            for (API api : duplicateApiSet) {
-                if (identifyAPI(api, synCtx, defaultStrategyApiSet)) {
+            API identifiedApi = (API) synCtx.getProperty(RESTConstants.IDENTIFIED_API);
+            //If normal path this goes to else, if logging enabled then goes inside the if method.
+            if (identifiedApi != null
+                    && duplicateApiSet.contains(identifiedApi)) {
+                if (startProcess(identifiedApi, synCtx, defaultStrategyApiSet)) {
                     return true;
+                }
+            } else {
+                for (API api : duplicateApiSet) {
+                    if (startProcess(api, synCtx, defaultStrategyApiSet)) {
+                        return true;
+                    }
                 }
             }
         }
@@ -110,7 +119,7 @@ public abstract class AbstractApiHandler {
         }
     }
 
-    protected boolean identifyAPI(API api, MessageContext synCtx, List defaultStrategyApiSet) {
+    protected boolean startProcess(API api, MessageContext synCtx, List defaultStrategyApiSet) {
         API defaultAPI = null;
         api.setLogSetterValue();
         if ("/".equals(api.getContext())) {
