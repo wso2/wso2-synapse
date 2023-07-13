@@ -112,12 +112,12 @@ public class SynapseJsonPath extends SynapsePath {
                 propertyExpression = extractPropMatcher.group(0);
             }
         } else {
+            // Though SynapseJsonPath support "$.", the JSONPath implementation does not support it
+            if (expression.endsWith(".")) {
+                expression = expression.substring(0, expression.length() - 1);
+            }
             jsonPath = JsonPath.compile(expression);
             checkIsWholeBody();
-        }
-        // Though SynapseJsonPath support "$.", the JSONPath implementation does not support it
-        if (expression.endsWith(".")) {
-            expression = expression.substring(0, expression.length() - 1);
         }
         this.setPathType(SynapsePath.JSON_PATH);
     }
