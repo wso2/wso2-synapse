@@ -74,9 +74,9 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     protected Log log;
     protected static final Log trace = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
 
-    private static final boolean jmxEnabled = Boolean.parseBoolean(MiscellaneousUtil.getProperty(
-            SynapsePropertiesLoader.loadSynapseProperties(),
-            JmxConfigurationConstants.PROP_ENDPOINT_VIEW_JMX_ENABLE, "true"));
+    private static final boolean jmxEnabled = Boolean.parseBoolean(
+            MiscellaneousUtil.getProperty(SynapsePropertiesLoader.loadSynapseProperties(),
+                    JmxConfigurationConstants.PROP_ENDPOINT_VIEW_JMX_ENABLE, "true"));
 
     /** Hold the logical name of an endpoint */
     private String endpointName = null;
