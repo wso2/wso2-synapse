@@ -42,5 +42,6 @@ public class JmxConfigurationConstants {
     public static final String PROP_REMOTE_SSL = "remote.ssl";
 
     public static final String PROP_THREAD_JMX_ENABLE = "synapse.jmx.thread.view.enabled";
-    
+
+    public static final String PROP_ENDPOINT_VIEW_JMX_ENABLE = "synapse.jmx.endpoint.view.enabled";
 }
