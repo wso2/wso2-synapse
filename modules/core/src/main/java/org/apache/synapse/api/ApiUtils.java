@@ -176,7 +176,7 @@ public class ApiUtils {
             synCtx.setProperty(RESTConstants.IDENTIFIED_API, api);
             return true;
         } else {
-            return false;
+            return true;
         }
     }
 
