@@ -33,6 +33,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SequenceFlowObserver;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
@@ -46,6 +47,7 @@ import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
+import org.apache.synapse.config.SequenceFlowObserversLoader;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.SynapseHandlersLoader;
@@ -100,6 +102,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     private SynapseTaskManager taskManager;
     private RESTRequestHandler restHandler;
     private List<SynapseHandler> synapseHandlers;
+    private List<SequenceFlowObserver> sequenceObservers;
     private long globalTimeout = SynapseConstants.DEFAULT_GLOBAL_TIMEOUT;
     private SynapseDebugManager synapseDebugManager;
 
@@ -207,6 +210,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         restHandler = new RESTRequestHandler();
 
         synapseHandlers = SynapseHandlersLoader.loadHandlers();
+        sequenceObservers = SequenceFlowObserversLoader.loadObservers();
 
         this.globalTimeout = SynapseConfigUtils.getGlobalTimeoutInterval();
 
@@ -1051,6 +1055,26 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      */
     public void registerSynapseHandler(SynapseHandler handler) {
         synapseHandlers.add(handler);
+    }
+
+    /**
+     * Get all sequence observers
+     *
+     * @return list of sequence observers
+     */
+    @Override
+    public List<SequenceFlowObserver> getSequenceObservers() {
+        return sequenceObservers;
+    }
+
+    /**
+     * Register a sequence observer to the synapse environment
+     *
+     * @param observer sequence observer
+     */
+    @Override
+    public void registerSequenceObservers(SequenceFlowObserver observer) {
+        sequenceObservers.add(observer);
     }
 
     @Override

@@ -171,6 +171,8 @@ public final class SynapseConstants {
     /** The name of the synapse handlers file */
     public static final String SYNAPSE_HANDLER_FILE = "synapse-handlers.xml";
 
+    public static final String SEQUENCE_OBSERVERS_FILE = "sequence-observers.xml";
+
     /** the name of the property used for synapse library based class loading */
     public static final String SYNAPSE_LIB_LOADER = "synapse.lib.classloader";
     /** conf directory name **/
