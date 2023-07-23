@@ -72,7 +72,9 @@ public abstract class AbstractApiHandler {
                 }
             }
         }
-
+        if(synCtx.getProperty(RESTConstants.IDENTIFIED_API) != null) {
+            synCtx.getPropertyKeySet().remove(RESTConstants.IDENTIFIED_API);
+        }
         for (API api : defaultStrategyApiSet) {
             api.setLogSetterValue();
             if (api.canProcess(synCtx)) {

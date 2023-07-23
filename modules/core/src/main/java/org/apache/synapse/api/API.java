@@ -280,7 +280,7 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
                 return false;
             }
         } else {
-            if (ApiUtils.identifyApi(this, synCtx) == false) {
+            if (!ApiUtils.identifyApi(this, synCtx)) {
                 return false;
             }else{
                 ApiUtils.getFullRequestPath(synCtx);
