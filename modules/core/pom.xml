@@ -21,7 +21,7 @@
 	</parent>
 
 	<groupId>org.apache.synapse</groupId>
-	<artifactId>synapse-core</artifactId>
+	<artifactId>synapse-core-integration-studio</artifactId>
 
 	<name>Apache Synapse - Core</name>
 	<description>Apache Synapse - Core</description>
