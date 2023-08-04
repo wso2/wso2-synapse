@@ -79,6 +79,12 @@ public class PollTableEntry extends AbstractPollTableEntry {
     /** moved file will have this formatted timestamp prefix */    
     private DateFormat moveTimestampFormat;
 
+    /** containing the time in [ms] between the size check on files (to avoid reading files which are currently written) */
+    private String checkSizeInterval = null;
+    /** does the checkSize Lock mechanisme take empty files or not, default = false */
+    private String checkSizeIgnoreEmpty = "false";
+
+
     private boolean streaming;
 
     private int maxRetryCount;
@@ -301,6 +307,30 @@ public class PollTableEntry extends AbstractPollTableEntry {
         } else {
             this.moveAfterFailure = resolveHostAtDeployment(moveAfterFailure);
         }
+    }
+
+    public void setCheckSizeInterval(String checkSizeInterval) {
+        this.checkSizeInterval = checkSizeInterval;
+    }
+
+    public String getCheckSizeInterval() {
+        return checkSizeInterval;
+    }
+
+    public boolean hasCheckSizeInterval() {
+        return (checkSizeInterval != null && checkSizeInterval.length() > 0);
+    }
+
+    public void setCheckSizeIgnoreEmpty(String checkSizeIgnoreEmpty) {
+        this.checkSizeIgnoreEmpty = checkSizeIgnoreEmpty;
+    }
+
+    public String getCheckSizeIgnoreEmpty() {
+        return checkSizeIgnoreEmpty;
+    }
+
+    public boolean isCheckSizeIgnoreEmpty() {
+        return "true".equals(checkSizeIgnoreEmpty);
     }
 
     public boolean isStreaming() {
@@ -600,6 +630,17 @@ public class PollTableEntry extends AbstractPollTableEntry {
 
             Map<String, String> schemeFileOptions = VFSUtils.parseSchemeFileOptions(fileURI, params);
             setVfsSchemeProperties(schemeFileOptions);
+
+            //get check size intervall for locking 
+            String checkSizeIntervalString = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_CHECK_SIZE_INTERVAL);
+            setCheckSizeInterval(checkSizeIntervalString);
+
+            //get check size ignore emtpy for locking 
+            String checkSizeIgnoreEmptyString = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_CHECK_SIZE_IGNORE_EMPTY);
+            //set parameter only if it is set, default value is true
+            if (checkSizeIgnoreEmptyString != null) {
+                setCheckSizeIgnoreEmpty(checkSizeIgnoreEmptyString);
+            }
 
             String strStreaming = ParamUtils.getOptionalParam(params, VFSConstants.STREAMING);
             if (strStreaming != null) {

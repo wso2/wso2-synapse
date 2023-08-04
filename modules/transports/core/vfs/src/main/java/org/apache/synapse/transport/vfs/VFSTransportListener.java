@@ -18,7 +18,6 @@
 */
 package org.apache.synapse.transport.vfs;
 
-import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
@@ -41,6 +40,7 @@ import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.AutoCloseInputStream;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.vfs2.FileContent;
 import org.apache.commons.vfs2.FileNotFolderException;
 import org.apache.commons.vfs2.FileNotFoundException;
@@ -63,6 +63,7 @@ import org.wso2.securevault.commons.MiscellaneousUtil;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -137,6 +138,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
     public static final String DELETE = "DELETE";
     public static final String MOVE = "MOVE";
     public static final String NONE = "NONE";
+
+    public static final String EMPTY_MD5 = "d41d8cd98f00b204e9800998ecf8427e";
 
     /** The VFS file system manager */
     private DefaultFileSystemManager fsManager = null;
@@ -305,73 +308,76 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     if (fileObject.getType() == FileType.FILE &&
                             !isFailedRecord) {
                         boolean runPostProcess = true;
-                        if (!entry.isFileLockingEnabled() || (entry.isFileLockingEnabled() &&
-                                acquireLock(getFsManager(), fileObject, entry, fso, true))) {
-                            try {
-                                if (fileObject.getType() == FileType.FILE) {
-                                    boolean status = processFile(entry, fileObject);
-                                    if (status) {
-                                        entry.setLastPollState(PollTableEntry.SUCCSESSFUL);
-                                    } else {
-                                        entry.setLastPollState(PollTableEntry.FAILED);
-                                    }
-                                    metrics.incrementMessagesReceived();
-                                } else {
-                                    runPostProcess = false;
-                                }
-
-                            } catch (AxisFault e) {
-                                if (e.getCause() instanceof FileNotFoundException) {
-                                    log.warn("Error processing File URI : " +
-                                             VFSUtils.maskURLPassword(fileObject.getName().toString()) +
-                                             ". This can be due to file moved from another process.");
-                                    runPostProcess = false;
-                                } else {
-                                    logException("Error processing File URI : " +
-                                                 VFSUtils.maskURLPassword(fileObject.getName().getURI()), e);
-                                    entry.setLastPollState(PollTableEntry.FAILED);
-                                    metrics.incrementFaultsReceiving();
-                                }
-                                closeFileSystem(fileObject);
-                            }
-                            if (runPostProcess) {
+                        // Cancel the process if the file is still uploading (not complete)
+                        if (!isFileStillUploading(entry, fileObject)) {
+                            if (!entry.isFileLockingEnabled() || (entry.isFileLockingEnabled() &&
+                                    acquireLock(getFsManager(), fileObject, entry, fso, true))) {
                                 try {
-                                    moveOrDeleteAfterProcessing(entry, fileObject, fso);
-                                } catch (AxisFault axisFault) {
-                                    logException(
-                                            "File object '" + VFSUtils.maskURLPassword(fileObject.getURL().toString()) +
-                                            "' " + "cloud not be moved", axisFault);
-                                    entry.setLastPollState(PollTableEntry.FAILED);
-                                    String timeStamp = VFSUtils.getSystemTime(entry.getFailedRecordTimestampFormat());
-                                    addFailedRecord(entry, fileObject, timeStamp);
+                                    if (fileObject.getType() == FileType.FILE) {
+                                        boolean status = processFile(entry, fileObject);
+                                        if (status) {
+                                            entry.setLastPollState(PollTableEntry.SUCCSESSFUL);
+                                        } else {
+                                            entry.setLastPollState(PollTableEntry.FAILED);
+                                        }
+                                        metrics.incrementMessagesReceived();
+                                    } else {
+                                        runPostProcess = false;
+                                    }
+
+                                } catch (AxisFault e) {
+                                    if (e.getCause() instanceof FileNotFoundException) {
+                                        log.warn("Error processing File URI : " +
+                                                VFSUtils.maskURLPassword(fileObject.getName().toString()) +
+                                                ". This can be due to file moved from another process.");
+                                        runPostProcess = false;
+                                    } else {
+                                        logException("Error processing File URI : " +
+                                                    VFSUtils.maskURLPassword(fileObject.getName().getURI()), e);
+                                        entry.setLastPollState(PollTableEntry.FAILED);
+                                        metrics.incrementFaultsReceiving();
+                                    }
+                                    closeFileSystem(fileObject);
                                 }
-                            }
-                            if (entry.isFileLockingEnabled()) {
-                                VFSUtils.releaseLock(getFsManager(), fileObject, fso);
+                                if (runPostProcess) {
+                                    try {
+                                        moveOrDeleteAfterProcessing(entry, fileObject, fso);
+                                    } catch (AxisFault axisFault) {
+                                        logException(
+                                                "File object '" + VFSUtils.maskURLPassword(fileObject.getURL().toString()) +
+                                                "' " + "cloud not be moved", axisFault);
+                                        entry.setLastPollState(PollTableEntry.FAILED);
+                                        String timeStamp = VFSUtils.getSystemTime(entry.getFailedRecordTimestampFormat());
+                                        addFailedRecord(entry, fileObject, timeStamp);
+                                    }
+                                }
+                                if (entry.isFileLockingEnabled()) {
+                                    VFSUtils.releaseLock(getFsManager(), fileObject, fso);
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("Removed the lock file '"
+                                                + VFSUtils.maskURLPassword(fileObject.toString())
+                                                + ".lock' of the file '"
+                                                + VFSUtils.maskURLPassword(fileObject.toString()));
+                                    }
+                                }
+                            } else if (log.isDebugEnabled()) {
+                                log.debug("Couldn't get the lock for processing the file : "
+                                        + VFSUtils.maskURLPassword(fileObject.getName().getURI()));
+                            } else if (isFailedRecord) {
+                                if (entry.isFileLockingEnabled()) {
+                                    VFSUtils.releaseLock(getFsManager(), fileObject, fso);
+                                }
+                                // schedule a cleanup task if the file is there
+                                if (getFsManager().resolveFile(fileObject.getURL().toString(), fso) != null &&
+                                        removeTaskState == STATE_STOPPED && entry.getMoveAfterMoveFailure() != null) {
+                                    workerPool.execute(new FileRemoveTask(entry, fileObject, fso));
+                                }
                                 if (log.isDebugEnabled()) {
-                                    log.debug("Removed the lock file '"
-                                    		+ VFSUtils.maskURLPassword(fileObject.toString())
-                                    		+ ".lock' of the file '"
-                                    		+ VFSUtils.maskURLPassword(fileObject.toString()));
+                                    log.debug("File '"
+                                            + VFSUtils.maskURLPassword(fileObject.getURL().toString())
+                                            + "' has been marked as a failed"
+                                            + " record, it will not process");
                                 }
-                            }
-                        } else if (log.isDebugEnabled()) {
-                            log.debug("Couldn't get the lock for processing the file : "
-                                    + VFSUtils.maskURLPassword(fileObject.getName().getURI()));
-                        } else if (isFailedRecord) {
-                            if (entry.isFileLockingEnabled()) {
-                                VFSUtils.releaseLock(getFsManager(), fileObject, fso);
-                            }
-                            // schedule a cleanup task if the file is there
-                            if (getFsManager().resolveFile(fileObject.getURL().toString(), fso) != null &&
-                                    removeTaskState == STATE_STOPPED && entry.getMoveAfterMoveFailure() != null) {
-                                workerPool.execute(new FileRemoveTask(entry, fileObject, fso));
-                            }
-                            if (log.isDebugEnabled()) {
-                                log.debug("File '"
-                                		+ VFSUtils.maskURLPassword(fileObject.getURL().toString())
-                                		+ "' has been marked as a failed"
-                                		+ " record, it will not process");
                             }
                         }
                     }
@@ -455,6 +461,14 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                         if(entry.getFileNamePattern()!=null &&
                                 child.getName().getBaseName().matches(entry.getFileNamePattern())){
                             //child's file name matches the file name pattern
+
+                            //check if file is still uploading (only used when checkSizeInterval is set)
+                            if (isFileStillUploading(entry, child)) {
+                                //continiue with next file this one is still uploading
+                                log.debug("Skipped file " + VFSUtils.maskURLPassword(child.getName().getBaseName()) + " is still uploading.");
+                                continue;
+                            }
+
                             //now we try to get the lock and process
                             if (log.isDebugEnabled()) {
                                 log.debug("Matching file : " + child.getName().getBaseName());
@@ -1194,5 +1208,149 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             }
             return lDiff.intValue();
         }
-    }  
+    }
+
+    /**
+     * Verifies if the given md5 is the md5 of an Empty File
+     * @param entry current poll
+     * @param md5 of the given file
+     * @return true if configuration is set and file is empty
+     */
+    private boolean isFileEmpty(PollTableEntry entry, String md5) {
+        if (entry.isCheckSizeIgnoreEmpty()) {
+            return EMPTY_MD5.equals(md5);
+        }
+        return false;
+    }
+    
+    /**
+     * This Function calculates the MD5 Hash of the FileObject, waits
+     * checkSizeInterval [ms] time, and calculates the MD5 Hash again. If they
+     * are the same, the file is finished uploading and can be consumed.
+     *
+     * @param entry current poll
+     * @param child the fileobject currently read
+     * @return if file is empty or the filesize is changing
+     */
+    private boolean isFileStillChangingSize(PollTableEntry entry, FileObject child, String md5) {
+        //check if the lock mechanism is activated
+        if (!entry.hasCheckSizeInterval()) {
+            //not checking the file size changing
+            return false;
+        }
+        try {
+            //get interval time
+            String checkSizeIntervalString = entry.getCheckSizeInterval();
+            Long checkSizeInterval = Long.valueOf(checkSizeIntervalString);
+
+            //wait interval time 
+            log.debug("Check if file is still uploading. Now sleep "+checkSizeInterval+" ms");
+            Thread.sleep(checkSizeInterval);
+            //get second MD5
+            //clear cache and refresh
+            fsManager.getFilesCache().close();
+            child.refresh();
+            String md5AfterSleep = getMD5Checksum(child);
+            //System.out.println("After " + checkSizeInterval + "ms second size: " + md5B);
+            if (!md5.equals(md5AfterSleep)) {
+                //file is still uploading
+                log.debug("File ist still uploading. md5 Hashcode Before="+md5 + " After="+md5AfterSleep);
+                return true;
+            }
+        } catch (Exception e) {
+            try {
+                if (ExceptionUtils.getStackTrace(e).contains("The file is being used by another process")) {
+                    return true;
+                }
+            } catch (Exception e2) {
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    private String getMD5Checksum(FileObject child) throws Exception {
+        InputStream inputStream = null;
+        try {
+            //get first MD5
+            inputStream = child.getContent().getInputStream();
+            String md5 = getMD5Checksum(inputStream);
+            return md5;
+        } finally {
+            if(inputStream != null){
+                try {
+                    inputStream.close();
+                } catch (Exception ex) {
+                }
+            }
+        }
+    }
+    
+    /**
+     * Return the MD5Checksum of a InputStream as String
+     *
+     * @param fis inputStream of the current file
+     * @return MD5 Checksum
+     * @throws Exception
+     */
+    private String getMD5Checksum(InputStream fis) throws Exception {
+        byte[] b = createChecksum(fis);
+        String result = "";
+        for (int i = 0; i < b.length; i++) {
+            result += Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1);
+        }
+        return result;
+    }
+
+    /**
+     * Used by getMD5Checksum to get the MD5 as byte array
+     *
+     * @param fis inputStream of the current file
+     * @return MD5 Checksum
+     * @throws Exception
+     */
+    private byte[] createChecksum(InputStream fis) throws Exception {
+        byte[] buffer = new byte[1024];
+        MessageDigest complete = MessageDigest.getInstance("MD5");
+        int numRead;
+        do {
+            numRead = fis.read(buffer);
+            if (numRead > 0) {
+                complete.update(buffer, 0, numRead);
+            }
+        } while (numRead != -1);
+        fis.close();
+        return complete.digest();
+    }
+
+    private boolean isFileStillUploading(PollTableEntry entry, FileObject child) {
+        if(!entry.isCheckSizeIgnoreEmpty() && !entry.hasCheckSizeInterval()) {
+            //CheckEmpty and CheckSize are not active - return false (file is not uploading)
+            return false;
+        }
+        InputStream inputStream = null;
+        try {
+            //get first MD5
+            log.debug("Create MD5 Checksum of File: "+VFSUtils.maskURLPassword(child.getName().toString()));
+            inputStream = child.getContent().getInputStream();
+            String md5 = getMD5Checksum(inputStream);
+            return isFileEmpty(entry, md5) || isFileStillChangingSize(entry, child, md5);
+        } catch (Exception e) {
+            try {
+                if (ExceptionUtils.getStackTrace(e).contains("The file is being used by another process")) {
+                    return true;
+                }
+            } catch (Exception e2) {
+            }
+            //return true when any exception occurs
+            return true;
+        } finally {
+            if(inputStream != null){
+                try {
+                    inputStream.close();
+                } catch (Exception ex) {
+                }
+            }
+        }
+    }
 }
