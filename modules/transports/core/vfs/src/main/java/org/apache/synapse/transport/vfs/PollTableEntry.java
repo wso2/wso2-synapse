@@ -143,6 +143,10 @@ public class PollTableEntry extends AbstractPollTableEntry {
 
     private static final Log log = LogFactory.getLog(PollTableEntry.class);
     
+    private Long minimumAge = null; //defines a minimum age of a file before being consumed. Use to avoid just written files to be consumed
+    private Long maximumAge = null; //defines a maximum age of a file being consumed. Old files will stay in the directory
+
+    
     public PollTableEntry(boolean fileLocking) {
         this.fileLocking = fileLocking;
     }
@@ -499,6 +503,18 @@ public class PollTableEntry extends AbstractPollTableEntry {
         this.subfolderTimestamp = subfolderTimestamp;
     }
 
+    public Long getMinimumAge() {
+        return minimumAge;
+    }
+
+    public Long getMaximumAge() {
+        return maximumAge;
+    }
+    
+    public boolean hasAgeCheck(){
+        return minimumAge != null||maximumAge != null;
+    }
+    
     @Override
     public boolean loadConfiguration(ParameterInclude params) throws AxisFault {
 
@@ -515,6 +531,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
     }
 
     protected boolean loadConfigurationsFromService(ParameterInclude params) throws AxisFault {
+        System.out.println("loading config from service");
         fileURI = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_FILE_FILE_URI);
         if (fileURI == null) {
             log.warn("transport.vfs.FileURI parameter is missing in the proxy service configuration");
@@ -690,6 +707,23 @@ public class PollTableEntry extends AbstractPollTableEntry {
                 }
             }
 
+            String strMinimumAge = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_FILE_MINIMUM_AGE);
+            if(strMinimumAge != null){
+                try {
+                    minimumAge = Long.parseLong(strMinimumAge);
+                } catch (NumberFormatException nfe) {
+                    log.warn("VFS File MinimumAge value is invalid : " + strMinimumAge, nfe);
+                }
+            }
+            String strMaximumAge = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_FILE_MAXIMUM_AGE);
+            if(strMaximumAge != null){
+                try {
+                    maximumAge = Long.parseLong(strMaximumAge);
+                } catch (NumberFormatException nfe) {
+                    log.warn("VFS File MaximumAge value is invalid : " + strMinimumAge, nfe);
+                }
+            }
+            
             String strAutoLock = ParamUtils.getOptionalParam(params,
                                                              VFSConstants.TRANSPORT_AUTO_LOCK_RELEASE);
             autoLockRelease = false;
