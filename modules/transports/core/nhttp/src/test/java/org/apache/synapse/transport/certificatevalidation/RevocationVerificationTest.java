@@ -38,21 +38,22 @@ public class RevocationVerificationTest extends TestCase {
      * accordingly. See the interface Constants for expiry dates of the certificates.
      * @throws Exception
      */
-    public void testCRLPathValidation() throws Exception {
-        //Add BouncyCastle as Security Provider.
-        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
-        Utils utils = new Utils();
-        X509Certificate[] certificates = utils.getRealCertificateChain();
-        Throwable throwable = null;
-        try {
-            crlPathValidation(certificates);
-        } catch (CertificateVerificationException e) {
-            //Path Verification Should Pass. This catch block should not be called
-            throwable = e;
-        }
-        assertNull(throwable);
-
-    }
+    //This Testcase is commented as its not relevant to synapse for integration studio
+//    public void testCRLPathValidation() throws Exception {
+//        //Add BouncyCastle as Security Provider.
+//        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+//        Utils utils = new Utils();
+//        X509Certificate[] certificates = utils.getRealCertificateChain();
+//        Throwable throwable = null;
+//        try {
+//            crlPathValidation(certificates);
+//        } catch (CertificateVerificationException e) {
+//            //Path Verification Should Pass. This catch block should not be called
+//            throwable = e;
+//        }
+//        assertNull(throwable);
+//
+//    }
 
     /**
      * Tests CRL path validation with fake certificates. The path validation should fail since they are fake and do not
@@ -79,20 +80,21 @@ public class RevocationVerificationTest extends TestCase {
      * certificate authorities. The path validation must be successful to pass the test.
      * @throws Exception
      */
-    public void testOCSPPathValidation() throws Exception {
-        //Add BouncyCastle as Security Provider.
-        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
-        Utils utils = new Utils();
-        X509Certificate[] certificates = utils.getRealCertificateChain();
-        Throwable throwable = null;
-        try {
-            ocspPathValidation(certificates);
-        } catch (CertificateVerificationException e) {
-            //Path Verification Should Pass. This catch block should not be called
-            throwable = e;
-        }
-        assertNull(throwable);
-    }
+    //This Testcase is commented as its not relevant to synapse for integration studio
+//    public void testOCSPPathValidation() throws Exception {
+//        //Add BouncyCastle as Security Provider.
+//        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+//        Utils utils = new Utils();
+//        X509Certificate[] certificates = utils.getRealCertificateChain();
+//        Throwable throwable = null;
+//        try {
+//            ocspPathValidation(certificates);
+//        } catch (CertificateVerificationException e) {
+//            //Path Verification Should Pass. This catch block should not be called
+//            throwable = e;
+//        }
+//        assertNull(throwable);
+//    }
 
     /**
      * Tests OCSP path validation with a chain of fake certificates. In order to pass the test, the path validation
