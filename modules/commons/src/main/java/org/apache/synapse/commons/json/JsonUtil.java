@@ -657,7 +657,15 @@ public final class JsonUtil {
     }
 
     private static void removeIndentations(OMElement elem) {
-        Iterator children = elem.getChildren();
+        Iterator children;
+        try {
+            children = elem.getChildren();
+        } catch (Exception e) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Error while removing indentations from OMElement. Error>>> " + e.getLocalizedMessage());
+            }
+            return;
+        }
         while (children.hasNext()) {
             OMNode child = (OMNode) children.next();
             if (child instanceof OMText) {
@@ -678,7 +686,15 @@ public final class JsonUtil {
      * @param properties Required properties
      */
     private static void removeIndentations(OMElement elem, Map properties) {
-        Iterator children = elem.getChildren();
+        Iterator children;
+        try {
+            children = elem.getChildren();
+        } catch (Exception e) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Error while removing indentations from OMElement. Error>>> " + e.getLocalizedMessage());
+            }
+            return;
+        }
         boolean preserveSpaces = properties.get(Constants.PRESERVE_SPACES) != null
                 && Boolean.parseBoolean((String) properties.get(Constants.PRESERVE_SPACES));
 
