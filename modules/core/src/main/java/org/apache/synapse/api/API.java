@@ -282,9 +282,8 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
         } else {
             if (!ApiUtils.identifyApi(this, synCtx)) {
                 return false;
-            }else{
-                ApiUtils.getFullRequestPath(synCtx);
             }
+            ApiUtils.getFullRequestPath(synCtx);
 
             org.apache.axis2.context.MessageContext msgCtx =
                     ((Axis2MessageContext) synCtx).getAxis2MessageContext();

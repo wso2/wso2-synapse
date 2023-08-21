@@ -169,6 +169,11 @@ public class ApiUtils {
                 log.debug("API context: " + api.getContext() + " does not match request URI: " + path);
                 return false;
             }
+            if (null != synCtx.getProperty(RESTConstants.IS_PROMETHEUS_ENGAGED) &&
+                    (!ApiUtils.matchApiPath(path, api.getContext()))) {
+                log.debug("API context: " + api.getContext() + " does not match request URI: " + path);
+                return false;
+            }
             if (!api.getVersionStrategy().isMatchingVersion(synCtx)) {
                 return false;
             }
@@ -188,7 +193,7 @@ public class ApiUtils {
      * @param synCtx    MessageContext object
      * @return          Whether the provided resource is bound to the provided message context
      */
-    public static boolean isBound(Resource resource, MessageContext synCtx) {
+    private static boolean isBound(Resource resource, MessageContext synCtx) {
         Collection<String> bindings = resource.getBindsTo();
         Object apiCaller = synCtx.getProperty(ApiConstants.API_CALLER);
         if (apiCaller != null) {
