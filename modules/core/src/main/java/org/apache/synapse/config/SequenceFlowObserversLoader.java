@@ -41,13 +41,13 @@ public class SequenceFlowObserversLoader {
     private static Log log = LogFactory.getLog(SequenceFlowObserversLoader.class);
 
     public static List<SequenceFlowObserver> loadObservers() {
-        List<SequenceFlowObserver> handlers = new ArrayList<>();
+        List<SequenceFlowObserver> observers = new ArrayList<>();
         OMElement observersConfig =
                 MiscellaneousUtil.loadXMLConfig(SynapseConstants.SEQUENCE_OBSERVERS_FILE);
         if (observersConfig != null) {
 
             if (!ROOT_Q.equals(observersConfig.getQName())) {
-                handleException("Invalid handler configuration file");
+                handleException("Invalid sequence observer configuration file");
             }
 
             Iterator iterator = observersConfig.getChildrenWithName(OBSERVER_Q);
@@ -58,7 +58,7 @@ public class SequenceFlowObserversLoader {
                 if (observerElem.getAttribute(NAME_ATT) != null) {
                     name = observerElem.getAttributeValue(NAME_ATT);
                 } else {
-                    handleException("Name not defined in one or more handlers");
+                    handleException("Name not defined in one or more sequence observer");
                 }
 
                 if (observerElem.getAttribute(CLASS_Q) != null) {
@@ -66,19 +66,19 @@ public class SequenceFlowObserversLoader {
                     if (!"".equals(className)) {
                         SequenceFlowObserver observer = createObserver(className);
                         if (observer != null) {
-                            handlers.add(observer);
+                            observers.add(observer);
                             observer.setName(name);
                         }
                     } else {
-                        handleException("Class name is null for handle name : " + name);
+                        handleException("Class name is null for sequence observer name : " + name);
                     }
                 } else {
-                    handleException("Class name not defined for handler named : " + name);
+                    handleException("Class name not defined for sequence observer named : " + name);
                 }
 
             }
         }
-        return handlers;
+        return observers;
     }
 
     private static SequenceFlowObserver createObserver(String classFQName) {
@@ -86,14 +86,14 @@ public class SequenceFlowObserversLoader {
         try {
             obj = Class.forName(classFQName).newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            handleException("Error creating Handler for class name : " + classFQName, e);
+            handleException("Error creating Sequence observer for class name : " + classFQName, e);
         }
 
         if (obj instanceof SequenceFlowObserver) {
             return (SequenceFlowObserver) obj;
         } else {
-            handleException("Error creating Handler. The Handler should be of type " +
-                    "org.apache.synapse.Handler");
+            handleException("Error creating Sequence observer. The Sequence observer should be of type " +
+                    "org.apache.synapse.SequenceFlowObserver");
         }
         return null;
     }
