@@ -82,7 +82,7 @@ public abstract class AbstractListMediator extends AbstractMediator
         // to pass it on; else, do nothing -> i.e. let the parents state flow
         setEffectiveTraceState(synCtx);
         int myEffectiveTraceState = synCtx.getTracingState();
-        if (this instanceof SequenceMediator) {
+        if (this instanceof SequenceMediator & mediatorPosition == 0) {
             List<SequenceFlowObserver> observers = synCtx.getEnvironment().getSequenceObservers();
             for (SequenceFlowObserver observer : observers) {
                 observer.start(synCtx, ((SequenceMediator) this).getName());
@@ -111,6 +111,14 @@ public abstract class AbstractListMediator extends AbstractMediator
                         mediator.reportCloseStatistics(synCtx, statisticReportingIndex);
                         returnVal = false;
                         break;
+                    }
+                    if (i == mediators.size() - 1) {
+                        if (this instanceof SequenceMediator) {
+                            List<SequenceFlowObserver> observers = synCtx.getEnvironment().getSequenceObservers();
+                            for (SequenceFlowObserver observer : observers) {
+                                observer.complete(synCtx, ((SequenceMediator) this).getName());
+                            }
+                        }
                     }
                     mediator.reportCloseStatistics(synCtx, statisticReportingIndex);
                 } else {

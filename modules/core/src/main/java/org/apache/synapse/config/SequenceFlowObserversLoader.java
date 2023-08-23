@@ -19,6 +19,7 @@
 package org.apache.synapse.config;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SequenceFlowObserver;
@@ -63,7 +64,7 @@ public class SequenceFlowObserversLoader {
 
                 if (observerElem.getAttribute(CLASS_Q) != null) {
                     String className = observerElem.getAttributeValue(CLASS_Q);
-                    if (!"".equals(className)) {
+                    if (StringUtils.isNotBlank(className)) {
                         SequenceFlowObserver observer = createObserver(className);
                         if (observer != null) {
                             observers.add(observer);
