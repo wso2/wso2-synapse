@@ -117,15 +117,15 @@ public abstract class AbstractListMediator extends AbstractMediator
                     synCtx.setTracingState(myEffectiveTraceState);
                     if (!mediator.mediate(synCtx)) {
                         returnVal = false;
-                        if (i == mediators.size() - 1) {
-                            if (this instanceof SequenceMediator) {
-                                List<SequenceFlowObserver> observers = synCtx.getEnvironment().getSequenceObservers();
-                                for (SequenceFlowObserver observer : observers) {
-                                    observer.complete(synCtx, ((SequenceMediator) this).getName());
-                                }
+                        break;
+                    }
+                    if (i == mediators.size() - 1) {
+                        if (this instanceof SequenceMediator) {
+                            List<SequenceFlowObserver> observers = synCtx.getEnvironment().getSequenceObservers();
+                            for (SequenceFlowObserver observer : observers) {
+                                observer.complete(synCtx, ((SequenceMediator) this).getName());
                             }
                         }
-                        break;
                     }
                 }
             }
