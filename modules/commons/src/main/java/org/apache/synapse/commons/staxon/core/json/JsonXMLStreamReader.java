@@ -135,6 +135,12 @@ public class JsonXMLStreamReader extends AbstractXMLStreamReader<JsonXMLStreamRe
                     }
                 }
                 source.endObject();
+            } else if (source.peek() == JsonStreamToken.START_OBJECT) {
+                source.startObject();
+                while (source.peek() == JsonStreamToken.NAME) {
+                    readAttrNsDecl(source.name(), source.value().text);
+                }
+                source.endObject();
             } else {
                 throw new IllegalStateException("Expected attribute value");
             }
