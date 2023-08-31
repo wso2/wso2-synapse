@@ -160,7 +160,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
             } catch (UnknownHostException | FileSystemException e) {
                 String message = "Unable to resolve the hostname of transport.vfs.FileURI : " +
                         VFSUtils.maskURLPassword(fileURI);
-                VFSTransportErrorHandler.logException(log, LogType.WARN, message, e);
+                VFSTransportErrorHandler.logException(log, LogType.WARN, message, getServiceName(), e);
             }
         }
         return  fileURI;
@@ -173,7 +173,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
             } catch (UnknownHostException | FileSystemException e) {
                 String message = "Unable to resolve the hostname of transport.vfs.ReplyFileURI : " +
                         VFSUtils.maskURLPassword(replyFileURI);
-                VFSTransportErrorHandler.logException(log, LogType.WARN, message, e);
+                VFSTransportErrorHandler.logException(log, LogType.WARN, message, getServiceName(), e);
             }
         }
         return replyFileURI;
@@ -210,7 +210,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
             }  catch (UnknownHostException | FileSystemException e) {
                 String message = "Unable to resolve the hostname of transport.vfs.MoveAfterProcess: " +
                         VFSUtils.maskURLPassword(moveAfterProcess);
-                VFSTransportErrorHandler.logException(log, LogType.WARN, message, e);
+                VFSTransportErrorHandler.logException(log, LogType.WARN, message, getServiceName(), e);
             }
         }
         return moveAfterProcess;
@@ -223,7 +223,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
             }  catch (UnknownHostException | FileSystemException e) {
                 String message = "Unable to resolve the hostname of transport.vfs.MoveAfterFailedMove: " +
                         VFSUtils.maskURLPassword(moveAfterMoveFailure);
-                VFSTransportErrorHandler.logException(log, LogType.WARN, message, e);
+                VFSTransportErrorHandler.logException(log, LogType.WARN, message, getServiceName(), e);
             }
         }
         return moveAfterMoveFailure;
@@ -295,7 +295,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
             } catch (UnknownHostException | FileSystemException e) {
                 String message = "Unable to resolve the hostname of transport.vfs.MoveAfterFailure: " +
                         VFSUtils.maskURLPassword(moveAfterFailure);
-                VFSTransportErrorHandler.logException(log, LogType.WARN, message, e);
+                VFSTransportErrorHandler.logException(log, LogType.WARN, message, getServiceName(), e);
             }
         }
         return moveAfterFailure;
@@ -509,7 +509,6 @@ public class PollTableEntry extends AbstractPollTableEntry {
 
     @Override
     public boolean loadConfiguration(ParameterInclude params) throws AxisFault {
-
         decryptParamsIfRequired(params);
         this.params = params;
         resolveHostsDynamically = ParamUtils.getOptionalParamBoolean(params,

@@ -55,6 +55,19 @@ public class VFSTransportErrorHandler {
     }
 
     /**
+     * This method is used to log exceptions with exception
+     * @param log Log
+     * @param type {@link LogType}
+     * @param message String message to be logged
+     * @param configName String name of the configuration
+     * @param e Exception
+     */
+    public static void logException(Log log, LogType type, String message, String configName, Exception e) {
+        message = constructLogMessage(message, configName);
+        logException(log, type, message, e);
+    }
+
+    /**
      * This method is used to log exceptions without exception
      * @param log Log
      * @param type {@link LogType}
@@ -81,6 +94,18 @@ public class VFSTransportErrorHandler {
     }
 
     /**
+     * This method is used to log exceptions without exception
+     * @param log Log
+     * @param type {@link LogType}
+     * @param message String message to be logged
+     * @param configName String name of the configuration
+     */
+    public static void logException(Log log, LogType type, String message, String configName) {
+        message = constructLogMessage(message, configName);
+        logException(log, type, message);
+    }
+
+    /**
      * This method is used to handle exceptions. Log error message and throws an AxisFault with the exception
      * @param log Log
      * @param message String message to be logged
@@ -93,6 +118,19 @@ public class VFSTransportErrorHandler {
     }
 
     /**
+     * This method is used to handle exceptions. Log error message and throws an AxisFault with the exception
+     * @param log Log
+     * @param message String message to be logged
+     * @param configName String name of the configuration
+     * @param e Exception
+     * @throws AxisFault
+     */
+    public static void handleException(Log log, String message, String configName, Exception e) throws AxisFault {
+        logException(log, LogType.ERROR, message, configName, e);
+        throw new AxisFault(message, e);
+    }
+
+    /**
      * This method is used to handle exceptions. Log error message and throws an AxisFault
      * @param log Log
      * @param message String message to be logged
@@ -100,6 +138,18 @@ public class VFSTransportErrorHandler {
      */
     public static void handleException(Log log, String message) throws AxisFault {
         logException(log, LogType.ERROR, message);
+        throw new AxisFault(message);
+    }
+
+    /**
+     * This method is used to handle exceptions. Log error message and throws an AxisFault
+     * @param log Log
+     * @param message String message to be logged
+     * @param configName String name of the configuration
+     * @throws AxisFault
+     */
+    public static void handleException(Log log, String message, String configName) throws AxisFault {
+        logException(log, LogType.ERROR, message, configName);
         throw new AxisFault(message);
     }
 
@@ -128,5 +178,18 @@ public class VFSTransportErrorHandler {
         WARN,
         ERROR,
         FATAL
+    }
+
+    /**
+     * This method is used to construct the log message
+     * @param message String message to be logged
+     * @param configName String name of the configuration
+     * @return String constructed log message
+     */
+    public static String constructLogMessage(String message, String configName) {
+        if (null == configName || configName.trim().isEmpty()) {
+            return message;
+        }
+        return "[Service: ".concat(configName).concat("] - ").concat(message);
     }
 }
