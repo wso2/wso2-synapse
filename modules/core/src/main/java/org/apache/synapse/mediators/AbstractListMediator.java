@@ -26,6 +26,7 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SequenceFlowObserver;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
@@ -34,6 +35,7 @@ import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
@@ -80,6 +82,12 @@ public abstract class AbstractListMediator extends AbstractMediator
         // to pass it on; else, do nothing -> i.e. let the parents state flow
         setEffectiveTraceState(synCtx);
         int myEffectiveTraceState = synCtx.getTracingState();
+        if (this instanceof SequenceMediator & mediatorPosition == 0) {
+            List<SequenceFlowObserver> observers = synCtx.getEnvironment().getSequenceObservers();
+            for (SequenceFlowObserver observer : observers) {
+                observer.start(synCtx, ((SequenceMediator) this).getName());
+            }
+        }
         try {
             SynapseLog synLog = getLog(synCtx);
             if (synLog.isTraceOrDebugEnabled()) {
@@ -104,12 +112,28 @@ public abstract class AbstractListMediator extends AbstractMediator
                         returnVal = false;
                         break;
                     }
+                    if (i == mediators.size() - 1) {
+                        if (this instanceof SequenceMediator) {
+                            List<SequenceFlowObserver> observers = synCtx.getEnvironment().getSequenceObservers();
+                            for (SequenceFlowObserver observer : observers) {
+                                observer.complete(synCtx, ((SequenceMediator) this).getName());
+                            }
+                        }
+                    }
                     mediator.reportCloseStatistics(synCtx, statisticReportingIndex);
                 } else {
                     synCtx.setTracingState(myEffectiveTraceState);
                     if (!mediator.mediate(synCtx)) {
                         returnVal = false;
                         break;
+                    }
+                    if (i == mediators.size() - 1) {
+                        if (this instanceof SequenceMediator) {
+                            List<SequenceFlowObserver> observers = synCtx.getEnvironment().getSequenceObservers();
+                            for (SequenceFlowObserver observer : observers) {
+                                observer.complete(synCtx, ((SequenceMediator) this).getName());
+                            }
+                        }
                     }
                 }
             }
