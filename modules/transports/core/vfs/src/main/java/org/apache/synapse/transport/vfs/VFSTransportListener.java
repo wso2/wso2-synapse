@@ -64,6 +64,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
@@ -72,6 +73,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
 
@@ -417,7 +420,13 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             Arrays.sort(children, new FileLastmodifiedtimestampDesComparator());
                         }
                         log.debug("End Sorting the files.");
-                    }                 
+                    }   
+                    
+                    // sorting by RequiredFileNamePatterns (if specified)
+                    if(entry.hasRequiredFileNamePatterns() && children.length > 1){
+                        Arrays.sort(children, new RequiredFileNamesComparator(entry.getFileNamePattern(), entry.getRequiredFileNamePatterns()));
+                    }
+
                     for (FileObject child : children) {
                         // Stop processing any further when put to maintenance mode (shutting down or restarting)
                         // Stop processing when service get undeployed
@@ -454,6 +463,24 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 
                         if(entry.getFileNamePattern()!=null &&
                                 child.getName().getBaseName().matches(entry.getFileNamePattern())){
+
+                            //Check if RequiredFileNamePatterns is specified
+                            if(entry.hasRequiredFileNamePatterns()){
+                                //Commit a complete list of children
+                                String childBaseName = child.getName().getBaseName();
+                                List<String> requiredPatternReplacedList = 
+                                    VFSUtils.buildPatternReplaced(childBaseName, entry.getFileNamePattern(), entry.getRequiredFileNamePatterns());
+                                
+                                boolean hasPatternMissing = 
+                                    VFSUtils.hasRequiredPatternsMissing(requiredPatternReplacedList, children);
+
+                                if(hasPatternMissing) {
+                                    //Do not consume this file
+                                    log.debug("Not all required files exist for transferring file ["+VFSUtils.maskURLPassword(child.getName().getBaseName()) +"]. Required patterns: "+entry.getRequiredFileNamePatterns());
+                                    continue;
+                                } 
+                            }
+
                             //child's file name matches the file name pattern
                             //now we try to get the lock and process
                             if (log.isDebugEnabled()) {
@@ -1195,4 +1222,74 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             return lDiff.intValue();
         }
     }  
+
+    class RequiredFileNamesComparator implements Comparator<FileObject> {
+        String fileNamePattern = null;
+        String requiredFileNamePatterns = null;
+
+        public RequiredFileNamesComparator(String fileNamePattern, String requiredFileNamePatterns){
+            this.fileNamePattern = fileNamePattern;
+            this.requiredFileNamePatterns = requiredFileNamePatterns;
+        }
+
+        @Override
+        public int compare(FileObject o1, FileObject o2) {
+        	//compairs the string of both file names by ignoring the "variable" part
+        	// ex. abc-file1.hl7 and def-file1.pdf with regex [a-z]$1[.]pdf,[a-z]$1[.]hl7 will compair only the "file1" string to sort the files
+        	/**
+        	 * complex example:
+        	 	Regex: [a-z]+[-]$1[-][1-9]+[-]$2[.]txt,[a-z]+[-]$2[-][1-9]+[-]$1[.]hl7
+				INPUT files in folder
+				aaa-testFileA-12345-date1.txt
+				bbb-testFileA-2344-date2.txt
+				ccc-testFileB-45345-date1.txt
+				ddd-date1-32423-testFileA.hl7
+				eee-date1-123-testFileB.hl7 
+				fff-date2-2342-testFileA.hl7
+				
+				SORTED files list
+				aaa-testFileA-12345-date1.txt
+				ddd-date1-32423-testFileA.hl7
+				bbb-testFileA-2344-date2.txt
+				fff-date2-2342-testFileA.hl7
+				ccc-testFileB-45345-date1.txt
+				eee-date1-123-testFileB.hl7 
+        	 
+        	 */
+            String fileName1 = removeFixedPatterns(o1, requiredFileNamePatterns);
+            String fileName2 = removeFixedPatterns(o2, requiredFileNamePatterns);
+            return fileName1.compareTo(fileName2);
+        }
+
+        private String removeFixedPatterns(FileObject child, String requiredFileNamePatterns) {
+        	//get base name of file
+        	String baseName = child.getName().getBaseName();
+        	//separate the patterns
+        	String[] patterns = requiredFileNamePatterns.split(",");
+        	for(int i=0;i<patterns.length;i++){
+        		String fixedPattern = patterns[i];
+        		ArrayList<String> groups = new ArrayList<>();
+        		//extract the $1 to $9 (max 9 groups can be used for now) and replace them with regex named groups
+        		for (int j = 0; j <= 9; j++) {
+        			if ( fixedPattern.matches(".*[$]["+j+"].*")) {
+            			fixedPattern = fixedPattern.replaceAll("[$]["+j+"]", "(?<grp"+j+">.*)");
+            			groups.add("grp"+j);
+        			}
+				}
+        		Pattern pattern = Pattern.compile(fixedPattern);
+        		Matcher matcher = pattern.matcher(baseName);
+        		//match the "fixed" expression with named groups
+        		if(matcher.find()) {
+        			String relevantname = "";
+        			//reconstruct the filename that matters with the regex groups ($1-$9)
+        			for (String groupName: groups) {
+            			relevantname+=matcher.group(groupName);
+					}
+        			//add the index of pattern at the end of the name, used to ensure that the first pattern is the first file read
+            		return relevantname+i;
+        		}
+            }
+        	return "";
+        }
+    } 
 }

@@ -45,9 +45,11 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
@@ -745,6 +747,100 @@ public class VFSUtils {
         }
 
         return uri;
+    }
+
+     /**
+     * Returns a list of reqiredFileNamePatterns, which contains real values instead of variable parts.
+     * 
+     * @param fileBaseName base name of a given file, which will be used to replace variable parts of requiredNamePatterns, 
+     * @param fileNamePattern pattern for allowed file names
+     * @param requiredFileNamePatterns patterns that has to be updated by replacing variable parts with actual values based on the given fileBaseName
+     * @return list of reqiredFileNamePattern containing real values instead of variable parts
+     */
+    public static List<String> buildPatternReplaced(String fileBaseName, String fileNamePattern, String requiredFileNamePatterns) {
+    	List<String> result = new ArrayList<String>();
+    	if(requiredFileNamePatterns != null && !requiredFileNamePatterns.isEmpty()){
+	    	//run the fileNamePattern to the child Filename to find out the regex groups needed
+	        Pattern pattern = Pattern.compile(fileNamePattern);
+	        Matcher matcher = pattern.matcher(fileBaseName);       
+	        matcher.find();
+
+	        //there are required filename pattern. Put the comma separated fileNamePatterns into a list. $1[.]hl7, $1[.]pdf
+	        String[] requiredPatternsList = requiredFileNamePatterns.split(",");
+
+	        //now each pattern must be found in the children
+	        for(String requiredPattern : requiredPatternsList){
+	            //find the group pattern $1
+	            //replace the group pattern by the corresponding group of the input file
+	            String requiredPatternReplaced = requiredPattern;
+	            for(int i=1;i<=matcher.groupCount();i++){  
+	                if(requiredPatternReplaced.contains("$"+i)){
+	                    requiredPatternReplaced = requiredPatternReplaced.replace("$"+i, matcher.group(i));
+	                }
+	            }
+	            result.add(requiredPatternReplaced);
+	        }
+    	}
+        return result;
+    }
+
+    /**
+     * Checks, if each given requiredPattern has at least one matching file from a given array of files.
+     * 
+     * @param requiredPatternReplacedList list of file name patterns that will be under examination
+     * @param initialChildren array of {@link FileObject}s, in which the matching will be made
+     * @return <code>false</code> if each given requiredPattern has at least one matching file from a given array of files, <code>true</code> otherwise.
+     */
+    public static boolean hasRequiredPatternsMissing(List<String> requiredPatternReplacedList, FileObject[] initialChildren){
+    	if(requiredPatternReplacedList == null){
+            return false;
+        }
+
+    	for(String requiredPatternReplaced : requiredPatternReplacedList){
+            boolean matches = false;
+            //check if the pattern exists in the children list
+            for(FileObject childInList:initialChildren){
+                String childInListFilename = childInList.getName().getBaseName();
+                matches = childInListFilename.matches(requiredPatternReplaced); 
+                if(matches){
+                    break; //file with this pattern found in children
+                }
+            }                        
+            //if pattern is not in the list of files (chrildren) - return true (there is a missing required filenamepattern);
+            if(matches == false){
+                return true; 
+            }
+        }
+
+        //as a default there
+        return false;
+    }
+
+    /**
+     * Returns the first file name pattern that matches to a given filename from an array of files.
+     * @param requiredPatternReplacedList the list of filename patterns
+     * @param initialChildren array of files, in which a matching filename will be searched for a pattern
+     * @param referenceName filename to wich the pattern is searched
+     * @return the first pattern that matches to a given filename from an array of files.
+     */
+    public static String getMatchedPattern(List<String> requiredPatternReplacedList, FileObject[] initialChildren, String referenceName){
+    	if(requiredPatternReplacedList != null) {
+	    	for (String requiredPatternReplaced : requiredPatternReplacedList) {  
+	            //check if the pattern exists in the children list
+	    		boolean matches = false;
+	    		for(FileObject childInList:initialChildren){
+	                String childInListFilename = childInList.getName().getBaseName();
+	                matches = childInListFilename.matches(requiredPatternReplaced);
+	                if(matches){
+	                	if(childInListFilename.equals(referenceName)) {
+	                		return requiredPatternReplaced;
+	                	}
+	                }
+	            }
+	        }
+    	}
+
+        return null;
     }
 
 
