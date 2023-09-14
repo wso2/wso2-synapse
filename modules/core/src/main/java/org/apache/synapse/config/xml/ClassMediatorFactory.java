@@ -22,13 +22,12 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.ext.ClassMediator;
 
 import javax.xml.namespace.QName;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -57,62 +56,12 @@ public class ClassMediatorFactory extends AbstractMediatorFactory {
             throw new SynapseException(msg);
         }
 
-        Class clazz = null;
-        Mediator mediator;
-
-        if (properties != null) {  // load from synapse libs or dynamic class mediators
-
-            ClassLoader libLoader =
-                    (ClassLoader) properties.get(SynapseConstants.SYNAPSE_LIB_LOADER);
-
-            if (libLoader != null) {         // load from synapse lib
-                try {
-                    clazz = libLoader.loadClass(name.getAttributeValue());
-                } catch (ClassNotFoundException e) {
-                    String msg = "Error loading class : " + name.getAttributeValue() +
-                                 " from Synapse library";
-                    log.error(msg, e);
-                    throw new SynapseException(msg, e);
-                }
-
-            } else {                                  // load from dynamic class mediators
-                Map<String, ClassLoader> dynamicClassMediatorLoaderMap =
-                        (Map<String, ClassLoader>) properties.get(SynapseConstants.CLASS_MEDIATOR_LOADERS);
-                if (dynamicClassMediatorLoaderMap != null) {
-                    // Has registered dynamic class mediator loaders in the deployment store.
-                    // Try to load class from them.
-                    Iterator<ClassLoader> dynamicClassMediatorLoaders =
-                            dynamicClassMediatorLoaderMap.values().iterator();
-
-                    while (dynamicClassMediatorLoaders.hasNext()) {
-                        try {
-                            clazz = dynamicClassMediatorLoaders.next().loadClass(name.getAttributeValue());
-                            break;
-                        } catch (Exception ignore) {
-                        }
-                    }
-                }
+        Mediator mediator = new AbstractMediator() {
+            @Override
+            public boolean mediate(MessageContext synCtx) {
+                return false;
             }
-        }
-
-        if (clazz == null) {
-            try {
-                clazz = getClass().getClassLoader().loadClass(name.getAttributeValue());
-            } catch (ClassNotFoundException e) {
-                String msg = "Error loading class : " + name.getAttributeValue()
-                             + " - Class not found";
-                log.error(msg, e);
-                throw new SynapseException(msg, e);
-            }
-        }
-
-        try {
-            mediator = (Mediator) clazz.newInstance();
-        } catch (Throwable e) {
-            String msg = "Error in instantiating class : " + name.getAttributeValue();
-            log.error(msg, e);
-            throw new SynapseException(msg, e);
-        }
+        };
 
         classMediator.addAllProperties(MediatorPropertyFactory.getMediatorProperties(elem, mediator));
 
