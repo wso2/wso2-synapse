@@ -35,6 +35,11 @@ public class ThrottleProperties implements Serializable {
 	private String throttlingKeysToReplicates = "25000";
 	private Map<String, String> distributedCounterConfigurations = new HashMap<>();
 	private String distributedCounterType = ThrottleConstants.HAZELCAST;
+	private boolean throttleSyncAsyncHybridModeEnabled = false;
+	private String distributedThrottleProcessorType = "hybrid";
+	private String hybridThrottleProcessorWindowType = "start_time_based";
+	private String localQuotaBufferPercentage = "20";
+
 	public String getWindowReplicatorPoolSize() {
 		return windowReplicatorPoolSize;
 	}
@@ -154,5 +159,38 @@ public class ThrottleProperties implements Serializable {
 	public void setDistributedCounterType(String distributedCounterType) {
 
 		this.distributedCounterType = distributedCounterType;
+	}
+
+	public String getDistributedThrottleProcessorType() {
+		return distributedThrottleProcessorType;
+	}
+
+	public void setDistributedThrottleProcessorType(String distributedThrottleProcessorType) {
+		this.distributedThrottleProcessorType = distributedThrottleProcessorType;
+	}
+
+	public void setThrottleSyncAsyncHybridModeEnabled(boolean throttleSyncAsyncHybridModeEnabled) {
+		this.throttleSyncAsyncHybridModeEnabled = throttleSyncAsyncHybridModeEnabled;
+	}
+
+	public boolean isThrottleSyncAsyncHybridModeEnabled() {
+		return throttleSyncAsyncHybridModeEnabled;
+	}
+
+	public void setHybridThrottleProcessorWindowType(
+			String hybridThrottleProcessorWindowType) {
+		this.hybridThrottleProcessorWindowType = hybridThrottleProcessorWindowType;
+	}
+
+	public String getHybridThrottleProcessorWindowType() {
+		return hybridThrottleProcessorWindowType;
+	}
+
+	public void setLocalQuotaBufferPercentage(String localQuotaBufferPercentage) {
+		this.localQuotaBufferPercentage = localQuotaBufferPercentage;
+	}
+
+	public String getLocalQuotaBufferPercentage() {
+		return localQuotaBufferPercentage;
 	}
 }
