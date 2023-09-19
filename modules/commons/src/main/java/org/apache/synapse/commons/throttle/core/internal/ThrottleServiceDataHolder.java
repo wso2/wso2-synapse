@@ -29,6 +29,7 @@ import java.util.Map;
 public class ThrottleServiceDataHolder {
 	private static final Log log  = LogFactory.getLog(ThrottleServiceDataHolder.class.getName());
 	private Map<String,DistributedCounterManager> distributedCounterManagerMap = new HashMap<>();
+	private Map<String,DistributedThrottleProcessor> distributedThrottleProcessorMap = new HashMap<>();
 
 	private ThrottleServiceDataHolder() {
 
@@ -67,4 +68,20 @@ public class ThrottleServiceDataHolder {
 		String distributedCounterType = throttleProperties.getDistributedCounterType();
 		return distributedCounterManagerMap.get(distributedCounterType);
 	}
+
+	public void addDistributedThrottleProcessor(DistributedThrottleProcessor distributedThrottleProcessor) {
+		distributedThrottleProcessorMap.put(distributedThrottleProcessor.getType(), distributedThrottleProcessor);
+	}
+
+	public void removeDistributedThrottleProcessor(DistributedThrottleProcessor distributedThrottleProcessor) {
+		if (distributedThrottleProcessor != null) {
+			distributedThrottleProcessorMap.remove(distributedThrottleProcessor.getType());
+		}
+	}
+
+	public DistributedThrottleProcessor getDistributedThrottleProcessor() {
+		String distributedThrottleProcessorType = throttleProperties.getDistributedThrottleProcessorType();
+		return distributedThrottleProcessorMap.get(distributedThrottleProcessorType);
+	}
+
 }
