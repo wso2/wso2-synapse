@@ -31,6 +31,7 @@ import org.apache.commons.vfs2.FileSystemException;
 import org.apache.synapse.commons.crypto.CryptoUtil;
 import org.apache.synapse.commons.vfs.VFSConstants;
 import org.apache.synapse.commons.vfs.VFSUtils;
+import org.apache.synapse.transport.vfs.VFSTransportErrorHandler.LogType;
 
 import java.net.UnknownHostException;
 import java.text.DateFormat;
@@ -157,7 +158,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
             try {
                 return VFSUtils.resolveUriHost(fileURI);
             } catch (UnknownHostException | FileSystemException e) {
-                log.warn("Unable to resolve the hostname of transport.vfs.FileURI : " + VFSUtils.maskURLPassword(fileURI), e);
+                String message = "Unable to resolve the hostname of transport.vfs.FileURI : " +
+                        VFSUtils.maskURLPassword(fileURI);
+                VFSTransportErrorHandler.logException(log, LogType.WARN, message, getServiceName(), e);
             }
         }
         return  fileURI;
@@ -168,8 +171,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
             try {
                 return VFSUtils.resolveUriHost(replyFileURI);
             } catch (UnknownHostException | FileSystemException e) {
-                log.warn("Unable to resolve the hostname of transport.vfs.ReplyFileURI : " +
-                        VFSUtils.maskURLPassword(replyFileURI), e);
+                String message = "Unable to resolve the hostname of transport.vfs.ReplyFileURI : " +
+                        VFSUtils.maskURLPassword(replyFileURI);
+                VFSTransportErrorHandler.logException(log, LogType.WARN, message, getServiceName(), e);
             }
         }
         return replyFileURI;
@@ -204,8 +208,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
             try {
                 return VFSUtils.resolveUriHost(moveAfterProcess);
             }  catch (UnknownHostException | FileSystemException e) {
-                log.warn("Unable to resolve the hostname of transport.vfs.MoveAfterProcess: " +
-                        VFSUtils.maskURLPassword(moveAfterProcess), e);
+                String message = "Unable to resolve the hostname of transport.vfs.MoveAfterProcess: " +
+                        VFSUtils.maskURLPassword(moveAfterProcess);
+                VFSTransportErrorHandler.logException(log, LogType.WARN, message, getServiceName(), e);
             }
         }
         return moveAfterProcess;
@@ -216,8 +221,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
             try {
                 return VFSUtils.resolveUriHost(moveAfterMoveFailure);
             }  catch (UnknownHostException | FileSystemException e) {
-                log.warn("Unable to resolve the hostname of transport.vfs.MoveAfterFailedMove: " +
-                        VFSUtils.maskURLPassword(moveAfterMoveFailure), e);
+                String message = "Unable to resolve the hostname of transport.vfs.MoveAfterFailedMove: " +
+                        VFSUtils.maskURLPassword(moveAfterMoveFailure);
+                VFSTransportErrorHandler.logException(log, LogType.WARN, message, getServiceName(), e);
             }
         }
         return moveAfterMoveFailure;
@@ -264,8 +270,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
             try {
                 return VFSUtils.resolveUriHost(moveAfterErrors);
             } catch (UnknownHostException | FileSystemException e) {
-                log.warn("Unable to resolve the hostname of transport.vfs.MoveAfterErrors: " +
-                        VFSUtils.maskURLPassword(moveAfterErrors), e);
+                String message = "Unable to resolve the hostname of transport.vfs.MoveAfterErrors: " +
+                        VFSUtils.maskURLPassword(moveAfterErrors);
+                VFSTransportErrorHandler.logException(log, LogType.WARN, message, e);
             }
         }
         return moveAfterErrors;
@@ -286,8 +293,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
             try {
                 return VFSUtils.resolveUriHost(moveAfterFailure);
             } catch (UnknownHostException | FileSystemException e) {
-                log.warn("Unable to resolve the hostname of transport.vfs.MoveAfterFailure: " +
-                        VFSUtils.maskURLPassword(moveAfterFailure), e);
+                String message = "Unable to resolve the hostname of transport.vfs.MoveAfterFailure: " +
+                        VFSUtils.maskURLPassword(moveAfterFailure);
+                VFSTransportErrorHandler.logException(log, LogType.WARN, message, getServiceName(), e);
             }
         }
         return moveAfterFailure;
@@ -501,7 +509,6 @@ public class PollTableEntry extends AbstractPollTableEntry {
 
     @Override
     public boolean loadConfiguration(ParameterInclude params) throws AxisFault {
-
         decryptParamsIfRequired(params);
         this.params = params;
         resolveHostsDynamically = ParamUtils.getOptionalParamBoolean(params,
@@ -517,7 +524,8 @@ public class PollTableEntry extends AbstractPollTableEntry {
     protected boolean loadConfigurationsFromService(ParameterInclude params) throws AxisFault {
         fileURI = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_FILE_FILE_URI);
         if (fileURI == null) {
-            log.warn("transport.vfs.FileURI parameter is missing in the proxy service configuration");
+            VFSTransportErrorHandler.logException(log, LogType.WARN,
+                    "transport.vfs.FileURI parameter is missing in the proxy service configuration");
             return false;
         } else {
 
@@ -632,8 +640,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
                 fileSizeLimit = strFileSizeLimit != null ? Double.parseDouble(strFileSizeLimit) :
                         VFSConstants.DEFAULT_TRANSPORT_FILE_SIZE_LIMIT;
             } catch (Exception e) {
-                log.warn("Error parsing specified file size limit - " + strFileSizeLimit +
-                         ", using default - unlimited");
+                String message = "Error parsing specified file size limit - " + strFileSizeLimit +
+                        ", using default - unlimited";
+                VFSTransportErrorHandler.logException(log, LogType.WARN, message);
             }
 
             moveAfterMoveFailure = ParamUtils.getOptionalParam(params,
@@ -674,8 +683,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
                 try {
                     fileProcessingInterval = Integer.parseInt(strFileProcessingInterval);
                 } catch (NumberFormatException nfe) {
-                    log.warn("VFS File Processing Interval not set correctly. Current value is : "
-                             + strFileProcessingInterval, nfe);
+                    String message = "VFS File Processing Interval not set correctly. Current value is : "
+                            + strFileProcessingInterval;
+                    VFSTransportErrorHandler.logException(log, LogType.WARN, message, nfe);
                 }
             }
 
@@ -685,8 +695,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
                 try {
                     fileProcessingCount = Integer.parseInt(strFileProcessingCount);
                 } catch (NumberFormatException nfe) {
-                    log.warn("VFS File Processing Count not set correctly. Current value is : "
-                             + strFileProcessingCount, nfe);
+                    String message = "VFS File Processing Count not set correctly. Current value is : "
+                             + strFileProcessingCount;
+                    VFSTransportErrorHandler.logException(log, LogType.WARN, message, nfe);
                 }
             }
 
@@ -700,8 +711,8 @@ public class PollTableEntry extends AbstractPollTableEntry {
                     autoLockRelease = Boolean.parseBoolean(strAutoLock);
                 } catch (Exception e) {
                     autoLockRelease = false;
-                    log.warn("VFS Auto lock removal not set properly. Current value is : "
-                             + strAutoLock, e);
+                    String message = "VFS Auto lock removal not set properly. Current value is : " + strAutoLock;
+                    VFSTransportErrorHandler.logException(log, LogType.WARN, message, e);
                 }
                 if (autoLockRelease) {
                     String strAutoLockInterval = ParamUtils.getOptionalParam(params,
@@ -712,9 +723,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
                             autoLockReleaseInterval = Long.parseLong(strAutoLockInterval);
                         } catch (Exception e) {
                             autoLockReleaseInterval = null;
-                            log.warn(
-                                    "VFS Auto lock removal property not set properly. Current value is : "
-                                    + strAutoLockInterval, e);
+                            String message = "VFS Auto lock removal property not set properly. Current value is : "
+                                            + strAutoLockInterval;
+                            VFSTransportErrorHandler.logException(log, LogType.WARN, message, e);
                         }
                     }
                     String strAutoLockReleaseSameNode = ParamUtils.getOptionalParam(params,
@@ -726,9 +737,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
                                     .parseBoolean(strAutoLockReleaseSameNode);
                         } catch (Exception e) {
                             autoLockReleaseSameNode = true;
-                            log.warn(
-                                    "VFS Auto lock removal property not set properly. Current value is : "
-                                    + autoLockReleaseSameNode, e);
+                            String message = "VFS Auto lock removal property not set properly. Current value is : "
+                                    + autoLockReleaseSameNode;
+                            VFSTransportErrorHandler.logException(log, LogType.WARN, message, e);
                         }
                     }
                 }
@@ -744,7 +755,8 @@ public class PollTableEntry extends AbstractPollTableEntry {
                     distributedLock = Boolean.parseBoolean(strDistributedLock);
                 } catch (Exception e) {
                     autoLockRelease = false;
-                    log.warn("VFS Distributed lock not set properly. Current value is : " + strDistributedLock, e);
+                    String message = "VFS Distributed lock not set properly. Current value is : " + strDistributedLock;
+                    VFSTransportErrorHandler.logException(log, LogType.WARN, message, e);
                 }
 
                 if (distributedLock) {
@@ -756,9 +768,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
                             distributedLockTimeout = Long.parseLong(strDistributedLockTimeout);
                         } catch (Exception e) {
                             distributedLockTimeout = null;
-                            log.warn(
-                                    "VFS Distributed lock timeout property not set properly. Current value is : "
-                                    + strDistributedLockTimeout, e);
+                            String message = "VFS Distributed lock timeout property not set properly. Current value is : "
+                                    + strDistributedLockTimeout;
+                            VFSTransportErrorHandler.logException(log, LogType.WARN, message, e);
                         }
                     }
                 }
@@ -799,15 +811,13 @@ public class PollTableEntry extends AbstractPollTableEntry {
                 String errorMsg = "Unable to decode the malformed URI : " + VFSUtils.maskURLPassword(uri);
                 //log the error since if we only throw AxisFault, we won't get the entire stacktrace in logs to
                 // identify root cause to users
-                log.error(errorMsg, e);
-                throw new AxisFault(errorMsg, e);
+                VFSTransportErrorHandler.handleException(log, errorMsg, e);
 
             } catch (UnknownHostException e) {
                 String errorMsg = "Error occurred while resolving hostname of URI : " + VFSUtils.maskURLPassword(uri);
                 //log the error since if we only throw AxisFault, we won't get the entire stacktrace in logs to
                 // identify root cause to users
-                log.error(errorMsg, e);
-                throw new AxisFault(errorMsg, e);
+                VFSTransportErrorHandler.handleException(log, errorMsg, e);
             }
         }
         return uri;
@@ -848,7 +858,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
                     cryptoUtil = new CryptoUtil(secureVaultProperties);
                 }
                 if (!cryptoUtil.isInitialized()) {
-                    throw new AxisFault("Error initialising cryptoutil");
+                    VFSTransportErrorHandler.handleException(log, "Error initialising cryptoutil");
                 }
                 String toDecrypt = m.group(1);
                 toDecrypt = new String(cryptoUtil.decrypt(toDecrypt.getBytes()));

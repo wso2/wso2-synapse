@@ -45,6 +45,7 @@ import org.apache.synapse.commons.vfs.VFSConstants;
 import org.apache.synapse.commons.vfs.VFSOutTransportInfo;
 import org.apache.synapse.commons.vfs.VFSParamDTO;
 import org.apache.synapse.commons.vfs.VFSUtils;
+import org.apache.synapse.transport.vfs.VFSTransportErrorHandler.LogType;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -117,8 +118,9 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                     autoLockRelease = Boolean.parseBoolean(strAutoLock.getValue().toString());
                 } catch (Exception e) {
                     autoLockRelease = false;
-                    log.warn("VFS Auto lock removal not set properly. Given value is : "
-                             + strAutoLock + ", defaults to - " + autoLockRelease, e);
+                    String message = "VFS Auto lock removal not set properly. Given value is : "
+                            + strAutoLock + ", defaults to - " + autoLockRelease;
+                    VFSTransportErrorHandler.logException(log, LogType.WARN, message, e);
                 }
                 if (autoLockRelease) {
                     Parameter strAutoLockInterval = transportOut
@@ -129,9 +131,9 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                             autoLockReleaseInterval = Long.parseLong(strAutoLockInterval.getValue().toString());
                         } catch (Exception e) {
                             autoLockReleaseInterval = null;
-                            log.warn(
-                                    "VFS Auto lock release interval is not set properly. Given value is : "
-                                    + strAutoLockInterval + ", defaults to - null", e);
+                            String message = "VFS Auto lock release interval is not set properly. Given value is : "
+                                    + strAutoLockInterval + ", defaults to - null";
+                            VFSTransportErrorHandler.logException(log, LogType.WARN, message, e);
                         }
                     }
                     Parameter strAutoLockReleaseSameNode = transportOut
@@ -143,9 +145,9 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                                     .parseBoolean(strAutoLockReleaseSameNode.getValue().toString());
                         } catch (Exception e) {
                             autoLockReleaseSameNode = true;
-                            log.warn(
-                                    "VFS Auto lock removal same node property not set properly. Given value is : "
-                                    + autoLockReleaseSameNode + ", defaults to - " + autoLockReleaseSameNode, e);
+                            String message = "VFS Auto lock removal same node property not set properly. Given value is : "
+                                    + autoLockReleaseSameNode + ", defaults to - " + autoLockReleaseSameNode;
+                            VFSTransportErrorHandler.logException(log, LogType.WARN, message, e);
                         }
                     }
                 }
@@ -156,7 +158,8 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
             vfsParamDTO.setAutoLockReleaseInterval(autoLockReleaseInterval);
             vfsParamDTO.setAutoLockReleaseSameNode(autoLockReleaseSameNode);
         } catch (FileSystemException e) {
-            handleException("Error initializing the file transport : " + e.getMessage(), e);
+            String message = "Error initializing the file transport : " + e.getMessage();
+            VFSTransportErrorHandler.handleException(log, message, e);
         }
     }
 
@@ -209,12 +212,13 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
     }
 
     protected void writeFile(MessageContext msgCtx, VFSOutTransportInfo vfsOutInfo) throws AxisFault {
-
+        String configName = (String) msgCtx.getProperty("_INTERNAL_TRIGGER_NAME");
         FileSystemOptions fso = null;
         try {
             fso = VFSUtils.attachFileSystemOptions(vfsOutInfo.getOutFileSystemOptionsMap(), getFsManager());
         } catch (Exception e) {
-            log.error("Error while attaching VFS file system properties. " + e.getMessage());
+            VFSTransportErrorHandler.logException(log, LogType.ERROR,
+                    "Error while attaching VFS file system properties. " + e.getMessage(), configName);
         }
 
         if (vfsOutInfo != null) {
@@ -234,7 +238,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                         retryCount++;
                         replyFile = getFsManager().resolveFile(vfsOutInfo.getOutFileURI(), fso);
                         if (replyFile == null) {
-                            log.error("replyFile is null");
+                            VFSTransportErrorHandler.logException(log, LogType.ERROR, "replyFile is null", configName);
                             throw new FileSystemException("replyFile is null");
                         }
                         // Retry if actual filesystem is corrupted, Otherwise first file after connection reset
@@ -243,15 +247,16 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                         wasError = false;
                                         
                     } catch (FileSystemException e) {
-                        log.error("cannot resolve replyFile", e);
+                        VFSTransportErrorHandler.logException(log, LogType.ERROR,
+                                "cannot resolve replyFile", configName, e);
                         if (replyFile != null) {
-                            closeFileSystem(replyFile);
+                            closeFileSystem(replyFile, configName);
                         } else {
-                            closeCachedFileSystem(vfsOutInfo, fso);
+                            closeCachedFileSystem(vfsOutInfo, fso, configName);
                         }
                         if(maxRetryCount <= retryCount) {
-                            handleException("cannot resolve replyFile repeatedly: "
-                                    + e.getMessage(), e);
+                            VFSTransportErrorHandler.handleException(log, "cannot resolve replyFile repeatedly: "
+                                    + e.getMessage(), configName, e);
                         }
                     }
                 
@@ -259,7 +264,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                         try {
                             Thread.sleep(reconnectionTimeout);
                         } catch (InterruptedException e2) {
-                            e2.printStackTrace();
+                            VFSTransportErrorHandler.printStackTrace(e2);
                         }
                     }
                 }
@@ -290,7 +295,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                         // if file locking is not disabled acquire the lock
                         // before uploading the file
                         if (vfsOutInfo.isFileLockingEnabled()) {
-                            acquireLockForSending(responseFile, vfsOutInfo, fso);
+                            acquireLockForSending(responseFile, vfsOutInfo, fso, configName);
                             populateResponseFile(responseFile, msgCtx,append, true, updateLastModified, fso);
                             VFSUtils.releaseLock(getFsManager(), responseFile, fso);
                         } else {
@@ -302,7 +307,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                         // if file locking is not disabled acquire the lock
                         // before uploading the file
                         if (vfsOutInfo.isFileLockingEnabled()) {
-                            acquireLockForSending(replyFile, vfsOutInfo, fso);
+                            acquireLockForSending(replyFile, vfsOutInfo, fso, configName);
                             populateResponseFile(replyFile, msgCtx, append, true, updateLastModified, fso);
                             VFSUtils.releaseLock(getFsManager(), replyFile, fso);
                         } else {
@@ -310,13 +315,14 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                         }
 
                     } else {
-                        handleException("Unsupported reply file type : " + replyFile.getType() +
-                                " for file : " + VFSUtils.maskURLPassword(vfsOutInfo.getOutFileURI()));
+                        String message = "Unsupported reply file type : " + replyFile.getType() +
+                                " for file : " + VFSUtils.maskURLPassword(vfsOutInfo.getOutFileURI());
+                        VFSTransportErrorHandler.handleException(log, message, configName);
                     }
                 } else {
                     // if file locking is not disabled acquire the lock before uploading the file
                     if (vfsOutInfo.isFileLockingEnabled()) {
-                        acquireLockForSending(replyFile, vfsOutInfo, fso);
+                        acquireLockForSending(replyFile, vfsOutInfo, fso, configName);
                         populateResponseFile(replyFile, msgCtx, append, true, updateLastModified, fso);
                         VFSUtils.releaseLock(getFsManager(), replyFile, fso);
                     } else {
@@ -325,12 +331,13 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                 }
             } catch (FileSystemException e) {
                 if (replyFile != null) {
-                    closeFileSystem(replyFile);
+                    closeFileSystem(replyFile, configName);
                 } else {
-                    closeCachedFileSystem(vfsOutInfo, fso);
+                    closeCachedFileSystem(vfsOutInfo, fso, configName);
                 }
-                handleException("Error resolving reply file : " +
-                		VFSUtils.maskURLPassword(vfsOutInfo.getOutFileURI()), e);
+                String message = "Error resolving reply file : " +
+                        VFSUtils.maskURLPassword(vfsOutInfo.getOutFileURI());
+                VFSTransportErrorHandler.handleException(log, message, configName, e);
             } finally {
                 if (replyFile != null) {
                     try {
@@ -343,23 +350,28 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                         getFsManager().getFilesCache().clear(fileSystem);
                         replyFile.close();
                     } catch (Exception ex) {
-                        log.warn("Error when closing the reply file", ex);
+                        VFSTransportErrorHandler.logException(log, LogType.WARN,
+                                "Error when closing the reply file", configName, ex);
                     }
                 }
             }
         } else {
-            handleException("Unable to determine out transport information to send message");
+            VFSTransportErrorHandler.handleException(log,
+                    "Unable to determine out transport information to send message", configName);
         }
     }
 
     private MessageFormatter getMessageFormatter(MessageContext msgContext){
 
+        String configName = (String) msgContext.getProperty("_INTERNAL_TRIGGER_NAME");
         try {
            return MessageProcessorSelector.getMessageFormatter(msgContext);
         } catch (AxisFault axisFault) {
-            throw new BaseTransportException("Unable to get the message formatter to use");
+            String message = "Unable to get the message formatter to use";
+            VFSTransportErrorHandler.throwException(
+                    new BaseTransportException(VFSTransportErrorHandler.constructLogMessage(message, configName)));
         }
-
+        return null;
     }
 
     protected void populateResponseFile(FileObject responseFile, MessageContext msgContext,
@@ -367,7 +379,8 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                                         FileSystemOptions fso) throws AxisFault {
         MessageFormatter messageFormatter = getMessageFormatter(msgContext);
         OMOutputFormat format = BaseUtils.getOMOutputFormat(msgContext);
-        
+        String configName = (String) msgContext.getProperty("_INTERNAL_TRIGGER_NAME");
+
         try {
             CountingOutputStream os = new CountingOutputStream(
                     responseFile.getContent().getOutputStream(append));
@@ -387,7 +400,8 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                     }
                     responseFile.getContent().setLastModifiedTime(lastModified);
                 } catch (Exception e) {
-                    log.warn("Could not set last modified.", e);
+                    VFSTransportErrorHandler.logException(log, LogType.WARN, "Could not set last modified.",
+                            configName, e);
                 }
             }
             
@@ -401,26 +415,29 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
             }
             metrics.incrementFaultsSending();
             String responseFileURI = responseFile.getName().getURI();
-            closeFileSystem(responseFile);
-            handleException("IO Error while creating response file : " + VFSUtils.maskURLPassword(responseFileURI), e);
+            closeFileSystem(responseFile, configName);
+            String message = "IO Error while creating response file : " + VFSUtils.maskURLPassword(responseFileURI);
+            VFSTransportErrorHandler.handleException(log, message, configName, e);
         }
     }
 
-    protected void acquireLockForSending(FileObject responseFile, VFSOutTransportInfo vfsOutInfo, FileSystemOptions fso)
+    protected void acquireLockForSending(FileObject responseFile, VFSOutTransportInfo vfsOutInfo,
+                                         FileSystemOptions fso, String configName)
             throws AxisFault {
         
         int tryNum = 0;
         // wait till we get the lock
         while (!VFSUtils.acquireLock(getFsManager(), responseFile, fso, false)) {
             if (vfsOutInfo.getMaxRetryCount() == tryNum++) {
-                handleException("Couldn't send the message to file : "
+                String message = "Couldn't send the message to file : "
                         + VFSUtils.maskURLPassword(responseFile.getName().getURI()) + ", unable to acquire the " +
-                        "lock even after " + tryNum + " retries");
+                        "lock even after " + tryNum + " retries";
+                VFSTransportErrorHandler.handleException(log, message, configName);
             } else {
-
-                log.warn("Couldn't get the lock for the file : "
+                String message = "Couldn't get the lock for the file : "
                         + VFSUtils.maskURLPassword(responseFile.getName().getURI()) + ", retry : " + tryNum
-                        + " scheduled after : " + vfsOutInfo.getReconnectTimeout());
+                        + " scheduled after : " + vfsOutInfo.getReconnectTimeout();
+                VFSTransportErrorHandler.logException(log, LogType.WARN, message, configName);
                 try {
                     Thread.sleep(vfsOutInfo.getReconnectTimeout());
                 } catch (InterruptedException ignore) {}
@@ -458,7 +475,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
         }
     }
 
-    private void closeFileSystem(FileObject fileObject) {
+    private void closeFileSystem(FileObject fileObject, String configName) {
         try {
             //Close the File system if it is not already closed
             if (fileObject != null && getFsManager() != null && fileObject.getParent() != null && fileObject.getParent().getFileSystem() != null) {
@@ -466,15 +483,16 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
             }
             fileObject.close();
         } catch (FileSystemException warn) {
-            log.warn("Error on closing the file: " + fileObject.getName().getPath(), warn);
+            String message = "Error on closing the file: " + fileObject.getName().getPath();
+            VFSTransportErrorHandler.logException(log, LogType.WARN, message, configName, warn);
         }
     }
 
-    private void closeCachedFileSystem(VFSOutTransportInfo vfsOutInfo, FileSystemOptions fso) {
+    private void closeCachedFileSystem(VFSOutTransportInfo vfsOutInfo, FileSystemOptions fso, String configName) {
         try {
             ((DefaultFileSystemManager) getFsManager()).closeCachedFileSystem(vfsOutInfo.getOutFileURI(), fso);
         } catch (Exception e1) {
-            log.debug("Unable to clear file system", e1);
+            VFSTransportErrorHandler.logException(log, LogType.DEBUG, "Unable to clear file system", configName, e1);
         }
     }
 
