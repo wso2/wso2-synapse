@@ -387,4 +387,14 @@ public class PassThroughConfiguration {
         }
         return passThroughDefaultServiceName;
     }
+
+    /**
+     * Get the value of the property to ignore case-sensitive headers from excess headers
+     *
+     * @return Value of the property
+     */
+    public boolean isIgnoreCaseSensitiveHeaders() {
+        return ConfigurationBuilderUtil.getBooleanProperty(PassThroughConfigPNames.IGNORE_CASE_SENSITIVE_HEADERS,
+                false, props);
+    }
 }
