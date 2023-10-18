@@ -167,4 +167,9 @@ public interface PassThroughConfigPNames {
      */
     public String EXPECTED_MAX_QUEUEING_TIME_FOR_MESSAGE_DISCARD_WORKER
             = "expected_max_queueing_time_for_message_discard_worker";
+
+    /**
+     * Defines whether to ignore case-sensitive headers from excess headers map
+     */
+    public String IGNORE_CASE_SENSITIVE_HEADERS = "ignore_case_sensitive_headers";
 }

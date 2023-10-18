@@ -173,9 +173,9 @@ public class ClientWorker implements Runnable {
                 return o1.compareToIgnoreCase(o2);
             }
         });
-
+        boolean ignoreCaseSensitive = conf.isIgnoreCaseSensitiveHeaders();
         for (Map.Entry<String, String> headerEntry : headerEntries) {
-            if (headerMap.containsKey(headerEntry.getKey())) {
+            if (headerMap.containsKey(headerEntry.getKey()) && !ignoreCaseSensitive) {
                 excessHeaders.put(headerEntry.getKey(), headerMap.get(headerEntry.getKey()));
             }
             headerMap.put(headerEntry.getKey(), headerEntry.getValue());
