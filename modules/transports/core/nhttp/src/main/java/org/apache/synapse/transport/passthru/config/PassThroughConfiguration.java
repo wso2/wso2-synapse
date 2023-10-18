@@ -22,6 +22,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.util.ConfigurationBuilderUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -472,5 +473,15 @@ public class PassThroughConfiguration {
             passThroughDefaultServiceName = getStringProperty("passthru.default.service", "__SynapseService");
         }
         return passThroughDefaultServiceName;
+    }
+
+    /**
+     * Get the value of the property to ignore case-sensitive headers from excess headers
+     *
+     * @return Value of the property
+     */
+    public boolean isIgnoreCaseSensitiveHeaders() {
+        return ConfigurationBuilderUtil.getBooleanProperty(PassThroughConfigPNames.IGNORE_CASE_SENSITIVE_HEADERS,
+                false, props);
     }
 }
