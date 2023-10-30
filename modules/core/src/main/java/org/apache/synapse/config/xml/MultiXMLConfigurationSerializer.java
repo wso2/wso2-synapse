@@ -777,9 +777,9 @@ public class MultiXMLConfigurationSerializer {
         wsdlElement.serialize(baos);
 
         boolean containsCdata = findCdataElements(wsdlElement);
-            if (containsCdata) {
-                out.write(baos.toByteArray());
-                return; // No prettifying necessary
+        if (containsCdata) {
+            out.write(baos.toByteArray());
+            return; // No prettifying necessary
         }
 
         Source stylesheetSource = new StreamSource(new ByteArrayInputStream(prettyPrintStylesheet.getBytes()));
