@@ -776,12 +776,10 @@ public class MultiXMLConfigurationSerializer {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         wsdlElement.serialize(baos);
 
-        if (wsdlElement.getLocalName().contains("sequence") || wsdlElement.getLocalName().contains("api")) {
-            boolean containsCdata = findCdataElements(wsdlElement);
+        boolean containsCdata = findCdataElements(wsdlElement);
             if (containsCdata) {
                 out.write(baos.toByteArray());
                 return; // No prettifying necessary
-            }
         }
 
         Source stylesheetSource = new StreamSource(new ByteArrayInputStream(prettyPrintStylesheet.getBytes()));
