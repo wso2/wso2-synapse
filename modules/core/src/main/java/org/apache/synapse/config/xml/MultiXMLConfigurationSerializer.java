@@ -53,12 +53,20 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.axis2.util.XMLPrettyPrinter;
 import org.apache.synapse.task.TaskManager;
+import org.apache.axiom.om.OMNode;
 
+import javax.xml.transform.Source;
+import javax.xml.transform.Templates;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
 
 public class MultiXMLConfigurationSerializer {
 
@@ -748,10 +756,45 @@ public class MultiXMLConfigurationSerializer {
         return parent;
     }
 
+    private static final String prettyPrintStylesheet =
+            "<xsl:stylesheet xmlns:xsl='http://www.w3.org/1999/XSL/Transform' version='1.0' " +
+                    " xmlns:xalan='http://xml.apache.org/xslt' " +
+                    " exclude-result-prefixes='xalan'>" +
+                    "  <xsl:output method='xml' indent='yes' xalan:indent-amount='4'/>" +
+                    "  <xsl:strip-space elements='*'/>" +
+                    "  <xsl:template match='/'>" +
+                    "    <xsl:apply-templates/>" +
+                    "  </xsl:template>" +
+                    "  <xsl:template match='node() | @*'>" +
+                    "        <xsl:copy>" +
+                    "          <xsl:apply-templates select='node() | @*'/>" +
+                    "        </xsl:copy>" +
+                    "  </xsl:template>" +
+                    "</xsl:stylesheet>";
+
+    private void prettify(OMElement wsdlElement, OutputStream out) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        wsdlElement.serialize(baos);
+
+        boolean containsCdata = findCdataElements(wsdlElement);
+        if (containsCdata) {
+            out.write(baos.toByteArray());
+            return; // No prettifying necessary
+        }
+
+        Source stylesheetSource = new StreamSource(new ByteArrayInputStream(prettyPrintStylesheet.getBytes()));
+        Source xmlSource = new StreamSource(new ByteArrayInputStream(baos.toByteArray()));
+
+        TransformerFactory tf = TransformerFactory.newInstance();
+        Templates templates = tf.newTemplates(stylesheetSource);
+        Transformer transformer = templates.newTransformer();
+        transformer.transform(xmlSource, new StreamResult(out));
+    }
+
     private void writeToFile(OMElement content, File file) throws Exception {
         File tempFile = File.createTempFile("syn_mx_", ".xml");
         OutputStream out = FileUtils.openOutputStream(tempFile);
-        XMLPrettyPrinter.prettify(content, out);
+        prettify(content, out);
         out.flush();
         out.close();
 
@@ -1018,4 +1061,22 @@ public class MultiXMLConfigurationSerializer {
         }
     }
 
+    private static boolean findCdataElements(OMElement element) {
+        // Iterate over the children of the current element
+        for (Iterator i = element.getChildren(); i.hasNext(); ) {
+            OMNode child = (OMNode) i.next();
+            // If the child is an element node, recurse
+            if (child.getType() == OMNode.ELEMENT_NODE) {
+                if (findCdataElements((OMElement) child)) {
+                    return true; // A CDATA section node was found, return true immediately
+                }
+            }
+            // If the child is a CDATA section node, return true
+            else if (child.getType() == OMNode.CDATA_SECTION_NODE) {
+                return true;
+            }
+        }
+        // No CDATA section nodes found
+        return false;
+    }
 }
