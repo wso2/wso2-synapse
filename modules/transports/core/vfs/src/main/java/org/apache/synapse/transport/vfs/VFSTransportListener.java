@@ -201,23 +201,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             log.debug("Polling: " + VFSUtils.maskURLPassword(fileURI));
         }
         if (entry.isClusterAware()) {
-            boolean leader = true;
-            ClusteringAgent agent = getConfigurationContext().getAxisConfiguration().getClusteringAgent();
-            log.warn("Although proxy is cluster aware, clustering config are not present, hence running the" +
-                         " the polling task in this node");
-            if (!leader) {
-                if (log.isDebugEnabled()) {
-                    log.debug("This Member is not the leader");
-                }
-                entry.setLastPollState(PollTableEntry.NONE);
-                long now = System.currentTimeMillis();
-                entry.setLastPollTime(now);
-                entry.setNextPollTime(now + entry.getPollInterval());
-                onPollCompletion(entry);
-                return;
-            }
             if (log.isDebugEnabled()) {
-                log.debug("This Member is the leader");
+                log.debug("Cluster aware flag is enabled.");
             }
         }
         FileSystemOptions fso = null;
