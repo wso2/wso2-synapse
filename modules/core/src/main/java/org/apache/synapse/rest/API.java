@@ -446,20 +446,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
                 if (resource != null) {
                     if (synCtx.getEnvironment().isDebuggerEnabled()) {
                         if (!synCtx.isResponse()) {
-                            SynapseWireLogHolder wireLogHolder = (SynapseWireLogHolder) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
-                                    .getProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
-                            if (wireLogHolder == null) {
-                                wireLogHolder = new SynapseWireLogHolder();
-                            }
-                            if (synCtx.getProperty(RESTConstants.SYNAPSE_REST_API) != null && !synCtx.getProperty(RESTConstants.SYNAPSE_REST_API).toString().isEmpty()) {
-                                wireLogHolder.setApiName(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API).toString());
-                                if (resource.getDispatcherHelper() != null) {
-                                    if (resource.getDispatcherHelper().getString() != null && !resource.getDispatcherHelper().getString().isEmpty()) {
-                                        wireLogHolder.setResourceUrlString(resource.getDispatcherHelper().getString());
-                                    }
-                                }
-                            }
-                            ((Axis2MessageContext) synCtx).getAxis2MessageContext().setProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, wireLogHolder);
+                            initWirelogHolder(synCtx, resource);
                         }
 
                     }
@@ -472,8 +459,9 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
             //This will get executed only in unhappy path. So ok to have the iterator.
             boolean resourceFound = false;
             boolean matchingMethodFound = false;
+            Resource resource = null;
             for (RESTDispatcher dispatcher : RESTUtils.getDispatchers()) {
-                Resource resource = dispatcher.findResource(synCtx, resources.values());
+                resource = dispatcher.findResource(synCtx, resources.values());
                 if (resource != null) {
                     resourceFound = true;
                     String method = (String) msgCtx.getProperty(Constants.Configuration.HTTP_METHOD);
@@ -484,16 +472,39 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
             if (!resourceFound) {
                 handleResourceNotFound(synCtx);
             } else if (resourceFound && !matchingMethodFound) {
-                //Resource found, but in that resource, requested method not allowed. So sending method not allowed http status (405)
-                msgCtx.setProperty(SynapseConstants.HTTP_SC, HttpStatus.SC_METHOD_NOT_ALLOWED);
-                msgCtx.removeProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-                msgCtx.setProperty("NIO-ACK-Requested", true);
+                String method = (String) synCtx.getProperty(RESTConstants.REST_METHOD);
+                if (RESTConstants.METHOD_OPTIONS.equals(method)) {
+                    initWirelogHolder(synCtx, resource);
+                    resource.process(synCtx);
+                } else {
+                    //Resource found, but in that resource, requested method not allowed. So sending method not allowed http status (405)
+                    msgCtx.setProperty(SynapseConstants.HTTP_SC, HttpStatus.SC_METHOD_NOT_ALLOWED);
+                    msgCtx.removeProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+                    msgCtx.setProperty("NIO-ACK-Requested", true);
+                }
             } else {
                 //Resource found, and matching method also found, which means request is BAD_REQUEST(400)
                 msgCtx.setProperty(SynapseConstants.HTTP_SC, HttpStatus.SC_BAD_REQUEST);
                 msgCtx.setProperty("NIO-ACK-Requested", true);
             }
         }
+    }
+
+    private static void initWirelogHolder(MessageContext synCtx, Resource resource) {
+        SynapseWireLogHolder wireLogHolder = (SynapseWireLogHolder) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                .getProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
+        if (wireLogHolder == null) {
+            wireLogHolder = new SynapseWireLogHolder();
+        }
+        if (synCtx.getProperty(RESTConstants.SYNAPSE_REST_API) != null && !synCtx.getProperty(RESTConstants.SYNAPSE_REST_API).toString().isEmpty()) {
+            wireLogHolder.setApiName(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API).toString());
+            if (resource.getDispatcherHelper() != null) {
+                if (resource.getDispatcherHelper().getString() != null && !resource.getDispatcherHelper().getString().isEmpty()) {
+                    wireLogHolder.setResourceUrlString(resource.getDispatcherHelper().getString());
+                }
+            }
+        }
+        ((Axis2MessageContext) synCtx).getAxis2MessageContext().setProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, wireLogHolder);
     }
 
     /**
