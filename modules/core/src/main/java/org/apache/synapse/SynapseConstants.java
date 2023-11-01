@@ -155,6 +155,8 @@ public final class SynapseConstants {
     
     /** The name of the Parameter set on the Axis2Configuration to hold the Synapse Configuration */
     public static final String SYNAPSE_CONFIG = "synapse.config";
+    /** EIP pattern name */
+    public static final String INIT_EIP_PATTERN = "init";
     /** The name of the Parameter set on the Axis2Configuration to hold the Synapse Environment */
     public static final String SYNAPSE_ENV = "synapse.env";
     /** The name of the Parameter set on AxisConfiguration to hold the ServerContextInformation */
