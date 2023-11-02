@@ -168,9 +168,7 @@ public class Resource extends AbstractRequestProcessor implements ManagedLifecyc
      * @return true if support false otherwise.
      */
     public boolean hasMatchingMethod(String method) {
-        if (RESTConstants.METHOD_OPTIONS.equals(method)) {
-            return true; // OPTIONS requests are always welcome
-        } else if (!methods.isEmpty()) {
+        if (!methods.isEmpty()) {
             if (!methods.contains(method)) {
                 if (log.isDebugEnabled()) {
                     log.debug("HTTP method does not match");
@@ -251,9 +249,7 @@ public class Resource extends AbstractRequestProcessor implements ManagedLifecyc
         String method = (String) msgCtx.getProperty(Constants.Configuration.HTTP_METHOD);
         synCtx.setProperty(RESTConstants.REST_METHOD, method);
 
-        if (RESTConstants.METHOD_OPTIONS.equals(method)) {
-            return true; // OPTIONS requests are always welcome
-        } else if (!methods.isEmpty()) {
+        if (!methods.isEmpty()) {
             if (!methods.contains(method)) {
                 if (log.isDebugEnabled()) {
                     log.debug("HTTP method does not match");
