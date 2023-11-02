@@ -135,6 +135,10 @@ public class TargetErrorHandler {
                     if (errorCode != -1) {
                         faultMessageContext.setProperty(
                                 PassThroughConstants.ERROR_CODE, getErrorCode(errorCode, state));
+                        faultMessageContext.setProperty(
+                                PassThroughConstants.BASE_ERROR_CODE, errorCode);
+                        faultMessageContext.setProperty(
+                                PassThroughConstants.PROTOCOL_STATE_ON_FAILURE, state.ordinal());
                     }
                     if (exceptionToRaise != null) {
                         faultMessageContext.setProperty(
