@@ -23,9 +23,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.jayway.jsonpath.JsonPath;
+import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
+import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.context.OperationContext;
@@ -372,10 +375,17 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
             throws AxisFault, JaxenException {
 
         // clone the message for the mediation in iteration
-        MessageContext newCtx = MessageHelper.cloneMessageContext(synCtx);
-
-        //Remove the original jsonstream from the context
-        JsonUtil.removeJsonPayload(((Axis2MessageContext) newCtx).getAxis2MessageContext());
+        MessageContext newCtx = MessageHelper.cloneMessageContext(synCtx, false, false);
+        // Adding an empty envelope since JsonUtil.getNewJsonPayload requires an envelope
+        SOAPFactory fac;
+        if (SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI
+                .equals(synCtx.getEnvelope().getBody().getNamespace().getNamespaceURI())) {
+            fac = OMAbstractFactory.getSOAP11Factory();
+        } else {
+            fac = OMAbstractFactory.getSOAP12Factory();
+        }
+        SOAPEnvelope newEnvelope = fac.getDefaultEnvelope();
+        newCtx.setEnvelope(newEnvelope);
 
         if (id != null) {
             // set the parent correlation details to the cloned MC -
