@@ -150,7 +150,7 @@ public class TimeoutHandler extends TimerTask {
                                             + getEndpointLogMessage(callback.getSynapseOutMsgCtx(),
                                             callback.getAxis2OutMsgCtx()) + ", "
                                             + getServiceLogMessage(callback.getSynapseOutMsgCtx())
-                                            + "Correlation ID : " + callback.getAxis2OutMsgCtx().getProperty(
+                                            + ", Correlation ID : " + callback.getAxis2OutMsgCtx().getProperty(
                                             CorrelationConstants.CORRELATION_ID));
                         }
 

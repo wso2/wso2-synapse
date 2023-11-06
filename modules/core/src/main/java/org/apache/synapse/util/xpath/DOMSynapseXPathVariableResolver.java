@@ -31,4 +31,8 @@ public class DOMSynapseXPathVariableResolver implements XPathVariableResolver {
             throw new SynapseException("DOM Synapse XPATH variable resolution failed",e);
         }
     }
+
+    public void setSynCtx(MessageContext synCtx) {
+        this.synCtx = synCtx;
+    }
 }

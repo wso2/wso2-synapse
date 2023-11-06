@@ -171,6 +171,8 @@ public final class SynapseConstants {
     /** The name of the synapse handlers file */
     public static final String SYNAPSE_HANDLER_FILE = "synapse-handlers.xml";
 
+    public static final String SEQUENCE_OBSERVERS_FILE = "sequence-observers.xml";
+
     /** the name of the property used for synapse library based class loading */
     public static final String SYNAPSE_LIB_LOADER = "synapse.lib.classloader";
     /** conf directory name **/
@@ -225,6 +227,11 @@ public final class SynapseConstants {
         public static final String SENDING_FAULT = "SENDING_FAULT";
         /** The message context property name which holds the error code for the last encountered exception */
         public static final String ERROR_CODE = "ERROR_CODE";
+        /** The message context property name which holds the error code for the last encountered exception
+        * without any protocol state specific alterations*/
+        public static final String BASE_ERROR_CODE = "BASE_ERROR_CODE";
+        /** The message context property name which holds the http protocol state upon a failure*/
+        public static final String PROTOCOL_STATE_ON_FAILURE = "PROTOCOL_STATE_ON_FAILURE";
         /** The MC property name which holds the error message for the last encountered exception */
         public static final String ERROR_MESSAGE = "ERROR_MESSAGE";
         /** The message context property name which holds the error detail (stack trace) for the last encountered exception */

@@ -320,6 +320,10 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 synapseOutMsgCtx.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
                 synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_CODE,
                     response.getProperty(SynapseConstants.ERROR_CODE));
+                synapseOutMsgCtx.setProperty(SynapseConstants.BASE_ERROR_CODE,
+                    response.getProperty(SynapseConstants.BASE_ERROR_CODE));
+                synapseOutMsgCtx.setProperty(SynapseConstants.PROTOCOL_STATE_ON_FAILURE,
+                    response.getProperty(SynapseConstants.PROTOCOL_STATE_ON_FAILURE));
                 synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_MESSAGE,
                     response.getProperty(SynapseConstants.ERROR_MESSAGE));
                 synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_DETAIL,
