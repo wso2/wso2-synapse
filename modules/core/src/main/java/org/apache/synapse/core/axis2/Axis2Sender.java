@@ -229,7 +229,6 @@ public class Axis2Sender {
                 AxisEngine.send(messageContext);
             }
         } catch (AxisFault e) {
-            smc.setProperty(SynapseConstants.RESPONSE_STATE, new ResponseState());
             handleException(getResponseMessage(messageContext), e, smc);
         }
     }
