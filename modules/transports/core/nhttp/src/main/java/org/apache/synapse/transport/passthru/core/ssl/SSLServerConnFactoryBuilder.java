@@ -70,7 +70,7 @@ public class SSLServerConnFactoryBuilder extends ServerConnFactoryBuilder {
             } catch (NumberFormatException e) {
                 log.error("Please specify correct Integer numbers for CacheDelay and CacheSize");
             }
-            revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay);
+            revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay, true);
         }
         ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl, preferredCiphers,
                 revocationVerifier,

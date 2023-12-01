@@ -25,9 +25,21 @@ import org.apache.synapse.transport.certificatevalidation.crl.CRLVerifier;
 import org.apache.synapse.transport.certificatevalidation.ocsp.OCSPCache;
 import org.apache.synapse.transport.certificatevalidation.ocsp.OCSPVerifier;
 import org.apache.synapse.transport.certificatevalidation.pathvalidation.CertificatePathValidator;
+import org.apache.synapse.transport.util.ConfigurationBuilderUtil;
+import org.wso2.securevault.KeyStoreType;
 
 import java.io.ByteArrayInputStream;
+import java.security.InvalidKeyException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.Optional;
 
 /**
  * Manager class responsible for verifying certificates. This class will use the available verifiers according to
@@ -37,9 +49,11 @@ public class RevocationVerificationManager {
 
     private int cacheSize = Constants.CACHE_DEFAULT_ALLOCATED_SIZE;
     private int cacheDelayMins = Constants.CACHE_DEFAULT_DELAY_MINS;
+    private boolean isFullCertChainValidationEnabled = false;
     private static final Log log = LogFactory.getLog(RevocationVerificationManager.class);
 
-    public RevocationVerificationManager(Integer cacheAllocatedSize, Integer cacheDelayMins) {
+    public RevocationVerificationManager(Integer cacheAllocatedSize, Integer cacheDelayMins,
+                                         boolean isFullCertChainValidationEnabled) {
 
         if (cacheAllocatedSize != null && cacheAllocatedSize > Constants.CACHE_MIN_ALLOCATED_SIZE
                 && cacheAllocatedSize < Constants.CACHE_MAX_ALLOCATED_SIZE) {
@@ -49,6 +63,7 @@ public class RevocationVerificationManager {
                 && cacheDelayMins < Constants.CACHE_MAX_DELAY_MINS) {
             this.cacheDelayMins = cacheDelayMins;
         }
+        this.isFullCertChainValidationEnabled = isFullCertChainValidationEnabled;
     }
 
     /**
@@ -62,6 +77,69 @@ public class RevocationVerificationManager {
 
         X509Certificate[] convertedCertificates = convert(peerCertificates);
 
+        Optional<X509Certificate> peerCertOpt;
+        X509Certificate peerCert = null;
+        X509Certificate issuerCert = null;
+        String alias;
+
+        if (!isFullCertChainValidationEnabled) {
+
+            if (log.isDebugEnabled()) {
+                log.debug("Retrieving the issuer certificate from client truststore since full certificate chain " +
+                        "validation is disabled");
+            }
+
+            KeyStore trustStore;
+            Enumeration<String> aliases;
+            String truststorePath = System.getProperty("javax.net.ssl.trustStore");
+            String truststorePassword = System.getProperty("javax.net.ssl.trustStorePassword");;
+
+            try {
+                trustStore = ConfigurationBuilderUtil.getKeyStore(truststorePath, truststorePassword,
+                        KeyStoreType.JKS.toString());
+            } catch (KeyStoreException e) {
+                throw new CertificateVerificationException("Error loading the truststore", e);
+            }
+
+            try {
+                aliases = trustStore.aliases();
+            } catch (KeyStoreException e) {
+                throw new CertificateVerificationException("Error while retrieving aliases from truststore", e);
+            }
+
+            while (aliases.hasMoreElements()) {
+                alias = aliases.nextElement();
+                try {
+                    issuerCert = (X509Certificate) trustStore.getCertificate(alias);
+                } catch (KeyStoreException e) {
+                    throw new CertificateVerificationException("Unable to read the certificate from truststore with " +
+                            "the alias: " + alias, e);
+                }
+
+                if (issuerCert == null) {
+                    throw new CertificateVerificationException("Issuer certificate not found in truststore");
+                }
+
+                // When full chain validation is disabled, only one cert is expected
+                peerCertOpt = Arrays.stream(convertedCertificates).findFirst();
+                if (peerCertOpt.isPresent()) {
+                    peerCert = peerCertOpt.get();
+                } else {
+                    throw new CertificateVerificationException("Peer certificate is not provided");
+                }
+
+                try {
+                    peerCert.verify(issuerCert.getPublicKey());
+                    log.debug("Valid issuer certificate found in the client truststore");
+                    break;
+                } catch (SignatureException | CertificateException | NoSuchAlgorithmException | InvalidKeyException |
+                         NoSuchProviderException e) {
+                    // Unable to verify the signature. Check with the next certificate.
+                    log.error("Signature not matching for alias : " + alias + ", validate with next cert");
+                }
+            }
+        }
+
         long start = System.currentTimeMillis();
 
         OCSPCache ocspCache = OCSPCache.getCache();
@@ -73,9 +151,19 @@ public class RevocationVerificationManager {
 
         for (RevocationVerifier verifier : verifiers) {
             try {
-                CertificatePathValidator pathValidator = new CertificatePathValidator(convertedCertificates, verifier);
-                pathValidator.validatePath();
-                log.info("Path verification Successful. Took " + (System.currentTimeMillis() - start) + " ms.");
+                if (isFullCertChainValidationEnabled) {
+                    log.debug("Doing full certificate chain validation");
+                    CertificatePathValidator pathValidator = new CertificatePathValidator(convertedCertificates,
+                            verifier);
+                    pathValidator.validatePath();
+                    log.info("Path verification Successful. Took " + (System.currentTimeMillis() - start) + " ms.");
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Validating client certificate with the issuer certificate retrieved from" +
+                                "the trust store");
+                    }
+                    verifier.checkRevocationStatus(peerCert, issuerCert);
+                }
                 return;
             } catch (Exception e) {
                 log.info(verifier.getClass().getSimpleName() + " failed.");

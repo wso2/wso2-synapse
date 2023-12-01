@@ -146,7 +146,7 @@ public class ClientConnFactoryBuilder {
                 cacheDelay = new Integer(cacheDelayString);
             } catch (NumberFormatException e) {
             }
-            revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay);
+            revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay, true);
         }
 
         // Process HttpProtocols

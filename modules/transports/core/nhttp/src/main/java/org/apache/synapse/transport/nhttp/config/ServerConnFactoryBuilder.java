@@ -26,6 +26,7 @@ import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.transport.base.ParamUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHost;
@@ -305,8 +306,22 @@ public class ServerConnFactoryBuilder {
                 cacheSize = new Integer(cacheSizeString);
                 cacheDelay = new Integer(cacheDelayString);
             }
-            catch (NumberFormatException e) {}
-            revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay);
+            catch (NumberFormatException e) {
+                throw new AxisFault("Cache size or Cache delay values are malformed", e);
+            }
+
+            // Checking whether the full certificate chain validation is enabled or not.
+            boolean isFullCertChainValidationEnabled = true;
+            OMElement isFullCertChainValidationConfig = cvp.getParameterElement()
+                    .getFirstChildWithName(new QName("FullChainValidation"));
+
+            if (isFullCertChainValidationConfig != null
+                    && StringUtils.equals("false", isFullCertChainValidationConfig.getText())) {
+                isFullCertChainValidationEnabled = false;
+            }
+
+            revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay,
+                    isFullCertChainValidationEnabled);
         }
 
         ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl, preferredCiphersEl,
@@ -324,6 +339,8 @@ public class ServerConnFactoryBuilder {
         OMElement profilesEl = profileParam.getParameterElement();
         SecretResolver secretResolver = SecretResolverFactory.create(profilesEl, true);
         Iterator<?> profiles = profilesEl.getChildrenWithName(new QName("profile"));
+        RevocationVerificationManager revocationVerifier = null;
+
         while (profiles.hasNext()) {
             OMElement profileEl = (OMElement) profiles.next();
             OMElement bindAddressEl = profileEl.getFirstChildWithName(new QName("bindAddress"));
@@ -341,8 +358,48 @@ public class ServerConnFactoryBuilder {
             OMElement preferredCiphersEl = profileEl.getFirstChildWithName(new QName(NhttpConstants.PREFERRED_CIPHERS));
             final Parameter sslpParameter = transportIn.getParameter("SSLProtocol");
             final String sslProtocol = sslpParameter != null ? sslpParameter.getValue().toString() : "TLS";
+
+            /* If multi SSL profiles are configured, checking whether the certificate revocation verifier is
+               configured and full certificate chain validation is enabled or not. */
+            if (profileEl.getFirstChildWithName(new QName("CertificateRevocationVerifier")) != null) {
+
+                Integer cacheSize = null;
+                Integer cacheDelay = null;
+
+                OMElement revocationVerifierConfig = profileEl
+                        .getFirstChildWithName(new QName("CertificateRevocationVerifier"));
+                OMElement revocationEnabled = revocationVerifierConfig
+                        .getFirstChildWithName(new QName("Enable"));
+
+                if (revocationEnabled != null && "true".equals(revocationEnabled.getText())) {
+                    String cacheSizeString = revocationVerifierConfig
+                            .getFirstChildWithName(new QName("CacheSize")).getText();
+                    String cacheDelayString = revocationVerifierConfig
+                            .getFirstChildWithName(new QName("CacheDelay")).getText();
+
+                    try {
+                        cacheSize = new Integer(cacheSizeString);
+                        cacheDelay = new Integer(cacheDelayString);
+                    } catch (NumberFormatException e) {
+                        throw new AxisFault("Cache size or Cache delay values are malformed", e);
+                    }
+                }
+
+                boolean isFullCertChainValidationEnabled = true;
+                OMElement isFullCertChainValidationConfig = revocationVerifierConfig
+                        .getFirstChildWithName(new QName("FullChainValidation"));
+
+                if (isFullCertChainValidationConfig != null
+                        && StringUtils.equals("false", isFullCertChainValidationConfig.getText())) {
+                    isFullCertChainValidationEnabled = false;
+                }
+
+                revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay,
+                        isFullCertChainValidationEnabled);
+            }
+
             SSLContextDetails ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl,
-                    preferredCiphersEl, null, sslProtocol, secretResolver);
+                    preferredCiphersEl, revocationVerifier, sslProtocol, secretResolver);
             if (sslByIPMap == null) {
                 sslByIPMap = new HashMap<InetSocketAddress, SSLContextDetails>();
             }

@@ -21,6 +21,13 @@ package org.apache.synapse.transport.util;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.Properties;
 
 public class ConfigurationBuilderUtil {
@@ -169,6 +176,30 @@ public class ConfigurationBuilderUtil {
         }
 
         return val == null ? def : val;
+    }
+
+    /**
+     * Returns the keystore of the given file path.
+     *
+     * @param keyStoreFilePath the keystore file path
+     * @param keyStorePassword the keystore password
+     * @param keyStoreType the keystore type
+     * @return KeyStore
+     * @throws KeyStoreException On error while creating keystore
+     */
+    public static KeyStore getKeyStore(String keyStoreFilePath, String keyStorePassword, String keyStoreType)
+            throws KeyStoreException {
+
+        String file = new File(keyStoreFilePath).getAbsolutePath();
+        try (FileInputStream keyStoreFileInputStream = new FileInputStream(file)) {
+            KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+            keyStore.load(keyStoreFileInputStream, keyStorePassword.toCharArray());
+            return keyStore;
+        } catch (IOException | NoSuchAlgorithmException | CertificateException e) {
+            String errorMessage = String.format("Keystore file does not exist in the path as configured " +
+                    "in '%s' property.", keyStoreFilePath);
+            throw new KeyStoreException(errorMessage);
+        }
     }
 
 }
