@@ -84,16 +84,6 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private static final Log log = LogFactory.getLog(PayloadFactoryMediator.class);
 
     public PayloadFactoryMediator() {
-        //ignore DTDs for XML Input
-        inputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
-        inputFactory.setProperty(XMLInputFactory.IS_COALESCING, true);
-        Map props = StAXUtils.loadFactoryProperties("XMLInputFactory.properties");
-        if (props != null) {
-            for (Object o : props.entrySet()) {
-                Map.Entry entry = (Map.Entry) o;
-                inputFactory.setProperty((String) entry.getKey(), entry.getValue());
-            }
-        }
     }
 
     /**
