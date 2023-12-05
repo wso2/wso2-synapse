@@ -119,6 +119,7 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
             compileFreeMarkerTemplate(format, getMediaType());
             templateLoaded = true;
         }
+        this.readInputFactoryProperties();
     }
 
     @Override
