@@ -533,6 +533,7 @@ public abstract class TemplateProcessor {
     public void readInputFactoryProperties() {
         //ignore DTDs for XML Input
         inputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
+        inputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
         inputFactory.setProperty(XMLInputFactory.IS_COALESCING, true);
         Map props = StAXUtils.loadFactoryProperties("XMLInputFactory.properties");
         if (props != null) {
