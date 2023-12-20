@@ -1582,7 +1582,7 @@
       <!-- The Java version used to execute maven-antrun-plugin in the integration module.
            TODO: Find a way to avoid hardcording this.-->
       <java.version>1.8</java.version>
-       <activemq.broker.version>5.9.1</activemq.broker.version>
+       <activemq.broker.version>5.10.1</activemq.broker.version>
        <slf4j.log4j.version>1.5.2</slf4j.log4j.version>
        <system.rules.version>1.17.0</system.rules.version>
        <io.netty.version>4.1.100.Final</io.netty.version>
