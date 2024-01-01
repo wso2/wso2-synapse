@@ -41,6 +41,13 @@ import org.apache.synapse.transport.nhttp.util.SecureVaultValueReader;
 import org.wso2.securevault.SecretResolver;
 import org.wso2.securevault.SecretResolverFactory;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509KeyManager;
+import javax.xml.namespace.QName;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -54,14 +61,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509KeyManager;
-import javax.xml.namespace.QName;
 
 public class ServerConnFactoryBuilder {
 
@@ -90,13 +89,13 @@ public class ServerConnFactoryBuilder {
     }
 
     protected SSLContextDetails createSSLContext(
-               final OMElement keyStoreEl,
-               final OMElement trustStoreEl,
-               final OMElement cientAuthEl,
-               final OMElement httpsProtocolsEl,
-               final OMElement preferredCiphersEl,
-               final RevocationVerificationManager verificationManager,
-               final String sslProtocol) throws AxisFault {
+            final OMElement keyStoreEl,
+            final OMElement trustStoreEl,
+            final OMElement cientAuthEl,
+            final OMElement httpsProtocolsEl,
+            final OMElement preferredCiphersEl,
+            final RevocationVerificationManager verificationManager,
+            final String sslProtocol) throws AxisFault {
 
         SecretResolver secretResolver;
         if (configurationContext != null && configurationContext.getAxisConfiguration() != null) {
@@ -183,25 +182,38 @@ public class ServerConnFactoryBuilder {
         }
 
         if (trustStoreEl != null) {
-            String location      = getValueOfElementWithLocalName(trustStoreEl, "Location");
-            String type          = getValueOfElementWithLocalName(trustStoreEl, "Type");
-            OMElement storePasswordEl = trustStoreEl.getFirstChildWithName(new QName("Password"));
-            if (storePasswordEl == null) {
-                throw new AxisFault("Cannot proceed because Password element is missing in TrustStore");
-            }
-            String storePassword = SecureVaultValueReader.getSecureVaultValue(secretResolver, storePasswordEl);
 
+            TrustStoreHolder trustStoreHolder = TrustStoreHolder.getInstance();
             FileInputStream fis = null;
+            String location = getValueOfElementWithLocalName(trustStoreEl, "Location");
+            KeyStore trustStore;
+
             try {
-                KeyStore trustStore = KeyStore.getInstance(type);
-                fis = new FileInputStream(location);
-                if (log.isDebugEnabled()) {
-                    log.debug(name + " Loading Trust Keystore from : " + location);
+                if (trustStoreHolder.getClientTrustStore() == null) {
+
+                    String type = getValueOfElementWithLocalName(trustStoreEl, "Type");
+                    OMElement storePasswordEl = trustStoreEl.getFirstChildWithName(new QName("Password"));
+
+                    if (storePasswordEl == null) {
+                        throw new AxisFault("Cannot proceed because Password element is missing in TrustStore");
+                    }
+
+                    String storePassword = SecureVaultValueReader.getSecureVaultValue(secretResolver, storePasswordEl);
+                    trustStore = KeyStore.getInstance(type);
+                    fis = new FileInputStream(location);
+
+                    if (log.isDebugEnabled()) {
+                        log.debug(name + " Loading Trust Keystore from : " + location);
+                    }
+
+                    trustStore.load(fis, storePassword.toCharArray());
+                    trustStoreHolder.setClientTrustStore(trustStore);
+                } else {
+                    trustStore = trustStoreHolder.getClientTrustStore();
                 }
 
-                trustStore.load(fis, storePassword.toCharArray());
                 TrustManagerFactory trustManagerfactory = TrustManagerFactory.getInstance(
-                           TrustManagerFactory.getDefaultAlgorithm());
+                        TrustManagerFactory.getDefaultAlgorithm());
                 trustManagerfactory.init(trustStore);
                 trustManagers = trustManagerfactory.getTrustManagers();
 

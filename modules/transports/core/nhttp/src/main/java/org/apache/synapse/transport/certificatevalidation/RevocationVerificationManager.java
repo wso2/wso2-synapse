@@ -20,13 +20,13 @@ package org.apache.synapse.transport.certificatevalidation;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.transport.certificatevalidation.cache.CertCache;
 import org.apache.synapse.transport.certificatevalidation.crl.CRLCache;
 import org.apache.synapse.transport.certificatevalidation.crl.CRLVerifier;
 import org.apache.synapse.transport.certificatevalidation.ocsp.OCSPCache;
 import org.apache.synapse.transport.certificatevalidation.ocsp.OCSPVerifier;
 import org.apache.synapse.transport.certificatevalidation.pathvalidation.CertificatePathValidator;
-import org.apache.synapse.transport.util.ConfigurationBuilderUtil;
-import org.wso2.securevault.KeyStoreType;
+import org.apache.synapse.transport.nhttp.config.TrustStoreHolder;
 
 import java.io.ByteArrayInputStream;
 import java.security.InvalidKeyException;
@@ -52,6 +52,18 @@ public class RevocationVerificationManager {
     private boolean isFullCertChainValidationEnabled = false;
     private static final Log log = LogFactory.getLog(RevocationVerificationManager.class);
 
+    public RevocationVerificationManager(Integer cacheAllocatedSize, Integer cacheDelayMins) {
+
+        if (cacheAllocatedSize != null && cacheAllocatedSize > Constants.CACHE_MIN_ALLOCATED_SIZE
+                && cacheAllocatedSize < Constants.CACHE_MAX_ALLOCATED_SIZE) {
+            this.cacheSize = cacheAllocatedSize;
+        }
+        if (cacheDelayMins != null && cacheDelayMins > Constants.CACHE_MIN_DELAY_MINS
+                && cacheDelayMins < Constants.CACHE_MAX_DELAY_MINS) {
+            this.cacheDelayMins = cacheDelayMins;
+        }
+    }
+
     public RevocationVerificationManager(Integer cacheAllocatedSize, Integer cacheDelayMins,
                                          boolean isFullCertChainValidationEnabled) {
 
@@ -67,8 +79,15 @@ public class RevocationVerificationManager {
     }
 
     /**
-     * This method first tries to verify the given certificate chain using OCSP since OCSP verification is
-     * faster. If that fails it tries to do the verification using CRL.
+     * This method verifies the given certificate chain or given peer certificate for revocation based on the
+     * requirement of full certificate chain validation. If full chain validation is enabled (default),
+     * the full certificate chain will be validated before checking the chain for revocation. If full chain validation
+     * is disabled, this method expects a single peer certificate, and it is validated with the immediate issuer
+     * certificate in the truststore (The truststore must contain the immediate issuer of the peer certificate).
+     * In both cases, OCSP and CRL verifiers are used for revocation verification.
+     * It first tries to verify using OCSP since OCSP verification is faster. If that fails it tries to do the
+     * verification using CRL.
+     *
      * @param peerCertificates  javax.security.cert.X509Certificate[] array of peer certificate chain from peer/client.
      * @throws CertificateVerificationException
      */
@@ -89,53 +108,71 @@ public class RevocationVerificationManager {
                         "validation is disabled");
             }
 
-            KeyStore trustStore;
+            KeyStore trustStore = TrustStoreHolder.getInstance().getClientTrustStore();
             Enumeration<String> aliases;
-            String truststorePath = System.getProperty("javax.net.ssl.trustStore");
-            String truststorePassword = System.getProperty("javax.net.ssl.trustStorePassword");;
 
-            try {
-                trustStore = ConfigurationBuilderUtil.getKeyStore(truststorePath, truststorePassword,
-                        KeyStoreType.JKS.toString());
-            } catch (KeyStoreException e) {
-                throw new CertificateVerificationException("Error loading the truststore", e);
+            // When full chain validation is disabled, only one cert is expected
+            peerCertOpt = Arrays.stream(convertedCertificates).findFirst();
+            if (peerCertOpt.isPresent()) {
+                peerCert = peerCertOpt.get();
+            } else {
+                throw new CertificateVerificationException("Peer certificate is not provided");
             }
 
-            try {
-                aliases = trustStore.aliases();
-            } catch (KeyStoreException e) {
-                throw new CertificateVerificationException("Error while retrieving aliases from truststore", e);
-            }
+            // Get cert cache and initialize it
+            CertCache certCache = CertCache.getCache();
+            certCache.init(cacheSize,cacheDelayMins);
 
-            while (aliases.hasMoreElements()) {
-                alias = aliases.nextElement();
+            if (certCache.getCacheValue(peerCert.getSerialNumber().toString()) == null) {
+
                 try {
-                    issuerCert = (X509Certificate) trustStore.getCertificate(alias);
+                    aliases = trustStore.aliases();
                 } catch (KeyStoreException e) {
-                    throw new CertificateVerificationException("Unable to read the certificate from truststore with " +
-                            "the alias: " + alias, e);
+                    throw new CertificateVerificationException("Error while retrieving aliases from truststore", e);
                 }
 
-                if (issuerCert == null) {
-                    throw new CertificateVerificationException("Issuer certificate not found in truststore");
-                }
+                while (aliases.hasMoreElements()) {
+                    try {
+                        alias = aliases.nextElement();
+                        try {
+                            issuerCert = (X509Certificate) trustStore.getCertificate(alias);
+                        } catch (KeyStoreException e) {
+                            throw new CertificateVerificationException("Unable to read the certificate from " +
+                                    "truststore with the alias: " + alias, e);
+                        }
 
-                // When full chain validation is disabled, only one cert is expected
-                peerCertOpt = Arrays.stream(convertedCertificates).findFirst();
-                if (peerCertOpt.isPresent()) {
-                    peerCert = peerCertOpt.get();
-                } else {
-                    throw new CertificateVerificationException("Peer certificate is not provided");
-                }
+                        if (issuerCert == null) {
+                            throw new CertificateVerificationException("Issuer certificate not found in truststore");
+                        }
 
+                        peerCert.verify(issuerCert.getPublicKey());
+                        log.debug("Valid issuer certificate found in the client truststore. Caching..");
+
+                        // Store the valid issuer cert in cache for future use
+                        certCache.setCacheValue(peerCert.getSerialNumber().toString(), issuerCert);
+                        if (log.isDebugEnabled()) {
+                            log.debug("Issuer certificate with serial number: " + issuerCert.getSerialNumber()
+                                    .toString() + " has been cached against the serial number:  " + peerCert
+                                    .getSerialNumber().toString() + " of the peer certificate.");
+                        }
+                        break;
+                    } catch (SignatureException | CertificateException | NoSuchAlgorithmException |
+                             InvalidKeyException |
+                             NoSuchProviderException e) {
+                        // Unable to verify the signature. Check with the next certificate.
+                        //todo: change this to a debug log after testing.
+                        log.error("Unable to verify the signature, checking with the next certificate...");
+                    }
+                }
+            } else {
+                X509Certificate cachedIssuerCert = certCache.getCacheValue(peerCert.getSerialNumber().toString());
                 try {
-                    peerCert.verify(issuerCert.getPublicKey());
-                    log.debug("Valid issuer certificate found in the client truststore");
-                    break;
-                } catch (SignatureException | CertificateException | NoSuchAlgorithmException | InvalidKeyException |
+                    peerCert.verify(cachedIssuerCert.getPublicKey());
+                } catch (SignatureException | CertificateException | NoSuchAlgorithmException |
+                         InvalidKeyException |
                          NoSuchProviderException e) {
                     // Unable to verify the signature. Check with the next certificate.
-                    log.error("Signature not matching for alias : " + alias + ", validate with next cert");
+                    log.error("Signature not matching for alias validate with next cert");
                 }
             }
         }
