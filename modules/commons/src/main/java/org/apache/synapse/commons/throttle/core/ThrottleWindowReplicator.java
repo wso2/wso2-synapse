@@ -97,7 +97,6 @@ private ThrottleProperties throttleProperties;
 
 		public void run() {
 			try {
-				log.info("Start running ThrottleWindowReplicatorTask.");
 				if (!set.isEmpty()) {
 					for (String key : set) {
 						String callerId;
@@ -140,8 +139,6 @@ private ThrottleProperties throttleProperties;
 								} else {
 									SharedParamManager.setSharedTimestamp(callerId, localFirstAccessTime);
 									SharedParamManager.setDistributedCounter(callerId, 0);
-									SharedParamManager.setExpiryTime(callerId,
-											callerContext.getUnitTime() + localFirstAccessTime);
 									//Reset global counter here as throttle replicator task may have updated global counter
 									//with dirty value
 									callerContext.resetGlobalCounter();
