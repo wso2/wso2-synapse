@@ -18,23 +18,20 @@
 package org.apache.synapse.commons.throttle.core;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
 
 public class ThrottleProperties implements Serializable {
 
-	private String throttleFrequency = "3600000";
-	private String throttleContextDistributedCleanupTaskFrequency = "3600000";
-	private String throttleContextDistributedExpiredInstanceTime = "3600000";
-	private String throttleDistributedCleanupPoolSize = "1";
-	private String throttleDistributedCleanupAmount = "25000";
-	private String maxNonAssociatedCounterCleanupAmount = "25000";
-	private String throttleDistributedCleanupTaskEnable = "true";
-	private String throttlingPoolSize = "1";
-	private String throttlingReplicationFrequency = "50";
-	private String throttlingKeysToReplicates = "25000";
-	private Map<String, String> distributedCounterConfigurations = new HashMap<>();
-	private String distributedCounterType = ThrottleConstants.HAZELCAST;
+	private String throttleFrequency;
+	private String throttleContextDistributedCleanupTaskFrequency;
+	private String throttleContextDistributedExpiredInstanceTime;
+	private String throttleDistributedCleanupPoolSize;
+	private String throttleDistributedCleanupAmount;
+	private String maxNonAssociatedCounterCleanupAmount;
+	private String throttleDistributedCleanupTaskEnable;
+	private String throttlingPoolSize;
+	private String throttlingReplicationFrequency;
+	private String throttlingKeysToReplicates;
+
 	public String getWindowReplicatorPoolSize() {
 		return windowReplicatorPoolSize;
 	}
@@ -51,8 +48,8 @@ public class ThrottleProperties implements Serializable {
 		this.windowReplicatorFrequency = windowReplicatorFrequency;
 	}
 
-	private String windowReplicatorPoolSize = "1";
-	private String windowReplicatorFrequency = "50";
+	private String windowReplicatorPoolSize;
+	private String windowReplicatorFrequency;
 
 	public String getThrottleDistributedCleanupTaskEnable() {
 		return throttleDistributedCleanupTaskEnable;
@@ -134,25 +131,5 @@ public class ThrottleProperties implements Serializable {
 
 	public void setThrottlingKeysToReplicates(String throttlingKeysToReplicates) {
 		this.throttlingKeysToReplicates = throttlingKeysToReplicates;
-	}
-
-	public Map<String, String> getDistributedCounterConfigurations() {
-
-		return distributedCounterConfigurations;
-	}
-
-	public void setDistributedCounterConfigurations(Map<String, String> distributedCounterConfigurations) {
-
-		this.distributedCounterConfigurations = distributedCounterConfigurations;
-	}
-
-	public String getDistributedCounterType() {
-
-		return distributedCounterType;
-	}
-
-	public void setDistributedCounterType(String distributedCounterType) {
-
-		this.distributedCounterType = distributedCounterType;
 	}
 }
