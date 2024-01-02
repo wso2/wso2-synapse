@@ -89,6 +89,7 @@ public class ThrottleReplicator {
 
     private class ReplicatorTask implements Runnable {
         public void run() {
+            log.info("Start running ThrottleReplicatorTask.");
             try {
                 if (!set.isEmpty()) {
                     for (String key : set) {
@@ -96,7 +97,7 @@ public class ThrottleReplicator {
                             ThrottleDataHolder dataHolder = (ThrottleDataHolder)
                                     configContext.getProperty(ThrottleConstants.THROTTLE_INFO_KEY);
                             CallerContext callerContext = dataHolder.getCallerContext(key);
-                            //get hazlecast instance and update counters
+                            //get distributed map instance and update counters
                             //If both global and local counters are 0 then that means cleanup caller
                             if (callerContext != null) {
                                 //If local counter > 0 and time window is not expired then only we have to replicate counters.

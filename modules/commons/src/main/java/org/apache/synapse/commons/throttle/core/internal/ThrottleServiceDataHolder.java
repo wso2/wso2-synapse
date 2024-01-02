@@ -17,16 +17,22 @@
 */
 package org.apache.synapse.commons.throttle.core.internal;
 
-import com.hazelcast.core.HazelcastInstance;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.commons.throttle.core.Throttle;
+import org.apache.synapse.commons.throttle.core.DistributedCounterManager;
 import org.apache.synapse.commons.throttle.core.ThrottleProperties;
 import org.apache.synapse.commons.throttle.core.ThrottleUtil;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class ThrottleServiceDataHolder {
 	private static final Log log  = LogFactory.getLog(ThrottleServiceDataHolder.class.getName());
-	private HazelcastInstance hazelcastInstance = null;
+	private Map<String,DistributedCounterManager> distributedCounterManagerMap = new HashMap<>();
+
+	private ThrottleServiceDataHolder() {
+
+	}
 
 	public ThrottleProperties getThrottleProperties() {
 		return throttleProperties;
@@ -46,12 +52,18 @@ public class ThrottleServiceDataHolder {
 		}
 		return thisInstance;
 	}
-
-	public HazelcastInstance getHazelCastInstance() {
-		return this.hazelcastInstance;
+	public void addDistributedCounterManager(DistributedCounterManager distributedCounterManager){
+		distributedCounterManagerMap.put(distributedCounterManager.getType(),distributedCounterManager);
+	}
+	public void removeDistributedCounterManager(DistributedCounterManager distributedCounterManager){
+		if (distributedCounterManager != null){
+			distributedCounterManagerMap.remove(distributedCounterManager.getType());
+		}
 	}
 
-	public void setHazelCastInstance(HazelcastInstance hazelCastInstance) {
-		this.hazelcastInstance = hazelCastInstance;
+	public DistributedCounterManager getDistributedCounterManager() {
+
+		String distributedCounterType = throttleProperties.getDistributedCounterType();
+		return distributedCounterManagerMap.get(distributedCounterType);
 	}
 }
