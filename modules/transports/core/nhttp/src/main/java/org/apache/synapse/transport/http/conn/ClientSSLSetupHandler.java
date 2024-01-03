@@ -33,7 +33,7 @@ import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.nio.reactor.ssl.SSLSetupHandler;
 import org.apache.synapse.transport.certificatevalidation.CertificateVerificationException;
-import org.apache.synapse.transport.certificatevalidation.RevocationVerificationManager;
+import org.apache.synapse.transport.certificatevalidation.CertificateVerificationManager;
 
 public class ClientSSLSetupHandler implements SSLSetupHandler {
 
@@ -139,10 +139,10 @@ public class ClientSSLSetupHandler implements SSLSetupHandler {
     };
 
     private final X509HostnameVerifier hostnameVerifier;
-    private final RevocationVerificationManager verificationManager;
+    private final CertificateVerificationManager verificationManager;
 
     public ClientSSLSetupHandler(final X509HostnameVerifier hostnameVerifier,
-                                 final RevocationVerificationManager verificationManager) {
+                                 final CertificateVerificationManager verificationManager) {
         this.hostnameVerifier = hostnameVerifier != null ? hostnameVerifier : DEFAULT;
         this.verificationManager = verificationManager;
     }

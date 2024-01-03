@@ -31,7 +31,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHost;
 import org.apache.http.params.HttpParams;
-import org.apache.synapse.transport.certificatevalidation.RevocationVerificationManager;
+import org.apache.synapse.transport.certificatevalidation.CertificateVerificationManager;
 import org.apache.synapse.transport.http.conn.SSLClientAuth;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.http.conn.ServerConnFactory;
@@ -73,6 +73,7 @@ public class ServerConnFactoryBuilder {
     protected SSLContextDetails ssl;
     private Map<InetSocketAddress, SSLContextDetails> sslByIPMap = null;
     private ConfigurationContext configurationContext;
+    CertificateVerificationManager certificateVerifier = null;
 
     public ServerConnFactoryBuilder(final TransportInDescription transportIn, final HttpHost host,
                                     ConfigurationContext configurationContext) {
@@ -94,7 +95,7 @@ public class ServerConnFactoryBuilder {
             final OMElement cientAuthEl,
             final OMElement httpsProtocolsEl,
             final OMElement preferredCiphersEl,
-            final RevocationVerificationManager verificationManager,
+            final CertificateVerificationManager verificationManager,
             final String sslProtocol) throws AxisFault {
 
         SecretResolver secretResolver;
@@ -114,7 +115,7 @@ public class ServerConnFactoryBuilder {
             final OMElement cientAuthEl,
             final OMElement httpsProtocolsEl,
             final OMElement preferredCiphersEl,
-            final RevocationVerificationManager verificationManager,
+            final CertificateVerificationManager verificationManager,
             final String sslProtocol, final SecretResolver secretResolver) throws AxisFault {
 
         KeyManager[] keymanagers  = null;
@@ -307,7 +308,6 @@ public class ServerConnFactoryBuilder {
         final Parameter cvp = transportIn.getParameter("CertificateRevocationVerifier");
         final String cvEnable = cvp != null ?
                                 cvp.getParameterElement().getAttribute(new QName("enable")).getAttributeValue() : null;
-        RevocationVerificationManager revocationVerifier = null;
 
         if ("true".equalsIgnoreCase(cvEnable)) {
             String cacheSizeString = cvp.getParameterElement().getFirstChildWithName(new QName("CacheSize")).getText();
@@ -332,12 +332,12 @@ public class ServerConnFactoryBuilder {
                 isFullCertChainValidationEnabled = false;
             }
 
-            revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay,
+            certificateVerifier = new CertificateVerificationManager(cacheSize, cacheDelay,
                     isFullCertChainValidationEnabled);
         }
 
         ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl, preferredCiphersEl,
-                revocationVerifier, sslProtocol);
+                certificateVerifier, sslProtocol);
         return this;
     }
 
@@ -351,7 +351,6 @@ public class ServerConnFactoryBuilder {
         OMElement profilesEl = profileParam.getParameterElement();
         SecretResolver secretResolver = SecretResolverFactory.create(profilesEl, true);
         Iterator<?> profiles = profilesEl.getChildrenWithName(new QName("profile"));
-        RevocationVerificationManager revocationVerifier = null;
 
         while (profiles.hasNext()) {
             OMElement profileEl = (OMElement) profiles.next();
@@ -406,12 +405,12 @@ public class ServerConnFactoryBuilder {
                     isFullCertChainValidationEnabled = false;
                 }
 
-                revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay,
+                certificateVerifier = new CertificateVerificationManager(cacheSize, cacheDelay,
                         isFullCertChainValidationEnabled);
             }
 
             SSLContextDetails ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl,
-                    preferredCiphersEl, revocationVerifier, sslProtocol, secretResolver);
+                    preferredCiphersEl, certificateVerifier, sslProtocol, secretResolver);
             if (sslByIPMap == null) {
                 sslByIPMap = new HashMap<InetSocketAddress, SSLContextDetails>();
             }

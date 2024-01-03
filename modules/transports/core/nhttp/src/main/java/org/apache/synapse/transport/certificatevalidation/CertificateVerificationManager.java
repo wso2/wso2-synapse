@@ -36,6 +36,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -45,14 +47,14 @@ import java.util.Optional;
  * Manager class responsible for verifying certificates. This class will use the available verifiers according to
  * a predefined policy.
  */
-public class RevocationVerificationManager {
+public class CertificateVerificationManager {
 
     private int cacheSize = Constants.CACHE_DEFAULT_ALLOCATED_SIZE;
     private int cacheDelayMins = Constants.CACHE_DEFAULT_DELAY_MINS;
     private boolean isFullCertChainValidationEnabled = false;
-    private static final Log log = LogFactory.getLog(RevocationVerificationManager.class);
+    private static final Log log = LogFactory.getLog(CertificateVerificationManager.class);
 
-    public RevocationVerificationManager(Integer cacheAllocatedSize, Integer cacheDelayMins) {
+    public CertificateVerificationManager(Integer cacheAllocatedSize, Integer cacheDelayMins) {
 
         if (cacheAllocatedSize != null && cacheAllocatedSize > Constants.CACHE_MIN_ALLOCATED_SIZE
                 && cacheAllocatedSize < Constants.CACHE_MAX_ALLOCATED_SIZE) {
@@ -64,8 +66,8 @@ public class RevocationVerificationManager {
         }
     }
 
-    public RevocationVerificationManager(Integer cacheAllocatedSize, Integer cacheDelayMins,
-                                         boolean isFullCertChainValidationEnabled) {
+    public CertificateVerificationManager(Integer cacheAllocatedSize, Integer cacheDelayMins,
+                                          boolean isFullCertChainValidationEnabled) {
 
         if (cacheAllocatedSize != null && cacheAllocatedSize > Constants.CACHE_MIN_ALLOCATED_SIZE
                 && cacheAllocatedSize < Constants.CACHE_MAX_ALLOCATED_SIZE) {
@@ -157,11 +159,8 @@ public class RevocationVerificationManager {
                         }
                         break;
                     } catch (SignatureException | CertificateException | NoSuchAlgorithmException |
-                             InvalidKeyException |
-                             NoSuchProviderException e) {
+                             InvalidKeyException | NoSuchProviderException e) {
                         // Unable to verify the signature. Check with the next certificate.
-                        //todo: change this to a debug log after testing.
-                        log.error("Unable to verify the signature, checking with the next certificate...");
                     }
                 }
             } else {
@@ -171,8 +170,8 @@ public class RevocationVerificationManager {
                 } catch (SignatureException | CertificateException | NoSuchAlgorithmException |
                          InvalidKeyException |
                          NoSuchProviderException e) {
-                    // Unable to verify the signature. Check with the next certificate.
-                    log.error("Signature not matching for alias validate with next cert");
+                    // Unable to verify the signature.
+                    throw new CertificateVerificationException("Unable to verify the signature of the certificate.");
                 }
             }
         }
@@ -237,5 +236,30 @@ public class RevocationVerificationManager {
             throw new CertificateVerificationException("Cant Convert certificates from javax to java", exceptionThrown);
         }
         return certChain;
+    }
+
+    /**
+     * Checks whether a provided certificate is expired or not at the time it is validated.
+     *
+     * @param certificates
+     * @throws CertificateNotYetValidException
+     * @throws CertificateExpiredException
+     * @throws CertificateVerificationException
+     */
+    public void isExpired(javax.security.cert.X509Certificate[] certificates) throws CertificateVerificationException {
+
+        X509Certificate[] convertedCertificates = convert(certificates);
+
+        for (X509Certificate cert : convertedCertificates) {
+            try {
+                cert.checkValidity();
+            } catch (CertificateExpiredException e) {
+                String msg = "Peer certificate is expired";
+                throw new CertificateVerificationException(msg);
+            } catch (CertificateNotYetValidException e) {
+                String msg = "Peer certificate is not valid yet";
+                throw new CertificateVerificationException(msg);
+            }
+        }
     }
 }

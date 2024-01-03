@@ -31,7 +31,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.params.HttpParams;
-import org.apache.synapse.transport.certificatevalidation.RevocationVerificationManager;
+import org.apache.synapse.transport.certificatevalidation.CertificateVerificationManager;
 import org.apache.synapse.transport.exceptions.InvalidConfigurationException;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ClientSSLSetupHandler;
@@ -129,7 +129,7 @@ public class ClientConnFactoryBuilder {
         final Parameter cvp = transportOut.getParameter("CertificateRevocationVerifier");
         final String cvEnable = cvp != null ?
                 cvp.getParameterElement().getAttribute(new QName("enable")).getAttributeValue() : null;
-        RevocationVerificationManager revocationVerifier = null;
+        CertificateVerificationManager revocationVerifier = null;
 
         if ("true".equalsIgnoreCase(cvEnable)) {
             String cacheSizeString = cvp.getParameterElement().getFirstChildWithName(new QName("CacheSize")).getText();
@@ -142,7 +142,7 @@ public class ClientConnFactoryBuilder {
                 cacheDelay = new Integer(cacheDelayString);
             } catch (NumberFormatException e) {
             }
-            revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay);
+            revocationVerifier = new CertificateVerificationManager(cacheSize, cacheDelay);
         }
 
         // Process HttpProtocols
