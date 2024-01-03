@@ -287,7 +287,10 @@ public class EnrichMediator extends AbstractMediator {
         try {
             // After the expressions in the inline text is replaced with the value, the string must be parsed
             // again to identify whether it has changed to a XML
-            source.setInlineOMNode(AXIOMUtil.stringToOM(inlineString));
+            OMNode inlineOMNode = AXIOMUtil.stringToOM(inlineString);
+            // serialize inlineOMNode
+            inlineOMNode.buildWithAttachments();
+            source.setInlineOMNode(inlineOMNode);
             isInlineTextXML = true;
         } catch (XMLStreamException | OMException e) {
             // The string is considered as a text / JSON
