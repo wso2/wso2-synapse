@@ -241,10 +241,8 @@ public class CertificateVerificationManager {
     /**
      * Checks whether a provided certificate is expired or not at the time it is validated.
      *
-     * @param certificates
-     * @throws CertificateNotYetValidException
-     * @throws CertificateExpiredException
-     * @throws CertificateVerificationException
+     * @param certificates array of certificates needs to be validated
+     * @throws CertificateVerificationException if one of the certs are expired, this exception will be thrown
      */
     public void isExpired(javax.security.cert.X509Certificate[] certificates) throws CertificateVerificationException {
 
