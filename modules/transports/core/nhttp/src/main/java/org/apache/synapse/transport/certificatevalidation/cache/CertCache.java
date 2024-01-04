@@ -35,8 +35,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CertCache implements ManageableCache {
 
     private static volatile CertCache cache;
-    private static volatile Map<String, TempCacheValue> hashMap = new ConcurrentHashMap<String, TempCacheValue>();
-    private static volatile Iterator<Map.Entry<String, TempCacheValue>> iterator = hashMap.entrySet().iterator();
+    private static volatile Map<String, CertCacheValue> hashMap = new ConcurrentHashMap<String, CertCacheValue>();
+    private static volatile Iterator<Map.Entry<String, CertCacheValue>> iterator = hashMap.entrySet().iterator();
     private static volatile CacheManager cacheManager;
     private static final Log log = LogFactory.getLog(CertCache.class);
 
@@ -74,7 +74,7 @@ public class CertCache implements ManageableCache {
     }
 
     public synchronized X509Certificate getCacheValue(String serialNumber) {
-        CertCache.TempCacheValue cacheValue = hashMap.get(serialNumber);
+        CertCacheValue cacheValue = hashMap.get(serialNumber);
         if (cacheValue != null) {
             return cacheValue.getValue();
         } else
@@ -112,7 +112,7 @@ public class CertCache implements ManageableCache {
     }
 
     public synchronized void setCacheValue(String serialNumber, X509Certificate cert) {
-        CertCache.TempCacheValue cacheValue = new CertCache.TempCacheValue(serialNumber, cert);
+        CertCacheValue cacheValue = new CertCacheValue(serialNumber, cert);
 
         if (log.isDebugEnabled()) {
             log.debug("Before set - HashMap size " + hashMap.size());
@@ -137,13 +137,13 @@ public class CertCache implements ManageableCache {
     /**
      * This is the wrapper class of the actual cache value which is a X509CRL.
      */
-    private class TempCacheValue implements ManageableCacheValue {
+    private class CertCacheValue implements ManageableCacheValue {
 
         private final String serialNumber;
         private final X509Certificate issuerCertificate;
         private final long timeStamp = System.currentTimeMillis();
 
-        public TempCacheValue(String serialNumber, X509Certificate issuerCertificate) {
+        public CertCacheValue(String serialNumber, X509Certificate issuerCertificate) {
 
             this.serialNumber = serialNumber;
             this.issuerCertificate = issuerCertificate;

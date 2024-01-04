@@ -129,7 +129,7 @@ public class ClientConnFactoryBuilder {
         final Parameter cvp = transportOut.getParameter("CertificateRevocationVerifier");
         final String cvEnable = cvp != null ?
                 cvp.getParameterElement().getAttribute(new QName("enable")).getAttributeValue() : null;
-        CertificateVerificationManager revocationVerifier = null;
+        CertificateVerificationManager certificateVerifier = null;
 
         if ("true".equalsIgnoreCase(cvEnable)) {
             String cacheSizeString = cvp.getParameterElement().getFirstChildWithName(new QName("CacheSize")).getText();
@@ -142,7 +142,7 @@ public class ClientConnFactoryBuilder {
                 cacheDelay = new Integer(cacheDelayString);
             } catch (NumberFormatException e) {
             }
-            revocationVerifier = new CertificateVerificationManager(cacheSize, cacheDelay);
+            certificateVerifier = new CertificateVerificationManager(cacheSize, cacheDelay);
         }
 
         // Process HttpProtocols
@@ -163,7 +163,7 @@ public class ClientConnFactoryBuilder {
         }
 
         // Initiated separately to cater setting https protocols
-        ClientSSLSetupHandler clientSSLSetupHandler = new ClientSSLSetupHandler(hostnameVerifier, revocationVerifier);
+        ClientSSLSetupHandler clientSSLSetupHandler = new ClientSSLSetupHandler(hostnameVerifier, certificateVerifier);
 
         if (null != httpsProtocols) {
             clientSSLSetupHandler.setHttpsProtocols(httpsProtocols);
