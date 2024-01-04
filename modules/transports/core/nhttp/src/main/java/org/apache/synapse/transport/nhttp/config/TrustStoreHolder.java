@@ -43,10 +43,12 @@ public class TrustStoreHolder {
     }
 
     public KeyStore getClientTrustStore() {
+
         return clientTrustStore;
     }
 
     public void setClientTrustStore(KeyStore clientTrustStore) {
+
         this.clientTrustStore = clientTrustStore;
     }
 

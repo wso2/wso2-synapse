@@ -84,8 +84,6 @@ public class CertCache implements ManageableCache {
     @Override
     public ManageableCacheValue getNextCacheValue() {
 
-        //changes to the map are reflected on the keySet. And its iterator is weakly consistent. so will never
-        //throw concurrent modification exception.
         if (iterator.hasNext()) {
             return hashMap.get(iterator.next().getKey());
         } else {
@@ -135,7 +133,7 @@ public class CertCache implements ManageableCache {
     }
 
     /**
-     * This is the wrapper class of the actual cache value which is a X509CRL.
+     * This is the wrapper class of the actual cache value.
      */
     private class CertCacheValue implements ManageableCacheValue {
 
@@ -159,9 +157,6 @@ public class CertCache implements ManageableCache {
             return serialNumber;
         }
 
-        /**
-         * CRL has a validity period. We can reuse a downloaded CRL within that period.
-         */
         public boolean isValid() {
 
             // Will be always return true since we only set defined data.
