@@ -679,8 +679,6 @@ public class PassThroughHttpListener implements TransportListener {
         Parameter profilePathParam = transportInDescription.getParameter("dynamicSSLProfilesConfig");
 
         if (oldParameter != null && profilePathParam != null) {
-            CertCache.resetCache();
-            TrustStoreHolder.resetInstance();
             transportInDescription.removeParameter(oldParameter);
             this.reloadSpecificEndPoints(transportInDescription);
         }

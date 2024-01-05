@@ -324,16 +324,23 @@ public class ServerConnFactoryBuilder {
 
             // Checking whether the full certificate chain validation is enabled or not.
             boolean isFullCertChainValidationEnabled = true;
-            OMElement isFullCertChainValidationConfig = cvp.getParameterElement()
+            boolean isCertExpiryValidationEnabled = false;
+            OMElement fullCertChainValidationConfig = cvp.getParameterElement()
                     .getFirstChildWithName(new QName("FullChainValidation"));
+            OMElement certExpiryValidationConfig = cvp.getParameterElement()
+                    .getFirstChildWithName(new QName("ExpiryValidation"));
 
-            if (isFullCertChainValidationConfig != null
-                    && StringUtils.equals("false", isFullCertChainValidationConfig.getText())) {
+            if (fullCertChainValidationConfig != null
+                    && StringUtils.equals("false", fullCertChainValidationConfig.getText())) {
                 isFullCertChainValidationEnabled = false;
             }
 
+            if (certExpiryValidationConfig != null && StringUtils.equals("true", certExpiryValidationConfig.getText())) {
+                isCertExpiryValidationEnabled = true;
+            }
+
             certificateVerifier = new CertificateVerificationManager(cacheSize, cacheDelay,
-                    isFullCertChainValidationEnabled);
+                    isFullCertChainValidationEnabled, isCertExpiryValidationEnabled);
         }
 
         ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl, preferredCiphersEl,
@@ -397,16 +404,31 @@ public class ServerConnFactoryBuilder {
                 }
 
                 boolean isFullCertChainValidationEnabled = true;
-                OMElement isFullCertChainValidationConfig = revocationVerifierConfig
+                boolean isCertExpiryValidationEnabled = false;
+
+                OMElement fullCertChainValidationConfig = revocationVerifierConfig
                         .getFirstChildWithName(new QName("FullChainValidation"));
 
-                if (isFullCertChainValidationConfig != null
-                        && StringUtils.equals("false", isFullCertChainValidationConfig.getText())) {
+                OMElement certExpiryValidationConfig = revocationVerifierConfig
+                        .getFirstChildWithName(new QName("ExpiryValidation"));
+
+                if (fullCertChainValidationConfig != null
+                        && StringUtils.equals("false", fullCertChainValidationConfig.getText())) {
+                    isFullCertChainValidationEnabled = false;
+                }
+
+                if (certExpiryValidationConfig != null
+                        && StringUtils.equals("true", certExpiryValidationConfig.getText())) {
+                    isCertExpiryValidationEnabled = true;
+                }
+
+                if (fullCertChainValidationConfig != null
+                        && StringUtils.equals("false", fullCertChainValidationConfig.getText())) {
                     isFullCertChainValidationEnabled = false;
                 }
 
                 certificateVerifier = new CertificateVerificationManager(cacheSize, cacheDelay,
-                        isFullCertChainValidationEnabled);
+                        isFullCertChainValidationEnabled, isCertExpiryValidationEnabled);
             }
 
             SSLContextDetails ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl,

@@ -21,6 +21,7 @@ package org.apache.synapse.transport.certificatevalidation.cache;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
+import org.apache.synapse.transport.certificatevalidation.Constants;
 
 import java.security.cert.X509Certificate;
 import java.util.Iterator;
@@ -49,28 +50,12 @@ public class CertCache implements ManageableCache {
             synchronized (CertCache.class) {
                 if (cache == null) {
                     cache = new CertCache();
+                    cacheManager = new CacheManager(cache, Constants.CACHE_DEFAULT_ALLOCATED_SIZE,
+                            Constants.CACHE_DEFAULT_DELAY_MINS);
                 }
             }
         }
         return cache;
-    }
-
-    /**
-     * This initialize the Cache with a CacheManager. If this method is called, a cache manager will not be used.
-     *
-     * @param size max size of the cache
-     * @param delay defines how frequently the CacheManager will be started
-     */
-    public void init(int size, int delay) {
-        if (cacheManager == null) {
-            synchronized (CertCache.class) {
-                if (cacheManager == null) {
-                    cacheManager = new CacheManager(cache, size, delay);
-                    CacheController mbean = new CacheController(cache,cacheManager);
-                    MBeanRegistrar.getInstance().registerMBean(mbean, "CacheController", "CertCacheController");
-                }
-            }
-        }
     }
 
     public synchronized X509Certificate getCacheValue(String serialNumber) {

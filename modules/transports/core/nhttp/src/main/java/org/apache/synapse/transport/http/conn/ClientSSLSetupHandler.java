@@ -184,7 +184,7 @@ public class ClientSSLSetupHandler implements SSLSetupHandler {
 
         if (verificationManager!=null) {
             try {
-                verificationManager.verifyRevocationStatus(sslsession.getPeerCertificateChain());
+                verificationManager.verifyCertificateValidity(sslsession.getPeerCertificateChain());
             } catch (CertificateVerificationException e) {
                 throw new SSLException("Certificate Chain Validation failed for host : " + address, e);
             }

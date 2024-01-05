@@ -707,8 +707,6 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
     public void reloadDynamicSSLConfig(TransportOutDescription transport) throws AxisFault {
         log.info("PassThroughHttpSender reloading SSL Config..");
         try {
-            CertCache.resetCache();
-            TrustStoreHolder.resetInstance();
             ClientConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transport, this.configurationContext);
             connFactory = connFactoryBuilder.createConnFactory(targetConfiguration.getHttpParams());
 

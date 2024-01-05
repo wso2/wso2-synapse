@@ -31,10 +31,6 @@ import org.apache.synapse.transport.certificatevalidation.CertificateVerificatio
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
-import java.util.Arrays;
-import java.util.List;
 
 public class ServerSSLSetupHandler implements SSLSetupHandler {
     
@@ -83,9 +79,7 @@ public class ServerSSLSetupHandler implements SSLSetupHandler {
 
         if (verificationManager != null) {
             try {
-                X509Certificate[] peerCertChain = sslsession.getPeerCertificateChain();
-                verificationManager.isExpired(peerCertChain);
-                verificationManager.verifyRevocationStatus(peerCertChain);
+                verificationManager.verifyCertificateValidity(sslsession.getPeerCertificateChain());
             } catch (CertificateVerificationException e) {
                 SocketAddress remoteAddress = iosession.getRemoteAddress();
                 String address;

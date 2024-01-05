@@ -51,7 +51,8 @@ public class CertificateVerificationManager {
 
     private int cacheSize = Constants.CACHE_DEFAULT_ALLOCATED_SIZE;
     private int cacheDelayMins = Constants.CACHE_DEFAULT_DELAY_MINS;
-    private boolean isFullCertChainValidationEnabled = false;
+    private boolean isFullCertChainValidationEnabled = true;
+    private boolean isCertExpiryValidationEnabled = false;
     private static final Log log = LogFactory.getLog(CertificateVerificationManager.class);
 
     public CertificateVerificationManager(Integer cacheAllocatedSize, Integer cacheDelayMins) {
@@ -67,7 +68,8 @@ public class CertificateVerificationManager {
     }
 
     public CertificateVerificationManager(Integer cacheAllocatedSize, Integer cacheDelayMins,
-                                          boolean isFullCertChainValidationEnabled) {
+                                          boolean isFullCertChainValidationEnabled,
+                                          boolean isCertExpiryValidationEnabled) {
 
         if (cacheAllocatedSize != null && cacheAllocatedSize > Constants.CACHE_MIN_ALLOCATED_SIZE
                 && cacheAllocatedSize < Constants.CACHE_MAX_ALLOCATED_SIZE) {
@@ -78,6 +80,7 @@ public class CertificateVerificationManager {
             this.cacheDelayMins = cacheDelayMins;
         }
         this.isFullCertChainValidationEnabled = isFullCertChainValidationEnabled;
+        this.isCertExpiryValidationEnabled = isCertExpiryValidationEnabled;
     }
 
     /**
@@ -93,7 +96,7 @@ public class CertificateVerificationManager {
      * @param peerCertificates  javax.security.cert.X509Certificate[] array of peer certificate chain from peer/client.
      * @throws CertificateVerificationException
      */
-    public void verifyRevocationStatus(javax.security.cert.X509Certificate[] peerCertificates)
+    public void verifyCertificateValidity(javax.security.cert.X509Certificate[] peerCertificates)
             throws CertificateVerificationException {
 
         X509Certificate[] convertedCertificates = convert(peerCertificates);
@@ -123,7 +126,6 @@ public class CertificateVerificationManager {
 
             // Get cert cache and initialize it
             CertCache certCache = CertCache.getCache();
-            certCache.init(cacheSize,cacheDelayMins);
 
             if (certCache.getCacheValue(peerCert.getSerialNumber().toString()) == null) {
 
@@ -134,20 +136,22 @@ public class CertificateVerificationManager {
                 }
 
                 while (aliases.hasMoreElements()) {
+
+                    alias = aliases.nextElement();
                     try {
-                        alias = aliases.nextElement();
-                        try {
-                            issuerCert = (X509Certificate) trustStore.getCertificate(alias);
-                        } catch (KeyStoreException e) {
-                            throw new CertificateVerificationException("Unable to read the certificate from " +
-                                    "truststore with the alias: " + alias, e);
-                        }
+                        issuerCert = (X509Certificate) trustStore.getCertificate(alias);
+                    } catch (KeyStoreException e) {
+                        throw new CertificateVerificationException("Unable to read the certificate from " +
+                                "truststore with the alias: " + alias, e);
+                    }
 
-                        if (issuerCert == null) {
-                            throw new CertificateVerificationException("Issuer certificate not found in truststore");
-                        }
+                    if (issuerCert == null) {
+                        throw new CertificateVerificationException("Issuer certificate not found in truststore");
+                    }
 
+                    try {
                         peerCert.verify(issuerCert.getPublicKey());
+
                         log.debug("Valid issuer certificate found in the client truststore. Caching..");
 
                         // Store the valid issuer cert in cache for future use
@@ -160,7 +164,7 @@ public class CertificateVerificationManager {
                         break;
                     } catch (SignatureException | CertificateException | NoSuchAlgorithmException |
                              InvalidKeyException | NoSuchProviderException e) {
-                        // Unable to verify the signature. Check with the next certificate.
+                        // Unable to verify the signature. Check with the next certificate in the next loop traversal.
                     }
                 }
             } else {
@@ -188,16 +192,30 @@ public class CertificateVerificationManager {
         for (RevocationVerifier verifier : verifiers) {
             try {
                 if (isFullCertChainValidationEnabled) {
+
+                    if (isCertExpiryValidationEnabled) {
+                        log.debug("Validating certificate chain for expiry");
+                        if (isExpired(convertedCertificates)) {
+                            throw new CertificateVerificationException("One of the provided certificates are expired");
+                        }
+                    }
+
                     log.debug("Doing full certificate chain validation");
                     CertificatePathValidator pathValidator = new CertificatePathValidator(convertedCertificates,
                             verifier);
                     pathValidator.validatePath();
                     log.info("Path verification Successful. Took " + (System.currentTimeMillis() - start) + " ms.");
                 } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Validating client certificate with the issuer certificate retrieved from" +
-                                "the trust store");
+
+                    if (isCertExpiryValidationEnabled) {
+                        log.debug("Validating the client certificate for expiry");
+                        if (isExpired(convertedCertificates)) {
+                            throw new CertificateVerificationException("The provided certificate is expired");
+                        }
                     }
+
+                    log.debug("Validating client certificate with the issuer certificate retrieved from" +
+                            "the trust store");
                     verifier.checkRevocationStatus(peerCert, issuerCert);
                 }
                 return;
@@ -241,23 +259,22 @@ public class CertificateVerificationManager {
     /**
      * Checks whether a provided certificate is expired or not at the time it is validated.
      *
-     * @param certificates array of certificates needs to be validated
-     * @throws CertificateVerificationException if one of the certs are expired, this exception will be thrown
+     * @param certificates certificates to be validated for expiry
+     * @return true if one of the certs are expired, false otherwise
      */
-    public void isExpired(javax.security.cert.X509Certificate[] certificates) throws CertificateVerificationException {
+    public boolean isExpired(X509Certificate[] certificates) {
 
-        X509Certificate[] convertedCertificates = convert(certificates);
-
-        for (X509Certificate cert : convertedCertificates) {
+        for (X509Certificate cert : certificates) {
             try {
                 cert.checkValidity();
             } catch (CertificateExpiredException e) {
-                String msg = "Peer certificate is expired";
-                throw new CertificateVerificationException(msg);
+                log.error("Peer certificate is expired");
+                return true;
             } catch (CertificateNotYetValidException e) {
-                String msg = "Peer certificate is not valid yet";
-                throw new CertificateVerificationException(msg);
+                log.error("Peer certificate is not valid yet");
+                return true;
             }
         }
+        return false;
     }
 }
