@@ -613,6 +613,7 @@ public final class SynapseConstants {
     public static final String MAX_FAILOVER_RECUSIVE_RETRIES_CONFIG = "maximum.failover.recursive.retries";
     public static final String SUSPEND_DURATION_ON_MAX_RECURSIVE_FAILOVER_CONFIG =
             "suspend.duration.on.maximum.recursive.failover";
+    public static final String EXCLUDE_PAYLOAD_DETAILS_FROM_ERROR = "exclude.payload.details.from.error";
 
     /**
      * Synapse Configuration holder property name, used for handling synapse import deployments
