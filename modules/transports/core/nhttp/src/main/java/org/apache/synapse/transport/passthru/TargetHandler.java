@@ -624,7 +624,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                 int responseRead = -1;
                 boolean interceptionEnabled = false;
                 Boolean[] interceptorResults = new Boolean[noOfInterceptors];
-                if (interceptStream) {
+                if (conn.getContext().getAttribute(PassThroughConstants.RESPONSE_MESSAGE_CONTEXT) != null
+                        && interceptStream) {
                     int index = 0;
                     for (StreamInterceptor interceptor : streamInterceptors) {
                         interceptorResults[index] = interceptor.interceptTargetResponse(
