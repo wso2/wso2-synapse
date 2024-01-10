@@ -41,6 +41,8 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.apache.synapse.transport.http.access.AccessConstants.CONFIG_ENABLE_LOGGING;
+
 /**
  * Class that logs the Http Accesses to the access log files. Code segment borrowed from
  * Apache Tomcat's org.apache.catalina.valves.AccessLogValve with thanks.
@@ -64,7 +66,9 @@ public class AccessLogger {
 
     public AccessLogger(final Log log) {
         super();
-        this.initOpen();
+        if (isLoggingEnabled) {
+            this.initOpen();
+        }
         AccessLogger.log = log;
         buffered = true;
         checkExists = false;
@@ -113,6 +117,11 @@ public class AccessLogger {
      * Can the log file be rotated.
      */
     private boolean isRotatable = getBooleanValue(IS_LOG_ROTATABLE, true);
+
+    /**
+     * Enable logging.
+     */
+    public boolean isLoggingEnabled = getBooleanValue(CONFIG_ENABLE_LOGGING, true);
 
     /**
      * Log the specified message to the log file, switching files if the date

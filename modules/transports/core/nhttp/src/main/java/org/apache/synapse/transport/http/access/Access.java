@@ -149,7 +149,9 @@ public class Access {
         }
         String logString = result.toString();
         log.debug(logString);      //log to the console
-        accessLogger.log(logString);      //log to the file
+        if (accessLogger.isLoggingEnabled) {
+            accessLogger.log(logString);      //log to the file
+        }
     }
 
     /**
@@ -873,6 +875,8 @@ public class Access {
         }
         String logString = result.toString();
         log.debug(logString);      //log to the console
-        accessLogger.log(logString);      //log to the file
+        if (accessLogger.isLoggingEnabled) {
+            accessLogger.log(logString);      //log to the file
+        }
     }
 }
