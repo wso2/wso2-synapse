@@ -75,6 +75,8 @@ public class AccessConstants {
 
     public static final String CONFIG_FILE_DATE_FORMAT = "access_log_file_date_format";
 
+    public static final String CONFIG_ENABLE_LOGGING = "access_log_enable";
+
 
     public static String getLogPattern() {
         return AccessConfiguration.getInstance().getStringProperty(CONFIG_PATTERN, LOG_PATTERN);
