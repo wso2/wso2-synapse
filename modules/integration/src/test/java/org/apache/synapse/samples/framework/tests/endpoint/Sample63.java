@@ -100,4 +100,27 @@ public class Sample63 extends SynapseTestCase {
         HttpResponse response = client.doGet("http://127.0.0.1:8280/foodapi/list/dynamicValues");
         assertEquals(HttpStatus.SC_OK, response.getStatus());
     }
+
+    public void testOAuthConfiguredDynamicURLEP() throws Exception {
+
+        String payload1 = "<request>\n" +
+                "\t<ep_url>http://localhost:9000/foodservice/food</ep_url>\n" +
+                "\t<token_ep>http://localhost:9000/foodservice/token1</token_ep>\n" +
+                "</request>";
+
+        String payload2 = "<request>\n" +
+                "\t<ep_url>http://localhost:9000/foodservice/apple</ep_url>\n" +
+                "\t<token_ep>http://localhost:9000/foodservice/token2</token_ep>\n" +
+                "</request>";
+
+        BasicHttpClient client = new BasicHttpClient();
+        HttpResponse response = client.doPost("http://127.0.0.1:8280/foodapi/list/dynamicURL", payload1.getBytes(),
+                "text/xml");
+        assertEquals(HttpStatus.SC_OK, response.getStatus());
+
+        HttpResponse response2 = client.doPost("http://127.0.0.1:8280/foodapi/list/dynamicURL", payload2.getBytes(),
+                "text/xml");
+        assertEquals(HttpStatus.SC_OK, response2.getStatus());
+        assertEquals("1", response2.getBodyAsString());
+    }
 }

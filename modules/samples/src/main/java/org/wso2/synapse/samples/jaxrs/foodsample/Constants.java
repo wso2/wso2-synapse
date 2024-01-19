@@ -22,6 +22,7 @@ public class Constants {
 
     static final String refreshToken = "wxyz#9876";
     static final String accessToken = "abcd@1234";
+    static final String accessToken2 = "jklm#6789";
     static final String expiresIn = "3600";
     static final String tokenType = "Bearer";
     static final String clientId = "my_client_id";
