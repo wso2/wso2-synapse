@@ -61,6 +61,8 @@ public class CertificateVerificationManager {
                 && cacheAllocatedSize < Constants.CACHE_MAX_ALLOCATED_SIZE) {
             this.cacheSize = cacheAllocatedSize;
         }
+        log.warn("The cache size is out of range. Hence, using the default cache size value of "
+                + Constants.CACHE_DEFAULT_ALLOCATED_SIZE + ".");
         if (cacheDelayMins != null && cacheDelayMins > Constants.CACHE_MIN_DELAY_MINS
                 && cacheDelayMins < Constants.CACHE_MAX_DELAY_MINS) {
             this.cacheDelayMins = cacheDelayMins;
