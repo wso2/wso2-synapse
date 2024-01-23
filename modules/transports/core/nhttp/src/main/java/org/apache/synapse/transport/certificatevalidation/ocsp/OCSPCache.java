@@ -22,6 +22,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.transport.certificatevalidation.CertificateVerificationException;
+import org.apache.synapse.transport.certificatevalidation.Constants;
 import org.apache.synapse.transport.certificatevalidation.cache.CacheController;
 import org.apache.synapse.transport.certificatevalidation.cache.CacheManager;
 import org.apache.synapse.transport.certificatevalidation.cache.ManageableCache;
@@ -51,12 +52,14 @@ public class OCSPCache implements ManageableCache {
 
     private OCSPCache() {}
 
-    public static OCSPCache getCache() {
+    public static OCSPCache getCache(int cacheSize, int cacheDelayMins) {
         //Double checked locking
         if (cache == null) {
             synchronized (OCSPCache.class) {
-                if (cache == null)
+                if (cache == null) {
                     cache = new OCSPCache();
+                    cacheManager = new CacheManager(cache, cacheSize, cacheDelayMins);
+                }
             }
         }
         return cache;

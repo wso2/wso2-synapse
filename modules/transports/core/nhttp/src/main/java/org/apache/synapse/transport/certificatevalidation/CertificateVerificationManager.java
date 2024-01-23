@@ -67,6 +67,8 @@ public class CertificateVerificationManager {
                 && cacheDelayMins < Constants.CACHE_MAX_DELAY_MINS) {
             this.cacheDelayMins = cacheDelayMins;
         }
+        log.warn("The cache delay is out of range. Hence, using the default cache delay value of "
+                + Constants.CACHE_DEFAULT_DELAY_MINS + ".");
     }
 
     public CertificateVerificationManager(Integer cacheAllocatedSize, Integer cacheDelayMins,
@@ -81,6 +83,9 @@ public class CertificateVerificationManager {
                 && cacheDelayMins < Constants.CACHE_MAX_DELAY_MINS) {
             this.cacheDelayMins = cacheDelayMins;
         }
+        log.warn("The cache delay is out of range. Hence, using the default cache delay value of "
+                + Constants.CACHE_DEFAULT_DELAY_MINS + ".");
+
         this.isFullCertChainValidationEnabled = isFullCertChainValidationEnabled;
         this.isCertExpiryValidationEnabled = isCertExpiryValidationEnabled;
     }
@@ -182,12 +187,8 @@ public class CertificateVerificationManager {
             }
         }
 
-        long start = System.currentTimeMillis();
-
-        OCSPCache ocspCache = OCSPCache.getCache();
-        ocspCache.init(cacheSize, cacheDelayMins);
-        CRLCache crlCache = CRLCache.getCache();
-        crlCache.init(cacheSize, cacheDelayMins);
+        OCSPCache ocspCache = OCSPCache.getCache(cacheSize, cacheDelayMins);
+        CRLCache crlCache = CRLCache.getCache(cacheSize, cacheDelayMins);
 
         RevocationVerifier[] verifiers = {new OCSPVerifier(ocspCache), new CRLVerifier(crlCache)};
 
@@ -206,7 +207,6 @@ public class CertificateVerificationManager {
                     CertificatePathValidator pathValidator = new CertificatePathValidator(convertedCertificates,
                             verifier);
                     pathValidator.validatePath();
-                    log.info("Path verification Successful. Took " + (System.currentTimeMillis() - start) + " ms.");
                 } else {
 
                     if (isCertExpiryValidationEnabled) {
