@@ -21,6 +21,7 @@ package org.apache.synapse.mediators.bsf.javascript;
 
 import junit.framework.TestCase;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.TestUtils;
 import org.apache.synapse.mediators.bsf.ScriptMediator;
 
@@ -62,5 +63,46 @@ public class JavaScriptMediatorTest extends TestCase {
 
         boolean response = mediator.mediate(mc);
         assertTrue(response);
+    }
+
+    /**
+     * Test controlling access to java classes through JS
+     * @throws Exception
+     */
+    public void testJavaClassAccessControl() throws Exception {
+        String scriptSourceCode =  "var s = new java.util.ArrayList();\n";
+
+
+        MessageContext mc = TestUtils.getTestContext("<foo/>", null);
+        ScriptMediator mediator = new ScriptMediator("js", scriptSourceCode, null);
+
+        System.setProperty("properties.file.path", System.getProperty("user.dir") + "/src/test/resources/file.properties");
+
+        try {
+            mediator.mediate(mc);
+            fail("Failed to enforce Java class access control configuration during mediation");
+        } catch(SynapseException e) {}
+
+    }
+
+    /**
+     * Test controlling access to java methods through JS
+     * @throws Exception
+     */
+    public void testJavaMethodAccessControl() throws Exception {
+        String scriptSourceCode =  "var c = this.context.getClass();\n" +
+                "var hashmapConstructors = c.getClassLoader().loadClass(\"java.util.HashMap\").getDeclaredConstructors();\n";
+
+
+        MessageContext mc = TestUtils.getTestContext("<foo/>", null);
+        ScriptMediator mediator = new ScriptMediator("js", scriptSourceCode, null);
+
+        System.setProperty("properties.file.path", System.getProperty("user.dir") + "/src/test/resources/file.properties");
+
+        try {
+            mediator.mediate(mc);
+            fail("Failed to enforce Java method access control configuration during mediation");
+        } catch(SynapseException e) {}
+
     }
 }
