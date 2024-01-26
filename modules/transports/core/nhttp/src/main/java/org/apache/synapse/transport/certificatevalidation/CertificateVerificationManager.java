@@ -60,15 +60,17 @@ public class CertificateVerificationManager {
         if (cacheAllocatedSize != null && cacheAllocatedSize > Constants.CACHE_MIN_ALLOCATED_SIZE
                 && cacheAllocatedSize < Constants.CACHE_MAX_ALLOCATED_SIZE) {
             this.cacheSize = cacheAllocatedSize;
+        } else {
+            log.warn("The cache size is out of range. Hence, using the default cache size value of "
+                    + Constants.CACHE_DEFAULT_ALLOCATED_SIZE + ".");
         }
-        log.warn("The cache size is out of range. Hence, using the default cache size value of "
-                + Constants.CACHE_DEFAULT_ALLOCATED_SIZE + ".");
         if (cacheDelayMins != null && cacheDelayMins > Constants.CACHE_MIN_DELAY_MINS
                 && cacheDelayMins < Constants.CACHE_MAX_DELAY_MINS) {
             this.cacheDelayMins = cacheDelayMins;
+        } else {
+            log.warn("The cache delay is out of range. Hence, using the default cache delay value of "
+                    + Constants.CACHE_DEFAULT_DELAY_MINS + ".");
         }
-        log.warn("The cache delay is out of range. Hence, using the default cache delay value of "
-                + Constants.CACHE_DEFAULT_DELAY_MINS + ".");
     }
 
     public CertificateVerificationManager(Integer cacheAllocatedSize, Integer cacheDelayMins,
@@ -78,13 +80,17 @@ public class CertificateVerificationManager {
         if (cacheAllocatedSize != null && cacheAllocatedSize > Constants.CACHE_MIN_ALLOCATED_SIZE
                 && cacheAllocatedSize < Constants.CACHE_MAX_ALLOCATED_SIZE) {
             this.cacheSize = cacheAllocatedSize;
+        } else {
+            log.warn("The cache size is out of range. Hence, using the default cache size value of "
+                    + Constants.CACHE_DEFAULT_ALLOCATED_SIZE + ".");
         }
         if (cacheDelayMins != null && cacheDelayMins > Constants.CACHE_MIN_DELAY_MINS
                 && cacheDelayMins < Constants.CACHE_MAX_DELAY_MINS) {
             this.cacheDelayMins = cacheDelayMins;
+        } else {
+            log.warn("The cache delay is out of range. Hence, using the default cache delay value of "
+                    + Constants.CACHE_DEFAULT_DELAY_MINS + ".");
         }
-        log.warn("The cache delay is out of range. Hence, using the default cache delay value of "
-                + Constants.CACHE_DEFAULT_DELAY_MINS + ".");
 
         this.isFullCertChainValidationEnabled = isFullCertChainValidationEnabled;
         this.isCertExpiryValidationEnabled = isCertExpiryValidationEnabled;
@@ -222,7 +228,6 @@ public class CertificateVerificationManager {
                 }
                 return;
             } catch (Exception e) {
-                log.info(verifier.getClass().getSimpleName() + " failed.");
                 log.debug("Certificate verification with " + verifier.getClass().getSimpleName() + " failed. ", e);
             }
         }
