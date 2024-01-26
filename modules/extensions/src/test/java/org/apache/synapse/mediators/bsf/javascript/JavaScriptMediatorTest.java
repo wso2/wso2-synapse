@@ -72,16 +72,20 @@ public class JavaScriptMediatorTest extends TestCase {
     public void testJavaClassAccessControl() throws Exception {
         String scriptSourceCode =  "var s = new java.util.ArrayList();\n";
 
-
         MessageContext mc = TestUtils.getTestContext("<foo/>", null);
         ScriptMediator mediator = new ScriptMediator("js", scriptSourceCode, null);
 
         System.setProperty("properties.file.path", System.getProperty("user.dir") + "/src/test/resources/file.properties");
 
+        boolean synapseExceptionThrown = false;
         try {
             mediator.mediate(mc);
-            fail("Failed to enforce Java class access control configuration during mediation");
-        } catch(SynapseException e) {}
+        } catch(SynapseException e) {
+            synapseExceptionThrown = true;
+        }
+
+        assertTrue("As Java class access control is configured " +
+                "SynapseException should be thrown during mediation", synapseExceptionThrown);
 
     }
 
@@ -93,16 +97,20 @@ public class JavaScriptMediatorTest extends TestCase {
         String scriptSourceCode =  "var c = this.context.getClass();\n" +
                 "var hashmapConstructors = c.getClassLoader().loadClass(\"java.util.HashMap\").getDeclaredConstructors();\n";
 
-
         MessageContext mc = TestUtils.getTestContext("<foo/>", null);
         ScriptMediator mediator = new ScriptMediator("js", scriptSourceCode, null);
 
         System.setProperty("properties.file.path", System.getProperty("user.dir") + "/src/test/resources/file.properties");
 
+        boolean synapseExceptionThrown = false;
         try {
             mediator.mediate(mc);
-            fail("Failed to enforce Java method access control configuration during mediation");
-        } catch(SynapseException e) {}
+        } catch(SynapseException e) {
+            synapseExceptionThrown = true;
+        }
+
+        assertTrue("As Java method access control is configured " +
+                "SynapseException should be thrown during mediation", synapseExceptionThrown);
 
     }
 }
