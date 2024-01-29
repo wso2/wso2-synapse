@@ -37,20 +37,35 @@ import org.apache.synapse.config.Entry;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
+import org.apache.synapse.mediators.bsf.access.control.AccessControlUtils;
+import org.apache.synapse.mediators.bsf.access.control.SandboxContextFactory;
+import org.apache.synapse.mediators.bsf.access.control.config.AccessControlConfig;
+import org.apache.synapse.mediators.bsf.access.control.config.AccessControlListType;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
 
 import javax.activation.DataHandler;
 import javax.script.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.CLASS_PREFIXES;
+import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.ENABLE;
+import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.LIMIT_CLASS_ACCESS_PREFIX;
+import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.LIMIT_NATIVE_OBJECT_ACCESS_PREFIX;
+import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.LIST_TYPE;
+import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.OBJECT_NAMES;
 
 /**
  * A Synapse mediator that calls a function in any scripting language supported by the BSF.
@@ -176,6 +191,16 @@ public class ScriptMediator extends AbstractMediator {
     private ScriptEngineFactory oracleNashornFactory;
 
     /**
+     * Store java class access control config
+     */
+    private AccessControlConfig classAccessControlConfig;
+
+    /**
+     * Store java method access config
+     */
+    private AccessControlConfig nativeObjectAccessControlConfig;
+
+    /**
      * Create a script mediator for the given language and given script source.
      *
      * @param language         the BSF language
@@ -275,6 +300,9 @@ public class ScriptMediator extends AbstractMediator {
             //if the engine is Rhino then needs to set the class loader specifically
             if (language.equals("js")) {
                 Context cx = Context.enter();
+                if (classAccessControlConfig != null && classAccessControlConfig.isAccessControlEnabled()) {
+                    cx.setClassShutter(createClassShutter());
+                }
                 cx.setApplicationClassLoader(this.loader);
 
             }
@@ -646,6 +674,12 @@ public class ScriptMediator extends AbstractMediator {
         this.multiThreadedEngine = scriptEngine.getFactory().getParameter("THREADING") != null;
         log.debug("Script mediator for language : " + language +
                 " supports multithreading? : " + multiThreadedEngine);
+
+        readAccessControlConfigurations(MiscellaneousUtil.loadProperties("synapse.properties"));
+        if (nativeObjectAccessControlConfig != null && nativeObjectAccessControlConfig.isAccessControlEnabled() &&
+                !ContextFactory.hasExplicitGlobal()) {
+            ContextFactory.initGlobal(new SandboxContextFactory(nativeObjectAccessControlConfig));
+        }
     }
 
     public String getLanguage() {
@@ -715,6 +749,62 @@ public class ScriptMediator extends AbstractMediator {
             return engineManager.getEngineByName(NASHORN).getFactory();
         }
         return null;
+    }
+
+    /**
+     * Creates a class shutter, which will be used inside the context that executes the script.
+     * This class shutter will be used to control the visibility of classes specified in the access control config,
+     * to the script.
+     * @return
+     */
+    private ClassShutter createClassShutter() {
+        return new ClassShutter() {
+            public boolean visibleToScripts(String className) {
+                /*
+                This will be used to compare whether the current fully qualified class name starts with
+                any of the provided set of strings provided in the access control config.
+                */
+                Comparator<String> startsWithComparator = new Comparator<String>() {
+                    @Override
+                    public int compare(String o1, String o2) {
+                        if (o1 == null || o2 == null) {
+                            return -1;
+                        }
+                        if (o1.startsWith(o2)) {
+                            return 1;
+                        }
+                        return -1;
+                    }
+                };
+                return AccessControlUtils.isAccessAllowed(className, classAccessControlConfig, startsWithComparator);
+            }
+        };
+    }
+
+    /**
+     * Reads and sets access control configurations.
+     * @param properties    Synapse properties.
+     */
+    private void readAccessControlConfigurations(Properties properties) {
+        String limitClassAccessEnabled = properties.getProperty(LIMIT_CLASS_ACCESS_PREFIX + ENABLE);
+        if (Boolean.parseBoolean(limitClassAccessEnabled)) {
+            String limitClassAccessListType = properties.getProperty(LIMIT_CLASS_ACCESS_PREFIX + LIST_TYPE);
+            String limitClassAccessClassPrefixes = properties.getProperty(LIMIT_CLASS_ACCESS_PREFIX + CLASS_PREFIXES);
+            this.classAccessControlConfig = new AccessControlConfig(true,
+                    AccessControlListType.valueOf(limitClassAccessListType),
+                    Arrays.asList(limitClassAccessClassPrefixes.split(",")));
+        }
+
+        String limitNativeObjectAccessEnabled = properties.getProperty(LIMIT_NATIVE_OBJECT_ACCESS_PREFIX + ENABLE);
+        if (Boolean.parseBoolean(limitNativeObjectAccessEnabled)) {
+            String limitNativeObjectAccessListType =
+                    properties.getProperty(LIMIT_NATIVE_OBJECT_ACCESS_PREFIX + LIST_TYPE);
+            String limitNativeObjectAccessClassPrefixes =
+                    properties.getProperty(LIMIT_NATIVE_OBJECT_ACCESS_PREFIX + OBJECT_NAMES);
+            this.nativeObjectAccessControlConfig = new AccessControlConfig(true,
+                    AccessControlListType.valueOf(limitNativeObjectAccessListType),
+                    Arrays.asList(limitNativeObjectAccessClassPrefixes.split(",")));
+        }
     }
 
 }
