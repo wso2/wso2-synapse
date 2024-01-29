@@ -759,8 +759,13 @@ public class SourceHandler implements NHttpServerEventHandler {
         }
 
         SourceContext.updateState(conn, ProtocolState.CLOSED);
-   
-        sourceConfiguration.getSourceConnections().closeConnection(conn, true);
+
+        if (conf.isTLSGracefulConnectionTerminationEnabled()) {
+            sourceConfiguration.getSourceConnections().closeConnection(conn, true);
+        } else {
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
+        }
+
         if (isTimeoutOccurred) {
             rollbackTransaction(conn);
         }
@@ -845,7 +850,13 @@ public class SourceHandler implements NHttpServerEventHandler {
         metrics.disconnected();
 
         SourceContext.updateState(conn, ProtocolState.CLOSED);
-        sourceConfiguration.getSourceConnections().closeConnection(conn, isFault);
+        
+        if (conf.isTLSGracefulConnectionTerminationEnabled()) {
+            sourceConfiguration.getSourceConnections().closeConnection(conn, isFault);
+        } else {
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, isFault);
+        }
+
         if (isFault) {
             rollbackTransaction(conn);
             metrics.exceptionOccured();
