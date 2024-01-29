@@ -20,20 +20,42 @@ package org.apache.synapse.transport.certificatevalidation.ocsp;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.bouncycastle.asn1.*;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.ContentType;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.synapse.transport.certificatevalidation.CertificateVerificationException;
+import org.apache.synapse.transport.certificatevalidation.Constants;
+import org.apache.synapse.transport.certificatevalidation.RevocationStatus;
+import org.apache.synapse.transport.certificatevalidation.RevocationVerifier;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.DERIA5String;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponseStatus;
-import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.asn1.x509.AccessDescription;
+import org.bouncycastle.asn1.x509.AuthorityInformationAccess;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.ocsp.*;
-import org.apache.synapse.transport.certificatevalidation.*;
+import org.bouncycastle.cert.ocsp.BasicOCSPResp;
+import org.bouncycastle.cert.ocsp.CertificateID;
+import org.bouncycastle.cert.ocsp.CertificateStatus;
+import org.bouncycastle.cert.ocsp.OCSPReq;
+import org.bouncycastle.cert.ocsp.OCSPReqBuilder;
+import org.bouncycastle.cert.ocsp.OCSPResp;
+import org.bouncycastle.cert.ocsp.SingleResp;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.security.Provider;
 import java.security.Security;
 import java.security.cert.X509Certificate;
@@ -51,6 +73,12 @@ public class OCSPVerifier implements RevocationVerifier {
     public OCSPVerifier(OCSPCache cache) {
         this.cache = cache;
     }
+
+    public static final String CONTENT_TYPE = "Content-Type";
+    public static final String JSON_TYPE ="application/json";
+    public static final String ACCEPT_TYPE = "Accept";
+    public static final String OCSP_REQUEST_TYPE = "application/ocsp-request";
+    public static final String OCSP_RESPONSE_TYPE = "application/ocsp-response";
 
     /**
      * Gets the revocation status (Good, Revoked or Unknown) of the given peer certificate.
@@ -83,7 +111,7 @@ public class OCSPVerifier implements RevocationVerifier {
 
             SingleResp[] responses;
             try {
-                OCSPResp ocspResponse = getOCSPResponce(serviceUrl, request);
+                OCSPResp ocspResponse = getOCSPResponse(serviceUrl, request);
                 if (OCSPResponseStatus.SUCCESSFUL != ocspResponse.getStatus()) {
                     continue; // Server didn't give the response right.
                 }
@@ -128,37 +156,34 @@ public class OCSPVerifier implements RevocationVerifier {
      * @throws CertificateVerificationException
      *
      */
-    protected OCSPResp getOCSPResponce(String serviceUrl, OCSPReq request) throws CertificateVerificationException {
+    protected OCSPResp getOCSPResponse(String serviceUrl, OCSPReq request) throws CertificateVerificationException {
 
-        try {
-            //Todo: Use http client.
-            byte[] array = request.getEncoded();
-            if (serviceUrl.startsWith("http")) {
-                HttpURLConnection con;
-                URL url = new URL(serviceUrl);
-                con = (HttpURLConnection) url.openConnection();
-                con.setRequestProperty("Content-Type", "application/ocsp-request");
-                con.setRequestProperty("Accept", "application/ocsp-response");
-                con.setDoOutput(true);
-                OutputStream out = con.getOutputStream();
-                DataOutputStream dataOut = new DataOutputStream(new BufferedOutputStream(out));
-                dataOut.write(array);
+        if (log.isDebugEnabled()) {
+            log.debug("Initiating HTTP request to URL: " + serviceUrl + " to get the OCSP response");
+        }
 
-                dataOut.flush();
-                dataOut.close();
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpPost httpPost = new HttpPost(serviceUrl);
 
-                //Check errors in response:
-                if (con.getResponseCode() / 100 != 2) {
-                    throw new CertificateVerificationException("Error getting ocsp response." +
-                            "Response code is " + con.getResponseCode());
-                }
-
-                //Get Response
-                InputStream in = (InputStream) con.getContent();
-                return new OCSPResp(in);
-            } else {
-                throw new CertificateVerificationException("Only http is supported for ocsp calls");
+            // adding request timeout configurations
+            if (httpPost.getConfig() == null) {
+                httpPost.setConfig(RequestConfig.custom().build());
             }
+
+            httpPost.addHeader(CONTENT_TYPE, OCSP_REQUEST_TYPE);
+            httpPost.addHeader(ACCEPT_TYPE, OCSP_RESPONSE_TYPE);
+            httpPost.setEntity(new ByteArrayEntity(request.getEncoded(), ContentType.create(JSON_TYPE)));
+            HttpResponse httpResponse = client.execute(httpPost);
+
+            //Check errors in response, if response status code is not 200 (success) range, throws exception
+            // eg: if response code is 200 (success) or 201 (accepted) return true,
+            //     if response code is 404 (not found) or 500 throw exception
+            if (httpResponse.getStatusLine().getStatusCode() / 100 != 2) {
+                throw new CertificateVerificationException("Error getting ocsp response." +
+                        "Response code is " + httpResponse.getStatusLine().getStatusCode());
+            }
+            InputStream in = httpResponse.getEntity().getContent();
+            return new OCSPResp(in);
         } catch (IOException e) {
             throw new CertificateVerificationException("Cannot get ocspResponse from url: " + serviceUrl, e);
         }

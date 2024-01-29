@@ -47,8 +47,6 @@ import org.apache.axis2.engine.AxisObserver;
 import org.apache.axis2.transport.TransportListener;
 import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.base.BaseUtils;
-import org.apache.axis2.transport.base.ManagementSupport;
-import org.apache.axis2.transport.base.TransportMBeanSupport;
 import org.apache.axis2.transport.base.threads.NativeThreadFactory;
 import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.axis2.transport.base.tracker.AxisServiceFilter;
@@ -62,8 +60,10 @@ import org.apache.http.impl.nio.reactor.DefaultListeningIOReactor;
 import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.nio.reactor.IOReactorExceptionHandler;
 import org.apache.http.params.HttpConnectionParams;
+import org.apache.synapse.transport.certificatevalidation.cache.CertCache;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.http.conn.ServerConnFactory;
+import org.apache.synapse.transport.nhttp.config.TrustStoreHolder;
 import org.apache.synapse.transport.nhttp.config.ServerConnFactoryBuilder;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
@@ -683,5 +683,4 @@ public class PassThroughHttpListener implements TransportListener {
             this.reloadSpecificEndPoints(transportInDescription);
         }
     }
-
 }

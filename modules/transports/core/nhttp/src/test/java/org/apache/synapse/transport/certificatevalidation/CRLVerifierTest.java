@@ -88,8 +88,7 @@ public class CRLVerifierTest extends TestCase {
         //Create a crl with fakeRevokedCertificate marked as revoked.
         X509CRL x509CRL = createCRL(fakeCACert, caKeyPair.getPrivate(), revokedSerialNumber);
 
-        CRLCache cache = CRLCache.getCache();
-        cache.init(5, 5);
+        CRLCache cache = CRLCache.getCache(5, 5);
         cache.setCacheValue(crlDistributionPointUrl, x509CRL);
 
         CRLVerifier crlVerifier  = new CRLVerifier(cache);

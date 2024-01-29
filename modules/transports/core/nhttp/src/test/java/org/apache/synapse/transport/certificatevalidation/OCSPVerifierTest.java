@@ -107,8 +107,7 @@ public class OCSPVerifierTest extends TestCase {
         OCSPResp response = generateOCSPResponse(request, certificateHolder, caKeyPair.getPrivate(), caKeyPair.getPublic(), revokedID);
         SingleResp singleResp = ((BasicOCSPResp)response.getResponseObject()).getResponses()[0];
 
-        OCSPCache cache = OCSPCache.getCache();
-        cache.init(5,5);
+        OCSPCache cache = OCSPCache.getCache(5, 5);
         cache.setCacheValue(revokedSerialNumber,singleResp, request, null);
 
         OCSPVerifier ocspVerifier= new OCSPVerifier(cache);
