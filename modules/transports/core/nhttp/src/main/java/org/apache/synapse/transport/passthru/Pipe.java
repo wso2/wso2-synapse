@@ -672,7 +672,6 @@ public class Pipe {
                         return;
                     } else if (isProducerError()) {
                         writeCondition.signalAll();
-                        buffer.clear();
                         return;
                     }
                 } else if (consumerIoControl instanceof NHttpClientConnection) {
