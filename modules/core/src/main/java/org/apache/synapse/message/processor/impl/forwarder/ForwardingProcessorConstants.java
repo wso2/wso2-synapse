@@ -61,6 +61,11 @@ public final class ForwardingProcessorConstants {
     public static final String NON_RETRY_STATUS_CODES = "non.retry.status.codes";
 
     /**
+     * Indicates the error status codes that need not retry, but want to store in the failed message store
+     */
+    public static final String NON_RETRY_STORE_STATUS_CODES = "non.retry.store.status.codes";
+
+    /**
      * Used th throttle forwarding-processor when it is used with cron expressions
      */
     public static final String THROTTLE_INTERVAL = "throttle.interval";

@@ -43,6 +43,9 @@ public class ScheduledMessageForwardingProcessor extends ScheduledMessageProcess
 			parameters.put(ForwardingProcessorConstants.NON_RETRY_STATUS_CODES, nonRetryStatusCodes);
 		}
 
+		if (nonRetryStoreStatusCodes != null) {
+			parameters.put(ForwardingProcessorConstants.NON_RETRY_STORE_STATUS_CODES, nonRetryStoreStatusCodes);
+		}
 		// Setting the end-point here. If target endpoint is not defined at the MP,
 		// target.endpoint property is used to fetch the endpoint
         if (targetEndpoint != null) {
