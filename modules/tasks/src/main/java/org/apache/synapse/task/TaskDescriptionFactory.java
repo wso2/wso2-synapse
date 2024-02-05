@@ -115,6 +115,11 @@ public class TaskDescriptionFactory {
             while (it.hasNext()) {
                 OMElement prop = (OMElement) it.next();
                 if (PropertyHelper.isStaticProperty(prop)) {
+                    String value = prop.getAttributeValue(new QName("value"));
+                    if (value != null) {
+                        String resolvedValue = ResolverFactory.getInstance().getResolver(value).resolve();
+                        prop.getAttribute(new QName("value")).setAttributeValue(resolvedValue);
+                    }
                     taskDescription.setXmlProperty(prop);
                 } else {
                     handleException("Tasks does not support dynamic properties");

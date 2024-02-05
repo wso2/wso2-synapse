@@ -114,14 +114,16 @@ public class WSDLEndpointFactory extends DefaultEndpointFactory {
 
             // get the service name and port name. at this point we should not worry about
             // the presence of those parameters. they are handled by corresponding WSDL builders.
-            String serviceName = wsdlElement.getAttributeValue(new QName("service"));
-            String portName = wsdlElement.getAttributeValue(new QName("port"));
+            String resolvedServiceName = ResolverFactory.getInstance()
+                    .getResolver(wsdlElement.getAttributeValue(new QName("service"))).resolve();;
+            String resolvedPortName = ResolverFactory.getInstance()
+                    .getResolver(wsdlElement.getAttributeValue(new QName("port"))).resolve();
             // check if wsdl is supplied as a URI
             String wsdlURI = wsdlElement.getAttributeValue(new QName("uri"));
             // set serviceName and portName in the endpoint. it does not matter if these are
             // null at this point. we are setting them only for serialization purpose.
-            wsdlEndpoint.setServiceName(serviceName);
-            wsdlEndpoint.setPortName(portName);
+            wsdlEndpoint.setServiceName(resolvedServiceName);
+            wsdlEndpoint.setPortName(resolvedPortName);
 
             String noParsing = properties.getProperty(SKIP_WSDL_PARSING);
 
@@ -142,7 +144,7 @@ public class WSDLEndpointFactory extends DefaultEndpointFactory {
 
                                     new WSDL11EndpointBuilder().
                                             populateEndpointDefinitionFromWSDL(endpoint,
-                                                    wsdlURI.trim(), omElement, serviceName, portName);
+                                                    wsdlURI.trim(), omElement, resolvedServiceName, resolvedPortName);
 
                                 } else if (WSDL2Constants.WSDL_NAMESPACE.equals(nsUri)) {
                                     //endpoint = new WSDL20EndpointBuilder().
@@ -181,7 +183,7 @@ public class WSDLEndpointFactory extends DefaultEndpointFactory {
                         baseUri = baseUri + File.separator;
                     }
                     new WSDL11EndpointBuilder().populateEndpointDefinitionFromWSDL(endpoint,
-                            baseUri, definitionElement, serviceName, portName);
+                            baseUri, definitionElement, resolvedServiceName, resolvedPortName);
                 } else {
                     endpoint = new EndpointDefinition();
                 }

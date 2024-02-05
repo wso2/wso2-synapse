@@ -59,7 +59,9 @@ public class TemplateEndpointFactory extends EndpointFactory {
         OMAttribute endpointTemplateAttribute = endpointElement.getAttribute(
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "template"));
         if (endpointTemplateAttribute != null) {
-            templateEndpoint.setTemplate(endpointTemplateAttribute.getAttributeValue());
+            String resolvedTemplate = ResolverFactory.getInstance()
+                    .getResolver(endpointTemplateAttribute.getAttributeValue()).resolve();
+            templateEndpoint.setTemplate(resolvedTemplate);
         } else {
             handleException("Error loading the configuration from endpoint group, " +
                     templateEndpoint.getName() +
