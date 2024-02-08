@@ -170,5 +170,4 @@ public class ConfigurationBuilderUtil {
 
         return val == null ? def : val;
     }
-
 }

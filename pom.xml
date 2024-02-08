@@ -26,7 +26,7 @@
    </parent>
    <groupId>org.apache.synapse</groupId>
    <artifactId>Apache-Synapse</artifactId>
-   <version>4.0.0-wso2v72-SNAPSHOT</version>
+   <version>4.0.0-wso2v79-SNAPSHOT</version>
    <name>Apache Synapse</name>
    <description>Apache Synapse</description>
    <packaging>pom</packaging>
@@ -1566,10 +1566,10 @@
       <powermock.version>2.0.9</powermock.version>
       <mockito.version>3.0.0</mockito.version>
       <fge.json.schema.validator.version>2.2.6.wso2v9</fge.json.schema.validator.version>
-      <fasterxml.jackson.version>2.13.4</fasterxml.jackson.version>
-       <fasterxml.jackson-databind.version>2.13.4.2</fasterxml.jackson-databind.version>
-      <google.guava.version>32.1.3-jre</google.guava.version>
-      <failureaccess.version>1.0.1</failureaccess.version>
+      <fasterxml.jackson.version>2.16.1</fasterxml.jackson.version>
+      <fasterxml.jackson-databind.version>2.16.1</fasterxml.jackson-databind.version>
+      <google.guava.version>33.0.0-jre</google.guava.version>
+      <failureaccess.version>1.0.2</failureaccess.version>
       <joda-time.version>2.9.4.wso2v1</joda-time.version>
       <com.googlecode.libphonenumber.version>7.4.2.wso2v1</com.googlecode.libphonenumber.version>
       <jacoco.agent.version>0.8.6</jacoco.agent.version>
@@ -1585,11 +1585,11 @@
        <activemq.broker.version>5.9.1</activemq.broker.version>
        <slf4j.log4j.version>1.5.2</slf4j.log4j.version>
        <system.rules.version>1.17.0</system.rules.version>
-       <io.netty.version>4.1.100.Final</io.netty.version>
-       <transport.http.netty.version>6.3.49</transport.http.netty.version>
+       <io.netty.version>4.1.104.Final</io.netty.version>
+       <transport.http.netty.version>6.3.50</transport.http.netty.version>
        <version.org.wso2.orbit.javax.activation>1.1.1.wso2v3</version.org.wso2.orbit.javax.activation>
        <rabbitmq.version>5.8.0</rabbitmq.version>
-       <opentelemetry.all.version>1.11.0.wso2v5</opentelemetry.all.version>
+       <opentelemetry.all.version>1.11.0.wso2v6</opentelemetry.all.version>
        <okhttp.wso2.version>4.9.3.wso2v2</okhttp.wso2.version>
        <okio.wso2.version>2.8.0.wso2v2</okio.wso2.version>
        <zipkin.sender.okhttp3.version>2.16.3</zipkin.sender.okhttp3.version>

@@ -26,6 +26,8 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 
+import java.util.Objects;
+
 /**
  * This class is used to handle Client Credentials grant oauth.
  */
@@ -59,5 +61,13 @@ public class ClientCredentialsHandler extends OAuthHandler {
     protected OMElement serializeSpecificOAuthConfigs(OMFactory omFactory) {
 
         return omFactory.createOMElement(AuthConstants.CLIENT_CREDENTIALS, SynapseConstants.SYNAPSE_OMNAMESPACE);
+    }
+
+    @Override
+    protected int getHash(MessageContext messageContext) throws AuthException {
+        return Objects.hash(messageContext.getTo().getAddress(), OAuthUtils.resolveExpression(getTokenUrl(), messageContext),
+                OAuthUtils.resolveExpression(getClientId(), messageContext), OAuthUtils.resolveExpression(getClientSecret(),
+                        messageContext), getRequestParametersAsString(messageContext),
+                getResolvedCustomHeadersMap(getCustomHeadersMap(), messageContext));
     }
 }

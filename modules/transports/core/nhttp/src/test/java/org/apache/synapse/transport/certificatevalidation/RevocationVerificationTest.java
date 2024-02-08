@@ -116,8 +116,7 @@ public class RevocationVerificationTest extends TestCase {
 
     private void crlPathValidation(X509Certificate[] certChain) throws Exception {
 
-        CRLCache crlCache = CRLCache.getCache();
-        crlCache.init(5, 5);
+        CRLCache crlCache = CRLCache.getCache(5, 5);
         RevocationVerifier verifier = new CRLVerifier(crlCache);
         CertificatePathValidator pathValidator = new CertificatePathValidator(certChain, verifier);
         pathValidator.validatePath();
@@ -125,8 +124,7 @@ public class RevocationVerificationTest extends TestCase {
 
     private void ocspPathValidation(X509Certificate[] certChain) throws Exception {
 
-        OCSPCache ocspCache = OCSPCache.getCache();
-        ocspCache.init(5, 5);
+        OCSPCache ocspCache = OCSPCache.getCache(5, 5);
         RevocationVerifier verifier = new OCSPVerifier(ocspCache);
         CertificatePathValidator pathValidator = new CertificatePathValidator(certChain, verifier);
         pathValidator.validatePath();

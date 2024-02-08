@@ -28,6 +28,7 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
+import org.apache.http.MethodNotSupportedException;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.ContentEncoder;
@@ -895,42 +896,12 @@ public class SourceHandler implements NHttpServerEventHandler {
             isFault = true;
             SourceContext.updateState(conn, ProtocolState.CLOSED);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
+        } else if (ex instanceof MethodNotSupportedException) {
+            isFault = generateHTTPErrorResponse(conn, ex, HttpVersion.HTTP_1_1, HttpStatus.SC_NOT_IMPLEMENTED,
+                    "Not Implemented");
         } else if (ex instanceof HttpException) {
-            log.error("HttpException occurred ", ex);
-            if (PassThroughCorrelationConfigDataHolder.isEnable()) {
-                logHttpRequestErrorInCorrelationLog(conn, "HTTP Exception");
-            }
-            try {
-                if (conn.isResponseSubmitted()) {
-                    sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
-                    return;
-                }
-                HttpContext httpContext = conn.getContext();
-
-                HttpResponse response = new BasicHttpResponse(
-                        HttpVersion.HTTP_1_1, HttpStatus.SC_BAD_REQUEST, "Bad request");
-                response.setParams(
-                        new DefaultedHttpParams(sourceConfiguration.getHttpParams(),
-                                response.getParams()));
-                response.addHeader(HTTP.CONN_DIRECTIVE, HTTP.CONN_CLOSE);
-
-                // Pre-process HTTP request
-                httpContext.setAttribute(ExecutionContext.HTTP_CONNECTION, conn);
-                httpContext.setAttribute(ExecutionContext.HTTP_REQUEST, null);
-                httpContext.setAttribute(ExecutionContext.HTTP_RESPONSE, response);
-
-                sourceConfiguration.getHttpProcessor().process(response, httpContext);
-
-                conn.submitResponse(response);
-                SourceContext.updateState(conn, ProtocolState.CLOSED);
-                informWriterError(conn);
-                conn.close();
-            } catch (Exception ex1) {
-                log.error(ex1.getMessage(), ex1);
-                SourceContext.updateState(conn, ProtocolState.CLOSED);
-                sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
-                isFault = true;
-            }
+            isFault = generateHTTPErrorResponse(conn, ex, HttpVersion.HTTP_1_1, HttpStatus.SC_BAD_REQUEST,
+                    "Bad request");
         } else {
             log.error("Unexpected error: " + ex.getMessage(), ex);
             SourceContext.updateState(conn, ProtocolState.CLOSED);
@@ -941,6 +912,45 @@ public class SourceHandler implements NHttpServerEventHandler {
         if (isFault) {
             rollbackTransaction(conn);
         }
+    }
+
+    private boolean generateHTTPErrorResponse (NHttpServerConnection conn, Exception ex, HttpVersion version,
+                                               int statusCode, String reason) {
+        log.error("HttpException occurred ", ex);
+        boolean isFault = false;
+        if (PassThroughCorrelationConfigDataHolder.isEnable()) {
+            logHttpRequestErrorInCorrelationLog(conn, "HTTP Exception");
+        }
+        try {
+            if (conn.isResponseSubmitted()) {
+                sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
+                return false;
+            }
+            HttpContext httpContext = conn.getContext();
+
+            HttpResponse response = new BasicHttpResponse(version, statusCode, reason);
+            response.setParams(
+                    new DefaultedHttpParams(sourceConfiguration.getHttpParams(), response.getParams()));
+            response.addHeader(HTTP.CONN_DIRECTIVE, HTTP.CONN_CLOSE);
+
+            // Pre-process HTTP request
+            httpContext.setAttribute(ExecutionContext.HTTP_CONNECTION, conn);
+            httpContext.setAttribute(ExecutionContext.HTTP_REQUEST, null);
+            httpContext.setAttribute(ExecutionContext.HTTP_RESPONSE, response);
+
+            sourceConfiguration.getHttpProcessor().process(response, httpContext);
+
+            conn.submitResponse(response);
+            SourceContext.updateState(conn, ProtocolState.CLOSED);
+            informWriterError(conn);
+            conn.close();
+        } catch (Exception ex1) {
+            log.error(ex1.getMessage(), ex1);
+            SourceContext.updateState(conn, ProtocolState.CLOSED);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
+            isFault = true;
+        }
+        return isFault;
     }
 
     private Map<String, String> getLoggingInfo(NHttpServerConnection conn, ProtocolState state) {

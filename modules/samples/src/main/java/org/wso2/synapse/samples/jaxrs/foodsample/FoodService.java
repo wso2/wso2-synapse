@@ -38,6 +38,7 @@ public class FoodService {
 
     private int unauthorizedReqCount = 0;
     private int tokenReqCount = 0;
+    private int appleServiceRequests = 0;
 
     @POST
     @Path("/token")
@@ -52,6 +53,38 @@ public class FoodService {
 
         if (validateBasicAuthHeader(basicHeader)) {
             return Response.status(Response.Status.OK).entity(new Token(Constants.accessToken, Constants.expiresIn,
+                    Constants.tokenType)).build();
+        }
+        return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid Credentials").build();
+    }
+
+    @POST
+    @Path("/token1")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAccessToken1(@Context HttpHeaders httpHeaders,
+                                    MultivaluedMap<String, String> tokenRequestParams) {
+
+        String basicHeader = httpHeaders.getHeaderString("Authorization");
+
+        if (validateBasicAuthHeader(basicHeader)) {
+            return Response.status(Response.Status.OK).entity(new Token(Constants.accessToken, Constants.expiresIn,
+                    Constants.tokenType)).build();
+        }
+        return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid Credentials").build();
+    }
+
+    @POST
+    @Path("/token2")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAccessToken2(@Context HttpHeaders httpHeaders,
+                                   MultivaluedMap<String, String> tokenRequestParams) {
+
+        String basicHeader = httpHeaders.getHeaderString("Authorization");
+
+        if (validateBasicAuthHeader(basicHeader)) {
+            return Response.status(Response.Status.OK).entity(new Token(Constants.accessToken2, Constants.expiresIn,
                     Constants.tokenType)).build();
         }
         return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid Credentials").build();
@@ -100,6 +133,22 @@ public class FoodService {
             String token = authorizationHeader.split(" ")[1];
             if (token.equals(Constants.accessToken)) {
                 return Response.status(Response.Status.OK).entity(tokenReqCount).build();
+            }
+        }
+        return Response.status(Response.Status.UNAUTHORIZED).build();
+    }
+
+    @GET
+    @Path("/apple")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getFoodItem2(@Context HttpHeaders httpHeaders) {
+
+        appleServiceRequests++;
+        String authorizationHeader = httpHeaders.getHeaderString("Authorization");
+        if (authorizationHeader != null) {
+            String token = authorizationHeader.split(" ")[1];
+            if (token.equals(Constants.accessToken2)) {
+                return Response.status(Response.Status.OK).entity(appleServiceRequests).build();
             }
         }
         return Response.status(Response.Status.UNAUTHORIZED).build();

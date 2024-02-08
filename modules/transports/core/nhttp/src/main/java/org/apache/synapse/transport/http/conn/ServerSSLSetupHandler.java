@@ -21,11 +21,12 @@ package org.apache.synapse.transport.http.conn;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
+import javax.security.cert.X509Certificate;
 
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.nio.reactor.ssl.SSLSetupHandler;
 import org.apache.synapse.transport.certificatevalidation.CertificateVerificationException;
-import org.apache.synapse.transport.certificatevalidation.RevocationVerificationManager;
+import org.apache.synapse.transport.certificatevalidation.CertificateVerificationManager;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -36,12 +37,12 @@ public class ServerSSLSetupHandler implements SSLSetupHandler {
     private final SSLClientAuth clientAuth;
     /** Enabled SSL handshake protocols (e.g. SSLv3, TLSv1) */
     private final String[] httpsProtocols;
-    private RevocationVerificationManager verificationManager;
+    private CertificateVerificationManager verificationManager;
     /** Ciphers enabled in axis2.xml, enabled all if null*/
     private final String[] preferredCiphers;
 
     public ServerSSLSetupHandler(final SSLClientAuth clientAuth, final String[] httpsProtocols,
-            final RevocationVerificationManager verificationManager, final String[] preferredCiphers) {
+                                 final CertificateVerificationManager verificationManager, final String[] preferredCiphers) {
         this.clientAuth = clientAuth;
         this.httpsProtocols = httpsProtocols;
         this.verificationManager = verificationManager;
@@ -78,7 +79,7 @@ public class ServerSSLSetupHandler implements SSLSetupHandler {
 
         if (verificationManager != null) {
             try {
-                verificationManager.verifyRevocationStatus(sslsession.getPeerCertificateChain());
+                verificationManager.verifyCertificateValidity(sslsession.getPeerCertificateChain());
             } catch (CertificateVerificationException e) {
                 SocketAddress remoteAddress = iosession.getRemoteAddress();
                 String address;

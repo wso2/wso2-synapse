@@ -140,7 +140,18 @@ public class HTTPEndpoint extends AbstractEndpoint {
         }
     }
 
-    private void processUrlTemplate(MessageContext synCtx) throws VariableExpansionException {
+    protected void processUrlTemplate(MessageContext synCtx) throws VariableExpansionException {
+
+        String evaluatedUri = resolveUrlTemplate(synCtx);
+        if (evaluatedUri != null) {
+            synCtx.setTo(new EndpointReference(evaluatedUri));
+            if (super.getDefinition() != null) {
+                synCtx.setProperty(EndpointDefinition.DYNAMIC_URL_VALUE, evaluatedUri);
+            }
+        }
+    }
+
+    protected String resolveUrlTemplate(MessageContext synCtx) throws VariableExpansionException {
         Map<String, Object> variables = new HashMap<String, Object>();
 
         /*The properties with uri.var.* are only considered for Outbound REST Endpoints*/
@@ -162,10 +173,10 @@ public class HTTPEndpoint extends AbstractEndpoint {
                     if (objProperty != null) {
                         if (objProperty instanceof String) {
                             variables.put(propertyKey.toString(),
-                                          decodeString((String) synCtx.getProperty(propertyKey.toString())));
+                                    decodeString((String) synCtx.getProperty(propertyKey.toString())));
                         } else {
                             variables.put(propertyKey.toString(),
-                                          decodeString(String.valueOf(synCtx.getProperty(propertyKey.toString()))));
+                                    decodeString(String.valueOf(synCtx.getProperty(propertyKey.toString()))));
                         }
                     }
                 }
@@ -224,14 +235,14 @@ public class HTTPEndpoint extends AbstractEndpoint {
                         (propertyKey.toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX)
                                 || propertyKey.toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX))) {
                     Object objProperty =
-                                         synCtx.getProperty(propertyKey.toString());
+                            synCtx.getProperty(propertyKey.toString());
                     if (objProperty != null) {
                         if (objProperty instanceof String) {
                             variables.put(propertyKey.toString(),
-                                          (String) synCtx.getProperty(propertyKey.toString()));
+                                    (String) synCtx.getProperty(propertyKey.toString()));
                         } else {
                             variables.put(propertyKey.toString(),
-                                          (String) String.valueOf(synCtx.getProperty(propertyKey.toString())));
+                                    (String) String.valueOf(synCtx.getProperty(propertyKey.toString())));
                         }
                     }
                 }
@@ -282,14 +293,7 @@ public class HTTPEndpoint extends AbstractEndpoint {
                 }
             }
         }
-
-
-        if (evaluatedUri != null) {
-            synCtx.setTo(new EndpointReference(evaluatedUri));
-            if (super.getDefinition() != null) {
-                synCtx.setProperty(EndpointDefinition.DYNAMIC_URL_VALUE, evaluatedUri);
-            }
-        }
+        return evaluatedUri;
     }
 
     /**
