@@ -92,6 +92,14 @@ public final class InlineExpressionUtil {
         Matcher matcher = EXPRESSION_PATTERN.matcher(text);
         while (matcher.find()) {
             String matchSeq = matcher.group();
+            String surroundedString;
+            try {
+                surroundedString = text.substring(text.indexOf(matchSeq) - 1, text.indexOf(matchSeq) + matchSeq
+                        .length() + 1);
+            } catch (IndexOutOfBoundsException e) {
+                // catch index out of bound exception when the expression is at the beginning or end of the text
+                surroundedString = StringUtils.EMPTY;
+            }
             String value = getDynamicValue(messageContext, matchSeq.substring(1, matchSeq.length() - 1));
             if (value == null) {
                 value = StringUtils.EMPTY;
@@ -99,7 +107,7 @@ public final class InlineExpressionUtil {
             // If the string is neither XML or JSON, it is considered a String and must be wrapped in double quotes
             // If it is an empty string returned from a json-eval expression it must be wrapped in double quotes
             if (isInline && ((value.isEmpty() && matchSeq.contains(EXPRESSION_JSON_EVAL))
-                    || (!isValidXML(value) && !isValidJson(value)))) {
+                    || (!isValidXML(value) && !isValidJson(value) && !isSurroundedByQuotes(surroundedString)))) {
                 value = "\"" + value + "\"";
             }
             text = text.replace(matchSeq, value);
@@ -107,6 +115,10 @@ public final class InlineExpressionUtil {
         return text;
     }
 
+    private static boolean isSurroundedByQuotes(String text) {
+
+        return text.startsWith("\"") && text.endsWith("\"");
+    }
     /**
      * Replaces Dynamic Values represented by expressions inside json-eval.
      *
