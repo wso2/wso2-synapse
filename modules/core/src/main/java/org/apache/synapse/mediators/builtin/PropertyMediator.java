@@ -345,7 +345,7 @@ public class PropertyMediator extends AbstractMediator {
     public void setValue(String value, String type) {
         this.type = type;
         // Convert the value into specified type
-        this.value = convertValue(value, type);
+        this.value = convertValue(value, type, false);
     }
 
     public String getType() {
@@ -422,14 +422,14 @@ public class PropertyMediator extends AbstractMediator {
             return valueElement.cloneOMElement();
         } else {
             if(expression != null) {
-                return convertValue(expression.stringValueOf(synCtx), type);
+                return convertValue(expression.stringValueOf(synCtx), type, true);
             }
         }
 
         return null;
     }
 
-    private Object convertValue(String value, String type) {
+    private Object convertValue(String value, String type, boolean isExpression) {
         if (type == null) {
             // If no type is set we simply return the string value
             return value;
@@ -441,10 +441,10 @@ public class PropertyMediator extends AbstractMediator {
                 case BOOLEAN    : return JavaUtils.isTrueExplicitly(value);
                 case DOUBLE     : return Double.parseDouble(value);
                 case FLOAT      : return Float.parseFloat(value);
-                case INTEGER    : return Integer.parseInt(value);
+                case INTEGER    : return parseInteger(value, isExpression);
                 case LONG       : return Long.parseLong(value);
                 case OM         : return buildOMElement(value);
-                case SHORT      : return Short.parseShort(value);
+                case SHORT      : return parseShort(value, isExpression);
                 case JSON       : return buildJSONElement(value);
                 default         : return value;
             }
@@ -454,6 +454,34 @@ public class PropertyMediator extends AbstractMediator {
             log.error(msg, e);
             throw new SynapseException(msg, e);
         }
+    }
+
+    /**
+     * This method will explicitly convert decimals to int since XPAth functions return numbers with decimal.
+     *
+     * @param value        String value returned from XPAth function
+     * @param isExpression Boolean to check whether the value is from XPAth function
+     * @return parsed Short value
+     */
+    private int parseInteger(String value, boolean isExpression) {
+        if (isExpression && value.contains(".")) {
+            return (int) Double.parseDouble(value);
+        }
+        return Integer.parseInt(value);
+    }
+
+    /**
+     * This method will explicitly convert decimals to short since XPAth functions return numbers with decimal.
+     *
+     * @param value        String value returned from XPAth function
+     * @param isExpression Boolean to check whether the value is from XPAth function
+     * @return parsed Short value
+     */
+    private short parseShort(String value, boolean isExpression) {
+        if (isExpression && value.contains(".")) {
+            return (short) Double.parseDouble(value);
+        }
+        return Short.parseShort(value);
     }
 
     /**
