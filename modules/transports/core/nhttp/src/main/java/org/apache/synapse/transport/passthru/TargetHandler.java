@@ -827,7 +827,12 @@ public class TargetHandler implements NHttpClientEventHandler {
         metrics.disconnected();
 
         TargetContext.updateState(conn, ProtocolState.CLOSED);
-        targetConfiguration.getConnections().closeConnection(conn, isFault);
+        
+        if (conf.isTLSGracefulConnectionTerminationEnabled()) {
+            targetConfiguration.getConnections().closeConnection(conn, isFault);
+        } else {
+            targetConfiguration.getConnections().shutdownConnection(conn, isFault);
+        }
 
     }
 
@@ -937,7 +942,12 @@ public class TargetHandler implements NHttpClientEventHandler {
         }
 
         TargetContext.updateState(conn, ProtocolState.CLOSED);
-        targetConfiguration.getConnections().closeConnection(conn, true);
+        
+        if (conf.isTLSGracefulConnectionTerminationEnabled()) {
+            targetConfiguration.getConnections().closeConnection(conn, true);
+        } else {
+            targetConfiguration.getConnections().shutdownConnection(conn, true);
+        }
     }
 
     private String workerPoolExhaustedErrorMessage(Object clientWorker
