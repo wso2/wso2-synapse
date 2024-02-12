@@ -89,7 +89,7 @@ public class ThrottleReplicator {
 
     private class ReplicatorTask implements Runnable {
         public void run() {
-            log.info("Start running ThrottleReplicatorTask.");
+            log.debug("Start running ThrottleReplicatorTask.");
             try {
                 if (!set.isEmpty()) {
                     for (String key : set) {

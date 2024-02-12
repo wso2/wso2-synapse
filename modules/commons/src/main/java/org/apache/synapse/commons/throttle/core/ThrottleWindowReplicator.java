@@ -97,7 +97,7 @@ private ThrottleProperties throttleProperties;
 
 		public void run() {
 			try {
-				log.info("Start running ThrottleWindowReplicatorTask.");
+				log.debug("Start running ThrottleWindowReplicatorTask.");
 				if (!set.isEmpty()) {
 					for (String key : set) {
 						String callerId;
