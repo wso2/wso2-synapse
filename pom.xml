@@ -667,9 +667,9 @@
              <version>${httpcore.version}</version>
          </dependency>
          <dependency>
-             <groupId>org.apache.httpcomponents</groupId>
+             <groupId>org.wso2.httpcomponents</groupId>
              <artifactId>httpcore-nio</artifactId>
-             <version>${httpcore-nio.version}</version>
+             <version>${httpcore-nio.wso2.version}</version>
          </dependency>
          <dependency>
              <groupId>org.apache.httpcomponents</groupId>
@@ -682,7 +682,7 @@
              <version>${httpcore.wso2.version}</version>
          </dependency>
          <dependency>
-             <groupId>org.apache.httpcomponents.wso2</groupId>
+             <groupId>org.wso2.orbit.httpcomponents</groupId>
              <artifactId>httpcore-nio</artifactId>
              <version>${httpcore-nio.wso2.version}</version>
          </dependency>
@@ -1476,7 +1476,7 @@
        <httpcore.version>4.4.16</httpcore.version>
       <httpcore.wso2.version>${httpcore.version}.wso2v1</httpcore.wso2.version>
        <httpcore-nio.version>4.4.16</httpcore-nio.version>
-       <httpcore-nio.wso2.version>${httpcore-nio.version}.wso2v1</httpcore-nio.wso2.version>
+       <httpcore-nio.wso2.version>${httpcore-nio.version}-wso2v4</httpcore-nio.wso2.version>
        <hc.httpclient.version>4.5.13</hc.httpclient.version>
        <httpclient.wso2.version>${hc.httpclient.version}.wso2v1</httpclient.wso2.version>
       <aspectj.version>1.8.5</aspectj.version>
