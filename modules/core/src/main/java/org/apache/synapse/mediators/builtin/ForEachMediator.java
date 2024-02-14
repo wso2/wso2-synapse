@@ -129,6 +129,11 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
                         + " is not a valid JSON array", synCtx);
             }
             JsonArray iterableJsonArray = iterableChildElements.getAsJsonArray();
+            // If the iterableJsonArray is empty, then no need to continue the mediation
+            if (iterableJsonArray.isEmpty()){
+                log.info("No elements found for the JSONPath : " + expression);
+                return true;
+            }
             if (synLog.isTraceOrDebugEnabled()) {
                 synLog.traceOrDebug("Splitting with JSONPath : " + expression + " resulted in " +
                         iterableJsonArray.size() + " elements.");

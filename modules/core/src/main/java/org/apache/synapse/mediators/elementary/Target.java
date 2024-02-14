@@ -527,9 +527,15 @@ public class Target {
                 if (path.equals("$") || path.equals("$.")) {
                     result = "";
                 } else {
-                    DocumentContext doc = JsonPath.parse(result);
-                    doc.delete(path);
-                    result = doc.jsonString();
+                    Object list = JsonPath.compile(path).read(result);
+                    if (!((JsonArray) list).isEmpty()) {
+                        DocumentContext doc = JsonPath.parse(result);
+                        doc.delete(path);
+                        result = doc.jsonString();
+                    } else {
+                        log.info("No matching elements were found for the given JSONPath: " + path + ". Therefore, " +
+                                "no elements were removed.");
+                    }
                 }
             }
         }
