@@ -26,12 +26,11 @@ import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.transport.base.ParamUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHost;
 import org.apache.http.params.HttpParams;
-import org.apache.synapse.transport.certificatevalidation.CertificateVerificationManager;
+import org.apache.synapse.transport.certificatevalidation.RevocationVerificationManager;
 import org.apache.synapse.transport.http.conn.SSLClientAuth;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.http.conn.ServerConnFactory;
@@ -41,13 +40,6 @@ import org.apache.synapse.transport.nhttp.util.SecureVaultValueReader;
 import org.wso2.securevault.SecretResolver;
 import org.wso2.securevault.SecretResolverFactory;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509KeyManager;
-import javax.xml.namespace.QName;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -62,6 +54,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509KeyManager;
+import javax.xml.namespace.QName;
+
 public class ServerConnFactoryBuilder {
 
     private final Log log = LogFactory.getLog(ServerConnFactoryBuilder.class);
@@ -73,7 +73,6 @@ public class ServerConnFactoryBuilder {
     protected SSLContextDetails ssl;
     private Map<InetSocketAddress, SSLContextDetails> sslByIPMap = null;
     private ConfigurationContext configurationContext;
-    CertificateVerificationManager certificateVerifier = null;
 
     public ServerConnFactoryBuilder(final TransportInDescription transportIn, final HttpHost host,
                                     ConfigurationContext configurationContext) {
@@ -90,13 +89,13 @@ public class ServerConnFactoryBuilder {
     }
 
     protected SSLContextDetails createSSLContext(
-            final OMElement keyStoreEl,
-            final OMElement trustStoreEl,
-            final OMElement cientAuthEl,
-            final OMElement httpsProtocolsEl,
-            final OMElement preferredCiphersEl,
-            final CertificateVerificationManager verificationManager,
-            final String sslProtocol) throws AxisFault {
+               final OMElement keyStoreEl,
+               final OMElement trustStoreEl,
+               final OMElement cientAuthEl,
+               final OMElement httpsProtocolsEl,
+               final OMElement preferredCiphersEl,
+               final RevocationVerificationManager verificationManager,
+               final String sslProtocol) throws AxisFault {
 
         SecretResolver secretResolver;
         if (configurationContext != null && configurationContext.getAxisConfiguration() != null) {
@@ -115,7 +114,7 @@ public class ServerConnFactoryBuilder {
             final OMElement cientAuthEl,
             final OMElement httpsProtocolsEl,
             final OMElement preferredCiphersEl,
-            final CertificateVerificationManager verificationManager,
+            final RevocationVerificationManager verificationManager,
             final String sslProtocol, final SecretResolver secretResolver) throws AxisFault {
 
         KeyManager[] keymanagers  = null;
@@ -183,38 +182,25 @@ public class ServerConnFactoryBuilder {
         }
 
         if (trustStoreEl != null) {
+            String location      = getValueOfElementWithLocalName(trustStoreEl, "Location");
+            String type          = getValueOfElementWithLocalName(trustStoreEl, "Type");
+            OMElement storePasswordEl = trustStoreEl.getFirstChildWithName(new QName("Password"));
+            if (storePasswordEl == null) {
+                throw new AxisFault("Cannot proceed because Password element is missing in TrustStore");
+            }
+            String storePassword = SecureVaultValueReader.getSecureVaultValue(secretResolver, storePasswordEl);
 
-            TrustStoreHolder trustStoreHolder = TrustStoreHolder.getInstance();
             FileInputStream fis = null;
-            String location = getValueOfElementWithLocalName(trustStoreEl, "Location");
-            KeyStore trustStore;
-
             try {
-                if (trustStoreHolder.getClientTrustStore() == null) {
-
-                    String type = getValueOfElementWithLocalName(trustStoreEl, "Type");
-                    OMElement storePasswordEl = trustStoreEl.getFirstChildWithName(new QName("Password"));
-
-                    if (storePasswordEl == null) {
-                        throw new AxisFault("Cannot proceed because Password element is missing in TrustStore");
-                    }
-
-                    String storePassword = SecureVaultValueReader.getSecureVaultValue(secretResolver, storePasswordEl);
-                    trustStore = KeyStore.getInstance(type);
-                    fis = new FileInputStream(location);
-
-                    if (log.isDebugEnabled()) {
-                        log.debug(name + " Loading Trust Keystore from : " + location);
-                    }
-
-                    trustStore.load(fis, storePassword.toCharArray());
-                    trustStoreHolder.setClientTrustStore(trustStore);
-                } else {
-                    trustStore = trustStoreHolder.getClientTrustStore();
+                KeyStore trustStore = KeyStore.getInstance(type);
+                fis = new FileInputStream(location);
+                if (log.isDebugEnabled()) {
+                    log.debug(name + " Loading Trust Keystore from : " + location);
                 }
 
+                trustStore.load(fis, storePassword.toCharArray());
                 TrustManagerFactory trustManagerfactory = TrustManagerFactory.getInstance(
-                        TrustManagerFactory.getDefaultAlgorithm());
+                           TrustManagerFactory.getDefaultAlgorithm());
                 trustManagerfactory.init(trustStore);
                 trustManagers = trustManagerfactory.getTrustManagers();
 
@@ -308,6 +294,7 @@ public class ServerConnFactoryBuilder {
         final Parameter cvp = transportIn.getParameter("CertificateRevocationVerifier");
         final String cvEnable = cvp != null ?
                                 cvp.getParameterElement().getAttribute(new QName("enable")).getAttributeValue() : null;
+        RevocationVerificationManager revocationVerifier = null;
 
         if ("true".equalsIgnoreCase(cvEnable)) {
             String cacheSizeString = cvp.getParameterElement().getFirstChildWithName(new QName("CacheSize")).getText();
@@ -318,33 +305,12 @@ public class ServerConnFactoryBuilder {
                 cacheSize = new Integer(cacheSizeString);
                 cacheDelay = new Integer(cacheDelayString);
             }
-            catch (NumberFormatException e) {
-                throw new AxisFault("Cache size or Cache delay values are malformed", e);
-            }
-
-            // Checking whether the full certificate chain validation is enabled or not.
-            boolean isFullCertChainValidationEnabled = true;
-            boolean isCertExpiryValidationEnabled = false;
-            OMElement fullCertChainValidationConfig = cvp.getParameterElement()
-                    .getFirstChildWithName(new QName("FullChainValidation"));
-            OMElement certExpiryValidationConfig = cvp.getParameterElement()
-                    .getFirstChildWithName(new QName("ExpiryValidation"));
-
-            if (fullCertChainValidationConfig != null
-                    && StringUtils.equals("false", fullCertChainValidationConfig.getText())) {
-                isFullCertChainValidationEnabled = false;
-            }
-
-            if (certExpiryValidationConfig != null && StringUtils.equals("true", certExpiryValidationConfig.getText())) {
-                isCertExpiryValidationEnabled = true;
-            }
-
-            certificateVerifier = new CertificateVerificationManager(cacheSize, cacheDelay,
-                    isFullCertChainValidationEnabled, isCertExpiryValidationEnabled);
+            catch (NumberFormatException e) {}
+            revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay);
         }
 
         ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl, preferredCiphersEl,
-                certificateVerifier, sslProtocol);
+                revocationVerifier, sslProtocol);
         return this;
     }
 
@@ -358,7 +324,6 @@ public class ServerConnFactoryBuilder {
         OMElement profilesEl = profileParam.getParameterElement();
         SecretResolver secretResolver = SecretResolverFactory.create(profilesEl, true);
         Iterator<?> profiles = profilesEl.getChildrenWithName(new QName("profile"));
-
         while (profiles.hasNext()) {
             OMElement profileEl = (OMElement) profiles.next();
             OMElement bindAddressEl = profileEl.getFirstChildWithName(new QName("bindAddress"));
@@ -376,63 +341,8 @@ public class ServerConnFactoryBuilder {
             OMElement preferredCiphersEl = profileEl.getFirstChildWithName(new QName(NhttpConstants.PREFERRED_CIPHERS));
             final Parameter sslpParameter = transportIn.getParameter("SSLProtocol");
             final String sslProtocol = sslpParameter != null ? sslpParameter.getValue().toString() : "TLS";
-
-            /* If multi SSL profiles are configured, checking whether the certificate revocation verifier is
-               configured and full certificate chain validation is enabled or not. */
-            if (profileEl.getFirstChildWithName(new QName("CertificateRevocationVerifier")) != null) {
-
-                Integer cacheSize = null;
-                Integer cacheDelay = null;
-
-                OMElement revocationVerifierConfig = profileEl
-                        .getFirstChildWithName(new QName("CertificateRevocationVerifier"));
-                OMElement revocationEnabled = revocationVerifierConfig
-                        .getFirstChildWithName(new QName("Enable"));
-
-                if (revocationEnabled != null && "true".equals(revocationEnabled.getText())) {
-                    String cacheSizeString = revocationVerifierConfig
-                            .getFirstChildWithName(new QName("CacheSize")).getText();
-                    String cacheDelayString = revocationVerifierConfig
-                            .getFirstChildWithName(new QName("CacheDelay")).getText();
-
-                    try {
-                        cacheSize = new Integer(cacheSizeString);
-                        cacheDelay = new Integer(cacheDelayString);
-                    } catch (NumberFormatException e) {
-                        throw new AxisFault("Cache size or Cache delay values are malformed", e);
-                    }
-                }
-
-                boolean isFullCertChainValidationEnabled = true;
-                boolean isCertExpiryValidationEnabled = false;
-
-                OMElement fullCertChainValidationConfig = revocationVerifierConfig
-                        .getFirstChildWithName(new QName("FullChainValidation"));
-
-                OMElement certExpiryValidationConfig = revocationVerifierConfig
-                        .getFirstChildWithName(new QName("ExpiryValidation"));
-
-                if (fullCertChainValidationConfig != null
-                        && StringUtils.equals("false", fullCertChainValidationConfig.getText())) {
-                    isFullCertChainValidationEnabled = false;
-                }
-
-                if (certExpiryValidationConfig != null
-                        && StringUtils.equals("true", certExpiryValidationConfig.getText())) {
-                    isCertExpiryValidationEnabled = true;
-                }
-
-                if (fullCertChainValidationConfig != null
-                        && StringUtils.equals("false", fullCertChainValidationConfig.getText())) {
-                    isFullCertChainValidationEnabled = false;
-                }
-
-                certificateVerifier = new CertificateVerificationManager(cacheSize, cacheDelay,
-                        isFullCertChainValidationEnabled, isCertExpiryValidationEnabled);
-            }
-
             SSLContextDetails ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl,
-                    preferredCiphersEl, certificateVerifier, sslProtocol, secretResolver);
+                    preferredCiphersEl, null, sslProtocol, secretResolver);
             if (sslByIPMap == null) {
                 sslByIPMap = new HashMap<InetSocketAddress, SSLContextDetails>();
             }

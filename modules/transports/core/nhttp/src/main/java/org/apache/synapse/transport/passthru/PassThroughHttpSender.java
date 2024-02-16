@@ -47,14 +47,12 @@ import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.nio.reactor.IOReactorExceptionHandler;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.commons.CorrelationConstants;
-import org.apache.synapse.transport.certificatevalidation.cache.CertCache;
 import org.apache.synapse.transport.exceptions.InvalidConfigurationException;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.nhttp.config.ClientConnFactoryBuilder;
-import org.apache.synapse.transport.nhttp.config.TrustStoreHolder;
 import org.apache.synapse.transport.nhttp.config.ProxyConfigBuilder;
 import org.apache.synapse.transport.nhttp.util.MessageFormatterDecoratorFactory;
 import org.apache.synapse.transport.nhttp.util.NhttpUtil;
@@ -559,7 +557,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         ProtocolState state = SourceContext.getState(conn);
         if (state != null && state.compareTo(ProtocolState.REQUEST_DONE) <= 0) {
             // start sending the response if we
-
+        	
 			boolean noEntityBodyResponse = false;
 			if (noEntityBody != null && Boolean.TRUE == noEntityBody
 					&& pipe != null) {
@@ -569,7 +567,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 				out.close();
 				noEntityBodyResponse = true;
 			}
-
+			
             if (!noEntityBodyResponse && msgContext.isPropertyTrue(PassThroughConstants.MESSAGE_BUILDER_INVOKED) && pipe != null) {
                 OutputStream out = pipe.getOutputStream();
                 /*if (msgContext.isPropertyTrue(NhttpConstants.SC_ACCEPTED)) {

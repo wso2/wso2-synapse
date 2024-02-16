@@ -19,36 +19,6 @@
 
 package org.apache.synapse.transport.nhttp.config;
 
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.impl.builder.StAXOMBuilder;
-import org.apache.axis2.AxisFault;
-import org.apache.axis2.context.ConfigurationContext;
-import org.apache.axis2.deployment.util.Utils;
-import org.apache.axis2.description.Parameter;
-import org.apache.axis2.description.TransportOutDescription;
-import org.apache.axis2.transport.base.ParamUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.http.conn.ssl.X509HostnameVerifier;
-import org.apache.http.params.HttpParams;
-import org.apache.synapse.transport.certificatevalidation.CertificateVerificationManager;
-import org.apache.synapse.transport.exceptions.InvalidConfigurationException;
-import org.apache.synapse.transport.http.conn.ClientConnFactory;
-import org.apache.synapse.transport.http.conn.ClientSSLSetupHandler;
-import org.apache.synapse.transport.http.conn.SSLContextDetails;
-import org.apache.synapse.transport.nhttp.NhttpConstants;
-import org.apache.synapse.transport.nhttp.NoValidateCertTrustManager;
-import org.apache.synapse.transport.nhttp.util.SecureVaultValueReader;
-import org.wso2.securevault.SecretResolver;
-import org.wso2.securevault.SecretResolverFactory;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -61,6 +31,41 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
+
+import org.apache.axiom.om.OMAttribute;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.impl.builder.StAXOMBuilder;
+import org.apache.axis2.AxisFault;
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.deployment.util.Utils;
+import org.apache.axis2.description.Parameter;
+import org.apache.axis2.description.TransportOutDescription;
+import org.apache.axis2.transport.base.ParamUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.http.conn.ssl.X509HostnameVerifier;
+import org.apache.http.params.HttpParams;
+import org.apache.synapse.commons.crypto.CryptoConstants;
+import org.apache.synapse.transport.certificatevalidation.RevocationVerificationManager;
+import org.apache.synapse.transport.exceptions.InvalidConfigurationException;
+import org.apache.synapse.transport.http.conn.ClientConnFactory;
+import org.apache.synapse.transport.http.conn.ClientSSLSetupHandler;
+import org.apache.synapse.transport.http.conn.SSLContextDetails;
+import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.transport.nhttp.NoValidateCertTrustManager;
+import org.apache.synapse.transport.nhttp.util.SecureVaultValueReader;
+import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.SecretResolverFactory;
+import org.wso2.securevault.SecureVaultException;
+import org.wso2.securevault.commons.MiscellaneousUtil;
+
 public class ClientConnFactoryBuilder {
 
     private static final Log log = LogFactory.getLog(ClientConnFactoryBuilder.class);
@@ -71,7 +76,6 @@ public class ClientConnFactoryBuilder {
     private SSLContextDetails ssl = null;
     private Map<String, SSLContext> sslByHostMap = null;
     private  ConfigurationContext configurationContext;
-    TrustStoreHolder trustStoreHolder = TrustStoreHolder.getInstance();
 
     public ClientConnFactoryBuilder(final TransportOutDescription transportOut, ConfigurationContext configurationContext) {
         this(transportOut);
@@ -83,7 +87,7 @@ public class ClientConnFactoryBuilder {
         this.transportOut = transportOut;
         this.name = transportOut.getName().toUpperCase(Locale.US);
     }
-
+    
     public ClientConnFactoryBuilder parseSSL() throws AxisFault {
         Parameter keyParam = transportOut.getParameter("keystore");
         Parameter trustParam = transportOut.getParameter("truststore");
@@ -129,7 +133,7 @@ public class ClientConnFactoryBuilder {
         final Parameter cvp = transportOut.getParameter("CertificateRevocationVerifier");
         final String cvEnable = cvp != null ?
                 cvp.getParameterElement().getAttribute(new QName("enable")).getAttributeValue() : null;
-        CertificateVerificationManager certificateVerifier = null;
+        RevocationVerificationManager revocationVerifier = null;
 
         if ("true".equalsIgnoreCase(cvEnable)) {
             String cacheSizeString = cvp.getParameterElement().getFirstChildWithName(new QName("CacheSize")).getText();
@@ -142,7 +146,7 @@ public class ClientConnFactoryBuilder {
                 cacheDelay = new Integer(cacheDelayString);
             } catch (NumberFormatException e) {
             }
-            certificateVerifier = new CertificateVerificationManager(cacheSize, cacheDelay);
+            revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay);
         }
 
         // Process HttpProtocols
@@ -163,7 +167,7 @@ public class ClientConnFactoryBuilder {
         }
 
         // Initiated separately to cater setting https protocols
-        ClientSSLSetupHandler clientSSLSetupHandler = new ClientSSLSetupHandler(hostnameVerifier, certificateVerifier);
+        ClientSSLSetupHandler clientSSLSetupHandler = new ClientSSLSetupHandler(hostnameVerifier, revocationVerifier);
 
         if (null != httpsProtocols) {
             clientSSLSetupHandler.setHttpsProtocols(httpsProtocols);
@@ -349,37 +353,28 @@ public class ClientConnFactoryBuilder {
                 log.warn(name + " Ignoring novalidatecert parameter since a truststore has been specified");
             }
 
+            String location = trustStoreElt.getFirstChildWithName(new QName("Location")).getText();
+            String type = trustStoreElt.getFirstChildWithName(new QName("Type")).getText();
+            OMElement passwordElement = trustStoreElt.getFirstChildWithName(new QName("Password"));
+            if (passwordElement == null) {
+                throw new AxisFault("Cannot proceed because Password element is missing in TrustStore");
+            }
+            String storePassword = SecureVaultValueReader.getSecureVaultValue(resolver, passwordElement);
+
             FileInputStream fis = null;
-            String location = trustStoreElt.getFirstChildWithName(new QName("Location")).getText();;
-            KeyStore trustStore;
-
             try {
-                if (trustStoreHolder.getClientTrustStore() == null) {
-                    String type = trustStoreElt.getFirstChildWithName(new QName("Type")).getText();
-                    OMElement passwordElement = trustStoreElt.getFirstChildWithName(new QName("Password"));
-
-                    if (passwordElement == null) {
-                        throw new AxisFault("Cannot proceed because Password element is missing in TrustStore");
-                    }
-
-                    String storePassword = SecureVaultValueReader.getSecureVaultValue(resolver, passwordElement);
-                    trustStore = KeyStore.getInstance(type);
-                    fis = new FileInputStream(location);
-
-                    if (log.isDebugEnabled()) {
-                        log.debug(name + " Loading Trust Keystore from : " + location);
-                    }
-
-                    trustStore.load(fis, storePassword.toCharArray());
-                    trustStoreHolder.setClientTrustStore(trustStore);
-                } else {
-                    trustStore = trustStoreHolder.getClientTrustStore();
+                KeyStore trustStore = KeyStore.getInstance(type);
+                fis = new FileInputStream(location);
+                if (log.isDebugEnabled()) {
+                    log.debug(name + " Loading Trust Keystore from : " + location);
                 }
 
+                trustStore.load(fis, storePassword.toCharArray());
                 TrustManagerFactory trustManagerfactory = TrustManagerFactory.getInstance(
                         TrustManagerFactory.getDefaultAlgorithm());
                 trustManagerfactory.init(trustStore);
                 trustManagers = trustManagerfactory.getTrustManagers();
+
             } catch (GeneralSecurityException gse) {
                 log.error(name + " Error loading Key store : " + location, gse);
                 throw new AxisFault("Error loading Key store : " + location, gse);
@@ -429,9 +424,9 @@ public class ClientConnFactoryBuilder {
                     keyStoreElt.getFirstChildWithName(new QName("Password")));
             String keyPassword = SecureVaultValueReader.getSecureVaultValue(secretResolver,
                     keyStoreElt.getFirstChildWithName(new QName("KeyPassword")));
-
-            try (FileInputStream fis = new FileInputStream(location)) {
-                KeyStore keyStore = KeyStore.getInstance(type);
+         
+            try (FileInputStream fis = new FileInputStream(location)) { 
+                KeyStore keyStore = KeyStore.getInstance(type);             
                 if (log.isDebugEnabled()) {
                     log.debug(name + " Loading Identity Keystore from : " + location);
                 }
@@ -448,7 +443,7 @@ public class ClientConnFactoryBuilder {
             } catch (IOException ioe) {
                 log.error(name + " Error opening Keystore : " + location, ioe);
                 throw new AxisFault("Error opening Keystore : " + location, ioe);
-            }
+            } 
         }
 
         if (trustStoreElt != null) {
@@ -456,35 +451,31 @@ public class ClientConnFactoryBuilder {
                 log.warn(name + " Ignoring novalidatecert parameter since a truststore has been specified");
             }
 
-            KeyStore trustStore;
             String location = trustStoreElt.getFirstChildWithName(new QName("Location")).getText();
-
+            String type = trustStoreElt.getFirstChildWithName(new QName("Type")).getText();
+            String storePassword = SecureVaultValueReader
+                    .getSecureVaultValue(secretResolver, trustStoreElt.getFirstChildWithName(new QName("Password")));
+       
             try (FileInputStream fis = new FileInputStream(location)) {
-                if (trustStoreHolder.getClientTrustStore() == null) {
-                    String type = trustStoreElt.getFirstChildWithName(new QName("Type")).getText();
-                    String storePassword = SecureVaultValueReader.getSecureVaultValue(secretResolver,
-                            trustStoreElt.getFirstChildWithName(new QName("Password")));
-                    trustStore = KeyStore.getInstance(type);
-                    if (log.isDebugEnabled()) {
-                        log.debug(name + " Loading Trust Keystore from : " + location);
-                    }
-                    trustStore.load(fis, storePassword.toCharArray());
-                    trustStoreHolder.setClientTrustStore(trustStore);
-                } else {
-                    trustStore = trustStoreHolder.getClientTrustStore();
+                KeyStore trustStore = KeyStore.getInstance(type);
+        
+                if (log.isDebugEnabled()) {
+                    log.debug(name + " Loading Trust Keystore from : " + location);
                 }
 
+                trustStore.load(fis, storePassword.toCharArray());
                 TrustManagerFactory trustManagerfactory = TrustManagerFactory.getInstance(
                         TrustManagerFactory.getDefaultAlgorithm());
                 trustManagerfactory.init(trustStore);
                 trustManagers = trustManagerfactory.getTrustManagers();
+
             } catch (GeneralSecurityException gse) {
                 log.error(name + " Error loading Key store : " + location, gse);
                 throw new AxisFault("Error loading Key store : " + location, gse);
             } catch (IOException ioe) {
                 log.error(name + " Error opening Key store : " + location, ioe);
                 throw new AxisFault("Error opening Key store : " + location, ioe);
-            }
+            } 
         } else if (novalidatecert) {
             if (log.isWarnEnabled()) {
                 log.warn(name + " Server certificate validation (trust) has been disabled. " +

@@ -33,7 +33,7 @@ import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.nio.reactor.ssl.SSLSetupHandler;
 import org.apache.synapse.transport.certificatevalidation.CertificateVerificationException;
-import org.apache.synapse.transport.certificatevalidation.CertificateVerificationManager;
+import org.apache.synapse.transport.certificatevalidation.RevocationVerificationManager;
 
 public class ClientSSLSetupHandler implements SSLSetupHandler {
 
@@ -139,10 +139,10 @@ public class ClientSSLSetupHandler implements SSLSetupHandler {
     };
 
     private final X509HostnameVerifier hostnameVerifier;
-    private final CertificateVerificationManager verificationManager;
+    private final RevocationVerificationManager verificationManager;
 
     public ClientSSLSetupHandler(final X509HostnameVerifier hostnameVerifier,
-                                 final CertificateVerificationManager verificationManager) {
+                                 final RevocationVerificationManager verificationManager) {
         this.hostnameVerifier = hostnameVerifier != null ? hostnameVerifier : DEFAULT;
         this.verificationManager = verificationManager;
     }
@@ -184,7 +184,7 @@ public class ClientSSLSetupHandler implements SSLSetupHandler {
 
         if (verificationManager!=null) {
             try {
-                verificationManager.verifyCertificateValidity(sslsession.getPeerCertificateChain());
+                verificationManager.verifyRevocationStatus(sslsession.getPeerCertificateChain());
             } catch (CertificateVerificationException e) {
                 throw new SSLException("Certificate Chain Validation failed for host : " + address, e);
             }
