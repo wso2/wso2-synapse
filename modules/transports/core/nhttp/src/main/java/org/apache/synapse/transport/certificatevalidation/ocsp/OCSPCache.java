@@ -22,7 +22,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.transport.certificatevalidation.CertificateVerificationException;
-import org.apache.synapse.transport.certificatevalidation.Constants;
 import org.apache.synapse.transport.certificatevalidation.cache.CacheController;
 import org.apache.synapse.transport.certificatevalidation.cache.CacheManager;
 import org.apache.synapse.transport.certificatevalidation.cache.ManageableCache;
@@ -52,14 +51,12 @@ public class OCSPCache implements ManageableCache {
 
     private OCSPCache() {}
 
-    public static OCSPCache getCache(int cacheSize, int cacheDelayMins) {
+    public static OCSPCache getCache() {
         //Double checked locking
         if (cache == null) {
             synchronized (OCSPCache.class) {
-                if (cache == null) {
+                if (cache == null)
                     cache = new OCSPCache();
-                    cacheManager = new CacheManager(cache, cacheSize, cacheDelayMins);
-                }
             }
         }
         return cache;
@@ -119,7 +116,7 @@ public class OCSPCache implements ManageableCache {
         try {
             String serviceUrl = cacheValue.serviceUrl;
             OCSPReq request = cacheValue.request;
-            OCSPResp response= ocspVerifier.getOCSPResponse(serviceUrl, request);
+            OCSPResp response= ocspVerifier.getOCSPResponce(serviceUrl, request);
 
             if (OCSPResponseStatus.SUCCESSFUL != response.getStatus())
                 throw new CertificateVerificationException("OCSP response status not SUCCESSFUL");

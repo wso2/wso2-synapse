@@ -50,13 +50,12 @@ public class CRLCache implements ManageableCache {
     private CRLCache() {
     }
 
-    public static CRLCache getCache(int cacheSize, int cacheDelayMins) {
+    public static CRLCache getCache() {
         //Double checked locking
         if (cache == null) {
             synchronized (CRLCache.class) {
                 if (cache == null) {
                     cache = new CRLCache();
-                    cacheManager = new CacheManager(cache, cacheSize, cacheDelayMins);
                 }
             }
         }
