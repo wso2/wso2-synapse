@@ -51,7 +51,15 @@ public class TemplateEndpoint extends AbstractEndpoint {
 
     @Override
     public void send(MessageContext synCtx) {
-        sendMessage(synCtx);
+        reLoadAndInitEndpoint(synCtx.getEnvironment());
+
+        if (realEndpoint != null) {
+            realEndpoint.send(synCtx);
+        } else {
+            informFailure(synCtx, SynapseConstants.ENDPOINT_IN_DIRECT_NOT_READY,
+                    "Couldn't find the endpoint with the name " + getName() +
+                            " & template : " + template);
+        }
     }
 
     @Override
@@ -62,18 +70,6 @@ public class TemplateEndpoint extends AbstractEndpoint {
         endpointJson.put(TYPE_JSON_ATT, "Template Endpoint");
         endpointJson.put("parameters", getParameters());
         endpointJson.put("template", getTemplate());
-    }
-
-    public void sendMessage(MessageContext synCtx) {
-        reLoadAndInitEndpoint(synCtx.getEnvironment());
-
-        if (realEndpoint != null) {
-            realEndpoint.send(synCtx);
-        } else {
-            informFailure(synCtx, SynapseConstants.ENDPOINT_IN_DIRECT_NOT_READY,
-                    "Couldn't find the endpoint with the name " + getName() +
-                            " & template : " + template);
-        }
     }
 
     public Map<String, String> getParameters() {
