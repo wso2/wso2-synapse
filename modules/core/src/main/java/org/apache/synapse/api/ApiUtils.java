@@ -42,7 +42,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 public class ApiUtils {
 
