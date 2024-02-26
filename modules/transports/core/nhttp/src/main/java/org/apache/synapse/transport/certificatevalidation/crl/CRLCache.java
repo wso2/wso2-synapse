@@ -20,7 +20,6 @@ package org.apache.synapse.transport.certificatevalidation.crl;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.transport.certificatevalidation.cache.CacheController;
 import org.apache.synapse.transport.certificatevalidation.cache.CacheManager;
@@ -50,12 +49,13 @@ public class CRLCache implements ManageableCache {
     private CRLCache() {
     }
 
-    public static CRLCache getCache() {
+    public static CRLCache getCache(int cacheSize, int cacheDelayMins) {
         //Double checked locking
         if (cache == null) {
             synchronized (CRLCache.class) {
                 if (cache == null) {
                     cache = new CRLCache();
+                    cacheManager = new CacheManager(cache, cacheSize, cacheDelayMins);
                 }
             }
         }

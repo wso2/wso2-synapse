@@ -27,7 +27,10 @@ import org.apache.synapse.transport.certificatevalidation.cache.CacheManager;
 import org.apache.synapse.transport.certificatevalidation.cache.ManageableCache;
 import org.apache.synapse.transport.certificatevalidation.cache.ManageableCacheValue;
 import org.bouncycastle.asn1.ocsp.OCSPResponseStatus;
-import org.bouncycastle.cert.ocsp.*;
+import org.bouncycastle.cert.ocsp.BasicOCSPResp;
+import org.bouncycastle.cert.ocsp.OCSPReq;
+import org.bouncycastle.cert.ocsp.OCSPResp;
+import org.bouncycastle.cert.ocsp.SingleResp;
 
 import java.math.BigInteger;
 import java.util.Date;
@@ -51,12 +54,14 @@ public class OCSPCache implements ManageableCache {
 
     private OCSPCache() {}
 
-    public static OCSPCache getCache() {
+    public static OCSPCache getCache(int cacheSize, int cacheDelayMins) {
         //Double checked locking
         if (cache == null) {
             synchronized (OCSPCache.class) {
-                if (cache == null)
+                if (cache == null) {
                     cache = new OCSPCache();
+                    cacheManager = new CacheManager(cache, cacheSize, cacheDelayMins);
+                }
             }
         }
         return cache;

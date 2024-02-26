@@ -19,12 +19,11 @@ package org.apache.synapse.transport.passthru.core.ssl;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
-import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHost;
-import org.apache.synapse.transport.certificatevalidation.RevocationVerificationManager;
+import org.apache.synapse.transport.certificatevalidation.CertificateVerificationManager;
 import org.apache.synapse.transport.nhttp.config.ServerConnFactoryBuilder;
 
 import javax.xml.namespace.QName;
@@ -46,7 +45,7 @@ public class SSLServerConnFactoryBuilder extends ServerConnFactoryBuilder {
             AxisFault {
         final String cvEnable = cvp != null ?
                                 cvp.getAttribute(new QName("enable")).getAttributeValue() : null;
-        RevocationVerificationManager revocationVerifier = null;
+        CertificateVerificationManager revocationVerifier = null;
 
         if ("true".equalsIgnoreCase(cvEnable)) {
             Iterator iterator = cvp.getChildElements();
@@ -70,7 +69,7 @@ public class SSLServerConnFactoryBuilder extends ServerConnFactoryBuilder {
             } catch (NumberFormatException e) {
                 log.error("Please specify correct Integer numbers for CacheDelay and CacheSize");
             }
-            revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay);
+            revocationVerifier = new CertificateVerificationManager(cacheSize, cacheDelay);
         }
         ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl, preferredCiphers,
                 revocationVerifier,
