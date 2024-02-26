@@ -24,6 +24,7 @@ import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.nio.NHttpServerConnection;
 import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
@@ -36,6 +37,9 @@ import org.apache.synapse.endpoints.dispatch.SALSessions;
 import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.ProtocolState;
+import org.apache.synapse.transport.passthru.SourceContext;
+import org.apache.synapse.transport.passthru.TargetContext;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.ConcurrencyThrottlingUtils;
 
@@ -119,7 +123,7 @@ public class TimeoutHandler extends TimerTask {
             if (callbackStore.size() > 0) {
 
                 long currentTime = currentTime();
-
+                boolean closeSocketOnEndpointTimeout = false;
                 List toRemove = new ArrayList();
 
                 for (Object key : callbackStore.keySet()) {
@@ -175,6 +179,27 @@ public class TimeoutHandler extends TimerTask {
                                                    SynapseConstants.HANDLER_TIME_OUT);
                             msgContext.setProperty(SynapseConstants.ERROR_MESSAGE,
                                                    SEND_TIMEOUT_MESSAGE);
+                            NHttpServerConnection sourceConn = (NHttpServerConnection) axis2MessageContext.
+                                    getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
+                            if (sourceConn != null && SourceContext.get(sourceConn).getState()
+                                    != ProtocolState.REQUEST_DONE) {
+                                //Suspend input to avoid invoking input ready method and set this property here
+                                //to avoid invoking the input ready method, while fault response is mediating through
+                                //the mediation since we have set REQUEST_DONE state in SourceHandler responseReady
+                                // method
+                                sourceConn.suspendInput();
+                                SourceContext sourceContext = (SourceContext) sourceConn.getContext().getAttribute
+                                        (TargetContext.CONNECTION_INFORMATION);
+                                if (sourceContext != null) {
+                                    sourceContext.setIsSourceRequestMarkedToBeDiscarded(true);
+                                }
+                                // This is to gurantee that the connection is closed after the response is sent and
+                                // not to release the buffer to the factory
+                                SourceContext.get(sourceConn).setShutDown(true);
+
+                                // We have to close the target connection since the request is invalid
+                                closeSocketOnEndpointTimeout = true;
+                            }
 
                             /* Clear the NO_KEEPALIVE property to prevent closing response connection when going through
                                the fault sequence due to end point time out. Since the axis2 message context used here
@@ -257,7 +282,7 @@ public class TimeoutHandler extends TimerTask {
                     if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                         CallbackStatisticCollector.callbackCompletionEvent(callback.getSynapseOutMsgCtx(), (String) key);
                     }
-                    if (conf.isCloseSocketOnEndpointTimeout()) {
+                    if (closeSocketOnEndpointTimeout || conf.isCloseSocketOnEndpointTimeout()) {
                         TransportOutDescription transportOut = callback.getAxis2OutMsgCtx().getTransportOut();
                         if (transportOut != null && transportOut.getSender() != null) {
                             // Call the TransportSender's onAppError method to release any resources
