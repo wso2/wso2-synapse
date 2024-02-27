@@ -114,83 +114,12 @@ public class CertificateVerificationManager {
 
         X509Certificate[] convertedCertificates = convert(peerCertificates);
 
-        Optional<X509Certificate> peerCertOpt;
         X509Certificate peerCert = null;
         X509Certificate issuerCert = null;
-        String alias;
 
         if (!isFullCertChainValidationEnabled) {
-
-            if (log.isDebugEnabled()) {
-                log.debug("Retrieving the issuer certificate from client truststore since full certificate chain " +
-                        "validation is disabled");
-            }
-
-            KeyStore trustStore = TrustStoreHolder.getInstance().getClientTrustStore();
-            Enumeration<String> aliases;
-
-            // When full chain validation is disabled, only one cert is expected
-            peerCertOpt = Arrays.stream(convertedCertificates).findFirst();
-            if (peerCertOpt.isPresent()) {
-                peerCert = peerCertOpt.get();
-            } else {
-                throw new CertificateVerificationException("Peer certificate is not provided");
-            }
-
-            // Get cert cache and initialize it
-            CertCache certCache = CertCache.getCache();
-
-            if (certCache.getCacheValue(peerCert.getSerialNumber().toString()) == null) {
-
-                try {
-                    aliases = trustStore.aliases();
-                } catch (KeyStoreException e) {
-                    throw new CertificateVerificationException("Error while retrieving aliases from truststore", e);
-                }
-
-                while (aliases.hasMoreElements()) {
-
-                    alias = aliases.nextElement();
-                    try {
-                        issuerCert = (X509Certificate) trustStore.getCertificate(alias);
-                    } catch (KeyStoreException e) {
-                        throw new CertificateVerificationException("Unable to read the certificate from " +
-                                "truststore with the alias: " + alias, e);
-                    }
-
-                    if (issuerCert == null) {
-                        throw new CertificateVerificationException("Issuer certificate not found in truststore");
-                    }
-
-                    try {
-                        peerCert.verify(issuerCert.getPublicKey());
-
-                        log.debug("Valid issuer certificate found in the client truststore. Caching..");
-
-                        // Store the valid issuer cert in cache for future use
-                        certCache.setCacheValue(peerCert.getSerialNumber().toString(), issuerCert);
-                        if (log.isDebugEnabled()) {
-                            log.debug("Issuer certificate with serial number: " + issuerCert.getSerialNumber()
-                                    .toString() + " has been cached against the serial number:  " + peerCert
-                                    .getSerialNumber().toString() + " of the peer certificate.");
-                        }
-                        break;
-                    } catch (SignatureException | CertificateException | NoSuchAlgorithmException |
-                             InvalidKeyException | NoSuchProviderException e) {
-                        // Unable to verify the signature. Check with the next certificate in the next loop traversal.
-                    }
-                }
-            } else {
-                X509Certificate cachedIssuerCert = certCache.getCacheValue(peerCert.getSerialNumber().toString());
-                try {
-                    peerCert.verify(cachedIssuerCert.getPublicKey());
-                } catch (SignatureException | CertificateException | NoSuchAlgorithmException |
-                         InvalidKeyException |
-                         NoSuchProviderException e) {
-                    // Unable to verify the signature.
-                    throw new CertificateVerificationException("Unable to verify the signature of the certificate.");
-                }
-            }
+            peerCert = getPeerCertificate(convertedCertificates);
+            issuerCert = getVerifiedIssuerCertOfPeerCert(peerCert, CertCache.getCache());
         }
 
         OCSPCache ocspCache = OCSPCache.getCache(cacheSize, cacheDelayMins);
@@ -283,5 +212,85 @@ public class CertificateVerificationManager {
             }
         }
         return false;
+    }
+
+    public X509Certificate getPeerCertificate(X509Certificate[] convertedCertificates)
+            throws CertificateVerificationException {
+
+        Optional<X509Certificate> peerCertOpt = Arrays.stream(convertedCertificates).findFirst();
+        if (peerCertOpt.isPresent()) {
+            return peerCertOpt.get();
+        } else {
+            throw new CertificateVerificationException("Peer certificate is not provided");
+        }
+    }
+
+    public X509Certificate getVerifiedIssuerCertOfPeerCert(X509Certificate peerCert, CertCache certCache)
+            throws CertificateVerificationException {
+
+        if (certCache.getCacheValue(peerCert.getSerialNumber().toString()) != null) {
+
+            X509Certificate cachedIssuerCert = certCache.getCacheValue(peerCert.getSerialNumber().toString());
+            if (!isPeerCertVerified(peerCert, cachedIssuerCert)) {
+                throw new CertificateVerificationException("Unable to verify the signature of the certificate.");
+            } else {
+                return cachedIssuerCert;
+            }
+        } else {
+            KeyStore trustStore = TrustStoreHolder.getInstance().getClientTrustStore();
+            Enumeration<String> aliases;
+            X509Certificate issuerCert = null;
+
+            try {
+                aliases = trustStore.aliases();
+            } catch (KeyStoreException e) {
+                throw new CertificateVerificationException("Error while retrieving aliases from truststore", e);
+            }
+
+            while (aliases.hasMoreElements()) {
+
+                String alias = aliases.nextElement();
+                try {
+                    issuerCert = (X509Certificate) trustStore.getCertificate(alias);
+                } catch (KeyStoreException e) {
+                    throw new CertificateVerificationException("Unable to read the certificate from " +
+                            "truststore with the alias: " + alias, e);
+                }
+
+                if (issuerCert == null) {
+                    throw new CertificateVerificationException("Issuer certificate not found in truststore");
+                }
+
+                try {
+                    peerCert.verify(issuerCert.getPublicKey());
+
+                    log.debug("Valid issuer certificate found in the client truststore. Caching..");
+
+                    // Store the valid issuer cert in cache for future use
+                    certCache.setCacheValue(peerCert.getSerialNumber().toString(), issuerCert);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Issuer certificate with serial number: " + issuerCert.getSerialNumber()
+                                .toString() + " has been cached against the serial number:  " + peerCert
+                                .getSerialNumber().toString() + " of the peer certificate.");
+                    }
+                    break;
+                } catch (SignatureException | CertificateException | NoSuchAlgorithmException |
+                         InvalidKeyException | NoSuchProviderException e) {
+                    // Unable to verify the signature. Check with the next certificate in the next loop traversal.
+                }
+            }
+            return issuerCert;
+        }
+    }
+
+    public boolean isPeerCertVerified(X509Certificate peerCert, X509Certificate issuerCert) {
+
+        try {
+            peerCert.verify(issuerCert.getPublicKey());
+            return true;
+        } catch (CertificateException | NoSuchAlgorithmException | InvalidKeyException | NoSuchProviderException
+                 | SignatureException e) {
+            return false;
+        }
     }
 }

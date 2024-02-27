@@ -19,13 +19,21 @@
 package org.apache.synapse.transport.certificatevalidation;
 
 import junit.framework.TestCase;
+import org.apache.synapse.transport.certificatevalidation.cache.CertCache;
 import org.apache.synapse.transport.certificatevalidation.crl.CRLCache;
 import org.apache.synapse.transport.certificatevalidation.crl.CRLVerifier;
 import org.apache.synapse.transport.certificatevalidation.ocsp.OCSPCache;
 import org.apache.synapse.transport.certificatevalidation.ocsp.OCSPVerifier;
 import org.apache.synapse.transport.certificatevalidation.pathvalidation.CertificatePathValidator;
+import org.mockito.Mockito;
 
+import java.math.BigInteger;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Security;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 public class RevocationVerificationTest extends TestCase {
@@ -112,6 +120,29 @@ public class RevocationVerificationTest extends TestCase {
             throwable = e;
         }
         assertNotNull(throwable);
+    }
+
+    public void testGetPeerCertificate() throws CertificateVerificationException {
+
+        X509Certificate mockCert = Mockito.mock(X509Certificate.class);
+        X509Certificate[] certArray = {mockCert};
+        CertificateVerificationManager verificationManager = new CertificateVerificationManager(5, 5);
+        Object peerCert = verificationManager.getPeerCertificate(certArray);
+        assertNotNull(peerCert);
+    }
+
+    public void testGetVerifiedIssuerCertOfPeerCertCached()
+            throws CertificateVerificationException, CertificateException, NoSuchAlgorithmException,
+            SignatureException, InvalidKeyException, NoSuchProviderException {
+
+        CertCache mockCertCache = Mockito.mock(CertCache.class);
+        X509Certificate peerCert = Mockito.mock(X509Certificate.class);
+        X509Certificate cachedIssuerCert = Mockito.mock(X509Certificate.class);
+        Mockito.when(peerCert.getSerialNumber()).thenReturn(BigInteger.valueOf(1L));
+        Mockito.when(mockCertCache.getCacheValue(Mockito.anyString())).thenReturn(cachedIssuerCert);
+        CertificateVerificationManager mockVerificationManager = new CertificateVerificationManager(5, 5);
+        Mockito.doNothing().when(peerCert).verify(Mockito.any());
+        assertNotNull(mockVerificationManager.getVerifiedIssuerCertOfPeerCert(peerCert, mockCertCache));
     }
 
     private void crlPathValidation(X509Certificate[] certChain) throws Exception {
