@@ -161,9 +161,9 @@
                                 </bundleDef>
                                 <bundleDef>org.wso2.orbit.com.squareup.okhttp:okhttp:${okhttp.wso2.version}</bundleDef>
                                 <bundleDef>org.wso2.orbit.com.squareup.okio:okio:${okio.wso2.version}</bundleDef>
-                                <bundleDef>io.zipkin.reporter2:zipkin-sender-okhttp3:${zipkin.sender.okhttp3.version}
+                                <bundleDef>org.wso2.orbit.io.zipkin.reporter2:zipkin-sender-okhttp3:${zipkin.sender.okhttp3.version}
                                 </bundleDef>
-                                <bundleDef>io.zipkin.reporter2:zipkin-reporter:${zipkin.sender.okhttp3.version}
+                                <bundleDef>io.zipkin.reporter2:zipkin-reporter:${zipkin-reporter.version}
                                 </bundleDef>
                                 <bundleDef>io.zipkin.zipkin2:zipkin:${zipkin.version}</bundleDef>
                                 <bundleDef>javax.annotation:javax.annotation-api</bundleDef>

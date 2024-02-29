@@ -458,7 +458,7 @@
 			<artifactId>okio</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>io.zipkin.reporter2</groupId>
+			<groupId>org.wso2.orbit.io.zipkin.reporter2</groupId>
 			<artifactId>zipkin-sender-okhttp3</artifactId>
 		</dependency>
 		<dependency>
