@@ -207,10 +207,10 @@ public class CertificateVerificationManager {
             try {
                 cert.checkValidity();
             } catch (CertificateExpiredException e) {
-                log.error("Peer certificate is expired");
+                log.error("Peer certificate is expired", e);
                 return true;
             } catch (CertificateNotYetValidException e) {
-                log.error("Peer certificate is not valid yet");
+                log.error("Peer certificate is not valid yet", e);
                 return true;
             }
         }
