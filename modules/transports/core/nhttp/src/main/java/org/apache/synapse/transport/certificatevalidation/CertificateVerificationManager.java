@@ -126,6 +126,7 @@ public class CertificateVerificationManager {
         CRLCache crlCache = CRLCache.getCache(cacheSize, cacheDelayMins);
 
         RevocationVerifier[] verifiers = {new OCSPVerifier(ocspCache), new CRLVerifier(crlCache)};
+        RevocationStatus revocationStatus = null;
 
         for (RevocationVerifier verifier : verifiers) {
             try {
@@ -142,8 +143,8 @@ public class CertificateVerificationManager {
                     CertificatePathValidator pathValidator = new CertificatePathValidator(convertedCertificates,
                             verifier);
                     pathValidator.validatePath();
+                    return;
                 } else {
-
                     if (isCertExpiryValidationEnabled) {
                         log.debug("Validating the client certificate for expiry");
                         if (isExpired(convertedCertificates)) {
@@ -153,9 +154,11 @@ public class CertificateVerificationManager {
 
                     log.debug("Validating client certificate with the issuer certificate retrieved from" +
                             "the trust store");
-                    verifier.checkRevocationStatus(peerCert, issuerCert);
+                    revocationStatus = verifier.checkRevocationStatus(peerCert, issuerCert);
+                    if (!RevocationStatus.GOOD.toString().equals(revocationStatus.toString())) {
+                        return;
+                    }
                 }
-                return;
             } catch (Exception e) {
                 log.debug("Certificate verification with " + verifier.getClass().getSimpleName() + " failed. ", e);
             }
@@ -237,6 +240,7 @@ public class CertificateVerificationManager {
                 return cachedIssuerCert;
             }
         } else {
+            boolean isIssuerCertVerified = false;
             KeyStore trustStore = TrustStoreHolder.getInstance().getClientTrustStore();
             Enumeration<String> aliases;
             X509Certificate issuerCert = null;
@@ -263,23 +267,27 @@ public class CertificateVerificationManager {
 
                 try {
                     peerCert.verify(issuerCert.getPublicKey());
-
-                    log.debug("Valid issuer certificate found in the client truststore. Caching..");
-
-                    // Store the valid issuer cert in cache for future use
-                    certCache.setCacheValue(peerCert.getSerialNumber().toString(), issuerCert);
-                    if (log.isDebugEnabled()) {
-                        log.debug("Issuer certificate with serial number: " + issuerCert.getSerialNumber()
-                                .toString() + " has been cached against the serial number:  " + peerCert
-                                .getSerialNumber().toString() + " of the peer certificate.");
-                    }
+                    isIssuerCertVerified = true;
                     break;
                 } catch (SignatureException | CertificateException | NoSuchAlgorithmException |
                          InvalidKeyException | NoSuchProviderException e) {
                     // Unable to verify the signature. Check with the next certificate in the next loop traversal.
                 }
             }
-            return issuerCert;
+
+            if (isIssuerCertVerified) {
+                log.debug("Valid issuer certificate found in the client truststore. Caching..");
+                // Store the valid issuer cert in cache for future use
+                certCache.setCacheValue(peerCert.getSerialNumber().toString(), issuerCert);
+                if (log.isDebugEnabled()) {
+                    log.debug("Issuer certificate with serial number: " + issuerCert.getSerialNumber()
+                            .toString() + " has been cached against the serial number:  " + peerCert
+                            .getSerialNumber().toString() + " of the peer certificate.");
+                }
+                return issuerCert;
+            } else {
+               throw new CertificateVerificationException("Certificate verification failed.");
+            }
         }
     }
 
