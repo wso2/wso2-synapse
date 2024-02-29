@@ -155,7 +155,7 @@ public class CertificateVerificationManager {
                     log.debug("Validating client certificate with the issuer certificate retrieved from" +
                             "the trust store");
                     revocationStatus = verifier.checkRevocationStatus(peerCert, issuerCert);
-                    if (!RevocationStatus.GOOD.toString().equals(revocationStatus.toString())) {
+                    if (RevocationStatus.GOOD.toString().equals(revocationStatus.toString())) {
                         return;
                     }
                 }
