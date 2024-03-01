@@ -20,10 +20,12 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.ParameterInclude;
 import org.apache.axis2.description.TransportOutDescription;
-import org.apache.synapse.transport.http.conn.Scheme;
-import org.apache.synapse.transport.nhttp.config.ClientConnFactoryBuilder;
+import org.apache.synapse.transport.certificatevalidation.cache.CertCache;
 import org.apache.synapse.transport.dynamicconfigurations.SSLProfileLoader;
 import org.apache.synapse.transport.dynamicconfigurations.SenderProfileReloader;
+import org.apache.synapse.transport.http.conn.Scheme;
+import org.apache.synapse.transport.nhttp.config.ClientConnFactoryBuilder;
+import org.apache.synapse.transport.nhttp.config.TrustStoreHolder;
 
 public class PassThroughHttpSSLSender extends PassThroughHttpSender implements SSLProfileLoader {
 
@@ -53,6 +55,8 @@ public class PassThroughHttpSSLSender extends PassThroughHttpSender implements S
      * @throws AxisFault
      */
     public void reloadConfig(ParameterInclude transport) throws AxisFault {
+        CertCache.resetCache();
+        TrustStoreHolder.resetInstance();
         reloadDynamicSSLConfig((TransportOutDescription) transport);
     }
 
