@@ -193,6 +193,12 @@ public class ApiUtils {
         return acceptableResources;
     }
 
+    /**
+     * This method is used to locate the specific API that has been invoked from the collection of all APIs.
+     *
+     * @param synCtx MessageContext of the request
+     * @return Selected API
+     */
     public static API getSelectedAPI(MessageContext synCtx) {
         //getting the API collection from the synapse configuration to find the invoked API
         Collection<API> apiSet = synCtx.getEnvironment().getSynapseConfiguration().getAPIs();
@@ -200,7 +206,7 @@ public class ApiUtils {
         List<API> defaultStrategyApiSet = new ArrayList<API>(apiSet);
         //To avoid apiSet being modified concurrently
         List<API> duplicateApiSet = new ArrayList<>(apiSet);
-        //identiy the api using canProcess method
+        //identify the api using canProcess method
         for (API api : duplicateApiSet) {
             if (identifySelectedAPI(api, synCtx, defaultStrategyApiSet)) {
                 return api;
@@ -218,7 +224,7 @@ public class ApiUtils {
         return null;
     }
 
-    public static boolean identifySelectedAPI(API api, MessageContext synCtx, List defaultStrategyApiSet) {
+    private static boolean identifySelectedAPI(API api, MessageContext synCtx, List defaultStrategyApiSet) {
         API defaultAPI = null;
         api.setLogSetterValue();
         if ("/".equals(api.getContext())) {
