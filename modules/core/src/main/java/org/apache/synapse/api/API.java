@@ -53,12 +53,12 @@ import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.logging.LoggingUtils;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.Collection;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -246,6 +246,10 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
         return resources.values().toArray(new Resource[resources.size()]);
     }
 
+    public Map<String, Resource> getResourcesMap() {
+        return resources;
+    }
+
     public void addHandler(Handler handler) {
         handlers.add(handler);
     }
@@ -276,20 +280,13 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
                 return false;
             }
         } else {
-            String path = ApiUtils.getFullRequestPath(synCtx);
-            if (null == synCtx.getProperty(RESTConstants.IS_PROMETHEUS_ENGAGED) &&
-                    (!ApiUtils.matchApiPath(path, context))) {
-                auditDebug("API context: " + context + " does not match request URI: " + path);
+            if (!ApiUtils.identifyApi(this, synCtx)) {
                 return false;
             }
-
-            if(!versionStrategy.isMatchingVersion(synCtx)){
-                return false;
-            }
+            ApiUtils.getFullRequestPath(synCtx);
 
             org.apache.axis2.context.MessageContext msgCtx =
                     ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-
             if (host != null || port != -1) {
                 String hostHeader = getHostHeader(msgCtx);
                 if (hostHeader != null) {
@@ -443,12 +440,7 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
                     msgCtx.getIncomingTransportName() + "://" + hostHeader);
         }
 
-        Set<Resource> acceptableResources = new LinkedHashSet<Resource>();
-        for (Resource r : resources.values()) {
-            if (isBound(r, synCtx) && r.canProcess(synCtx)) {
-                acceptableResources.add(r);
-            }
-        }
+        Set<Resource> acceptableResources = ApiUtils.getAcceptableResources(resources, synCtx);
 
         boolean processed = false;
         if (!acceptableResources.isEmpty()) {
@@ -530,23 +522,6 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
 
     }
 
-    /**
-     * Checks whether the provided resource is capable of processing the message from the provided message context.
-     * The resource becomes capable to do this when the it contains either the name of the api caller,
-     * or {@value ApiConstants#DEFAULT_BINDING_ENDPOINT_NAME}, in its binds-to.
-     *
-     * @param resource  Resource object
-     * @param synCtx    MessageContext object
-     * @return          Whether the provided resource is bound to the provided message context
-     */
-    private boolean isBound(Resource resource, MessageContext synCtx) {
-        Collection<String> bindings = resource.getBindsTo();
-        Object apiCaller = synCtx.getProperty(ApiConstants.API_CALLER);
-        if (apiCaller != null) {
-            return bindings.contains(apiCaller.toString());
-        }
-        return bindings.contains(ApiConstants.DEFAULT_BINDING_ENDPOINT_NAME);
-    }
 
     /**
      * Helper method to use when no matching resource found

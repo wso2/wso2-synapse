@@ -25,6 +25,10 @@ import org.apache.http.HttpStatus;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.api.version.ContextVersionStrategy;
+import org.apache.synapse.api.version.DefaultStrategy;
+import org.apache.synapse.api.version.URLBasedVersionStrategy;
+import org.apache.synapse.api.version.VersionStrategy;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.api.dispatch.DefaultDispatcher;
@@ -39,8 +43,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class ApiUtils {
 
@@ -158,6 +161,57 @@ public class ApiUtils {
         return (String) synCtx.getProperty(RESTConstants.REST_SUB_REQUEST_PATH);
     }
 
+    public static boolean identifyApi(API api, MessageContext synCtx) {
+        if (synCtx.getProperty(RESTConstants.IDENTIFIED_API) == null) {
+            String path = ApiUtils.getFullRequestPath(synCtx);
+            if (null == synCtx.getProperty(RESTConstants.IS_PROMETHEUS_ENGAGED) &&
+                    (!ApiUtils.matchApiPath(path, api.getContext()))) {
+                log.debug("API context: " + api.getContext() + " does not match request URI: " + path);
+                return false;
+            }
+            if (null != synCtx.getProperty(RESTConstants.IS_PROMETHEUS_ENGAGED) &&
+                    (!ApiUtils.matchApiPath(path, api.getContext()))) {
+                log.debug("API context: " + api.getContext() + " does not match request URI: " + path);
+                return false;
+            }
+            if (!api.getVersionStrategy().isMatchingVersion(synCtx)) {
+                return false;
+            }
+            synCtx.setProperty(RESTConstants.IDENTIFIED_API, api);
+            return true;
+        } else {
+            return true;
+        }
+    }
+
+    /**
+     * Checks whether the provided resource is capable of processing the message from the provided message context.
+     * The resource becomes capable to do this when the it contains either the name of the api caller,
+     * or {@value ApiConstants#DEFAULT_BINDING_ENDPOINT_NAME}, in its binds-to.
+     *
+     * @param resource  Resource object
+     * @param synCtx    MessageContext object
+     * @return          Whether the provided resource is bound to the provided message context
+     */
+    private static boolean isBound(Resource resource, MessageContext synCtx) {
+        Collection<String> bindings = resource.getBindsTo();
+        Object apiCaller = synCtx.getProperty(ApiConstants.API_CALLER);
+        if (apiCaller != null) {
+            return bindings.contains(apiCaller.toString());
+        }
+        return bindings.contains(ApiConstants.DEFAULT_BINDING_ENDPOINT_NAME);
+    }
+
+    public static Set<Resource> getAcceptableResources(Map<String, Resource> resources, MessageContext synCtx) {
+        Set<Resource> acceptableResources = new LinkedHashSet<Resource>();
+        for (Resource r : resources.values()) {
+            if (isBound(r, synCtx) && r.canProcess(synCtx)) {
+                acceptableResources.add(r);
+            }
+        }
+        return acceptableResources;
+    }
+
     public static List<RESTDispatcher> getDispatchers() {
         return dispatchers;
     }
@@ -177,8 +231,8 @@ public class ApiUtils {
      * and false if the two values don't match
      */
     public static boolean matchApiPath(String path, String context) {
-        if (!path.startsWith(context + "/") && !path.startsWith(context + "?") &&
-                !context.equals(path) && !"/".equals(context)) {
+        if (!path.startsWith(context + "/") && !path.startsWith(context + "?")
+                && !context.equals(path) && !"/".equals(context)) {
             return false;
         }
         return true;
