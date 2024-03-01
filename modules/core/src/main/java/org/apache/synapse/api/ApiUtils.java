@@ -195,7 +195,6 @@ public class ApiUtils {
 
     public static API getSelectedAPI(MessageContext synCtx) {
         API selectedApi;
-        API defaultAPI = null;
         //getting the API collection from the synapse configuration to find the invoked API
         Collection<API> apiSet = synCtx.getEnvironment().getSynapseConfiguration().getAPIs();
         //Since swapping elements are not possible with sets, Collection is converted to a List
@@ -218,10 +217,6 @@ public class ApiUtils {
                 selectedApi = api;
                 return selectedApi;
             }
-        }
-        if (defaultAPI != null && defaultAPI.canProcess(synCtx)) {
-            defaultAPI.setLogSetterValue();
-            return defaultAPI;
         }
         return null;
     }
