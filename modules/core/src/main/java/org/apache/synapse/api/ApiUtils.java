@@ -194,7 +194,6 @@ public class ApiUtils {
     }
 
     public static API getSelectedAPI(MessageContext synCtx) {
-        API selectedApi;
         //getting the API collection from the synapse configuration to find the invoked API
         Collection<API> apiSet = synCtx.getEnvironment().getSynapseConfiguration().getAPIs();
         //Since swapping elements are not possible with sets, Collection is converted to a List
@@ -204,8 +203,7 @@ public class ApiUtils {
         //identiy the api using canProcess method
         for (API api : duplicateApiSet) {
             if (identifySelectedAPI(api, synCtx, defaultStrategyApiSet)) {
-                selectedApi = api;
-                return selectedApi;
+                return api;
             }
         }
         for (API api : defaultStrategyApiSet) {
@@ -214,8 +212,7 @@ public class ApiUtils {
                 if (log.isDebugEnabled()) {
                     log.debug("Located specific API: " + api.getName() + " for processing message");
                 }
-                selectedApi = api;
-                return selectedApi;
+                return api;
             }
         }
         return null;
