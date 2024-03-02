@@ -36,7 +36,7 @@ public class Sample10102 extends SynapseTestCase {
     public void testSingleClientCertForRevocation() throws Exception {
 
         BasicHttpClient client = new BasicHttpClient();
-        HttpResponse response = client.doPostWithCert("https://localhost:8253/test/order",
+        HttpResponse response = client.doPostWithCert("https://localhost:8243/test/order",
                 TEST_PAYLOAD, "application/xml",
                 FilenameUtils.normalize(System.getProperty("user.dir")
                         + "/modules/integration/src/test/resources/transport.jks"),
