@@ -25,8 +25,16 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.ssl.SSLContexts;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.KeyStore;
 import java.util.Map;
 
 /**
@@ -109,6 +117,36 @@ public class BasicHttpClient {
             return new HttpResponse(client.execute(post));
         } finally {
             client.close();
+        }
+    }
+
+    public HttpResponse doPostWithCert(String url, byte[] payload,
+                               String contentType, String keyStorePath,
+                                       String trustStorePath, String keyStorePass, String trustStorePass)
+            throws Exception {
+
+        KeyStore testKeyStore = KeyStore.getInstance("JKS");
+        testKeyStore.load(Files.newInputStream(Paths.get(keyStorePath)), keyStorePass.toCharArray());
+
+        KeyStore testTrustStore = KeyStore.getInstance("JKS");
+        testTrustStore.load(Files.newInputStream(Paths.get(trustStorePath)), trustStorePass.toCharArray());
+
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
+        keyManagerFactory.init(testKeyStore, keyStorePass.toCharArray());
+
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("SunX509");
+        trustManagerFactory.init(testTrustStore);
+
+        sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().setSSLContext(sslContext).build()) {
+            HttpPost post = new HttpPost(url);
+            BasicHttpEntity entity = new BasicHttpEntity();
+            entity.setContentType(contentType);
+            entity.setContent(new ByteArrayInputStream(payload));
+            post.setEntity(entity);
+            return new HttpResponse(client.execute(post));
         }
     }
 
