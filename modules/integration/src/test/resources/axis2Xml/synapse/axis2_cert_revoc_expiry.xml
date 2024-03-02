@@ -97,7 +97,7 @@
         <parameter name="non-blocking" locked="false">true</parameter>
             <parameter name="keystore" locked="false">
             <KeyStore>
-                <Location>modules/integration/src/test/resources/wso2carbon.jks</Location>
+                <Location>modules/integration/src/test/resources/identity.jks</Location>
                 <Type>JKS</Type>
                 <Password>password</Password>
                 <KeyPassword>password</KeyPassword>
