@@ -27,11 +27,13 @@ import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.XMLToObjectMapper;
 import org.apache.synapse.config.xml.eventing.EventPublisherMediatorFactory;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
+import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.template.InvokeMediator;
 
@@ -214,10 +216,12 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
                 }
             }
 
-
-            String msg = "Unknown mediator referenced by configuration element : " + qName;
-            log.error(msg);
-            throw new SynapseException(msg);
+            return new AbstractMediator() {
+                @Override
+                public boolean mediate(MessageContext synCtx) {
+                    return false;
+                }
+            };
         }
 
         try {
