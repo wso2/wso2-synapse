@@ -27,21 +27,21 @@ public interface TestConstants {
 
     /**
      * The certificates in the resources folder will contain the certificates in the certificate chain from
-     * https://www.github.com
+     * https://www.wso2.com
      * These certificates are chosen because the certificate issuers support both CRL and OCSP. Read the certificates for
      * more details.
      *
      * CAUTION: Replace the certificates if they expire or are marked as revoked by their issuers. At the moment they are
      * valid. The expiry dates of the certificates are as follows:
      *
-     * github.com                    : 3/15/2024
-     * DigiCertHighAssuranceEVCA-1   : 4/14/2031
-     * DigiCertHighAssuranceEVRootCA : 11/10/2031
+     * wso2.com                      : 19/12/2024
+     * DigiCertHighAssuranceEVCA-1   : 24/09/2030
+     * DigiCertHighAssuranceEVRootCA : 15/01/2038
      */
     final static String REAL_PEER_CERT = "/org/apache/synapse/transport/certificatevalidation" +
-            "/certificates/github/github.com";
+            "/certificates/wso2/wso2.com";
     final static String INTERMEDIATE_CERT = "/org/apache/synapse/transport/certificatevalidation" +
-            "/certificates/github/DigiCertHighAssuranceEVCA-1";
+            "/certificates/wso2/DigiCertHighAssuranceEVCA-1";
     final static String ROOT_CERT = "/org/apache/synapse/transport/certificatevalidation" +
-            "/certificates/github/DigiCertHighAssuranceEVRootCA";
+            "/certificates/wso2/DigiCertHighAssuranceEVRootCA";
 }
