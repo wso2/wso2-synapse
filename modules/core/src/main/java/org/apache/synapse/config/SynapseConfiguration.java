@@ -84,8 +84,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Timer;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Stream;
 import javax.xml.namespace.QName;
 
@@ -196,7 +194,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      */
     private Map<String, MessageProcessor> messageProcessors = new ConcurrentHashMap<String, MessageProcessor>();
 
-    private Map<String, ReadWriteLock> locks = new ConcurrentHashMap<String, ReadWriteLock>();
+    private Map<String, Object> locks = new ConcurrentHashMap<String, Object>();
 
     /**
      * Endpoint templates to create actual endpoints
@@ -1017,45 +1015,35 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      * @return its value
      */
     public Entry getEntryDefinition(String key) {
-        Object lockObj = acquireLock(key);
-        if (lockObj instanceof ReadWriteLock) {
-            ReadWriteLock lock = (ReadWriteLock) lockObj;
-            lock.readLock().lock();
-            try {
-                Object o = localRegistry.get(key);
-                if (o == null || o instanceof Entry) {
+        Object o = localRegistry.get(key);
+        if (o == null || o instanceof Entry) {
+            if (o == null) {
+                // this is not a local definition
+                synchronized (this) {
+                    o = localRegistry.get(key);
                     if (o == null) {
-                        // this is not a local definition
-                        synchronized (this) {
-                            o = localRegistry.get(key);
-                            if (o == null) {
-                                Entry entry = new Entry(key);
-                                entry.setType(Entry.REMOTE_ENTRY);
-                                addEntry(key, entry);
-                                return entry;
-                            } else {
-                                if (!(o instanceof Entry)) {
-                                    if (log.isDebugEnabled()) {
-                                        log.debug("There is no local registry entry for key : " + key +
-                                                ", Object already exists of type :" + o.getClass().getName());
-                                    }
-                                    return null;
-                                }
+                        Entry entry = new Entry(key);
+                        entry.setType(Entry.REMOTE_ENTRY);
+                        addEntry(key, entry);
+                        return entry;
+                    } else {
+                        if (!(o instanceof Entry)) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("There is no local registry entry for key : " + key +
+                                        ", Object already exists of type :" + o.getClass().getName());
                             }
+                            return null;
                         }
                     }
-                    return (Entry) o;
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("There is no local registry entry for key : " + key);
-                    }
-                    return null;
                 }
-            } finally {
-                lock.readLock().unlock();
             }
+            return (Entry) o;
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("There is no local registry entry for key : " + key);
+            }
+            return null;
         }
-        return null;
     }
 
     /**
@@ -1162,12 +1150,12 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     }
 
     public Object acquireLock(String key) {
-        ReadWriteLock lock = locks.get(key);
+        Object lock = locks.get(key);
         if (lock == null) {
             synchronized (this) {
                 lock = locks.get(key);
                 if (lock == null) {
-                    lock = new ReentrantReadWriteLock();
+                    lock = new Object();
                     locks.put(key, lock);
                 }
             }
@@ -1183,68 +1171,60 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      */
     public Endpoint getEndpoint(String key) {
 
-        Object lockObj = acquireLock(key);
-        if (lockObj instanceof ReadWriteLock) {
-            ReadWriteLock lock = (ReadWriteLock) lockObj;
-            lock.readLock().lock();
-            try {
-                Object o = getEntry(key);
-                if (o != null && o instanceof Endpoint) {
-                    return (Endpoint) o;
-                }
-
-                Entry entry = null;
-                if (o == null) {
-                    entry = new Entry(key);
-                    entry.setType(Entry.REMOTE_ENTRY);
-                } else {
-                    Object object = localRegistry.get(key);
-                    if (object instanceof Entry) {
-                        entry = (Entry) object;
-                    }
-                }
-
-                assertEntryNull(entry, key);
-
-                //noinspection ConstantConditions
-                if (entry.getMapper() == null) {
-                    entry.setMapper(XMLToEndpointMapper.getInstance());
-                }
-
-                if (entry.getType() == Entry.REMOTE_ENTRY) {
-                    if (registry != null) {
-                        o = registry.getResource(entry, getProperties());
-                        if (o != null && o instanceof Endpoint) {
-                            localRegistry.put(key, entry);
-                            return (Endpoint) o;
-                        } else if (o instanceof OMNode) {
-                            properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, this);
-                            Endpoint e = (Endpoint) XMLToEndpointMapper.getInstance().
-                                    getObjectFromOMNode((OMNode) o, properties);
-                            if (e != null) {
-                                entry.setValue(e);
-                                return e;
-                            }
-                        }
-                    }
-                } else {
-                    Object value = entry.getValue();
-                    if (value instanceof OMNode) {
-                        properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, this);
-                        Object object = entry.getMapper().getObjectFromOMNode(
-                                (OMNode) value, getProperties());
-                        if (object instanceof Endpoint) {
-                            entry.setValue(object);
-                            return (Endpoint) object;
-                        }
-                    }
-                }
-                return null;
-            } finally {
-                lock.readLock().unlock();
+        synchronized (acquireLock(key)) {
+            Object o = getEntry(key);
+            if (o != null && o instanceof Endpoint) {
+                return (Endpoint) o;
             }
+
+            Entry entry = null;
+            if (o == null) {
+                entry = new Entry(key);
+                entry.setType(Entry.REMOTE_ENTRY);
+            } else {
+                Object object = localRegistry.get(key);
+                if (object instanceof Entry) {
+                    entry = (Entry) object;
+                }
+            }
+
+            assertEntryNull(entry, key);
+
+            //noinspection ConstantConditions
+            if (entry.getMapper() == null) {
+                entry.setMapper(XMLToEndpointMapper.getInstance());
+            }
+
+            if (entry.getType() == Entry.REMOTE_ENTRY) {
+                if (registry != null) {
+                    o = registry.getResource(entry, getProperties());
+                    if (o != null && o instanceof Endpoint) {
+                        localRegistry.put(key, entry);
+                        return (Endpoint) o;
+                    } else if (o instanceof OMNode) {
+                        properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, this);
+                        Endpoint e = (Endpoint) XMLToEndpointMapper.getInstance().
+                                getObjectFromOMNode((OMNode) o, properties);
+                        if (e != null) {
+                            entry.setValue(e);
+                            return e;
+                        }
+                    }
+                }
+            } else {
+                Object value = entry.getValue();
+                if (value instanceof OMNode) {
+                    properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, this);
+                    Object object = entry.getMapper().getObjectFromOMNode(
+                            (OMNode) value, getProperties());
+                    if (object instanceof Endpoint) {
+                        entry.setValue(object);
+                        return (Endpoint) object;
+                    }
+                }
+            }
+            return null;
         }
-        return null;
     }
 
     /**
