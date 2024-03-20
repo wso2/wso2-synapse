@@ -37,8 +37,11 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.commons.jmx.JmxConfigurationConstants;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
+import org.apache.synapse.commons.util.MiscellaneousUtil;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
@@ -70,6 +73,10 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     protected Log log;
     protected static final Log trace = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
+
+    private static final boolean jmxEnabled = Boolean.parseBoolean(MiscellaneousUtil.getProperty(
+            SynapsePropertiesLoader.loadSynapseProperties(),
+            JmxConfigurationConstants.PROP_ENDPOINT_VIEW_JMX_ENABLE, "true"));
 
     /** Hold the logical name of an endpoint */
     private String endpointName = null;
@@ -217,7 +224,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     public void setName(String endpointName) {
         this.endpointName = endpointName;
-        if (enableMBeanStats) {
+        if (enableMBeanStats && jmxEnabled) {
             /*if (endpointName != null && !"".equals(endpointName.trim())){
                 //we skip stat collection for endpoints with no defined name
                 log.warn("Endpoint Name not found. Skipped JMX statistics collection for this endpoint");
