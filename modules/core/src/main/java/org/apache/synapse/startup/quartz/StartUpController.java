@@ -76,7 +76,7 @@ public class StartUpController extends AbstractStartup {
         }        
         if (synapseTaskManager.isInitialized()) {
             TaskScheduler taskScheduler = synapseTaskManager.getTaskScheduler();
-            if (taskScheduler != null && taskScheduler.isInitialized() && removeTask) {
+            if (taskScheduler != null && taskScheduler.isTaskSchedulerInitialized() && removeTask) {
                 taskScheduler.deleteTask(taskDescription.getName(), taskDescription.getTaskGroup());
             }
             TaskDescriptionRepository repository = synapseTaskManager.getTaskDescriptionRepository();
