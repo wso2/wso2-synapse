@@ -159,6 +159,12 @@ public class TaskScheduler {
         }
     }
 
+    public boolean isTaskSchedulerInitialized() {
+        synchronized (lock) {
+            return initialized;
+        }
+    }
+
     public void deleteTask(String name, String group) {
         synchronized (lock) {
             if (!initialized) {
