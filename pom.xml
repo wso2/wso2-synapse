@@ -1592,9 +1592,9 @@
        <opentelemetry.all.version>1.11.0.wso2v6</opentelemetry.all.version>
        <okhttp.wso2.version>4.12.0.wso2v1</okhttp.wso2.version>
        <okio.wso2.version>3.6.0.wso2v1</okio.wso2.version>
-       <zipkin.sender.okhttp3.version>3.3.0.wso2v1</zipkin.sender.okhttp3.version>
+       <zipkin.sender.okhttp3.version>2.17.2.wso2v1</zipkin.sender.okhttp3.version>
        <zipkin.version>2.27.1</zipkin.version>
-       <zipkin-reporter.version>3.3.0</zipkin-reporter.version>
+       <zipkin-reporter.version>2.17.2</zipkin-reporter.version>
        <javax.annotation.verion>1.3.2</javax.annotation.verion>
        <apache.felix.scr.ds-annotations.version>1.2.4</apache.felix.scr.ds-annotations.version>
        <com.hierynomus.smbj.version>0.11.3.wso2v1</com.hierynomus.smbj.version>
