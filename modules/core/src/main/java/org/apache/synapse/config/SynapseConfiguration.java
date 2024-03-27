@@ -194,8 +194,6 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      */
     private Map<String, MessageProcessor> messageProcessors = new ConcurrentHashMap<String, MessageProcessor>();
 
-    private Map<String, Object> locks = new ConcurrentHashMap<String, Object>();
-
     /**
      * Endpoint templates to create actual endpoints
      */
@@ -1149,20 +1147,6 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         return definedEndpoints;
     }
 
-    public Object acquireLock(String key) {
-        Object lock = locks.get(key);
-        if (lock == null) {
-            synchronized (this) {
-                lock = locks.get(key);
-                if (lock == null) {
-                    lock = new Object();
-                    locks.put(key, lock);
-                }
-            }
-        }
-        return lock;
-    }
-
     /**
      * Get the definition of the endpoint with the given key
      *
@@ -1171,60 +1155,58 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      */
     public Endpoint getEndpoint(String key) {
 
-        synchronized (acquireLock(key)) {
-            Object o = getEntry(key);
-            if (o != null && o instanceof Endpoint) {
-                return (Endpoint) o;
-            }
-
-            Entry entry = null;
-            if (o == null) {
-                entry = new Entry(key);
-                entry.setType(Entry.REMOTE_ENTRY);
-            } else {
-                Object object = localRegistry.get(key);
-                if (object instanceof Entry) {
-                    entry = (Entry) object;
-                }
-            }
-
-            assertEntryNull(entry, key);
-
-            //noinspection ConstantConditions
-            if (entry.getMapper() == null) {
-                entry.setMapper(XMLToEndpointMapper.getInstance());
-            }
-
-            if (entry.getType() == Entry.REMOTE_ENTRY) {
-                if (registry != null) {
-                    o = registry.getResource(entry, getProperties());
-                    if (o != null && o instanceof Endpoint) {
-                        localRegistry.put(key, entry);
-                        return (Endpoint) o;
-                    } else if (o instanceof OMNode) {
-                        properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, this);
-                        Endpoint e = (Endpoint) XMLToEndpointMapper.getInstance().
-                                getObjectFromOMNode((OMNode) o, properties);
-                        if (e != null) {
-                            entry.setValue(e);
-                            return e;
-                        }
-                    }
-                }
-            } else {
-                Object value = entry.getValue();
-                if (value instanceof OMNode) {
-                    properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, this);
-                    Object object = entry.getMapper().getObjectFromOMNode(
-                            (OMNode) value, getProperties());
-                    if (object instanceof Endpoint) {
-                        entry.setValue(object);
-                        return (Endpoint) object;
-                    }
-                }
-            }
-            return null;
+        Object o = getEntry(key);
+        if (o != null && o instanceof Endpoint) {
+            return (Endpoint) o;
         }
+
+        Entry entry = null;
+        if (o == null) {
+            entry = new Entry(key);
+            entry.setType(Entry.REMOTE_ENTRY);
+        } else {
+            Object object = localRegistry.get(key);
+            if (object instanceof Entry) {
+                entry = (Entry) object;
+            }
+        }
+
+        assertEntryNull(entry, key);
+
+        //noinspection ConstantConditions
+        if (entry.getMapper() == null) {
+            entry.setMapper(XMLToEndpointMapper.getInstance());
+        }
+
+        if (entry.getType() == Entry.REMOTE_ENTRY) {
+            if (registry != null) {
+                o = registry.getResource(entry, getProperties());
+                if (o != null && o instanceof Endpoint) {
+                    localRegistry.put(key, entry);
+                    return (Endpoint) o;
+                } else if (o instanceof OMNode) {
+                    properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, this);
+                    Endpoint e = (Endpoint) XMLToEndpointMapper.getInstance().
+                            getObjectFromOMNode((OMNode) o, properties);
+                    if (e != null) {
+                        entry.setValue(e);
+                        return e;
+                    }
+                }
+            }
+        } else {
+            Object value = entry.getValue();
+            if (value instanceof OMNode) {
+                properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, this);
+                Object object = entry.getMapper().getObjectFromOMNode(
+                        (OMNode) value, getProperties());
+                if (object instanceof Endpoint) {
+                    entry.setValue(object);
+                    return (Endpoint) object;
+                }
+            }
+        }
+        return null;
     }
 
     /**
