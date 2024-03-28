@@ -106,8 +106,10 @@ public final class InlineExpressionUtil {
             }
             // If the string is neither XML or JSON, it is considered a String and must be wrapped in double quotes
             // If it is an empty string returned from a json-eval expression it must be wrapped in double quotes
-            if (isInline && ((value.isEmpty() && matchSeq.contains(EXPRESSION_JSON_EVAL))
-                    || (!isValidXML(value) && !isValidJson(value) && !isSurroundedByQuotes(surroundedString)))) {
+            if (isInline && (
+                    (value.isEmpty() && matchSeq.contains(EXPRESSION_JSON_EVAL)) ||
+                    (!isValidXML(value) && !isValidJson(value) && (value.isEmpty() || !isSurroundedByQuotes(surroundedString)))
+            )) {
                 value = "\"" + value + "\"";
             }
             text = text.replace(matchSeq, value);
