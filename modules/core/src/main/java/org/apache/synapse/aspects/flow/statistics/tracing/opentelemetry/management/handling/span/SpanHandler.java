@@ -280,7 +280,9 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         return spanStore.getOuterLevelSpanWrapper() == null
                 && (statisticDataUnit.getComponentType() == ComponentType.PROXYSERVICE
                 || statisticDataUnit.getComponentType() == ComponentType.API
-                || statisticDataUnit.getComponentType() == ComponentType.INBOUNDENDPOINT);
+                || statisticDataUnit.getComponentType() == ComponentType.INBOUNDENDPOINT
+                        || (statisticDataUnit.getComponentType() == ComponentType.SEQUENCE
+                        && SynapseConstants.MAIN_SEQUENCE_KEY.equals(statisticDataUnit.getComponentName())));
     }
 
     @Override
