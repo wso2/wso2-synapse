@@ -293,7 +293,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                             + " URI : " + request.getUri()
                             + ", Method : " + request.getMethod()
                             + ", Correlation ID: " + request.getHeaders().get(PassThroughConstants.CORRELATION_DEFAULT_HEADER)
-                    );                    dropSourceConnection(conn);
+                    );
                     dropSourceConnection(conn);
                     metrics.exceptionOccured();
                     conn.getContext().setAttribute(PassThroughConstants.SOURCE_CONNECTION_DROPPED, true);
