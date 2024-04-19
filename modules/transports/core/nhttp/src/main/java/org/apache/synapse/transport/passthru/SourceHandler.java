@@ -359,7 +359,11 @@ public class SourceHandler implements NHttpServerEventHandler {
 
                 if (messageSizeSum > validMaxMessageSize) {
                     log.warn("Payload exceeds valid payload size range, hence discontinuing chunk stream at "
-                            + messageSizeSum + " bytes to prevent OOM.");
+                            + messageSizeSum + " bytes to prevent OOM for"
+                            + " URI : " + request.getUri()
+                            + ", Method : " + request.getMethod()
+                            + ", Correlation ID: " + request.getHeaders().get(PassThroughConstants.CORRELATION_DEFAULT_HEADER)
+                    );
                     dropSourceConnection(conn);
                     metrics.exceptionOccured();
                     conn.getContext().setAttribute(PassThroughConstants.SOURCE_CONNECTION_DROPPED, true);

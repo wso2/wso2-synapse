@@ -678,7 +678,11 @@ public class TargetHandler implements NHttpClientEventHandler {
 
               if (messageSizeSum > validMaxMessageSize) {
                   log.warn("Payload exceeds valid payload size range, hence discontinuing chunk stream at "
-                          + messageSizeSum + " bytes to prevent OOM.");
+                          + messageSizeSum + " bytes to prevent OOM for"
+                          + " URI : " + msgCtx.getProperty(PassThroughConstants.TRANSPORT_IN_URL)
+                          + ", Method : " + msgCtx.getProperty(PassThroughConstants.HTTP_METHOD)
+                          + ", Correlation ID: " + msgCtx.getProperty(CorrelationConstants.CORRELATION_ID)
+                  );
                   dropTargetConnection(conn);
                   response.getPipe().forceProducerComplete(decoder);
               }

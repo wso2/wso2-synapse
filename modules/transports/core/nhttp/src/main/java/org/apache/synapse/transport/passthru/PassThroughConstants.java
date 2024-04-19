@@ -237,6 +237,7 @@ public class PassThroughConstants {
     public static final String HTTP_PUT = "PUT";
     public static final String HTTP_OPTIONS = "OPTIONS";
     public static final String HTTP_CONNECT = "CONNECT";
+    public static final String HTTP_METHOD = "HTTP_METHOD";
 
     //Constant to specify the socket timeout
     public static final String HTTP_SOCKET_TIMEOUT = "HTTP_SOCKET_TIMEOUT";
@@ -274,4 +275,5 @@ public class PassThroughConstants {
     //default header that carries the correlation ID. Header name is configurable at passthru-http.properties
     public static final String CORRELATION_DEFAULT_HEADER = "activityid";
     public static final String TRANSPORT_LATENCY_LOGGER = "transport-latency";
+    public static final String TRANSPORT_IN_URL = "TransportInURL";
 }
