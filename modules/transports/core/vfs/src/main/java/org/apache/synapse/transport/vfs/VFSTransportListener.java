@@ -51,6 +51,7 @@ import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.FileType;
 import org.apache.commons.vfs2.impl.DefaultFileSystemManager;
 import org.apache.commons.vfs2.impl.StandardFileSystemManager;
+import org.apache.commons.vfs2.provider.UriParser;
 import org.apache.synapse.commons.vfs.FileObjectDataSource;
 import org.apache.synapse.commons.vfs.VFSConstants;
 import org.apache.synapse.commons.vfs.VFSOutTransportInfo;
@@ -138,6 +139,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
     public static final String DELETE = "DELETE";
     public static final String MOVE = "MOVE";
     public static final String NONE = "NONE";
+    private static final String IS_MOUNTED = "transport.vfs.isMounted";
 
     /** The VFS file system manager */
     private DefaultFileSystemManager fsManager = null;
@@ -726,6 +728,11 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 }                
                 FileObject dest = moveToDirectory.resolveFile(
                         prefix + fileObject.getName().getBaseName());
+
+                // Get transport.vfs.isMounted query parameter
+                Map<String,String> queryParam = UriParser.extractQueryParams(moveToDirectoryURI);
+                dest.setIsMounted(Boolean.parseBoolean(queryParam.get(IS_MOUNTED)));
+
                 if (log.isDebugEnabled()) {
                     log.debug("Moving to file :" + VFSUtils.maskURLPassword(dest.getName().getURI()));
                 }
