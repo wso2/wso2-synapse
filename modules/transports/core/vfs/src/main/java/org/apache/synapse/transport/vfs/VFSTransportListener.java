@@ -287,9 +287,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 try {
                     children = fileObject.getChildren();
                     for (FileObject child : children) {
-                        if (fileObject.getIsMounted()) {
-                            child.setIsMounted(fileObject.getIsMounted());
-                        }
+                        child.setIsMounted(fileObject.getIsMounted());
                     }
                 } catch (FileNotFolderException ignored) {
                 } catch (FileSystemException ex) {
