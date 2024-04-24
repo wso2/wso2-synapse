@@ -2062,7 +2062,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         Map.Entry<Library, Integer> libraryCountEntry = deployedLibs.get(name);
         if (libraryCountEntry != null) {
             Integer count = libraryCountEntry.getValue();
-            if (count > 0) {
+            if (count > 1) {
                 count--;
                 libraryCountEntry.setValue(count);
             } else {
