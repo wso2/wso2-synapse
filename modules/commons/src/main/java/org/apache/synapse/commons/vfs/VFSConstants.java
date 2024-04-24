@@ -43,6 +43,7 @@ public final class VFSConstants {
     public static final String TRANSPORT_FILE_CONTENT_TYPE = "transport.vfs.ContentType";
     public static final String TRANSPORT_FILE_LOCKING = "transport.vfs.Locking";
     public static final String UPDATE_LAST_MODIFIED = "transport.vfs.UpdateLastModified";
+    public static final String IS_MOUNTED = "transport.vfs.IsMounted";
     public static final String TRANSPORT_FILE_LOCKING_ENABLED = "enable";
     public static final String TRANSPORT_FILE_LOCKING_DISABLED = "disable";
 

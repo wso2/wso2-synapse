@@ -139,7 +139,6 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
     public static final String DELETE = "DELETE";
     public static final String MOVE = "MOVE";
     public static final String NONE = "NONE";
-    private static final String IS_MOUNTED = "transport.vfs.isMounted";
 
     /** The VFS file system manager */
     private DefaultFileSystemManager fsManager = null;
@@ -237,6 +236,10 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 retryCount++;
                 fileObject = getFsManager().resolveFile(fileURI, fso);
 
+                // Get if the file location is volume mounted
+                Map<String,String> queryParams = UriParser.extractQueryParams(fileURI);
+                fileObject.setIsMounted(Boolean.parseBoolean(queryParams.get(VFSConstants.IS_MOUNTED)));
+
                 if (fileObject == null) {
                     log.error("fileObject is null");
                     throw new FileSystemException("fileObject is null");
@@ -283,6 +286,11 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 FileObject[] children = null;
                 try {
                     children = fileObject.getChildren();
+                    for (FileObject child : children) {
+                        if (fileObject.getIsMounted()) {
+                            child.setIsMounted(fileObject.getIsMounted());
+                        }
+                    }
                 } catch (FileNotFolderException ignored) {
                 } catch (FileSystemException ex) {
                     closeFileSystem(fileObject);
@@ -729,9 +737,9 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 FileObject dest = moveToDirectory.resolveFile(
                         prefix + fileObject.getName().getBaseName());
 
-                // Get transport.vfs.isMounted query parameter
-                Map<String,String> queryParam = UriParser.extractQueryParams(moveToDirectoryURI);
-                dest.setIsMounted(Boolean.parseBoolean(queryParam.get(IS_MOUNTED)));
+                // Get if the destination location is volume mounted
+                Map<String,String> queryParams = UriParser.extractQueryParams(moveToDirectoryURI);
+                dest.setIsMounted(Boolean.parseBoolean(queryParams.get(VFSConstants.IS_MOUNTED)));
 
                 if (log.isDebugEnabled()) {
                     log.debug("Moving to file :" + VFSUtils.maskURLPassword(dest.getName().getURI()));
