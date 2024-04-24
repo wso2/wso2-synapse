@@ -51,6 +51,7 @@ import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.FileType;
 import org.apache.commons.vfs2.impl.DefaultFileSystemManager;
 import org.apache.commons.vfs2.impl.StandardFileSystemManager;
+import org.apache.commons.vfs2.provider.UriParser;
 import org.apache.synapse.commons.vfs.FileObjectDataSource;
 import org.apache.synapse.commons.vfs.VFSConstants;
 import org.apache.synapse.commons.vfs.VFSOutTransportInfo;
@@ -235,6 +236,10 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 retryCount++;
                 fileObject = getFsManager().resolveFile(fileURI, fso);
 
+                // Get if the file location is volume mounted
+                Map<String,String> queryParams = UriParser.extractQueryParams(fileURI);
+                fileObject.setIsMounted(Boolean.parseBoolean(queryParams.get(VFSConstants.IS_MOUNTED)));
+
                 if (fileObject == null) {
                     log.error("fileObject is null");
                     throw new FileSystemException("fileObject is null");
@@ -281,6 +286,9 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 FileObject[] children = null;
                 try {
                     children = fileObject.getChildren();
+                    for (FileObject child : children) {
+                        child.setIsMounted(fileObject.getIsMounted());
+                    }
                 } catch (FileNotFolderException ignored) {
                 } catch (FileSystemException ex) {
                     closeFileSystem(fileObject);
@@ -726,6 +734,11 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 }                
                 FileObject dest = moveToDirectory.resolveFile(
                         prefix + fileObject.getName().getBaseName());
+
+                // Get if the destination location is volume mounted
+                Map<String,String> queryParams = UriParser.extractQueryParams(moveToDirectoryURI);
+                dest.setIsMounted(Boolean.parseBoolean(queryParams.get(VFSConstants.IS_MOUNTED)));
+
                 if (log.isDebugEnabled()) {
                     log.debug("Moving to file :" + VFSUtils.maskURLPassword(dest.getName().getURI()));
                 }
