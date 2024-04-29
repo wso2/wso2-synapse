@@ -343,7 +343,7 @@
         </dependency>
         <!--  JSON Schema validator dependency -->
         <dependency>
-            <groupId>org.wso2.orbit.com.github.fge</groupId>
+            <groupId>org.wso2.orbit.com.github.java-json-tools</groupId>
             <artifactId>json-schema-validator-all</artifactId>
         </dependency>
         <dependency>

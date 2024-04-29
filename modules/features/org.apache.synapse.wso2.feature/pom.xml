@@ -76,7 +76,7 @@
             <artifactId>handy-uri-templates</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.orbit.com.github.fge</groupId>
+            <groupId>org.wso2.orbit.com.github.java-json-tools</groupId>
             <artifactId>json-schema-validator-all</artifactId>
         </dependency>
         <dependency>
@@ -155,7 +155,7 @@
                                 <!--<bundleDef>org.wso2.orbit.joda-time:joda-time:${joda-time.version}</bundleDef>-->
                                 <bundleDef>com.google.guava:guava:${google.guava.version}</bundleDef>
                                 <bundleDef>com.google.guava:failureaccess:${failureaccess.version}</bundleDef>
-                                <bundleDef>org.wso2.orbit.com.github.fge:json-schema-validator-all</bundleDef>
+                                <bundleDef>org.wso2.orbit.com.github.java-json-tools:json-schema-validator-all</bundleDef>
                                 <bundleDef>
                                     org.wso2.orbit.io.opentelemetry:opentelemetry-all:${opentelemetry.all.version}
                                 </bundleDef>

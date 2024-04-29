@@ -131,7 +131,7 @@
             <artifactId>synapse-core</artifactId>
             <exclusions>
                 <exclusion>
-                    <groupId>org.wso2.orbit.com.github.fge</groupId>
+                    <groupId>org.wso2.orbit.com.github.java-json-tools</groupId>
                     <artifactId>json-schema-validator-all</artifactId>
                 </exclusion>
             </exclusions>
@@ -143,7 +143,7 @@
             <scope>test</scope>
             <exclusions>
                 <exclusion>
-                    <groupId>org.wso2.orbit.com.github.fge</groupId>
+                    <groupId>org.wso2.orbit.com.github.java-json-tools</groupId>
                     <artifactId>json-schema-validator-all</artifactId>
                 </exclusion>
             </exclusions>

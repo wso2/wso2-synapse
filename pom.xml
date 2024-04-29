@@ -1067,9 +1067,9 @@
               <version>${version.org.wso2.orbit.javax.activation}</version>
           </dependency>
          <dependency>
-            <groupId>org.wso2.orbit.com.github.fge</groupId>
+            <groupId>org.wso2.orbit.com.github.java-json-tools</groupId>
             <artifactId>json-schema-validator-all</artifactId>
-            <version>${fge.json.schema.validator.version}</version>
+            <version>${java-json-tools.json.schema.validator.version}</version>
          </dependency>
          <dependency>
               <groupId>com.fasterxml.jackson.core</groupId>
@@ -1565,7 +1565,7 @@
       <javax.servlet.version>3.0.1</javax.servlet.version>
       <powermock.version>2.0.9</powermock.version>
       <mockito.version>3.0.0</mockito.version>
-      <fge.json.schema.validator.version>2.2.6.wso2v10</fge.json.schema.validator.version>
+      <java-json-tools.json.schema.validator.version>2.2.7.wso2v1</java-json-tools.json.schema.validator.version>
       <fasterxml.jackson.version>2.16.1</fasterxml.jackson.version>
       <fasterxml.jackson-databind.version>2.16.1</fasterxml.jackson-databind.version>
       <google.guava.version>33.0.0-jre</google.guava.version>
