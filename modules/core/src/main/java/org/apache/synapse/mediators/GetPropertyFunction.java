@@ -28,6 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.commons.util.FilePropertyLoader;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -109,7 +110,8 @@ public class GetPropertyFunction implements Function , XPathFunction {
                             !XMLConfigConstants.SCOPE_REGISTRY.equals(argOne) &&
                             !XMLConfigConstants.SCOPE_FUNC.equals(argOne) &&
                             !XMLConfigConstants.SCOPE_SYSTEM.equals(argOne) &&
-                            !XMLConfigConstants.SCOPE_ENVIRONMENT.equals(argOne)) {
+                            !XMLConfigConstants.SCOPE_ENVIRONMENT.equals(argOne) &&
+                            !XMLConfigConstants.SCOPE_FILE.equals(argOne)) {
                         return evaluate(XMLConfigConstants.SCOPE_DEFAULT, args.get(0),
                             args.get(1), context.getNavigator());
                     } else {
@@ -357,6 +359,17 @@ public class GetPropertyFunction implements Function , XPathFunction {
             } else {
                 if (traceOrDebugOn) {
                     traceOrDebug(traceOn, "Environment property " + key + " not found");
+                }
+                return NULL_STRING;
+            }
+
+        } else if (XMLConfigConstants.SCOPE_FILE.equals(scope)) {
+            String propVal = FilePropertyLoader.getInstance().getValue(key);
+            if (propVal != null) {
+                return propVal;
+            } else {
+                if (traceOrDebugOn) {
+                    traceOrDebug(traceOn, "Property " + key + " not found in properties file");
                 }
                 return NULL_STRING;
             }
