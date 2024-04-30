@@ -53,6 +53,8 @@ public class XMLConfigConstants {
     public static final String SCOPE_SYSTEM = "system";
     /** The scope name for environment variables */
     public static final String SCOPE_ENVIRONMENT = "env";
+    /** The scope name for properties defined in a file*/
+    public static final String SCOPE_FILE = "file";
     public static final String KEY = "key";
     public static final String NAME = "name";
     public static final String LOCATION = "location";
