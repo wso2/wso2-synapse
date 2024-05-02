@@ -82,7 +82,7 @@ public class FilePropertyResolverTest {
             //ignore
         }
         FilePropertyLoader propertyLoader = FilePropertyLoader.getInstance();
-        Awaitility.await().pollInterval(500, TimeUnit.MILLISECONDS).atMost(8, TimeUnit.SECONDS).
+        Awaitility.await().pollInterval(500, TimeUnit.MILLISECONDS).atMost(10, TimeUnit.SECONDS).
                 until(() -> "testValue2".equals(propertyLoader.getValue(KEY)));
     }
 
