@@ -65,6 +65,8 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
 
     private String id;
 
+    private boolean continueLoopOnFailure = false;
+
     private static final String FOREACH_ORIGINAL_MESSAGE = "FOREACH_ORIGINAL_MESSAGE";
 
     private static final String FOREACH_COUNTER = "FOREACH_COUNTER";
@@ -142,7 +144,23 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
             for (JsonElement element : iterableJsonArray) {
                 try {
                     updateIteratedMessage(synCtx, element);
-                    boolean mediateResult = mediateSequence(synCtx);
+                    boolean mediateResult;
+                    if (continueLoopOnFailure) {
+                        try {
+                            mediateResult = mediateSequence(synCtx);
+                        } catch (Exception ex) {
+                            if (log.isDebugEnabled()) {
+                                log.warn("Error occurred while mediating the sequence for the foreach mediator, " +
+                                        "Continuing with the remaining.", ex);
+                            } else {
+                                log.warn("Error occurred while mediating the sequence for the foreach mediator, " +
+                                                ex.getMessage() + ". Continuing with the remaining.");
+                            }
+                            continue;
+                        }
+                    } else {
+                        mediateResult = mediateSequence(synCtx);
+                    }
                     modifiedPayloadArray.add(EIPUtils.tryParseJsonString(parser,
                             JsonUtil.jsonPayloadToString(((Axis2MessageContext) synCtx).getAxis2MessageContext())));
                     msgCounter++;
@@ -151,10 +169,19 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
                                 + msgCounter);
                     }
                     synCtx.setProperty(counterPropName, msgCounter);
-                    if (!mediateResult) { // break the loop if mediate result is false
+                    if (!mediateResult && !continueLoopOnFailure) {// break the loop if mediate result is false
                         break;
                     }
                 } catch (AxisFault axisFault) {
+                    if (continueLoopOnFailure) {
+                        if (log.isDebugEnabled()) {
+                            log.warn("Error occurred in the foreach mediator, Continuing with the remaining.", axisFault);
+                        } else {
+                            log.warn("Error occurred in the foreach mediator, " + axisFault.getMessage()
+                                    + ". Continuing with the remaining.");
+                        }
+                        continue;
+                    }
                     handleException("Error updating the stream with iterater element : " +
                             element.toString(), axisFault, synCtx);
                 }
@@ -221,7 +248,22 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
                 } catch (AxisFault axisFault) {
                     handleException("Error creating an iterated copy of the message", axisFault, synCtx);
                 }
-                boolean mediateResult = mediateSequence(iteratedMsgCtx);
+                boolean mediateResult = false;
+                if (continueLoopOnFailure) {
+                    try {
+                        mediateResult = mediateSequence(iteratedMsgCtx);
+                    } catch (Exception ex) {
+                        if (log.isDebugEnabled()) {
+                            log.warn("Error occurred while mediating the sequence for the foreach mediator, " +
+                                    "Continuing with the remaining.", ex);
+                        } else {
+                            log.warn("Error occurred while mediating the sequence for the foreach mediator, " +
+                                    ex.getMessage() + ". Continuing with the remaining.");
+                        }
+                    }
+                } else {
+                    mediateResult = mediateSequence(iteratedMsgCtx);
+                }
                 //add the mediated element to the parent from original message context
                 parent.addChild(iteratedMsgCtx.getEnvelope().getBody().getFirstElement());
 
@@ -232,7 +274,7 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
                 }
                 synCtx.setProperty(counterPropName, msgCounter);
 
-                if (!mediateResult) { // break the loop if mediate result is false
+                if (!mediateResult && !continueLoopOnFailure) { // break the loop if mediate result is false
                     break;
                 }
             }
@@ -473,5 +515,9 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public void setContinueLoopOnFailure(boolean continueOnFail) {
+        this.continueLoopOnFailure = continueOnFail;
     }
 }
