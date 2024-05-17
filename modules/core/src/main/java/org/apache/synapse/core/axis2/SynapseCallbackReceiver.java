@@ -67,6 +67,7 @@ import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.ResponseAcceptEncodingProcessor;
 
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Stack;
 import java.util.Timer;
 
@@ -160,16 +161,9 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             return;
         }
 
-
-        if (messageCtx.getOptions() != null && messageCtx.getOptions().getRelatesTo() != null) {
-            // never take a chance with a NPE at this stage.. so check at each level :-)
-            Options options = messageCtx.getOptions();
-            if (options != null) {
-                RelatesTo relatesTo = options.getRelatesTo();
-                if (relatesTo != null) {
-                    messageID = relatesTo.getValue();
-                }
-            }
+        String relatesTo = extractRelatesToFromResponse(messageCtx);
+        if (relatesTo != null && !isRelatesToUnspecified(relatesTo)) {
+            messageID = relatesTo;
         } else if (messageCtx.getProperty(SynapseConstants.SANDESHA2_SEQUENCE_KEY) == null) {
             messageID = (String) messageCtx.getProperty(SynapseConstants.RELATES_TO_FOR_POX);
         }
@@ -227,6 +221,26 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             // TODO invoke a generic synapse error handler for this message
             log.warn("Synapse received a response message without a message Id");
         }
+    }
+
+    private String extractRelatesToFromResponse(MessageContext messageCtx) {
+        if (messageCtx.getOptions() != null && messageCtx.getOptions().getRelatesTo() != null) {
+            // never take a chance with a NPE at this stage.. so check at each level :-)
+            Options options = messageCtx.getOptions();
+            if (options != null) {
+                RelatesTo relatesTo = options.getRelatesTo();
+                if (relatesTo != null) {
+                    return relatesTo.getValue();
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean isRelatesToUnspecified(String relatesTo) {
+
+        return relatesTo.equals("http://schemas.xmlsoap.org/ws/2004/08/addressing/id/unspecified")
+                || relatesTo.equals("http://www.w3.org/2005/08/addressing/unspecified");
     }
 
     /**
