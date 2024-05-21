@@ -510,4 +510,8 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
     public void setContinueLoopOnFailure(boolean continueOnFail) {
         this.continueLoopOnFailure = continueOnFail;
     }
+
+    public boolean getContinueLoopOnFailure() {
+        return this.continueLoopOnFailure;
+    }
 }
