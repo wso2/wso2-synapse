@@ -73,6 +73,10 @@ public class ForEachMediatorSerializer extends AbstractMediatorSerializer {
             forEachElem.addChild(seqElement);
         }
 
+        if (forEachMed.getContinueLoopOnFailure()) {
+            forEachElem.addAttribute("continueLoopOnFailure", Boolean.toString(forEachMed.getContinueLoopOnFailure()), null);
+        }
+
         serializeComments(forEachElem, forEachMed.getCommentsList());
 
         return forEachElem;
