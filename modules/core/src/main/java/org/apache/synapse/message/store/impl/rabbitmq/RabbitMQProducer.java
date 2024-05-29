@@ -112,17 +112,17 @@ public class RabbitMQProducer implements MessageProducer {
             if (channel != null) {
                 try {
                     channel.close();
-                } catch (IOException | TimeoutException exception) {
+                } catch (Exception channelCloseException) {
                     log.error("Error occurred while closing the malformed channel Error: " +
-                            exception.getLocalizedMessage());
+                            channelCloseException.getLocalizedMessage());
                 }
             }
             if (connection != null) {
                 try {
                     connection.close();
-                } catch (IOException ioException) {
+                } catch (Exception connectionCloseException) {
                     log.error("Error occurred while closing the malformed connection Error: " +
-                            ioException.getLocalizedMessage());
+                            connectionCloseException.getLocalizedMessage());
                 }
             }
             channel = null;
