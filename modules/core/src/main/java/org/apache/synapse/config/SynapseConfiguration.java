@@ -494,7 +494,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         while (swaggerIterator.hasNext()) {
             String name = swaggerIterator.next();
             if (!apiTable.containsKey(name)) {
-                swaggerTable.remove(name);
+                swaggerIterator.remove();
             }
         }
     }
