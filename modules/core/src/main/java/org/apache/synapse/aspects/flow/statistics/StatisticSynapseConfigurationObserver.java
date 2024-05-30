@@ -33,6 +33,7 @@ import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.api.API;
+import org.apache.synapse.startup.quartz.StartUpController;
 
 public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 	@Override
@@ -138,7 +139,14 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 
 	@Override
 	public void startupAdded(Startup startup) {
-
+		if (startup instanceof StartUpController) {
+			StartUpController startupController = (StartUpController) startup;
+			ArtifactHolder holder = new ArtifactHolder();
+			holder.setParent(startupController.getName());
+			startupController.setComponentStatisticsId(holder);
+			startupController.getAspectConfiguration().setHashCode(holder.getHashCodeAsString());
+			StatisticIdentityGenerator.conclude(holder);
+		}
 	}
 
 	@Override

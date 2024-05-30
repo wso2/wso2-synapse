@@ -41,6 +41,8 @@ public class StatisticsConstants {
 				return StatisticsConstants.FLOW_STATISTICS_API;
 			case RESOURCE:
 				return StatisticsConstants.FLOW_STATISTICS_RESOURCE;
+			case TASK:
+				return StatisticsConstants.FLOW_STATISTICS_TASK;
 			default:
 				return StatisticsConstants.FLOW_STATISTICS_ANY;
 		}
@@ -171,6 +173,8 @@ public class StatisticsConstants {
 	public static final String FLOW_STATISTICS_API = "API";
 
 	public static final String FLOW_STATISTICS_RESOURCE = "API Resource";
+
+	public static final String FLOW_STATISTICS_TASK = "TASK";
 
 	public static final String FLOW_STATISTICS_ANY = "Other Type";
 

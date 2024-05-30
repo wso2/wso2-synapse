@@ -65,6 +65,8 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.elementary.Source;
 import org.apache.synapse.mediators.elementary.Target;
 import org.apache.synapse.rest.RESTRequestHandler;
+import org.apache.synapse.startup.quartz.QuartzTaskStatisticsCloseEventListener;
+import org.apache.synapse.startup.quartz.StartUpController;
 import org.apache.synapse.task.SynapseTaskManager;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
@@ -400,15 +402,41 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     }
 
     public void injectAsync(final MessageContext synCtx, SequenceMediator seq) {
+        String taskName;
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
+        AspectConfiguration aspectConfiguration = null;
+        Integer statisticReportingIndex = null;
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for asynchronous mediation using the : "
                 + (seq.getName() == null? "Anonymous" : seq.getName()) + " Sequence");
         }
-        if (RuntimeStatisticCollector.isStatisticsEnabled()) {
-            OpenEventCollector.reportFlowAsynchronousEvent(synCtx);
-        }
         synCtx.setEnvironment(this);
-        executorService.execute(new MediatorWorker(seq, synCtx));
+        MediatorWorker mediatorWorker = new MediatorWorker(seq, synCtx);
+        /*
+         * If the method is invoked by the task
+         * Then check for the endpoint name and then set the Log Appender Content
+         */
+        if (synCtx.getProperty(SynapseConstants.TASK_NAME) != null) {
+            taskName = (String) synCtx.getProperty(SynapseConstants.TASK_NAME);
+            StartUpController startUpController =
+                    (StartUpController) synCtx.getConfiguration().getStartup(taskName);
+            if (startUpController != null) {
+                CustomLogSetter.getInstance().setLogAppender(startUpController.getArtifactContainerName());
+                if (startUpController.getAspectConfiguration() != null) {
+                    aspectConfiguration = startUpController.getAspectConfiguration();
+                }
+                if (isStatisticsEnabled) {
+                    statisticReportingIndex = OpenEventCollector.reportEntryEvent(synCtx, taskName,
+                            aspectConfiguration, ComponentType.TASK);
+                    QuartzTaskStatisticsCloseEventListener statisticsCloseEventListener
+                            = new QuartzTaskStatisticsCloseEventListener(taskName, statisticReportingIndex);
+                    mediatorWorker.setStatisticsCloseEventListener(statisticsCloseEventListener);
+                }
+
+            }
+        }
+        executorService.execute(mediatorWorker);
+
     }
 
     /**
@@ -424,7 +452,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      * 
      */
     public boolean injectInbound(final MessageContext synCtx, SequenceMediator seq,
-            boolean sequential) throws SynapseException {
+        boolean sequential) throws SynapseException {
         String inboundName = null;
         boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         AspectConfiguration inboundAspectConfiguration = null;
