@@ -259,7 +259,7 @@ class SynapseTestcaseDataReader {
             QName qualifiedRegistryArtifactFile = new QName("", ARTIFACT, "");
             OMElement registryArtifactsFileNode = resource.getFirstChildWithName(qualifiedRegistryArtifactFile);
             String resourceArtifact = registryArtifactsFileNode.getText();
-            if (resourceArtifact.isEmpty()) {
+            if (resourceArtifact.isEmpty() && registryArtifactsFileNode.getFirstOMChild() != null) {
                 resourceArtifact = registryArtifactsFileNode.getFirstOMChild().toString();
             }
 
