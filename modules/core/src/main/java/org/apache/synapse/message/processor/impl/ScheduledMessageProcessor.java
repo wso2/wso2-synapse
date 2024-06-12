@@ -71,6 +71,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
      * This is specially used for REST scenarios where http status codes can take semantics in a RESTful architecture.
      */
     protected String[] nonRetryStatusCodes = null;
+	protected String[] nonRetryStoreStatusCodes = null;
 
 	protected BlockingMsgSender sender;
 
@@ -241,6 +242,10 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 				// we take it out of param set and send it because we need split
 				// the array.
 				nonRetryStatusCodes = o.toString().split(",");
+			}
+			o = parameters.get(ForwardingProcessorConstants.NON_RETRY_STORE_STATUS_CODES);
+			if (o != null) {
+				nonRetryStoreStatusCodes = o.toString().split(",");
 			}
 		}
 	}
