@@ -17,7 +17,7 @@
   ~  specific language governing permissions and limitations
   ~  under the License.
   -->
-<project xmlns="https://maven.apache.org/POM/4.0.0" xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
    <modelVersion>4.0.0</modelVersion>
    <parent>
       <groupId>org.wso2</groupId>
@@ -30,9 +30,9 @@
    <name>Apache Synapse</name>
    <description>Apache Synapse</description>
    <packaging>pom</packaging>
-   <url>https://synapse.apache.org/</url>
+   <url>http://synapse.apache.org/</url>
    <issueManagement>
-      <url>https://issues.apache.org/jira/browse/SYNAPSE</url>
+      <url>http://issues.apache.org/jira/browse/SYNAPSE</url>
    </issueManagement>
    <mailingLists>
       <mailingList>
@@ -40,28 +40,28 @@
          <subscribe>dev-subscribe@synapse.apache.org</subscribe>
          <unsubscribe>dev-unsubscribe@synapse.apache.org</unsubscribe>
          <post>dev@synapse.apache.org</post>
-         <archive>https://mail-archives.apache.org/mod_mbox/synapse-dev/</archive>
+         <archive>http://mail-archives.apache.org/mod_mbox/synapse-dev/</archive>
       </mailingList>
       <mailingList>
          <name>Apache Synapse User List</name>
          <subscribe>user-subscribe@synapse.apache.org</subscribe>
          <unsubscribe>user-unsubscribe@synapse.apache.org</unsubscribe>
          <post>user@synapse.apache.org</post>
-         <archive>https://mail-archives.apache.org/mod_mbox/synapse-user/</archive>
+         <archive>http://mail-archives.apache.org/mod_mbox/synapse-user/</archive>
       </mailingList>
       <mailingList>
          <name>Apache Synapse Commits List</name>
          <subscribe>commits-subscribe@synapse.apache.org</subscribe>
          <unsubscribe>commits-unsubscribe@synapse.apache.org</unsubscribe>
          <post>commits@synapse.apache.org</post>
-         <archive>https://mail-archives.apache.org/mod_mbox/synapse-commits/</archive>
+         <archive>http://mail-archives.apache.org/mod_mbox/synapse-commits/</archive>
       </mailingList>
    </mailingLists>
    <inceptionYear>2005</inceptionYear>
    <licenses>
       <license>
          <name>The Apache Software License, Version 2.0</name>
-         <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+         <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
          <distribution>repo</distribution>
       </license>
    </licenses>
@@ -73,7 +73,7 @@
    </scm>
    <organization>
       <name>Apache Software Foundation</name>
-      <url>https://www.apache.org/</url>
+      <url>http://www.apache.org/</url>
    </organization>
    <profiles>
       <profile>
@@ -1624,21 +1624,21 @@
          <id>azeez</id>
          <email>azeez AT wso2.com</email>
          <organization>WSO2</organization>
-         <url>https://afkham.org/</url>
+         <url>http://afkham.org/</url>
       </developer>
       <developer>
          <name>Paul Fremantle</name>
          <id>pzf</id>
          <email>paul AT wso2.com</email>
          <organization>WSO2</organization>
-         <url>https://pzf.fremantle.org/</url>
+         <url>http://pzf.fremantle.org/</url>
       </developer>
       <developer>
          <name>Eran Chinthaka</name>
          <id>chinthaka</id>
          <email>chinthaka AT wso2.com</email>
          <organization>WSO2</organization>
-         <url>https://www.apache.org/~chinthaka</url>
+         <url>http://www.apache.org/~chinthaka</url>
       </developer>
       <developer>
          <name>Ant Elder</name>
@@ -1657,7 +1657,7 @@
          <id>deepal</id>
          <email>deepal AT wso2.com</email>
          <organization>WSO2</organization>
-         <url>https://www.apache.org/~deepal</url>
+         <url>http://www.apache.org/~deepal</url>
       </developer>
       <developer>
          <name>Davanum Srinivas</name>
@@ -1711,7 +1711,7 @@
          <id>asankha</id>
          <email>asankha AT apache.org</email>
          <organization>AdroitLogic</organization>
-         <url>https://adroitlogic.org</url>
+         <url>http://adroitlogic.org</url>
       </developer>
       <developer>
          <name>Upul Godage</name>
@@ -1729,7 +1729,7 @@
          <name>Andreas Veithen</name>
          <id>veithen</id>
          <email>veithen AT apache.org</email>
-         <url>https://www.linkedin.com/in/aveithen</url>
+         <url>http://www.linkedin.com/in/aveithen</url>
       </developer>
       <developer>
          <name>Asanka Abeysinghe</name>
@@ -1760,7 +1760,7 @@
          <id>heshan</id>
          <email>heshan AT apache.org</email>
          <organization>WSO2</organization>
-         <url>https://heshans.blogspot.com/</url>
+         <url>http://heshans.blogspot.com/</url>
       </developer>
    </developers>
    <contributors>
