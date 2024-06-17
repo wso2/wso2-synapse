@@ -121,7 +121,7 @@ public class AccessLogger {
     /**
      * Enable logging.
      */
-    public boolean isLoggingEnabled = getBooleanValue(CONFIG_ENABLE_LOGGING, true);
+    public boolean isLoggingEnabled = getBooleanValue(CONFIG_ENABLE_LOGGING, false);
 
     /**
      * Log the specified message to the log file, switching files if the date
