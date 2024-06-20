@@ -58,6 +58,8 @@ public class PollTableEntry extends AbstractPollTableEntry {
     private String replyFileURI;
     /** file name pattern for a directory or compressed file entry */
     private String fileNamePattern;
+    /** File name patterns and order of processing the matching files */
+    private String requiredFileNamePatterns;
     /** Content-Type to use for the message */
     private String contentType;
 
@@ -181,6 +183,14 @@ public class PollTableEntry extends AbstractPollTableEntry {
 
     public String getFileNamePattern() {
         return fileNamePattern;
+    }
+
+    public String getRequiredFileNamePatterns() {
+        return requiredFileNamePatterns;
+    }
+
+    public boolean hasRequiredFileNamePatterns() {
+        return requiredFileNamePatterns != null && !requiredFileNamePatterns.isEmpty();
     }
 
     public String getContentType() {
@@ -539,6 +549,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
 
             fileNamePattern = ParamUtils.getOptionalParam(params,
                                                           VFSConstants.TRANSPORT_FILE_FILE_NAME_PATTERN);
+
+            requiredFileNamePatterns = ParamUtils.getOptionalParam(params,
+                                                      VFSConstants.TRANSPORT_FILE_REQUIRED_FILE_NAME_PATTERNS);
 
             contentType = ParamUtils.getRequiredParam(params,
                                                       VFSConstants.TRANSPORT_FILE_CONTENT_TYPE);
