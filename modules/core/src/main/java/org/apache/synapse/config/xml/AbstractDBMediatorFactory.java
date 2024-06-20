@@ -136,13 +136,15 @@ public abstract class AbstractDBMediatorFactory extends AbstractMediatorFactory 
     }
 
     private void readLookupConfig(AbstractDBMediator mediator, OMElement pool) {
-        String dataSourceName = getValue(pool, DSNAME_Q);
-        mediator.setDataSourceName(dataSourceName);
+        String resolvedDataSourceName = ResolverFactory.getInstance().getResolver(getValue(pool, DSNAME_Q)).resolve();
+        mediator.setDataSourceName(resolvedDataSourceName);
         saveElementConfig(pool, DSNAME_Q, mediator);
 
         if (pool.getFirstChildWithName(ICCLASS_Q) != null) {
+            String resolvedInitialContextClass = ResolverFactory.getInstance()
+                    .getResolver(getValue(pool, ICCLASS_Q)).resolve();
             Properties props = new Properties();
-            props.put(Context.INITIAL_CONTEXT_FACTORY, getValue(pool, ICCLASS_Q));
+            props.put(Context.INITIAL_CONTEXT_FACTORY, resolvedInitialContextClass);
             props.put(Context.PROVIDER_URL, getValue(pool, URL_Q));
             props.put(Context.SECURITY_PRINCIPAL, getValue(pool, USER_Q));
             props.put(Context.SECURITY_CREDENTIALS, getValue(pool, PASS_Q));
