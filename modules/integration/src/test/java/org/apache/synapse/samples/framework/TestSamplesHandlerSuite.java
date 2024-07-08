@@ -324,7 +324,7 @@ public class TestSamplesHandlerSuite extends TestSuite {
 
     private static void populateTransportSamples() {
         sampleClassRepo.put("268", Sample268.class);
-//        sampleClassRepo.put("10102", Sample10102.class);
-//        sampleClassRepo.put("10103", Sample10103.class);
+        sampleClassRepo.put("10102", Sample10102.class);
+        sampleClassRepo.put("10103", Sample10103.class);
     }
 }
