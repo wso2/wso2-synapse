@@ -28,7 +28,7 @@ import org.apache.synapse.mediators.bsf.ScriptMediator;
 public class JavaScriptMediatorTest extends TestCase {
 
     public void testInlineMediator() throws Exception {
-        ScriptMediator mediator = new ScriptMediator("js", "mc.getPayloadXML().b == 'petra';",null);
+        ScriptMediator mediator = new ScriptMediator("rhinoJs", "mc.getPayloadXML().b == 'petra';",null);
 
         MessageContext mc = TestUtils.getTestContext("<a><b>petra</b></a>", null);
         assertTrue(mediator.mediate(mc));
@@ -41,7 +41,7 @@ public class JavaScriptMediatorTest extends TestCase {
     }
 
     public void testInlineMediator2() throws Exception {
-        ScriptMediator mediator = new ScriptMediator("js", "mc.getPayloadXML().b == 'petra';",null);
+        ScriptMediator mediator = new ScriptMediator("rhinoJs", "mc.getPayloadXML().b == 'petra';",null);
 
         MessageContext mc = TestUtils.getTestContext("<a><b>petra</b></a>", null);
         assertTrue(mediator.mediate(mc));
@@ -55,8 +55,7 @@ public class JavaScriptMediatorTest extends TestCase {
 
     public void testInlineMediatorWithImports() throws Exception {
 
-        String scriptSourceCode = "importClass(Packages.java.util.UUID);\n" +
-                "var uuid = java.util.UUID.randomUUID().toString().replace('-','');\n";
+        String scriptSourceCode = "var uuid = java.util.UUID.randomUUID().toString().replace('-','');\n";
 
         MessageContext mc = TestUtils.getTestContext("<foo/>", null);
         ScriptMediator mediator = new ScriptMediator("js", scriptSourceCode, null);
@@ -73,7 +72,7 @@ public class JavaScriptMediatorTest extends TestCase {
         String scriptSourceCode =  "var s = new java.util.ArrayList();\n";
 
         MessageContext mc = TestUtils.getTestContext("<foo/>", null);
-        ScriptMediator mediator = new ScriptMediator("js", scriptSourceCode, null);
+        ScriptMediator mediator = new ScriptMediator("rhinoJs", scriptSourceCode, null);
 
         System.setProperty("properties.file.path", System.getProperty("user.dir") + "/src/test/resources/file.properties");
 
@@ -98,7 +97,7 @@ public class JavaScriptMediatorTest extends TestCase {
                 "var hashmapConstructors = c.getClassLoader().loadClass(\"java.util.HashMap\").getDeclaredConstructors();\n";
 
         MessageContext mc = TestUtils.getTestContext("<foo/>", null);
-        ScriptMediator mediator = new ScriptMediator("js", scriptSourceCode, null);
+        ScriptMediator mediator = new ScriptMediator("rhinoJs", scriptSourceCode, null);
 
         System.setProperty("properties.file.path", System.getProperty("user.dir") + "/src/test/resources/file.properties");
 

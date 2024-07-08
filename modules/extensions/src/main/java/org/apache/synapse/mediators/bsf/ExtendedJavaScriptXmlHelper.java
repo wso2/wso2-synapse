@@ -32,7 +32,7 @@ import javax.xml.stream.XMLStreamException;
 /**
  * This class will provide the operations to convert between xml elements of scripts and OMElements.
  */
-public class NashornJavaScriptXmlHelper extends DefaultXMLHelper {
+public class ExtendedJavaScriptXmlHelper extends DefaultXMLHelper {
 
     /**
      * This method will convert the message payload in to xml.

@@ -35,18 +35,18 @@ import javax.activation.DataSource;
 import java.util.LinkedHashMap;
 
 /**
- * Test functions of Nashorn Java Script Mediator
+ * Test functions of GraalVM Java Script Mediator
  */
-public class NashornJavaScriptMediatorTest extends TestCase {
+public class GraalVMJavaScriptMediatorTest extends TestCase {
 
     private static final String INLINE_SCRIPT = "var state=5;";
 
     /**
-     * Test functionality of mediate with external script in nashornJS.
+     * Test functionality of mediate with external script in graalVMJs.
      *
      * @throws Exception
      */
-    public void testExternalScriptWithCommentsOnNashornEngine() throws Exception {
+    public void testExternalScriptWithCommentsOnGraalVMEngine() throws Exception {
         String request = "{\n"
                 + "    \"results\": [\n"
                 + "        {\n"
@@ -133,7 +133,7 @@ public class NashornJavaScriptMediatorTest extends TestCase {
         e.setValue(text);
         mc.getConfiguration().addEntry(scriptSrcKey, e);
         Value v = new Value(scriptSrcKey);
-        ScriptMediator mediator = new ScriptMediator("nashornJs", new LinkedHashMap<Value, Object>(), v, "transform",
+        ScriptMediator mediator = new ScriptMediator("js", new LinkedHashMap<Value, Object>(), v, "transform",
                 null);
         boolean result = mediator.mediate(mc);
         String response = JsonUtil.jsonPayloadToString(((Axis2MessageContext) mc).getAxis2MessageContext());
@@ -146,13 +146,13 @@ public class NashornJavaScriptMediatorTest extends TestCase {
     }
 
     /**
-     * Test functionality of mediate with inline script in nashornJS.
+     * Test functionality of mediate with inline script in graalVMJs.
      *
      * @throws Exception
      */
-    public void testInlineMediatorOnNashornEngine() throws Exception {
+    public void testInlineMediatorOnGraalVMEngine() throws Exception {
         MessageContext mc = TestUtils.getTestContext("<foo/>", null);
-        ScriptMediator mediator = new ScriptMediator("nashornJs", INLINE_SCRIPT,null);
+        ScriptMediator mediator = new ScriptMediator("js", INLINE_SCRIPT,null);
         boolean responese = mediator.mediate(mc);
         assertTrue(responese);
     }
