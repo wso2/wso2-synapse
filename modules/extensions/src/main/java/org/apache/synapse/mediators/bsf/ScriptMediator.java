@@ -684,6 +684,8 @@ public class ScriptMediator extends AbstractMediator {
             ScriptEngineWrapper sew;
             if (language.equals(NASHORN_JAVA_SCRIPT)) {
                 sew = new ScriptEngineWrapper(engineManager.getEngineByName(NASHORN));
+            } else if (language.equals(RHINO_JAVA_SCRIPT)) {
+                sew = new ScriptEngineWrapper(engineManager.getEngineByExtension("jsEngine"));
             } else {
                 sew = new ScriptEngineWrapper(engineManager.getEngineByExtension(language));
             }
@@ -708,6 +710,9 @@ public class ScriptMediator extends AbstractMediator {
 
 
         this.multiThreadedEngine = scriptEngine.getFactory().getParameter("THREADING") != null;
+        if (language.equals(JAVA_SCRIPT)) {
+            this.multiThreadedEngine = true;
+        }
         log.debug("Script mediator for language : " + language +
                 " supports multithreading? : " + multiThreadedEngine);
 
@@ -759,8 +764,10 @@ public class ScriptMediator extends AbstractMediator {
         if (scriptEngineWrapper == null) {
             if (language.equals(NASHORN_JAVA_SCRIPT)) {
                 scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByName(NASHORN));
+            } else if (language.equals(RHINO_JAVA_SCRIPT)) {
+                scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByExtension("jsEngine"));
             } else {
-                scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByExtension(GRAALVM));
+                scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByExtension(language));
             }
         }
         // fall back
