@@ -57,8 +57,8 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
             }
 
             // Clone the original MessageContext and save it to do a retry after a token refresh
-            MessageContext cloneMessageContext = MessageHelper.cloneMessageContext(synCtx);
-            MessageCache.getInstance().addMessageContext(synCtx.getMessageID(), cloneMessageContext);
+            MessageContext clonedMessageContext = MessageHelper.cloneMessageContext(synCtx);
+            MessageCache.getInstance().addMessageContext(synCtx.getMessageID(), clonedMessageContext);
 
             super.send(synCtx);
 
