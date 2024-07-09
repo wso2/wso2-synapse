@@ -24,7 +24,7 @@
     <sequence name="main">
         <in>
             <!-- transform the custom quote request into a standard quote requst expected by the service -->
-            <script language="js">
+            <script language="rhinoJs">
                 var symbol = mc.getPayloadXML()..*::Code.toString();
                 mc.setPayloadXML(
                 &lt;m:getQuote xmlns:m="http://services.samples"&gt;
@@ -41,7 +41,7 @@
         </in>
         <out>
             <!-- transform the standard response back into the custom format the client expects -->
-            <script language="js">
+            <script language="rhinoJs">
                 var symbol = mc.getPayloadXML()..*::symbol.toString();
                 var price = mc.getPayloadXML()..*::last.toString();
                 mc.setPayloadXML(
