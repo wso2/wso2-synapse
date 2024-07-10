@@ -24,7 +24,7 @@
     <sequence name="text_proxy">
         <log level="full"/>
         <header name="Action" value="urn:placeOrder"/>
-        <script language="js">
+        <script language="rhinoJs">
             var args = mc.getPayloadXML().toString().split(" ");
             mc.setPayloadXML(
             &lt;placeOrder xmlns="http://services.samples"&gt;

@@ -21,6 +21,7 @@ import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
 
 import javax.script.ScriptEngineFactory;
 
+@Deprecated
 public class OpenJDKNashornFactoryWrapper {
     public static ScriptEngineFactory getOpenJDKNashornFactory() {
         return new NashornScriptEngineFactory();

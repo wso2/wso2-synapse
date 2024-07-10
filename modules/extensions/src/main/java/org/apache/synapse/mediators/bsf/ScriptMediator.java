@@ -19,6 +19,7 @@
 package org.apache.synapse.mediators.bsf;
 
 import com.google.gson.JsonParser;
+import com.oracle.truffle.js.scriptengine.GraalJSEngineFactory;
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import com.sun.script.groovy.GroovyScriptEngineFactory;
 import com.sun.script.jruby.JRubyScriptEngineFactory;
@@ -42,8 +43,8 @@ import org.apache.synapse.mediators.bsf.access.control.SandboxContextFactory;
 import org.apache.synapse.mediators.bsf.access.control.config.AccessControlConfig;
 import org.apache.synapse.mediators.bsf.access.control.config.AccessControlListType;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.graalvm.polyglot.Context;
 import org.mozilla.javascript.ClassShutter;
-import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 
 import javax.activation.DataHandler;
@@ -104,9 +105,19 @@ public class ScriptMediator extends AbstractMediator {
     private static final String NASHORN_JAVA_SCRIPT = "nashornJs";
 
     /**
+     *
+     */
+    private static final String RHINO_JAVA_SCRIPT = "rhinoJs";
+
+    /**
      * Name of the nashorn java script engine.
      */
     private static final String NASHORN = "nashorn";
+
+    /**
+     * Name of the graalvm js engine.
+     */
+    private static final String GRAALVM = "graal.js";
 
     /**
      * Factory Name for Oracle Nashorn Engine. Built-in Nashorn engine in JDK 8 to JDK 11
@@ -296,22 +307,26 @@ public class ScriptMediator extends AbstractMediator {
 
     private boolean invokeScript(MessageContext synCtx) {
         boolean returnValue;
+        Context context = null;
         try {
             //if the engine is Rhino then needs to set the class loader specifically
-            if (language.equals("js")) {
-                Context cx = Context.enter();
+            if (language.equals(RHINO_JAVA_SCRIPT)) {
+                org.mozilla.javascript.Context cx = org.mozilla.javascript.Context.enter();
                 if (classAccessControlConfig != null && classAccessControlConfig.isAccessControlEnabled()) {
                     cx.setClassShutter(createClassShutter());
                 }
                 cx.setApplicationClassLoader(this.loader);
-
+            }
+            if (language.equals(JAVA_SCRIPT)) {
+                context = Context.newBuilder("js").allowExperimentalOptions(true).build();
+                context.enter();
             }
 
             Object returnObject;
             if (key != null) {
-                returnObject = mediateWithExternalScript(synCtx);
+                returnObject = mediateWithExternalScript(synCtx, context);
             } else {
-                returnObject = mediateForInlineScript(synCtx);
+                returnObject = mediateForInlineScript(synCtx, context);
             }
             returnValue = !(returnObject != null && returnObject instanceof Boolean) || (Boolean) returnObject;
 
@@ -332,8 +347,13 @@ public class ScriptMediator extends AbstractMediator {
                     (function != null ? " function " + function : ""), e, synCtx);
             returnValue = false;
         } finally {
+            if (language.equals(RHINO_JAVA_SCRIPT)) {
+                org.mozilla.javascript.Context.exit();
+            }
             if (language.equals("js")) {
-                Context.exit();
+                if (context != null) {
+                    context.leave();
+                }
             }
         }
 
@@ -344,24 +364,26 @@ public class ScriptMediator extends AbstractMediator {
      * Mediation implementation when the script to be executed should be loaded from the registry
      *
      * @param synCtx the message context
+     * @param context the context of script engine
      * @return script result
      * @throws ScriptException       For any errors , when compile, run the script
      * @throws NoSuchMethodException If the function is not defined in the script
      */
-    private Object mediateWithExternalScript(MessageContext synCtx)
+    private Object mediateWithExternalScript(MessageContext synCtx, Context context)
             throws ScriptException, NoSuchMethodException {
         ScriptEngineWrapper sew = null;
         Object obj;
         try {
             sew = prepareExternalScript(synCtx);
             XMLHelper helper;
-            if (language.equalsIgnoreCase(JAVA_SCRIPT) || language.equals(NASHORN_JAVA_SCRIPT)) {
+            if (language.equalsIgnoreCase(JAVA_SCRIPT) || language.equals(NASHORN_JAVA_SCRIPT) ||
+                    language.equals(RHINO_JAVA_SCRIPT)) {
                 helper = xmlHelper;
             } else {
                 helper = XMLHelper.getArgHelper(sew.getEngine());
             }
             ScriptMessageContext scriptMC;
-            scriptMC = getScriptMessageContext(synCtx, helper);
+            scriptMC = getScriptMessageContext(synCtx, helper, context);
             processJSONPayload(synCtx, scriptMC);
             Invocable invocableScript = (Invocable) sew.getEngine();
 
@@ -384,9 +406,11 @@ public class ScriptMediator extends AbstractMediator {
      * @param helper Object which help to convert xml into OMelemnt
      * @return Nashorn or Common script message context according to language attribute
      */
-    private ScriptMessageContext getScriptMessageContext(MessageContext synCtx, XMLHelper helper) {
+    private ScriptMessageContext getScriptMessageContext(MessageContext synCtx, XMLHelper helper,
+                                                         Context context) {
         ScriptMessageContext scriptMC;
         if (language.equals(NASHORN_JAVA_SCRIPT)) {
+            // nashorn is deprecated and will be removed in the future in favor of graal.js
             try {
                 if(isJDKContainNashorn()) {
                     scriptMC = new NashornJavaScriptMessageContext(synCtx, helper, jsEngine);
@@ -397,6 +421,12 @@ public class ScriptMediator extends AbstractMediator {
                 throw new SynapseException("Error occurred while evaluating empty json object", e);
             }
 
+        } else if (language.equals(JAVA_SCRIPT)) {
+            try {
+                scriptMC = new GraalVMJavaScriptMessageContext(synCtx, helper, context);
+            } catch (ScriptException e) {
+                throw new SynapseException("Error occurred while evaluating empty json object", e);
+            }
         } else {
             scriptMC = new CommonScriptMessageContext(synCtx, helper);
         }
@@ -410,9 +440,9 @@ public class ScriptMediator extends AbstractMediator {
      * @return true, or the script return value
      * @throws ScriptException For any errors , when compile , run the script
      */
-    private Object mediateForInlineScript(MessageContext synCtx) throws ScriptException {
+    private Object mediateForInlineScript(MessageContext synCtx, Context context) throws ScriptException {
         ScriptMessageContext scriptMC;
-        scriptMC = getScriptMessageContext(synCtx, xmlHelper);
+        scriptMC = getScriptMessageContext(synCtx, xmlHelper, context);
         processJSONPayload(synCtx, scriptMC);
         Bindings bindings = scriptEngine.createBindings();
         bindings.put(MC_VAR_NAME, scriptMC);
@@ -443,6 +473,8 @@ public class ScriptMediator extends AbstractMediator {
                     } else {
                         jsonObject = ((OpenJDKNashornJavaScriptMessageContext) scriptMC).jsonSerializerCallMember("parse", jsonPayload);
                     }
+                } else if (JAVA_SCRIPT.equals(language)) {
+                    jsonObject = ((GraalVMJavaScriptMessageContext) scriptMC).jsonSerializerCallMember("parse", jsonPayload);
                 } else {
                     String scriptWithJsonParser = "JSON.parse(JSON.stringify(" + jsonPayload + "))";
                     jsonObject = this.jsEngine.eval('(' + scriptWithJsonParser + ')');
@@ -618,13 +650,15 @@ public class ScriptMediator extends AbstractMediator {
         if (log.isDebugEnabled()) {
             log.debug("Initializing script mediator for language : " + language);
         }
-
+        System.setProperty("polyglot.engine.WarnInterpreterOnly", "false");
+        System.setProperty("polyglot.js.nashorn-compat", "true");
         engineManager = new ScriptEngineManager();
-        if (!language.equals(NASHORN_JAVA_SCRIPT)) {
+        if (language.equals(JAVA_SCRIPT)) {
+            engineManager.registerEngineExtension("jsEngine", new GraalJSEngineFactory());
+        }
+        if (language.equals(RHINO_JAVA_SCRIPT)) {
             engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
         }
-
-        engineManager.registerEngineExtension("js", new RhinoScriptEngineFactory());
         engineManager.registerEngineExtension("groovy", new GroovyScriptEngineFactory());
         engineManager.registerEngineExtension("rb", new JRubyScriptEngineFactory());
         engineManager.registerEngineExtension("py", new JythonScriptEngineFactory());
@@ -638,6 +672,8 @@ public class ScriptMediator extends AbstractMediator {
         }
         if (language.equals(NASHORN_JAVA_SCRIPT)) {
             this.scriptEngine = engineManager.getEngineByName(NASHORN);
+        } else if (language.equals(RHINO_JAVA_SCRIPT)) {
+            this.scriptEngine = engineManager.getEngineByExtension("jsEngine");
         } else {
             this.scriptEngine = engineManager.getEngineByExtension(language);
         }
@@ -648,6 +684,8 @@ public class ScriptMediator extends AbstractMediator {
             ScriptEngineWrapper sew;
             if (language.equals(NASHORN_JAVA_SCRIPT)) {
                 sew = new ScriptEngineWrapper(engineManager.getEngineByName(NASHORN));
+            } else if (language.equals(RHINO_JAVA_SCRIPT)) {
+                sew = new ScriptEngineWrapper(engineManager.getEngineByExtension("jsEngine"));
             } else {
                 sew = new ScriptEngineWrapper(engineManager.getEngineByExtension(language));
             }
@@ -661,24 +699,29 @@ public class ScriptMediator extends AbstractMediator {
         if (scriptEngine == null) {
             handleException("No script engine found for language: " + language);
         }
-        //Invoking a custom Helper class for api change in rhino17 and also for Nashorn engine based implimentation
-        if (language.equalsIgnoreCase(JAVA_SCRIPT)) {
+        if (language.equalsIgnoreCase(JAVA_SCRIPT) || language.equals(NASHORN_JAVA_SCRIPT)) {
+            xmlHelper = new ExtendedJavaScriptXmlHelper();
+        } else if (language.equals(RHINO_JAVA_SCRIPT)) {
+            // this will be removed in the future in favor of graal.js
             xmlHelper = new JavaScriptXmlHelper();
-        } else if (language.equals(NASHORN_JAVA_SCRIPT)) {
-            xmlHelper = new NashornJavaScriptXmlHelper();
         } else {
             xmlHelper = XMLHelper.getArgHelper(scriptEngine);
         }
 
 
         this.multiThreadedEngine = scriptEngine.getFactory().getParameter("THREADING") != null;
+        if (language.equals(JAVA_SCRIPT)) {
+            this.multiThreadedEngine = true;
+        }
         log.debug("Script mediator for language : " + language +
                 " supports multithreading? : " + multiThreadedEngine);
 
-        readAccessControlConfigurations(MiscellaneousUtil.loadProperties("synapse.properties"));
-        if (nativeObjectAccessControlConfig != null && nativeObjectAccessControlConfig.isAccessControlEnabled() &&
-                !ContextFactory.hasExplicitGlobal()) {
-            ContextFactory.initGlobal(new SandboxContextFactory(nativeObjectAccessControlConfig));
+        if (language.equals(RHINO_JAVA_SCRIPT)) {
+            readAccessControlConfigurations(MiscellaneousUtil.loadProperties("synapse.properties"));
+            if (nativeObjectAccessControlConfig != null && nativeObjectAccessControlConfig.isAccessControlEnabled() &&
+                    !ContextFactory.hasExplicitGlobal()) {
+                ContextFactory.initGlobal(new SandboxContextFactory(nativeObjectAccessControlConfig));
+            }
         }
     }
 
@@ -721,6 +764,8 @@ public class ScriptMediator extends AbstractMediator {
         if (scriptEngineWrapper == null) {
             if (language.equals(NASHORN_JAVA_SCRIPT)) {
                 scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByName(NASHORN));
+            } else if (language.equals(RHINO_JAVA_SCRIPT)) {
+                scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByExtension("jsEngine"));
             } else {
                 scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByExtension(language));
             }
@@ -752,11 +797,13 @@ public class ScriptMediator extends AbstractMediator {
     }
 
     /**
+     * @deprecated This method is deprecated and will be removed in a future release in favour of GraalVM JS engine.
      * Creates a class shutter, which will be used inside the context that executes the script.
      * This class shutter will be used to control the visibility of classes specified in the access control config,
      * to the script.
      * @return
      */
+    @Deprecated
     private ClassShutter createClassShutter() {
         return new ClassShutter() {
             public boolean visibleToScripts(String className) {
