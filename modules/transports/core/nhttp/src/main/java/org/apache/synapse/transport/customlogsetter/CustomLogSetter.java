@@ -22,7 +22,7 @@ import org.apache.logging.log4j.ThreadContext;
 
 public class CustomLogSetter {
     private static CustomLogSetter instance = null;
-    private static final String APPENDER_CONTENT = "CAppName";
+    private static final String APPENDER_CONTENT = "Artifact-Container";
 
     private CustomLogSetter() {
     }
@@ -41,6 +41,6 @@ public class CustomLogSetter {
     }
 
     public void clearThreadLocalContent () {
-        ThreadContext.clearAll();
+        ThreadContext.remove(APPENDER_CONTENT);
     }
 }
