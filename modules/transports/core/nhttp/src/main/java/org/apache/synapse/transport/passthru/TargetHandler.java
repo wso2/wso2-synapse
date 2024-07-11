@@ -844,7 +844,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         String message = getErrorMessage("I/O error : " + e.getMessage(), conn);
 
         if (e.getMessage() != null && (e instanceof ConnectionClosedException
-                || e.getMessage().toLowerCase().contains("connection reset by peer")
+                || e.getMessage().toLowerCase().contains("connection reset")
                 || e.getMessage().toLowerCase().contains("forcibly closed"))) {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": I/O error (Probably the keep-alive connection "

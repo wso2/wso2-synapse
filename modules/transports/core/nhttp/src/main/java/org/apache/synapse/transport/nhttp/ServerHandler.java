@@ -619,7 +619,7 @@ public class ServerHandler implements NHttpServerEventHandler {
                 commitResponseHideExceptions(conn, response);
             } catch (Exception ignore) {}
         } else if (e instanceof ConnectionClosedException || (e.getMessage() != null &&
-                (e.getMessage().contains("Connection reset by peer") ||
+                (e.getMessage().contains("Connection reset") ||
                 e.getMessage().contains("forcibly closed")))) {
             if (log.isDebugEnabled()) {
                 errMsg = "I/O error (Probably the keepalive connection " +
@@ -658,7 +658,7 @@ public class ServerHandler implements NHttpServerEventHandler {
         String errMsg = "I/O error : " + e.getMessage();
 
         if (e instanceof ConnectionClosedException || (e.getMessage() != null &&
-                (e.getMessage().contains("Connection reset by peer") ||
+                (e.getMessage().contains("Connection reset") ||
                         e.getMessage().contains("forcibly closed")))) {
             if (log.isDebugEnabled()) {
                 errMsg = "I/O error (Probably the keepalive connection " +

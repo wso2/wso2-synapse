@@ -649,7 +649,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             return;
         }
         if (e instanceof ConnectionClosedException || (e.getMessage() != null && (
-                e.getMessage().toLowerCase().contains("connection reset by peer") ||
+                e.getMessage().toLowerCase().contains("connection reset") ||
                 e.getMessage().toLowerCase().contains("forcibly closed")))) {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": I/O error (Probably the keepalive connection "
