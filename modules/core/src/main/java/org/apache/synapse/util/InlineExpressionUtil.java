@@ -47,7 +47,7 @@ public final class InlineExpressionUtil {
     private static final String EXPRESSION_JSON_EVAL = "json-eval(";
 
     // Regex to identify expressions in inline text
-    private static final Pattern EXPRESSION_PATTERN = Pattern.compile("(\\{[^\\s\"][^,<>\n}\\]]*})");
+    private static final Pattern EXPRESSION_PATTERN = Pattern.compile("(\\{[^\\s\",<>}\\]]+})");
 
     private InlineExpressionUtil() {
 
