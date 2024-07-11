@@ -60,6 +60,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Arrays;
 
 public class ClientConnFactoryBuilder {
 
@@ -251,6 +252,9 @@ public class ClientConnFactoryBuilder {
             }
 
             String[] servers = serversElt.getText().split(",");
+            if (log.isDebugEnabled()) {
+                log.debug("Servers list of the custom SSL profile : " + Arrays.toString(servers));
+            }
             OMElement ksElt = profile.getFirstChildWithName(new QName("KeyStore"));
             OMElement trElt = profile.getFirstChildWithName(new QName("TrustStore"));
             String noValCert = profile.getAttributeValue(new QName("novalidatecert"));
@@ -268,6 +272,9 @@ public class ClientConnFactoryBuilder {
                 server = server.trim();
                 if (!contextMap.containsKey(server)) {
                     contextMap.put(server, sslContext);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Update the SSL context map for the server: " + server);
+                    }
                 } else {
                     if (log.isWarnEnabled()) {
                         log.warn(name + " Multiple SSL profiles were found for the server : " +
