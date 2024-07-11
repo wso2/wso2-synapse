@@ -18,9 +18,11 @@
 
 package org.apache.synapse.transport.customlogsetter;
 
+import org.apache.logging.log4j.ThreadContext;
+
 public class CustomLogSetter {
     private static CustomLogSetter instance = null;
-    private static ThreadLocal<String> logAppender = new ThreadLocal<>();
+    private static final String APPENDER_CONTENT = "CAppName";
 
     private CustomLogSetter() {
     }
@@ -34,15 +36,11 @@ public class CustomLogSetter {
 
     public void setLogAppender (String appenderContent) {
         if (appenderContent != null && !appenderContent.equals("")){
-            logAppender.set(appenderContent);
+            ThreadContext.put(APPENDER_CONTENT, appenderContent);
         }
     }
 
-    public String getLogAppenderContent() {
-        return logAppender.get();
-    }
-
     public void clearThreadLocalContent () {
-        logAppender.remove();
+        ThreadContext.clearAll();
     }
 }
