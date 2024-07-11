@@ -22,7 +22,7 @@ import org.apache.logging.log4j.ThreadContext;
 
 public class CustomLogSetter {
     private static CustomLogSetter instance = null;
-    private static final String APPENDER_CONTENT = "CAppContent";
+    private static final String APPENDER_CONTENT = "CAppName";
 
     private CustomLogSetter() {
     }
