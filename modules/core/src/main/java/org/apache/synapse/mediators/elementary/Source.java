@@ -321,27 +321,24 @@ public class Source {
             case EnrichMediator.INLINE: {
                 assert inlineOMNode != null
                         || inlineKey != null : "inlineJSONNode or key shouldn't be null when type is INLINE";
-                try {
-                    if (inlineOMNode instanceof OMText) {
-                        object = JsonPath.parse(((OMTextImpl) inlineOMNode).getText()).json();
-                    } else if (inlineKey != null && !inlineKey.trim().equals("")) {
-                        Object inlineObj = synCtx.getEntry(inlineKey);
-                        if ((inlineObj instanceof String) && !(((String) inlineObj).trim().equals(""))) {
-                            object = JsonPath.parse(((String) inlineObj)).json();
-                        } else {
-                            synLog.error("Source failed to get inline JSON" + "inlineKey=" + inlineKey);
-                        }
+                if (inlineOMNode instanceof OMText) {
+                    object = JsonPath.parse(((OMTextImpl) inlineOMNode).getText()).json();
+                } else if (inlineKey != null && !inlineKey.trim().equals("")) {
+                    Object inlineObj = synCtx.getEntry(inlineKey);
+                    if ((inlineObj instanceof String) && !(((String) inlineObj).trim().equals(""))) {
+                        object = JsonPath.parse(((String) inlineObj)).json();
                     } else {
-                        synLog.error("Source failed to get inline JSON" + "inlineJSONNode=" + inlineOMNode + ", inlineKey="
-                                + inlineKey);
+                        synLog.error("Source failed to get inline JSON" + "inlineKey=" + inlineKey);
                     }
-                } finally {
-                    // If the initialInlineOMNode is not null, it means that inline OM Node has been overridden with the
-                    // inline string containing resolved dynamic values. Therefore, we should set the initial OM Node back
-                    // which contains the original inline value
-                    if (initialInlineOMNode != null) {
-                        this.inlineOMNode = initialInlineOMNode;
-                    }
+                } else {
+                    synLog.error("Source failed to get inline JSON" + "inlineJSONNode=" + inlineOMNode + ", inlineKey="
+                            + inlineKey);
+                }
+                // If the initialInlineOMNode is not null, it means that inline OM Node has been overridden with the
+                // inline string containing resolved dynamic values. Therefore, we should set the initial OM Node back
+                // which contains the original inline value
+                if (initialInlineOMNode != null) {
+                    this.inlineOMNode = initialInlineOMNode;
                 }
                 break;
             }
