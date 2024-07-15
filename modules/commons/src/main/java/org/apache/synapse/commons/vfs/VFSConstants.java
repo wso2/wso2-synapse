@@ -40,6 +40,7 @@ public final class VFSConstants {
 
     public static final String TRANSPORT_FILE_FILE_URI = "transport.vfs.FileURI";
     public static final String TRANSPORT_FILE_FILE_NAME_PATTERN = "transport.vfs.FileNamePattern";
+    public static final String TRANSPORT_FILE_REQUIRED_FILE_NAME_PATTERNS = "transport.vfs.RequiredFileNamePatterns";
     public static final String TRANSPORT_FILE_CONTENT_TYPE = "transport.vfs.ContentType";
     public static final String TRANSPORT_FILE_LOCKING = "transport.vfs.Locking";
     public static final String UPDATE_LAST_MODIFIED = "transport.vfs.UpdateLastModified";
