@@ -475,9 +475,10 @@ public class BlockingMsgSender {
 
                     if (originalMC != null && OAuthUtils.retryOnOAuthFailure(httpEndpoint, synapseInMsgCtx,
                             synapseInMsgCtx)) {
-                        MessageContext messageContext = httpEndpoint.retryCallWithNewToken(originalMC);
-                        ((Axis2MessageContext) synapseInMsgCtx).setAxis2MessageContext(
-                                ((Axis2MessageContext) messageContext).getAxis2MessageContext());
+                        originalMC.getEnvelope().build();
+
+                        resetMessageContext((Axis2MessageContext) synapseInMsgCtx, (Axis2MessageContext) originalMC);
+                        httpEndpoint.retryCallWithNewToken(synapseInMsgCtx);
                     }
                 }
 
@@ -487,6 +488,19 @@ public class BlockingMsgSender {
                 }
             }
         }
+    }
+
+    private static void resetMessageContext(Axis2MessageContext synapseInMsgCtx, Axis2MessageContext originalMC) throws AxisFault {
+        // Replace envelope and headers with original envelope and headers before retrying
+        org.apache.axis2.context.MessageContext originalAxisMC =
+                originalMC.getAxis2MessageContext();
+
+        org.apache.axis2.context.MessageContext synapseInAxisMC =
+                synapseInMsgCtx.getAxis2MessageContext();
+
+        synapseInAxisMC.setEnvelope(originalAxisMC.getEnvelope());
+        synapseInAxisMC.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
+                originalAxisMC.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
     }
 
     private void sendRobust(org.apache.axis2.context.MessageContext axisOutMsgCtx,
