@@ -234,9 +234,6 @@ public class DeliveryAgent {
                 MessageContext messageContext = queue.poll();
 
                 if (messageContext != null) {
-                    messageContext.setProperty(PassThroughConstants.PASS_THROUGH_TARGET_CONNECTION, conn);
-                    messageContext.setProperty(PassThroughConstants.PASS_THROUGH_TARGET_CONFIGURATION,
-                            targetConfiguration);
                     tryNextMessage(messageContext, route, conn);
                     conn = null;
                 }
@@ -254,6 +251,8 @@ public class DeliveryAgent {
     private void tryNextMessage(MessageContext messageContext, HttpRoute route, NHttpClientConnection conn) {
         if (conn != null) {
             try {
+                messageContext.setProperty(PassThroughConstants.PASS_THROUGH_TARGET_CONNECTION, conn);
+                messageContext.setProperty(PassThroughConstants.PASS_THROUGH_TARGET_CONFIGURATION, targetConfiguration);
                 conn.getContext().setAttribute(CorrelationConstants.CORRELATION_ID,
                         messageContext.getProperty(CorrelationConstants.CORRELATION_ID));
                 TargetContext.updateState(conn, ProtocolState.REQUEST_READY);
