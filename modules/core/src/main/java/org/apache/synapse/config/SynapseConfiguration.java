@@ -232,6 +232,11 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     Map<String, Library> synapseLibraries = new ConcurrentHashMap<String, Library>();
 
     /**
+     * Holds synapse Libraries class loaders by library qualified name
+     */
+    private static Map<String, ClassLoader> libraryClassLoaders = new ConcurrentHashMap<String, ClassLoader>();
+
+    /**
      * Holds the library imports  currently being included into Synapse engine
      */
     Map<String, SynapseImport> synapseImports = new ConcurrentHashMap<String, SynapseImport>();
@@ -2040,6 +2045,14 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      */
     public Map<String, Library> getSynapseLibraries() {
         return synapseLibraries;
+    }
+
+    public static void addLibraryClassLoader(String libraryName, ClassLoader classLoader) {
+        libraryClassLoaders.putIfAbsent(libraryName, classLoader);
+    }
+    
+    public static ClassLoader getClassLoader(String libraryName) {
+        return libraryClassLoaders.get(libraryName);
     }
 
     public static Library getDeployedLib(String name) {
