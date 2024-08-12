@@ -92,6 +92,8 @@ public abstract class AbstractRegistry implements Registry {
                 log.debug("Cached object has expired for key : " + entry.getKey());
             }
             re = getRegistryEntry(entry.getKey());
+            // reload the properties since the cache is expired
+            entry.setEntryProperties(getResourceProperties(entry.getKey()));
 
             if (re.getVersion() != Long.MIN_VALUE &&
                 re.getVersion() == entry.getVersion()) {
