@@ -181,7 +181,7 @@ public class ClientWorker implements Runnable {
         });
 
         for (Map.Entry<String, String> headerEntry : headerEntries) {
-            if (headerMap.containsKey(headerEntry.getKey())) {
+            if (headerMap.containsKey(headerEntry.getKey()) && !conf.isIgnoreCaseSensitiveHeaders()) {
                 excessHeaders.put(headerEntry.getKey(), headerMap.get(headerEntry.getKey()));
             }
             headerMap.put(headerEntry.getKey(), headerEntry.getValue());

@@ -177,4 +177,15 @@ public interface PassThroughConfigPNames {
      * Defines whether viewing services are enabled or not
      */
     public String BLOCK_SERVICE_LIST = "http.block_service_list";
+
+    /**
+     * Defines whether to ignore case-sensitive headers from excess headers map
+     */
+    public String IGNORE_CASE_SENSITIVE_HEADERS = "ignore_case_sensitive_headers";
+
+    /**
+     * Defines whether TransportHandler and SourceHandler has to enable/disable TLS graceful connection termination
+     */
+    public String TLS_GRACEFUL_CONNECTION_TERMINATION = "tls_graceful_connection_termination";
+
 }

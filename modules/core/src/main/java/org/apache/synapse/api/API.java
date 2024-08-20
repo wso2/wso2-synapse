@@ -246,6 +246,10 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
         return resources.values().toArray(new Resource[resources.size()]);
     }
 
+    public Map<String, Resource> getResourcesMap() {
+        return resources;
+    }
+
     public void addHandler(Handler handler) {
         handlers.add(handler);
     }
@@ -443,12 +447,7 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
                     msgCtx.getIncomingTransportName() + "://" + hostHeader);
         }
 
-        Set<Resource> acceptableResources = new LinkedHashSet<Resource>();
-        for (Resource r : resources.values()) {
-            if (isBound(r, synCtx) && r.canProcess(synCtx)) {
-                acceptableResources.add(r);
-            }
-        }
+        Set<Resource> acceptableResources = ApiUtils.getAcceptableResources(resources, synCtx);
 
         boolean processed = false;
         if (!acceptableResources.isEmpty()) {
@@ -457,22 +456,8 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
                 if (resource != null) {
                     if (synCtx.getEnvironment().isDebuggerEnabled()) {
                         if (!synCtx.isResponse()) {
-                            SynapseWireLogHolder wireLogHolder = (SynapseWireLogHolder) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
-                                    .getProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
-                            if (wireLogHolder == null) {
-                                wireLogHolder = new SynapseWireLogHolder();
-                            }
-                            if (synCtx.getProperty(RESTConstants.SYNAPSE_REST_API) != null && !synCtx.getProperty(RESTConstants.SYNAPSE_REST_API).toString().isEmpty()) {
-                                wireLogHolder.setApiName(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API).toString());
-                                if (resource.getDispatcherHelper() != null) {
-                                    if (resource.getDispatcherHelper().getString() != null && !resource.getDispatcherHelper().getString().isEmpty()) {
-                                        wireLogHolder.setResourceUrlString(resource.getDispatcherHelper().getString());
-                                    }
-                                }
-                            }
-                            ((Axis2MessageContext) synCtx).getAxis2MessageContext().setProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, wireLogHolder);
+                            initWirelogHolder(synCtx, resource);
                         }
-
                     }
                     resource.process(synCtx);
                     return;
@@ -483,8 +468,9 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
             //This will get executed only in unhappy path. So ok to have the iterator.
             boolean resourceFound = false;
             boolean matchingMethodFound = false;
+            Resource resource = null;
             for (RESTDispatcher dispatcher : ApiUtils.getDispatchers()) {
-                Resource resource = dispatcher.findResource(synCtx, resources.values());
+                resource = dispatcher.findResource(synCtx, resources.values());
                 if (resource != null) {
                     resourceFound = true;
                     String method = (String) msgCtx.getProperty(Constants.Configuration.HTTP_METHOD);
@@ -495,13 +481,36 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
             if (!resourceFound) {
                 handleResourceNotFound(synCtx);
             } else if (!matchingMethodFound) {
-                handleMethodNotAllowed(synCtx);
+                String method = (String) synCtx.getProperty(RESTConstants.REST_METHOD);
+                if (RESTConstants.METHOD_OPTIONS.equals(method)) {
+                    initWirelogHolder(synCtx, resource);
+                    resource.process(synCtx);
+                } else {
+                    handleMethodNotAllowed(synCtx);
+                }
             } else {
                 //Resource found, and matching method also found, which means request is BAD_REQUEST(400)
                 msgCtx.setProperty(SynapseConstants.HTTP_SC, HttpStatus.SC_BAD_REQUEST);
                 msgCtx.setProperty("NIO-ACK-Requested", true);
             }
         }
+    }
+
+    private static void initWirelogHolder(MessageContext synCtx, Resource resource) {
+        SynapseWireLogHolder wireLogHolder = (SynapseWireLogHolder) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                .getProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
+        if (wireLogHolder == null) {
+            wireLogHolder = new SynapseWireLogHolder();
+        }
+        if (synCtx.getProperty(RESTConstants.SYNAPSE_REST_API) != null && !synCtx.getProperty(RESTConstants.SYNAPSE_REST_API).toString().isEmpty()) {
+            wireLogHolder.setApiName(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API).toString());
+            if (resource.getDispatcherHelper() != null) {
+                if (resource.getDispatcherHelper().getString() != null && !resource.getDispatcherHelper().getString().isEmpty()) {
+                    wireLogHolder.setResourceUrlString(resource.getDispatcherHelper().getString());
+                }
+            }
+        }
+        ((Axis2MessageContext) synCtx).getAxis2MessageContext().setProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, wireLogHolder);
     }
 
     private void handleMethodNotAllowed(MessageContext synCtx) {
@@ -520,23 +529,6 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
 
     }
 
-    /**
-     * Checks whether the provided resource is capable of processing the message from the provided message context.
-     * The resource becomes capable to do this when the it contains either the name of the api caller,
-     * or {@value ApiConstants#DEFAULT_BINDING_ENDPOINT_NAME}, in its binds-to.
-     *
-     * @param resource  Resource object
-     * @param synCtx    MessageContext object
-     * @return          Whether the provided resource is bound to the provided message context
-     */
-    private boolean isBound(Resource resource, MessageContext synCtx) {
-        Collection<String> bindings = resource.getBindsTo();
-        Object apiCaller = synCtx.getProperty(ApiConstants.API_CALLER);
-        if (apiCaller != null) {
-            return bindings.contains(apiCaller.toString());
-        }
-        return bindings.contains(ApiConstants.DEFAULT_BINDING_ENDPOINT_NAME);
-    }
 
     /**
      * Helper method to use when no matching resource found

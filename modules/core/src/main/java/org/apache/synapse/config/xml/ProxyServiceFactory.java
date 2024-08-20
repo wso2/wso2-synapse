@@ -237,9 +237,13 @@ public class ProxyServiceFactory {
                 proxy.setPreservePolicy(preservePolicy.getAttributeValue());
             }
             if (wsdlEndpoint != null) {
-                proxy.setPublishWSDLEndpoint(wsdlEndpoint.getAttributeValue());
+                String resolvedWsdlEndpoint = ResolverFactory.getInstance()
+                        .getResolver(wsdlEndpoint.getAttributeValue()).resolve();
+                proxy.setPublishWSDLEndpoint(resolvedWsdlEndpoint);
             } else if (wsdlKey != null) {
-                proxy.setWSDLKey(wsdlKey.getAttributeValue());
+                String resolvedWsdlKey = ResolverFactory.getInstance()
+                        .getResolver(wsdlKey.getAttributeValue()).resolve();
+                proxy.setWSDLKey(resolvedWsdlKey);
             } else {
                 OMAttribute wsdlURI = wsdl.getAttribute(
                         new QName(XMLConfigConstants.NULL_NAMESPACE, "uri"));

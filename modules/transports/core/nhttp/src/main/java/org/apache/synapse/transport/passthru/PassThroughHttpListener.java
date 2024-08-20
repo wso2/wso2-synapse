@@ -445,7 +445,6 @@ public class PassThroughHttpListener implements TransportListener {
                 }
             }
             serviceTracker.stop();
-            handler.stop();
         } catch (IOException e) {
             handleException("Error shutting down " + namePrefix + " listening IO reactor", e);
         } catch (InterruptedException e) {
@@ -461,6 +460,7 @@ public class PassThroughHttpListener implements TransportListener {
                 getAxisConfiguration().getObserversList().remove(axisObserver);*/
 //        serviceTracker.stop();
         sourceConfiguration.getMetrics().destroy();
+        handler.stop();
     }
 
     /**

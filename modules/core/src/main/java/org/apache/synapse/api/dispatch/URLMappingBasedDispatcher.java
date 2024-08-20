@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.api.ApiUtils;
 import org.apache.synapse.api.Resource;
+import org.apache.synapse.rest.RESTConstants;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -55,6 +56,7 @@ public class URLMappingBasedDispatcher implements RESTDispatcher {
                 if (log.isDebugEnabled()) {
                     log.debug("Found exact URL match for: " + url);
                 }
+                synCtx.setProperty(RESTConstants.SELECTED_RESOURCE, filteredResources.get(i));
                 return filteredResources.get(i);
             }
         }
@@ -72,6 +74,7 @@ public class URLMappingBasedDispatcher implements RESTDispatcher {
             if (log.isDebugEnabled()) {
                 log.debug("Found path match for: " + url + " with matching length: " + maxLength);
             }
+            synCtx.setProperty(RESTConstants.SELECTED_RESOURCE, matchedResource);
             return matchedResource;
         }
 
@@ -80,6 +83,7 @@ public class URLMappingBasedDispatcher implements RESTDispatcher {
                 if (log.isDebugEnabled()) {
                     log.debug("Found extension match for: " + url);
                 }
+                synCtx.setProperty(RESTConstants.SELECTED_RESOURCE, filteredResources.get(i));
                 return filteredResources.get(i);
             }
         }

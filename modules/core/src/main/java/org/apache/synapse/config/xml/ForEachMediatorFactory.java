@@ -54,6 +54,9 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
     private static final QName ID_Q
             = new QName(XMLConfigConstants.NULL_NAMESPACE, "id");
 
+    private static final QName CONTINUE_IN_FAULT_Q
+            = new QName(XMLConfigConstants.NULL_NAMESPACE, "continueLoopOnFailure");
+
     public QName getTagQName() {
         return FOREACH_Q;
     }
@@ -67,6 +70,11 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
         OMAttribute id = elem.getAttribute(ID_Q);
         if (id != null) {
             mediator.setId(id.getAttributeValue());
+        }
+
+        OMAttribute continueOnFail = elem.getAttribute(CONTINUE_IN_FAULT_Q);
+        if (continueOnFail != null) {
+            mediator.setContinueLoopOnFailure(Boolean.parseBoolean(continueOnFail.getAttributeValue()));
         }
 
         OMAttribute expression = elem.getAttribute(ATT_EXPRN);

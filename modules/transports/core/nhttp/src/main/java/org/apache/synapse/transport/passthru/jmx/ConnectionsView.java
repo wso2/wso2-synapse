@@ -53,10 +53,13 @@ public class ConnectionsView implements ConnectionsViewMBean {
     private static final int LONG_DATA_COLLECTION_PERIOD = 60 * 5;
 
     private static final int SAMPLES_PER_HOUR = (60 * 60)/LONG_DATA_COLLECTION_PERIOD;
-
+    private Queue<Integer> lastSecondRequestQueue = new LinkedList<Integer>();
+    private Queue<Integer> openedConnectionsDataQueue = new LinkedList<Integer>();
     private Queue<Integer> shortTermDataQueue = new LinkedList<Integer>();
     private Queue<Integer> longTermDataQueue = new LinkedList<Integer>();
 
+    private AtomicInteger requestsReceived = new AtomicInteger(0);
+    private AtomicInteger openedConnections = new AtomicInteger(0);
     private AtomicInteger activeConnections = new AtomicInteger(0);
     private AtomicInteger shortTermOpenedConnections = new AtomicInteger(0);
     private AtomicInteger longTermOpenedConnections = new AtomicInteger(0);
@@ -78,6 +81,34 @@ public class ConnectionsView implements ConnectionsViewMBean {
 
         initCounters(requestSizeCounters);
         initCounters(responseSizeCounters);
+
+        Runnable requestTask = new Runnable() {
+            public void run() {
+                // We only need historical data for the last 1 minutes
+                // Therefore no need to keep data older than that...
+                if (lastSecondRequestQueue.size() == 60) {
+                    lastSecondRequestQueue.remove();
+                }
+                lastSecondRequestQueue.offer(requestsReceived.getAndSet(0));
+            }
+        };
+        // Delay the timer by 1 minute to prevent the task from starting immediately
+        scheduler.scheduleAtFixedRate(requestTask, 1,
+                1, TimeUnit.SECONDS);
+
+        Runnable secondsTask = new Runnable() {
+            public void run() {
+                // We only need historical data for the last 1 minutes
+                // Therefore no need to keep data older than that...
+                if (openedConnectionsDataQueue.size() == 60) {
+                    openedConnectionsDataQueue.remove();
+                }
+                openedConnectionsDataQueue.offer(openedConnections.getAndSet(0));
+            }
+        };
+        // Delay the timer by 1 minute to prevent the task from starting immediately
+        scheduler.scheduleAtFixedRate(secondsTask, 1,
+                1, TimeUnit.SECONDS);
 
         Runnable task = new Runnable() {
             public void run() {
@@ -127,6 +158,7 @@ public class ConnectionsView implements ConnectionsViewMBean {
 
     protected void connected() {
         activeConnections.incrementAndGet();
+        openedConnections.incrementAndGet();
         shortTermOpenedConnections.incrementAndGet();
         longTermOpenedConnections.incrementAndGet();
     }
@@ -136,6 +168,8 @@ public class ConnectionsView implements ConnectionsViewMBean {
     }
 
     protected void requestReceived() {
+
+        requestsReceived.incrementAndGet();
         unservedRequests.incrementAndGet();
     }
 
@@ -181,6 +215,41 @@ public class ConnectionsView implements ConnectionsViewMBean {
 
     public int getActiveConnections() {
         return activeConnections.get();
+    }
+
+    public int getLastSecondRequests() {
+
+        return getTotalRequests(1);
+    }
+
+    public int getLast15SecondRequests() {
+
+        return getTotalRequests(15);
+    }
+
+    public int getLastMinuteRequests() {
+
+        return getTotalRequests(60);
+    }
+
+    public int getLastSecondConnections() {
+
+        return getSecondConnections(1);
+    }
+
+    public int getLast5SecondConnections() {
+
+        return getSecondConnections(5);
+    }
+
+    public int getLast15SecondConnections() {
+
+        return getSecondConnections(15);
+    }
+
+    public int getLast30SecondConnections() {
+
+        return getSecondConnections(30);
     }
 
     public int getLastMinuteConnections() {
@@ -248,9 +317,29 @@ public class ConnectionsView implements ConnectionsViewMBean {
      * @return The number of connections opened
      */
     private int getTotalConnections(int n) {
-        int sum = 0;
-        Integer[] array = shortTermDataQueue.toArray(new Integer[shortTermDataQueue.size()]);
 
+        Integer[] array = shortTermDataQueue.toArray(new Integer[shortTermDataQueue.size()]);
+        int sum = getTotal(array, n);
+        return sum;
+    }
+
+    private int getTotalRequests(int n) {
+
+        Integer[] array = lastSecondRequestQueue.toArray(new Integer[lastSecondRequestQueue.size()]);
+        int sum = getTotal(array, n);
+        return sum;
+    }
+
+    private int getSecondConnections(int n) {
+
+        Integer[] array = openedConnectionsDataQueue.toArray(new Integer[openedConnectionsDataQueue.size()]);
+        int sum = getTotal(array, n);
+        return sum;
+    }
+
+    private int getTotal(Integer[] array, int n) {
+
+        int sum = 0;
         if (n > array.length) {
             for (int i = 0; i < array.length; i++) {
                 sum += array[i];

@@ -211,5 +211,33 @@
                 <respond/>
             </faultSequence>
         </resource>
+        <resource uri-template="/list/dynamicURL" methods="POST">
+            <inSequence>
+                <property expression="$body//ep_url" name="uri.var.ep" scope="default" type="STRING"/>
+                <property expression="$body//token_ep" name="token_ep" scope="default" type="STRING"/>
+                <send>
+                    <endpoint>
+                        <http method="get" uri-template="{uri.var.ep}">
+                            <authentication>
+                                <oauth>
+                                    <clientCredentials>
+                                        <clientId>my_client_id</clientId>
+                                        <clientSecret>my_client_secret</clientSecret>
+                                        <tokenUrl>{$ctx:token_ep}</tokenUrl>
+                                    </clientCredentials>
+                                </oauth>
+                            </authentication>
+                        </http>
+                    </endpoint>
+                </send>
+            </inSequence>
+            <outSequence>
+                <send/>
+            </outSequence>
+            <faultSequence>
+                <property name="HTTP_SC" value="500" scope="axis2"/>
+                <respond/>
+            </faultSequence>
+        </resource>
     </api>
 </definitions>

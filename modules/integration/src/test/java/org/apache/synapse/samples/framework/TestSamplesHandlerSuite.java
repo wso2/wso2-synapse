@@ -87,6 +87,8 @@ import org.apache.synapse.samples.framework.tests.rest.Sample800;
 import org.apache.synapse.samples.framework.tests.tasks.Sample300;
 import org.apache.synapse.samples.framework.tests.template.Sample750;
 import org.apache.synapse.samples.framework.tests.template.Sample751;
+import org.apache.synapse.samples.framework.tests.transport.Sample10102;
+import org.apache.synapse.samples.framework.tests.transport.Sample10103;
 import org.apache.synapse.samples.framework.tests.transport.Sample250;
 import org.apache.synapse.samples.framework.tests.transport.Sample251;
 import org.apache.synapse.samples.framework.tests.transport.Sample268;
@@ -322,5 +324,7 @@ public class TestSamplesHandlerSuite extends TestSuite {
 
     private static void populateTransportSamples() {
         sampleClassRepo.put("268", Sample268.class);
+        sampleClassRepo.put("10102", Sample10102.class);
+        sampleClassRepo.put("10103", Sample10103.class);
     }
 }

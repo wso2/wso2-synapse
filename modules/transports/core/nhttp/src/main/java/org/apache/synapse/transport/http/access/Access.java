@@ -25,6 +25,7 @@ import org.apache.http.HttpMessage;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.params.HttpParams;
+import org.apache.synapse.transport.http.conn.LoggingUtils;
 import org.apache.synapse.transport.http.wrapper.HttpRequestWrapper;
 import org.apache.synapse.transport.http.wrapper.HttpResponseWrapper;
 
@@ -32,9 +33,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * The class to handle the HTTP Access Logs, patterns and the major functionality.
@@ -43,6 +42,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class Access {
     private static Log log = LogFactory.getLog(Access.class);
+    private final Log accesslog = LogFactory.getLog(LoggingUtils.ACCESS_LOG_ID);
 
     /**
      * Array of AccessLogElement, they will be used to make log message.
@@ -53,10 +53,8 @@ public class Access {
 
     private static AccessLogger accessLogger;
 
-    private static ConcurrentLinkedQueue<HttpRequestWrapper> requestQueue;
-    private static ConcurrentLinkedQueue<HttpResponseWrapper> responseQueue;
-
-    private static final int LOG_FREQUENCY_IN_SECONDS = 30;
+    private static LinkedBlockingQueue<HttpRequestWrapper> requestQueue;
+    private static LinkedBlockingQueue<HttpResponseWrapper> responseQueue;
 
     private Date date;
 
@@ -70,8 +68,8 @@ public class Access {
         super();
         Access.log = log;
         Access.accessLogger = accessLogger;
-        requestQueue = new ConcurrentLinkedQueue<HttpRequestWrapper>();
-        responseQueue = new ConcurrentLinkedQueue<HttpResponseWrapper>();
+        requestQueue = new LinkedBlockingQueue<HttpRequestWrapper>();
+        responseQueue = new LinkedBlockingQueue<HttpResponseWrapper>();
         logElements = createLogElements();
         logAccesses();
     }
@@ -104,30 +102,36 @@ public class Access {
      * logs the request and response accesses.
      */
     public void logAccesses() {
-        TimerTask logRequests = new LogRequests();
-        TimerTask logResponses = new LogResponses();
-        Timer requestTimer = new Timer();
-        Timer responseTimer = new Timer();
-        // Retry in 30 seconds
-        long retryIn = 1000 * LOG_FREQUENCY_IN_SECONDS;
-        requestTimer.schedule(logRequests, 0, retryIn);
-        responseTimer.schedule(logResponses, 0, retryIn);
+        Thread logRequests = new LogRequests();
+        Thread logResponses = new LogResponses();
+        logRequests.start();
+        logResponses.start();
     }
 
-    private class LogRequests extends TimerTask {
+    private class LogRequests extends Thread {
         public void run() {
-            while (!requestQueue.isEmpty()) {
-                HttpRequestWrapper req = requestQueue.poll();
-                log(req, null);
+            while (true) {
+                HttpRequestWrapper req = null;
+                try {
+                    req = requestQueue.take();
+                    log(req, null);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
 
-    private class LogResponses extends TimerTask {
+    private class LogResponses extends Thread {
         public void run() {
-            while (!responseQueue.isEmpty()) {
-                HttpResponseWrapper res = responseQueue.poll();
-                log(null, res);
+            while (true) {
+                HttpResponseWrapper res = null;
+                try {
+                    res = responseQueue.take();
+                    log(null, res);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
@@ -149,7 +153,9 @@ public class Access {
         }
         String logString = result.toString();
         log.debug(logString);      //log to the console
-        accessLogger.log(logString);      //log to the file
+        if (accessLogger.isLoggingEnabled) {
+            accessLogger.log(logString);      //log to the file
+        }
     }
 
     /**
@@ -872,7 +878,9 @@ public class Access {
             }
         }
         String logString = result.toString();
-        log.debug(logString);      //log to the console
-        accessLogger.log(logString);      //log to the file
+        accesslog.info(logString);      //log to the console
+        if (accessLogger.isLoggingEnabled) {
+            accessLogger.log(logString);      //log to the file
+        }
     }
 }

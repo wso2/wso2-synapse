@@ -50,7 +50,7 @@ public class CORSHelper {
         } else if (allowedOrigins.contains(origin)) {
             return origin;
         } else {
-            return null;
+            return "";
         }
     }
 
@@ -86,7 +86,7 @@ public class CORSHelper {
                         transportHeaders.get(RESTConstants.CORS_HEADER_ORIGIN));
 
                 // If the request origin is not allowed, set the status code to 403
-                if (isOptionsRequest(synCtx) && allowedOrigin == null) {
+                if (isOptionsRequest(synCtx) && allowedOrigin.isEmpty()) {
                     ((Axis2MessageContext) synCtx).getAxis2MessageContext()
                             .setProperty(PassThroughConstants.HTTP_SC, HttpStatus.SC_FORBIDDEN);
                 }

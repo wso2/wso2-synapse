@@ -40,6 +40,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import javax.net.ssl.SSLContext;
 
@@ -49,6 +51,7 @@ import javax.net.ssl.SSLContext;
  * particular server from the specified map it uses the default SSLContext.
  */
 public class ClientConnFactory {
+    protected Log log = LogFactory.getLog(ClientConnFactory.class);;
 
     private final HttpResponseFactory responseFactory;
     private final ByteBufferAllocator allocator;
@@ -113,6 +116,9 @@ public class ClientConnFactory {
         if (customContext != null) {
             return customContext;
         } else {
+            if (log.isDebugEnabled()) {
+                log.debug("The sslByHostMap is null or Custom SSL context is null for the host : " + host);
+            }
             return ssl != null ? ssl.getContext() : null;
         }
     }

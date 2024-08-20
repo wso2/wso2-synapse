@@ -208,7 +208,10 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         Object statusCode = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty("HTTP_SC");
         Object statusDescription = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty("HTTP_DESC");
         // We only need to extract span context from headers when there are trp headers available
-        if (isOuterLevelSpan(statisticDataUnit, spanStore) && headersMap != null) {
+        if (headersMap == null) {
+            headersMap = new HashMap();
+        }
+        if (isOuterLevelSpan(statisticDataUnit, spanStore)) {
             // Extract span context from headers
             context = extract(headersMap);
         } else {
@@ -274,9 +277,12 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
      * @return                  Whether the given statistic data unit denotes an outer level span.
      */
     private boolean isOuterLevelSpan(StatisticDataUnit statisticDataUnit, SpanStore spanStore) {
-        return spanStore.getOuterLevelSpanWrapper() == null &&
-                (statisticDataUnit.getComponentType() == ComponentType.PROXYSERVICE ||
-                statisticDataUnit.getComponentType() == ComponentType.API);
+        return spanStore.getOuterLevelSpanWrapper() == null
+                && (statisticDataUnit.getComponentType() == ComponentType.PROXYSERVICE
+                || statisticDataUnit.getComponentType() == ComponentType.API
+                || statisticDataUnit.getComponentType() == ComponentType.INBOUNDENDPOINT
+                        || (statisticDataUnit.getComponentType() == ComponentType.SEQUENCE
+                        && SynapseConstants.MAIN_SEQUENCE_KEY.equals(statisticDataUnit.getComponentName())));
     }
 
     @Override

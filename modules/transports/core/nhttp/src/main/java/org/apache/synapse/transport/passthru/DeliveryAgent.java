@@ -259,9 +259,6 @@ public class DeliveryAgent {
                 MessageContext messageContext = queue.poll();
 
                 if (messageContext != null) {
-                    messageContext.setProperty(PassThroughConstants.PASS_THROUGH_TARGET_CONNECTION, conn);
-                    messageContext.setProperty(PassThroughConstants.PASS_THROUGH_TARGET_CONFIGURATION,
-                            targetConfiguration);
                     tryNextMessage(messageContext, route, conn);
                     conn = null;
                 }
@@ -279,6 +276,8 @@ public class DeliveryAgent {
     private void tryNextMessage(MessageContext messageContext, HttpRoute route, NHttpClientConnection conn) {
         if (conn != null) {
             try {
+                messageContext.setProperty(PassThroughConstants.PASS_THROUGH_TARGET_CONNECTION, conn);
+                messageContext.setProperty(PassThroughConstants.PASS_THROUGH_TARGET_CONFIGURATION, targetConfiguration);
                 HttpContext ctx = conn.getContext();
                 /*
                 * If the flow is SSE we need to set references to target connection and targetConnections
