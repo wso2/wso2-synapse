@@ -31,9 +31,7 @@ import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The class mediator delegates the mediation to a single instance of a specified
@@ -54,7 +52,7 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
     private final List<MediatorProperty> properties = new ArrayList<MediatorProperty>();
 
     /** Contains Dynamic Expressions/not */
-    private boolean hasContentAwareProperties = false;
+    private boolean hasDynamicProperties = false;
 
     /**
 	 * Don't use a new instance... do one instance of the object per instance of
@@ -89,7 +87,7 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
         boolean result;
 
         try {
-            if (hasContentAwareProperties) {
+            if (hasDynamicProperties) {
                 synchronized (mediator) {
                     result = updateInstancePropertiesAndMediate(synCtx);
                 }
@@ -144,11 +142,17 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
 
     public void addAllProperties(List<MediatorProperty> propertyList) {
 	    properties.addAll(propertyList);
-
         for (MediatorProperty property : properties) {
             SynapsePath expression = property.getExpression();
-            if (expression != null && expression.isContentAware()) {
-                hasContentAwareProperties = true;
+            // Since expressions such as expression="get-property('...')" or expression="$trp:..." are also dynamic
+            // and their values can change with each request, we face a potential race condition when these
+            // expressions alter class mediator instance variables using setters. Given that only one instance of the
+            // mediator is created and shared among multiple concurrent requests, this shared state can lead to
+            // inconsistent behavior and data corruption. Therefore, we need to ensure synchronization not only
+            // when the content is altered but also for each evaluation of these dynamic expressions to maintain
+            // thread safety and data integrity.
+            if (expression != null) {
+                hasDynamicProperties = true;
                 break;
             }
         }

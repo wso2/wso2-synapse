@@ -18,22 +18,21 @@
  */
 package org.apache.synapse.transport.http.conn;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Arrays;
-
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSession;
-
 import org.apache.http.conn.ssl.AbstractVerifier;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.nio.reactor.ssl.SSLSetupHandler;
 import org.apache.synapse.transport.certificatevalidation.CertificateVerificationException;
-import org.apache.synapse.transport.certificatevalidation.RevocationVerificationManager;
+import org.apache.synapse.transport.certificatevalidation.CertificateVerificationManager;
+
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
 
 public class ClientSSLSetupHandler implements SSLSetupHandler {
 
@@ -139,10 +138,10 @@ public class ClientSSLSetupHandler implements SSLSetupHandler {
     };
 
     private final X509HostnameVerifier hostnameVerifier;
-    private final RevocationVerificationManager verificationManager;
+    private final CertificateVerificationManager verificationManager;
 
     public ClientSSLSetupHandler(final X509HostnameVerifier hostnameVerifier,
-                                 final RevocationVerificationManager verificationManager) {
+                                 final CertificateVerificationManager verificationManager) {
         this.hostnameVerifier = hostnameVerifier != null ? hostnameVerifier : DEFAULT;
         this.verificationManager = verificationManager;
     }
@@ -184,7 +183,7 @@ public class ClientSSLSetupHandler implements SSLSetupHandler {
 
         if (verificationManager!=null) {
             try {
-                verificationManager.verifyRevocationStatus(sslsession.getPeerCertificateChain());
+                verificationManager.verifyCertificateValidity(sslsession.getPeerCertificateChain());
             } catch (CertificateVerificationException e) {
                 throw new SSLException("Certificate Chain Validation failed for host : " + address, e);
             }

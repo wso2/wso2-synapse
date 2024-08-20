@@ -43,10 +43,10 @@ public class ScriptMediatorTest extends TestCase {
 
     private static final String inlinescript = "var state=5;";
 
-    private String threadsafetyscript = "var rno = mc.getPayloadXML().toString(); rno=rno*2; mc.setPayloadXML"
+    private String threadsafetyscriptForRhinoJS = "var rno = mc.getPayloadXML().toString(); rno=rno*2; mc.setPayloadXML"
             + "(<randomNo>{rno}</randomNo>)";
 
-    private String threadSafetyScriptForNashorn = "var rno = mc.getPayloadXML().toString(); var st1 = mc.getEnvelope"
+    private String threadSafetyScript = "var rno = mc.getPayloadXML().toString(); var st1 = mc.getEnvelope"
             + "().getBody().getFirstElement().getText();mc.getEnvelope().getBody().getFirstElement().setText"
             + "(st1 * 2);";
 
@@ -58,13 +58,13 @@ public class ScriptMediatorTest extends TestCase {
     }
 
     /**
-     * Test functionality of mediate with inline script in nashornJS.
+     * Test functionality of mediate with inline script in rhinoJs.
      *
      * @throws Exception
      */
     public void testInlineMediatorOnNashornEngine() throws Exception {
         MessageContext mc = TestUtils.getTestContext("<foo/>", null);
-        ScriptMediator mediator = new ScriptMediator("nashornJs", inlinescript,null);
+        ScriptMediator mediator = new ScriptMediator("rhinoJs", inlinescript,null);
         boolean responese = mediator.mediate(mc);
         assertTrue(responese);
     }
@@ -74,23 +74,23 @@ public class ScriptMediatorTest extends TestCase {
         Random rand = new Random();
         String randomno = Integer.toString(rand.nextInt(200));
         mc.getEnvelope().getBody().getFirstElement().setText(randomno);
-        ScriptMediator mediator = new ScriptMediator("js", threadsafetyscript,null);
+        ScriptMediator mediator = new ScriptMediator("js", threadSafetyScript,null);
         mediator.mediate(mc);
         assertEquals(Integer.parseInt(mc.getEnvelope().getBody().getFirstElement().getText()),
                 Integer.parseInt(randomno) * 2);
     }
 
     /**
-     * Test functionality of mediate with multiple threads in nashornJS.
+     * Test functionality of mediate with multiple threads in rhinoJS.
      *
      * @throws Exception
      */
-    public void testThreadSafetyOnNashornEngine() throws Exception {
+    public void testThreadSafetyOnRhinoEngine() throws Exception {
         MessageContext mc = TestUtils.getTestContext("<randomNo/>", null);
         Random rand = new Random();
         String randomno = Integer.toString(rand.nextInt(200));
         mc.getEnvelope().getBody().getFirstElement().setText(randomno);
-        ScriptMediator mediator = new ScriptMediator("nashornJs", threadSafetyScriptForNashorn,null);
+        ScriptMediator mediator = new ScriptMediator("rhinoJs", threadsafetyscriptForRhinoJS,null);
         mediator.mediate(mc);
         assertEquals(Integer.parseInt(mc.getEnvelope().getBody().getFirstElement().getText()),
                 Integer.parseInt(randomno) * 2);
@@ -191,9 +191,9 @@ public class ScriptMediatorTest extends TestCase {
         ScriptMediator mediator = new ScriptMediator("js", new LinkedHashMap<Value, Object>(), v, "transform", null);
         boolean result = mediator.mediate(mc);
         String response = JsonUtil.jsonPayloadToString(((Axis2MessageContext) mc).getAxis2MessageContext());
-        String expectedResponse = "[{\"name\":\"Biaggio Cafe\", \"tags\":[\"bar\", \"restaurant\", \"food\","
-                + " \"establishment\"], \"id\":\"ID:7eaf7\"}, {\"name\":\"Doltone House\", \"tags\":[\"food\","
-                + " \"establishment\"], \"id\":\"ID:3ef98\"}]";
+        String expectedResponse = "[{\"name\":\"Biaggio Cafe\",\"tags\":[\"bar\",\"restaurant\",\"food\","
+                + "\"establishment\"],\"id\":\"ID:7eaf7\"},{\"name\":\"Doltone House\",\"tags\":[\"food\","
+                + "\"establishment\"],\"id\":\"ID:3ef98\"}]";
 
         assertEquals(expectedResponse, response);
         assertEquals(true, result);

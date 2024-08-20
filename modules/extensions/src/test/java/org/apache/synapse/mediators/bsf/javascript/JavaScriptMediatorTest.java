@@ -21,13 +21,14 @@ package org.apache.synapse.mediators.bsf.javascript;
 
 import junit.framework.TestCase;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.TestUtils;
 import org.apache.synapse.mediators.bsf.ScriptMediator;
 
 public class JavaScriptMediatorTest extends TestCase {
 
     public void testInlineMediator() throws Exception {
-        ScriptMediator mediator = new ScriptMediator("js", "mc.getPayloadXML().b == 'petra';",null);
+        ScriptMediator mediator = new ScriptMediator("rhinoJs", "mc.getPayloadXML().b == 'petra';",null);
 
         MessageContext mc = TestUtils.getTestContext("<a><b>petra</b></a>", null);
         assertTrue(mediator.mediate(mc));
@@ -40,7 +41,7 @@ public class JavaScriptMediatorTest extends TestCase {
     }
 
     public void testInlineMediator2() throws Exception {
-        ScriptMediator mediator = new ScriptMediator("js", "mc.getPayloadXML().b == 'petra';",null);
+        ScriptMediator mediator = new ScriptMediator("rhinoJs", "mc.getPayloadXML().b == 'petra';",null);
 
         MessageContext mc = TestUtils.getTestContext("<a><b>petra</b></a>", null);
         assertTrue(mediator.mediate(mc));
@@ -54,13 +55,61 @@ public class JavaScriptMediatorTest extends TestCase {
 
     public void testInlineMediatorWithImports() throws Exception {
 
-        String scriptSourceCode = "importClass(Packages.java.util.UUID);\n" +
-                "var uuid = java.util.UUID.randomUUID().toString().replace('-','');\n";
+        String scriptSourceCode = "var uuid = java.util.UUID.randomUUID().toString().replace('-','');\n";
 
         MessageContext mc = TestUtils.getTestContext("<foo/>", null);
         ScriptMediator mediator = new ScriptMediator("js", scriptSourceCode, null);
 
         boolean response = mediator.mediate(mc);
         assertTrue(response);
+    }
+
+    /**
+     * Test controlling access to java classes through JS
+     * @throws Exception
+     */
+    public void testJavaClassAccessControl() throws Exception {
+        String scriptSourceCode =  "var s = new java.util.ArrayList();\n";
+
+        MessageContext mc = TestUtils.getTestContext("<foo/>", null);
+        ScriptMediator mediator = new ScriptMediator("rhinoJs", scriptSourceCode, null);
+
+        System.setProperty("properties.file.path", System.getProperty("user.dir") + "/src/test/resources/file.properties");
+
+        boolean synapseExceptionThrown = false;
+        try {
+            mediator.mediate(mc);
+        } catch(SynapseException e) {
+            synapseExceptionThrown = true;
+        }
+
+        assertTrue("As Java class access control is configured " +
+                "SynapseException should be thrown during mediation", synapseExceptionThrown);
+
+    }
+
+    /**
+     * Test controlling access to java methods through JS
+     * @throws Exception
+     */
+    public void testJavaMethodAccessControl() throws Exception {
+        String scriptSourceCode =  "var c = this.context.getClass();\n" +
+                "var hashmapConstructors = c.getClassLoader().loadClass(\"java.util.HashMap\").getDeclaredConstructors();\n";
+
+        MessageContext mc = TestUtils.getTestContext("<foo/>", null);
+        ScriptMediator mediator = new ScriptMediator("rhinoJs", scriptSourceCode, null);
+
+        System.setProperty("properties.file.path", System.getProperty("user.dir") + "/src/test/resources/file.properties");
+
+        boolean synapseExceptionThrown = false;
+        try {
+            mediator.mediate(mc);
+        } catch(SynapseException e) {
+            synapseExceptionThrown = true;
+        }
+
+        assertTrue("As Java method access control is configured " +
+                "SynapseException should be thrown during mediation", synapseExceptionThrown);
+
     }
 }

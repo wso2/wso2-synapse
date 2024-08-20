@@ -18,7 +18,9 @@
 
 package org.apache.synapse.endpoints;
 
+import com.damnhandy.uri.template.VariableExpansionException;
 import org.apache.axis2.AxisFault;
+import org.apache.axis2.addressing.EndpointReference;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.endpoints.auth.AuthHandler;
@@ -46,6 +48,7 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
     public void send(MessageContext synCtx) {
 
         try {
+            setResolvedUrlTemplate(synCtx);
             oAuthHandler.setAuthHeader(synCtx);
 
             // If this a blocking call, add 401 as a non error http status code
@@ -54,8 +57,8 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
             }
 
             // Clone the original MessageContext and save it to do a retry after a token refresh
-            MessageContext cloneMessageContext = MessageHelper.cloneMessageContext(synCtx);
-            MessageCache.getInstance().addMessageContext(synCtx.getMessageID(), cloneMessageContext);
+            MessageContext clonedMessageContext = MessageHelper.cloneMessageContext(synCtx);
+            MessageCache.getInstance().addMessageContext(synCtx.getMessageID(), clonedMessageContext);
 
             super.send(synCtx);
 
@@ -77,17 +80,22 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
      */
     public MessageContext retryCallWithNewToken(MessageContext synCtx) {
         // remove the existing token from the cache so that a new token is generated
-        oAuthHandler.removeTokenFromCache();
-        // set RETRIED_ON_OAUTH_FAILURE property to true
-        synCtx.setProperty(AuthConstants.RETRIED_ON_OAUTH_FAILURE, true);
-        send(synCtx);
+        try {
+            // set RETRIED_ON_OAUTH_FAILURE property to true
+            synCtx.setProperty(AuthConstants.RETRIED_ON_OAUTH_FAILURE, true);
+            oAuthHandler.removeTokenFromCache(synCtx);
+            send(synCtx);
+        } catch (AuthException e) {
+            handleError(synCtx,
+                    "Error removing access token for oauth configured http endpoint " + this.getName(), e);
+        }
         return synCtx;
     }
 
     @Override
     public void destroy() {
 
-        oAuthHandler.removeTokenFromCache();
+        oAuthHandler.removeTokensFromCache();
         super.destroy();
     }
 
@@ -108,5 +116,22 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
         String errorMsg = message + " " + exception.getMessage();
         log.error(errorMsg);
         informFailure(synCtx, SynapseConstants.ENDPOINT_AUTH_FAILURE, errorMsg);
+    }
+
+    private void setResolvedUrlTemplate(MessageContext messageContext) {
+        String resolvedUrl = resolveUrlTemplate(messageContext);
+        if (resolvedUrl != null) {
+            messageContext.setTo(new EndpointReference(resolvedUrl));
+            if (super.getDefinition() != null) {
+                messageContext.setProperty(EndpointDefinition.DYNAMIC_URL_VALUE, resolvedUrl);
+            }
+        }
+    }
+
+    @Override
+    protected void processUrlTemplate(MessageContext synCtx) throws VariableExpansionException {
+        // Since we set the resolved URL in the OAuthConfiguredHTTPEndpoint.send method
+        // return the processUrlTemplate to skip re-resolving at HTTPEndpoint.
+        return;
     }
 }

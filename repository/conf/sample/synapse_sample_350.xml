@@ -34,7 +34,7 @@
     <sequence name="main">
         <in>
             <!-- transform the custom quote request into a standard quote request expected by the service -->
-            <script language="js" key="stockquoteScript" function="transformRequest"/>
+            <script language="rhinoJs" key="stockquoteScript" function="transformRequest"/>
             <send>
                 <endpoint>
                     <address uri="http://localhost:9000/services/SimpleStockQuoteService"/>
@@ -43,7 +43,7 @@
         </in>
         <out>
             <!-- transform the standard response back into the custom format the client expects -->
-            <script language="js" key="script/stockquoteTransformResponse.js"
+            <script language="rhinoJs" key="script/stockquoteTransformResponse.js"
                     function="transformResponse"/>
             <send/>
         </out>

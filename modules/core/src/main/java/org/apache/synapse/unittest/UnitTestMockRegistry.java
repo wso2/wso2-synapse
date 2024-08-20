@@ -177,8 +177,12 @@ public class UnitTestMockRegistry extends AbstractRegistry {
     public Properties getResourceProperties(String entryKey) {
         Properties propertySet = new Properties();
 
-        String filePathAsKey = entryKey.substring(0, entryKey.length() - 1) + ".properties";
-        String resourcePath = getAbsolutePathToRegistry(filePathAsKey);
+        String formattedEntryKey = entryKey;
+        if (entryKey.endsWith(Constants.BACK_SLASH)) {
+            formattedEntryKey = entryKey.substring(0, entryKey.length() - 1);
+        }
+
+        String resourcePath = getAbsolutePathToRegistry(formattedEntryKey + ".properties");
         boolean isFoundPropertyFile = false;
 
         //check registry has .properties file for the properties with key
@@ -186,8 +190,7 @@ public class UnitTestMockRegistry extends AbstractRegistry {
             isFoundPropertyFile = true;
         } else {
             //check registry has file for the properties with key
-            filePathAsKey = entryKey.substring(0, entryKey.length() - 1);
-            resourcePath = getAbsolutePathToRegistry(filePathAsKey);
+            resourcePath = getAbsolutePathToRegistry(formattedEntryKey);
 
             if (resourcePath != null && testMockRegistry.containsKey(resourcePath)) {
                 isFoundPropertyFile = true;

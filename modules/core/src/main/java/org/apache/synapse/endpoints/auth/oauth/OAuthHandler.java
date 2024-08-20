@@ -46,7 +46,6 @@ import java.util.concurrent.ExecutionException;
 public abstract class OAuthHandler implements AuthHandler {
 
     private final String id;
-
     private final String tokenApiUrl;
     private final String clientId;
     private final String clientSecret;
@@ -89,7 +88,7 @@ public abstract class OAuthHandler implements AuthHandler {
     private String getToken(final MessageContext messageContext) throws AuthException {
 
         try {
-            return TokenCache.getInstance().getToken(id, new Callable<String>() {
+            return TokenCache.getInstance().getToken(getId(messageContext), new Callable<String>() {
                 @Override
                 public String call() throws AuthException, IOException {
                     return OAuthClient.generateToken(OAuthUtils.resolveExpression(tokenApiUrl, messageContext),
@@ -130,11 +129,19 @@ public abstract class OAuthHandler implements AuthHandler {
     }
 
     /**
+     * Method to remove the token from the cache when the token is invalid.
+     */
+    public void removeTokenFromCache(MessageContext messageContext) throws AuthException {
+
+        TokenCache.getInstance().removeToken(getId(messageContext));
+    }
+
+    /**
      * Method to remove the token from the cache when the endpoint is destroyed.
      */
-    public void removeTokenFromCache() {
+    public void removeTokensFromCache() {
 
-        TokenCache.getInstance().removeToken(id);
+        TokenCache.getInstance().removeTokens(id.concat("_"));
     }
 
     /**
@@ -313,7 +320,7 @@ public abstract class OAuthHandler implements AuthHandler {
      * @param messageContext   Message Context of the request which will be used to resolve dynamic expressions
      * @return Map<String, String> Resolved custom headers
      */
-    private Map<String, String> getResolvedCustomHeadersMap(Map<String, String> customHeadersMap,
+    protected Map<String, String> getResolvedCustomHeadersMap(Map<String, String> customHeadersMap,
                                                             MessageContext messageContext) throws AuthException {
 
         Map<String, String> resolvedCustomHeadersMap = null;
@@ -339,4 +346,9 @@ public abstract class OAuthHandler implements AuthHandler {
         return socketTimeout;
     }
 
+    protected abstract int getHash(MessageContext messageContext) throws AuthException;
+
+    private String getId(MessageContext messageContext) throws AuthException {
+        return id.concat("_").concat(String.valueOf(getHash(messageContext)));
+    }
 }

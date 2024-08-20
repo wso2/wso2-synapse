@@ -51,22 +51,14 @@ public class TemplateEndpoint extends AbstractEndpoint {
 
     @Override
     public void send(MessageContext synCtx) {
-        if (RuntimeStatisticCollector.isStatisticsEnabled()) {
-            Integer currentIndex = null;
-            if (getDefinition() != null) {
-                currentIndex = OpenEventCollector.reportChildEntryEvent(synCtx, getReportingName(),
-                        ComponentType.ENDPOINT, getDefinition().getAspectConfiguration(), true);
-            }
-            try {
-                sendMessage(synCtx);
-            } finally {
-                if (currentIndex != null) {
-                    CloseEventCollector.closeEntryEvent(synCtx, getReportingName(), ComponentType.MEDIATOR,
-                            currentIndex, false);
-                }
-            }
+        reLoadAndInitEndpoint(synCtx.getEnvironment());
+
+        if (realEndpoint != null) {
+            realEndpoint.send(synCtx);
         } else {
-            sendMessage(synCtx);
+            informFailure(synCtx, SynapseConstants.ENDPOINT_IN_DIRECT_NOT_READY,
+                    "Couldn't find the endpoint with the name " + getName() +
+                            " & template : " + template);
         }
     }
 
@@ -78,18 +70,6 @@ public class TemplateEndpoint extends AbstractEndpoint {
         endpointJson.put(TYPE_JSON_ATT, "Template Endpoint");
         endpointJson.put("parameters", getParameters());
         endpointJson.put("template", getTemplate());
-    }
-
-    public void sendMessage(MessageContext synCtx) {
-        reLoadAndInitEndpoint(synCtx.getEnvironment());
-
-        if (realEndpoint != null) {
-            realEndpoint.send(synCtx);
-        } else {
-            informFailure(synCtx, SynapseConstants.ENDPOINT_IN_DIRECT_NOT_READY,
-                    "Couldn't find the endpoint with the name " + getName() +
-                            " & template : " + template);
-        }
     }
 
     public Map<String, String> getParameters() {

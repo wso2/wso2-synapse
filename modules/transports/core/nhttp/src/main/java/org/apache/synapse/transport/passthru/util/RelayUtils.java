@@ -40,6 +40,7 @@ import org.apache.http.HttpRequest;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.transport.http.conn.LoggingNHttpServerConnection;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
@@ -219,8 +220,12 @@ public class RelayUtils {
                 }
             }
         } catch (Exception e) {
+            //removing JSONstream from the message Context since it is outdated.
+            JsonUtil.removeJsonPayload(messageContext);
             //Clearing the buffer when there is an exception occurred.
             discardRequestMessage(messageContext);
+            //Clearing the buffered input stream when there is an build exception occurred.
+            messageContext.setProperty(PassThroughConstants.BUFFERED_INPUT_STREAM, null);
             messageContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
             handleException("Error while building Passthrough stream", e);
         }

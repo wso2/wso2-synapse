@@ -25,6 +25,9 @@ import org.apache.http.HttpStatus;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.api.version.ContextVersionStrategy;
+import org.apache.synapse.api.version.DefaultStrategy;
+import org.apache.synapse.api.version.URLBasedVersionStrategy;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.api.dispatch.DefaultDispatcher;
@@ -40,7 +43,11 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ApiUtils {
 
@@ -158,6 +165,92 @@ public class ApiUtils {
         return (String) synCtx.getProperty(RESTConstants.REST_SUB_REQUEST_PATH);
     }
 
+    /**
+     * Checks whether the provided resource is capable of processing the message from the provided message context.
+     * The resource becomes capable to do this when the it contains either the name of the api caller,
+     * or {@value ApiConstants#DEFAULT_BINDING_ENDPOINT_NAME}, in its binds-to.
+     *
+     * @param resource  Resource object
+     * @param synCtx    MessageContext object
+     * @return          Whether the provided resource is bound to the provided message context
+     */
+    public static boolean isBound(Resource resource, MessageContext synCtx) {
+        Collection<String> bindings = resource.getBindsTo();
+        Object apiCaller = synCtx.getProperty(ApiConstants.API_CALLER);
+        if (apiCaller != null) {
+            return bindings.contains(apiCaller.toString());
+        }
+        return bindings.contains(ApiConstants.DEFAULT_BINDING_ENDPOINT_NAME);
+    }
+
+    public static Set<Resource> getAcceptableResources(Map<String, Resource> resources, MessageContext synCtx) {
+        Set<Resource> acceptableResources = new LinkedHashSet<Resource>();
+        for (Resource r : resources.values()) {
+            if (isBound(r, synCtx) && r.canProcess(synCtx)) {
+                acceptableResources.add(r);
+            }
+        }
+        return acceptableResources;
+    }
+
+    /**
+     * This method is used to locate the specific API that has been invoked from the collection of all APIs.
+     *
+     * @param synCtx MessageContext of the request
+     * @return Selected API
+     */
+    public static API getSelectedAPI(MessageContext synCtx) {
+        //getting the API collection from the synapse configuration to find the invoked API
+        Collection<API> apiSet = synCtx.getEnvironment().getSynapseConfiguration().getAPIs();
+        //Since swapping elements are not possible with sets, Collection is converted to a List
+        List<API> defaultStrategyApiSet = new ArrayList<API>(apiSet);
+        //To avoid apiSet being modified concurrently
+        List<API> duplicateApiSet = new ArrayList<>(apiSet);
+        //identify the api using canProcess method
+        for (API api : duplicateApiSet) {
+            if (identifySelectedAPI(api, synCtx, defaultStrategyApiSet)) {
+                return api;
+            }
+        }
+        for (API api : defaultStrategyApiSet) {
+            api.setLogSetterValue();
+            if (api.canProcess(synCtx)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Located specific API: " + api.getName() + " for processing message");
+                }
+                return api;
+            }
+        }
+        return null;
+    }
+
+    private static boolean identifySelectedAPI(API api, MessageContext synCtx, List defaultStrategyApiSet) {
+        API defaultAPI = null;
+        api.setLogSetterValue();
+        if ("/".equals(api.getContext())) {
+            defaultAPI = api;
+        } else if (api.getVersionStrategy().getClass().getName().equals(DefaultStrategy.class.getName())) {
+            //APIs whose VersionStrategy is bound to an instance of DefaultStrategy, should be skipped and processed at
+            // last.Otherwise they will be always chosen to process the request without matching the version.
+            defaultStrategyApiSet.add(api);
+        } else if (api.getVersionStrategy().getClass().getName().equals(ContextVersionStrategy.class.getName())
+                || api.getVersionStrategy().getClass().getName().equals(URLBasedVersionStrategy.class.getName())) {
+            api.setLogSetterValue();
+            if (api.canProcess(synCtx)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Located specific API: " + api.getName() + " for processing message");
+                }
+                return true;
+            }
+        } else if (api.canProcess(synCtx)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Located specific API: " + api.getName() + " for processing message");
+            }
+            return true;
+        }
+        return false;
+    }
+
     public static List<RESTDispatcher> getDispatchers() {
         return dispatchers;
     }
@@ -177,8 +270,8 @@ public class ApiUtils {
      * and false if the two values don't match
      */
     public static boolean matchApiPath(String path, String context) {
-        if (!path.startsWith(context + "/") && !path.startsWith(context + "?") &&
-                !context.equals(path) && !"/".equals(context)) {
+        if (!path.startsWith(context + "/") && !path.startsWith(context + "?")
+                && !context.equals(path) && !"/".equals(context)) {
             return false;
         }
         return true;

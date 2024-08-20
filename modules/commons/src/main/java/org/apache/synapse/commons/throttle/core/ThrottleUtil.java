@@ -30,7 +30,6 @@ import javax.cache.Caching;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -160,6 +159,25 @@ public class ThrottleUtil {
 									getResolvedValue(secretResolver, distributedConfiguration));
 						}
 					}
+					if (key.contains(ThrottleConstants.THROTTLE_SYNC_ASYNC_HYBRID_MODE_ENABLED)) {
+						String throttleSyncAsyncHybridModeEnabled = properties.getProperty(key);
+						if (StringUtils.isNotEmpty(throttleSyncAsyncHybridModeEnabled)) {
+							throttleProperties.setThrottleSyncAsyncHybridModeEnabled(
+									Boolean.parseBoolean(throttleSyncAsyncHybridModeEnabled));
+						}
+					}
+					if (key.contains(ThrottleConstants.HYBRID_THROTTLE_PROCESSOR_WINDOW_TYPE)) {
+						String hybridThrottleProcessorWindowType = properties.getProperty(key);
+						if (StringUtils.isNotEmpty(hybridThrottleProcessorWindowType)) {
+							throttleProperties.setHybridThrottleProcessorWindowType(hybridThrottleProcessorWindowType);
+						}
+					}
+					if (key.contains(ThrottleConstants.LOCAL_QUOTA_BUFFER_PERCENTAGE)) {
+						String localQuotaBufferPercentage = properties.getProperty(key);
+						if (StringUtils.isNotEmpty(localQuotaBufferPercentage)) {
+							throttleProperties.setLocalQuotaBufferPercentage(localQuotaBufferPercentage);
+						}
+					}
 				}
 			} catch (IOException e) {
 				log.debug("Setting the Default Throttle Properties");
@@ -194,4 +212,4 @@ public class ThrottleUtil {
             }
             return cache;
         }
-    }
+}

@@ -76,12 +76,15 @@ public class InvokeMediator extends AbstractMediator implements
 	private Map<String, Value> pName2ExpressionMap;
 
 	private boolean dynamicMediator = false;
-
-	/** The local registry key which is used to pick a sequence definition */
+	
 	private Value key = null;
 
-    /** Reference to the synapse environment */
-    private SynapseEnvironment synapseEnv;
+	private String localEntryKey = null;
+
+	/**
+	 * Reference to the synapse environment
+	 */
+	private SynapseEnvironment synapseEnv;
 
 	public InvokeMediator() {
 		// LinkedHashMap is used to preserve tag order
@@ -129,6 +132,10 @@ public class InvokeMediator extends AbstractMediator implements
 		if (executePreFetchingSequence && key != null) {
 			String defaultConfiguration = key.evaluateValue(synCtx);
 			Mediator m = synCtx.getDefaultConfiguration(defaultConfiguration);
+			if (m instanceof InvokeMediator) {
+				InvokeMediator invokeMediator = (InvokeMediator) m;
+				invokeMediator.setLocalEntryKey(defaultConfiguration);
+			}
 			if (m == null) {
 				handleException("Sequence named " + key + " cannot be found", synCtx);
 
@@ -149,6 +156,9 @@ public class InvokeMediator extends AbstractMediator implements
 		}
 
 		if (mediator != null && mediator instanceof TemplateMediator) {
+			if (localEntryKey != null) {
+				((TemplateMediator) mediator).setLocalEntryKey(localEntryKey);
+			}
 			populateParameters(synCtx, ((TemplateMediator) mediator).getName());
 			if (executePreFetchingSequence) {
 				ContinuationStackManager.addReliantContinuationState(synCtx,
@@ -318,6 +328,12 @@ public class InvokeMediator extends AbstractMediator implements
 
 	public void setKey(Value key) {
 		this.key = key;
+	}
+	public void setLocalEntryKey(String localEntryKey) {
+		this.localEntryKey = localEntryKey;
+	}
+	public String getLocalEntryKey() {
+		return localEntryKey;
 	}
 
 	public String getPackageName() {

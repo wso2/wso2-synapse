@@ -51,10 +51,15 @@ public class TemplateContext {
      * refers to the parameters of the function
      */
     private Collection<TemplateParam> parameters;
+    private final String INIT_CONFIG_KEY = "INIT_CONFIG_KEY";
     /**
      * contains a map for parameterNames to evaluated values
      */
     private Map mappedValues;
+    /**
+     * The local entry key name
+     */
+    private String localEntryKey = null;
 
     public TemplateContext(String name, Collection<TemplateParam> parameters) {
         this.fName = name;
@@ -68,6 +73,9 @@ public class TemplateContext {
      * @param synCtxt Synapse MessageContext
      */
     public void setupParams(MessageContext synCtxt) {
+        if (SynapseConstants.INIT_EIP_PATTERN.equals(fName) && getLocalEntryKey() != null) {
+            mappedValues.put(INIT_CONFIG_KEY, getLocalEntryKey());
+        }
         Iterator<TemplateParam> paramNames = parameters.iterator();
         while (paramNames.hasNext()) {
             TemplateParam parameter = paramNames.next();
@@ -180,6 +188,14 @@ public class TemplateContext {
 
     public Map getMappedValues() {
         return mappedValues;
+    }
+
+    public String getLocalEntryKey() {
+        return localEntryKey;
+    }
+
+    public void setLocalEntryKey(String localEntryKey) {
+        this.localEntryKey = localEntryKey;
     }
 
     public void setMappedValues(Map map) {

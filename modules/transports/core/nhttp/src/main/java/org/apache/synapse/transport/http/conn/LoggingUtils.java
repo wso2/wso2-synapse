@@ -38,7 +38,7 @@ public class LoggingUtils {
 
     public final static String HEADER_LOG_ID = "org.apache.synapse.transport.http.headers";
     public final static String WIRE_LOG_ID = "org.apache.synapse.transport.http.wire";
-    public final static String ACCESS_LOG_ID = "org.apache.synapse.transport.http.access";
+    public final static String ACCESS_LOG_ID = "org.apache.synapse.transport.http.access.logs";
     private final static Pattern SKIP_LOGGING_PATTERN;
 
     static {

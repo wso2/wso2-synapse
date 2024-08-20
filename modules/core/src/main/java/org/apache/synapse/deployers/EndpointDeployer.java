@@ -23,6 +23,9 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.jmx.JmxConfigurationConstants;
+import org.apache.synapse.commons.util.MiscellaneousUtil;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
@@ -41,6 +44,10 @@ import java.util.Properties;
 public class EndpointDeployer extends AbstractSynapseArtifactDeployer {
 
     private static Log log = LogFactory.getLog(EndpointDeployer.class);
+
+    private static final boolean jmxEnabled = Boolean.parseBoolean(
+            MiscellaneousUtil.getProperty(SynapsePropertiesLoader.loadSynapseProperties(),
+                    JmxConfigurationConstants.PROP_ENDPOINT_VIEW_JMX_ENABLE, "true"));
 
     @Override
     public String deploySynapseArtifact(OMElement artifactConfig, String fileName,
@@ -126,7 +133,7 @@ public class EndpointDeployer extends AbstractSynapseArtifactDeployer {
 
             waitForCompletion();
             existingEp.destroy();
-            if (existingArtifactName.equals(ep.getName())) {
+            if (existingArtifactName.equals(ep.getName()) && jmxEnabled) {
                 // If the endpoint name was same as the old one, above method call (destroy)
                 // will unregister the endpoint MBean - So we should register it again.
                 MBeanRegistrar.getInstance().registerMBean(

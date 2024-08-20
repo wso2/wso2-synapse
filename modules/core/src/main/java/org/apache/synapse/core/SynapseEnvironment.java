@@ -21,6 +21,7 @@ package org.apache.synapse.core;
 
 import org.apache.axiom.util.blob.OverflowBlob;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SequenceFlowObserver;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
@@ -231,6 +232,20 @@ public interface SynapseEnvironment {
      * @param handler synapse handler
      */
     public void registerSynapseHandler(SynapseHandler handler);
+
+    /**
+     * Get all sequence observers
+     *
+     * @return list of sequence observers
+     */
+    public List<SequenceFlowObserver> getSequenceObservers();
+
+    /**
+     * Register a sequence observer to the synapse environment
+     *
+     * @param observer sequence observer
+     */
+    public void registerSequenceObservers(SequenceFlowObserver observer);
 
     /**
      * Get the global timeout interval for callbacks

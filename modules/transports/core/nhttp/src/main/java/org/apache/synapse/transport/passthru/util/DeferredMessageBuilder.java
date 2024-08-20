@@ -18,7 +18,7 @@ package org.apache.synapse.transport.passthru.util;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAPEnvelope;
-import org.apache.axiom.soap.impl.dom.soap11.SOAP11Factory;
+import org.apache.axiom.soap.impl.llom.soap11.SOAP11Factory;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.builder.*;
@@ -143,7 +143,7 @@ public class DeferredMessageBuilder {
             if (builder != null) {
                 try {
                     if (contentLength != null && "0".equals(contentLength) && !msgCtx.isDoingREST()) {
-                        element = new org.apache.axiom.soap.impl.llom.soap11.SOAP11Factory().getDefaultEnvelope();
+                        element = new SOAP11Factory().getDefaultEnvelope();
                         //since we are setting an empty envelop to achieve the empty body, we have to set a different
                         //content-type other than text/xml, application/soap+xml or any other content-type which will
                         //invoke the soap builder, otherwise soap builder will get hit and an empty envelope

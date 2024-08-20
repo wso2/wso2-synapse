@@ -232,6 +232,11 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     Map<String, Library> synapseLibraries = new ConcurrentHashMap<String, Library>();
 
     /**
+     * Holds synapse Libraries class loaders by library qualified name
+     */
+    private static Map<String, ClassLoader> libraryClassLoaders = new ConcurrentHashMap<String, ClassLoader>();
+
+    /**
      * Holds the library imports  currently being included into Synapse engine
      */
     Map<String, SynapseImport> synapseImports = new ConcurrentHashMap<String, SynapseImport>();
@@ -494,7 +499,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         while (swaggerIterator.hasNext()) {
             String name = swaggerIterator.next();
             if (!apiTable.containsKey(name)) {
-                swaggerTable.remove(name);
+                swaggerIterator.remove();
             }
         }
     }
@@ -2042,6 +2047,14 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         return synapseLibraries;
     }
 
+    public static void addLibraryClassLoader(String libraryName, ClassLoader classLoader) {
+        libraryClassLoaders.putIfAbsent(libraryName, classLoader);
+    }
+    
+    public static ClassLoader getClassLoader(String libraryName) {
+        return libraryClassLoaders.get(libraryName);
+    }
+
     public static Library getDeployedLib(String name) {
         Map.Entry<Library, Integer> libraryCountEntry = deployedLibs.get(name);
         if (libraryCountEntry == null) {
@@ -2062,7 +2075,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         Map.Entry<Library, Integer> libraryCountEntry = deployedLibs.get(name);
         if (libraryCountEntry != null) {
             Integer count = libraryCountEntry.getValue();
-            if (count > 0) {
+            if (count > 1) {
                 count--;
                 libraryCountEntry.setValue(count);
             } else {

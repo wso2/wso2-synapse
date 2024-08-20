@@ -25,6 +25,12 @@ import java.util.Map;
 public interface ConnectionsViewMBean {
 
     public int getActiveConnections();
+    public int getLastSecondRequests();
+    public int getLast15SecondRequests();
+    public int getLastMinuteRequests();
+    public int getLastSecondConnections();
+    public int getLast5SecondConnections();
+    public int getLast15SecondConnections();
     public int getLastMinuteConnections();
     public int getLast5MinuteConnections();
     public int getLast15MinuteConnections();

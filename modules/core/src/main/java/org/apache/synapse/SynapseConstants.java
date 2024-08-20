@@ -155,6 +155,8 @@ public final class SynapseConstants {
     
     /** The name of the Parameter set on the Axis2Configuration to hold the Synapse Configuration */
     public static final String SYNAPSE_CONFIG = "synapse.config";
+    /** EIP pattern name */
+    public static final String INIT_EIP_PATTERN = "init";
     /** The name of the Parameter set on the Axis2Configuration to hold the Synapse Environment */
     public static final String SYNAPSE_ENV = "synapse.env";
     /** The name of the Parameter set on AxisConfiguration to hold the ServerContextInformation */
@@ -170,6 +172,8 @@ public final class SynapseConstants {
     public static final String SYNAPSE_PROPERTIES = "synapse.properties";
     /** The name of the synapse handlers file */
     public static final String SYNAPSE_HANDLER_FILE = "synapse-handlers.xml";
+
+    public static final String SEQUENCE_OBSERVERS_FILE = "sequence-observers.xml";
 
     /** the name of the property used for synapse library based class loading */
     public static final String SYNAPSE_LIB_LOADER = "synapse.lib.classloader";
@@ -225,6 +229,11 @@ public final class SynapseConstants {
         public static final String SENDING_FAULT = "SENDING_FAULT";
         /** The message context property name which holds the error code for the last encountered exception */
         public static final String ERROR_CODE = "ERROR_CODE";
+        /** The message context property name which holds the error code for the last encountered exception
+        * without any protocol state specific alterations*/
+        public static final String BASE_ERROR_CODE = "BASE_ERROR_CODE";
+        /** The message context property name which holds the http protocol state upon a failure*/
+        public static final String PROTOCOL_STATE_ON_FAILURE = "PROTOCOL_STATE_ON_FAILURE";
         /** The MC property name which holds the error message for the last encountered exception */
         public static final String ERROR_MESSAGE = "ERROR_MESSAGE";
         /** The message context property name which holds the error detail (stack trace) for the last encountered exception */
@@ -604,6 +613,7 @@ public final class SynapseConstants {
     public static final String MAX_FAILOVER_RECUSIVE_RETRIES_CONFIG = "maximum.failover.recursive.retries";
     public static final String SUSPEND_DURATION_ON_MAX_RECURSIVE_FAILOVER_CONFIG =
             "suspend.duration.on.maximum.recursive.failover";
+    public static final String EXCLUDE_PAYLOAD_DETAILS_FROM_ERROR = "exclude.payload.details.from.error";
 
     /**
      * Synapse Configuration holder property name, used for handling synapse import deployments

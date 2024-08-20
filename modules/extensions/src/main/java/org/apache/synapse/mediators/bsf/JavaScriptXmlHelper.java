@@ -36,7 +36,7 @@ import javax.xml.stream.XMLStreamException;
  * since there is an api change in rhino17,This class is provided instead of getting Helper class by
  * XMLHelper.getArgHelper(engine) in bsf
  */
-
+@Deprecated
 public class JavaScriptXmlHelper extends DefaultXMLHelper {
     private final Scriptable scope;
 

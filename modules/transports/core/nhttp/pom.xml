@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.synapse</groupId>
         <artifactId>synapse-transports</artifactId>
-        <version>4.0.0-wso2v46-SNAPSHOT</version>
+        <version>4.0.0-wso2v122-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -176,7 +176,7 @@
             <artifactId>httpcore</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
+            <groupId>org.wso2.httpcomponents</groupId>
             <artifactId>httpcore-nio</artifactId>
         </dependency>
         <dependency>
@@ -192,7 +192,7 @@
         <!-- BouncyCastle Api which needs when validating Certificates. -->
         <dependency>
             <groupId>org.wso2.orbit.org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
+            <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.caching</groupId>

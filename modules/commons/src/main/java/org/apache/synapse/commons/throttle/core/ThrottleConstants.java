@@ -168,6 +168,7 @@ public final class ThrottleConstants {
 
     public static final String THROTTLE_TIMESTAMP_KEY = "startedTime-";
     public static final String THROTTLE_SHARED_COUNTER_KEY = "sharedCounter-";
+    public static final String THROTTLE_LOCK_KEY_PREFIX = "lock-";
     public static final String THROTTLE_CONTEXT_CLEANUP_TASK_FREQUENCY = "throttling.context.cleanup.frequency";
     public static final String THROTTLE_CONTEXT_DISTRIBUTED_CLEANUP_TASK_FREQUENCY =
             "throttling.context.distributed.cleanup.frequency";
@@ -186,5 +187,7 @@ public final class ThrottleConstants {
     public static final String WINDOW_REPLICATOR_FREQUENCY = "throttlingWindowReplicator.replication.frequency";
     public static final String DISTRIBUTED_COUNTER_TYPE = "throttling.distributed.counter.type";
     public static final String DISTRIBUTED_COUNTER_CONFIGURATIONS  = "throttling.distributed.counter.configurations.";
-
+    public static final String THROTTLE_SYNC_ASYNC_HYBRID_MODE_ENABLED = "throttling.sync-async_hybrid_mode.enable";
+    public static final String HYBRID_THROTTLE_PROCESSOR_WINDOW_TYPE = "throttling.hybrid_throttle_processor_window.type";
+    public static final String LOCAL_QUOTA_BUFFER_PERCENTAGE = "throttling.local_quota_buffer_percentage";
 }

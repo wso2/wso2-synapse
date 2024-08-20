@@ -20,10 +20,19 @@ package org.apache.synapse.transport.certificatevalidation.crl;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.bouncycastle.asn1.*;
-import org.bouncycastle.asn1.x509.*;
-import org.apache.synapse.transport.certificatevalidation.*;
+import org.apache.synapse.transport.certificatevalidation.CertificateVerificationException;
+import org.apache.synapse.transport.certificatevalidation.RevocationVerifier;
+import org.apache.synapse.transport.certificatevalidation.RevocationStatus;
+import org.bouncycastle.asn1.ASN1IA5String;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.x509.CRLDistPoint;
+import org.bouncycastle.asn1.x509.DistributionPoint;
+import org.bouncycastle.asn1.x509.DistributionPointName;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -164,7 +173,7 @@ public class CRLVerifier implements RevocationVerifier {
                     if (genName.getTagNo() == GeneralName.uniformResourceIdentifier) {
                         //DERIA5String contains an ascii string.
                         //A IA5String is a restricted character string type in the ASN.1 notation
-                        String url = DERIA5String.getInstance(genName.getName()).getString().trim();
+                        String url = ASN1IA5String.getInstance(genName.getName()).getString().trim();
                         crlUrls.add(url);
                     }
                 }

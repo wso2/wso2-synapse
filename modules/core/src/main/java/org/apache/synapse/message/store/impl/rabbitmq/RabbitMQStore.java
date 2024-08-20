@@ -351,12 +351,15 @@ public class RabbitMQStore extends AbstractMessageStore {
     @Override
     public MessageProducer getProducer() {
         RabbitMQProducer producer = new RabbitMQProducer(this);
+        boolean producerConnectionInvalidated = false;
         producer.setId(nextProducerId());
         producer.setExchangeName(exchangeName);
         producer.setRoutingKey(routingKey);
         if (producerConnection == null) {
+            producerConnectionInvalidated = true;
             producerConnection = createConnection();
         } else if (!producerConnection.isOpen()) {
+            producerConnectionInvalidated = true;
             producerConnection.abort();
             producerConnection = createConnection();
         }
@@ -365,7 +368,7 @@ public class RabbitMQStore extends AbstractMessageStore {
         if (log.isDebugEnabled()) {
             log.debug(nameString() + " created message producer " + producer.getId());
         }
-        if (channel == null) {
+        if (channel == null || producerConnectionInvalidated) {
             channel = createChannel(producerConnection);
         }
         producer.setChannel(channel);

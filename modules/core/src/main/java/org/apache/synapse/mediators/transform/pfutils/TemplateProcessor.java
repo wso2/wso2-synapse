@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.impl.builder.StAXBuilder;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
+import org.apache.axiom.om.util.StAXUtils;
 import org.apache.axis2.AxisFault;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -526,4 +527,20 @@ public abstract class TemplateProcessor {
 
     public abstract boolean getTemplateStatus();
 
+    /**
+     * Read XMLInputFactory properties from XMLInputFactory.properties file.
+     */
+    public void readInputFactoryProperties() {
+        //ignore DTDs for XML Input
+        inputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
+        inputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
+        inputFactory.setProperty(XMLInputFactory.IS_COALESCING, true);
+        Map props = StAXUtils.loadFactoryProperties("XMLInputFactory.properties");
+        if (props != null) {
+            for (Object o : props.entrySet()) {
+                Map.Entry entry = (Map.Entry) o;
+                inputFactory.setProperty((String) entry.getKey(), entry.getValue());
+            }
+        }
+    }
 }

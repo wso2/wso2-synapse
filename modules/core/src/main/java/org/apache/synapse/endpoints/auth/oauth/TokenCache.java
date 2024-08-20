@@ -82,7 +82,7 @@ public class TokenCache {
     }
 
     /**
-     * This method is called to remove the token from the cache when the endpoint is destroyed
+     * This method is called to remove the token from the cache when the token is invalid
      *
      * @param id id of the endpoint
      */
@@ -91,4 +91,12 @@ public class TokenCache {
         tokenMap.invalidate(id);
     }
 
+    /**
+     * This method is called to remove the tokens from the cache when the endpoint is destroyed
+     *
+     * @param oauthHandlerId id of the OAuth handler bounded to the endpoint
+     */
+    public void removeTokens(String oauthHandlerId) {
+        tokenMap.asMap().entrySet().removeIf(entry -> entry.getKey().startsWith(oauthHandlerId));
+    }
 }
