@@ -116,11 +116,12 @@ public class SpanStore {
      * Denotes the end of a span.
      * Adds tags to the span and removes reference to the appropriate span wrapper in activeSpanWrappers.
      * @param spanWrapper   Span wrapper object, which has been already created
+     * @param synCtx Synapse message context
      */
-    public void finishSpan(SpanWrapper spanWrapper) {
+    public void finishSpan(SpanWrapper spanWrapper, MessageContext synCtx) {
         if (spanWrapper != null && spanWrapper.getSpan() != null) {
             if (spanWrapper.getStatisticDataUnit() != null) {
-                SpanTagger.setSpanTags(spanWrapper);
+                SpanTagger.setSpanTags(spanWrapper, synCtx);
             }
             spanWrapper.getSpan().end();
             activeSpanWrappers.remove(spanWrapper);

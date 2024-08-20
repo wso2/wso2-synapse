@@ -352,12 +352,12 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         }
         if (!Objects.equals(spanWrapper, spanStore.getOuterLevelSpanWrapper())) {
             // A non-outer level span
-            spanStore.finishSpan(spanWrapper);
+            spanStore.finishSpan(spanWrapper, synCtx);
         } else {
             // An outer level span
             if (tracingScope.isEventCollectionFinished(synCtx)) {
-                cleanupContinuationStateSequences(spanStore);
-                spanStore.finishSpan(spanWrapper);
+                cleanupContinuationStateSequences(spanStore, synCtx);
+                spanStore.finishSpan(spanWrapper, synCtx);
                 tracingScopeManager.cleanupTracingScope(tracingScope.getTracingScopeId());
             }
             // Else - Absorb. Will be handled when all the callbacks are completed
@@ -367,13 +367,14 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
     /**
      * Cleans up remaining unfinished continuation state sequences before ending the outer level span.
      * @param spanStore Span store object.
+     * @param synCtx Synapse message context
      */
-    private void cleanupContinuationStateSequences(SpanStore spanStore) {
+    private void cleanupContinuationStateSequences(SpanStore spanStore, MessageContext synCtx) {
         if (!spanStore.getContinuationStateSequenceInfos().isEmpty()) {
             List<ContinuationStateSequenceInfo> continuationStateSequences =
                     spanStore.getContinuationStateSequenceInfos();
             for (ContinuationStateSequenceInfo continuationStateSequence : continuationStateSequences) {
-                finishSpanForContinuationStateSequence(continuationStateSequence, spanStore);
+                finishSpanForContinuationStateSequence(continuationStateSequence, spanStore, synCtx);
             }
             continuationStateSequences.clear();
         }
@@ -385,10 +386,10 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
      * @param spanStore             Span store object.
      */
     private void finishSpanForContinuationStateSequence(ContinuationStateSequenceInfo continuationStateSequenceInfo,
-                                                        SpanStore spanStore) {
+                                                        SpanStore spanStore, MessageContext synCtx) {
         String spanWrapperId = continuationStateSequenceInfo.getSpanReferenceId();
         SpanWrapper spanWrapper = spanStore.getSpanWrapper(spanWrapperId);
-        spanStore.finishSpan(spanWrapper);
+        spanStore.finishSpan(spanWrapper, synCtx);
     }
 
     @Override
@@ -418,9 +419,9 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         // The last callback received in a scope will finish the outer level span
         if (tracingScope.isEventCollectionFinished(messageContext)) {
             synchronized (tracingScope.getSpanStore()) {
-                cleanupContinuationStateSequences(tracingScope.getSpanStore());
+                cleanupContinuationStateSequences(tracingScope.getSpanStore(), messageContext);
                 SpanWrapper outerLevelSpanWrapper = tracingScope.getSpanStore().getOuterLevelSpanWrapper();
-                tracingScope.getSpanStore().finishSpan(outerLevelSpanWrapper);
+                tracingScope.getSpanStore().finishSpan(outerLevelSpanWrapper, messageContext);
                 tracingScopeManager.cleanupTracingScope(tracingScope.getTracingScopeId());
             }
         }
@@ -452,7 +453,8 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
                                 true);
                 if (continuationStateSequenceInfo != null) {
                     continuationStateSequenceInfo.setSpanActive(false);
-                    finishSpanForContinuationStateSequence(continuationStateSequenceInfo, tracingScope.getSpanStore());
+                    finishSpanForContinuationStateSequence(continuationStateSequenceInfo, tracingScope.getSpanStore(),
+                            synCtx);
                     tracingScope.getSpanStore().getContinuationStateSequenceInfos()
                             .remove(continuationStateSequenceInfo);
                 }
@@ -501,7 +503,7 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
             List<ContinuationStateSequenceInfo> stackedSequences =
                     tracingScope.getSpanStore().getContinuationStateSequenceInfos();
             for (ContinuationStateSequenceInfo stackedSequence : stackedSequences) {
-                finishSpanForContinuationStateSequence(stackedSequence, tracingScope.getSpanStore());
+                finishSpanForContinuationStateSequence(stackedSequence, tracingScope.getSpanStore(), synCtx);
             }
             stackedSequences.clear();
         }
