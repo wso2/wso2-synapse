@@ -37,7 +37,7 @@ import org.apache.axis2.transport.base.AbstractPollingTransportListener;
 import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.base.BaseUtils;
 import org.apache.axis2.transport.base.ManagementSupport;
-import org.apache.axis2.transport.base.threads.WorkerPool; 
+import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.AutoCloseInputStream;
 import org.apache.commons.lang3.StringUtils;
