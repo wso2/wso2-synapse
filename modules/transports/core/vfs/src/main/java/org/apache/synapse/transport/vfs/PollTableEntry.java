@@ -531,7 +531,6 @@ public class PollTableEntry extends AbstractPollTableEntry {
     }
 
     protected boolean loadConfigurationsFromService(ParameterInclude params) throws AxisFault {
-        System.out.println("loading config from service");
         fileURI = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_FILE_FILE_URI);
         if (fileURI == null) {
             log.warn("transport.vfs.FileURI parameter is missing in the proxy service configuration");
