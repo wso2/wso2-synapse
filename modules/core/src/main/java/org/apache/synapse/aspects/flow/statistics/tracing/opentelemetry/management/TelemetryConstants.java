@@ -78,4 +78,5 @@ public class TelemetryConstants {
     public static final String STATUS_CODE_ATTRIBUTE_KEY = "Status code";
     public static final String STATUS_DESCRIPTION_ATTRIBUTE_KEY = "Status description";
     public static final String ENDPOINT_ATTRIBUTE_KEY = "Endpoint";
+    public static final String CORRELATION_ID_ATTRIBUTE_KEY = "CorrelationId";
 }
