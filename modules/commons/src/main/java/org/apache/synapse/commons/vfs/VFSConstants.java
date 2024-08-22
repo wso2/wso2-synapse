@@ -47,6 +47,9 @@ public final class VFSConstants {
     public static final String TRANSPORT_FILE_LOCKING_ENABLED = "enable";
     public static final String TRANSPORT_FILE_LOCKING_DISABLED = "disable";
 
+    public static final String TRANSPORT_CHECK_SIZE_INTERVAL = "transport.vfs.CheckSizeInterval";
+    public static final String TRANSPORT_CHECK_SIZE_IGNORE_EMPTY = "transport.vfs.CheckSizeIgnoreEmpty";
+
     /**
      * This parameter is used decide whether the resolving hostname IP of URIs are done at deployment or dynamically.
      * At usage default id 'false' which lead hostname resolution at deployment
