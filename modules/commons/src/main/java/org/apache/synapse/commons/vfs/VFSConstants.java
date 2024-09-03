@@ -204,6 +204,11 @@ public final class VFSConstants {
     public static final String SCHEME_FTPS = "ftps";
     // sftp scheme file option list
     public static enum SFTP_FILE_OPTION {Identities, UserDirIsRoot, IdentityPassPhrase};
+    
+    /** Parameter for minimum age **/
+    public static final String TRANSPORT_FILE_MINIMUM_AGE = "transport.vfs.MinimumAge";
+    /** Parameter for maximum age **/
+    public static final String TRANSPORT_FILE_MAXIMUM_AGE = "transport.vfs.MaximumAge";
 
     public static final String FILE_TYPE_PREFIX = "transport.vfs.fileType";
     public static final String FILE_TYPE = "filetype";

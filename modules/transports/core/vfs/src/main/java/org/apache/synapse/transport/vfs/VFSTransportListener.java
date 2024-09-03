@@ -463,6 +463,22 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             isFailedRecord = isFailedRecord(child, entry);
                         }
 
+                        if(entry.getMinimumAge() != null){
+                            long age = child.getContent().getLastModifiedTime();
+                            long time = System.currentTimeMillis();
+                            if((time-age)/1000 <= entry.getMinimumAge()){
+                                continue;
+                            }
+                        }
+                        
+                        if(entry.getMaximumAge() != null){
+                            long age = child.getContent().getLastModifiedTime();
+                            long time = System.currentTimeMillis();
+                            if((time-age)/1000 >= entry.getMaximumAge()){
+                                continue;
+                            }
+                        }
+                        
                         if(entry.getFileNamePattern()!=null &&
                                 child.getName().getBaseName().matches(entry.getFileNamePattern())){
                             //child's file name matches the file name pattern
