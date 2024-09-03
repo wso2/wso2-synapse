@@ -511,10 +511,6 @@ public class PollTableEntry extends AbstractPollTableEntry {
         return maximumAge;
     }
     
-    public boolean hasAgeCheck(){
-        return minimumAge != null||maximumAge != null;
-    }
-    
     @Override
     public boolean loadConfiguration(ParameterInclude params) throws AxisFault {
 
