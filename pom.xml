@@ -1501,7 +1501,7 @@
       <com.jayway.jsonpath.version>2.9.0.wso2v1</com.jayway.jsonpath.version>
       <qfj.version>1.5.3</qfj.version>
        <quickfixj.version>2.3.1</quickfixj.version>
-      <org.bouncycastle.version>1.77.0.wso2v2</org.bouncycastle.version>
+      <org.bouncycastle.version>1.78.1.wso2v1</org.bouncycastle.version>
       <imp.pkg.version.wso2.bouncycastle>[1.52.0,2.0.0)</imp.pkg.version.wso2.bouncycastle>
        <httpcore.version>4.4.16</httpcore.version>
       <httpcore.wso2.version>${httpcore.version}.wso2v1</httpcore.wso2.version>
