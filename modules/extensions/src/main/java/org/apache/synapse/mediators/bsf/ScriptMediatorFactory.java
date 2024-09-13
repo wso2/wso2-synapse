@@ -24,6 +24,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.AbstractMediatorFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.mediators.Value;
@@ -36,6 +37,11 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 import java.util.*;
+
+import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.DEFAULT_SCRIPT_ENGINE;
+import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.GRAAL_JAVA_SCRIPT;
+import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.JAVA_SCRIPT;
+import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.RHINO_JAVA_SCRIPT;
 
 /**
  * Creates an instance of a Script mediator for inline or external script mediation for BSF
@@ -106,7 +112,13 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
             mediator = new ScriptMediator(langAtt.getAttributeValue(),
                     includeKeysMap, generatedKey, functionName,classLoader);
         } else {
-            mediator = new ScriptMediator(langAtt.getAttributeValue(), elem.getText(),classLoader);
+            String language = langAtt.getAttributeValue();
+            if (language.equals(JAVA_SCRIPT) &&
+                    (RHINO_JAVA_SCRIPT.equals(SynapsePropertiesLoader.getPropertyValue(
+                            DEFAULT_SCRIPT_ENGINE, GRAAL_JAVA_SCRIPT)))) {
+                language = RHINO_JAVA_SCRIPT;
+            }
+            mediator = new ScriptMediator(language, elem.getText(),classLoader);
         }
 
         processAuditStatus(mediator, elem);
