@@ -61,6 +61,13 @@ import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.JAVA_SCRIPT;
+import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.MC_VAR_NAME;
+import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.NASHORN;
+import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.NASHORN_JAVA_SCRIPT;
+import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.ORACLE_NASHORN_NAME;
+import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.POOL_SIZE_PROPERTY;
+import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.RHINO_JAVA_SCRIPT;
 import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.CLASS_PREFIXES;
 import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.ENABLE;
 import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.LIMIT_CLASS_ACCESS_PREFIX;
@@ -88,41 +95,6 @@ import static org.apache.synapse.mediators.bsf.access.control.AccessControlConst
 public class ScriptMediator extends AbstractMediator {
 
     private static final Log logger = LogFactory.getLog(ScriptMediator.class.getName());
-
-    /**
-     * The name of the variable made available to the scripting language to access the message
-     */
-    private static final String MC_VAR_NAME = "mc";
-
-    /**
-     * Name of the java script language
-     */
-    private static final String JAVA_SCRIPT = "js";
-
-    /**
-     * Name of the java script language with usage of nashorn engine.
-     */
-    private static final String NASHORN_JAVA_SCRIPT = "nashornJs";
-
-    /**
-     *
-     */
-    private static final String RHINO_JAVA_SCRIPT = "rhinoJs";
-
-    /**
-     * Name of the nashorn java script engine.
-     */
-    private static final String NASHORN = "nashorn";
-
-    /**
-     * Name of the graalvm js engine.
-     */
-    private static final String GRAALVM = "graal.js";
-
-    /**
-     * Factory Name for Oracle Nashorn Engine. Built-in Nashorn engine in JDK 8 to JDK 11
-     */
-    private static final String ORACLE_NASHORN_NAME = "Oracle Nashorn";
 
     /**
      * The registry entry key for a script loaded from the registry
@@ -178,10 +150,6 @@ public class ScriptMediator extends AbstractMediator {
      * Pool size
      */
     private int poolSize = DEFAULT_POOL_SIZE;
-    /**
-     * Pool size property name
-     */
-    private static String POOL_SIZE_PROPERTY = "synapse.script.mediator.pool.size";
     /**
      * Pool ScriptEngine Resources
      */
