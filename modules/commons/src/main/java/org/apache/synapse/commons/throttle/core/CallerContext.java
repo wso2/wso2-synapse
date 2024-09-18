@@ -138,10 +138,11 @@ public abstract class CallerContext implements Serializable, Cloneable {
      * @param configuration   -  The Configuration for this caller
      * @param throttleContext -The Throttle Context
      * @param currentTime     -The system current time
+     * @param eventCount      -The event count
      * @return boolean        -The boolean value which say access will allow or not
      */
     private boolean canAccessIfUnitTimeNotOver(CallerConfiguration configuration,
-                                               ThrottleContext throttleContext, long currentTime) {
+                                               ThrottleContext throttleContext, long currentTime, Long eventCount) {
         boolean canAccess = false;
         int maxRequest = configuration.getMaximumRequestPerUnitTime();
         if (maxRequest != 0) {
@@ -154,7 +155,7 @@ public abstract class CallerContext implements Serializable, Cloneable {
                             + configuration.getID() + " nextAccessTime=" + this.nextAccessTime);
                 }
                 canAccess = true;     // can continue access
-                this.localCount.incrementAndGet();
+                this.localCount.addAndGet(eventCount);
                 // Send the current state to others (clustered env)
                 throttleContext.flushCallerContext(this, id);
                 // can complete access
@@ -209,7 +210,7 @@ public abstract class CallerContext implements Serializable, Cloneable {
 
                         if (log.isDebugEnabled()) {
                             log.debug("Caller=" + this.getId() + " has reset counters and added for replication when unit "
-                                      + "time is not over");
+                                    + "time is not over");
                         }
                     } else {
                         if (log.isDebugEnabled()) {
@@ -373,6 +374,21 @@ public abstract class CallerContext implements Serializable, Cloneable {
      */
     public boolean canAccess(ThrottleContext throttleContext, CallerConfiguration configuration,
                              long currentTime) throws ThrottleException {
+        return canAccess(throttleContext, configuration, currentTime, 1L);
+    }
+
+    /**
+     * Check whether that caller can access or not, based on current state and pre-defined policy
+     *
+     * @param throttleContext -The Context for this caller - runtime state
+     * @param configuration   -The Configuration for this caller - data from policy
+     * @param currentTime     -The current system time
+     * @param eventCount      -The event count
+     * @return boolean        -The boolean value which say access will allow or not
+     * @throws ThrottleException throws for invalid throttle configuration
+     */
+    public boolean canAccess(ThrottleContext throttleContext, CallerConfiguration configuration,
+                             long currentTime, Long eventCount) throws ThrottleException {
         RequestContext requestContext = new RequestContext(currentTime);
         boolean canAccess;
         if (configuration == null) {
@@ -407,14 +423,15 @@ public abstract class CallerContext implements Serializable, Cloneable {
                 log.debug("LATENCY FOR THROTTLE PROCESSING: " + duration + " ms");
             }
         } else {
-            canAccess = canAccessBasedOnUnitTime(configuration, throttleContext, currentTime);
+            canAccess = canAccessBasedOnUnitTime(configuration, throttleContext, currentTime, eventCount);
         }
         return canAccess;
     }
 
-    private boolean canAccessBasedOnUnitTime(CallerConfiguration configuration, ThrottleContext throttleContext, long currentTime) {
+    private boolean canAccessBasedOnUnitTime(CallerConfiguration configuration, ThrottleContext throttleContext,
+                                             long currentTime, Long eventCount) {
         if (this.nextTimeWindow > currentTime) {
-            return canAccessIfUnitTimeNotOver(configuration, throttleContext, currentTime);
+            return canAccessIfUnitTimeNotOver(configuration, throttleContext, currentTime, eventCount);
         } else {
             return canAccessIfUnitTimeOver(configuration, throttleContext, currentTime);
         }
