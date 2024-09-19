@@ -25,8 +25,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.apache.synapse.endpoints.auth.AuthConstants.TOKEN_CACHE_TIMEOUT_PROPERTY;
@@ -35,7 +33,7 @@ import static org.apache.synapse.endpoints.auth.AuthConstants.TOKEN_CACHE_TIMEOU
  * Token Cache Implementation
  * Tokens will be invalidate after a interval of TOKEN_CACHE_TIMEOUT minutes
  */
-public class TokenCache {
+public class TokenCache implements TokenCacheProvider {
 
     private static final Log log = LogFactory.getLog(TokenCache.class);
 
@@ -70,15 +68,27 @@ public class TokenCache {
     }
 
     /**
-     * This method returns the value in the cache, or computes it from the specified Callable
+     * Stores a token in the cache with the specified ID.
      *
-     * @param id       id of the oauth handler
-     * @param callable to generate a new token by calling oauth server
-     * @return Token object
+     * @param id    the unique identifier for the token
+     * @param token the token to be cached
      */
-    public String getToken(String id, Callable<String> callable) throws ExecutionException {
+    @Override
+    public void putToken(String id, String token) {
 
-        return tokenMap.get(id, callable);
+        tokenMap.put(id, token);
+    }
+
+    /**
+     * Retrieves a token from the cache using the specified ID.
+     *
+     * @param id the unique identifier for the token
+     * @return the cached token, or {@code null} if not found
+     */
+    @Override
+    public String getToken(String id) {
+
+        return tokenMap.getIfPresent(id);
     }
 
     /**
@@ -86,6 +96,7 @@ public class TokenCache {
      *
      * @param id id of the endpoint
      */
+    @Override
     public void removeToken(String id) {
 
         tokenMap.invalidate(id);
@@ -96,6 +107,7 @@ public class TokenCache {
      *
      * @param oauthHandlerId id of the OAuth handler bounded to the endpoint
      */
+    @Override
     public void removeTokens(String oauthHandlerId) {
         tokenMap.asMap().entrySet().removeIf(entry -> entry.getKey().startsWith(oauthHandlerId));
     }

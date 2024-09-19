@@ -34,9 +34,11 @@ import java.util.Objects;
 public class ClientCredentialsHandler extends OAuthHandler {
 
     public ClientCredentialsHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode,
-                                    int connectionTimeout, int connectionRequestTimeout, int socketTimeout) {
+                                    int connectionTimeout, int connectionRequestTimeout, int socketTimeout,
+                                    TokenCacheProvider tokenCacheProvider) {
 
-        super(tokenApiUrl, clientId, clientSecret, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout);
+        super(tokenApiUrl, clientId, clientSecret, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout,
+                tokenCacheProvider);
     }
 
     @Override
