@@ -38,9 +38,11 @@ public class PasswordCredentialsHandler extends OAuthHandler {
 
     protected PasswordCredentialsHandler(String tokenApiUrl, String clientId, String clientSecret, String username,
                                          String password, String authMode, int connectionTimeout,
-                                         int connectionRequestTimeout, int socketTimeout) {
+                                         int connectionRequestTimeout, int socketTimeout,
+                                         TokenCacheProvider tokenCacheProvider) {
 
-        super(tokenApiUrl, clientId, clientSecret, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout);
+        super(tokenApiUrl, clientId, clientSecret, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout,
+                tokenCacheProvider);
         this.username = username;
         this.password = password;
     }
