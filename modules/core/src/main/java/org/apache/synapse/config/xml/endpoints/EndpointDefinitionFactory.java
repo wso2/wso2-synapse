@@ -285,11 +285,20 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 XMLConfigConstants.SUSPEND_INITIAL_DURATION));
             if (initialDuration != null && initialDuration.getText() != null) {
                 try {
-                    definition.setInitialSuspendDuration(
-                        Integer.parseInt(initialDuration.getText().trim()));
+                    String initialDurationTrimmed = initialDuration.getText().trim();
+                    if (isExpression(initialDurationTrimmed)) {
+                        String expressionStr = initialDurationTrimmed.substring(1, initialDurationTrimmed.length() - 1);
+                        SynapseXPath expressionXPath = new SynapseXPath(expressionStr);
+                        definition.setDynamicInitialSuspendDuration(expressionXPath);
+                    } else {
+                        definition.setInitialSuspendDuration(
+                                Integer.parseInt(initialDurationTrimmed));
+                    }
                 } catch (NumberFormatException e) {
                     handleException("The initial suspend duration should be specified " +
                         "as a valid number : " + initialDuration.getText(), e);
+                } catch (JaxenException e) {
+                    handleException("Couldn't assign dynamic initial suspend duration as Synapse expression");
                 }
             }
 
@@ -366,6 +375,14 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
         }
 
         return definition;
+    }
+
+    private boolean isExpression(String expressionStr) {
+        Pattern pattern = Pattern.compile("\\{.*\\}}");
+        if (pattern.matcher(expressionStr).matches()) {
+            return true;
+        }
+        return false;
     }
 
     protected static void handleException(String msg) {

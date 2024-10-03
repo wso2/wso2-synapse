@@ -161,6 +161,10 @@ public class EndpointDefinition implements AspectConfigurable {
 
     /** The initial suspend duration when an endpoint is marked inactive */
     private long initialSuspendDuration = -1;
+    /**
+     * The expression to evaluate dynamic initial suspend duration.
+     */
+    private SynapsePath dynamicInitialSuspendDuration = null;
     /** The suspend duration ratio for the next duration - this is the geometric series multipler */
     private float suspendProgressionFactor = 1;
     /** This is the maximum duration for which a node will be suspended */
@@ -616,6 +620,46 @@ public class EndpointDefinition implements AspectConfigurable {
      */
     public void setInitialSuspendDuration(long initialSuspendDuration) {
         this.initialSuspendDuration = initialSuspendDuration;
+    }
+
+    public SynapsePath getDynamicInitialSuspendDuration() {
+
+        return dynamicInitialSuspendDuration;
+    }
+
+    public void setDynamicInitialSuspendDuration(SynapsePath dynamicInitialSuspendDuration) {
+
+        this.dynamicInitialSuspendDuration = dynamicInitialSuspendDuration;
+    }
+
+    public boolean isInitialSuspendDurationDynamic() {
+        if (dynamicInitialSuspendDuration != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public long evaluateDynamicInitialSuspendDuration(MessageContext synCtx) {
+        long result = initialSuspendDuration;
+        try {
+            String stringValue = dynamicInitialSuspendDuration.stringValueOf(synCtx);
+            if (stringValue != null) {
+                result = Long.parseLong(stringValue.trim());
+            } else {
+                log.warn("Error while evaluating dynamic initial suspend duration.");
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while evaluating dynamic initial suspend duration.");
+        }
+        return result;
+    }
+
+    public long getResolvedInitialSuspendDuration(MessageContext messageContext) {
+        if (isInitialSuspendDurationDynamic()) {
+            return evaluateDynamicInitialSuspendDuration(messageContext);
+        }
+        return initialSuspendDuration;
     }
 
 //    public int getTraceState() {

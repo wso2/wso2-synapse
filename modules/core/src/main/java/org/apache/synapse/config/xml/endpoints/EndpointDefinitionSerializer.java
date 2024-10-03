@@ -132,7 +132,7 @@ public class EndpointDefinitionSerializer {
             }
         }
 
-        if (endpointDefinition.getInitialSuspendDuration() != -1 ||
+        if (endpointDefinition.getInitialSuspendDuration() != -1 || endpointDefinition.isInitialSuspendDurationDynamic() ||
             !endpointDefinition.getSuspendErrorCodes().isEmpty()) {
 
             OMElement suspendOnFailure = fac.createOMElement(
@@ -148,11 +148,15 @@ public class EndpointDefinitionSerializer {
                 suspendOnFailure.addChild(errorCodes);
             }
 
-            if (endpointDefinition.getInitialSuspendDuration() != -1) {
+            if (endpointDefinition.getInitialSuspendDuration() != -1 || endpointDefinition.isInitialSuspendDurationDynamic()) {
                 OMElement initialDuration = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_INITIAL_DURATION,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
-                initialDuration.setText(Long.toString(endpointDefinition.getInitialSuspendDuration()));
+                if (!endpointDefinition.isInitialSuspendDurationDynamic()){
+                    initialDuration.setText(Long.toString(endpointDefinition.getInitialSuspendDuration()));
+                } else {
+                    initialDuration.setText('{' + endpointDefinition.getDynamicInitialSuspendDuration().getExpression() + '}');
+                }
                 suspendOnFailure.addChild(initialDuration);
             }
 

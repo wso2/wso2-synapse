@@ -25,6 +25,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.util.MessageHelper;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.util.Replicator;
 
 import java.util.Calendar;
@@ -194,12 +195,16 @@ public class EndpointContext {
         }
     }
 
+    private void setState(int state) {
+        setState(state, null);
+    }
+
     /**
      * Update the internal state of the endpoint
      *
      * @param state the new state of the endpoint
      */
-    private void setState(int state) {
+    private void setState(int state, MessageContext messageContext) {
 
         recordStatistics(state);
 
@@ -229,7 +234,7 @@ public class EndpointContext {
                                 " has been marked for SUSPENSION," +
                                 " but no further retries remain. Thus it will be SUSPENDED.");
 
-                        setState(ST_SUSPENDED);
+                        setState(ST_SUSPENDED, messageContext);
 
                     } else {
                         Replicator.setAndReplicateState(
@@ -246,7 +251,7 @@ public class EndpointContext {
                     break;
                 }
                 case ST_SUSPENDED: {
-                    computeNextRetryTimeForSuspended();
+                    computeNextRetryTimeForSuspended(messageContext);
                     break;
                 }
                 case ST_OFF: {
@@ -294,7 +299,7 @@ public class EndpointContext {
                                     + " has been marked for SUSPENSION, "
                                     + "but no further retries remain. Thus it will be SUSPENDED.");
 
-                            setState(ST_SUSPENDED);
+                            setState(ST_SUSPENDED, messageContext);
 
                         } else {
                             localRemainingRetries = retries - 1;
@@ -309,7 +314,7 @@ public class EndpointContext {
                         break;
                     }
                     case ST_SUSPENDED: {
-                        computeNextRetryTimeForSuspended();
+                        computeNextRetryTimeForSuspended(messageContext);
                         break;
                     }
                     case ST_OFF: {
@@ -361,6 +366,15 @@ public class EndpointContext {
     }
 
     /**
+     * Endpoint failed processing a message
+     */
+    public void onFault(MessageContext messageContext) {
+        log.warn("Endpoint : " + endpointName + printEndpointAddress() +
+                " will be marked SUSPENDED as it failed");
+        setState(ST_SUSPENDED, messageContext);
+    }
+
+    /**
      * Endpoint timeout processing a message
      */
     public void onTimeout() {
@@ -374,9 +388,10 @@ public class EndpointContext {
     /**
      * Compute the suspension duration according to the geometric series parameters defined
      */
-    private void computeNextRetryTimeForSuspended() {
+    private void computeNextRetryTimeForSuspended(MessageContext messageContext) {
         boolean notYetSuspended = true;
-        long lastSuspendDuration = definition.getInitialSuspendDuration();
+        long lastSuspendDuration = definition.getResolvedInitialSuspendDuration(messageContext);
+
         if (isClustered) {
             Long lastDuration = (Long) cfgCtx.getPropertyNonReplicable(LAST_SUSPEND_DURATION_KEY);
             if (lastDuration != null) {
@@ -389,7 +404,7 @@ public class EndpointContext {
         }
 
         long nextSuspendDuration = (notYetSuspended ?
-                definition.getInitialSuspendDuration() :
+                definition.getResolvedInitialSuspendDuration(messageContext) :
                 (long) (lastSuspendDuration * definition.getSuspendProgressionFactor()));
 
         if (nextSuspendDuration > definition.getSuspendMaximumDuration()) {
