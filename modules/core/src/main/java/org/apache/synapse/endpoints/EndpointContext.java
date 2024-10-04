@@ -214,7 +214,7 @@ public class EndpointContext {
             switch (state) {
                 case ST_ACTIVE: {
                     Replicator.setAndReplicateState(REMAINING_RETRIES_KEY,
-                            definition.getRetriesOnTimeoutBeforeSuspend(), cfgCtx);
+                            definition.getResolvedRetriesOnTimeoutBeforeSuspend(messageContext), cfgCtx);
                     Replicator.setAndReplicateState(LAST_SUSPEND_DURATION_KEY, null, cfgCtx);
                     Replicator.setAndReplicateState(REMAINING_RETRIES_KEY, maximumRetryLimit, cfgCtx);
                     if (maximumRecursiveRetryLimit != -1) {
@@ -226,7 +226,7 @@ public class EndpointContext {
                     Integer retries
                             = (Integer) cfgCtx.getPropertyNonReplicable(REMAINING_RETRIES_KEY);
                     if (retries == null) {
-                        retries = definition.getRetriesOnTimeoutBeforeSuspend();
+                        retries = definition.getResolvedRetriesOnTimeoutBeforeSuspend(messageContext);
                     }
 
                     if (retries <= 0) {
@@ -258,7 +258,7 @@ public class EndpointContext {
                     // mark as in maintenence, and reset all other information
                     Replicator.setAndReplicateState(REMAINING_RETRIES_KEY,
                             definition == null ? -1 :
-                                    definition.getRetriesOnTimeoutBeforeSuspend(), cfgCtx);
+                                    definition.getResolvedRetriesOnTimeoutBeforeSuspend(messageContext), cfgCtx);
                     Replicator.setAndReplicateState(LAST_SUSPEND_DURATION_KEY, null, cfgCtx);
                     Replicator.setAndReplicateState(REMAINING_RETRIES_KEY, maximumRetryLimit, cfgCtx);
                     if (maximumRecursiveRetryLimit != -1) {
@@ -280,7 +280,7 @@ public class EndpointContext {
                 if (definition == null) return;
                 switch (state) {
                     case ST_ACTIVE: {
-                        localRemainingRetries = definition.getRetriesOnTimeoutBeforeSuspend();
+                        localRemainingRetries = definition.getResolvedRetriesOnTimeoutBeforeSuspend(messageContext);
                         localLastSuspendDuration = -1;
                         maximumRemainingRetries = maximumRetryLimit;
                         if (maximumRecursiveRetryLimit != -1) {
@@ -291,7 +291,7 @@ public class EndpointContext {
                     case ST_TIMEOUT: {
                         int retries = localRemainingRetries;
                         if (retries == -1) {
-                            retries = definition.getRetriesOnTimeoutBeforeSuspend();
+                            retries = definition.getResolvedRetriesOnTimeoutBeforeSuspend(messageContext);
                         }
 
                         if (retries <= 0) {
@@ -320,7 +320,7 @@ public class EndpointContext {
                     case ST_OFF: {
                         // mark as in maintenence, and reset all other information
                         localRemainingRetries = definition == null ?
-                                -1 : definition.getRetriesOnTimeoutBeforeSuspend();
+                                -1 : definition.getResolvedRetriesOnTimeoutBeforeSuspend(messageContext);
                         localLastSuspendDuration = -1;
                         maximumRemainingRetries = maximumRetryLimit;
                         if (maximumRecursiveRetryLimit != -1) {

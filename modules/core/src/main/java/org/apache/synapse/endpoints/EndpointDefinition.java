@@ -178,6 +178,8 @@ public class EndpointDefinition implements AspectConfigurable {
 
     /** No of retries to attempt on timeout, before an endpoint is makred inactive */
     private int retriesOnTimeoutBeforeSuspend = 0;
+    /** The expression to evaluate dynamic retries on timeout before suspend */
+    private SynapsePath dynamicRetriesOnTimeoutBeforeSuspend = null;
     /** The delay between retries for a timeout out endpoint */
     private int retryDurationOnTimeout = 0;
     /** A list of error codes which puts the endpoint into timeout mode */
@@ -768,6 +770,43 @@ public class EndpointDefinition implements AspectConfigurable {
 
     public void setRetriesOnTimeoutBeforeSuspend(int retriesOnTimeoutBeforeSuspend) {
         this.retriesOnTimeoutBeforeSuspend = retriesOnTimeoutBeforeSuspend;
+    }
+
+    public SynapsePath getDynamicRetriesOnTimeoutBeforeSuspend() {
+
+        return dynamicRetriesOnTimeoutBeforeSuspend;
+    }
+
+    public void setDynamicRetriesOnTimeoutBeforeSuspend(
+            SynapsePath dynamicRetriesOnTimeoutBeforeSuspend) {
+
+        this.dynamicRetriesOnTimeoutBeforeSuspend = dynamicRetriesOnTimeoutBeforeSuspend;
+    }
+
+    public boolean isRetriesOnTimeoutBeforeSuspendDynamic() {
+
+        return dynamicRetriesOnTimeoutBeforeSuspend != null;
+    }
+
+    public int evaluateDynamicRetriesOnTimeoutBeforeSuspend(MessageContext messageContext) {
+
+        int result = retriesOnTimeoutBeforeSuspend;
+        try {
+            String stringValue = dynamicRetriesOnTimeoutBeforeSuspend.stringValueOf(messageContext);
+            if (stringValue != null) {
+                result = Integer.parseInt(stringValue);
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while evaluating dynamic endpoint timeout expression.");
+        }
+        return result;
+    }
+
+    public int getResolvedRetriesOnTimeoutBeforeSuspend(MessageContext messageContext) {
+        if (isRetriesOnTimeoutBeforeSuspendDynamic()) {
+            return evaluateDynamicRetriesOnTimeoutBeforeSuspend(messageContext);
+        }
+        return retriesOnTimeoutBeforeSuspend;
     }
 
     public int getRetryDurationOnTimeout() {

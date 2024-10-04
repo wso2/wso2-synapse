@@ -219,11 +219,20 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 XMLConfigConstants.RETRIES_BEFORE_SUSPENSION));
             if (retriesBeforeSuspend != null && retriesBeforeSuspend.getText() != null) {
                 try {
-                    definition.setRetriesOnTimeoutBeforeSuspend(
-                        Integer.parseInt(retriesBeforeSuspend.getText().trim()));
+                    String trimmedRetriesBeforeSuspend = retriesBeforeSuspend.getText().trim();
+                    if (isExpression(trimmedRetriesBeforeSuspend)) {
+                        String expressionStr = trimmedRetriesBeforeSuspend.substring(1, trimmedRetriesBeforeSuspend.length() - 1);
+                        SynapseXPath expressionXPath = new SynapseXPath(expressionStr);
+                        definition.setDynamicRetriesOnTimeoutBeforeSuspend(expressionXPath);
+                    } else {
+                        definition.setRetriesOnTimeoutBeforeSuspend(
+                                Integer.parseInt(trimmedRetriesBeforeSuspend));
+                    }
                 } catch (NumberFormatException e) {
                     handleException("The retries before suspend [for timeouts] should be " +
                         "specified as a valid number : " + retriesBeforeSuspend.getText(), e);
+                } catch (JaxenException e) {
+                    handleException("Couldn't assign dynamic retries before suspend [for timeouts] as Synapse expression");
                 }
             }
 

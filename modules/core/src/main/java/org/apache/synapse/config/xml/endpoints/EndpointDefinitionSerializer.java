@@ -204,11 +204,15 @@ public class EndpointDefinitionSerializer {
                 markAsTimedout.addChild(errorCodes);
             }
 
-            if (endpointDefinition.getRetriesOnTimeoutBeforeSuspend() > 0) {
+            if (endpointDefinition.getRetriesOnTimeoutBeforeSuspend() > 0 || endpointDefinition.isRetriesOnTimeoutBeforeSuspendDynamic()) {
                 OMElement retries = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.RETRIES_BEFORE_SUSPENSION,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
-                retries.setText(Long.toString(endpointDefinition.getRetriesOnTimeoutBeforeSuspend()));
+                if (endpointDefinition.isRetriesOnTimeoutBeforeSuspendDynamic()) {
+                    retries.setText('{' + endpointDefinition.getDynamicRetriesOnTimeoutBeforeSuspend().getExpression() + '}');
+                } else {
+                    retries.setText(Long.toString(endpointDefinition.getRetriesOnTimeoutBeforeSuspend()));
+                }
                 markAsTimedout.addChild(retries);
             }
 
