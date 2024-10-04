@@ -405,7 +405,7 @@ public class EndpointContext {
 
         long nextSuspendDuration = (notYetSuspended ?
                 definition.getResolvedInitialSuspendDuration(messageContext) :
-                (long) (lastSuspendDuration * definition.getSuspendProgressionFactor()));
+                (long) (lastSuspendDuration * definition.getResolvedSuspendProgressionFactor(messageContext)));
 
         if (nextSuspendDuration > definition.getResolvedSuspendMaximumDuration(messageContext)) {
             nextSuspendDuration = definition.getResolvedSuspendMaximumDuration(messageContext);

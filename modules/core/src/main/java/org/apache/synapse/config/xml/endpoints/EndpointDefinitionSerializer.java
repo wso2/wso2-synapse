@@ -160,11 +160,15 @@ public class EndpointDefinitionSerializer {
                 suspendOnFailure.addChild(initialDuration);
             }
 
-            if (endpointDefinition.getSuspendProgressionFactor() != -1) {
+            if (endpointDefinition.getSuspendProgressionFactor() != -1 || endpointDefinition.isSuspendProgressionFactorDynamic()) {
                 OMElement progressionFactor = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_PROGRESSION_FACTOR,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
-                progressionFactor.setText(Float.toString(endpointDefinition.getSuspendProgressionFactor()));
+                if (endpointDefinition.isSuspendProgressionFactorDynamic()) {
+                    progressionFactor.setText('{' + endpointDefinition.getDynamicSuspendProgressionFactor().getExpression() + '}');
+                } else {
+                    progressionFactor.setText(Float.toString(endpointDefinition.getSuspendProgressionFactor()));
+                }
                 suspendOnFailure.addChild(progressionFactor);
             }
 

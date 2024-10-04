@@ -307,11 +307,20 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 XMLConfigConstants.SUSPEND_PROGRESSION_FACTOR));
             if (progressionFactor != null && progressionFactor.getText() != null) {
                 try {
-                    definition.setSuspendProgressionFactor(
-                        Float.parseFloat(progressionFactor.getText().trim()));
+                    String trimmedProgressionFactor = progressionFactor.getText().trim();
+                    if (isExpression(trimmedProgressionFactor)) {
+                        String expressionStr = trimmedProgressionFactor.substring(1, trimmedProgressionFactor.length() - 1);
+                        SynapseXPath expressionXPath = new SynapseXPath(expressionStr);
+                        definition.setDynamicSuspendProgressionFactor(expressionXPath);
+                    } else {
+                        definition.setSuspendProgressionFactor(
+                                Float.parseFloat(trimmedProgressionFactor));
+                    }
                 } catch (NumberFormatException e) {
                     handleException("The suspend duration progression factor should be specified " +
                         "as a valid float : " + progressionFactor.getText(), e);
+                } catch (JaxenException e) {
+                    handleException("Couldn't assign dynamic suspend duration progression factor as Synapse expression");
                 }
             }
 

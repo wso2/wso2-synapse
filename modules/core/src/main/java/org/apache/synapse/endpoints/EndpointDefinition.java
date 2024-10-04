@@ -167,6 +167,8 @@ public class EndpointDefinition implements AspectConfigurable {
     private SynapsePath dynamicInitialSuspendDuration = null;
     /** The suspend duration ratio for the next duration - this is the geometric series multipler */
     private float suspendProgressionFactor = 1;
+    /** The expression to evaluate dynamic suspend progression factor */
+    private SynapsePath dynamicSuspendProgressionFactor = null;
     /** This is the maximum duration for which a node will be suspended */
     private long suspendMaximumDuration = Long.MAX_VALUE;
     /** The expression to maximum duration for which a node will be suspended */
@@ -678,6 +680,42 @@ public class EndpointDefinition implements AspectConfigurable {
 
     public void setSuspendProgressionFactor(float suspendProgressionFactor) {
         this.suspendProgressionFactor = suspendProgressionFactor;
+    }
+
+    public SynapsePath getDynamicSuspendProgressionFactor() {
+
+        return dynamicSuspendProgressionFactor;
+    }
+
+    public void setDynamicSuspendProgressionFactor(SynapsePath dynamicSuspendProgressionFactor) {
+
+        this.dynamicSuspendProgressionFactor = dynamicSuspendProgressionFactor;
+    }
+
+    public boolean isSuspendProgressionFactorDynamic() {
+
+        return dynamicSuspendProgressionFactor != null;
+    }
+
+    public float evaluateDynamicSuspendProgressionFactor(MessageContext messageContext) {
+
+        float result = suspendProgressionFactor;
+        try {
+            String stringValue = dynamicSuspendProgressionFactor.stringValueOf(messageContext);
+            if (stringValue != null) {
+                result = Float.parseFloat(stringValue);
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while evaluating dynamic endpoint timeout expression.");
+        }
+        return result;
+    }
+
+    public float getResolvedSuspendProgressionFactor(MessageContext messageContext) {
+        if (isSuspendProgressionFactorDynamic()) {
+            return evaluateDynamicSuspendProgressionFactor(messageContext);
+        }
+        return suspendProgressionFactor;
     }
 
     public long getSuspendMaximumDuration() {
