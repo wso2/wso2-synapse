@@ -182,6 +182,8 @@ public class EndpointDefinition implements AspectConfigurable {
     private SynapsePath dynamicRetriesOnTimeoutBeforeSuspend = null;
     /** The delay between retries for a timeout out endpoint */
     private int retryDurationOnTimeout = 0;
+    /** The expression to evaluate dynamic retry duration on timeout */
+    private SynapsePath dynamicRetryDurationOnTimeout = null;
     /** A list of error codes which puts the endpoint into timeout mode */
     private final List<Integer> timeoutErrorCodes = new ArrayList<Integer>();
 
@@ -815,6 +817,42 @@ public class EndpointDefinition implements AspectConfigurable {
 
     public void setRetryDurationOnTimeout(int retryDurationOnTimeout) {
         this.retryDurationOnTimeout = retryDurationOnTimeout;
+    }
+
+    public SynapsePath getDynamicRetryDurationOnTimeout() {
+
+        return dynamicRetryDurationOnTimeout;
+    }
+
+    public void setDynamicRetryDurationOnTimeout(SynapsePath dynamicRetryDurationOnTimeout) {
+
+        this.dynamicRetryDurationOnTimeout = dynamicRetryDurationOnTimeout;
+    }
+
+    public boolean isRetryDurationOnTimeoutDynamic() {
+
+        return dynamicRetryDurationOnTimeout != null;
+    }
+
+    public int evaluateDynamicRetryDurationOnTimeout(MessageContext messageContext) {
+
+        int result = retryDurationOnTimeout;
+        try {
+            String stringValue = dynamicRetryDurationOnTimeout.stringValueOf(messageContext);
+            if (stringValue != null) {
+                result = Integer.parseInt(stringValue);
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while evaluating dynamic endpoint timeout expression.");
+        }
+        return result;
+    }
+
+    public int getResolvedRetryDurationOnTimeout(MessageContext messageContext) {
+        if (isRetryDurationOnTimeoutDynamic()) {
+            return evaluateDynamicRetryDurationOnTimeout(messageContext);
+        }
+        return retryDurationOnTimeout;
     }
 
     public List<Integer> getSuspendErrorCodes() {

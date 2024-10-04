@@ -240,7 +240,7 @@ public class EndpointContext {
                         Replicator.setAndReplicateState(
                                 REMAINING_RETRIES_KEY, (retries - 1), cfgCtx);
                         long nextRetry = System.currentTimeMillis()
-                                + definition.getRetryDurationOnTimeout();
+                                + definition.getResolvedRetryDurationOnTimeout(messageContext);
                         Replicator.setAndReplicateState(NEXT_RETRY_TIME_KEY, nextRetry, cfgCtx);
 
                         log.warn("Endpoint : " + endpointName + printEndpointAddress() +
@@ -304,7 +304,7 @@ public class EndpointContext {
                         } else {
                             localRemainingRetries = retries - 1;
                             localNextRetryTime =
-                                    System.currentTimeMillis() + definition.getRetryDurationOnTimeout();
+                                    System.currentTimeMillis() + definition.getResolvedRetryDurationOnTimeout(messageContext);
                             log.warn("Endpoint : " + endpointName + printEndpointAddress()
                                     + " is marked as TIMEOUT and " +
                                     "will be retried : " + localRemainingRetries + " more time/s " +

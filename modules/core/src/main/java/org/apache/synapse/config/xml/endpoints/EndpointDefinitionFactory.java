@@ -241,11 +241,20 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 XMLConfigConstants.RETRY_DELAY));
             if (retryDelay != null && retryDelay.getText() != null) {
                 try {
-                    definition.setRetryDurationOnTimeout(
-                        Integer.parseInt(retryDelay.getText().trim()));
+                    String trimmedRetryDelay = retryDelay.getText().trim();
+                    if (isExpression(trimmedRetryDelay)) {
+                        String expressionStr = trimmedRetryDelay.substring(1, trimmedRetryDelay.length() - 1);
+                        SynapseXPath expressionXPath = new SynapseXPath(expressionStr);
+                        definition.setDynamicRetryDurationOnTimeout(expressionXPath);
+                    } else {
+                        definition.setRetryDurationOnTimeout(
+                                Integer.parseInt(trimmedRetryDelay));
+                    }
                 } catch (NumberFormatException e) {
                     handleException("The retry delay for timeouts should be specified " +
                         "as a valid number : " + retryDelay.getText(), e);
+                } catch (JaxenException e) {
+                    handleException("Couldn't assign dynamic retry delay for timeouts as Synapse expression");
                 }
             }
         }

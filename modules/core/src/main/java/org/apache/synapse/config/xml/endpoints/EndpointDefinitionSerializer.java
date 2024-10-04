@@ -188,7 +188,7 @@ public class EndpointDefinitionSerializer {
             element.addChild(suspendOnFailure);
         }
 
-        if (endpointDefinition.getRetryDurationOnTimeout() > 0 ||
+        if (endpointDefinition.getRetryDurationOnTimeout() > 0 || endpointDefinition.isRetryDurationOnTimeoutDynamic() ||
             !endpointDefinition.getTimeoutErrorCodes().isEmpty()) {
 
             OMElement markAsTimedout = fac.createOMElement(
@@ -216,11 +216,15 @@ public class EndpointDefinitionSerializer {
                 markAsTimedout.addChild(retries);
             }
 
-            if (endpointDefinition.getRetryDurationOnTimeout() > 0) {
+            if (endpointDefinition.getRetryDurationOnTimeout() > 0 || endpointDefinition.isRetryDurationOnTimeoutDynamic()) {
                 OMElement retryDelay = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.RETRY_DELAY,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
-                retryDelay.setText(Long.toString(endpointDefinition.getRetryDurationOnTimeout()));
+                if (endpointDefinition.isRetryDurationOnTimeoutDynamic()) {
+                    retryDelay.setText('{' + endpointDefinition.getDynamicRetryDurationOnTimeout().getExpression() + '}');
+                } else {
+                    retryDelay.setText(Long.toString(endpointDefinition.getRetryDurationOnTimeout()));
+                }
                 markAsTimedout.addChild(retryDelay);
             }
 
