@@ -169,6 +169,8 @@ public class EndpointDefinition implements AspectConfigurable {
     private float suspendProgressionFactor = 1;
     /** This is the maximum duration for which a node will be suspended */
     private long suspendMaximumDuration = Long.MAX_VALUE;
+    /** The expression to maximum duration for which a node will be suspended */
+    private SynapsePath dynamicSuspendMaximumDuration = null;
     /** A list of error codes, which directly puts an endpoint into suspend mode */
     private final List<Integer> suspendErrorCodes = new ArrayList<Integer>();
 
@@ -684,6 +686,42 @@ public class EndpointDefinition implements AspectConfigurable {
 
     public void setSuspendMaximumDuration(long suspendMaximumDuration) {
         this.suspendMaximumDuration = suspendMaximumDuration;
+    }
+
+    public SynapsePath getDynamicSuspendMaximumDuration() {
+
+        return dynamicSuspendMaximumDuration;
+    }
+
+    public void setDynamicSuspendMaximumDuration(SynapsePath dynamicSuspendMaximumDuration) {
+
+        this.dynamicSuspendMaximumDuration = dynamicSuspendMaximumDuration;
+    }
+
+    public boolean isSuspendMaximumDurationDynamic() {
+
+        return dynamicSuspendMaximumDuration != null;
+    }
+
+    public long evaluateDynamicSuspendMaximumDuration(MessageContext messageContext) {
+
+        long result = suspendMaximumDuration;
+        try {
+            String stringValue = dynamicSuspendMaximumDuration.stringValueOf(messageContext);
+            if (stringValue != null) {
+                result = Long.parseLong(stringValue);
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while evaluating dynamic endpoint timeout expression.");
+        }
+        return result;
+    }
+
+    public long getResolvedSuspendMaximumDuration(MessageContext messageContext) {
+        if (isSuspendMaximumDurationDynamic()) {
+            return evaluateDynamicSuspendMaximumDuration(messageContext);
+        }
+        return suspendMaximumDuration;
     }
 
     public int getRetriesOnTimeoutBeforeSuspend() {

@@ -407,8 +407,8 @@ public class EndpointContext {
                 definition.getResolvedInitialSuspendDuration(messageContext) :
                 (long) (lastSuspendDuration * definition.getSuspendProgressionFactor()));
 
-        if (nextSuspendDuration > definition.getSuspendMaximumDuration()) {
-            nextSuspendDuration = definition.getSuspendMaximumDuration();
+        if (nextSuspendDuration > definition.getResolvedSuspendMaximumDuration(messageContext)) {
+            nextSuspendDuration = definition.getResolvedSuspendMaximumDuration(messageContext);
         } else if (nextSuspendDuration < 0) {
             nextSuspendDuration = SynapseConstants.DEFAULT_ENDPOINT_SUSPEND_TIME;
         }

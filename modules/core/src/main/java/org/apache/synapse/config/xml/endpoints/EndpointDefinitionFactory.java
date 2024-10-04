@@ -320,11 +320,20 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 XMLConfigConstants.SUSPEND_MAXIMUM_DURATION));
             if (maximumDuration != null && maximumDuration.getText() != null) {
                 try {
-                    definition.setSuspendMaximumDuration(
-                        Long.parseLong(maximumDuration.getText().trim()));
+                    String trimmedMaximumDuration = maximumDuration.getText().trim();
+                    if (isExpression(trimmedMaximumDuration)) {
+                        String expressionStr = trimmedMaximumDuration.substring(1, trimmedMaximumDuration.length() - 1);
+                        SynapseXPath expressionXPath = new SynapseXPath(expressionStr);
+                        definition.setDynamicSuspendMaximumDuration(expressionXPath);
+                    } else {
+                        definition.setSuspendMaximumDuration(
+                                Long.parseLong(maximumDuration.getText().trim()));
+                    }
                 } catch (NumberFormatException e) {
                     handleException("The maximum suspend duration should be specified " +
                         "as a valid number : " + maximumDuration.getText(), e);
+                } catch (JaxenException e) {
+                    handleException("Couldn't assign dynamic maximum suspend duration as Synapse expression");
                 }
             }
         }

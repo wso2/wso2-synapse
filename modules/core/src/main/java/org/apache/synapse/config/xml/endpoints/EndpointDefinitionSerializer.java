@@ -168,12 +168,16 @@ public class EndpointDefinitionSerializer {
                 suspendOnFailure.addChild(progressionFactor);
             }
 
-            if (endpointDefinition.getSuspendMaximumDuration() != -1 &&
-                    endpointDefinition.getSuspendMaximumDuration() != Long.MAX_VALUE) {
+            if ((endpointDefinition.getSuspendMaximumDuration() != -1 &&
+                    endpointDefinition.getSuspendMaximumDuration() != Long.MAX_VALUE) || endpointDefinition.isSuspendMaximumDurationDynamic()) {
                 OMElement suspendMaximum = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_MAXIMUM_DURATION,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
-                suspendMaximum.setText(Long.toString(endpointDefinition.getSuspendMaximumDuration()));
+                if (endpointDefinition.isSuspendMaximumDurationDynamic()) {
+                    suspendMaximum.setText('{' + endpointDefinition.getDynamicSuspendMaximumDuration().getExpression() + '}');
+                } else {
+                    suspendMaximum.setText(Long.toString(endpointDefinition.getSuspendMaximumDuration()));
+                }
                 suspendOnFailure.addChild(suspendMaximum);
             }
 
