@@ -38,4 +38,63 @@ public class DynamicEndpointTest extends TestCase {
                 endpoint.getDefinition().evaluateDynamicEndpointTimeout(synCtx));
     }
 
+    public void testContextPropertiesForInitialSuspendDuration() throws Exception {
+
+        SynapseXPath xpath = new SynapseXPath("$ctx:initialSuspendDuration");
+        AbstractEndpoint endpoint = new AddressEndpoint();
+        EndpointDefinition definition = new EndpointDefinition();
+        endpoint.setDefinition(definition);
+        definition.setDynamicInitialSuspendDuration(xpath);
+        MessageContext synCtx = new TestMessageContext();
+        synCtx.setProperty("initialSuspendDuration", "90000");
+        assertEquals(endpoint.getDefinition().getResolvedInitialSuspendDuration(synCtx), 90000);
+    }
+
+    public void testContextPropertiesForSuspendMaximumDuration() throws Exception {
+
+        SynapseXPath xpath = new SynapseXPath("$ctx:suspendMaximumDuration");
+        AbstractEndpoint endpoint = new AddressEndpoint();
+        EndpointDefinition definition = new EndpointDefinition();
+        endpoint.setDefinition(definition);
+        definition.setDynamicSuspendMaximumDuration(xpath);
+        MessageContext synCtx = new TestMessageContext();
+        synCtx.setProperty("suspendMaximumDuration", "90000");
+        assertEquals(endpoint.getDefinition().getResolvedSuspendMaximumDuration(synCtx), 90000);
+    }
+
+    public void testContextPropertiesForSuspendProgressionFactor() throws Exception {
+
+        SynapseXPath xpath = new SynapseXPath("$ctx:suspendProgressionFactor");
+        AbstractEndpoint endpoint = new AddressEndpoint();
+        EndpointDefinition definition = new EndpointDefinition();
+        endpoint.setDefinition(definition);
+        definition.setDynamicSuspendProgressionFactor(xpath);
+        MessageContext synCtx = new TestMessageContext();
+        synCtx.setProperty("suspendProgressionFactor", "2");
+        assertEquals(endpoint.getDefinition().getResolvedSuspendProgressionFactor(synCtx), 2.0f);
+    }
+
+    public void testContextPropertiesForRetriesOnTimeoutBeforeSuspend() throws Exception {
+
+        SynapseXPath xpath = new SynapseXPath("$ctx:retriesOnTimeoutBeforeSuspend");
+        AbstractEndpoint endpoint = new AddressEndpoint();
+        EndpointDefinition definition = new EndpointDefinition();
+        endpoint.setDefinition(definition);
+        definition.setDynamicRetriesOnTimeoutBeforeSuspend(xpath);
+        MessageContext synCtx = new TestMessageContext();
+        synCtx.setProperty("retriesOnTimeoutBeforeSuspend", "3");
+        assertEquals(endpoint.getDefinition().getResolvedRetriesOnTimeoutBeforeSuspend(synCtx), 3);
+    }
+
+    public void testContextPropertiesForRetryDurationOnTimeout() throws Exception {
+
+        SynapseXPath xpath = new SynapseXPath("$ctx:retryDurationOnTimeout");
+        AbstractEndpoint endpoint = new AddressEndpoint();
+        EndpointDefinition definition = new EndpointDefinition();
+        endpoint.setDefinition(definition);
+        definition.setDynamicRetryDurationOnTimeout(xpath);
+        MessageContext synCtx = new TestMessageContext();
+        synCtx.setProperty("retryDurationOnTimeout", "90000");
+        assertEquals(endpoint.getDefinition().getResolvedRetryDurationOnTimeout(synCtx), 90000);
+    }
 }
