@@ -424,7 +424,7 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
     }
 
     private boolean isExpression(String expressionStr) {
-        Pattern pattern = Pattern.compile("\\{.*\\}}");
+        Pattern pattern = Pattern.compile("\\{.*\\}");
         if (pattern.matcher(expressionStr).matches()) {
             return true;
         }
