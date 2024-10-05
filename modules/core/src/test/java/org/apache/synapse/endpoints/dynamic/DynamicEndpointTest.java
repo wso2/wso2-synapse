@@ -18,6 +18,7 @@ package org.apache.synapse.endpoints.dynamic;
 
 import junit.framework.TestCase;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.TestMessageContext;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.AddressEndpoint;
@@ -97,4 +98,30 @@ public class DynamicEndpointTest extends TestCase {
         synCtx.setProperty("retryDurationOnTimeout", "90000");
         assertEquals(endpoint.getDefinition().getResolvedRetryDurationOnTimeout(synCtx), 90000);
     }
+
+    public void testContextPropertiesForTimeoutActionFault() throws Exception {
+
+        SynapseXPath xpath = new SynapseXPath("$ctx:timeoutAction");
+        AbstractEndpoint endpoint = new AddressEndpoint();
+        EndpointDefinition definition = new EndpointDefinition();
+        endpoint.setDefinition(definition);
+        definition.setDynamicTimeoutAction(xpath);
+        MessageContext synCtx = new TestMessageContext();
+        synCtx.setProperty("timeoutAction", "fault");
+        assertEquals(endpoint.getDefinition().getResolvedTimeoutAction(synCtx), SynapseConstants.DISCARD_AND_FAULT);
+    }
+
+    public void testContextPropertiesForTimeoutActionDiscard() throws Exception {
+
+        SynapseXPath xpath = new SynapseXPath("$ctx:timeoutAction");
+        AbstractEndpoint endpoint = new AddressEndpoint();
+        EndpointDefinition definition = new EndpointDefinition();
+        endpoint.setDefinition(definition);
+        definition.setDynamicTimeoutAction(xpath);
+        MessageContext synCtx = new TestMessageContext();
+        synCtx.setProperty("timeoutAction", "discard");
+        assertEquals(endpoint.getDefinition().getResolvedTimeoutAction(synCtx), SynapseConstants.DISCARD);
+    }
+
+
 }

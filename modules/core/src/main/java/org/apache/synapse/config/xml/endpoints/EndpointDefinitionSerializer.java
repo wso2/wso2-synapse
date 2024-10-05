@@ -102,7 +102,7 @@ public class EndpointDefinitionSerializer {
             element.addChild(sec);
         }
 
-        if (endpointDefinition.getTimeoutAction() != SynapseConstants.NONE ||
+        if (endpointDefinition.getTimeoutAction() != SynapseConstants.NONE || endpointDefinition.getDynamicTimeoutAction() != null ||
                 endpointDefinition.getTimeoutDuration() > 0 || endpointDefinition.isDynamicTimeoutEndpoint()) {
 
             OMElement timeout = fac.createOMElement(
@@ -120,13 +120,17 @@ public class EndpointDefinitionSerializer {
                 timeout.addChild(duration);
             }
 
-            if (endpointDefinition.getTimeoutAction() != SynapseConstants.NONE) {
+            if (endpointDefinition.getTimeoutAction() != SynapseConstants.NONE || endpointDefinition.getDynamicTimeoutAction() != null) {
                 OMElement action = fac.createOMElement("responseAction", SynapseConstants.SYNAPSE_OMNAMESPACE);
-                if (endpointDefinition.getTimeoutAction() == SynapseConstants.DISCARD) {
-                    action.setText("discard");
-                } else if (endpointDefinition.getTimeoutAction()
-                           == SynapseConstants.DISCARD_AND_FAULT) {
-                    action.setText("fault");
+                if (endpointDefinition.isTimeoutActionDynamic()) {
+                    action.setText('{' + endpointDefinition.getDynamicTimeoutAction().getExpression() + '}');
+                } else {
+                    if (endpointDefinition.getTimeoutAction() == SynapseConstants.DISCARD) {
+                        action.setText("discard");
+                    } else if (endpointDefinition.getTimeoutAction()
+                            == SynapseConstants.DISCARD_AND_FAULT) {
+                        action.setText("fault");
+                    }
                 }
                 timeout.addChild(action);
             }

@@ -158,6 +158,8 @@ public class EndpointDefinition implements AspectConfigurable {
      * action to perform when a timeout occurs (NONE | DISCARD | DISCARD_AND_FAULT) *
      */
     private int timeoutAction = SynapseConstants.NONE;
+    /** The expression to evaluate dynamic timeout action */
+    private SynapsePath dynamicTimeoutAction = null;
 
     /** The initial suspend duration when an endpoint is marked inactive */
     private long initialSuspendDuration = -1;
@@ -584,6 +586,51 @@ public class EndpointDefinition implements AspectConfigurable {
 
     public void setTimeoutAction(int timeoutAction) {
         this.timeoutAction = timeoutAction;
+    }
+
+    public SynapsePath getDynamicTimeoutAction() {
+
+        return dynamicTimeoutAction;
+    }
+
+    public void setDynamicTimeoutAction(SynapsePath dynamicTimeoutAction) {
+
+        this.dynamicTimeoutAction = dynamicTimeoutAction;
+    }
+
+    public boolean isTimeoutActionDynamic() {
+
+        return dynamicTimeoutAction != null;
+    }
+
+    public int evaluateDynamicTimeoutAction(MessageContext synCtx) {
+
+        int result = timeoutAction;
+        try {
+            String timeoutActionStr = dynamicTimeoutAction.stringValueOf(synCtx);
+            if (timeoutActionStr != null) {
+                if (EPConstants.DISCARD.equalsIgnoreCase(timeoutActionStr)) {
+                    result = SynapseConstants.DISCARD;
+                } else if (EPConstants.FAULT.equalsIgnoreCase(timeoutActionStr)) {
+                    result = SynapseConstants.DISCARD_AND_FAULT;
+                } else {
+                    log.warn("Error while evaluating dynamic endpoint timeout action.");
+                }
+            } else {
+                log.warn("Error while evaluating dynamic endpoint timeout action.");
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while evaluating dynamic endpoint timeout action.");
+        }
+        return result;
+    }
+
+    public int getResolvedTimeoutAction(MessageContext messageContext) {
+
+        if (isTimeoutActionDynamic()) {
+            return evaluateDynamicTimeoutAction(messageContext);
+        }
+        return timeoutAction;
     }
 
     public String getFormat() {

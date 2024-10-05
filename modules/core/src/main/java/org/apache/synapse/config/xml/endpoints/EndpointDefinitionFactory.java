@@ -180,14 +180,24 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
             OMElement action = timeout.getFirstChildWithName(
                     new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "responseAction"));
             if (action != null && action.getText() != null) {
-                String actionString = action.getText();
-                if ("discard".equalsIgnoreCase(actionString.trim())) {
-                    definition.setTimeoutAction(SynapseConstants.DISCARD);
-                } else if ("fault".equalsIgnoreCase(actionString.trim())) {
-                    definition.setTimeoutAction(SynapseConstants.DISCARD_AND_FAULT);
+                String actionString = action.getText().trim();
+                if (isExpression(actionString)) {
+                    try {
+                        String expressionStr = actionString.substring(1, actionString.length() - 1);
+                        SynapseXPath expressionXPath = new SynapseXPath(expressionStr);
+                        definition.setDynamicTimeoutAction(expressionXPath);
+                    } catch (JaxenException e) {
+                        handleException("Couldn't assign dynamic timeout action as Synapse expression");
+                    }
                 } else {
-                    handleException("Invalid timeout action, action : "
-                            + actionString + " is not supported");
+                    if ("discard".equalsIgnoreCase(actionString)) {
+                        definition.setTimeoutAction(SynapseConstants.DISCARD);
+                    } else if ("fault".equalsIgnoreCase(actionString)) {
+                        definition.setTimeoutAction(SynapseConstants.DISCARD_AND_FAULT);
+                    } else {
+                        handleException("Invalid timeout action, action : "
+                                + actionString + " is not supported");
+                    }
                 }
             }
         }

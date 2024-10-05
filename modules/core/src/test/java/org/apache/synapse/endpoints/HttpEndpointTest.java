@@ -154,6 +154,20 @@ public class HttpEndpointTest {
     }
 
     @Test
+    public void testSetDynamicTimeoutAction() throws XMLStreamException, AxisFault {
+
+        HTTPEndpointFactory httpEndpointFactory = new HTTPEndpointFactory();
+        OMElement omElement = AXIOMUtil.stringToOM(
+                "<http method=\"get\" statistics=\"enable\" trace=\"enable\" uri-template=\"http://localhost:3000/banks\" xmlns=\"http://ws.apache.org/ns/synapse\"><enableAddressing separateListener=\"true\" version=\"final\"/><timeout><duration>12</duration><responseAction>{$ctx:timeoutAction}</responseAction></timeout></http>");
+        EndpointDefinition ep = httpEndpointFactory.createEndpointDefinition(omElement);
+        HTTPEndpoint httpEndpoint = new HTTPEndpoint();
+        httpEndpoint.setDefinition(ep);
+        MessageContext messageContext = createMessageContext();
+        messageContext.setProperty("timeoutAction", "discard");
+        Assert.assertEquals(httpEndpoint.getDefinition().getResolvedTimeoutAction(messageContext), SynapseConstants.DISCARD);
+    }
+
+    @Test
     public void testSetSuspendOnFailureInitialDuration() throws XMLStreamException, AxisFault {
 
         HTTPEndpointFactory httpEndpointFactory = new HTTPEndpointFactory();
