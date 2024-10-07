@@ -468,7 +468,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 			}
 		}
         if (errorCode != null) {
-            if (definition.getTimeoutErrorCodes().isEmpty()) {
+            if (definition.getResolvedTimeoutErrorCodes(synCtx).isEmpty()) {
                 // if timeout codes are not defined, assume only HTTP timeout and connection close
                 boolean isTimeout = SynapseConstants.NHTTP_CONNECTION_TIMEOUT == errorCode;
                 boolean isClosed = SynapseConstants.NHTTP_CONNECTION_CLOSED == errorCode;
@@ -482,11 +482,11 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                     return true;
                 }
             } else {
-                if (definition.getTimeoutErrorCodes().contains(errorCode)) {
+                if (definition.getResolvedTimeoutErrorCodes(synCtx).contains(errorCode)) {
                     if (log.isDebugEnabled()) {
                         log.debug("Encountered a mark for suspension error : " + errorCode
                                 + " defined " + "error codes are : "
-                                + definition.getTimeoutErrorCodes());
+                                + definition.getResolvedTimeoutErrorCodes(synCtx));
                     }
                     return true;
                 }

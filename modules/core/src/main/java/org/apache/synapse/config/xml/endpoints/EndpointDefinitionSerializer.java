@@ -197,18 +197,22 @@ public class EndpointDefinitionSerializer {
         }
 
         if (endpointDefinition.getRetryDurationOnTimeout() > 0 || endpointDefinition.isRetryDurationOnTimeoutDynamic() ||
-            !endpointDefinition.getTimeoutErrorCodes().isEmpty()) {
+            !endpointDefinition.getTimeoutErrorCodes().isEmpty() || endpointDefinition.isTimeoutErrorCodesDynamic()) {
 
             OMElement markAsTimedout = fac.createOMElement(
                 org.apache.synapse.config.xml.XMLConfigConstants.MARK_FOR_SUSPENSION,
                 SynapseConstants.SYNAPSE_OMNAMESPACE);
 
-            if (!endpointDefinition.getTimeoutErrorCodes().isEmpty()) {
+            if (!endpointDefinition.getTimeoutErrorCodes().isEmpty() || endpointDefinition.isTimeoutErrorCodesDynamic()) {
                 OMElement errorCodes = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.ERROR_CODES,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
-                errorCodes.setText(endpointDefinition.getTimeoutErrorCodes().
-                    toString().replaceAll("[\\[\\] ]", ""));
+                if (endpointDefinition.isTimeoutErrorCodesDynamic()) {
+                    errorCodes.setText('{' + endpointDefinition.getDynamicTimeoutErrorCodes().getExpression() + '}');
+                } else {
+                    errorCodes.setText(endpointDefinition.getTimeoutErrorCodes().
+                            toString().replaceAll("[\\[\\] ]", ""));
+                }
                 markAsTimedout.addChild(errorCodes);
             }
 

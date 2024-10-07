@@ -190,6 +190,8 @@ public class EndpointDefinition implements AspectConfigurable {
     private SynapsePath dynamicRetryDurationOnTimeout = null;
     /** A list of error codes which puts the endpoint into timeout mode */
     private final List<Integer> timeoutErrorCodes = new ArrayList<Integer>();
+    /** The expression to evaluate dynamic timeout error codes */
+    private SynapsePath dynamicTimeoutErrorCodes = null;
 
     private AspectConfiguration aspectConfiguration;
 
@@ -974,6 +976,46 @@ public class EndpointDefinition implements AspectConfigurable {
 
     public void addTimeoutErrorCode(int code) {
         timeoutErrorCodes.add(code);
+    }
+
+    public SynapsePath getDynamicTimeoutErrorCodes() {
+
+        return dynamicTimeoutErrorCodes;
+    }
+
+    public void setDynamicTimeoutErrorCodes(SynapsePath dynamicTimeoutErrorCodes) {
+
+        this.dynamicTimeoutErrorCodes = dynamicTimeoutErrorCodes;
+    }
+
+    public boolean isTimeoutErrorCodesDynamic() {
+
+        return dynamicTimeoutErrorCodes != null;
+    }
+
+    public List<Integer> evaluateDynamicTimeoutErrorCodes(MessageContext messageContext) {
+
+        List<Integer> result = timeoutErrorCodes;
+        try {
+            String stringValue = dynamicTimeoutErrorCodes.stringValueOf(messageContext);
+            if (stringValue != null) {
+                String[] errorCodes = stringValue.split(",");
+                result = new ArrayList<Integer>();
+                for (String errorCode : errorCodes) {
+                    result.add(Integer.parseInt(errorCode.trim()));
+                }
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while evaluating dynamic endpoint timeout expression.");
+        }
+        return result;
+    }
+
+    public List<Integer> getResolvedTimeoutErrorCodes(MessageContext messageContext) {
+        if (isTimeoutErrorCodesDynamic()) {
+            return evaluateDynamicTimeoutErrorCodes(messageContext);
+        }
+        return timeoutErrorCodes;
     }
 
     public void addRetryDisabledErrorCode(int code) {

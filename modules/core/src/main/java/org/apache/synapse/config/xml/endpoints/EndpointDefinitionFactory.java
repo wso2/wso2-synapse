@@ -212,14 +212,25 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 SynapseConstants.SYNAPSE_NAMESPACE,
                 XMLConfigConstants.ERROR_CODES));
             if (timeoutCodes != null && timeoutCodes.getText() != null) {
-                StringTokenizer st = new StringTokenizer(timeoutCodes.getText().trim(), ", ");
-                while (st.hasMoreTokens()) {
-                    String s = st.nextToken();
+                String trimmedTimeoutCodes = timeoutCodes.getText().trim();
+                if (isExpression(trimmedTimeoutCodes)) {
                     try {
-                        definition.addTimeoutErrorCode(Integer.parseInt(s));
-                    } catch (NumberFormatException e) {
-                        handleException("The timeout error codes should be specified " +
-                            "as valid numbers separated by commas : " + timeoutCodes.getText(), e);
+                        String expressionStr = trimmedTimeoutCodes.substring(1, trimmedTimeoutCodes.length() - 1);
+                        SynapseXPath expressionXPath = new SynapseXPath(expressionStr);
+                        definition.setDynamicTimeoutErrorCodes(expressionXPath);
+                    } catch (JaxenException e) {
+                        handleException("Couldn't assign dynamic timeout error codes as Synapse expression");
+                    }
+                } else {
+                    StringTokenizer st = new StringTokenizer(timeoutCodes.getText().trim(), ", ");
+                    while (st.hasMoreTokens()) {
+                        String s = st.nextToken();
+                        try {
+                            definition.addTimeoutErrorCode(Integer.parseInt(s));
+                        } catch (NumberFormatException e) {
+                            handleException("The timeout error codes should be specified " +
+                                    "as valid numbers separated by commas : " + timeoutCodes.getText(), e);
+                        }
                     }
                 }
             }
