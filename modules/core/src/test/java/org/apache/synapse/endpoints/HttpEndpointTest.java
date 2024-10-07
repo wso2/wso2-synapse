@@ -37,10 +37,14 @@ import org.apache.synapse.config.xml.endpoints.HTTPEndpointFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
+import org.json.HTTP;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -176,6 +180,58 @@ public class HttpEndpointTest {
         EndpointDefinition ep1 = httpEndpointFactory.createEndpointDefinition(omElement);
         Assert.assertEquals(ep1.getRetriesOnTimeoutBeforeSuspend(), 0);
         Assert.assertEquals(ep1.getInitialSuspendDuration(), 1000);
+    }
+
+    @Test
+    public void testSetSuspendErrorCodes() throws XMLStreamException, AxisFault {
+
+        HTTPEndpointFactory httpEndpointFactory = new HTTPEndpointFactory();
+        OMElement omElement = AXIOMUtil.stringToOM(
+                "<http method=\"get\" uri-template=\"http://localhost:3000/banks\" xmlns=\"http://ws.apache.org/ns/synapse\">\n" +
+                        "        <suspendOnFailure>\n" +
+                        "            <errorCodes>{$ctx:suspendErrorCodes}</errorCodes>\n" +
+                        "            <initialDuration>-1</initialDuration>\n" +
+                        "            <progressionFactor>1</progressionFactor>\n" +
+                        "        </suspendOnFailure>\n" +
+                        "        <markForSuspension>\n" +
+                        "            <retriesBeforeSuspension>0</retriesBeforeSuspension>\n" +
+                        "        </markForSuspension>\n" +
+                        "    </http>");
+        EndpointDefinition ep = httpEndpointFactory.createEndpointDefinition(omElement);
+        HTTPEndpoint httpEndpoint = new HTTPEndpoint();
+        httpEndpoint.setDefinition(ep);
+        MessageContext messageContext = createMessageContext();
+        messageContext.setProperty("suspendErrorCodes", "101503,101504");
+
+        List<Integer> actualSuspendErrorCodes = new ArrayList<>();
+        actualSuspendErrorCodes.add(101503);
+        actualSuspendErrorCodes.add(101504);
+        List<Integer> expectedSuspendErrorCodes = httpEndpoint.getDefinition().getResolvedSuspendErrorCodes(messageContext);
+        Assert.assertTrue(expectedSuspendErrorCodes.equals(actualSuspendErrorCodes));
+    }
+
+    @Test
+    public void testSetTimeoutErrorCodes() throws XMLStreamException, AxisFault {
+
+        HTTPEndpointFactory httpEndpointFactory = new HTTPEndpointFactory();
+        OMElement omElement = AXIOMUtil.stringToOM(
+                "<http method=\"get\" uri-template=\"http://localhost:3000/banks\" xmlns=\"http://ws.apache.org/ns/synapse\">\n" +
+                        "        <markForSuspension>\n" +
+                        "            <errorCodes>{$ctx:timeoutErrorCodes}</errorCodes>\n" +
+                        "            <retriesBeforeSuspension>10</retriesBeforeSuspension>\n" +
+                        "        </markForSuspension>\n" +
+                        "    </http>");
+        EndpointDefinition ep = httpEndpointFactory.createEndpointDefinition(omElement);
+        HTTPEndpoint httpEndpoint = new HTTPEndpoint();
+        httpEndpoint.setDefinition(ep);
+        MessageContext messageContext = createMessageContext();
+        messageContext.setProperty("timeoutErrorCodes", "101503,101504");
+
+        List<Integer> actualTimeoutErrorCodes = new ArrayList<>();
+        actualTimeoutErrorCodes.add(101503);
+        actualTimeoutErrorCodes.add(101504);
+        List<Integer> expectedTimeoutErrorCodes = httpEndpoint.getDefinition().getResolvedTimeoutErrorCodes(messageContext);
+        Assert.assertTrue(expectedTimeoutErrorCodes.equals(actualTimeoutErrorCodes));
     }
 
     /**
