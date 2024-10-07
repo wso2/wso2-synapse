@@ -295,15 +295,25 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 SynapseConstants.SYNAPSE_NAMESPACE,
                 XMLConfigConstants.ERROR_CODES));
             if (suspendCodes != null && suspendCodes.getText() != null) {
-
-                StringTokenizer st = new StringTokenizer(suspendCodes.getText().trim(), ", ");
-                while (st.hasMoreTokens()) {
-                    String s = st.nextToken();
+                String trimmedSuspendCodes = suspendCodes.getText().trim();
+                if (isExpression(trimmedSuspendCodes)) {
                     try {
-                        definition.addSuspendErrorCode(Integer.parseInt(s));
-                    } catch (NumberFormatException e) {
-                        handleException("The suspend error codes should be specified " +
-                            "as valid numbers separated by commas : " + suspendCodes.getText(), e);
+                        String expressionStr = trimmedSuspendCodes.substring(1, trimmedSuspendCodes.length() - 1);
+                        SynapseXPath expressionXPath = new SynapseXPath(expressionStr);
+                        definition.setDynamicSuspendErrorCodes(expressionXPath);
+                    } catch (JaxenException e) {
+                        handleException("Couldn't assign dynamic suspend error codes as Synapse expression");
+                    }
+                } else {
+                    StringTokenizer st = new StringTokenizer(trimmedSuspendCodes, ", ");
+                    while (st.hasMoreTokens()) {
+                        String s = st.nextToken();
+                        try {
+                            definition.addSuspendErrorCode(Integer.parseInt(s));
+                        } catch (NumberFormatException e) {
+                            handleException("The suspend error codes should be specified " +
+                                    "as valid numbers separated by commas : " + suspendCodes.getText(), e);
+                        }
                     }
                 }
             }

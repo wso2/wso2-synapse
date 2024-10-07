@@ -177,6 +177,8 @@ public class EndpointDefinition implements AspectConfigurable {
     private SynapsePath dynamicSuspendMaximumDuration = null;
     /** A list of error codes, which directly puts an endpoint into suspend mode */
     private final List<Integer> suspendErrorCodes = new ArrayList<Integer>();
+    /** The expression to evaluate dynamic suspend error codes */
+    private SynapsePath dynamicSuspendErrorCodes = null;
 
     /** No of retries to attempt on timeout, before an endpoint is makred inactive */
     private int retriesOnTimeoutBeforeSuspend = 0;
@@ -928,6 +930,46 @@ public class EndpointDefinition implements AspectConfigurable {
 
     public void addSuspendErrorCode(int code) {
         suspendErrorCodes.add(code);
+    }
+
+    public SynapsePath getDynamicSuspendErrorCodes() {
+
+        return dynamicSuspendErrorCodes;
+    }
+
+    public void setDynamicSuspendErrorCodes(SynapsePath dynamicSuspendErrorCodes) {
+
+        this.dynamicSuspendErrorCodes = dynamicSuspendErrorCodes;
+    }
+
+    public boolean isSuspendErrorCodesDynamic() {
+
+        return dynamicSuspendErrorCodes != null;
+    }
+
+    public List<Integer> evaluateDynamicSuspendErrorCodes(MessageContext messageContext) {
+
+        List<Integer> result = suspendErrorCodes;
+        try {
+            String stringValue = dynamicSuspendErrorCodes.stringValueOf(messageContext);
+            if (stringValue != null) {
+                String[] errorCodes = stringValue.split(",");
+                result = new ArrayList<Integer>();
+                for (String errorCode : errorCodes) {
+                    result.add(Integer.parseInt(errorCode.trim()));
+                }
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while evaluating dynamic endpoint timeout expression.");
+        }
+        return result;
+    }
+
+    public List<Integer> getResolvedSuspendErrorCodes(MessageContext messageContext) {
+        if (isSuspendErrorCodesDynamic()) {
+            return evaluateDynamicSuspendErrorCodes(messageContext);
+        }
+        return suspendErrorCodes;
     }
 
     public void addTimeoutErrorCode(int code) {

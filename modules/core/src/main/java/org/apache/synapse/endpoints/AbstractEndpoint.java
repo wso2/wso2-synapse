@@ -542,7 +542,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     protected boolean isSuspendFault(MessageContext synCtx) {
         Integer errorCode = (Integer) synCtx.getProperty(SynapseConstants.ERROR_CODE);
         if (errorCode != null) {
-            if (definition.getSuspendErrorCodes().isEmpty()) {
+            if (definition.getResolvedSuspendErrorCodes(synCtx).isEmpty()) {
                 // if suspend codes are not defined, any error will be fatal for the endpoint
                 if (log.isDebugEnabled()) {
                     log.debug(this.toString() + " encountered a fatal error : " + errorCode);
@@ -550,10 +550,10 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                 return true;
 
             } else {
-                if (definition.getSuspendErrorCodes().contains(errorCode)) {
+                if (definition.getResolvedSuspendErrorCodes(synCtx).contains(errorCode)) {
                     if (log.isDebugEnabled()) {
                         log.debug("Encountered a suspend error : " + errorCode +
-                            " defined suspend codes are : " + definition.getSuspendErrorCodes());
+                            " defined suspend codes are : " + definition.getResolvedSuspendErrorCodes(synCtx));
                     }
                     return true;
                 }

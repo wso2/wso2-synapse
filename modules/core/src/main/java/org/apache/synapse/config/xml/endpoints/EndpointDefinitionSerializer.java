@@ -137,18 +137,22 @@ public class EndpointDefinitionSerializer {
         }
 
         if (endpointDefinition.getInitialSuspendDuration() != -1 || endpointDefinition.isInitialSuspendDurationDynamic() ||
-            !endpointDefinition.getSuspendErrorCodes().isEmpty()) {
+            !endpointDefinition.getSuspendErrorCodes().isEmpty() || endpointDefinition.isSuspendErrorCodesDynamic()) {
 
             OMElement suspendOnFailure = fac.createOMElement(
                 org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_ON_FAILURE,
                 SynapseConstants.SYNAPSE_OMNAMESPACE);
 
-            if (!endpointDefinition.getSuspendErrorCodes().isEmpty()) {
+            if (!endpointDefinition.getSuspendErrorCodes().isEmpty() || endpointDefinition.isSuspendErrorCodesDynamic()) {
                 OMElement errorCodes = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.ERROR_CODES,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
-                errorCodes.setText(endpointDefinition.getSuspendErrorCodes().
-                    toString().replaceAll("[\\[\\] ]", ""));
+                if (endpointDefinition.isSuspendErrorCodesDynamic()) {
+                    errorCodes.setText('{' + endpointDefinition.getDynamicSuspendErrorCodes().getExpression() + '}');
+                } else {
+                    errorCodes.setText(endpointDefinition.getSuspendErrorCodes().
+                            toString().replaceAll("[\\[\\] ]", ""));
+                }
                 suspendOnFailure.addChild(errorCodes);
             }
 
