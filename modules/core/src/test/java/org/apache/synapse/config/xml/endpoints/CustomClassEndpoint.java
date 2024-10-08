@@ -20,7 +20,7 @@ public class CustomClassEndpoint extends AbstractEndpoint{
 	}
 
 	@Override
-	protected void createJsonRepresentation() {
+	protected void createJsonRepresentation(MessageContext messageContext) {
 		//TODO
 	}
 

@@ -58,12 +58,12 @@ public class AddressEndpoint extends AbstractEndpoint {
         }
     }
 
-    protected void createJsonRepresentation() {
+    protected void createJsonRepresentation(MessageContext messageContext) {
         endpointJson = new JSONObject();
         endpointJson.put("name", getName());
         endpointJson.put("type", "Address Endpoint");
         endpointJson.put("address", getDefinition().getAddress());
-        setAdvancedProperties();
+        setAdvancedProperties(messageContext);
     }
 
     public void send(MessageContext synCtx) {

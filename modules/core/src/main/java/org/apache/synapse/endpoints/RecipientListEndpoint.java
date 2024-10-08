@@ -97,7 +97,7 @@ public class RecipientListEndpoint extends AbstractEndpoint {
 	}
 
     @Override
-    protected void createJsonRepresentation() {
+    protected void createJsonRepresentation(MessageContext messageContext) {
 
         endpointJson = new JSONObject();
         endpointJson.put(NAME_JSON_ATT, getName());
