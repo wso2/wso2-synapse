@@ -70,6 +70,7 @@ import javax.script.ScriptException;
 /**
  * NashornJavaScriptMessageContext implements the ScriptMessageContext specific to Nashorn java script engine.
  */
+@Deprecated
 @SuppressWarnings({"UnusedDeclaration"})
 public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     private static final Log logger = LogFactory.getLog(NashornJavaScriptMessageContext.class.getName());

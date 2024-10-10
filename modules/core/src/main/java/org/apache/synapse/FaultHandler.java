@@ -90,6 +90,10 @@ public abstract class FaultHandler {
         if (traceOrDebugOn) {
             traceOrDebugWarn(traceOn, "ERROR_CODE : " +
                 synCtx.getProperty(SynapseConstants.ERROR_CODE));
+            traceOrDebugWarn(traceOn,"BASE_ERROR_CODE : " +
+                synCtx.getProperty(SynapseConstants.BASE_ERROR_CODE));
+            traceOrDebugWarn(traceOn,"PROTOCOL_STATE_ON_FAILURE : " +
+                synCtx.getProperty(SynapseConstants.PROTOCOL_STATE_ON_FAILURE));
             traceOrDebugWarn(traceOn, "ERROR_MESSAGE : " +
                 synCtx.getProperty(SynapseConstants.ERROR_MESSAGE));
             traceOrDebugWarn(traceOn, "ERROR_DETAIL : " +

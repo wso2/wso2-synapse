@@ -38,6 +38,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.inbound.InboundResponseSender;
@@ -61,6 +62,8 @@ public class Axis2Sender {
      * Content type header name.
      */
     private static final String CONTENT_TYPE_STRING = "Content-Type";
+    private static final boolean removeHeaders = SynapsePropertiesLoader
+            .getBooleanProperty(SynapseConstants.EXCLUDE_PAYLOAD_DETAILS_FROM_ERROR, false);
 
     /**
      * Send a message out from the Synapse engine to an external service
@@ -299,7 +302,7 @@ public class Axis2Sender {
             }
             Map<String, Object> mHeader = (Map<String, Object>) msgContext.getProperty
                     (org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-            if (mHeader != null) {
+            if (!removeHeaders && mHeader != null) {
                 for (String strKey : mHeader.keySet()) {
                     sb.append(strKey + ":" + mHeader.get(strKey).toString() + ",");
                 }

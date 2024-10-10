@@ -20,6 +20,8 @@ package org.apache.synapse.commons.throttle.core;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.throttle.core.internal.DistributedThrottleProcessor;
+import org.apache.synapse.commons.throttle.core.internal.ThrottleServiceDataHolder;
 
 import java.io.Serializable;
 import java.util.UUID;
@@ -43,13 +45,22 @@ public abstract class CallerContext implements Serializable, Cloneable {
     private long nextTimeWindow = 0;
     /* The globalCount to keep track number of request */
     private AtomicLong globalCount = new AtomicLong(0);
-
+    private long localQuota;
     private String roleId;
     private long unitTime;
+    /*
+     This is specific for each API EP
+     if this is true, then syncing of throttle parameter with global redis counters be synced will be done in sync mode
+     */
+    private boolean isThrottleParamSyncingModeSync;
+    private ThrottleProperties throttleProperties;
+
+
     /**
      * Count to keep track of local (specific to this node) number of requests
      */
     private AtomicLong localCount = new AtomicLong(0);
+    private AtomicLong localHits = new AtomicLong(0);
 
     /**
      * Used for debugging purposes. *
@@ -83,6 +94,10 @@ public abstract class CallerContext implements Serializable, Cloneable {
             throw new InstantiationError("Couldn't create a CallContext for an empty " +
                                          "remote caller ID");
         }
+        if (throttleProperties == null) {
+            throttleProperties = ThrottleServiceDataHolder.getInstance().getThrottleProperties();
+        }
+
         this.id = ID.trim();
     }
 
@@ -111,7 +126,10 @@ public abstract class CallerContext implements Serializable, Cloneable {
         this.roleId = configuration.getID();
         //Also we need to pick counter value associated with time window.
         throttleContext.addCallerContext(this, this.id);
-        throttleContext.replicateTimeWindow(this.id);
+
+        if (!ThrottleServiceDataHolder.getInstance().getThrottleProperties().isThrottleSyncAsyncHybridModeEnabled()) {
+            throttleContext.replicateTimeWindow(this.id);
+        }
     }
 
     /**
@@ -120,10 +138,11 @@ public abstract class CallerContext implements Serializable, Cloneable {
      * @param configuration   -  The Configuration for this caller
      * @param throttleContext -The Throttle Context
      * @param currentTime     -The system current time
+     * @param eventCount      -The event count
      * @return boolean        -The boolean value which say access will allow or not
      */
     private boolean canAccessIfUnitTimeNotOver(CallerConfiguration configuration,
-                                               ThrottleContext throttleContext, long currentTime) {
+                                               ThrottleContext throttleContext, long currentTime, Long eventCount) {
         boolean canAccess = false;
         int maxRequest = configuration.getMaximumRequestPerUnitTime();
         if (maxRequest != 0) {
@@ -136,11 +155,10 @@ public abstract class CallerContext implements Serializable, Cloneable {
                             + configuration.getID() + " nextAccessTime=" + this.nextAccessTime);
                 }
                 canAccess = true;     // can continue access
-                this.localCount.incrementAndGet();
+                this.localCount.addAndGet(eventCount);
                 // Send the current state to others (clustered env)
                 throttleContext.flushCallerContext(this, id);
                 // can complete access
-
             } else {
                 //else , if caller has not already prohibit
                 if (this.nextAccessTime == 0) {
@@ -190,9 +208,9 @@ public abstract class CallerContext implements Serializable, Cloneable {
                         throttleContext.replicateTimeWindow(this.id);
                         throttleContext.addAndFlushCallerContext(this, this.id);
 
-                        if(log.isDebugEnabled()) {
+                        if (log.isDebugEnabled()) {
                             log.debug("Caller=" + this.getId() + " has reset counters and added for replication when unit "
-                                      + "time is not over");
+                                    + "time is not over");
                         }
                     } else {
                         if (log.isDebugEnabled()) {
@@ -356,6 +374,22 @@ public abstract class CallerContext implements Serializable, Cloneable {
      */
     public boolean canAccess(ThrottleContext throttleContext, CallerConfiguration configuration,
                              long currentTime) throws ThrottleException {
+        return canAccess(throttleContext, configuration, currentTime, 1L);
+    }
+
+    /**
+     * Check whether that caller can access or not, based on current state and pre-defined policy
+     *
+     * @param throttleContext -The Context for this caller - runtime state
+     * @param configuration   -The Configuration for this caller - data from policy
+     * @param currentTime     -The current system time
+     * @param eventCount      -The event count
+     * @return boolean        -The boolean value which say access will allow or not
+     * @throws ThrottleException throws for invalid throttle configuration
+     */
+    public boolean canAccess(ThrottleContext throttleContext, CallerConfiguration configuration,
+                             long currentTime, Long eventCount) throws ThrottleException {
+        RequestContext requestContext = new RequestContext(currentTime);
         boolean canAccess;
         if (configuration == null) {
             if (log.isDebugEnabled()) {
@@ -374,15 +408,35 @@ public abstract class CallerContext implements Serializable, Cloneable {
             initAccess(configuration, throttleContext, currentTime);
         }
         // if unit time period (session time) is not over
-        if (this.nextTimeWindow > currentTime) {
-            canAccess = canAccessIfUnitTimeNotOver(configuration, throttleContext, currentTime);
-        } else {
-            canAccess = canAccessIfUnitTimeOver(configuration, throttleContext, currentTime);
+        if (log.isDebugEnabled()) {
+            log.debug("### NEW REQUEST RECEIVED ! - currentTime: " + currentTime);
         }
 
+        DistributedThrottleProcessor distributedThrottleProcessor = ThrottleServiceDataHolder.getInstance()
+                .getDistributedThrottleProcessor();
+        if (distributedThrottleProcessor != null && distributedThrottleProcessor.isEnable()) {
+            long startTime = System.currentTimeMillis();
+            canAccess = distributedThrottleProcessor.canAccessBasedOnUnitTime(this, configuration, throttleContext,
+                    requestContext);
+            long duration = System.currentTimeMillis() - startTime;
+            if (log.isDebugEnabled()) {
+                log.debug("LATENCY FOR THROTTLE PROCESSING: " + duration + " ms");
+            }
+        } else {
+            canAccess = canAccessBasedOnUnitTime(configuration, throttleContext, currentTime, eventCount);
+        }
         return canAccess;
-
     }
+
+    private boolean canAccessBasedOnUnitTime(CallerConfiguration configuration, ThrottleContext throttleContext,
+                                             long currentTime, Long eventCount) {
+        if (this.nextTimeWindow > currentTime) {
+            return canAccessIfUnitTimeNotOver(configuration, throttleContext, currentTime, eventCount);
+        } else {
+            return canAccessIfUnitTimeOver(configuration, throttleContext, currentTime);
+        }
+    }
+
 
     /**
      * Returns the next time window
@@ -410,11 +464,26 @@ public abstract class CallerContext implements Serializable, Cloneable {
     }
 
     public void setLocalCounter(long counter) {
+        if (log.isTraceEnabled()) {
+            log.trace("changing local counter from:" + localCount.get() + " to:" + counter);
+        }
         localCount.set(counter);
     }
 
     public long getLocalCounter() {
         return localCount.get();
+    }
+
+    public void setLocalHits(long counter) {
+        localHits.set(counter);
+    }
+
+    public long getLocalHits() {
+        return localHits.get();
+    }
+
+    public void incrementLocalHits() {
+        localHits.incrementAndGet();
     }
 
     public void resetLocalCounter() {
@@ -458,5 +527,29 @@ public abstract class CallerContext implements Serializable, Cloneable {
 
     public void setRoleId(String roleId) {
         this.roleId = roleId;
+    }
+
+    public void setIsThrottleParamSyncingModeSync(boolean isThrottleParamSyncingModeSync) {
+        this.isThrottleParamSyncingModeSync = isThrottleParamSyncingModeSync;
+    }
+
+    public boolean isThrottleParamSyncingModeSync() {
+        return isThrottleParamSyncingModeSync;
+    }
+
+    public long getLocalQuota() {
+        return localQuota;
+    }
+
+    public void setLocalQuota(long localQuota) {
+        this.localQuota = localQuota;
+    }
+
+    public long getNextAccessTime() {
+        return nextAccessTime;
+    }
+
+    public void setNextAccessTime(long nextAccessTime) {
+        this.nextAccessTime = nextAccessTime;
     }
 }

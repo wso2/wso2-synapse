@@ -237,7 +237,7 @@ public class JmsStore extends AbstractMessageStore {
         try {
             initme();
         } catch (StoreForwardException | JMSException e) {
-            logger.info(nameString() + ". Initialization failed...", e);
+            logger.error(nameString() + ". Initialization failed...", e);
         }
         super.init(se);
         logger.info(nameString() + ". Initialized... ");

@@ -57,6 +57,11 @@ public class RoleBasedAccessRateController {
      */
     public AccessInformation canAccess(ThrottleContext throttleContext,
                                        String consumerKey, String roleID) throws ThrottleException {
+        return canAccess(throttleContext, consumerKey, roleID, 1L);
+    }
+
+    public AccessInformation canAccess(ThrottleContext throttleContext,
+                                       String consumerKey, String roleID, Long eventCount) throws ThrottleException {
 
         String type = "role";
 
@@ -116,7 +121,7 @@ public class RoleBasedAccessRateController {
                 if (caller != null) {
                     long currentTime = System.currentTimeMillis();
 
-                    if (!caller.canAccess(throttleContext, configuration, currentTime)) {
+                    if (!caller.canAccess(throttleContext, configuration, currentTime, eventCount)) {
                         //if current caller cannot access , then perform cleaning
                         log.info(ACCESS_DENIED_TEMPORALLY);
                         throttleContext.processCleanList(currentTime);

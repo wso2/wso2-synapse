@@ -109,6 +109,11 @@ public class CallMediatorFactory extends AbstractMediatorFactory {
 
         OMElement targetEle = elem.getFirstChildWithName(TARGET_Q);
         if (targetEle != null) {
+            if (sourceEle == null) {
+                Source source = CallMediatorEnrichUtil.createSourceWithBody();
+                callMediator.setSourceAvailable(true);
+                callMediator.setSourceForOutboundPayload(source);
+            }
             Target target = new Target();
             populateTarget(callMediator, target, targetEle);
             callMediator.setTargetForInboundPayload(target);

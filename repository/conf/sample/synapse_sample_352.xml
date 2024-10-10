@@ -24,7 +24,7 @@
     <sequence name="main">
         <in>
             <!-- change the MessageContext into a response and set a response payload -->
-            <script language="js">
+            <script language="rhinoJs">
                 mc.setTo(mc.getReplyTo());
                 mc.setProperty("RESPONSE", "true");
                 mc.setPayloadXML(

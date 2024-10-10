@@ -75,6 +75,11 @@ public class PassThroughConstants {
     public static final String SENDING_FAULT = "SENDING_FAULT";
     /** The message context property name which holds the error code for the last encountered exception */
     public static final String ERROR_CODE = "ERROR_CODE";
+    /** The message context property name which holds the error code for the last encountered exception
+     * without any protocol state specific alterations*/
+    public static final String BASE_ERROR_CODE = "BASE_ERROR_CODE";
+    /** The message context property name which holds the http protocol state upon a failure*/
+    public static final String PROTOCOL_STATE_ON_FAILURE = "PROTOCOL_STATE_ON_FAILURE";
     /** The MC property name which holds the error message for the last encountered exception */
     public static final String ERROR_MESSAGE = "ERROR_MESSAGE";
     /** The message context property name which holds the error detail (stack trace) for the last encountered exception */
@@ -232,6 +237,7 @@ public class PassThroughConstants {
     public static final String HTTP_PUT = "PUT";
     public static final String HTTP_OPTIONS = "OPTIONS";
     public static final String HTTP_CONNECT = "CONNECT";
+    public static final String HTTP_METHOD = "HTTP_METHOD";
 
     //Constant to specify the socket timeout
     public static final String HTTP_SOCKET_TIMEOUT = "HTTP_SOCKET_TIMEOUT";
@@ -269,4 +275,5 @@ public class PassThroughConstants {
     //default header that carries the correlation ID. Header name is configurable at passthru-http.properties
     public static final String CORRELATION_DEFAULT_HEADER = "activityid";
     public static final String TRANSPORT_LATENCY_LOGGER = "transport-latency";
+    public static final String TRANSPORT_IN_URL = "TransportInURL";
 }

@@ -55,6 +55,17 @@ public class TemplateMediator extends AbstractListMediator {
 
     private String errorHandler = null;
 
+    /** The local entry key name */
+    private String localEntryKey = null;
+
+    public String getLocalEntryKey() {
+        return localEntryKey;
+    }
+
+    public void setLocalEntryKey(String localEntryKey) {
+        this.localEntryKey = localEntryKey;
+    }
+
     public void setParameters(Collection<TemplateParam> paramNames) {
         this.templateParams = paramNames;
     }
@@ -161,6 +172,9 @@ public class TemplateMediator extends AbstractListMediator {
      */
     private void pushFuncContextTo(MessageContext synCtx) {
         TemplateContext funcContext = new TemplateContext(eipPatternName, templateParams);
+        if (localEntryKey != null) {
+            funcContext.setLocalEntryKey(localEntryKey);
+        }
         //process the raw parameters parsed in
         funcContext.setupParams(synCtx);
 

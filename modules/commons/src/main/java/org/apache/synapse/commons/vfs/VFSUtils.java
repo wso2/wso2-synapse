@@ -69,7 +69,7 @@ public class VFSUtils {
     /**
      * URL pattern
      */
-    private static final Pattern URL_PATTERN = Pattern.compile("[a-z]+://.*");
+    private static final Pattern URL_PATTERN = Pattern.compile("[a-zA-Z0-9]+://.*");
 
     /**
      * Password pattern
@@ -352,7 +352,7 @@ public class VFSUtils {
         String maskUrl;
         if (urlMatcher.find()) {
             final Matcher pwdMatcher = PASSWORD_PATTERN.matcher(url);
-            maskUrl = pwdMatcher.replaceFirst("\":***@\"");
+            maskUrl = pwdMatcher.replaceFirst(":***@");
             return maskUrl;
         }
         return url;

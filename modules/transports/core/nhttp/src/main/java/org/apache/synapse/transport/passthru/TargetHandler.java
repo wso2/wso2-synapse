@@ -624,7 +624,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                 int responseRead = -1;
                 boolean interceptionEnabled = false;
                 Boolean[] interceptorResults = new Boolean[noOfInterceptors];
-                if (interceptStream) {
+                if (conn.getContext().getAttribute(PassThroughConstants.RESPONSE_MESSAGE_CONTEXT) != null
+                        && interceptStream) {
                     int index = 0;
                     for (StreamInterceptor interceptor : streamInterceptors) {
                         interceptorResults[index] = interceptor.interceptTargetResponse(
@@ -677,7 +678,11 @@ public class TargetHandler implements NHttpClientEventHandler {
 
               if (messageSizeSum > validMaxMessageSize) {
                   log.warn("Payload exceeds valid payload size range, hence discontinuing chunk stream at "
-                          + messageSizeSum + " bytes to prevent OOM.");
+                          + messageSizeSum + " bytes to prevent OOM for"
+                          + " URI : " + msgCtx.getProperty(PassThroughConstants.TRANSPORT_IN_URL)
+                          + ", Method : " + msgCtx.getProperty(PassThroughConstants.HTTP_METHOD)
+                          + ", Correlation ID: " + msgCtx.getProperty(CorrelationConstants.CORRELATION_ID)
+                  );
                   dropTargetConnection(conn);
                   response.getPipe().forceProducerComplete(decoder);
               }
@@ -826,7 +831,12 @@ public class TargetHandler implements NHttpClientEventHandler {
         metrics.disconnected();
 
         TargetContext.updateState(conn, ProtocolState.CLOSED);
-        targetConfiguration.getConnections().closeConnection(conn, isFault);
+        
+        if (conf.isTLSGracefulConnectionTerminationEnabled()) {
+            targetConfiguration.getConnections().closeConnection(conn, isFault);
+        } else {
+            targetConfiguration.getConnections().shutdownConnection(conn, isFault);
+        }
 
     }
 
@@ -834,7 +844,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         String message = getErrorMessage("I/O error : " + e.getMessage(), conn);
 
         if (e.getMessage() != null && (e instanceof ConnectionClosedException
-                || e.getMessage().toLowerCase().contains("connection reset by peer")
+                || e.getMessage().toLowerCase().contains("connection reset")
                 || e.getMessage().toLowerCase().contains("forcibly closed"))) {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": I/O error (Probably the keep-alive connection "
@@ -936,7 +946,12 @@ public class TargetHandler implements NHttpClientEventHandler {
         }
 
         TargetContext.updateState(conn, ProtocolState.CLOSED);
-        targetConfiguration.getConnections().closeConnection(conn, true);
+        
+        if (conf.isTLSGracefulConnectionTerminationEnabled()) {
+            targetConfiguration.getConnections().closeConnection(conn, true);
+        } else {
+            targetConfiguration.getConnections().shutdownConnection(conn, true);
+        }
     }
 
     private String workerPoolExhaustedErrorMessage(Object clientWorker
@@ -1049,100 +1064,101 @@ public class TargetHandler implements NHttpClientEventHandler {
     public void exception(NHttpClientConnection conn, Exception ex) {
         ProtocolState state = TargetContext.getState(conn);
         MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
-        Map<String, String> logDetails = getLoggingInfo(conn, state, requestMsgCtx, ex);
-
-        if (state == ProtocolState.REQUEST_HEAD || state == ProtocolState.REQUEST_BODY) {
-            informWriterError(conn);
-            log.warn("ERROR_CODE = " + logDetails.get("error_code") + ", STATE_DESCRIPTION = Exception occurred "
-                    + logDetails.get("state_description") + ", INTERNAL_STATE = " + state + ", DIRECTION = "
-                    + logDetails.get("direction") + ", " + "CAUSE_OF_ERROR = " + logDetails.get("cause_of_error")
-                    + ", TARGET_HOST = " + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port")
-                    + ", TARGET_CONTEXT = " + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
-                    + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
-                    .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn)
-                    + ", CORRELATION_ID" + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
-                    + ", CONNECTION = " + conn);
-        } else if (state == ProtocolState.RESPONSE_HEAD || state == ProtocolState.RESPONSE_BODY) {
-            informReaderError(conn);
-            log.warn("ERROR_CODE = " + logDetails.get("error_code") + ", STATE_DESCRIPTION = Exception occurred "
-                    + logDetails.get("state_description") + ", INTERNAL_STATE = " + state + ", DIRECTION = "
-                    + logDetails.get("direction") + ", " + "CAUSE_OF_ERROR = " + logDetails.get("cause_of_error")
-                    + ", TARGET_HOST = " + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port")
-                    + ", TARGET_CONTEXT = " + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
-                    + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
-                    .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn)
-                    + ", CORRELATION_ID" + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
-                    + ", CONNECTION = " + conn);
-        } else if (state == ProtocolState.REQUEST_DONE) {
-            log.warn("ERROR_CODE = " + logDetails.get("error_code") + ", STATE_DESCRIPTION = Exception occurred "
-                    + logDetails.get("state_description") + ", INTERNAL_STATE = " + state + ", DIRECTION = "
-                    + logDetails.get("direction") + ", " + "CAUSE_OF_ERROR = " + logDetails.get("cause_of_error")
-                    + ", TARGET_HOST = " + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port")
-                    + ", TARGET_CONTEXT = " + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
-                    + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
-                    .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn)
-                    + ", CORRELATION_ID" + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
-                    + ", CONNECTION = " + conn);
-        } else if (state == ProtocolState.REQUEST_READY) {
-            log.warn("ERROR_CODE = " + logDetails.get("error_code") + ", STATE_DESCRIPTION = Exception occurred "
-                    + logDetails.get("state_description") + ", INTERNAL_STATE = " + state + ", DIRECTION = "
-                    + logDetails.get("direction") + ", " + "CAUSE_OF_ERROR = " + logDetails.get("cause_of_error")
-                    + ", TARGET_HOST = " + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port")
-                    + ", TARGET_CONTEXT = " + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
-                    + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
-                    .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn)
-                    + ", CORRELATION_ID" + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
-                    + ", CONNECTION = " + conn);
-        } else if (state == ProtocolState.RESPONSE_DONE) {
-            return;
-        }
-        
-        if (ex instanceof IOException) {
-
-            logIOException(conn, (IOException) ex);
-            if (PassThroughCorrelationConfigDataHolder.isEnable()){
-                logHttpRequestErrorInCorrelationLog(conn, "IO Exception in " + state.name());
+        try {
+            Map<String, String> logDetails = getLoggingInfo(conn, state, requestMsgCtx, ex);
+            if (state == ProtocolState.REQUEST_HEAD || state == ProtocolState.REQUEST_BODY) {
+                informWriterError(conn);
+                log.warn("ERROR_CODE = " + logDetails.get("error_code") + ", STATE_DESCRIPTION = Exception occurred "
+                        + logDetails.get("state_description") + ", INTERNAL_STATE = " + state + ", DIRECTION = "
+                        + logDetails.get("direction") + ", " + "CAUSE_OF_ERROR = " + logDetails.get("cause_of_error")
+                        + ", TARGET_HOST = " + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port")
+                        + ", TARGET_CONTEXT = " + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
+                        + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
+                        .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn)
+                        + ", CORRELATION_ID" + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                        + ", CONNECTION = " + conn);
+            } else if (state == ProtocolState.RESPONSE_HEAD || state == ProtocolState.RESPONSE_BODY) {
+                informReaderError(conn);
+                log.warn("ERROR_CODE = " + logDetails.get("error_code") + ", STATE_DESCRIPTION = Exception occurred "
+                        + logDetails.get("state_description") + ", INTERNAL_STATE = " + state + ", DIRECTION = "
+                        + logDetails.get("direction") + ", " + "CAUSE_OF_ERROR = " + logDetails.get("cause_of_error")
+                        + ", TARGET_HOST = " + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port")
+                        + ", TARGET_CONTEXT = " + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
+                        + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
+                        .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn)
+                        + ", CORRELATION_ID" + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                        + ", CONNECTION = " + conn);
+            } else if (state == ProtocolState.REQUEST_DONE) {
+                log.warn("ERROR_CODE = " + logDetails.get("error_code") + ", STATE_DESCRIPTION = Exception occurred "
+                        + logDetails.get("state_description") + ", INTERNAL_STATE = " + state + ", DIRECTION = "
+                        + logDetails.get("direction") + ", " + "CAUSE_OF_ERROR = " + logDetails.get("cause_of_error")
+                        + ", TARGET_HOST = " + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port")
+                        + ", TARGET_CONTEXT = " + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
+                        + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
+                        .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn)
+                        + ", CORRELATION_ID" + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                        + ", CONNECTION = " + conn);
+            } else if (state == ProtocolState.REQUEST_READY) {
+                log.warn("ERROR_CODE = " + logDetails.get("error_code") + ", STATE_DESCRIPTION = Exception occurred "
+                        + logDetails.get("state_description") + ", INTERNAL_STATE = " + state + ", DIRECTION = "
+                        + logDetails.get("direction") + ", " + "CAUSE_OF_ERROR = " + logDetails.get("cause_of_error")
+                        + ", TARGET_HOST = " + logDetails.get("host") + ", TARGET_PORT = " + logDetails.get("port")
+                        + ", TARGET_CONTEXT = " + logDetails.get("url") + ", " + "HTTP_METHOD = " + logDetails.get("method")
+                        + ", TRIGGER_TYPE = " + logDetails.get("trigger_type") + ", TRIGGER_NAME = " + logDetails
+                        .get("trigger_name") + ", REMOTE_ADDRESS = " + getBackEndConnectionInfo(conn)
+                        + ", CORRELATION_ID" + " = " + conn.getContext().getAttribute(CorrelationConstants.CORRELATION_ID)
+                        + ", CONNECTION = " + conn);
             }
-            if (state != ProtocolState.RESPONSE_DONE && requestMsgCtx != null) {
-                requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
-                        PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
-                targetErrorHandler.handleError(requestMsgCtx,
-                        ErrorCodes.SND_IO_ERROR,
-                        "Error in Sender",
-                        ex,
-                        state);
-            }
+        } finally {
+            if (ex instanceof IOException) {
 
-            TargetContext.updateState(conn, ProtocolState.CLOSING);
-        } else if (ex instanceof HttpException) {
-            String message = getErrorMessage("HTTP protocol violation : " + ex.getMessage(), conn);
-            log.error(message, ex);
-            if (PassThroughCorrelationConfigDataHolder.isEnable()){
-                logHttpRequestErrorInCorrelationLog(conn, "HTTP Exception in " + state.name());
-            }
-            if (state != ProtocolState.RESPONSE_DONE && requestMsgCtx != null) {
-                requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
-                        PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
-                targetErrorHandler.handleError(requestMsgCtx,
-                        ErrorCodes.PROTOCOL_VIOLATION,
-                        "Error in Sender",
-                        null,
-                        state);
-            }
+                logIOException(conn, (IOException) ex);
+                if (PassThroughCorrelationConfigDataHolder.isEnable()){
+                    logHttpRequestErrorInCorrelationLog(conn, "IO Exception in " + state.name());
+                }
+                if (state != ProtocolState.RESPONSE_DONE && requestMsgCtx != null) {
+                    requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                            PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
+                    targetErrorHandler.handleError(requestMsgCtx,
+                            ErrorCodes.SND_IO_ERROR,
+                            "Error in Sender",
+                            ex,
+                            state);
+                }
 
-            TargetContext.updateState(conn, ProtocolState.CLOSED);
-        } else {
-            if(null != ex && null != ex.getMessage()) {
-                log.error("Unexpected error: " + ex.getMessage(), ex);
+                TargetContext.updateState(conn, ProtocolState.CLOSING);
+            } else if (ex instanceof HttpException) {
+                String message = getErrorMessage("HTTP protocol violation : " + ex.getMessage(), conn);
+                log.error(message, ex);
+                if (PassThroughCorrelationConfigDataHolder.isEnable()){
+                    logHttpRequestErrorInCorrelationLog(conn, "HTTP Exception in " + state.name());
+                }
+                if (state != ProtocolState.RESPONSE_DONE && requestMsgCtx != null) {
+                    requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                            PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
+                    targetErrorHandler.handleError(requestMsgCtx,
+                            ErrorCodes.PROTOCOL_VIOLATION,
+                            "Error in Sender",
+                            null,
+                            state);
+                }
+
+                TargetContext.updateState(conn, ProtocolState.CLOSED);
             } else {
-                log.error("Unexpected error.");
+                if (null != ex && null != ex.getMessage()) {
+                    log.error("Unexpected error: " + ex.getMessage(), ex);
+                } else {
+                    log.error("Unexpected error.");
+                }
+                if (PassThroughCorrelationConfigDataHolder.isEnable()) {
+                    logHttpRequestErrorInCorrelationLog(conn, "Unexpected error");
+                }
+                TargetContext.updateState(conn, ProtocolState.CLOSED);
             }
-            if (PassThroughCorrelationConfigDataHolder.isEnable()) {
-                logHttpRequestErrorInCorrelationLog(conn, "Unexpected error");
-            }
-            TargetContext.updateState(conn, ProtocolState.CLOSED);
+
+            targetConfiguration.getConnections().shutdownConnection(conn, true);
         }
-        targetConfiguration.getConnections().shutdownConnection(conn, true);
+
     }
 
     public void setConnFactory(ClientConnFactory connFactory) {

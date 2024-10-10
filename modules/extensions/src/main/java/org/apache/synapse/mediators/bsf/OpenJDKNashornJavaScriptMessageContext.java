@@ -55,6 +55,7 @@ import java.util.*;
  * NashornJavaScriptMessageContext implements the ScriptMessageContext specific to Nashorn java script engine.
  */
 @SuppressWarnings({"UnusedDeclaration"})
+@Deprecated
 public class OpenJDKNashornJavaScriptMessageContext implements ScriptMessageContext {
     private static final Log logger = LogFactory.getLog(OpenJDKNashornJavaScriptMessageContext.class.getName());
 

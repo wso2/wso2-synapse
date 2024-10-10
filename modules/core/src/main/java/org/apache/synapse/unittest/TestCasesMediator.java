@@ -142,9 +142,9 @@ public class TestCasesMediator {
         String url;
 
         //check transport port whether http or https
-        if (proxyTransportMethod.equals(HTTP_KEY)) {
+        if (proxyTransportMethod.equalsIgnoreCase(HTTP_KEY)) {
             url = HTTP_LOCALHOST_URL + httpPassThruOperatingPort + PROXY_INVOKE_PREFIX_URL + key;
-        } else if (proxyTransportMethod.equals(HTTPS_KEY)) {
+        } else if (proxyTransportMethod.equalsIgnoreCase(HTTPS_KEY)) {
             url = HTTPS_LOCALHOST_URL + httpsPassThruOperatingPort + PROXY_INVOKE_PREFIX_URL + key;
         } else {
             return new AbstractMap.SimpleEntry<>("'" + proxyTransportMethod + "' transport is not supported", null);

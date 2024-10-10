@@ -47,7 +47,7 @@ public class RegexTemplateProcessor extends TemplateProcessor {
 
     @Override
     public void init() {
-        // nothing to do since no pre processing is needed
+        this.readInputFactoryProperties();
     }
 
     /**

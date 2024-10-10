@@ -91,8 +91,6 @@ public class EnrichMediator extends AbstractMediator {
 
     private boolean isNativeJsonSupportEnabled = false;
 
-    private boolean containsInlineExpressions = false;
-
     public static final String ACTION_REMOVE = "remove";
 
     public boolean mediate(MessageContext synCtx) {
@@ -179,18 +177,31 @@ public class EnrichMediator extends AbstractMediator {
         // If the inline text contains expressions, we need to evaluate the values
         // and decide on the type (whether XML or JSON)
         boolean isInlineTextXML = !isNativeJsonSupportEnabled;
+        OMNode inlineOMNodeWithValues = null;
+        String inlineString = null;
 
-        if (containsInlineExpressions()) {
+        if (source.containsInlineExpressions()) {
             OMNode inlineOMNode = source.getInlineOMNode();
-            source.setInitialInlineOMNode(inlineOMNode);
             if (inlineOMNode != null) {
-                if (inlineOMNode instanceof OMText) {
-                    // If the node type is text, it can either be a JSON string or an expression
-                    // If it is an expression we must check again after resolving the expressions
-                    // whether it is XML or JSON
-                    isInlineTextXML = setDynamicValuesInNode(synCtx, ((OMTextImpl) inlineOMNode).getText());
-                } else if (inlineOMNode instanceof OMElement) {
-                    isInlineTextXML = setDynamicValuesInNode(synCtx, inlineOMNode.toString());
+                try {
+                    if (inlineOMNode instanceof OMText) {
+                        // If the node type is text, it can either be a JSON string or an expression
+                        // If it is an expression we must check again after resolving the expressions
+                        // whether it is XML or JSON
+                        inlineString = InlineExpressionUtil.replaceDynamicValues(synCtx,
+                                ((OMTextImpl) inlineOMNode).getText());
+                        // After the expressions in the inline text is replaced with the value,
+                        // the string must be parsed again to identify whether it has changed to a XML
+                        inlineOMNodeWithValues = AXIOMUtil.stringToOM(inlineString);
+                        isInlineTextXML = true;
+                    } else if (inlineOMNode instanceof OMElement) {
+                        inlineString = InlineExpressionUtil.replaceDynamicValues(synCtx, inlineOMNode.toString());
+                        inlineOMNodeWithValues = AXIOMUtil.stringToOM(inlineString);
+                        isInlineTextXML = true;
+                    }
+                } catch (XMLStreamException | OMException e){
+                    // The string is considered as a text / JSON
+                    inlineOMNodeWithValues = OMAbstractFactory.getOMFactory().createOMText(inlineString);
                 }
             }
         }
@@ -218,7 +229,7 @@ public class EnrichMediator extends AbstractMediator {
             } else {
                 Object sourceNode;
                 try {
-                    sourceNode = source.evaluateJson(synCtx, synLog, sourcePropertyJson);
+                    sourceNode = source.evaluateJson(synCtx, synLog, sourcePropertyJson, inlineOMNodeWithValues);
                     if (sourceNode == null) {
                         handleException("Failed to get the source for Enriching : ", synCtx);
                     } else if (target.getTargetType() == KEY) {
@@ -252,7 +263,7 @@ public class EnrichMediator extends AbstractMediator {
             // TODO implement target action "remove" for XML
             ArrayList<OMNode> sourceNodeList;
             try {
-                sourceNodeList = source.evaluate(synCtx, synLog);
+                sourceNodeList = source.evaluate(synCtx, synLog, inlineOMNodeWithValues);
                 if (sourceNodeList == null) {
                     handleException("Failed to get the source for Enriching : ", synCtx);
                 } else {
@@ -287,7 +298,10 @@ public class EnrichMediator extends AbstractMediator {
         try {
             // After the expressions in the inline text is replaced with the value, the string must be parsed
             // again to identify whether it has changed to a XML
-            source.setInlineOMNode(AXIOMUtil.stringToOM(inlineString));
+            OMNode inlineOMNode = AXIOMUtil.stringToOM(inlineString);
+            // serialize inlineOMNode
+            inlineOMNode.buildWithAttachments();
+            source.setInlineOMNode(inlineOMNode);
             isInlineTextXML = true;
         } catch (XMLStreamException | OMException e) {
             // The string is considered as a text / JSON
@@ -321,13 +335,4 @@ public class EnrichMediator extends AbstractMediator {
         isNativeJsonSupportEnabled = nativeJsonSupportEnabled;
     }
 
-    public boolean containsInlineExpressions() {
-
-        return containsInlineExpressions;
-    }
-
-    public void setContainsInlineExpressions(boolean containsInlineExpressions) {
-
-        this.containsInlineExpressions = containsInlineExpressions;
-    }
 }

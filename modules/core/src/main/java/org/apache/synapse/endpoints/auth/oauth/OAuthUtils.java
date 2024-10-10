@@ -129,7 +129,8 @@ public class OAuthUtils {
             return null;
         }
         AuthorizationCodeHandler handler = new AuthorizationCodeHandler(tokenApiUrl, clientId, clientSecret,
-                refreshToken, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout);
+                refreshToken, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout,
+                TokenCacheFactory.getTokenCache());
         if (hasRequestParameters(authCodeElement)) {
             Map<String, String> requestParameters = getRequestParameters(authCodeElement);
             if (requestParameters == null) {
@@ -170,7 +171,7 @@ public class OAuthUtils {
             return null;
         }
         ClientCredentialsHandler handler = new ClientCredentialsHandler(tokenApiUrl, clientId, clientSecret, authMode,
-                connectionTimeout, connectionRequestTimeout, socketTimeout);
+                connectionTimeout, connectionRequestTimeout, socketTimeout, TokenCacheFactory.getTokenCache());
         if (hasRequestParameters(clientCredentialsElement)) {
             Map<String, String> requestParameters = getRequestParameters(clientCredentialsElement);
             if (requestParameters == null) {
@@ -213,7 +214,8 @@ public class OAuthUtils {
             return null;
         }
         PasswordCredentialsHandler handler = new PasswordCredentialsHandler(tokenApiUrl, clientId, clientSecret,
-                username, password, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout);
+                username, password, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout,
+                TokenCacheFactory.getTokenCache());
         if (hasRequestParameters(passwordCredentialsElement)) {
             Map<String, String> requestParameters = getRequestParameters(passwordCredentialsElement);
             if (requestParameters == null) {

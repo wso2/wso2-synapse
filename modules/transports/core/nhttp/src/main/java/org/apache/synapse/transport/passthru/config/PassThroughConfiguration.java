@@ -70,6 +70,9 @@ public class PassThroughConfiguration {
     /** Reverse proxy mode is enabled or not */
     private Boolean reverseProxyMode = null;
 
+    /** Enables graceful termination for TLS connection */
+    private Boolean isTLSGracefulConnectionTerminationEnabled = null;
+
     /** Default Synapse service name */
     private String passThroughDefaultServiceName = null;
 
@@ -149,6 +152,14 @@ public class PassThroughConfiguration {
     public boolean isCloseSocketOnEndpointTimeout() {
         return ConfigurationBuilderUtil.getBooleanProperty(PassThroughConfigPNames.CLOSE_SOCKET_ON_ENDPOINT_TIMEOUT
                 , CLOSE_SOCKET_ON_ENDPOINT_TIMEOUT, props);
+    }
+
+    public boolean isTLSGracefulConnectionTerminationEnabled() {
+        if (isTLSGracefulConnectionTerminationEnabled == null) {
+            isTLSGracefulConnectionTerminationEnabled = getBooleanProperty(
+                    PassThroughConfigPNames.TLS_GRACEFUL_CONNECTION_TERMINATION, true);
+        }
+        return isTLSGracefulConnectionTerminationEnabled;
     }
 
     public boolean isConsumeAndDiscard() {
@@ -386,5 +397,15 @@ public class PassThroughConfiguration {
             passThroughDefaultServiceName = getStringProperty("passthru.default.service", "__SynapseService");
         }
         return passThroughDefaultServiceName;
+    }
+
+    /**
+     * Get the value of the property to ignore case-sensitive headers from excess headers
+     *
+     * @return Value of the property
+     */
+    public boolean isIgnoreCaseSensitiveHeaders() {
+        return ConfigurationBuilderUtil.getBooleanProperty(PassThroughConfigPNames.IGNORE_CASE_SENSITIVE_HEADERS,
+                false, props);
     }
 }

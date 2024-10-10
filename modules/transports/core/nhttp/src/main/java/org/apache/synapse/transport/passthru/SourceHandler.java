@@ -28,6 +28,7 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
+import org.apache.http.MethodNotSupportedException;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.ContentEncoder;
@@ -358,7 +359,11 @@ public class SourceHandler implements NHttpServerEventHandler {
 
                 if (messageSizeSum > validMaxMessageSize) {
                     log.warn("Payload exceeds valid payload size range, hence discontinuing chunk stream at "
-                            + messageSizeSum + " bytes to prevent OOM.");
+                            + messageSizeSum + " bytes to prevent OOM for"
+                            + " URI : " + request.getUri()
+                            + ", Method : " + request.getMethod()
+                            + ", Correlation ID: " + request.getHeaders().get(PassThroughConstants.CORRELATION_DEFAULT_HEADER)
+                    );
                     dropSourceConnection(conn);
                     metrics.exceptionOccured();
                     conn.getContext().setAttribute(PassThroughConstants.SOURCE_CONNECTION_DROPPED, true);
@@ -644,7 +649,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             return;
         }
         if (e instanceof ConnectionClosedException || (e.getMessage() != null && (
-                e.getMessage().toLowerCase().contains("connection reset by peer") ||
+                e.getMessage().toLowerCase().contains("connection reset") ||
                 e.getMessage().toLowerCase().contains("forcibly closed")))) {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": I/O error (Probably the keepalive connection "
@@ -759,8 +764,13 @@ public class SourceHandler implements NHttpServerEventHandler {
         }
 
         SourceContext.updateState(conn, ProtocolState.CLOSED);
-   
-        sourceConfiguration.getSourceConnections().closeConnection(conn, true);
+
+        if (conf.isTLSGracefulConnectionTerminationEnabled()) {
+            sourceConfiguration.getSourceConnections().closeConnection(conn, true);
+        } else {
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
+        }
+
         if (isTimeoutOccurred) {
             rollbackTransaction(conn);
         }
@@ -845,7 +855,13 @@ public class SourceHandler implements NHttpServerEventHandler {
         metrics.disconnected();
 
         SourceContext.updateState(conn, ProtocolState.CLOSED);
-        sourceConfiguration.getSourceConnections().closeConnection(conn, isFault);
+        
+        if (conf.isTLSGracefulConnectionTerminationEnabled()) {
+            sourceConfiguration.getSourceConnections().closeConnection(conn, isFault);
+        } else {
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, isFault);
+        }
+
         if (isFault) {
             rollbackTransaction(conn);
             metrics.exceptionOccured();
@@ -895,42 +911,12 @@ public class SourceHandler implements NHttpServerEventHandler {
             isFault = true;
             SourceContext.updateState(conn, ProtocolState.CLOSED);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
+        } else if (ex instanceof MethodNotSupportedException) {
+            isFault = generateHTTPErrorResponse(conn, ex, HttpVersion.HTTP_1_1, HttpStatus.SC_NOT_IMPLEMENTED,
+                    "Not Implemented");
         } else if (ex instanceof HttpException) {
-            log.error("HttpException occurred ", ex);
-            if (PassThroughCorrelationConfigDataHolder.isEnable()) {
-                logHttpRequestErrorInCorrelationLog(conn, "HTTP Exception");
-            }
-            try {
-                if (conn.isResponseSubmitted()) {
-                    sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
-                    return;
-                }
-                HttpContext httpContext = conn.getContext();
-
-                HttpResponse response = new BasicHttpResponse(
-                        HttpVersion.HTTP_1_1, HttpStatus.SC_BAD_REQUEST, "Bad request");
-                response.setParams(
-                        new DefaultedHttpParams(sourceConfiguration.getHttpParams(),
-                                response.getParams()));
-                response.addHeader(HTTP.CONN_DIRECTIVE, HTTP.CONN_CLOSE);
-
-                // Pre-process HTTP request
-                httpContext.setAttribute(ExecutionContext.HTTP_CONNECTION, conn);
-                httpContext.setAttribute(ExecutionContext.HTTP_REQUEST, null);
-                httpContext.setAttribute(ExecutionContext.HTTP_RESPONSE, response);
-
-                sourceConfiguration.getHttpProcessor().process(response, httpContext);
-
-                conn.submitResponse(response);
-                SourceContext.updateState(conn, ProtocolState.CLOSED);
-                informWriterError(conn);
-                conn.close();
-            } catch (Exception ex1) {
-                log.error(ex1.getMessage(), ex1);
-                SourceContext.updateState(conn, ProtocolState.CLOSED);
-                sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
-                isFault = true;
-            }
+            isFault = generateHTTPErrorResponse(conn, ex, HttpVersion.HTTP_1_1, HttpStatus.SC_BAD_REQUEST,
+                    "Bad request");
         } else {
             log.error("Unexpected error: " + ex.getMessage(), ex);
             SourceContext.updateState(conn, ProtocolState.CLOSED);
@@ -941,6 +927,45 @@ public class SourceHandler implements NHttpServerEventHandler {
         if (isFault) {
             rollbackTransaction(conn);
         }
+    }
+
+    private boolean generateHTTPErrorResponse (NHttpServerConnection conn, Exception ex, HttpVersion version,
+                                               int statusCode, String reason) {
+        log.error("HttpException occurred ", ex);
+        boolean isFault = false;
+        if (PassThroughCorrelationConfigDataHolder.isEnable()) {
+            logHttpRequestErrorInCorrelationLog(conn, "HTTP Exception");
+        }
+        try {
+            if (conn.isResponseSubmitted()) {
+                sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
+                return false;
+            }
+            HttpContext httpContext = conn.getContext();
+
+            HttpResponse response = new BasicHttpResponse(version, statusCode, reason);
+            response.setParams(
+                    new DefaultedHttpParams(sourceConfiguration.getHttpParams(), response.getParams()));
+            response.addHeader(HTTP.CONN_DIRECTIVE, HTTP.CONN_CLOSE);
+
+            // Pre-process HTTP request
+            httpContext.setAttribute(ExecutionContext.HTTP_CONNECTION, conn);
+            httpContext.setAttribute(ExecutionContext.HTTP_REQUEST, null);
+            httpContext.setAttribute(ExecutionContext.HTTP_RESPONSE, response);
+
+            sourceConfiguration.getHttpProcessor().process(response, httpContext);
+
+            conn.submitResponse(response);
+            SourceContext.updateState(conn, ProtocolState.CLOSED);
+            informWriterError(conn);
+            conn.close();
+        } catch (Exception ex1) {
+            log.error(ex1.getMessage(), ex1);
+            SourceContext.updateState(conn, ProtocolState.CLOSED);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
+            isFault = true;
+        }
+        return isFault;
     }
 
     private Map<String, String> getLoggingInfo(NHttpServerConnection conn, ProtocolState state) {

@@ -44,8 +44,12 @@ public final class VFSConstants {
     public static final String TRANSPORT_FILE_CONTENT_TYPE = "transport.vfs.ContentType";
     public static final String TRANSPORT_FILE_LOCKING = "transport.vfs.Locking";
     public static final String UPDATE_LAST_MODIFIED = "transport.vfs.UpdateLastModified";
+    public static final String IS_MOUNTED = "transport.vfs.IsMounted";
     public static final String TRANSPORT_FILE_LOCKING_ENABLED = "enable";
     public static final String TRANSPORT_FILE_LOCKING_DISABLED = "disable";
+
+    public static final String TRANSPORT_CHECK_SIZE_INTERVAL = "transport.vfs.CheckSizeInterval";
+    public static final String TRANSPORT_CHECK_SIZE_IGNORE_EMPTY = "transport.vfs.CheckSizeIgnoreEmpty";
 
     /**
      * This parameter is used decide whether the resolving hostname IP of URIs are done at deployment or dynamically.
@@ -201,6 +205,11 @@ public final class VFSConstants {
     public static final String SCHEME_FTPS = "ftps";
     // sftp scheme file option list
     public static enum SFTP_FILE_OPTION {Identities, UserDirIsRoot, IdentityPassPhrase};
+    
+    /** Parameter for minimum age **/
+    public static final String TRANSPORT_FILE_MINIMUM_AGE = "transport.vfs.MinimumAge";
+    /** Parameter for maximum age **/
+    public static final String TRANSPORT_FILE_MAXIMUM_AGE = "transport.vfs.MaximumAge";
 
     public static final String FILE_TYPE_PREFIX = "transport.vfs.fileType";
     public static final String FILE_TYPE = "filetype";

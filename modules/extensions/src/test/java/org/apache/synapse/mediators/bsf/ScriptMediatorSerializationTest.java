@@ -44,7 +44,7 @@ public class ScriptMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testInlineScriptMediatorSerializationScenarioOne() throws XMLComparisonException {
-        String inputXml = "<syn:script xmlns:syn=\"http://ws.apache.org/ns/synapse\" language='js'>" +
+        String inputXml = "<syn:script xmlns:syn=\"http://ws.apache.org/ns/synapse\" language='rhinoJs'>" +
                 "<![CDATA[var symbol = mc.getPayloadXML()..*::Code.toString();mc.setPayloadXML(<m:getQuote xmlns:m=\"http://services.samples/xsd\">\n" +
                 "<m:request><m:symbol>{symbol}</m:symbol></m:request></m:getQuote>);]]></syn:script> ";
         assertTrue(serialization(inputXml, mediatorFactory, scriptMediatorSerializer));

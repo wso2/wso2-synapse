@@ -18,7 +18,6 @@
 */
 package org.apache.synapse.transport.vfs;
 
-import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
@@ -41,6 +40,7 @@ import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.AutoCloseInputStream;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.vfs2.FileContent;
 import org.apache.commons.vfs2.FileNotFolderException;
 import org.apache.commons.vfs2.FileNotFoundException;
@@ -51,6 +51,7 @@ import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.FileType;
 import org.apache.commons.vfs2.impl.DefaultFileSystemManager;
 import org.apache.commons.vfs2.impl.StandardFileSystemManager;
+import org.apache.commons.vfs2.provider.UriParser;
 import org.apache.synapse.commons.vfs.FileObjectDataSource;
 import org.apache.synapse.commons.vfs.VFSConstants;
 import org.apache.synapse.commons.vfs.VFSOutTransportInfo;
@@ -59,10 +60,12 @@ import org.apache.synapse.commons.vfs.VFSUtils;
 import org.wso2.securevault.SecretResolver;
 import org.wso2.securevault.SecureVaultException;
 import org.wso2.securevault.commons.MiscellaneousUtil;
+import org.apache.synapse.transport.vfs.VFSTransportErrorHandler.LogType;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -141,6 +144,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
     public static final String MOVE = "MOVE";
     public static final String NONE = "NONE";
 
+    public static final String EMPTY_MD5 = "d41d8cd98f00b204e9800998ecf8427e";
+
     /** The VFS file system manager */
     private DefaultFileSystemManager fsManager = null;
 
@@ -180,7 +185,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 }
             }
         } catch (FileSystemException e) {
-            handleException("Error initializing the file transport : " + e.getMessage(), e);
+            String message = "Error initializing the file transport : " + e.getMessage();
+            VFSTransportErrorHandler.handleException(log, message, e);
         }
     }
 
@@ -197,27 +203,13 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
      * @param fileURI the file or directory to be scanned
      */
     protected void scanFileOrDirectory(final PollTableEntry entry, String fileURI) {
+        String serviceName = entry.getServiceName();
         if (log.isDebugEnabled()) {
             log.debug("Polling: " + VFSUtils.maskURLPassword(fileURI));
         }
         if (entry.isClusterAware()) {
-            boolean leader = true;
-            ClusteringAgent agent = getConfigurationContext().getAxisConfiguration().getClusteringAgent();
-            log.warn("Although proxy is cluster aware, clustering config are not present, hence running the" +
-                         " the polling task in this node");
-            if (!leader) {
-                if (log.isDebugEnabled()) {
-                    log.debug("This Member is not the leader");
-                }
-                entry.setLastPollState(PollTableEntry.NONE);
-                long now = System.currentTimeMillis();
-                entry.setLastPollTime(now);
-                entry.setNextPollTime(now + entry.getPollInterval());
-                onPollCompletion(entry);
-                return;
-            }
             if (log.isDebugEnabled()) {
-                log.debug("This Member is the leader");
+                log.debug("Cluster aware flag is enabled.");
             }
         }
         FileSystemOptions fso = null;
@@ -225,7 +217,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         try {
             fso = VFSUtils.attachFileSystemOptions(entry.getVfsSchemeProperties(), getFsManager());
         } catch (Exception e) {
-            log.error("Error while attaching VFS file system properties. " + e.getMessage());
+            VFSTransportErrorHandler.logException(log, LogType.ERROR,
+                    "Error while attaching VFS file system properties. ", serviceName, e);
         }
 
         FileObject fileObject = null;
@@ -249,6 +242,10 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 retryCount++;
                 fileObject = getFsManager().resolveFile(fileURI, fso);
 
+                // Get if the file location is volume mounted
+                Map<String,String> queryParams = UriParser.extractQueryParams(fileURI);
+                fileObject.setIsMounted(Boolean.parseBoolean(queryParams.get(VFSConstants.IS_MOUNTED)));
+
                 if (fileObject == null) {
                     log.error("fileObject is null");
                     throw new FileSystemException("fileObject is null");
@@ -264,13 +261,15 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             VFSUtils.maskURLPassword(fileURI), e, entry);
                     return;
                 } else {
-                    log.warn("Failed to resolve the file URI: " +
+                    String message = "Failed to resolve the file URI: " +
                             VFSUtils.maskURLPassword(fileURI) + ", in attempt " + retryCount +
                             ", " + e.getMessage() + " Retrying in " + reconnectionTimeout +
-                            " milliseconds.");
+                            " milliseconds.";
+                    VFSTransportErrorHandler.logException(log, LogType.WARN, message, serviceName);
                 }
             } catch (Exception e) {
-                log.warn("Runtime error may have occurred. ", e);
+                VFSTransportErrorHandler.logException(log, LogType.WARN, "Runtime error may have occurred. ",
+                        serviceName, e);
                 closeCachedFileSystem(fileURI, fso);
             }
 
@@ -279,7 +278,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     Thread.sleep(reconnectionTimeout);
                 } catch (InterruptedException e2) {
                     Thread.currentThread().interrupt();
-                    log.error("Thread was interrupted while waiting to reconnect.", e2);
+                    VFSTransportErrorHandler.logException(log, LogType.ERROR,
+                            "Thread was interrupted while waiting to reconnect.", serviceName, e2);
                 }
             }
         }
@@ -292,10 +292,13 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 FileObject[] children = null;
                 try {
                     children = fileObject.getChildren();
+                    for (FileObject child : children) {
+                        child.setIsMounted(fileObject.getIsMounted());
+                    }
                 } catch (FileNotFolderException ignored) {
                 } catch (FileSystemException ex) {
                     closeFileSystem(fileObject);
-                    log.error(ex.getMessage(), ex);
+                    VFSTransportErrorHandler.logException(log, LogType.ERROR, ex.getMessage(), serviceName, ex);
                 }
 
                 // if this is a file that would translate to a single message
@@ -308,73 +311,81 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     if (fileObject.getType() == FileType.FILE &&
                             !isFailedRecord) {
                         boolean runPostProcess = true;
-                        if (!entry.isFileLockingEnabled() || (entry.isFileLockingEnabled() &&
-                                acquireLock(getFsManager(), fileObject, entry, fso, true))) {
-                            try {
-                                if (fileObject.getType() == FileType.FILE) {
-                                    boolean status = processFile(entry, fileObject);
-                                    if (status) {
-                                        entry.setLastPollState(PollTableEntry.SUCCSESSFUL);
+                        // Cancel the process if the file is still uploading (not complete)
+                        if (!isFileStillUploading(entry, fileObject)) {
+                            if (!entry.isFileLockingEnabled() || (entry.isFileLockingEnabled() &&
+                                    acquireLock(getFsManager(), fileObject, entry, fso, true))) {
+                                try {
+                                    if (fileObject.getType() == FileType.FILE) {
+                                        boolean status = processFile(entry, fileObject);
+                                        if (status) {
+                                            entry.setLastPollState(PollTableEntry.SUCCSESSFUL);
+                                        } else {
+                                            entry.setLastPollState(PollTableEntry.FAILED);
+                                        }
+                                        metrics.incrementMessagesReceived();
                                     } else {
-                                        entry.setLastPollState(PollTableEntry.FAILED);
+                                        runPostProcess = false;
                                     }
-                                    metrics.incrementMessagesReceived();
-                                } else {
-                                    runPostProcess = false;
+
+                                } catch (AxisFault e) {
+                                    if (e.getCause() instanceof FileNotFoundException) {
+                                        String message = "Error processing File URI : " +
+                                                VFSUtils.maskURLPassword(fileObject.getName().toString()) +
+                                                ". This can be due to file moved from another process.";
+                                        VFSTransportErrorHandler.logException(log, LogType.WARN, message, serviceName);
+                                        runPostProcess = false;
+                                    } else {
+                                        String message = "Error processing File URI : " +
+                                                VFSUtils.maskURLPassword(fileObject.getName().getURI());
+                                        VFSTransportErrorHandler.logException(log, LogType.ERROR, message, serviceName, e);
+                                        entry.setLastPollState(PollTableEntry.FAILED);
+                                        metrics.incrementFaultsReceiving();
+                                    }
+                                    closeFileSystem(fileObject);
                                 }
 
-                            } catch (AxisFault e) {
-                                if (e.getCause() instanceof FileNotFoundException) {
-                                    log.warn("Error processing File URI : " +
-                                             VFSUtils.maskURLPassword(fileObject.getName().toString()) +
-                                             ". This can be due to file moved from another process.");
-                                    runPostProcess = false;
-                                } else {
-                                    logException("Error processing File URI : " +
-                                                 VFSUtils.maskURLPassword(fileObject.getName().getURI()), e);
-                                    entry.setLastPollState(PollTableEntry.FAILED);
-                                    metrics.incrementFaultsReceiving();
+                                if (runPostProcess) {
+                                    try {
+                                        moveOrDeleteAfterProcessing(entry, fileObject, fso);
+                                    } catch (AxisFault axisFault) {
+                                        String message = "File object '" +
+                                            VFSUtils.maskURLPassword(fileObject.getURL().toString()) +
+                                            "' " + "cloud not be moved";
+                                        VFSTransportErrorHandler.logException(log, LogType.ERROR, message, serviceName,
+                                                axisFault);
+                                        entry.setLastPollState(PollTableEntry.FAILED);
+                                        String timeStamp = VFSUtils.getSystemTime(entry.getFailedRecordTimestampFormat());
+                                        addFailedRecord(entry, fileObject, timeStamp);
+                                    }
                                 }
-                                closeFileSystem(fileObject);
-                            }
-                            if (runPostProcess) {
-                                try {
-                                    moveOrDeleteAfterProcessing(entry, fileObject, fso);
-                                } catch (AxisFault axisFault) {
-                                    logException(
-                                            "File object '" + VFSUtils.maskURLPassword(fileObject.getURL().toString()) +
-                                            "' " + "cloud not be moved", axisFault);
-                                    entry.setLastPollState(PollTableEntry.FAILED);
-                                    String timeStamp = VFSUtils.getSystemTime(entry.getFailedRecordTimestampFormat());
-                                    addFailedRecord(entry, fileObject, timeStamp);
+                                if (entry.isFileLockingEnabled()) {
+                                    VFSUtils.releaseLock(getFsManager(), fileObject, fso);
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("Removed the lock file '"
+                                                + VFSUtils.maskURLPassword(fileObject.toString())
+                                                + ".lock' of the file '"
+                                                + VFSUtils.maskURLPassword(fileObject.toString()));
+                                    }
                                 }
-                            }
-                            if (entry.isFileLockingEnabled()) {
-                                VFSUtils.releaseLock(getFsManager(), fileObject, fso);
+                            } else if (log.isDebugEnabled()) {
+                                log.debug("Couldn't get the lock for processing the file : "
+                                        + VFSUtils.maskURLPassword(fileObject.getName().getURI()));
+                            } else if (isFailedRecord) {
+                                if (entry.isFileLockingEnabled()) {
+                                    VFSUtils.releaseLock(getFsManager(), fileObject, fso);
+                                }
+                                // schedule a cleanup task if the file is there
+                                if (getFsManager().resolveFile(fileObject.getURL().toString(), fso) != null &&
+                                        removeTaskState == STATE_STOPPED && entry.getMoveAfterMoveFailure() != null) {
+                                    workerPool.execute(new FileRemoveTask(entry, fileObject, fso));
+                                }
                                 if (log.isDebugEnabled()) {
-                                    log.debug("Removed the lock file '"
-                                    		+ VFSUtils.maskURLPassword(fileObject.toString())
-                                    		+ ".lock' of the file '"
-                                    		+ VFSUtils.maskURLPassword(fileObject.toString()));
+                                    log.debug("File '"
+                                            + VFSUtils.maskURLPassword(fileObject.getURL().toString())
+                                            + "' has been marked as a failed"
+                                            + " record, it will not process");
                                 }
-                            }
-                        } else if (log.isDebugEnabled()) {
-                            log.debug("Couldn't get the lock for processing the file : "
-                                    + VFSUtils.maskURLPassword(fileObject.getName().getURI()));
-                        } else if (isFailedRecord) {
-                            if (entry.isFileLockingEnabled()) {
-                                VFSUtils.releaseLock(getFsManager(), fileObject, fso);
-                            }
-                            // schedule a cleanup task if the file is there
-                            if (getFsManager().resolveFile(fileObject.getURL().toString(), fso) != null &&
-                                    removeTaskState == STATE_STOPPED && entry.getMoveAfterMoveFailure() != null) {
-                                workerPool.execute(new FileRemoveTask(entry, fileObject, fso));
-                            }
-                            if (log.isDebugEnabled()) {
-                                log.debug("File '"
-                                		+ VFSUtils.maskURLPassword(fileObject.getURL().toString())
-                                		+ "' has been marked as a failed"
-                                		+ " record, it will not process");
                             }
                         }
                     }
@@ -461,6 +472,22 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             isFailedRecord = isFailedRecord(child, entry);
                         }
 
+                        if(entry.getMinimumAge() != null){
+                            long age = child.getContent().getLastModifiedTime();
+                            long time = System.currentTimeMillis();
+                            if((time-age)/1000 <= entry.getMinimumAge()){
+                                continue;
+                            }
+                        }
+                        
+                        if(entry.getMaximumAge() != null){
+                            long age = child.getContent().getLastModifiedTime();
+                            long time = System.currentTimeMillis();
+                            if((time-age)/1000 >= entry.getMaximumAge()){
+                                continue;
+                            }
+                        }
+                        
                         if(entry.getFileNamePattern()!=null &&
                                 child.getName().getBaseName().matches(entry.getFileNamePattern())){
 
@@ -482,6 +509,14 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             }
 
                             //child's file name matches the file name pattern
+
+                            //check if file is still uploading (only used when checkSizeInterval is set)
+                            if (isFileStillUploading(entry, child)) {
+                                //continiue with next file this one is still uploading
+                                log.debug("Skipped file " + VFSUtils.maskURLPassword(child.getName().getBaseName()) + " is still uploading.");
+                                continue;
+                            }
+
                             //now we try to get the lock and process
                             if (log.isDebugEnabled()) {
                                 log.debug("Matching file : " + child.getName().getBaseName());
@@ -690,6 +725,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
     protected void moveOrDeleteAfterProcessing(final PollTableEntry entry, FileObject fileObject, FileSystemOptions fso)
             throws AxisFault {
 
+        String serviceName = entry.getServiceName();
         String moveToDirectoryURI = null;
         try {
             switch (entry.getLastPollState()) {
@@ -739,7 +775,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     destinationFSO = VFSUtils.attachFileSystemOptions(
                             VFSUtils.parseSchemeFileOptions(moveToDirectoryURI, entry.getParams()), getFsManager());
                 } catch (Exception e) {
-                    log.warn("Unable to set options for processed file location ", e);
+                    VFSTransportErrorHandler.logException(log, LogType.WARN,
+                            "Unable to set options for processed file location ", serviceName, e);
                 }
                 FileObject moveToDirectory = getFsManager().resolveFile(moveToDirectoryURI, destinationFSO);
                 String prefix;
@@ -755,6 +792,11 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 }                
                 FileObject dest = moveToDirectory.resolveFile(
                         prefix + fileObject.getName().getBaseName());
+
+                // Get if the destination location is volume mounted
+                Map<String,String> queryParams = UriParser.extractQueryParams(moveToDirectoryURI);
+                dest.setIsMounted(Boolean.parseBoolean(queryParams.get(VFSConstants.IS_MOUNTED)));
+
                 if (log.isDebugEnabled()) {
                     log.debug("Moving to file :" + VFSUtils.maskURLPassword(dest.getName().getURI()));
                 }
@@ -765,8 +807,9 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     fileObject.moveTo(dest);
                 } catch (FileSystemException e) {
                     closeFileSystem(fileObject);
-                    handleException("Error moving file : " + VFSUtils.maskURLPassword(fileObject.toString()) + " to " +
-                                    VFSUtils.maskURLPassword(moveToDirectoryURI), e);
+                    String message = "Error moving file : " + VFSUtils.maskURLPassword(fileObject.toString()) + " to " +
+                            VFSUtils.maskURLPassword(moveToDirectoryURI);
+                    VFSTransportErrorHandler.handleException(log, message, serviceName, e);
                 }finally{
 	                try {
 	                	fileObject.close();
@@ -784,13 +827,13 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     if (!fileObject.delete()) {
                         String msg = "Cannot delete file : "
                         		+ VFSUtils.maskURLPassword(fileObject.toString());
-                        log.error(msg);
-                        throw new AxisFault(msg);
+                        VFSTransportErrorHandler.handleException(log, msg, serviceName);
                     }
                 } catch (FileSystemException e) {
                     closeFileSystem(fileObject);
-                    log.error("Error deleting file : "
-                    		+ VFSUtils.maskURLPassword(fileObject.toString()), e);
+                    String msg = "Error deleting file : "
+                            + VFSUtils.maskURLPassword(fileObject.toString());
+                    VFSTransportErrorHandler.handleException(log, msg, serviceName, e);
                 }
             }
 
@@ -1003,6 +1046,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
     protected synchronized void addFailedRecord(PollTableEntry pollTableEntry,
                                               FileObject failedObject,
                                               String timeString) {
+        String serviceName = pollTableEntry.getServiceName();
         try {
             String record = failedObject.getName().getBaseName() + VFSConstants.FAILED_RECORD_DELIMITER
                     + timeString;
@@ -1025,7 +1069,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 FileUtils.writeLines(failedRecordFile, content);
             }
         } catch (IOException e) {
-            log.fatal("Failure while writing the failed records!", e);
+            VFSTransportErrorHandler.logException(log, LogType.FATAL,
+                    "Failure while writing the failed records!", serviceName, e);
         }
     }
 
@@ -1088,6 +1133,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             boolean isDeletionSucceed = false;
             int nextRetryDuration = pollTableEntry.getNextRetryDuration();
             int count = 0;
+            String serviceName = pollTableEntry.getServiceName();
             while (!isDeletionSucceed) {
                 try {
                     reTryFailedMove(pollTableEntry, failedFileObject, fileSystemOptions);
@@ -1096,13 +1142,15 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 } catch (AxisFault axisFault) {
                     removeTaskState = STATE_RUNNING;
                     try {
-                        log.error("Remove attempt '" + (count++) + "' failed for the file '"
-                        		+ VFSUtils.maskURLPassword(failedFileObject.getURL().toString())
-                        		+ "', next re-try will be " +"after '"
-                        		+ nextRetryDuration + "' milliseconds");
+                        String message = "Remove attempt '" + (count++) + "' failed for the file '"
+                                + VFSUtils.maskURLPassword(failedFileObject.getURL().toString())
+                                + "', next re-try will be " +"after '"
+                                + nextRetryDuration + "' milliseconds";
+                        VFSTransportErrorHandler.logException(log, LogType.ERROR, message, serviceName);
                     } catch (FileSystemException e) {
-                        log.error("Error while retrying the file url of the file object '" +
-                        		VFSUtils.maskURLPassword(failedFileObject.toString()) + "'");
+                        String message = "Error while retrying the file url of the file object '" +
+                                VFSUtils.maskURLPassword(failedFileObject.toString()) + "'";
+                        VFSTransportErrorHandler.logException(log, LogType.ERROR, message, serviceName);
                     }
                     try {
                         Thread.sleep(nextRetryDuration);
@@ -1115,6 +1163,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 
         private synchronized void reTryFailedMove(PollTableEntry entry, FileObject fileObject, FileSystemOptions fso)
                 throws AxisFault {
+            String serviceName = entry.getServiceName();
             try {
 
                 String moveToDirectoryURI = entry.getMoveAfterMoveFailure();
@@ -1138,14 +1187,16 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     fileObject.moveTo(dest);  // FIXME - when an exception occurs here it causes the in folder to vanish
                 } catch (FileSystemException e) {
                     closeFileSystem(fileObject);
-                    handleException("Error moving the failed file : " 
-                    		+ VFSUtils.maskURLPassword(fileObject.toString()) + " to " + moveToDirectoryURI, e);
+                    String message = "Error moving the failed file : "
+                            + VFSUtils.maskURLPassword(fileObject.toString()) + " to " + moveToDirectoryURI;
+                    VFSTransportErrorHandler.handleException(log, message, serviceName, e);
                 }
             } catch (FileSystemException e) {
-                handleException("Cloud not move the failed file object '" 
-                		+ VFSUtils.maskURLPassword(fileObject.toString()) + "'", e);
+                String message = "Cloud not move the failed file object '"
+                        + VFSUtils.maskURLPassword(fileObject.toString()) + "'";
+                VFSTransportErrorHandler.handleException(log, message, serviceName, e);
             } catch (IOException e) {
-                handleException("Cloud not create the folder", e);
+                VFSTransportErrorHandler.handleException(log, "Cloud not create the folder", serviceName, e);
             }
         }
     }
@@ -1174,7 +1225,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 lDiff = o1.getContent().getLastModifiedTime()
                         - o2.getContent().getLastModifiedTime();
             } catch (FileSystemException e) {
-                log.warn("Unable to compare lastmodified timestamp of the two files.", e);
+                String message = "Unable to compare lastmodified timestamp of the two files.";
+                VFSTransportErrorHandler.logException(log, LogType.WARN, message, e);
             }
             return lDiff.intValue();
         }
@@ -1186,7 +1238,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             try {
                 lDiff = o1.getContent().getSize() - o2.getContent().getSize();
             } catch (FileSystemException e) {
-                log.warn("Unable to compare size of the two files.", e);
+                VFSTransportErrorHandler.logException(log, LogType.WARN, "Unable to compare size of the two files.", e);
             }
             return lDiff.intValue();
         }
@@ -1205,7 +1257,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 lDiff = o2.getContent().getLastModifiedTime()
                         - o1.getContent().getLastModifiedTime();
             } catch (FileSystemException e) {
-                log.warn("Unable to compare lastmodified timestamp of the two files.", e);
+                VFSTransportErrorHandler.logException(log, LogType.WARN,
+                        "Unable to compare lastmodified timestamp of the two files.", e);
             }
             return lDiff.intValue();
         }
@@ -1217,7 +1270,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             try {
                 lDiff = o2.getContent().getSize() - o1.getContent().getSize();
             } catch (FileSystemException e) {
-                log.warn("Unable to compare size of the two files.", e);
+                VFSTransportErrorHandler.logException(log, LogType.WARN, "Unable to compare size of the two files.", e);
             }
             return lDiff.intValue();
         }
@@ -1291,5 +1344,148 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             }
         	return "";
         }
-    } 
+    }
+
+    /**
+     * Verifies if the given md5 is the md5 of an Empty File
+     * @param entry current poll
+     * @param md5 of the given file
+     * @return true if configuration is set and file is empty
+     */
+    private boolean isFileEmpty(PollTableEntry entry, String md5) {
+        if (entry.isCheckSizeIgnoreEmpty()) {
+            return EMPTY_MD5.equals(md5);
+        }
+        return false;
+    }
+    
+    /**
+     * This Function calculates the MD5 Hash of the FileObject, waits
+     * checkSizeInterval [ms] time, and calculates the MD5 Hash again. If they
+     * are the same, the file is finished uploading and can be consumed.
+     *
+     * @param entry current poll
+     * @param child the fileobject currently read
+     * @return if file is empty or the filesize is changing
+     */
+    private boolean isFileStillChangingSize(PollTableEntry entry, FileObject child, String md5) {
+        //check if the lock mechanism is activated
+        if (!entry.hasCheckSizeInterval()) {
+            //not checking the file size changing
+            return false;
+        }
+        try {
+            //get interval time
+            String checkSizeIntervalString = entry.getCheckSizeInterval();
+            Long checkSizeInterval = Long.valueOf(checkSizeIntervalString);
+
+            //wait interval time 
+            log.debug("Check if file is still uploading. Now sleep "+checkSizeInterval+" ms");
+            Thread.sleep(checkSizeInterval);
+            //get second MD5
+            //clear cache and refresh
+            fsManager.getFilesCache().close();
+            child.refresh();
+            String md5AfterSleep = getMD5Checksum(child);
+            if (!md5.equals(md5AfterSleep)) {
+                //file is still uploading
+                log.debug("File ist still uploading. md5 Hashcode Before="+md5 + " After="+md5AfterSleep);
+                return true;
+            }
+        } catch (Exception e) {
+            try {
+                if (ExceptionUtils.getStackTrace(e).contains("The file is being used by another process")) {
+                    return true;
+                }
+            } catch (Exception e2) {
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    private String getMD5Checksum(FileObject child) throws Exception {
+        InputStream inputStream = null;
+        try {
+            //get first MD5
+            inputStream = child.getContent().getInputStream();
+            String md5 = getMD5Checksum(inputStream);
+            return md5;
+        } finally {
+            if(inputStream != null){
+                try {
+                    inputStream.close();
+                } catch (Exception ex) {
+                }
+            }
+        }
+    }
+    
+    /**
+     * Return the MD5Checksum of a InputStream as String
+     *
+     * @param fis inputStream of the current file
+     * @return MD5 Checksum
+     * @throws Exception
+     */
+    private String getMD5Checksum(InputStream fis) throws Exception {
+        byte[] b = createChecksum(fis);
+        String result = "";
+        for (int i = 0; i < b.length; i++) {
+            result += Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1);
+        }
+        return result;
+    }
+
+    /**
+     * Used by getMD5Checksum to get the MD5 as byte array
+     *
+     * @param fis inputStream of the current file
+     * @return MD5 Checksum
+     * @throws Exception
+     */
+    private byte[] createChecksum(InputStream fis) throws Exception {
+        byte[] buffer = new byte[1024];
+        MessageDigest complete = MessageDigest.getInstance("MD5");
+        int numRead;
+        do {
+            numRead = fis.read(buffer);
+            if (numRead > 0) {
+                complete.update(buffer, 0, numRead);
+            }
+        } while (numRead != -1);
+        fis.close();
+        return complete.digest();
+    }
+
+    private boolean isFileStillUploading(PollTableEntry entry, FileObject child) {
+        if(!entry.isCheckSizeIgnoreEmpty() && !entry.hasCheckSizeInterval()) {
+            //CheckEmpty and CheckSize are not active - return false (file is not uploading)
+            return false;
+        }
+        InputStream inputStream = null;
+        try {
+            //get first MD5
+            log.debug("Create MD5 Checksum of File: "+VFSUtils.maskURLPassword(child.getName().toString()));
+            inputStream = child.getContent().getInputStream();
+            String md5 = getMD5Checksum(inputStream);
+            return isFileEmpty(entry, md5) || isFileStillChangingSize(entry, child, md5);
+        } catch (Exception e) {
+            try {
+                if (ExceptionUtils.getStackTrace(e).contains("The file is being used by another process")) {
+                    return true;
+                }
+            } catch (Exception e2) {
+            }
+            //return true when any exception occurs
+            return true;
+        } finally {
+            if(inputStream != null){
+                try {
+                    inputStream.close();
+                } catch (Exception ex) {
+                }
+            }
+        }
+    }
 }
