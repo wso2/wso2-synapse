@@ -77,7 +77,7 @@ public class ServerSSLSetupHandler implements SSLSetupHandler {
 
         if (verificationManager != null) {
             try {
-                verificationManager.verifyCertificateValidity(sslsession.getPeerCertificateChain());
+                verificationManager.verifyCertificateValidity(sslsession.getPeerCertificates());
             } catch (CertificateVerificationException e) {
                 SocketAddress remoteAddress = iosession.getRemoteAddress();
                 String address;
