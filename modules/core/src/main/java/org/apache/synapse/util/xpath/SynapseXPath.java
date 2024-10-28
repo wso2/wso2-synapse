@@ -176,19 +176,20 @@ public class SynapseXPath extends SynapsePath {
             contentAware = false;
         }
         
-	 String propertyScope = getPropertyScope(xpathString);
-	 // skip message building for scope registry, system and transport scopes
-	 // for get-property() method
-	 if (XMLConfigConstants.SCOPE_REGISTRY.equals(propertyScope)
-			|| XMLConfigConstants.SCOPE_SYSTEM.equals(propertyScope)
-             || XMLConfigConstants.SCOPE_TRANSPORT.equals(propertyScope)
-             || XMLConfigConstants.SCOPE_ENVIRONMENT.equals(propertyScope)
-             || XMLConfigConstants.SCOPE_FILE.equals(propertyScope)) {
-         contentAware = false;
-         return;
-	 }
+         String propertyScope = getPropertyScope(xpathString);
+         // skip message building for scope registry, system and transport scopes
+         // for get-property() method
+         if (XMLConfigConstants.SCOPE_REGISTRY.equals(propertyScope)
+                || XMLConfigConstants.SCOPE_SYSTEM.equals(propertyScope)
+                 || XMLConfigConstants.SCOPE_TRANSPORT.equals(propertyScope)
+                 || XMLConfigConstants.SCOPE_ENVIRONMENT.equals(propertyScope)
+                 || XMLConfigConstants.SCOPE_FILE.equals(propertyScope)) {
+             contentAware = false;
+             return;
+         }
 
-        if(xpathString.contains("$trp") || xpathString.contains("$ctx") || xpathString.contains("$axis2")){
+        if(xpathString.contains("$trp") || xpathString.contains("$ctx") || xpathString.contains("$axis2") ||
+                xpathString.contains("$config")) {
             contentAware = false;
             return;
         }
@@ -276,7 +277,7 @@ public class SynapseXPath extends SynapsePath {
             contentAware = false;
         }
 
-        if (xpathExpr.contains("$trp") || xpathExpr.contains("$ctx") || xpathExpr.contains("$axis2")) {
+        if (xpathExpr.contains("$trp") || xpathExpr.contains("$ctx") || xpathExpr.contains("$axis2") || xpathExpr.contains("$config")) {
             contentAware = false;
         }
     }

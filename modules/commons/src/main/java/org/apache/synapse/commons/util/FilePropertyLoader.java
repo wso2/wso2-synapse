@@ -22,9 +22,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.SynapseCommonsException;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -41,6 +42,7 @@ public class FilePropertyLoader {
     private static final String CONF_LOCATION = "conf.location";
     private static final String FILE_PROPERTY_PATH = "properties.file.path";
     private static final String DEFAULT_PROPERTY_FILE = "file.properties";
+    private static final String CONFIG_PROPERTY_FILE = "config.properties";
     private static final String FILE_SYNC_INTERVAL = "file.properties.sync.interval";
     private static final String FILE_CANNOT_BE_FOUND_ERROR = "File cannot found in ";
     private String propertiesFilePath;
@@ -101,7 +103,7 @@ public class FilePropertyLoader {
         File file = new File(propertiesFilePath);
         if (file.exists()) {
             if (file.lastModified() > lastModifiedTimestamp) {
-                try (InputStream in = new FileInputStream(propertiesFilePath)) {
+                try (InputStream in = Files.newInputStream(Paths.get(propertiesFilePath))) {
                     Properties rawProps = new Properties();
                     Map<String, String> tempPropertyMap = new HashMap<>();
                     rawProps.load(in);
@@ -131,6 +133,8 @@ public class FilePropertyLoader {
         }
         if (("default").equals(filePath)) {
             propertiesFilePath = System.getProperty(CONF_LOCATION) + File.separator + DEFAULT_PROPERTY_FILE;
+        } else if (("configurable").equals(filePath)) {
+            propertiesFilePath = System.getProperty(CONF_LOCATION) + File.separator + CONFIG_PROPERTY_FILE;
         } else {
             propertiesFilePath = filePath;
         }
