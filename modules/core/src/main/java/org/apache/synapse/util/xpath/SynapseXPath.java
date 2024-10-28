@@ -277,7 +277,8 @@ public class SynapseXPath extends SynapsePath {
             contentAware = false;
         }
 
-        if (xpathExpr.contains("$trp") || xpathExpr.contains("$ctx") || xpathExpr.contains("$axis2") || xpathExpr.contains("$config")) {
+        if (xpathExpr.contains("$trp") || xpathExpr.contains("$ctx") || xpathExpr.contains("$axis2") ||
+                xpathExpr.contains("$config")) {
             contentAware = false;
         }
     }
