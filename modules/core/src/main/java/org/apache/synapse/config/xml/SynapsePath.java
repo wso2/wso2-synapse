@@ -27,6 +27,7 @@ public abstract class SynapsePath extends AXIOMXPath {
 
 	public static final String X_PATH = "X_PATH";
 	public static final String JSON_PATH = "JSON_PATH";
+	public static final String SIEL_PATH = "SIEL_PATH";
 	private String pathType = null;
 
 	public DOMSynapseXPathNamespaceMap domNamespaceMap = new DOMSynapseXPathNamespaceMap();
@@ -60,9 +61,11 @@ public abstract class SynapsePath extends AXIOMXPath {
 
 	private String inferPathType(String expression) {
 		if (expression.startsWith("json-eval(")) {
-			return X_PATH;
-		} else {
 			return JSON_PATH;
+		} else if(expression.startsWith("#[") && expression.endsWith("]")) {
+			return SIEL_PATH;
+		} else {
+			return X_PATH;
 		}
 	}
 
@@ -102,6 +105,13 @@ public abstract class SynapsePath extends AXIOMXPath {
     }
 
 	public abstract String stringValueOf(MessageContext synCtx);
+
+	/**
+	 * New method to get the object value of the expression in places where we can handle the Object result.
+	 * @param synCtx MessageContext
+	 * @return Object - can be String, Integer, Double, Boolean, OMNode, JSONElement or null.
+	 */
+	public abstract Object objectValueOf(MessageContext synCtx);
 
 	public void handleException(String msg, Throwable e) {
 		log.error(msg, e);

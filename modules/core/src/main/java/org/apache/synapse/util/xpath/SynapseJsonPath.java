@@ -195,6 +195,11 @@ public class SynapseJsonPath extends SynapsePath {
         return "";
     }
 
+    @Override
+    public Object objectValueOf(MessageContext synCtx) {
+        return null;
+    }
+
     public String stringValueOf(final InputStream jsonStream) {
         if (jsonStream == null) {
             return "";
