@@ -20,19 +20,19 @@ package org.apache.synapse.commons.property;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Property Loader is the class used to store the properties in the map
+ * Property Holder is the class used to store the properties in the map
  */
-public class PropertyLoader {
+public class PropertyHolder {
 
     private ConcurrentHashMap<String, String> properties;
 
     private static class PropertyLoaderHelper {
-        private static final PropertyLoader INSTANCE = new PropertyLoader();
+        private static final PropertyHolder INSTANCE = new PropertyHolder();
     }
 
-    private PropertyLoader() {}
+    private PropertyHolder() {}
 
-    public static PropertyLoader getInstance() {
+    public static PropertyHolder getInstance() {
         return PropertyLoaderHelper.INSTANCE;
     }
 

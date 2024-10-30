@@ -19,7 +19,7 @@ package org.apache.synapse.commons.resolvers;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.commons.property.PropertyLoader;
+import org.apache.synapse.commons.property.PropertyHolder;
 
 /**
  * Config Resolver can be used to resolve configurable property variables in the synapse config.
@@ -37,7 +37,7 @@ public class ConfigResolver implements Resolver {
 
     @Override
     public String resolve() {
-        String propertyValue = PropertyLoader.getInstance().getPropertyValue(this.input);
+        String propertyValue = PropertyHolder.getInstance().getPropertyValue(this.input);
         if (propertyValue == null) {
             throw new ResolverException("Parameter key: " + input + " could not be found");
         }
