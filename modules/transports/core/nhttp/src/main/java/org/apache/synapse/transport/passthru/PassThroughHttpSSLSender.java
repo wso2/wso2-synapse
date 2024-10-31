@@ -21,18 +21,21 @@ import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.ParameterInclude;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.synapse.transport.certificatevalidation.cache.CertCache;
+import org.apache.synapse.transport.dynamicconfigurations.IKeyStoreLoader;
+import org.apache.synapse.transport.dynamicconfigurations.KeyStoreReloader;
 import org.apache.synapse.transport.dynamicconfigurations.SSLProfileLoader;
 import org.apache.synapse.transport.dynamicconfigurations.SenderProfileReloader;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.nhttp.config.ClientConnFactoryBuilder;
 import org.apache.synapse.transport.nhttp.config.TrustStoreHolder;
 
-public class PassThroughHttpSSLSender extends PassThroughHttpSender implements SSLProfileLoader {
+public class PassThroughHttpSSLSender extends PassThroughHttpSender implements SSLProfileLoader, IKeyStoreLoader {
 
     @Override
     public void init(ConfigurationContext configurationContext,
                      TransportOutDescription transportOutDescription) throws AxisFault {
         super.init(configurationContext, transportOutDescription);
+        new KeyStoreReloader(this, transportOutDescription);
         new SenderProfileReloader(this, transportOutDescription);
     }
 
@@ -60,4 +63,10 @@ public class PassThroughHttpSSLSender extends PassThroughHttpSender implements S
         reloadDynamicSSLConfig((TransportOutDescription) transport);
     }
 
+    @Override
+    public void loadKeyStore(ParameterInclude transport) throws AxisFault {
+        CertCache.resetCache();
+        TrustStoreHolder.resetInstance();
+        reloadSSL((TransportOutDescription) transport);
+    }
 }

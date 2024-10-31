@@ -722,6 +722,18 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         }
     }
 
+    public void reloadSSL(TransportOutDescription transport) throws AxisFault {
+        log.info("PassThroughHttpSender SSL Config..");
+        ClientConnFactoryBuilder connFactoryBuilder =
+                initConnFactoryBuilder(transport, this.configurationContext).parseSSL();
+        connFactory = connFactoryBuilder.createConnFactory(targetConfiguration.getHttpParams());
+
+        handler.setConnFactory(connFactory);
+        ioEventDispatch.setConnFactory(connFactory);
+
+        log.info("Pass-through " + namePrefix + " Sender updated with SSL Configuration Updates ...");
+    }
+
     /**
      * Set content type headers along with the charactor encoding if content type header is not preserved
      * @param msgContext    message context
