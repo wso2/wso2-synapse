@@ -625,4 +625,7 @@ public final class SynapseConstants {
     public static final String JAEGER_SPAN_ID = "jaeger_span_id";
 
     public static final String ANALYTICS_METADATA = "ANALYTICS_METADATA";
+
+    public static final String SCATTER_MESSAGES = "SCATTER_MESSAGES";
+    public static final String CONTINUE_FLOW_TRIGGERED_FROM_MEDIATOR_WORKER = "CONTINUE_FLOW_TRIGGERED_FROM_MEDIATOR_WORKER";
 }
