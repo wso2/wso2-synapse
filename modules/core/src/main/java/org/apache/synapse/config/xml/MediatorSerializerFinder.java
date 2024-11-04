@@ -77,7 +77,8 @@ public class MediatorSerializerFinder {
             ForEachMediatorSerializer.class,
             JSONTransformMediatorSerializer.class,
             NTLMMediatorSerializer.class,
-            VariableMediatorSerializer.class
+            VariableMediatorSerializer.class,
+            ScatterGatherMediatorSerializer.class
     };
 
     private final static MediatorSerializerFinder instance = new MediatorSerializerFinder();

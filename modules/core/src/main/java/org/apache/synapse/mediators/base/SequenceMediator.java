@@ -521,4 +521,16 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
             StatisticIdentityGenerator.reportingFlowContinuableEndEvent(sequenceId, ComponentType.SEQUENCE, holder);
         }
     }
+
+    /**
+     * Check whether the message is a scatter message or not
+     *
+     * @param synCtx MessageContext
+     * @return true if the message is a scatter message
+     */
+    private static boolean isScatterMessage(MessageContext synCtx) {
+
+        Boolean isSkipContinuationState = (Boolean) synCtx.getProperty(SynapseConstants.SCATTER_MESSAGES);
+        return isSkipContinuationState != null && isSkipContinuationState;
+    }
 }

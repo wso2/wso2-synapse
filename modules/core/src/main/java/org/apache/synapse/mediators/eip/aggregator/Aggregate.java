@@ -26,6 +26,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.eip.EIPConstants;
+import org.apache.synapse.mediators.v2.ScatterGather;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,7 @@ public class Aggregate extends TimerTask {
     private String correlation = null;
     /** The AggregateMediator that should be invoked on completion of the aggregation */
     private AggregateMediator aggregateMediator = null;
+    private ScatterGather scatterGatherMediator = null;
     private List<MessageContext> messages = new ArrayList<MessageContext>();
     private boolean locked = false;
     private boolean completed = false;
@@ -87,6 +89,24 @@ public class Aggregate extends TimerTask {
         this.aggregateMediator = mediator;
     }
 
+    public Aggregate(SynapseEnvironment synEnv, String corelation, long timeoutMillis, int min,
+                     int max, ScatterGather scatterGatherMediator, FaultHandler faultHandler) {
+
+        this.synEnv = synEnv;
+        this.correlation = corelation;
+        if (timeoutMillis > 0) {
+            expiryTimeMillis = System.currentTimeMillis() + timeoutMillis;
+        }
+        if (min > 0) {
+            minCount = min;
+        }
+        if (max > 0) {
+            maxCount = max;
+        }
+        this.faultHandler = faultHandler;
+        this.scatterGatherMediator = scatterGatherMediator;
+    }
+
     /**
      * Add a message to the interlan message list
      *
@@ -118,9 +138,15 @@ public class Aggregate extends TimerTask {
 
                 // get total messages for this group, from the first message we have collected
                 MessageContext mc = messages.get(0);
-                Object prop = mc.getProperty(EIPConstants.MESSAGE_SEQUENCE +
-                        (aggregateMediator.getId() != null ? "." + aggregateMediator.getId() : ""));
-            
+                Object prop;
+                if (aggregateMediator != null) {
+                    prop = mc.getProperty(EIPConstants.MESSAGE_SEQUENCE +
+                            (aggregateMediator.getId() != null ? "." + aggregateMediator.getId() : ""));
+                } else {
+                    prop = mc.getProperty(EIPConstants.MESSAGE_SEQUENCE +
+                            (scatterGatherMediator.getId() != null ? "." + scatterGatherMediator.getId() : ""));
+                }
+
                 if (prop != null && prop instanceof String) {
                     String[] msgSequence = prop.toString().split(
                             EIPConstants.MESSAGE_SEQUENCE_DELEMITER);
@@ -264,8 +290,13 @@ public class Aggregate extends TimerTask {
         public void run() {
             MessageContext messageContext = aggregate.getLastMessage();
             try {
-                log.warn("Aggregate mediator timeout occurred.");
-                aggregateMediator.completeAggregate(aggregate);
+                if (aggregateMediator != null) {
+                    log.warn("Aggregate mediator timeout occurred.");
+                    aggregateMediator.completeAggregate(aggregate);
+                } else {
+                    log.warn("Scatter Gather mediator timeout occurred.");
+                    scatterGatherMediator.completeAggregate(aggregate);
+                }
             } catch (Exception ex) {
                 if (faultHandler != null && messageContext != null) {
                     faultHandler.handleFault(messageContext, ex);
