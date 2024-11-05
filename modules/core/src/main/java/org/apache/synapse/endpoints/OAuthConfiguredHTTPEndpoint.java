@@ -64,10 +64,10 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
 
         } catch (AuthException e) {
             handleError(synCtx,
-                    "Could not generate access token for oauth configured http endpoint " + this.getName(), e);
+                    "Could not generate access token for oauth configured http endpoint " + this.getName() + ".", e);
         } catch (AxisFault axisFault) {
             handleError(synCtx,
-                    "Error cloning the message context for oauth configured http endpoint " + this.getName(),
+                    "Error cloning the message context for oauth configured http endpoint " + this.getName() + ".",
                     axisFault);
         }
     }
