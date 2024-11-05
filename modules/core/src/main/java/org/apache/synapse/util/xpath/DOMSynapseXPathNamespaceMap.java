@@ -17,7 +17,6 @@ public class DOMSynapseXPathNamespaceMap implements NamespaceContext {
         knownPrefixMap.add(SynapseXPathConstants.SOAP_BODY_VARIABLE);
         knownPrefixMap.add(SynapseXPathConstants.FUNC_CONTEXT_VARIABLE_PREFIX);
         knownPrefixMap.add(SynapseXPathConstants.MESSAGE_CONTEXT_VARIABLE_PREFIX);
-        knownPrefixMap.add(SynapseXPathConstants.CONFIG_VARIABLE_PREFIX);
         knownPrefixMap.add(SynapseXPathConstants.URL_VARIABLE_PREFIX);
         knownPrefixMap.add(SynapseXPathConstants.AXIS2_CONTEXT_VARIABLE_PREFIX);
         knownPrefixMap.add(SynapseXPathConstants.TRANSPORT_VARIABLE_PREFIX);
