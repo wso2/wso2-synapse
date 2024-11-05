@@ -133,8 +133,6 @@ public class FilePropertyLoader {
         }
         if (("default").equals(filePath)) {
             propertiesFilePath = System.getProperty(CONF_LOCATION) + File.separator + DEFAULT_PROPERTY_FILE;
-        } else if (("configurable").equals(filePath)) {
-            propertiesFilePath = System.getProperty(CONF_LOCATION) + File.separator + CONFIG_PROPERTY_FILE;
         } else {
             propertiesFilePath = filePath;
         }

@@ -22,7 +22,6 @@ package org.apache.synapse.util.xpath;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.description.AxisBindingOperation;
@@ -145,117 +144,114 @@ public class SynapseXPathVariableContext implements VariableContext {
             }
 
             if (prefix != null && !"".equals(prefix) && synCtx != null) {
-                switch (prefix) {
-                    case SynapseXPathConstants.CONFIG_VARIABLE_PREFIX:
-                        return ResolverFactory.getInstance().getResolver("$config:" + localName).resolve();
-                    case SynapseXPathConstants.MESSAGE_CONTEXT_VARIABLE_PREFIX:
-                        return synCtx.getProperty(localName);
 
-                    case SynapseXPathConstants.AXIS2_CONTEXT_VARIABLE_PREFIX:
+                if (SynapseXPathConstants.MESSAGE_CONTEXT_VARIABLE_PREFIX.equals(prefix)) {
 
-                        return ((Axis2MessageContext)
-                                synCtx).getAxis2MessageContext().getProperty(localName);
+                    return synCtx.getProperty(localName);
 
-                    case SynapseXPathConstants.FUNC_CONTEXT_VARIABLE_PREFIX:
-                        Stack<TemplateContext> functionStack = (Stack) synCtx.getProperty(SynapseConstants.SYNAPSE__FUNCTION__STACK);
-                        TemplateContext topCtxt = functionStack.peek();
-                        if (topCtxt != null) {
-                            Object result = topCtxt.getParameterValue(localName);
-                            if (result != null && result instanceof SynapseXPath && env != null) {
-                                SynapseXPath expression = (SynapseXPath) topCtxt.getParameterValue(localName);
-                                try {
-                                    return expression.evaluate(env);
-                                } catch (JaxenException e) {
-                                    return null;
-                                }
-                            } else {
-                                return result;
+                } else if (SynapseXPathConstants.AXIS2_CONTEXT_VARIABLE_PREFIX.equals(prefix)) {
+
+                    return ((Axis2MessageContext)
+                        synCtx).getAxis2MessageContext().getProperty(localName);
+
+                } else if (SynapseXPathConstants.FUNC_CONTEXT_VARIABLE_PREFIX.equals(prefix)) {
+                    Stack<TemplateContext> functionStack = (Stack) synCtx.getProperty(SynapseConstants.SYNAPSE__FUNCTION__STACK);
+                    TemplateContext topCtxt = functionStack.peek();
+                    if (topCtxt != null) {
+                        Object result = topCtxt.getParameterValue(localName);
+                        if (result != null && result instanceof SynapseXPath && env != null) {
+                            SynapseXPath expression = (SynapseXPath) topCtxt.getParameterValue(localName);
+                            try {
+                                return expression.evaluate(env);
+                            } catch (JaxenException e) {
+                                return null;
                             }
-                        }
-                        break;
-                    case SynapseXPathConstants.TRANSPORT_VARIABLE_PREFIX:
-
-                        org.apache.axis2.context.MessageContext axis2MessageContext =
-                                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-                        Object headers = axis2MessageContext.getProperty(
-                                org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-
-                        if (headers != null && headers instanceof Map) {
-                            Map headersMap = (Map) headers;
-                            return headersMap.get(localName);
                         } else {
-                            return null;
+                            return result;
                         }
-                    case SynapseXPathConstants.URL_VARIABLE_PREFIX:
+                    }
+                } else if (SynapseXPathConstants.TRANSPORT_VARIABLE_PREFIX.equals(prefix)) {
 
-                        EndpointReference toEPR = synCtx.getTo();
-                        if (toEPR != null) {
-                            String completeURL = toEPR.getAddress();
-                            AxisBindingOperation axisBindingOperation = (AxisBindingOperation)
-                                    ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(
-                                            Constants.AXIS_BINDING_OPERATION);
-                            String queryParameterSeparator = null;
-                            if (axisBindingOperation != null) {
-                                queryParameterSeparator = (String) axisBindingOperation.getProperty(
-                                        WSDL2Constants.ATTR_WHTTP_QUERY_PARAMETER_SEPARATOR);
-                            }
-                            if (queryParameterSeparator == null) {
-                                queryParameterSeparator = WSDL20DefaultValueHolder.
-                                        ATTR_WHTTP_QUERY_PARAMETER_SEPARATOR_DEFAULT;
-                            }
+                    org.apache.axis2.context.MessageContext axis2MessageContext =
+                        ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+                    Object headers = axis2MessageContext.getProperty(
+                        org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
 
-                            int i = completeURL.indexOf("?");
-                            if (i > -1) {
-                                String queryString = completeURL.substring(i + 1);
+                    if (headers != null && headers instanceof Map) {
+                        Map headersMap = (Map) headers;
+                        return headersMap.get(localName);
+                    } else {
+                        return null;
+                    }
+                } else if (SynapseXPathConstants.URL_VARIABLE_PREFIX.equals(prefix)) {
 
-                                if (queryString != null && !queryString.equals("")) {
-                                    String params[] = queryString.split(queryParameterSeparator);
+                    EndpointReference toEPR = synCtx.getTo();
+                    if (toEPR != null) {
+                        String completeURL = toEPR.getAddress();
+                        AxisBindingOperation axisBindingOperation = (AxisBindingOperation)
+                                ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(
+                                        Constants.AXIS_BINDING_OPERATION);
+                        String queryParameterSeparator = null;
+                        if (axisBindingOperation != null) {
+                            queryParameterSeparator = (String) axisBindingOperation.getProperty(
+                                    WSDL2Constants.ATTR_WHTTP_QUERY_PARAMETER_SEPARATOR);
+                        }
+                        if (queryParameterSeparator == null) {
+                            queryParameterSeparator = WSDL20DefaultValueHolder.
+                                    ATTR_WHTTP_QUERY_PARAMETER_SEPARATOR_DEFAULT;
+                        }
 
-                                    if (params == null || params.length == 0) {
-                                        return "";
-                                    }
+                        int i = completeURL.indexOf("?");
+                        if (i > -1) {
+                            String queryString = completeURL.substring(i + 1);
 
-                                    for (String param : params) {
-                                        String temp[] = param.split("=");
-                                        if (temp != null && temp.length >= 1) {
-                                            if (temp[0].equalsIgnoreCase(localName)) {
-                                                try {
-                                                    return temp.length > 1 ?
-                                                            URIEncoderDecoder.decode(temp[1]) : "";
-                                                } catch (UnsupportedEncodingException e) {
-                                                    String msg = "Couldn't decode the URL parameter " +
-                                                            "value " + temp[1] +
-                                                            " with name " + localName;
-                                                    log.error(msg, e);
-                                                    throw new UnresolvableException(
-                                                            msg + e.getMessage());
-                                                }
+                            if (queryString != null && !queryString.equals("")) {
+                                String params[] = queryString.split(queryParameterSeparator);
+
+                                if (params == null || params.length == 0) {
+                                    return "";
+                                }
+
+                                for (String param : params) {
+                                    String temp[] = param.split("=");
+                                    if (temp != null && temp.length >= 1) {
+                                        if (temp[0].equalsIgnoreCase(localName)) {
+                                            try {
+                                                return temp.length > 1 ?
+                                                        URIEncoderDecoder.decode(temp[1]) : "";
+                                            } catch (UnsupportedEncodingException e) {
+                                                String msg = "Couldn't decode the URL parameter " +
+                                                        "value " + temp[1] +
+                                                        " with name " + localName;
+                                                log.error(msg, e);
+                                                throw new UnresolvableException(
+                                                        msg + e.getMessage());
                                             }
                                         }
                                     }
                                 }
                             }
                         }
+                    }
+                    return "";
+                } else if (SynapseXPathConstants.OPERATION_SCOPE_VARIABLE_PREFIX.equals(prefix)) {
+                    Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+                    return axis2smc.getAxis2MessageContext().getOperationContext().getProperty(localName);
+                } else if (SynapseXPathConstants.SYSTEM_SCOPE_VARIABLE_PREFIX.equals(prefix)) {
+                    String propVal = System.getProperty(localName);
+                    if (propVal != null) {
+                        return propVal;
+                    } else {
                         return "";
-                    case SynapseXPathConstants.OPERATION_SCOPE_VARIABLE_PREFIX:
-                        Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
-                        return axis2smc.getAxis2MessageContext().getOperationContext().getProperty(localName);
-                    case SynapseXPathConstants.SYSTEM_SCOPE_VARIABLE_PREFIX:
-                        String propVal = System.getProperty(localName);
-                        if (propVal != null) {
-                            return propVal;
-                        } else {
-                            return "";
+                    }
+                } else {
+                    Object o = synCtx.getProperty(prefix);
+                    if (o instanceof Map) {
+                        Object valueObject = ((Map) o).get(localName);
+                        if (valueObject != null) {
+                            return valueObject.toString();
                         }
-                    default:
-                        Object o = synCtx.getProperty(prefix);
-                        if (o instanceof Map) {
-                            Object valueObject = ((Map) o).get(localName);
-                            if (valueObject != null) {
-                                return valueObject.toString();
-                            }
-                        }
-                        break;
+                    }
                 }
             }
         }

@@ -65,40 +65,22 @@ public class ResolverFactory {
         Matcher matcher = rePattern.matcher(input);
         if (input.startsWith(CONFIGURABLE_VARIABLE_PREFIX)) {
             if (matcher.find()) {
-                Class<? extends Resolver> resolverClass = resolverMap.get(matcher.group(RESOLVER_INDEX).toLowerCase());
-                if (resolverClass != null) {
-                    return getResolver(resolverClass, matcher);
-                } else {
-                    throw new ResolverException("Resolver could not be found");
-                }
+                return getResolver(matcher.group(RESOLVER_INDEX).toLowerCase(), matcher);
             }
         } else if (input.startsWith(SYSTEM_VARIABLE_PREFIX)) {
             if (matcher.find()) {
-                Class<? extends Resolver> resolverClass = resolverMap.get(matcher.group(RESOLVER_INDEX).toLowerCase());
-                if (resolverClass != null) {
-                    return getResolver(resolverClass, matcher);
-                } else {
-                    throw new ResolverException("Resolver could not be found");
-                }
+                return getResolver(matcher.group(RESOLVER_INDEX).toLowerCase(), matcher);
             }
         } else if(input.startsWith(FILE_PROPERTY_VARIABLE_PREFIX)) {
-            if (matcher.find()){
-                Class<? extends Resolver> resolverClass = resolverMap.get(matcher.group(RESOLVER_INDEX).toLowerCase());
-                if (resolverClass != null) {
-                    return getResolver(resolverClass, matcher);
-                } else {
-                    throw new ResolverException("Resolver could not be found");
-                }
+            if (matcher.find()) {
+                return getResolver(matcher.group(RESOLVER_INDEX).toLowerCase(), matcher);
             }
         } else if(input.startsWith(CUSTOM_PROPERTY_VARIABLE_PREFIX)) {
             if (matcher.find()){
                 String nameWithPlaceholder = matcher.group(RESOLVER_INDEX).toLowerCase();
                 String className = nameWithPlaceholder.substring(CUSTOM_PROPERTY_VARIABLE_PREFIX.length() - 1);
-                Class<? extends Resolver> resolverClass = resolverMap.get(className);
-                if (resolverClass != null) {
-                    return getResolver(resolverClass, matcher);
-                } else {
-                    throw new ResolverException("Resolver could not be found");
+                if (matcher.find()) {
+                    return getResolver(className, matcher);
                 }
             }
         }
@@ -135,12 +117,17 @@ public class ResolverFactory {
         }
     }
 
-    private Resolver getResolver(Class<? extends Resolver> resolverClass, Matcher matcher) {
-        try {
-            Resolver resolverObject = resolverClass.newInstance();
-            resolverObject.setVariable(matcher.group(3));
-            return resolverObject;
-        } catch (IllegalAccessException | InstantiationException e) {
+    private Resolver getResolver(String className, Matcher matcher) {
+        Class<? extends Resolver> resolverClass = resolverMap.get(className);
+        if (resolverClass != null) {
+            try {
+                Resolver resolverObject = resolverClass.newInstance();
+                resolverObject.setVariable(matcher.group(3));
+                return resolverObject;
+            } catch (IllegalAccessException | InstantiationException e) {
+                throw new ResolverException("Resolver could not be found");
+            }
+        } else {
             throw new ResolverException("Resolver could not be found");
         }
     }

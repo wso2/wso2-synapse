@@ -57,8 +57,6 @@ public final class SynapseXPathConstants {
     /** Variable prefix for accessing the MessageContext properties through XPath variables */
     public static final String MESSAGE_CONTEXT_VARIABLE_PREFIX = "ctx";
 
-    public static final String CONFIG_VARIABLE_PREFIX = "config";
-
     /** Variable prefix for accessing the Function/Template Context properties through XPath variables */
     public static final String FUNC_CONTEXT_VARIABLE_PREFIX = "func";
 
