@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMFactory;
 import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.endpoints.ProxyConfigs;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 
@@ -34,11 +35,11 @@ import java.util.Objects;
 public class ClientCredentialsHandler extends OAuthHandler {
 
     public ClientCredentialsHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode,
-                                    int connectionTimeout, int connectionRequestTimeout, int socketTimeout,
-                                    TokenCacheProvider tokenCacheProvider) {
+            int connectionTimeout, int connectionRequestTimeout, int socketTimeout,
+            TokenCacheProvider tokenCacheProvider, ProxyConfigs proxyConfigs) {
 
         super(tokenApiUrl, clientId, clientSecret, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout,
-                tokenCacheProvider);
+                tokenCacheProvider, proxyConfigs);
     }
 
     @Override

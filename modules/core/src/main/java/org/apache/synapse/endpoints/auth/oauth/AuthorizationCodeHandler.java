@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMFactory;
 import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.endpoints.ProxyConfigs;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 
@@ -35,13 +36,12 @@ public class AuthorizationCodeHandler extends OAuthHandler {
 
     private final String refreshToken;
 
-    public AuthorizationCodeHandler(String tokenApiUrl, String clientId, String clientSecret,
-                                    String refreshToken, String authMode, int connectionTimeout,
-                                    int connectionRequestTimeout, int socketTimeout,
-                                    TokenCacheProvider tokenCacheProvider) {
+    public AuthorizationCodeHandler(String tokenApiUrl, String clientId, String clientSecret, String refreshToken,
+            String authMode, int connectionTimeout, int connectionRequestTimeout, int socketTimeout,
+            TokenCacheProvider tokenCacheProvider, ProxyConfigs proxyConfigs) {
 
-        super(tokenApiUrl, clientId, clientSecret, authMode, connectionTimeout, connectionRequestTimeout,
-                socketTimeout, tokenCacheProvider);
+        super(tokenApiUrl, clientId, clientSecret, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout,
+                tokenCacheProvider,proxyConfigs);
         this.refreshToken = refreshToken;
     }
 

@@ -87,4 +87,12 @@ public class AuthConstants {
     public static final String BASIC_AUTH_USERNAME = "username";
     public static final String BASIC_AUTH_PASSWORD = "password";
 
+    public static final String PROXY_CONFIGS = "proxyConfigs";
+    public static final String PROXY_HOST = "proxyHost";
+    public static final String PROXY_PORT = "proxyPort";
+    public static final String PROXY_USERNAME = "proxyUsername";
+    public static final String PROXY_PASSWORD = "proxyPassword";
+    public static final String OAUTH_PROXY_PROTOCOL = "proxyProtocol";
+
+    public static final String HTTPS_PROTOCOL = "https";
 }

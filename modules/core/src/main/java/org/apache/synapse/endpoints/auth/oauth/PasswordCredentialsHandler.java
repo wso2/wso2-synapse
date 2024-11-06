@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMFactory;
 import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.endpoints.ProxyConfigs;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 
@@ -37,12 +38,11 @@ public class PasswordCredentialsHandler extends OAuthHandler {
     private final String password;
 
     protected PasswordCredentialsHandler(String tokenApiUrl, String clientId, String clientSecret, String username,
-                                         String password, String authMode, int connectionTimeout,
-                                         int connectionRequestTimeout, int socketTimeout,
-                                         TokenCacheProvider tokenCacheProvider) {
+            String password, String authMode, int connectionTimeout, int connectionRequestTimeout, int socketTimeout,
+            TokenCacheProvider tokenCacheProvider, ProxyConfigs proxyConfigs) {
 
         super(tokenApiUrl, clientId, clientSecret, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout,
-                tokenCacheProvider);
+                tokenCacheProvider, proxyConfigs);
         this.username = username;
         this.password = password;
     }

@@ -26,9 +26,14 @@ import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -39,23 +44,32 @@ import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLContexts;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.NoConnectionReuseStrategy;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
+import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.endpoints.ProxyConfigs;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.nhttp.config.ClientConnFactoryBuilder;
 import org.apache.synapse.transport.nhttp.util.SecureVaultValueReader;
+import org.apache.synapse.util.xpath.KeyStoreManager;
 import org.wso2.securevault.SecretResolver;
 import org.wso2.securevault.SecretResolverFactory;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
 import javax.xml.namespace.QName;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -66,7 +80,11 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
 import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
+import java.security.KeyStoreException;
+import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -84,28 +102,35 @@ public class OAuthClient {
     private static final String HTTP_CONNECTION = "http";
     private static final String HTTPS_CONNECTION = "https";
     private static final String ALL_HOSTS = "*";
+    public static final String HOST_NAME_VERIFIER = "httpclient.hostnameVerifier";
+    public static final String ALLOW_ALL = "AllowAll";
+    public static final String STRICT = "Strict";
+    public static final String DEFAULT_AND_LOCALHOST = "DefaultAndLocalhost";
+    public static final int MAX_TOTAL_POOL_SIZE = 100;
+    public static final int DEFAULT_MAX_PER_ROUTE = 50;
 
     /**
      * Method to generate the access token from an OAuth server
      *
-     * @param tokenApiUrl The token url of the server
-     * @param payload     The payload of the request
-     * @param credentials The encoded credentials
+     * @param tokenApiUrl   The token url of the server
+     * @param payload       The payload of the request
+     * @param credentials   The encoded credentials
+     * @param proxyConfigs  The proxy configurations
      * @return accessToken String
-     * @throws AuthException In the event of an unexpected HTTP status code return from the server or access_token
-     *                        key missing in the response payload
-     * @throws IOException    In the event of a problem parsing the response from the server
+     * @throws AuthException In the event of an unexpected HTTP status code return from the server or access_token key
+     *                       missing in the response payload
+     * @throws IOException   In the event of a problem parsing the response from the server
      */
     public static String generateToken(String tokenApiUrl, String payload, String credentials,
                                        MessageContext messageContext, Map<String, String> customHeaders,
-                                       int connectionTimeout, int connectionRequestTimeout, int socketTimeout) throws AuthException, IOException {
+                                       int connectionTimeout, int connectionRequestTimeout, int socketTimeout,  ProxyConfigs proxyConfigs) throws AuthException, IOException {
 
         if (log.isDebugEnabled()) {
             log.debug("Initializing token generation request: [token-endpoint] " + tokenApiUrl);
         }
 
         try (CloseableHttpClient httpClient = getSecureClient(tokenApiUrl, messageContext, connectionTimeout,
-                connectionRequestTimeout, socketTimeout)) {
+                connectionRequestTimeout, socketTimeout, proxyConfigs)) {
             HttpPost httpPost = new HttpPost(tokenApiUrl);
             httpPost.setHeader(AuthConstants.CONTENT_TYPE_HEADER, AuthConstants.APPLICATION_X_WWW_FORM_URLENCODED);
             if (!(customHeaders == null || customHeaders.isEmpty())) {
@@ -178,38 +203,132 @@ public class OAuthClient {
      * @throws AuthException
      */
     private static CloseableHttpClient getSecureClient(String tokenUrl, MessageContext messageContext,
-                                                       int connectionTimeout, int connectionRequestTimeout, int socketTimeout)
+            int connectionTimeout, int connectionRequestTimeout, int socketTimeout, ProxyConfigs proxyConfigs)
             throws AuthException {
+
+        if (proxyConfigs.isProxyEnabled()) {
+            return getSecureClientWithProxy(connectionTimeout, connectionRequestTimeout, socketTimeout, proxyConfigs);
+        } else {
+            return getSecureClientWithoutProxy(tokenUrl, messageContext, connectionTimeout, connectionRequestTimeout,
+                    socketTimeout);
+        }
+    }
+    private static CloseableHttpClient getSecureClientWithoutProxy(String tokenUrl, MessageContext messageContext,
+            int connectionTimeout, int connectionRequestTimeout, int socketTimeout) throws AuthException {
         SSLContext sslContext;
-        ConfigurationContext configurationContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext().
-                getConfigurationContext();
+        ConfigurationContext configurationContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext()
+                .getConfigurationContext();
         TransportOutDescription transportOut = configurationContext.getAxisConfiguration().getTransportOut("https");
         try {
-            ClientConnFactoryBuilder clientConnFactoryBuilder =
-                    new ClientConnFactoryBuilder(transportOut, configurationContext).parseSSL();
-
+            ClientConnFactoryBuilder clientConnFactoryBuilder = new ClientConnFactoryBuilder(transportOut,
+                    configurationContext).parseSSL();
             sslContext = getSSLContextWithUrl(tokenUrl, clientConnFactoryBuilder.getSslByHostMap(),
-                                              clientConnFactoryBuilder.getSSLContextDetails());
+                    clientConnFactoryBuilder.getSSLContextDetails());
         } catch (AxisFault e) {
             throw new AuthException("Error while reading SSL configs. Using default Keystore and Truststore", e);
         }
-        SSLConnectionSocketFactory sslConnectionFactory =
-                new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
-        RequestConfig config = RequestConfig.custom()
-                .setConnectTimeout(connectionTimeout)
-                .setConnectionRequestTimeout(connectionRequestTimeout)
-                .setSocketTimeout(socketTimeout).build();
-        Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create().
-                register(HTTPS_CONNECTION, sslConnectionFactory).register(HTTP_CONNECTION, new PlainConnectionSocketFactory())
-                .build();
+        SSLConnectionSocketFactory sslConnectionFactory = new SSLConnectionSocketFactory(sslContext,
+                NoopHostnameVerifier.INSTANCE);
+        RequestConfig config = RequestConfig.custom().setConnectTimeout(connectionTimeout)
+                .setConnectionRequestTimeout(connectionRequestTimeout).setSocketTimeout(socketTimeout).build();
+        Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory> create()
+                .register(HTTPS_CONNECTION, sslConnectionFactory)
+                .register(HTTP_CONNECTION, new PlainConnectionSocketFactory()).build();
 
         BasicHttpClientConnectionManager connManager = new BasicHttpClientConnectionManager(registry);
-
         CloseableHttpClient client = HttpClientBuilder.create().setDefaultRequestConfig(config)
-                .setConnectionManager(connManager)
-                .setSSLSocketFactory(sslConnectionFactory).build();
+                .setConnectionManager(connManager).setSSLSocketFactory(sslConnectionFactory).build();
 
         return client;
+    }
+
+    private static CloseableHttpClient getSecureClientWithProxy(int connectionTimeout, int connectionRequestTimeout,
+            int socketTimeout, ProxyConfigs proxyConfigs) throws AuthException {
+
+        PoolingHttpClientConnectionManager pool = getPoolingHttpClientConnectionManager(
+                proxyConfigs.getProxyProtocol());
+        pool.setMaxTotal(MAX_TOTAL_POOL_SIZE);
+        pool.setDefaultMaxPerRoute(DEFAULT_MAX_PER_ROUTE);
+
+        RequestConfig params = RequestConfig.custom().build();
+        HttpClientBuilder clientBuilder = HttpClients.custom().setConnectionManager(pool)
+                .setDefaultRequestConfig(params);
+
+        HttpHost host = new HttpHost(proxyConfigs.getProxyHost(), Integer.parseInt(proxyConfigs.getProxyPort()),
+                proxyConfigs.getProxyProtocol());
+        DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(host);
+        RequestConfig config = RequestConfig.custom().setConnectTimeout(connectionTimeout)
+                .setConnectionRequestTimeout(connectionRequestTimeout).setSocketTimeout(socketTimeout).build();
+        clientBuilder = clientBuilder.setRoutePlanner(routePlanner);
+
+        if (StringUtils.isNotBlank(proxyConfigs.getProxyUsername()) && StringUtils.isNotBlank(
+                proxyConfigs.getProxyPassword())) {
+            CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+            credentialsProvider.setCredentials(
+                    new AuthScope(proxyConfigs.getProxyHost(), Integer.parseInt(proxyConfigs.getProxyPort())),
+                    new UsernamePasswordCredentials(proxyConfigs.getProxyUsername(), proxyConfigs.getProxyPassword()));
+            clientBuilder = clientBuilder.setDefaultRequestConfig(config)
+                    .setDefaultCredentialsProvider(credentialsProvider);
+        }
+
+        return clientBuilder.build();
+    }
+
+    private static PoolingHttpClientConnectionManager getPoolingHttpClientConnectionManager(String protocol)
+            throws AuthException {
+
+        PoolingHttpClientConnectionManager poolManager;
+        if (AuthConstants.HTTPS_PROTOCOL.equals(protocol)) {
+            SSLConnectionSocketFactory socketFactory = createSocketFactory();
+            org.apache.http.config.Registry<ConnectionSocketFactory> socketFactoryRegistry =
+                    RegistryBuilder.<ConnectionSocketFactory> create()
+                    .register(AuthConstants.HTTPS_PROTOCOL, socketFactory).build();
+            poolManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
+        } else {
+            poolManager = new PoolingHttpClientConnectionManager();
+        }
+        return poolManager;
+    }
+
+    private static SSLConnectionSocketFactory createSocketFactory() throws AuthException {
+        SSLContext sslContext;
+
+        char[] trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword").toCharArray();
+        String trustStoreLocation = System.getProperty("javax.net.ssl.trustStore");
+        try {
+            KeyStore trustStore = KeyStoreManager.getKeyStore(trustStoreLocation, Arrays.toString(trustStorePassword),
+                    "JKS");
+            sslContext = SSLContexts.custom().loadTrustMaterial(trustStore).build();
+
+            HostnameVerifier hostnameVerifier;
+            String hostnameVerifierOption = System.getProperty(HOST_NAME_VERIFIER);
+
+            if (ALLOW_ALL.equalsIgnoreCase(hostnameVerifierOption)) {
+                hostnameVerifier = SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
+            } else if (STRICT.equalsIgnoreCase(hostnameVerifierOption)) {
+                hostnameVerifier = SSLSocketFactory.STRICT_HOSTNAME_VERIFIER;
+            } else if (DEFAULT_AND_LOCALHOST.equalsIgnoreCase(hostnameVerifierOption)) {
+                hostnameVerifier = new HostnameVerifier() {
+                    final String[] localhosts = { "::1", "127.0.0.1", "localhost", "localhost.localdomain" };
+
+                    @Override
+                    public boolean verify(String urlHostName, SSLSession session) {
+                        return SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER.verify(urlHostName,
+                                session) || Arrays.asList(localhosts).contains(urlHostName);
+                    }
+                };
+            } else {
+                hostnameVerifier = SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER;
+            }
+
+            return new SSLConnectionSocketFactory(sslContext, hostnameVerifier);
+        } catch (NoSuchAlgorithmException e) {
+            throw new AuthException(e);
+        } catch (KeyStoreException e) {
+            throw new AuthException(e);
+        } catch (KeyManagementException e) {
+            throw new AuthException(e);
+        }
     }
 
     /**
