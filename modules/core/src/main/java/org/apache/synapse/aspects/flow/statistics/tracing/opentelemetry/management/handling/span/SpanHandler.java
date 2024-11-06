@@ -430,6 +430,16 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         }
     }
 
+    public void handleScatterGatherFinishEvent(MessageContext messageContext) {
+        TracingScope tracingScope = tracingScopeManager.getTracingScope(messageContext);
+            synchronized (tracingScope.getSpanStore()) {
+                cleanupContinuationStateSequences(tracingScope.getSpanStore(), messageContext);
+                SpanWrapper outerLevelSpanWrapper = tracingScope.getSpanStore().getOuterLevelSpanWrapper();
+                tracingScope.getSpanStore().finishSpan(outerLevelSpanWrapper, messageContext);
+                tracingScopeManager.cleanupTracingScope(tracingScope.getTracingScopeId());
+            }
+    }
+
     @Override
     public void handleStateStackInsertion(MessageContext synCtx, String seqName, SequenceType seqType) {
         TracingScope tracingScope = tracingScopeManager.getTracingScope(synCtx);
