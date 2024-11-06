@@ -576,7 +576,12 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                         synapseInMessageContext.setProperty(
                                 (String) key, synapseOutMsgCtx.getProperty((String) key));
                     }
-                   
+
+                    for (Object key : synapseOutMsgCtx.getVariableKeySet()) {
+                        synapseInMessageContext.setVariable(
+                                (String) key, synapseOutMsgCtx.getVariable((String) key));
+                    }
+
                     if(failOver){
                     	 //we may required to handle same message for failover cases only other than that 
                     	 //should treat based on the incoming message
@@ -613,6 +618,11 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             for (Object key : synapseOutMsgCtx.getPropertyKeySet()) {
                 synapseInMessageContext.setProperty(
                         (String) key, synapseOutMsgCtx.getProperty((String) key));
+            }
+
+            for (Object key : synapseOutMsgCtx.getVariableKeySet()) {
+                synapseInMessageContext.setVariable(
+                        (String) key, synapseOutMsgCtx.getVariable((String) key));
             }
 
             if (successfulEndpoint instanceof OAuthConfiguredHTTPEndpoint) {

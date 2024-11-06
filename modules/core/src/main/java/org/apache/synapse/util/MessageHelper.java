@@ -207,6 +207,19 @@ public class MessageHelper {
             }
         }
 
+        // copy all the variables to the newCtx
+        for (Object o : synCtx.getVariableKeySet()) {
+            String strkey = (String) o;
+            Object obj = synCtx.getVariable(strkey);
+            if (obj instanceof OMElement) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Deep clone for OMElement");
+                }
+                obj = ((OMElement) obj).cloneOMElement();
+            }
+            newCtx.setVariable(strkey, obj);
+        }
+
         // Make deep copy of fault stack so that parent will not be lost it's fault stack
         Stack<FaultHandler> faultStack = synCtx.getFaultStack();
         if (!faultStack.isEmpty()) {
