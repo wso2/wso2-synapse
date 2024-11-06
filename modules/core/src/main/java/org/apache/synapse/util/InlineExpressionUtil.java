@@ -49,6 +49,9 @@ public final class InlineExpressionUtil {
     // Regex to identify expressions in inline text
     private static final Pattern EXPRESSION_PATTERN = Pattern.compile("(\\{[^\\s\",<>}\\]]+})");
 
+    // Regex to identify synapse expressions #[expression] in inline text
+    private static final Pattern EXPRESSION_PLACEHOLDER_PATTERN = Pattern.compile("#\\[(.+?)\\]");
+
     private InlineExpressionUtil() {
 
     }
@@ -196,5 +199,38 @@ public final class InlineExpressionUtil {
             // ignore
         }
         return false;
+    }
+
+    /**
+     * Process the inline template and replace the synapse expressions with the resolved values
+     *
+     * @param synCtx   Message Context
+     * @param template Inline template
+     * @return Processed inline template
+     */
+    public static String processInLineTemplate(MessageContext synCtx, String template) {
+
+        Matcher matcher = EXPRESSION_PLACEHOLDER_PATTERN.matcher(template);
+        StringBuffer result = new StringBuffer();
+        while (matcher.find()) {
+            // Extract the expression inside #[...]
+            String placeholder = matcher.group(1);
+            // Dummy resolver for expressions to test the Log mediator
+            // TODO update the #getDynamicValue method with synapse expressions and replace this
+            String replacement = ExpressionResolver.resolve(placeholder, synCtx);
+            matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(result);
+        return result.toString();
+    }
+
+    static class ExpressionResolver {
+        public static String resolve(String expression, MessageContext synCtx) {
+            String variableName = expression.substring(5);
+            if (synCtx.getVariable(variableName) != null) {
+                return synCtx.getVariable(variableName).toString();
+            }
+            return expression;
+        }
     }
 }
