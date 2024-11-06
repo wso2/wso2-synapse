@@ -20,12 +20,14 @@
 package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.builtin.LogMediator;
 
 /**
  * <pre>
  * &lt;log [level="simple|headers|full|custom"] [separator="string"] [category="INFO|TRACE|DEBUG|WARN|ERROR|FATAL"]&gt;
+ *      &lt;message&gt;String template&lt;/message&gt;
  *      &lt;property&gt; *
  * &lt;/log&gt;
  * </pre>
@@ -42,7 +44,7 @@ public class LogMediatorSerializer extends AbstractMediatorSerializer {
         OMElement log = fac.createOMElement("log", synNS);
         saveTracingState(log,mediator);
 
-        if (mediator.getLogLevel() != LogMediator.SIMPLE) {
+        if (StringUtils.isBlank(mediator.getMessageTemplate()) && mediator.getLogLevel() != LogMediator.SIMPLE) {
             log.addAttribute(fac.createOMAttribute(
                 "level", nullNS,
                     mediator.getLogLevel() == LogMediator.HEADERS ? "headers" :
@@ -71,6 +73,12 @@ public class LogMediatorSerializer extends AbstractMediatorSerializer {
         if (!LogMediator.DEFAULT_SEP.equals(mediator.getSeparator())) {
             log.addAttribute(fac.createOMAttribute(
                     "separator", nullNS, mediator.getSeparator()));
+        }
+
+        if (StringUtils.isNotBlank(mediator.getMessageTemplate())) {
+            OMElement onCompleteElem = fac.createOMElement("message", synNS);
+            onCompleteElem.setText(mediator.getMessageTemplate());
+            log.addChild(onCompleteElem);
         }
 
         super.serializeProperties(log, mediator.getProperties());

@@ -29,14 +29,17 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
+import org.apache.synapse.util.InlineExpressionUtil;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Logs the specified message into the configured logger. The log levels specify
@@ -56,6 +59,9 @@ public class LogMediator extends AbstractMediator {
     /** all attributes of level 'simple' and the SOAP envelope and any properties */
     public static final int FULL    = 3;
 
+    /** The message template and the additional properties specified to the Log mediator */
+    public static final int MESSAGE_TEMPLATE = 4;
+
     public static final int CATEGORY_INFO = 0;
     public static final int CATEGORY_DEBUG = 1;
     public static final int CATEGORY_TRACE = 2;
@@ -73,6 +79,8 @@ public class LogMediator extends AbstractMediator {
     private int category = CATEGORY_INFO;
     /** The holder for the custom properties */
     private final List<MediatorProperty> properties = new ArrayList<MediatorProperty>();
+
+    private String messageTemplate;
 
     /**
      * Logs the current message according to the supplied semantics
@@ -143,6 +151,8 @@ public class LogMediator extends AbstractMediator {
                 return getHeadersLogMessage(synCtx);
             case FULL:
                 return getFullLogMessage(synCtx);
+            case MESSAGE_TEMPLATE:
+                return processMessageTemplate(synCtx, messageTemplate);
             default:
                 return "Invalid log level specified";
         }
@@ -288,6 +298,16 @@ public class LogMediator extends AbstractMediator {
         }
     }
 
+    public String getMessageTemplate() {
+
+        return messageTemplate;
+    }
+
+    public void setMessageTemplate(String messageTemplate) {
+
+        this.messageTemplate = messageTemplate;
+    }
+
     private String trimLeadingSeparator(StringBuffer sb) {
         String retStr = sb.toString();
         if (retStr.startsWith(separator)) {
@@ -297,8 +317,16 @@ public class LogMediator extends AbstractMediator {
         }
     }
 
+    private String processMessageTemplate(MessageContext synCtx, String template) {
+        StringBuffer result = new StringBuffer();
+        result.append(InlineExpressionUtil.processInLineTemplate(synCtx, template));
+        setCustomProperties(result, synCtx);
+        return result.toString();
+    }
+
     @Override
     public boolean isContentAware() {
+        // TODO Use the new simplified expression model to check if the log mediator is content aware
         if (logLevel == CUSTOM) {
             for (MediatorProperty property : properties) {
                 if (property.getExpression() != null && property.getExpression().isContentAware()) {
