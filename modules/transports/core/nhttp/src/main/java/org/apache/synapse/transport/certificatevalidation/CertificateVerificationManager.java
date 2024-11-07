@@ -28,6 +28,7 @@ import org.apache.synapse.transport.certificatevalidation.ocsp.OCSPVerifier;
 import org.apache.synapse.transport.certificatevalidation.pathvalidation.CertificatePathValidator;
 import org.apache.synapse.transport.nhttp.config.TrustStoreHolder;
 
+import java.security.cert.Certificate;
 import java.io.ByteArrayInputStream;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
@@ -93,10 +94,10 @@ public class CertificateVerificationManager {
      * It first tries to verify using OCSP since OCSP verification is faster. If that fails it tries to do the
      * verification using CRL.
      *
-     * @param peerCertificates  javax.security.cert.X509Certificate[] array of peer certificate chain from peer/client.
+     * @param peerCertificates  java.security.cert.Certificate[] array of peer certificate chain from peer/client.
      * @throws CertificateVerificationException
      */
-    public void verifyCertificateValidity(javax.security.cert.X509Certificate[] peerCertificates)
+    public void verifyCertificateValidity(Certificate[] peerCertificates)
             throws CertificateVerificationException {
 
         X509Certificate[] convertedCertificates = convert(peerCertificates);
@@ -154,11 +155,11 @@ public class CertificateVerificationManager {
     }
 
     /**
-     * @param certs array of javax.security.cert.X509Certificate[] s.
+     * @param certs array of java.security.cert.Certificate[] s.
      * @return the converted array of java.security.cert.X509Certificate[] s.
      * @throws CertificateVerificationException
      */
-    private X509Certificate[] convert(javax.security.cert.X509Certificate[] certs)
+    private X509Certificate[] convert(Certificate[] certs)
             throws CertificateVerificationException {
         X509Certificate[] certChain = new X509Certificate[certs.length];
         Throwable exceptionThrown;
@@ -170,11 +171,7 @@ public class CertificateVerificationManager {
                         = java.security.cert.CertificateFactory.getInstance("X.509");
                 certChain[i]=((X509Certificate)cf.generateCertificate(bis));
                 continue;
-            } catch (java.security.cert.CertificateEncodingException e) {
-                exceptionThrown = e;
-            } catch (javax.security.cert.CertificateEncodingException e) {
-                exceptionThrown = e;
-            } catch (java.security.cert.CertificateException e) {
+            } catch (CertificateException e) {
                 exceptionThrown = e;
             }
             throw new CertificateVerificationException("Cant Convert certificates from javax to java", exceptionThrown);

@@ -205,7 +205,7 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 	} else {
 	    String msg = "Artifact representing the filename " + fileName
 		    + " is not deployed on Synapse";
-	    log.error(msg);
+	    log.warn(msg);
 	    throw new DeploymentException(msg);
 	}
 

@@ -49,6 +49,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Controls Jaeger spans, with respect to various events received during Synapse message flow.
@@ -203,13 +204,13 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         Span span;
         Map<String, String> tracerSpecificCarrier = new HashMap<>();
 
-        Map headersMap = (Map) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
-                .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        Map headersMap = new ConcurrentHashMap<>((Map) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
         Object statusCode = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty("HTTP_SC");
         Object statusDescription = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty("HTTP_DESC");
         // We only need to extract span context from headers when there are trp headers available
         if (headersMap == null) {
-            headersMap = new HashMap();
+            headersMap = new ConcurrentHashMap();
         }
         if (isOuterLevelSpan(statisticDataUnit, spanStore)) {
             // Extract span context from headers

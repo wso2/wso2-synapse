@@ -920,4 +920,28 @@ public class GraalVMJavaScriptMessageContext implements ScriptMessageContext {
         mc.setMessageFlowTracingState(state);
     }
 
+    @Override
+    public Object getVariable(String key) {
+
+        return mc.getVariable(key);
+    }
+
+    @Override
+    public void setVariable(String key, Object value) {
+
+        try {
+            OMElement omElement = xmlHelper.toOMElement(value);
+            mc.setVariable(key, omElement);
+        } catch (ScriptException e) {
+            // Try to convert the value into OMElement if it fails it means value is not a representation of xml so
+            // set as key value pair
+            mc.setVariable(key, value);
+        }
+    }
+
+    @Override
+    public Set getVariableKeySet() {
+
+        return mc.getVariableKeySet();
+    }
 }
