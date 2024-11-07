@@ -370,7 +370,9 @@ public class ClientConnFactoryBuilder {
                 if (log.isDebugEnabled()) {
                     log.debug(name + " Loading Trust Keystore from : " + location);
                 }
-
+                SslSenderTrustStoreHolder.getInstance().setLocation(location);
+                SslSenderTrustStoreHolder.getInstance().setPassword(passwordElement.getText());
+                SslSenderTrustStoreHolder.getInstance().setType(type);
                 trustStore.load(fis, storePassword.toCharArray());
                 TrustManagerFactory trustManagerfactory = TrustManagerFactory.getInstance(
                         TrustManagerFactory.getDefaultAlgorithm());

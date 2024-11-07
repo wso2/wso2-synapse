@@ -41,6 +41,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.util.JavaUtils;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.util.MediatorPropertyUtils;
+import org.apache.synapse.util.resolver.SecureVaultResolver;
 
 import java.util.Comparator;
 import java.util.Map;
@@ -211,7 +212,7 @@ public class PropertyMediator extends AbstractMediator {
                             org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
                             headersMap);
                 }
-            }else if(XMLConfigConstants.SCOPE_OPERATION.equals(scope)
+            } else if(XMLConfigConstants.SCOPE_OPERATION.equals(scope)
                     && synCtx instanceof Axis2MessageContext){
             	//Setting Transport Headers
                 Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
@@ -504,7 +505,7 @@ public class PropertyMediator extends AbstractMediator {
                 matchedValue = matcher.group(group);
             } else {
                 if (synLog.isTraceOrDebugEnabled()) {
-                    String msg = "Failed to get a match for regx : " +
+                    String msg = "Failed to get a match for regex : " +
                             pattern.toString() + " with the property value :" +
                             value + " for group :" + group;
                     synLog.traceOrDebug(msg);
@@ -515,7 +516,7 @@ public class PropertyMediator extends AbstractMediator {
             
         } else {
             if (synLog.isTraceOrDebugEnabled()) {
-                String msg = "Unable to find a match for regx : " +
+                String msg = "Unable to find a match for regex : " +
                         pattern.toString() + " with the property value :" + value;
                 synLog.traceOrDebug(msg);
             }
