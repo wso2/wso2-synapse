@@ -22,11 +22,13 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.builtin.PropertyMediator;
 import org.apache.synapse.util.MediatorPropertyUtils;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
+import org.apache.synapse.util.xpath.Synapse_Path;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
@@ -83,6 +85,9 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
                 String nameExpression = nameAttributeValue.substring(1, nameAttributeValue.length() - 1);
                 if(nameExpression.startsWith("json-eval(")) {
                     new SynapseJsonPath(nameExpression.substring(10, nameExpression.length() - 1));
+                } else if (nameExpression.startsWith(SynapseConstants.SIEL_IDENTIFIER_START) &&
+                        nameExpression.endsWith(SynapseConstants.SIEL_IDENTIFIER_END)) {
+                    new Synapse_Path(nameExpression.substring(2, nameExpression.length() - 1));
                 } else {
                     new SynapseXPath(nameExpression);
                 }

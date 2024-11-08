@@ -27,6 +27,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
+import org.apache.synapse.util.xpath.Synapse_Path;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
@@ -39,16 +40,19 @@ public class SynapsePathFactory {
 
     private static final Log log = LogFactory.getLog(SynapsePathFactory.class);
 
-    public static SynapsePath getSynapsePath(OMElement elem, QName attribName)
+    public static org.apache.synapse.config.xml.SynapsePath getSynapsePath(OMElement elem, QName attribName)
         throws JaxenException {
 
-        SynapsePath path = null;
+        org.apache.synapse.config.xml.SynapsePath path = null;
         OMAttribute pathAttrib = elem.getAttribute(attribName);
 
         if (pathAttrib != null && pathAttrib.getAttributeValue() != null) {
 
             if(pathAttrib.getAttributeValue().startsWith("json-eval(")) {
                 path = new SynapseJsonPath(pathAttrib.getAttributeValue().substring(10, pathAttrib.getAttributeValue().length() - 1));
+            } else if (pathAttrib.getAttributeValue().startsWith(SynapseConstants.SIEL_IDENTIFIER_START) &&
+                    pathAttrib.getAttributeValue().endsWith(SynapseConstants.SIEL_IDENTIFIER_END)) {
+                path = new Synapse_Path(pathAttrib.getAttributeValue().substring(2, pathAttrib.getAttributeValue().length() - 1));
             } else {
                 try {
                     path = new SynapseXPath(pathAttrib.getAttributeValue());
@@ -79,8 +83,8 @@ public class SynapsePathFactory {
         return path;
     }
 
-    public static SynapsePath getSynapsePathfromExpression(OMElement elem, String expression) throws JaxenException {
-        SynapsePath path = null;
+    public static org.apache.synapse.config.xml.SynapsePath getSynapsePathfromExpression(OMElement elem, String expression) throws JaxenException {
+        org.apache.synapse.config.xml.SynapsePath path = null;
         if (expression != null) {
             if (expression.startsWith("json-eval(")) {
                 path = new SynapseJsonPath(expression.substring(10, expression.length() - 1));
@@ -112,7 +116,7 @@ public class SynapsePathFactory {
         return path;
     }
 
-    public static SynapsePath getSynapsePath(OMElement elem, String expression)
+    public static org.apache.synapse.config.xml.SynapsePath getSynapsePath(OMElement elem, String expression)
         throws JaxenException {
 
         if (expression == null) {

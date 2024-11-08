@@ -528,6 +528,11 @@ public class SynapseXPath extends SynapsePath {
         return null;
     }
 
+    @Override
+    public Object objectValueOf(MessageContext synCtx) {
+        return null;
+    }
+
     /**
      * Specialized form of xpath evaluation function.An xpath evaluate() will be performed using two contexts
      * (ie:-soap-envelope and on Synapse Message Context). This is useful for evaluating xpath on a
