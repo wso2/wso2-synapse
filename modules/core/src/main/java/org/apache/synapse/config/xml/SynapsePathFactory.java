@@ -27,7 +27,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
-import org.apache.synapse.util.xpath.Synapse_Path;
+import org.apache.synapse.util.xpath.SynapseExpression;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
@@ -50,9 +50,9 @@ public class SynapsePathFactory {
 
             if(pathAttrib.getAttributeValue().startsWith("json-eval(")) {
                 path = new SynapseJsonPath(pathAttrib.getAttributeValue().substring(10, pathAttrib.getAttributeValue().length() - 1));
-            } else if (pathAttrib.getAttributeValue().startsWith(SynapseConstants.SIEL_IDENTIFIER_START) &&
-                    pathAttrib.getAttributeValue().endsWith(SynapseConstants.SIEL_IDENTIFIER_END)) {
-                path = new Synapse_Path(pathAttrib.getAttributeValue().substring(2, pathAttrib.getAttributeValue().length() - 1));
+            } else if (pathAttrib.getAttributeValue().startsWith(SynapseConstants.SYNAPSE_EXPRESSION_IDENTIFIER_START) &&
+                    pathAttrib.getAttributeValue().endsWith(SynapseConstants.SYNAPSE_EXPRESSION_IDENTIFIER_END)) {
+                path = new SynapseExpression(pathAttrib.getAttributeValue().substring(2, pathAttrib.getAttributeValue().length() - 1));
             } else {
                 try {
                     path = new SynapseXPath(pathAttrib.getAttributeValue());

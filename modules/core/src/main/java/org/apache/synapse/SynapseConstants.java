@@ -626,7 +626,7 @@ public final class SynapseConstants {
 
     public static final String ANALYTICS_METADATA = "ANALYTICS_METADATA";
 
-    // Constants related to SIEL
+    // Constants related to Synapse Expressions
     public static final String AND = "and";
     public static final String OR = "or";
     public static final String NOT = "not";
@@ -670,8 +670,8 @@ public final class SynapseConstants {
 
     public static final String  PAYLOAD = "payload";
     public static final String  PAYLOAD_$ = "$";
-    public static final String  SIEL_IDENTIFIER_START = "#[";
-    public static final String  SIEL_IDENTIFIER_END = "]";
+    public static final String  SYNAPSE_EXPRESSION_IDENTIFIER_START = "${";
+    public static final String  SYNAPSE_EXPRESSION_IDENTIFIER_END = "}";
     public static final String  AXIS2 = "axis2";
     public static final String  QUERY_PARAM = "queryParams";
     public static final String  URI_PARAM = "uriParams";

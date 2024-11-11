@@ -4,6 +4,7 @@ import org.apache.axiom.om.*;
 import org.apache.axiom.om.xpath.AXIOMXPath;
 import org.apache.commons.logging.Log;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
@@ -27,7 +28,7 @@ public abstract class SynapsePath extends AXIOMXPath {
 
 	public static final String X_PATH = "X_PATH";
 	public static final String JSON_PATH = "JSON_PATH";
-	public static final String SIEL_PATH = "SIEL_PATH";
+	public static final String SYNAPSE_EXPRESSIONS_PATH = "SYNAPSE_EXPRESSIONS_PATH";
 	private String pathType = null;
 
 	public DOMSynapseXPathNamespaceMap domNamespaceMap = new DOMSynapseXPathNamespaceMap();
@@ -62,8 +63,9 @@ public abstract class SynapsePath extends AXIOMXPath {
 	private String inferPathType(String expression) {
 		if (expression.startsWith("json-eval(")) {
 			return JSON_PATH;
-		} else if(expression.startsWith("#[") && expression.endsWith("]")) {
-			return SIEL_PATH;
+		} else if (expression.startsWith(SynapseConstants.SYNAPSE_EXPRESSION_IDENTIFIER_START)
+				&& expression.endsWith(SynapseConstants.SYNAPSE_EXPRESSION_IDENTIFIER_END)) {
+			return SYNAPSE_EXPRESSIONS_PATH;
 		} else {
 			return X_PATH;
 		}
