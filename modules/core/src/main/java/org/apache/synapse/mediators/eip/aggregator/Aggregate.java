@@ -115,6 +115,9 @@ public class Aggregate extends TimerTask {
      */
     public synchronized boolean addMessage(MessageContext synCtx) {
         if (maxCount <= 0 || (maxCount > 0 && messages.size() < maxCount)) {
+            if (messages == null) {
+                return false;
+            }
             messages.add(synCtx);
             return true;
         } else {
