@@ -62,7 +62,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 		}
 
 		boolean isCollectingTracing = false;
-		if (isCollectingProperties() || isCollectingPayloads()) {
+		if (isCollectingProperties() || isCollectingPayloads() || isCollectingVariables()) {
 			isCollectingTracing = (aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
 		}
 

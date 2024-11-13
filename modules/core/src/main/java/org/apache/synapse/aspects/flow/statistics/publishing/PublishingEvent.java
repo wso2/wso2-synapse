@@ -46,6 +46,7 @@ public class PublishingEvent {
 
 	private Map contextPropertyMap;
 	private Map transportPropertyMap;
+	private Map contextVariableMap;
 
 	private Integer[] children;
 
@@ -72,6 +73,7 @@ public class PublishingEvent {
 
 		this.contextPropertyMap = extractProperties(statisticsLog.getContextPropertyMap());
 		this.transportPropertyMap = extractProperties(statisticsLog.getTransportPropertyMap());
+		this.contextVariableMap = extractProperties(statisticsLog.getContextVariableMap());
 
 		if (statisticsLog.getChildren().size() > 0) {
 			this.children = new Integer[statisticsLog.getChildren().size()];
@@ -288,6 +290,12 @@ public class PublishingEvent {
 			objectList.add(null);
 		} else {
 			objectList.add(this.transportPropertyMap.toString());
+		}
+
+		if (this.contextVariableMap == null) {
+			objectList.add(null);
+		} else {
+			objectList.add(this.contextVariableMap.toString());
 		}
 
 		objectList.add(Arrays.toString(this.children));

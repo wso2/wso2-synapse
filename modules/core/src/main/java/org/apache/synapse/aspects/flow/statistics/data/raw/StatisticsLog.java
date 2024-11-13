@@ -126,6 +126,11 @@ public class StatisticsLog {
 	private Map<String, Object> contextPropertyMap;
 
 	/**
+	 * Synapse Message context variables for the component.
+	 */
+	private Map<String, Object> contextVariableMap;
+
+	/**
 	 * Transport properties for the component.
 	 */
 	private Map<String, Object> transportPropertyMap;
@@ -181,6 +186,7 @@ public class StatisticsLog {
 		this.messageFlowId = statisticDataUnit.getStatisticId();
 		this.beforePayload = statisticDataUnit.getPayload();
 		this.contextPropertyMap = statisticDataUnit.getContextPropertyMap();
+		this.contextVariableMap = statisticDataUnit.getContextVariableMap();
 		this.transportPropertyMap = statisticDataUnit.getTransportPropertyMap();
 		this.componentType = statisticDataUnit.getComponentType();
 		this.hashCode = statisticDataUnit.getHashCode();
@@ -277,6 +283,10 @@ public class StatisticsLog {
 
 	public Map<String, Object> getContextPropertyMap() {
 		return contextPropertyMap;
+	}
+
+	public Map<String, Object> getContextVariableMap() {
+		return contextVariableMap;
 	}
 
 	public void setAfterPayload(String afterPayload) {

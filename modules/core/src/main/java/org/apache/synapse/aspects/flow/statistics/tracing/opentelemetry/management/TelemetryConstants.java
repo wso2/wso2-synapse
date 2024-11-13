@@ -68,6 +68,8 @@ public class TelemetryConstants {
     public static final String AFTER_PAYLOAD_ATTRIBUTE_KEY = "afterPayload";
     public static final String BEFORE_CONTEXT_PROPERTY_MAP_ATTRIBUTE_KEY = "beforeContextPropertyMap";
     public static final String AFTER_CONTEXT_PROPERTY_MAP_ATTRIBUTE_KEY = "afterContextPropertyMap";
+    public static final String BEFORE_CONTEXT_VARIABLE_MAP_ATTRIBUTE_KEY = "beforeContextVariableMap";
+    public static final String AFTER_CONTEXT_VARIABLE_MAP_ATTRIBUTE_KEY = "afterContextVariableMap";
     public static final String PROPERTY_MEDIATOR_VALUE_ATTRIBUTE_KEY = "propertyMediatorValue";
     public static final String COMPONENT_NAME_ATTRIBUTE_KEY = "componentName";
     public static final String COMPONENT_TYPE_ATTRIBUTE_KEY = "componentType";

@@ -46,7 +46,8 @@ public class SpanTagger {
     public static void setSpanTags(SpanWrapper spanWrapper, MessageContext synCtx) {
         StatisticsLog openStatisticsLog = new StatisticsLog(spanWrapper.getStatisticDataUnit());
         Span span = spanWrapper.getSpan();
-        if (OpenTelemetryManagerHolder.isCollectingPayloads() || OpenTelemetryManagerHolder.isCollectingProperties()) {
+        if (OpenTelemetryManagerHolder.isCollectingPayloads() || OpenTelemetryManagerHolder.isCollectingProperties()
+                || OpenTelemetryManagerHolder.isCollectingVariables()) {
             if (OpenTelemetryManagerHolder.isCollectingPayloads()) {
                 if(openStatisticsLog.getBeforePayload() != null) {
                     span.setAttribute(TelemetryConstants.BEFORE_PAYLOAD_ATTRIBUTE_KEY,
@@ -83,6 +84,22 @@ public class SpanTagger {
                         spanWrapper.getCloseEventStatisticDataUnit().getPropertyValue() != null) {
                     span.setAttribute(TelemetryConstants.PROPERTY_MEDIATOR_VALUE_ATTRIBUTE_KEY,
                             spanWrapper.getCloseEventStatisticDataUnit().getPropertyValue());
+                }
+            }
+
+            if (OpenTelemetryManagerHolder.isCollectingVariables()) {
+                if (spanWrapper.getStatisticDataUnit().getContextVariableMap() != null) {
+                    span.setAttribute(TelemetryConstants.BEFORE_CONTEXT_VARIABLE_MAP_ATTRIBUTE_KEY,
+                            spanWrapper.getStatisticDataUnit().getContextVariableMap().toString());
+                }
+                if (spanWrapper.getCloseEventStatisticDataUnit() != null) {
+                    if (spanWrapper.getCloseEventStatisticDataUnit().getContextVariableMap() != null) {
+                        span.setAttribute(TelemetryConstants.AFTER_CONTEXT_VARIABLE_MAP_ATTRIBUTE_KEY,
+                                spanWrapper.getCloseEventStatisticDataUnit().getContextVariableMap().toString());
+                    }
+                } else if (openStatisticsLog.getContextVariableMap() != null) {
+                    span.setAttribute(TelemetryConstants.AFTER_CONTEXT_VARIABLE_MAP_ATTRIBUTE_KEY,
+                            openStatisticsLog.getContextVariableMap().toString());
                 }
             }
         }
