@@ -46,7 +46,7 @@ public class ScatterGatherMediatorSerializer extends AbstractMediatorSerializer 
         OMElement aggregationElement = fac.createOMElement("aggregation", synNS);
 
         SynapsePathSerializer.serializePath(
-                scatterGatherMediator.getAggregationExpression(), aggregationElement, "value-to-aggregate");
+                scatterGatherMediator.getAggregationExpression(), aggregationElement, "value");
 
         if (scatterGatherMediator.getCorrelateExpression() != null) {
             SynapsePathSerializer.serializePath(
@@ -68,8 +68,9 @@ public class ScatterGatherMediatorSerializer extends AbstractMediatorSerializer 
         scatterGatherElement.addChild(aggregationElement);
 
         for (Target target : scatterGatherMediator.getTargets()) {
-            if (target != null) {
-                scatterGatherElement.addChild(TargetSerializer.serializeTarget(target));
+            if (target != null && target.getSequence() != null) {
+                SequenceMediatorSerializer serializer = new SequenceMediatorSerializer();
+                serializer.serializeAnonymousSequence(scatterGatherElement, target.getSequence());
             }
         }
         serializeComments(scatterGatherElement, scatterGatherMediator.getCommentsList());

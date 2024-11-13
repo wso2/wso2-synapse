@@ -37,14 +37,14 @@ public class ScatterGatherMediatorSerializationTest extends AbstractTestCase {
     public void testScatterGatherSerialization() {
 
         String inputXML = "<scatter-gather xmlns=\"http://ws.apache.org/ns/synapse\" parallel-execution=\"true\">" +
-                "<aggregation value-to-aggregate=\"json-eval($)\" /><target><sequence>" +
+                "<aggregation value=\"json-eval($)\" /><sequence>" +
                 "<payloadFactory media-type=\"json\"><format>{                    \"pet\": {                        " +
                 "\"name\": \"pet1\",                        \"type\": \"dog\"                    },                    " +
                 "\"status\": \"success\"                    }</format><args/></payloadFactory><log level=\"custom\">" +
-                "<property name=\"Message\" value=\"==== DONE scatter target 1 ====\"/></log></sequence></target>" +
-                "<target><sequence><call><endpoint><http method=\"GET\" uri-template=\"http://localhost:5454/api/pet2\"/>" +
+                "<property name=\"Message\" value=\"==== DONE scatter target 1 ====\"/></log></sequence>" +
+                "<sequence><call><endpoint><http method=\"GET\" uri-template=\"http://localhost:5454/api/pet2\"/>" +
                 "</endpoint></call><log level=\"custom\"><property name=\"Message\" value=\"==== DONE scatter target 2 ====\"/>" +
-                "</log></sequence></target></scatter-gather>";
+                "</log></sequence></scatter-gather>";
 
         assertTrue(serialization(inputXML, scatterGatherMediatorFactory, scatterGatherMediatorSerializer));
     }

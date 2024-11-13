@@ -35,13 +35,11 @@ import javax.xml.namespace.QName;
  *
  * <pre>
  * &lt;scatter-gather parallel-execution=(true | false)&gt;
- *   &lt;aggregation value-to-aggregate="expression" condition="expression" timeout="long"
+ *   &lt;aggregation value="expression" condition="expression" timeout="long"
  *     min-messages="expression" max-messages="expression"/&gt;
- *   &lt;target&gt;
- *     &lt;sequence&gt;
- *       (mediator)+
- *     &lt;/sequence&gt;
- *   &lt;/target&gt;+
+ *   &lt;sequence&gt;
+ *     (mediator)+
+ *   &lt;/sequence&gt;+
  * &lt;/scatter-gather&gt;
  * </pre>
  */
@@ -54,13 +52,15 @@ public class ScatterGatherMediatorFactory extends AbstractMediatorFactory {
             = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "scatter-gather");
     private static final QName ELEMENT_AGGREGATE_Q
             = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "aggregation");
-    private static final QName ATT_VALUE_TO_AGGREGATE = new QName("value-to-aggregate");
+    private static final QName ATT_VALUE_TO_AGGREGATE = new QName("value");
     private static final QName ATT_CONDITION = new QName("condition");
     private static final QName ATT_TIMEOUT = new QName("timeout");
     private static final QName ATT_MIN_MESSAGES = new QName("min-messages");
     private static final QName ATT_MAX_MESSAGES = new QName("max-messages");
-    private static final QName TARGET_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "target");
+    private static final QName SEQUENCE_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "sequence");
     private static final QName PARALLEL_EXEC_Q = new QName("parallel-execution");
+
+    private static final SequenceMediatorFactory fac = new SequenceMediatorFactory();
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
@@ -76,11 +76,15 @@ public class ScatterGatherMediatorFactory extends AbstractMediatorFactory {
 
         mediator.setParallelExecution(asynchronousExe);
 
-        Iterator targetElements = elem.getChildrenWithName(TARGET_Q);
-        while (targetElements.hasNext()) {
-            Target target = TargetFactory.createTarget((OMElement) targetElements.next(), properties);
-            target.setAsynchronous(asynchronousExe);
-            mediator.addTarget(target);
+        Iterator sequenceListElements = elem.getChildrenWithName(SEQUENCE_Q);
+        while (sequenceListElements.hasNext()) {
+            OMElement sequence = (OMElement) sequenceListElements.next();
+            if (sequence != null) {
+                Target target = new Target();
+                target.setSequence(fac.createAnonymousSequence(sequence, properties));
+                target.setAsynchronous(asynchronousExe);
+                mediator.addTarget(target);
+            }
         }
 
         OMElement aggregateElement = elem.getFirstChildWithName(ELEMENT_AGGREGATE_Q);
