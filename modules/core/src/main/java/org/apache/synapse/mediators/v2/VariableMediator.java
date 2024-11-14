@@ -20,6 +20,7 @@ package org.apache.synapse.mediators.v2;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.util.JavaUtils;
@@ -126,7 +127,7 @@ public class VariableMediator extends AbstractMediator {
     public void setValue(String value, String type) {
 
         this.type = type;
-        this.value = convertValue(value, type, false);
+        this.value = convertValue(value, type);
     }
 
     public String getType() {
@@ -168,14 +169,13 @@ public class VariableMediator extends AbstractMediator {
             return value;
         } else {
             if (expression != null) {
-                return convertValue(expression.stringValueOf(synCtx), type, true);
+                return convertExpressionResult(expression.objectValueOf(synCtx), type);
             }
         }
-
         return null;
     }
 
-    private Object convertValue(String value, String type, boolean isExpression) {
+    private Object convertValue(String value, String type) {
 
         if (type == null) {
             return value;
@@ -191,13 +191,13 @@ public class VariableMediator extends AbstractMediator {
                 case FLOAT:
                     return Float.parseFloat(value);
                 case INTEGER:
-                    return parseInteger(value, isExpression);
+                    return Integer.parseInt(value);
                 case LONG:
                     return Long.parseLong(value);
                 case OM:
                     return buildOMElement(value);
                 case SHORT:
-                    return parseShort(value, isExpression);
+                    return Short.parseShort(value);
                 case JSON:
                     return buildJSONElement(value);
                 default:
@@ -212,33 +212,124 @@ public class VariableMediator extends AbstractMediator {
     }
 
     /**
-     * This method will explicitly convert decimals to int since XPAth functions return numbers with decimal.
+     * Convert the evaluated value to the expected data type.
      *
-     * @param value        String value returned from XPAth function
-     * @param isExpression Boolean to check whether the value is from XPAth function
-     * @return parsed Short value
+     * @param evaluatedValue Evaluated value to be converted
+     * @param type           Expected data type
+     * @return Converted value
      */
-    private int parseInteger(String value, boolean isExpression) {
+    private Object convertExpressionResult(Object evaluatedValue, String type) {
 
-        if (isExpression && value.contains(".")) {
-            return (int) Double.parseDouble(value);
+        if (type == null) {
+            return evaluatedValue;
         }
-        return Integer.parseInt(value);
+
+        if (evaluatedValue instanceof JsonPrimitive) {
+            return convertJsonPrimitive((JsonPrimitive) evaluatedValue, type);
+        }
+
+        XMLConfigConstants.DATA_TYPES dataType = XMLConfigConstants.DATA_TYPES.valueOf(type);
+        switch (dataType) {
+            case BOOLEAN:
+                if (!(evaluatedValue instanceof Boolean)) {
+                    handleDataTypeException("BOOLEAN");
+                }
+            case DOUBLE:
+                if (!(evaluatedValue instanceof Double)) {
+                    handleDataTypeException("DOUBLE");
+                }
+            case FLOAT:
+                if (!(evaluatedValue instanceof Float)) {
+                    handleDataTypeException("FLOAT");
+                }
+            case INTEGER:
+                if (!(evaluatedValue instanceof Integer)) {
+                    handleDataTypeException("INTEGER");
+                }
+            case LONG:
+                if (!(evaluatedValue instanceof Long)) {
+                    handleDataTypeException("LONG");
+                }
+            case OM:
+                if (!(evaluatedValue instanceof OMElement)) {
+                    handleDataTypeException("OM");
+                }
+            case SHORT:
+                if (!(evaluatedValue instanceof Short)) {
+                    handleDataTypeException("SHORT");
+                }
+            case JSON:
+                if (!(evaluatedValue instanceof JsonElement)) {
+                    handleDataTypeException("JSON");
+                }
+            default:
+        }
+        return evaluatedValue;
     }
 
     /**
-     * This method will explicitly convert decimals to short since XPAth functions return numbers with decimal.
+     * Convert the JSON primitive to the expected data type.
      *
-     * @param value        String value returned from XPAth function
-     * @param isExpression Boolean to check whether the value is from XPAth function
-     * @return parsed Short value
+     * @param jsonPrimitive JSON primitive to be converted
+     * @param type          Expected data type
+     * @return Converted JSON primitive
      */
-    private short parseShort(String value, boolean isExpression) {
+    public Object convertJsonPrimitive(JsonPrimitive jsonPrimitive, String type) {
 
-        if (isExpression && value.contains(".")) {
-            return (short) Double.parseDouble(value);
+        XMLConfigConstants.DATA_TYPES dataType = XMLConfigConstants.DATA_TYPES.valueOf(type);
+        switch (dataType) {
+            case BOOLEAN:
+                if (jsonPrimitive.isBoolean()) {
+                    return jsonPrimitive.getAsBoolean();
+                } else {
+                    handleDataTypeException("BOOLEAN");
+                }
+            case DOUBLE:
+                if (jsonPrimitive.isNumber()) {
+                    return jsonPrimitive.getAsDouble();
+                } else {
+                    handleDataTypeException("DOUBLE");
+                }
+            case FLOAT:
+                if (jsonPrimitive.isNumber()) {
+                    return jsonPrimitive.getAsFloat();
+                } else {
+                    handleDataTypeException("FLOAT");
+                }
+            case INTEGER:
+                if (jsonPrimitive.isNumber()) {
+                    return jsonPrimitive.getAsInt();
+                } else {
+                    handleDataTypeException("INTEGER");
+                }
+            case LONG:
+                if (jsonPrimitive.isNumber()) {
+                    return jsonPrimitive.getAsLong();
+                } else {
+                    handleDataTypeException("LONG");
+                }
+            case SHORT:
+                if (jsonPrimitive.isNumber()) {
+                    return jsonPrimitive.getAsShort();
+                } else {
+                    handleDataTypeException("SHORT");
+                }
+            default:
+                return jsonPrimitive.getAsString();
         }
-        return Short.parseShort(value);
+    }
+
+    /**
+     * This method will throw a SynapseException with a message indicating that the expression result does not match
+     * the expected data type.
+     *
+     * @param dataType Expected data type
+     */
+    private void handleDataTypeException(String dataType) {
+
+        String msg = "Expression '${" + expression + "}' result does not match the expected data type '" + dataType + "'";
+        log.error(msg);
+        throw new SynapseException(msg);
     }
 
     @Override
