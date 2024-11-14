@@ -37,6 +37,7 @@ import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.ListMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.util.xpath.SynapseExpression;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
@@ -144,7 +145,7 @@ public class FilterMediator extends AbstractListMediator implements
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug((xpath == null ?
                         "Source : " + source + " against : " + regex.pattern() + " matches" :
-                        "XPath expression : "  + xpath + " evaluates to true") +
+                        "Expression : "  + xpath + " evaluates to true") +
                         " - executing then sequence with key : " + thenKey);
                 }
 
@@ -162,7 +163,7 @@ public class FilterMediator extends AbstractListMediator implements
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug((xpath == null ?
                         "Source : " + source + " against : " + regex.pattern() + " matches" :
-                        "XPath expression : "  + xpath + " evaluates to true") +
+                        "Expression : "  + xpath + " evaluates to true") +
                         " - executing child mediators");
                 }
 
@@ -179,7 +180,7 @@ public class FilterMediator extends AbstractListMediator implements
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug((xpath == null ?
                         "Source : " + source + " against : " + regex.pattern() + " does not match" :
-                        "XPath expression : "  + xpath + " evaluates to false") +
+                        "Expression : "  + xpath + " evaluates to false") +
                         " - executing the else sequence with key : " + elseKey);
                 }
 
@@ -198,7 +199,7 @@ public class FilterMediator extends AbstractListMediator implements
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug((xpath == null ?
                         "Source : " + source + " against : " + regex.pattern() + " does not match" :
-                        "XPath expression : "  + xpath + " evaluates to false") +
+                        "Expression : "  + xpath + " evaluates to false") +
                         " - executing the else path child mediators");
                 }
                 ContinuationStackManager.addReliantContinuationState(synCtx, 1, getMediatorPosition());
@@ -212,7 +213,7 @@ public class FilterMediator extends AbstractListMediator implements
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug((xpath == null ?
                         "Source : " + source + " against : " + regex.pattern() + " does not match" :
-                        "XPath expression : "  + xpath + " evaluates to false and no else path") +
+                        "Expression : "  + xpath + " evaluates to false and no else path") +
                         " - skipping child mediators");
                 }
                 result = true;
@@ -288,9 +289,11 @@ public class FilterMediator extends AbstractListMediator implements
                     return xpath.booleanValueOf(synCtx);
                 } else if (xpath instanceof SynapseJsonPath) {
                     return ((SynapseJsonPath) xpath).booleanValueOf(synCtx);
+                } else if (xpath instanceof SynapseExpression) {
+                    return Boolean.parseBoolean(xpath.stringValueOf(synCtx));
                 }
             } catch (JaxenException e) {
-                handleException("Error evaluating XPath expression : " + xpath, e, synCtx);
+                handleException("Error evaluating Expression : " + xpath, e, synCtx);
             }
 
         } else if (source != null && regex != null) {
