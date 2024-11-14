@@ -30,6 +30,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.SynapsePath;
+import org.apache.synapse.config.xml.SynapsePathFactory;
+import org.apache.synapse.util.xpath.SynapseExpression;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
@@ -49,8 +51,8 @@ public final class InlineExpressionUtil {
     // Regex to identify expressions in inline text
     private static final Pattern EXPRESSION_PATTERN = Pattern.compile("(\\{[^\\s\",<>}\\]]+})");
 
-    // Regex to identify synapse expressions #[expression] in inline text
-    private static final Pattern EXPRESSION_PLACEHOLDER_PATTERN = Pattern.compile("#\\[(.+?)\\]");
+    // Regex to identify synapse expressions ${expression} in inline text
+    private static final Pattern SYNAPSE_EXPRESSION_PLACEHOLDER_PATTERN = Pattern.compile("\\$\\{(.+?)}");
 
     private InlineExpressionUtil() {
 
@@ -202,35 +204,46 @@ public final class InlineExpressionUtil {
     }
 
     /**
+     * Checks whether inline text contains synapse expressions
+     * Inline expressions will be denoted inside ${}
+     * e.g.: ${var.var1}, ${payload.element.id}
+     *
+     * @param inlineText Inline text string
+     * @return true if the string contains inline synapse expressions, false otherwise
+     */
+    public static boolean isInlineSynapseExpressionsContentAware(String inlineText) {
+
+        Matcher matcher = SYNAPSE_EXPRESSION_PLACEHOLDER_PATTERN.matcher(inlineText);
+        while (matcher.find()) {
+            // Extract the expression inside ${...}
+            String placeholder = matcher.group(1);
+            if (placeholder.contains("xpath(") || placeholder.contains("payload.") || placeholder.contains("$.")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Process the inline template and replace the synapse expressions with the resolved values
      *
      * @param synCtx   Message Context
      * @param template Inline template
      * @return Processed inline template
      */
-    public static String processInLineTemplate(MessageContext synCtx, String template) {
+    public static String processInLineSynapseExpressionTemplate(MessageContext synCtx, String template)
+            throws JaxenException {
 
-        Matcher matcher = EXPRESSION_PLACEHOLDER_PATTERN.matcher(template);
+        Matcher matcher = SYNAPSE_EXPRESSION_PLACEHOLDER_PATTERN.matcher(template);
         StringBuffer result = new StringBuffer();
         while (matcher.find()) {
-            // Extract the expression inside #[...]
+            // Extract the expression inside ${...}
             String placeholder = matcher.group(1);
-            // Dummy resolver for expressions to test the Log mediator
-            // TODO update the #getDynamicValue method with synapse expressions and replace this
-            String replacement = ExpressionResolver.resolve(placeholder, synCtx);
+            SynapseExpression expression = new SynapseExpression(placeholder);
+            String replacement = expression.stringValueOf(synCtx);
             matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
         }
         matcher.appendTail(result);
         return result.toString();
-    }
-
-    static class ExpressionResolver {
-        public static String resolve(String expression, MessageContext synCtx) {
-            String variableName = expression.substring(5);
-            if (synCtx.getVariable(variableName) != null) {
-                return synCtx.getVariable(variableName).toString();
-            }
-            return expression;
-        }
     }
 }

@@ -29,17 +29,15 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.commons.CorrelationConstants;
-import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.util.InlineExpressionUtil;
+import org.jaxen.JaxenException;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Logs the specified message into the configured logger. The log levels specify
@@ -319,14 +317,25 @@ public class LogMediator extends AbstractMediator {
 
     private String processMessageTemplate(MessageContext synCtx, String template) {
         StringBuffer result = new StringBuffer();
-        result.append(InlineExpressionUtil.processInLineTemplate(synCtx, template));
+        try {
+            result.append(InlineExpressionUtil.processInLineSynapseExpressionTemplate(synCtx, template));
+        } catch (JaxenException e) {
+            handleException("Failed to process the message template : " + template, e, synCtx);
+        }
         setCustomProperties(result, synCtx);
         return result.toString();
     }
 
     @Override
     public boolean isContentAware() {
-        // TODO Use the new simplified expression model to check if the log mediator is content aware
+        if (logLevel == MESSAGE_TEMPLATE) {
+            for (MediatorProperty property : properties) {
+                if (property.getExpression() != null && property.getExpression().isContentAware()) {
+                    return true;
+                }
+            }
+            return InlineExpressionUtil.isInlineSynapseExpressionsContentAware(messageTemplate);
+        }
         if (logLevel == CUSTOM) {
             for (MediatorProperty property : properties) {
                 if (property.getExpression() != null && property.getExpression().isContentAware()) {
