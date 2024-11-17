@@ -36,7 +36,6 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitExpression(ExpressionParser.ExpressionContext ctx) {
-        System.out.println("visitExpression " + ctx.getText());
         if (ctx.comparisonExpression() != null) {
             return visitComparisonExpression(ctx.comparisonExpression());
         } else if (ctx.conditionalExpression() != null) {
@@ -162,6 +161,14 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
                     return new PredefinedFunctionNode(parameterList, SynapseConstants.REPLACE);
                 case SynapseConstants.SPLIT:
                     return new PredefinedFunctionNode(parameterList, SynapseConstants.SPLIT);
+                case SynapseConstants.INDEX_OF:
+                    return new PredefinedFunctionNode(parameterList, SynapseConstants.INDEX_OF);
+                case SynapseConstants.NOW:
+                    return new PredefinedFunctionNode(parameterList, SynapseConstants.NOW);
+                case SynapseConstants.FORMAT_DATE_TIME:
+                    return new PredefinedFunctionNode(parameterList, SynapseConstants.FORMAT_DATE_TIME);
+                case SynapseConstants.CHAR_AT:
+                    return new PredefinedFunctionNode(parameterList, SynapseConstants.CHAR_AT);
                 case SynapseConstants.ABS:
                     return new PredefinedFunctionNode(parameterList, SynapseConstants.ABS);
                 case SynapseConstants.CEIL:
