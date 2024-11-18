@@ -26,8 +26,16 @@ import org.apache.synapse.util.synapse.expression.utils.ExpressionUtils;
 import org.jaxen.JaxenException;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.UnsupportedCharsetException;
+import java.time.DateTimeException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.List;
 
@@ -160,6 +168,12 @@ public class PredefinedFunctionNode implements ExpressionNode {
                 return handleUrlEncodeFunction(source, argument1);
             case SynapseConstants.REGISTRY:
                 return handleRegistryAccess(context, source, argument1);
+            case SynapseConstants.INDEX_OF:
+                return handleIndexOfFunction(source, argument1);
+            case SynapseConstants.FORMAT_DATE_TIME:
+                return handleFormatCurrentDateTimeFunction(source, argument1);
+            case SynapseConstants.CHAR_AT:
+                return handleCharAtFunction(source, argument1);
             default:
                 throw new EvaluationException("Invalid function: " + functionName + " with two arguments");
         }
@@ -177,6 +191,10 @@ public class PredefinedFunctionNode implements ExpressionNode {
                 return handleSubstringFunction(source, argument1, argument2);
             case SynapseConstants.REPLACE:
                 return handleReplaceFunction(source, argument1, argument2);
+            case SynapseConstants.INDEX_OF:
+                return handleIndexOfFunction(source, argument1, argument2);
+            case SynapseConstants.FORMAT_DATE_TIME:
+                return handleFormatDateTimeFunctions(source, argument1, argument2);
             default:
                 throw new EvaluationException("Invalid function: " + functionName + " with three arguments");
         }
@@ -295,7 +313,7 @@ public class PredefinedFunctionNode implements ExpressionNode {
     private ExpressionResult handleUrlDecodeFunction(ExpressionResult result) {
         if (result.isString()) {
             try {
-                return new ExpressionResult(java.net.URLDecoder.decode(result.asString(), "UTF-8"));
+                return new ExpressionResult(URLDecoder.decode(result.asString(), "UTF-8"));
             } catch (UnsupportedEncodingException e) {
                 throw new EvaluationException("unsupported encoding provided for urlDecode function");
             }
@@ -382,6 +400,88 @@ public class PredefinedFunctionNode implements ExpressionNode {
             return new ExpressionResult(jsonArray);
         }
         throw new EvaluationException("Invalid argument provided for split function. source: " + source.asString()
+                + ", argument1: " + argument1.asString());
+    }
+
+    private ExpressionResult handleIndexOfFunction(ExpressionResult source, ExpressionResult argument1) {
+        if (source.isString() && argument1.isString()) {
+            return new ExpressionResult(source.asString().indexOf(argument1.asString()));
+        }
+        throw new EvaluationException("Invalid argument provided for indexOf function. source: " + source.asString()
+                + ", argument1: " + argument1.asString());
+    }
+
+    private ExpressionResult handleIndexOfFunction(ExpressionResult source, ExpressionResult argument1, ExpressionResult argument2) {
+        if (source.isString() && argument1.isString() && argument2.isInteger()) {
+            return new ExpressionResult(source.asString().indexOf(argument1.asString(), argument2.asInt()));
+        }
+        throw new EvaluationException("Invalid argument provided for indexOf function. source: " + source.asString()
+                + ", argument1: " + argument1.asString() + ", argument2: " + argument2.asString());
+    }
+
+    private ExpressionResult handleFormatCurrentDateTimeFunction(ExpressionResult source, ExpressionResult argument1) {
+        if (argument1.isString() && source.isNumeric()) {
+            try {
+                DateTimeFormatter formatObj = DateTimeFormatter.ofPattern(argument1.asString());
+                LocalDateTime dateObj = LocalDateTime.ofInstant(Instant.ofEpochMilli(source.asLong()),
+                        ZoneId.systemDefault());
+                return new ExpressionResult(dateObj.format(formatObj));
+            } catch (DateTimeException e) {
+                throw new EvaluationException("Invalid date format provided for formatDateTime function. Format: "
+                        + argument1.asString());
+            }
+        }
+        throw new EvaluationException("Invalid argument provided for formatDateTime function. source: " + source.asString()
+                + ", argument1: " + argument1.asString());
+    }
+
+    private ExpressionResult handleFormatDateTimeFunctions(ExpressionResult source, ExpressionResult oldFormat,
+                                                           ExpressionResult newFormat) {
+        if (source.isString() && oldFormat.isString() && newFormat.isString()) {
+            DateTimeFormatter oldFormatObj = null;
+            try {
+                oldFormatObj = DateTimeFormatter.ofPattern(oldFormat.asString());
+                LocalDateTime dateObj = LocalDateTime.parse(source.asString(), oldFormatObj);
+                DateTimeFormatter newFormatObj = DateTimeFormatter.ofPattern(newFormat.asString());
+                return new ExpressionResult(dateObj.format(newFormatObj));
+            } catch (DateTimeException | IllegalArgumentException e) {
+                // try with date only
+                if (oldFormatObj != null) {
+                    try {
+                        LocalDate dateObj = LocalDate.parse(source.asString(), oldFormatObj);
+                        DateTimeFormatter newFormatObj = DateTimeFormatter.ofPattern(newFormat.asString());
+                        return new ExpressionResult(dateObj.format(newFormatObj));
+                    } catch (DateTimeException | IllegalArgumentException ex) {
+                        // try with time only
+                        try {
+                            LocalTime dateObj = LocalTime.parse(source.asString(), oldFormatObj);
+                            DateTimeFormatter newFormatObj = DateTimeFormatter.ofPattern(newFormat.asString());
+                            return new ExpressionResult(dateObj.format(newFormatObj));
+                        } catch (DateTimeException | IllegalArgumentException exc) {
+                            throw new EvaluationException("Invalid date format provided for formatDateTime function. Format: "
+                                    + oldFormat.asString());
+                        }
+                    }
+                }
+                throw new EvaluationException("Invalid date format provided for formatDateTime function. Format: "
+                        + oldFormat.asString());
+            }
+        }
+        throw new EvaluationException("Invalid argument provided for formatDateTime function. source: " + source.asString()
+                + ", oldFormat: " + oldFormat.asString() + ", newFormat: " + newFormat.asString());
+    }
+
+    private ExpressionResult handleCharAtFunction(ExpressionResult source, ExpressionResult argument1) {
+        if (source.isString() && argument1.isInteger()) {
+            try {
+
+                return new ExpressionResult(String.valueOf(source.asString().charAt(argument1.asInt())));
+            } catch (StringIndexOutOfBoundsException ex) {
+                throw new EvaluationException("Invalid index provided for charAt function. source: " + source.asString()
+                        + ", index: " + argument1.asInt());
+            }
+        }
+        throw new EvaluationException("Invalid argument provided for charAt function. source: " + source.asString()
                 + ", argument1: " + argument1.asString());
     }
 

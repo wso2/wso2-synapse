@@ -640,7 +640,7 @@ public final class SynapseConstants {
     public static final String  TRIM = "trim";
     public static final String  REPLACE = "replace";
     public static final String  SPLIT = "split";
-    public static final String  NOW = "now";
+    public static final String  INDEX_OF = "indexOf";
     public static final String  ABS = "abs";
     public static final String  CEIL = "ceil";
     public static final String  FLOOR = "floor";
@@ -661,6 +661,9 @@ public final class SynapseConstants {
     public static final String  EXISTS = "exists";
     public static final String  XPATH = "xpath";
     public static final String  SECRET = "secret";
+    public static final String  NOW = "now";
+    public static final String  FORMAT_DATE_TIME = "formatDateTime";
+    public static final String  CHAR_AT = "charAt";
 
     public static final String  ROUND = "round";
     public static final String  INTEGER = "integer";

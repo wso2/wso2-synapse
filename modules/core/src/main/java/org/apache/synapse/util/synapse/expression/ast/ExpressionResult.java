@@ -118,6 +118,16 @@ public class ExpressionResult {
         throw new EvaluationException("Value : " + value + " cannot be converted to double");
     }
 
+    // Method to get value as Long
+    public long asLong() {
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        } else if (value instanceof JsonPrimitive && ((JsonPrimitive) value).isNumber()) {
+            return ((JsonPrimitive) value).getAsLong();
+        }
+        throw new EvaluationException("Value : " + value + " cannot be converted to double");
+    }
+
     // Method to get value as boolean
     public boolean asBoolean() {
         if (value instanceof Boolean) {

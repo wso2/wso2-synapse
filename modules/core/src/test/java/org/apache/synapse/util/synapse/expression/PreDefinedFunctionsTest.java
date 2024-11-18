@@ -21,6 +21,9 @@ import org.apache.synapse.SynapseConstants;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 /**
  * Test class for pre-defined functions.
  */
@@ -361,7 +364,7 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("false", TestUtils.evaluateExpression("exists(var.num1)"));
         Assert.assertEquals("false", TestUtils.evaluateExpression("exists(null)"));
         Assert.assertEquals("John", TestUtils.evaluateExpressionWithPayload(
-                "exists($.fullName) ? $.fullName : $.name",1));
+                "exists($.fullName) ? $.fullName : $.name", 1));
     }
 
     @Test
@@ -400,5 +403,39 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("true", TestUtils.evaluateExpression("not(false)"));
         Assert.assertEquals("true", TestUtils.evaluateExpression("not(5 > 6) ? true : false"));
         Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("not(123)"));
+    }
+
+    @Test
+    public void testIndexOf() {
+        Assert.assertEquals("6", TestUtils.evaluateExpression("indexOf(\"Hello World\", \"World\")"));
+        Assert.assertEquals("-1", TestUtils.evaluateExpression("indexOf(\"Hello World\", \"World2\")"));
+        Assert.assertEquals("8", TestUtils.evaluateExpression("indexOf(\"Hello World\", \"r\")"));
+        Assert.assertEquals("9", TestUtils.evaluateExpression("indexOf(\"Hello World\", \"l\",5)"));
+        Assert.assertEquals("-1", TestUtils.evaluateExpression("indexOf(\"Hello World\", \"l\",50)"));
+        Assert.assertEquals("7", TestUtils.evaluateExpressionWithPayload("indexOf($.string, \"World\")", 1));
+    }
+
+    @Test
+    public void testCharAt() {
+        Assert.assertEquals("W", TestUtils.evaluateExpression("charAt(\"Hello World\", 6)"));
+        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("charAt(\"Hello World\", -1)"));
+        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("charAt(\"Hello World\", 100)"));
+        Assert.assertEquals(" ", TestUtils.evaluateExpressionWithPayload("charAt($.string, 0)", 1));
+    }
+
+    @Test
+    public void testFormatDateTime() {
+        Assert.assertEquals(LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")),
+                TestUtils.evaluateExpression("formatDateTime(now(), \"dd-MM-yyyy HH:mm\")"));
+        Assert.assertEquals(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                TestUtils.evaluateExpression("formatDateTime(now(), \"yyyy-MM-dd\")"));
+        Assert.assertEquals("1988-09-29",
+                TestUtils.evaluateExpression("formatDateTime(\"29/09/1988\",\"dd/MM/yyyy\", \"yyyy-MM-dd\")"));
+        Assert.assertEquals("1988 Sep 29",
+                TestUtils.evaluateExpression("formatDateTime(\"29-09-1988\",\"dd-MM-yyyy\", \"yyyy MMM dd\")"));
+        Assert.assertEquals("11 22 33",
+                TestUtils.evaluateExpression("formatDateTime(\"11-22-33\",\"HH-mm-ss\", \"HH mm ss\")"));
+        Assert.assertEquals(SynapseConstants.UNKNOWN,
+                TestUtils.evaluateExpression("formatDateTime(\"50-22-33\",\"HH-mm-ss\", \"HH mm ss\")"));
     }
 }
