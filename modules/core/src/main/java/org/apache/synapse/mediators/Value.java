@@ -23,10 +23,12 @@ import org.apache.axiom.om.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
+import org.apache.synapse.util.xpath.SynapseExpression;
 import org.jaxen.JaxenException;
 
 import java.util.ArrayList;
@@ -101,6 +103,10 @@ public class Value {
                             new SynapseJsonPath(expressionString.substring(10, expressionString.length() - 1));
                     expression = expressionTypeKey;
 
+                } else if (expressionString.startsWith(SynapseConstants.SYNAPSE_EXPRESSION_IDENTIFIER_START) &&
+                        expressionString.endsWith(SynapseConstants.SYNAPSE_EXPRESSION_IDENTIFIER_END)) {
+                    expression = new SynapseExpression(
+                            expressionString.substring(2, expressionString.length() - 1));
                 } else {
                     SynapseXPath expressionTypeKey = new SynapseXPath(expressionString);
                     for (OMNamespace aNamespaceList : namespaceList) {
