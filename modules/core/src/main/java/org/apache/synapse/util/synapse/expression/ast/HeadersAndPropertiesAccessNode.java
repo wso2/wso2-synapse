@@ -65,7 +65,7 @@ public class HeadersAndPropertiesAccessNode implements ExpressionNode {
                 try {
                     value = PropertyHolder.getInstance().getPropertyValue(name);
                 } catch (Exception e) {
-                    throw new EvaluationException("Value of the key:[" + name + "] is null");
+                    throw new EvaluationException("The value of the key:[" + name + "] is null");
                 }
             } else {
                 if (SynapseConstants.URI_PARAM.equals(scope)) {
