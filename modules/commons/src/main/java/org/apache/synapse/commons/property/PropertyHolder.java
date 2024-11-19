@@ -47,7 +47,6 @@ public class PropertyHolder {
         }
     }
 
-
     public String getPropertyValue(String key) {
         ensureMapInitialized();
         return this.properties.get(key);
