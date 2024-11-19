@@ -32,6 +32,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.commons.json.Constants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -54,7 +55,11 @@ public abstract class AbstractListMediator extends AbstractMediator
         implements ListMediator {
 
     private static final String MSG_BUILD_FAILURE_EXCEPTION_PATTERN = ".*(Wstx)(.*Exception)" +
-            "|.*MalformedJsonException|.*(synapse\\.commons\\.staxon\\.core)|.*(com\\.fasterxml\\.jackson\\.core)";
+            "|.*MalformedJsonException|.*(synapse\\.commons\\.staxon\\.core)|.*(com\\.fasterxml\\.jackson\\.core)" +
+            "|.*JsonSyntaxException";
+
+    private static final String ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT =
+            "org.apache.synapse.commons.json.JsonInputStream.IsJsonObject";
 
     // Create a Pattern object
     protected Pattern msgBuildFailureExpattern = Pattern.compile(MSG_BUILD_FAILURE_EXCEPTION_PATTERN);
@@ -274,6 +279,13 @@ public abstract class AbstractListMediator extends AbstractMediator
         } catch (AxisFault axisFault) {
             log.error("Exception while consuming the input stream on Om Exception", axisFault);
         }
+        //removing JSONstream from the message Context since it is outdated.
+        org.apache.axis2.context.MessageContext axis2MessageContext =
+                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        axis2MessageContext.removeProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
+        axis2MessageContext.removeProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT);
+        //Clearing the buffered input stream when there is an build exception occurred.
+        axis2MessageContext.setProperty(PassThroughConstants.BUFFERED_INPUT_STREAM, null);
         SOAPEnvelope soapEnvelope;
         if (synCtx.isSOAP11()) {
             soapEnvelope = OMAbstractFactory.getSOAP11Factory().createSOAPEnvelope();

@@ -69,6 +69,11 @@ public class Axis2MessageContext implements MessageContext {
     private final Map<String, Object> properties = new HashMap<String, Object>();
 
     /**
+     * Synapse Message Context variables
+     */
+    private final Map<String, Object> variables = new HashMap<>();
+
+    /**
      * Local entries fetched from the configuration or from the registry for the transactional
      * resource access
      */
@@ -724,5 +729,23 @@ public class Axis2MessageContext implements MessageContext {
     public HashMap<String, Object> getAnalyticsMetadata() {
         //noinspection unchecked
         return (HashMap<String, Object>) getProperty(SynapseConstants.ANALYTICS_METADATA);
+    }
+
+    @Override
+    public Object getVariable(String key) {
+        return variables.get(key);
+    }
+
+    @Override
+    public void setVariable(String key, Object value) {
+        if (value == null) {
+            return;
+        }
+        variables.put(key, value);
+    }
+
+    @Override
+    public Set getVariableKeySet() {
+        return variables.keySet();
     }
 }

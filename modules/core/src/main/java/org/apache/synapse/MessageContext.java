@@ -457,4 +457,27 @@ public OMElement getFormat(String key);
      * @param tracingState Set whether the message flowtracing is enabled or not
      */
     public void setMessageFlowTracingState(int tracingState);
+
+    /**
+     * Get the value of a variable on the message instance
+     *
+     * @param key key to look up variable
+     * @return value for the given key
+     */
+    public Object getVariable(String key);
+
+    /**
+     * Set a variable with the given name on the message instance
+     *
+     * @param key   key to be used
+     * @param value value to be saved
+     */
+    public void setVariable(String key, Object value);
+
+    /**
+     * Returns the Set of keys over the variables on this message context
+     *
+     * @return a Set of keys over message variables
+     */
+    public Set getVariableKeySet();
 }

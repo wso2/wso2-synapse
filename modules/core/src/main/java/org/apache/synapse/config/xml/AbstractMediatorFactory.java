@@ -65,6 +65,8 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
         = new QName(XMLConfigConstants.STATISTICS_ATTRIB_NAME);
     protected static final QName PROP_Q
         = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "property");
+    protected static final QName VARIABLE_Q
+            = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "variable");
     protected static final QName PROPERTY_GROUP_Q
             = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "propertyGroup");
     protected static final QName FEATURE_Q
