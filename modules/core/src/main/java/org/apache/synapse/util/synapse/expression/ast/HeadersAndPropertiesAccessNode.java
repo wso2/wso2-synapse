@@ -19,6 +19,8 @@
 package org.apache.synapse.util.synapse.expression.ast;
 
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.commons.property.PropertyHolder;
+import org.apache.synapse.commons.resolvers.ConfigResolver;
 import org.apache.synapse.util.synapse.expression.context.EvaluationContext;
 import org.apache.synapse.util.synapse.expression.exception.EvaluationException;
 
@@ -60,6 +62,8 @@ public class HeadersAndPropertiesAccessNode implements ExpressionNode {
             Object value;
             if (Type.HEADER.equals(type)) {
                 value = context.getHeader(name);
+            } else if (Type.CONFIG.equals(type)) {
+                value =  PropertyHolder.getInstance().getPropertyValue(name);
             } else {
                 if (SynapseConstants.URI_PARAM.equals(scope)) {
                     value = context.getProperty("uri.var." + name, SynapseConstants.SYNAPSE);
