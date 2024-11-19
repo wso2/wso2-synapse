@@ -125,7 +125,7 @@ public class ResolverFactory {
                 resolverObject.setVariable(matcher.group(3));
                 return resolverObject;
             } catch (IllegalAccessException | InstantiationException e) {
-                throw new ResolverException("Resolver could not be found");
+                throw new ResolverException("Resolver could not be initialized", e);
             }
         } else {
             throw new ResolverException("Resolver could not be found");

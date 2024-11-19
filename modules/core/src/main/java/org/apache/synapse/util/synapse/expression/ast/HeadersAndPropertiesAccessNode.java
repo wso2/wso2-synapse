@@ -62,7 +62,11 @@ public class HeadersAndPropertiesAccessNode implements ExpressionNode {
             if (Type.HEADER.equals(type)) {
                 value = context.getHeader(name);
             } else if (Type.CONFIG.equals(type)) {
-                value =  PropertyHolder.getInstance().getPropertyValue(name);
+                try {
+                    value = PropertyHolder.getInstance().getPropertyValue(name);
+                } catch (Exception e) {
+                    throw new EvaluationException("Value of the key:[" + name + "] is null");
+                }
             } else {
                 if (SynapseConstants.URI_PARAM.equals(scope)) {
                     value = context.getProperty("uri.var." + name, SynapseConstants.SYNAPSE);

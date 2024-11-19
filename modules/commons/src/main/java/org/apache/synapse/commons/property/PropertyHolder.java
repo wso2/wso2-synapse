@@ -37,27 +37,21 @@ public class PropertyHolder {
     }
 
     public void setProperty(String key, String value) {
-        ensureMapInitialized();
-        this.properties.put(key, value);
-    }
-
-    private void ensureMapInitialized() {
-        if (properties == null) {
-            this.properties = new ConcurrentHashMap<>();
-        }
+        getProperties().put(key, value);
     }
 
     public String getPropertyValue(String key) {
-        ensureMapInitialized();
-        return this.properties.get(key);
+        return getProperties().get(key);
     }
 
     public Boolean hasKey(String key) {
-        ensureMapInitialized();
-        return properties.containsKey(key);
+        return getProperties().containsKey(key);
     }
 
     public ConcurrentHashMap<String, String> getProperties() {
+        if (properties == null) {
+            this.properties = new ConcurrentHashMap<>();
+        }
         return this.properties;
     }
 }

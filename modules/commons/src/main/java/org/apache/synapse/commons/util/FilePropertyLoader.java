@@ -42,7 +42,6 @@ public class FilePropertyLoader {
     private static final String CONF_LOCATION = "conf.location";
     private static final String FILE_PROPERTY_PATH = "properties.file.path";
     private static final String DEFAULT_PROPERTY_FILE = "file.properties";
-    private static final String CONFIG_PROPERTY_FILE = "config.properties";
     private static final String FILE_SYNC_INTERVAL = "file.properties.sync.interval";
     private static final String FILE_CANNOT_BE_FOUND_ERROR = "File cannot found in ";
     private String propertiesFilePath;

@@ -41,7 +41,6 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.util.JavaUtils;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.util.MediatorPropertyUtils;
-import org.apache.synapse.util.resolver.SecureVaultResolver;
 
 import java.util.Comparator;
 import java.util.Map;
