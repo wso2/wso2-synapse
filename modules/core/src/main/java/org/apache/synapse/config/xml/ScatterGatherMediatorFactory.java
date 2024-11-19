@@ -20,7 +20,9 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.eip.Target;
 import org.apache.synapse.mediators.v2.ScatterGather;
 import org.jaxen.JaxenException;
@@ -34,7 +36,7 @@ import javax.xml.namespace.QName;
  * different message contexts and aggregate the responses back.
  *
  * <pre>
- * &lt;scatter-gather parallel-execution=(true | false)&gt;
+ * &lt;scatter-gather parallel-execution=(true | false) result-target=(body | variable) content-type=(JSON | XML)&gt;
  *   &lt;aggregation value="expression" condition="expression" timeout="long"
  *     min-messages="expression" max-messages="expression"/&gt;
  *   &lt;sequence&gt;
@@ -59,6 +61,8 @@ public class ScatterGatherMediatorFactory extends AbstractMediatorFactory {
     private static final QName ATT_MAX_MESSAGES = new QName("max-messages");
     private static final QName SEQUENCE_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "sequence");
     private static final QName PARALLEL_EXEC_Q = new QName("parallel-execution");
+    private static final QName RESULT_TARGET_Q = new QName("result-target");
+    private static final QName CONTENT_TYPE_Q = new QName("content-type");
 
     private static final SequenceMediatorFactory fac = new SequenceMediatorFactory();
 
@@ -73,10 +77,36 @@ public class ScatterGatherMediatorFactory extends AbstractMediatorFactory {
         if (parallelExecAttr != null && parallelExecAttr.getAttributeValue().equals("false")) {
             asynchronousExe = false;
         }
-
         mediator.setParallelExecution(asynchronousExe);
 
+        OMAttribute contentTypeAttr = elem.getAttribute(CONTENT_TYPE_Q);
+        if (contentTypeAttr == null || StringUtils.isBlank(contentTypeAttr.getAttributeValue())) {
+            String msg = "The 'content-type' attribute is required for the configuration of a Scatter Gather mediator";
+            throw new SynapseException(msg);
+        } else {
+            if ("JSON".equals(contentTypeAttr.getAttributeValue())) {
+                mediator.setContentType(ScatterGather.JSON_TYPE);
+            } else if ("XML".equals(contentTypeAttr.getAttributeValue())) {
+                mediator.setContentType(ScatterGather.XML_TYPE);
+            } else {
+                String msg = "The 'content-type' attribute should be either 'JSON' or 'XML'";
+                throw new SynapseException(msg);
+            }
+        }
+
+        OMAttribute resultTargetAttr = elem.getAttribute(RESULT_TARGET_Q);
+        if (resultTargetAttr == null || StringUtils.isBlank(resultTargetAttr.getAttributeValue())) {
+            String msg = "The 'result-target' attribute is required for the configuration of a Scatter Gather mediator";
+            throw new SynapseException(msg);
+        } else {
+            mediator.setResultTarget(resultTargetAttr.getAttributeValue());
+        }
+
         Iterator sequenceListElements = elem.getChildrenWithName(SEQUENCE_Q);
+        if (!sequenceListElements.hasNext()) {
+            String msg = "A 'sequence' element is required for the configuration of a Scatter Gather mediator";
+            throw new SynapseException(msg);
+        }
         while (sequenceListElements.hasNext()) {
             OMElement sequence = (OMElement) sequenceListElements.next();
             if (sequence != null) {
@@ -97,6 +127,9 @@ public class ScatterGatherMediatorFactory extends AbstractMediatorFactory {
                 } catch (JaxenException e) {
                     handleException("Unable to load the aggregating expression", e);
                 }
+            } else {
+                String msg = "The 'value' attribute is required for the configuration of a Scatter Gather mediator";
+                throw new SynapseException(msg);
             }
 
             OMAttribute conditionExpr = aggregateElement.getAttribute(ATT_CONDITION);
@@ -123,6 +156,9 @@ public class ScatterGatherMediatorFactory extends AbstractMediatorFactory {
             if (maxMessages != null) {
                 mediator.setMaxMessagesToComplete(new ValueFactory().createValue("max-messages", aggregateElement));
             }
+        } else {
+            String msg = "The 'aggregation' element is required for the configuration of a Scatter Gather mediator";
+            throw new SynapseException(msg);
         }
         addAllCommentChildrenToList(elem, mediator.getCommentsList());
         return mediator;

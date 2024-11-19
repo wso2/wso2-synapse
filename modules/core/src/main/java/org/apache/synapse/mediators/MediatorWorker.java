@@ -154,7 +154,7 @@ public class MediatorWorker implements Runnable {
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
                 debugManager.releaseMediationFlowLock();
             }
-            if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+            if (RuntimeStatisticCollector.isStatisticsEnabled() && !isScatterMessage(synCtx)) {
                 this.statisticsCloseEventListener.invokeCloseEventEntry(synCtx);
             }
         }

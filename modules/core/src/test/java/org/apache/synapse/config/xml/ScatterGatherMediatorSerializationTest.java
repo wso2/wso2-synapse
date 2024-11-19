@@ -36,7 +36,8 @@ public class ScatterGatherMediatorSerializationTest extends AbstractTestCase {
 
     public void testScatterGatherSerialization() {
 
-        String inputXML = "<scatter-gather xmlns=\"http://ws.apache.org/ns/synapse\" parallel-execution=\"true\">" +
+        String inputXML = "<scatter-gather xmlns=\"http://ws.apache.org/ns/synapse\" result-target=\"body\" " +
+                "content-type=\"XML\" parallel-execution=\"true\">" +
                 "<aggregation value=\"json-eval($)\" /><sequence>" +
                 "<payloadFactory media-type=\"json\"><format>{                    \"pet\": {                        " +
                 "\"name\": \"pet1\",                        \"type\": \"dog\"                    },                    " +

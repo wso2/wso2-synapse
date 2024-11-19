@@ -43,6 +43,11 @@ public class ScatterGatherMediatorSerializer extends AbstractMediatorSerializer 
 
         scatterGatherElement.addAttribute(fac.createOMAttribute(
                 "parallel-execution", nullNS, Boolean.toString(scatterGatherMediator.getParallelExecution())));
+        scatterGatherElement.addAttribute(fac.createOMAttribute(
+                "result-target", nullNS, scatterGatherMediator.getResultTarget()));
+        scatterGatherElement.addAttribute(fac.createOMAttribute(
+                "content-type", nullNS, scatterGatherMediator.getContentType()));
+
         OMElement aggregationElement = fac.createOMElement("aggregation", synNS);
 
         SynapsePathSerializer.serializePath(
