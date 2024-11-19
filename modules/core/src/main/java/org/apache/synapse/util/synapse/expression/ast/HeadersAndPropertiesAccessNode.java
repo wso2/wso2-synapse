@@ -20,7 +20,6 @@ package org.apache.synapse.util.synapse.expression.ast;
 
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.commons.property.PropertyHolder;
-import org.apache.synapse.commons.resolvers.ConfigResolver;
 import org.apache.synapse.util.synapse.expression.context.EvaluationContext;
 import org.apache.synapse.util.synapse.expression.exception.EvaluationException;
 
