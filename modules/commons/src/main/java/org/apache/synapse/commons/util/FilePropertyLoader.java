@@ -22,9 +22,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.SynapseCommonsException;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -101,7 +102,7 @@ public class FilePropertyLoader {
         File file = new File(propertiesFilePath);
         if (file.exists()) {
             if (file.lastModified() > lastModifiedTimestamp) {
-                try (InputStream in = new FileInputStream(propertiesFilePath)) {
+                try (InputStream in = Files.newInputStream(Paths.get(propertiesFilePath))) {
                     Properties rawProps = new Properties();
                     Map<String, String> tempPropertyMap = new HashMap<>();
                     rawProps.load(in);

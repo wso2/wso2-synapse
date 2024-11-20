@@ -30,13 +30,14 @@ public class ResolverFactory {
 
     private static final Log LOG = LogFactory.getLog(ResolverFactory.class);
     private static final int RESOLVER_INDEX = 2;
-    private static ResolverFactory resolverFactory = new ResolverFactory();
+    private static final ResolverFactory resolverFactory = new ResolverFactory();
     private final Pattern rePattern = Pattern.compile("(\\$)([_a-zA-Z0-9]+):([_a-zA-Z0-9]+)");
     private static final String SYSTEM_VARIABLE_PREFIX = "$SYSTEM";
     private static final String FILE_PROPERTY_VARIABLE_PREFIX = "$FILE";
     private static final String CUSTOM_PROPERTY_VARIABLE_PREFIX = "$CUSTOM_";
+    private static final String CONFIGURABLE_VARIABLE_PREFIX = "$config:";
 
-    private Map<String, Class<? extends Resolver>> resolverMap = new HashMap<>();
+    private final Map<String, Class<? extends Resolver>> resolverMap = new HashMap<>();
 
     /**
      * This function return an object of Resolver factory
@@ -61,58 +62,25 @@ public class ResolverFactory {
         if (input == null) {
             return null;
         }
-
-        if (input.startsWith(SYSTEM_VARIABLE_PREFIX)) {
-            Matcher matcher = rePattern.matcher(input);
-            Resolver resolverObject = null;
+        Matcher matcher = rePattern.matcher(input);
+        if (input.startsWith(CONFIGURABLE_VARIABLE_PREFIX)) {
             if (matcher.find()) {
-                Class<? extends Resolver> resolverClass = resolverMap.get(matcher.group(RESOLVER_INDEX).toLowerCase());
-                if (resolverClass != null) {
-                    try {
-                        resolverObject = resolverClass.newInstance();
-                        resolverObject.setVariable(matcher.group(3));
-                        return resolverObject;
-                    } catch (IllegalAccessException | InstantiationException e) {
-                        throw new ResolverException("Resolver could not be found");
-                    }
-                } else {
-                    throw new ResolverException("Resolver could not be found");
-                }
+                return getResolver(matcher.group(RESOLVER_INDEX).toLowerCase(), matcher);
             }
-        } else if(input.startsWith(FILE_PROPERTY_VARIABLE_PREFIX)){
-            Matcher matcher = rePattern.matcher(input);
-            Resolver resolverObject = null;
-            if (matcher.find()){
-                Class<? extends Resolver> resolverClass = resolverMap.get(matcher.group(RESOLVER_INDEX).toLowerCase());
-                if (resolverClass != null) {
-                    try {
-                        resolverObject = resolverClass.newInstance();
-                        resolverObject.setVariable(matcher.group(3));
-                        return resolverObject;
-                    } catch (IllegalAccessException | InstantiationException e) {
-                        throw new ResolverException("Resolver could not be initialized", e);
-                    }
-                } else {
-                    throw new ResolverException("Resolver could not be found");
-                }
+        } else if (input.startsWith(SYSTEM_VARIABLE_PREFIX)) {
+            if (matcher.find()) {
+                return getResolver(matcher.group(RESOLVER_INDEX).toLowerCase(), matcher);
+            }
+        } else if(input.startsWith(FILE_PROPERTY_VARIABLE_PREFIX)) {
+            if (matcher.find()) {
+                return getResolver(matcher.group(RESOLVER_INDEX).toLowerCase(), matcher);
             }
         } else if(input.startsWith(CUSTOM_PROPERTY_VARIABLE_PREFIX)) {
-            Matcher matcher = rePattern.matcher(input);
-            Resolver resolverObject = null;
             if (matcher.find()){
                 String nameWithPlaceholder = matcher.group(RESOLVER_INDEX).toLowerCase();
                 String className = nameWithPlaceholder.substring(CUSTOM_PROPERTY_VARIABLE_PREFIX.length() - 1);
-                Class<? extends Resolver> resolverClass = resolverMap.get(className);
-                if (resolverClass != null) {
-                    try {
-                        resolverObject = resolverClass.newInstance();
-                        resolverObject.setVariable(matcher.group(3));
-                        return resolverObject;
-                    } catch (IllegalAccessException | InstantiationException e) {
-                        throw new ResolverException("Resolver could not be initialized", e);
-                    }
-                } else {
-                    throw new ResolverException("Resolver could not be found");
+                if (matcher.find()) {
+                    return getResolver(className, matcher);
                 }
             }
         }
@@ -126,6 +94,7 @@ public class ResolverFactory {
     private void registerResolvers() {
         resolverMap.put("system", SystemResolver.class);
         resolverMap.put("file", FilePropertyResolver.class);
+        resolverMap.put("config", ConfigResolver.class);
     }
 
     private void registerExterns() {
@@ -145,6 +114,21 @@ public class ResolverFactory {
                     LOG.debug("Failed to Resolver " + className + " to resolver factory. Already exist");
                 }
             }
+        }
+    }
+
+    private Resolver getResolver(String className, Matcher matcher) {
+        Class<? extends Resolver> resolverClass = resolverMap.get(className);
+        if (resolverClass != null) {
+            try {
+                Resolver resolverObject = resolverClass.newInstance();
+                resolverObject.setVariable(matcher.group(3));
+                return resolverObject;
+            } catch (IllegalAccessException | InstantiationException e) {
+                throw new ResolverException("Resolver could not be initialized", e);
+            }
+        } else {
+            throw new ResolverException("Resolver could not be found");
         }
     }
 }
