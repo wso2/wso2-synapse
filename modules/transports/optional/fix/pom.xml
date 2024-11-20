@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.synapse</groupId>
         <artifactId>synapse-transports</artifactId>
-        <version>4.0.0-wso2v136</version>
+        <version>4.0.0-wso2v137-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
