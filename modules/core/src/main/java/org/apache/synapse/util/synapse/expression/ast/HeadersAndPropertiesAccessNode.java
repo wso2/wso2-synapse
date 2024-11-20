@@ -20,6 +20,7 @@ package org.apache.synapse.util.synapse.expression.ast;
 
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.commons.property.PropertyHolder;
+import org.apache.synapse.commons.resolvers.ResolverException;
 import org.apache.synapse.util.synapse.expression.context.EvaluationContext;
 import org.apache.synapse.util.synapse.expression.exception.EvaluationException;
 
@@ -64,7 +65,7 @@ public class HeadersAndPropertiesAccessNode implements ExpressionNode {
             } else if (Type.CONFIG.equals(type)) {
                 try {
                     value = PropertyHolder.getInstance().getPropertyValue(name);
-                } catch (Exception e) {
+                } catch (ResolverException e) {
                     throw new EvaluationException("The value of the key:[" + name + "] is null");
                 }
             } else {
