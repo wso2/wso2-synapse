@@ -68,10 +68,11 @@ public class LogMediatorFactory extends AbstractMediatorFactory  {
         // set its common attributes such as tracing etc
         processAuditStatus(logMediator,elem);
 
+        boolean containMessageTemplate = false;
         OMElement messageElement = elem.getFirstChildWithName(ELEMENT_MESSAGE_Q);
         if (messageElement != null && messageElement.getText() != null) {
             logMediator.setMessageTemplate(messageElement.getText());
-            logMediator.setLogLevel(LogMediator.MESSAGE_TEMPLATE);
+            containMessageTemplate = true;
         }
 
         // Set the high level set of properties to be logged (i.e. log level)
@@ -89,6 +90,10 @@ public class LogMediatorFactory extends AbstractMediatorFactory  {
             } else {
                 handleException("Invalid log level. Level has to be one of the following : "
                         + "simple, headers, full, custom");
+            }
+        } else {
+            if (containMessageTemplate) {
+                logMediator.setLogLevel(LogMediator.MESSAGE_TEMPLATE);
             }
         }
 

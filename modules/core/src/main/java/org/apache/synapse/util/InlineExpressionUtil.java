@@ -204,12 +204,12 @@ public final class InlineExpressionUtil {
     }
 
     /**
-     * Checks whether inline text contains synapse expressions
+     * Checks whether inline template contains content aware synapse expressions.
      * Inline expressions will be denoted inside ${}
      * e.g.: ${var.var1}, ${payload.element.id}
      *
      * @param inlineText Inline text string
-     * @return true if the string contains inline synapse expressions, false otherwise
+     * @return true if the string contains content aware inline synapse expressions, false otherwise
      */
     public static boolean isInlineSynapseExpressionsContentAware(String inlineText) {
 

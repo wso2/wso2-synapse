@@ -44,7 +44,7 @@ public class LogMediatorSerializer extends AbstractMediatorSerializer {
         OMElement log = fac.createOMElement("log", synNS);
         saveTracingState(log,mediator);
 
-        if (StringUtils.isBlank(mediator.getMessageTemplate()) && mediator.getLogLevel() != LogMediator.SIMPLE) {
+        if (mediator.getLogLevel() != LogMediator.MESSAGE_TEMPLATE) {
             log.addAttribute(fac.createOMAttribute(
                 "level", nullNS,
                     mediator.getLogLevel() == LogMediator.HEADERS ? "headers" :

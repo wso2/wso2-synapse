@@ -78,7 +78,7 @@ public class LogMediator extends AbstractMediator {
     /** The holder for the custom properties */
     private final List<MediatorProperty> properties = new ArrayList<MediatorProperty>();
 
-    private String messageTemplate;
+    private String messageTemplate = "";
 
     /**
      * Logs the current message according to the supplied semantics
@@ -142,6 +142,7 @@ public class LogMediator extends AbstractMediator {
     private String getLogMessage(MessageContext synCtx) {
         switch (logLevel) {
             case CUSTOM:
+            case MESSAGE_TEMPLATE:
                 return getCustomLogMessage(synCtx);
             case SIMPLE:
                 return getSimpleLogMessage(synCtx);
@@ -149,8 +150,6 @@ public class LogMediator extends AbstractMediator {
                 return getHeadersLogMessage(synCtx);
             case FULL:
                 return getFullLogMessage(synCtx);
-            case MESSAGE_TEMPLATE:
-                return processMessageTemplate(synCtx, messageTemplate);
             default:
                 return "Invalid log level specified";
         }
@@ -158,12 +157,18 @@ public class LogMediator extends AbstractMediator {
 
     private String getCustomLogMessage(MessageContext synCtx) {
         StringBuffer sb = new StringBuffer();
+        processMessageTemplate(sb, synCtx, messageTemplate);
         setCustomProperties(sb, synCtx);
         return trimLeadingSeparator(sb);
     }
 
     private String getSimpleLogMessage(MessageContext synCtx) {
         StringBuffer sb = new StringBuffer();
+        processMessageTemplate(sb, synCtx, messageTemplate);
+        // append separator if the message template is not empty
+        if (sb.length() > 0) {
+            sb.append(separator);
+        }
         if (synCtx.getTo() != null)
             sb.append("To: ").append(synCtx.getTo().getAddress());
         else
@@ -188,6 +193,7 @@ public class LogMediator extends AbstractMediator {
 
     private String getHeadersLogMessage(MessageContext synCtx) {
         StringBuffer sb = new StringBuffer();
+        processMessageTemplate(sb, synCtx, messageTemplate);
         if (synCtx.getEnvelope() != null) {
             SOAPHeader header = synCtx.getEnvelope().getHeader();
             if (getCorrelationId(synCtx) != null)
@@ -303,7 +309,7 @@ public class LogMediator extends AbstractMediator {
 
     public void setMessageTemplate(String messageTemplate) {
 
-        this.messageTemplate = messageTemplate;
+        this.messageTemplate = messageTemplate.replace("\\n", "\n").replace("\\t", "\t");
     }
 
     private String trimLeadingSeparator(StringBuffer sb) {
@@ -315,34 +321,23 @@ public class LogMediator extends AbstractMediator {
         }
     }
 
-    private String processMessageTemplate(MessageContext synCtx, String template) {
-        StringBuffer result = new StringBuffer();
+    private void processMessageTemplate(StringBuffer stringBuffer, MessageContext synCtx, String template) {
         try {
-            result.append(InlineExpressionUtil.processInLineSynapseExpressionTemplate(synCtx, template));
+            stringBuffer.append(InlineExpressionUtil.processInLineSynapseExpressionTemplate(synCtx, template));
         } catch (JaxenException e) {
             handleException("Failed to process the message template : " + template, e, synCtx);
         }
-        setCustomProperties(result, synCtx);
-        return result.toString();
     }
 
     @Override
     public boolean isContentAware() {
-        if (logLevel == MESSAGE_TEMPLATE) {
+        if (logLevel == MESSAGE_TEMPLATE || logLevel == CUSTOM) {
             for (MediatorProperty property : properties) {
                 if (property.getExpression() != null && property.getExpression().isContentAware()) {
                     return true;
                 }
             }
             return InlineExpressionUtil.isInlineSynapseExpressionsContentAware(messageTemplate);
-        }
-        if (logLevel == CUSTOM) {
-            for (MediatorProperty property : properties) {
-                if (property.getExpression() != null && property.getExpression().isContentAware()) {
-                    return true;
-                }
-            }
-            return false;
         }
         return true;
     }
