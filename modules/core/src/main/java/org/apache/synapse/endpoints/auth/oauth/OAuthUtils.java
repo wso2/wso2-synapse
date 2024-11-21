@@ -31,6 +31,7 @@ import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
+import org.apache.synapse.endpoints.ProxyConfigs;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.mediators.Value;
@@ -119,6 +120,12 @@ public class OAuthUtils {
         String refreshToken = getChildValue(authCodeElement, AuthConstants.OAUTH_REFRESH_TOKEN);
         String tokenApiUrl = getChildValue(authCodeElement, AuthConstants.TOKEN_API_URL);
         String authMode = getChildValue(authCodeElement, AuthConstants.OAUTH_AUTHENTICATION_MODE);
+
+        ProxyConfigs proxyConfigs = getProxyConfigs(authCodeElement);
+        if (proxyConfigs == null) {
+            return null;
+        }
+
         int connectionTimeout = getOauthTimeouts(authCodeElement, AuthConstants.OAUTH_CONNECTION_TIMEOUT);
         int connectionRequestTimeout = getOauthTimeouts(authCodeElement,
                 AuthConstants.OAUTH_CONNECTION_REQUEST_TIMEOUT);
@@ -130,7 +137,7 @@ public class OAuthUtils {
         }
         AuthorizationCodeHandler handler = new AuthorizationCodeHandler(tokenApiUrl, clientId, clientSecret,
                 refreshToken, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout,
-                TokenCacheFactory.getTokenCache());
+                TokenCacheFactory.getTokenCache(), proxyConfigs);
         if (hasRequestParameters(authCodeElement)) {
             Map<String, String> requestParameters = getRequestParameters(authCodeElement);
             if (requestParameters == null) {
@@ -161,6 +168,12 @@ public class OAuthUtils {
         String clientSecret = getChildValue(clientCredentialsElement, AuthConstants.OAUTH_CLIENT_SECRET);
         String tokenApiUrl = getChildValue(clientCredentialsElement, AuthConstants.TOKEN_API_URL);
         String authMode = getChildValue(clientCredentialsElement, AuthConstants.OAUTH_AUTHENTICATION_MODE);
+
+        ProxyConfigs proxyConfigs = getProxyConfigs(clientCredentialsElement);
+        if (proxyConfigs == null) {
+            return null;
+        }
+
         int connectionTimeout = getOauthTimeouts(clientCredentialsElement, AuthConstants.OAUTH_CONNECTION_TIMEOUT);
         int connectionRequestTimeout = getOauthTimeouts(clientCredentialsElement,
                 AuthConstants.OAUTH_CONNECTION_REQUEST_TIMEOUT);
@@ -171,7 +184,7 @@ public class OAuthUtils {
             return null;
         }
         ClientCredentialsHandler handler = new ClientCredentialsHandler(tokenApiUrl, clientId, clientSecret, authMode,
-                connectionTimeout, connectionRequestTimeout, socketTimeout, TokenCacheFactory.getTokenCache());
+                connectionTimeout, connectionRequestTimeout, socketTimeout, TokenCacheFactory.getTokenCache(), proxyConfigs);
         if (hasRequestParameters(clientCredentialsElement)) {
             Map<String, String> requestParameters = getRequestParameters(clientCredentialsElement);
             if (requestParameters == null) {
@@ -204,6 +217,12 @@ public class OAuthUtils {
         String password = getChildValue(passwordCredentialsElement, AuthConstants.OAUTH_PASSWORD);
         String tokenApiUrl = getChildValue(passwordCredentialsElement, AuthConstants.TOKEN_API_URL);
         String authMode = getChildValue(passwordCredentialsElement, AuthConstants.OAUTH_AUTHENTICATION_MODE);
+
+        ProxyConfigs proxyConfigs = getProxyConfigs(passwordCredentialsElement);
+        if (proxyConfigs == null) {
+            return null;
+        }
+
         int connectionTimeout = getOauthTimeouts(passwordCredentialsElement, AuthConstants.OAUTH_CONNECTION_TIMEOUT);
         int connectionRequestTimeout = getOauthTimeouts(passwordCredentialsElement,
                 AuthConstants.OAUTH_CONNECTION_REQUEST_TIMEOUT);
@@ -215,7 +234,7 @@ public class OAuthUtils {
         }
         PasswordCredentialsHandler handler = new PasswordCredentialsHandler(tokenApiUrl, clientId, clientSecret,
                 username, password, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout,
-                TokenCacheFactory.getTokenCache());
+                TokenCacheFactory.getTokenCache(), proxyConfigs);
         if (hasRequestParameters(passwordCredentialsElement)) {
             Map<String, String> requestParameters = getRequestParameters(passwordCredentialsElement);
             if (requestParameters == null) {
@@ -231,6 +250,50 @@ public class OAuthUtils {
             handler.setCustomHeaders(customHeaders);
         }
         return handler;
+    }
+
+    /**
+     * Method to get the proxy configurations
+     *
+     * @param grantTypeOMElement OMElement containing the grant type related OMElement
+     * @return ProxyConfigs object. Return null if proxy configurations are invalid
+     */
+    private static ProxyConfigs getProxyConfigs(OMElement grantTypeOMElement) {
+
+        ProxyConfigs proxyConfigs = new ProxyConfigs();
+        OMElement proxyConfigsOM = grantTypeOMElement.getFirstChildWithName(
+                new QName(SynapseConstants.SYNAPSE_NAMESPACE, AuthConstants.PROXY_CONFIGS));
+        if (proxyConfigsOM == null || proxyConfigsOM.getFirstElement() == null) {
+            //proxyConfigs Element is not available or it has no child elements
+            proxyConfigs.setProxyEnabled(false);
+        } else {
+            proxyConfigs.setProxyEnabled(true);
+            proxyConfigs.setProxyHost(getChildValue(proxyConfigsOM, AuthConstants.PROXY_HOST));
+            proxyConfigs.setProxyPort(getChildValue(proxyConfigsOM, AuthConstants.PROXY_PORT));
+            proxyConfigs.setProxyUsername(getChildValue(proxyConfigsOM, AuthConstants.PROXY_USERNAME));
+            proxyConfigs.setProxyPassword(getChildValue(proxyConfigsOM, AuthConstants.PROXY_PASSWORD));
+            proxyConfigs.setProxyProtocol(getChildValue(proxyConfigsOM, AuthConstants.OAUTH_PROXY_PROTOCOL));
+
+            if (StringUtils.isEmpty(proxyConfigs.getProxyHost())) {
+                log.error(
+                        "'proxyHost' is not set for the proxy configurations. So error occurred while getting the " +
+                                "related Oauth handler.");
+                return null;
+            }
+            if (StringUtils.isEmpty(proxyConfigs.getProxyPort())) {
+                log.error(
+                        "'proxyPort' is not set for the proxy configurations. So error occurred while getting the " +
+                                "related Oauth handler.");
+                return null;
+            }
+            if (StringUtils.isEmpty(proxyConfigs.getProxyProtocol())) {
+                log.error(
+                        "'proxyProtocol' is not set for the proxy configurations. So error occurred while getting the" +
+                                " related Oauth handler.");
+                return null;
+            }
+        }
+        return proxyConfigs;
     }
 
     /**
@@ -550,5 +613,36 @@ public class OAuthUtils {
             requestParameters.addChild(parameter);
         }
         return requestParameters;
+    }
+
+    /**
+     * Create an OMElement for proxy configurations.
+     *
+     * @return OMElement of proxy configurations.
+     */
+    public static OMElement createOMProxyConfigs(OMFactory omFactory, ProxyConfigs proxyConfigs) {
+        OMElement proxyConfigsOM = omFactory.createOMElement(AuthConstants.PROXY_CONFIGS,
+                SynapseConstants.SYNAPSE_OMNAMESPACE);
+        OMElement proxyHostOM = OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.PROXY_HOST,
+                proxyConfigs.getProxyHost());
+        proxyConfigsOM.addChild(proxyHostOM);
+
+        OMElement proxyPortOM = OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.PROXY_PORT,
+                proxyConfigs.getProxyPort());
+        proxyConfigsOM.addChild(proxyPortOM);
+
+        OMElement proxyUsernameOM = OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.PROXY_USERNAME,
+                proxyConfigs.getProxyUsername());
+        proxyConfigsOM.addChild(proxyUsernameOM);
+
+        OMElement proxyPasswordOM = OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.PROXY_PASSWORD,
+                proxyConfigs.getProxyPassword());
+        proxyConfigsOM.addChild(proxyPasswordOM);
+
+        OMElement proxyProtocolOM = OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.OAUTH_PROXY_PROTOCOL,
+                proxyConfigs.getProxyProtocol());
+        proxyConfigsOM.addChild(proxyProtocolOM);
+
+        return proxyConfigsOM;
     }
 }

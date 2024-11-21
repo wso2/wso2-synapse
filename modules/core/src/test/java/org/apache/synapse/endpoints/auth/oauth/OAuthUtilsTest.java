@@ -37,6 +37,7 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
+import org.apache.synapse.endpoints.ProxyConfigs;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.endpoints.auth.AuthUtils;
@@ -303,7 +304,8 @@ public class OAuthUtilsTest {
 
             OAuthHandler oAuthHandler =
                     new AuthorizationCodeHandler("oauth_server_url", "client_id", "client_secret",
-                            "refresh_token", "header", -1, -1, -1, TokenCache.getInstance());
+                            "refresh_token", "header", -1, -1,
+                            -1, TokenCache.getInstance(), new ProxyConfigs());
 
             OAuthConfiguredHTTPEndpoint httpEndpoint = new OAuthConfiguredHTTPEndpoint(oAuthHandler);
 
