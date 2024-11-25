@@ -243,8 +243,6 @@ public class EndpointDefinition implements AspectConfigurable {
             if (stringValue != null) {
                 timeoutMilliSeconds = Long.parseLong(stringValue.trim());
             } else {
-                log.warn("Error while evaluating dynamic endpoint timeout expression." +
-                        "Synapse global timeout is taken as effective timeout.");
                 timeoutMilliSeconds = effectiveTimeout;
             }
         } catch (NumberFormatException e) {
@@ -619,11 +617,7 @@ public class EndpointDefinition implements AspectConfigurable {
                     result = SynapseConstants.DISCARD_AND_FAULT;
                 } else if (EPConstants.NEVER.equalsIgnoreCase(timeoutActionStr)) {
                     result = SynapseConstants.NONE;
-                } else {
-                    log.warn("Error while evaluating dynamic endpoint timeout action.");
                 }
-            } else {
-                log.warn("Error while evaluating dynamic endpoint timeout action.");
             }
         } catch (NumberFormatException e) {
             log.warn("Error while evaluating dynamic endpoint timeout action.");
@@ -707,8 +701,6 @@ public class EndpointDefinition implements AspectConfigurable {
             String stringValue = dynamicInitialSuspendDuration.stringValueOf(synCtx);
             if (stringValue != null) {
                 result = Long.parseLong(stringValue.trim());
-            } else {
-                log.warn("Error while evaluating dynamic initial suspend duration.");
             }
         } catch (NumberFormatException e) {
             log.warn("Error while evaluating dynamic initial suspend duration.");
