@@ -102,7 +102,7 @@ public class EndpointDefinitionSerializer {
             element.addChild(sec);
         }
 
-        if (endpointDefinition.getTimeoutAction() != SynapseConstants.NONE ||
+        if (endpointDefinition.getTimeoutAction() != SynapseConstants.NONE || endpointDefinition.getDynamicTimeoutAction() != null ||
                 endpointDefinition.getTimeoutDuration() > 0 || endpointDefinition.isDynamicTimeoutEndpoint()) {
 
             OMElement timeout = fac.createOMElement(
@@ -120,91 +120,123 @@ public class EndpointDefinitionSerializer {
                 timeout.addChild(duration);
             }
 
-            if (endpointDefinition.getTimeoutAction() != SynapseConstants.NONE) {
+            if (endpointDefinition.getTimeoutAction() != SynapseConstants.NONE || endpointDefinition.getDynamicTimeoutAction() != null) {
                 OMElement action = fac.createOMElement("responseAction", SynapseConstants.SYNAPSE_OMNAMESPACE);
-                if (endpointDefinition.getTimeoutAction() == SynapseConstants.DISCARD) {
-                    action.setText("discard");
-                } else if (endpointDefinition.getTimeoutAction()
-                           == SynapseConstants.DISCARD_AND_FAULT) {
-                    action.setText("fault");
+                if (endpointDefinition.isTimeoutActionDynamic()) {
+                    action.setText('{' + endpointDefinition.getDynamicTimeoutAction().getExpression() + '}');
+                } else {
+                    if (endpointDefinition.getTimeoutAction() == SynapseConstants.DISCARD) {
+                        action.setText("discard");
+                    } else if (endpointDefinition.getTimeoutAction()
+                            == SynapseConstants.DISCARD_AND_FAULT) {
+                        action.setText("fault");
+                    }
                 }
                 timeout.addChild(action);
             }
         }
 
-        if (endpointDefinition.getInitialSuspendDuration() != -1 ||
-            !endpointDefinition.getSuspendErrorCodes().isEmpty()) {
+        if (endpointDefinition.getInitialSuspendDuration() != -1 || endpointDefinition.isInitialSuspendDurationDynamic() ||
+            !endpointDefinition.getSuspendErrorCodes().isEmpty() || endpointDefinition.isSuspendErrorCodesDynamic()) {
 
             OMElement suspendOnFailure = fac.createOMElement(
                 org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_ON_FAILURE,
                 SynapseConstants.SYNAPSE_OMNAMESPACE);
 
-            if (!endpointDefinition.getSuspendErrorCodes().isEmpty()) {
+            if (!endpointDefinition.getSuspendErrorCodes().isEmpty() || endpointDefinition.isSuspendErrorCodesDynamic()) {
                 OMElement errorCodes = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.ERROR_CODES,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
-                errorCodes.setText(endpointDefinition.getSuspendErrorCodes().
-                    toString().replaceAll("[\\[\\] ]", ""));
+                if (endpointDefinition.isSuspendErrorCodesDynamic()) {
+                    errorCodes.setText('{' + endpointDefinition.getDynamicSuspendErrorCodes().getExpression() + '}');
+                } else {
+                    errorCodes.setText(endpointDefinition.getSuspendErrorCodes().
+                            toString().replaceAll("[\\[\\] ]", ""));
+                }
                 suspendOnFailure.addChild(errorCodes);
             }
 
-            if (endpointDefinition.getInitialSuspendDuration() != -1) {
+            if (endpointDefinition.getInitialSuspendDuration() != -1 || endpointDefinition.isInitialSuspendDurationDynamic()) {
                 OMElement initialDuration = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_INITIAL_DURATION,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
-                initialDuration.setText(Long.toString(endpointDefinition.getInitialSuspendDuration()));
+                if (!endpointDefinition.isInitialSuspendDurationDynamic()){
+                    initialDuration.setText(Long.toString(endpointDefinition.getInitialSuspendDuration()));
+                } else {
+                    initialDuration.setText('{' + endpointDefinition.getDynamicInitialSuspendDuration().getExpression() + '}');
+                }
                 suspendOnFailure.addChild(initialDuration);
             }
 
-            if (endpointDefinition.getSuspendProgressionFactor() != -1) {
+            if (endpointDefinition.getSuspendProgressionFactor() != -1 || endpointDefinition.isSuspendProgressionFactorDynamic()) {
                 OMElement progressionFactor = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_PROGRESSION_FACTOR,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
-                progressionFactor.setText(Float.toString(endpointDefinition.getSuspendProgressionFactor()));
+                if (endpointDefinition.isSuspendProgressionFactorDynamic()) {
+                    progressionFactor.setText('{' + endpointDefinition.getDynamicSuspendProgressionFactor().getExpression() + '}');
+                } else {
+                    progressionFactor.setText(Float.toString(endpointDefinition.getSuspendProgressionFactor()));
+                }
                 suspendOnFailure.addChild(progressionFactor);
             }
 
-            if (endpointDefinition.getSuspendMaximumDuration() != -1 &&
-                    endpointDefinition.getSuspendMaximumDuration() != Long.MAX_VALUE) {
+            if ((endpointDefinition.getSuspendMaximumDuration() != -1 &&
+                    endpointDefinition.getSuspendMaximumDuration() != Long.MAX_VALUE) || endpointDefinition.isSuspendMaximumDurationDynamic()) {
                 OMElement suspendMaximum = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_MAXIMUM_DURATION,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
-                suspendMaximum.setText(Long.toString(endpointDefinition.getSuspendMaximumDuration()));
+                if (endpointDefinition.isSuspendMaximumDurationDynamic()) {
+                    suspendMaximum.setText('{' + endpointDefinition.getDynamicSuspendMaximumDuration().getExpression() + '}');
+                } else {
+                    suspendMaximum.setText(Long.toString(endpointDefinition.getSuspendMaximumDuration()));
+                }
                 suspendOnFailure.addChild(suspendMaximum);
             }
 
             element.addChild(suspendOnFailure);
         }
 
-        if (endpointDefinition.getRetryDurationOnTimeout() > 0 ||
-            !endpointDefinition.getTimeoutErrorCodes().isEmpty()) {
+        if (endpointDefinition.getRetryDurationOnTimeout() > 0 || endpointDefinition.isRetryDurationOnTimeoutDynamic() ||
+            !endpointDefinition.getTimeoutErrorCodes().isEmpty() || endpointDefinition.isTimeoutErrorCodesDynamic()) {
 
             OMElement markAsTimedout = fac.createOMElement(
                 org.apache.synapse.config.xml.XMLConfigConstants.MARK_FOR_SUSPENSION,
                 SynapseConstants.SYNAPSE_OMNAMESPACE);
 
-            if (!endpointDefinition.getTimeoutErrorCodes().isEmpty()) {
+            if (!endpointDefinition.getTimeoutErrorCodes().isEmpty() || endpointDefinition.isTimeoutErrorCodesDynamic()) {
                 OMElement errorCodes = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.ERROR_CODES,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
-                errorCodes.setText(endpointDefinition.getTimeoutErrorCodes().
-                    toString().replaceAll("[\\[\\] ]", ""));
+                if (endpointDefinition.isTimeoutErrorCodesDynamic()) {
+                    errorCodes.setText('{' + endpointDefinition.getDynamicTimeoutErrorCodes().getExpression() + '}');
+                } else {
+                    errorCodes.setText(endpointDefinition.getTimeoutErrorCodes().
+                            toString().replaceAll("[\\[\\] ]", ""));
+                }
                 markAsTimedout.addChild(errorCodes);
             }
 
-            if (endpointDefinition.getRetriesOnTimeoutBeforeSuspend() > 0) {
+            if (endpointDefinition.getRetriesOnTimeoutBeforeSuspend() > 0 || endpointDefinition.isRetriesOnTimeoutBeforeSuspendDynamic()) {
                 OMElement retries = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.RETRIES_BEFORE_SUSPENSION,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
-                retries.setText(Long.toString(endpointDefinition.getRetriesOnTimeoutBeforeSuspend()));
+                if (endpointDefinition.isRetriesOnTimeoutBeforeSuspendDynamic()) {
+                    retries.setText('{' + endpointDefinition.getDynamicRetriesOnTimeoutBeforeSuspend().getExpression() + '}');
+                } else {
+                    retries.setText(Long.toString(endpointDefinition.getRetriesOnTimeoutBeforeSuspend()));
+                }
                 markAsTimedout.addChild(retries);
             }
 
-            if (endpointDefinition.getRetryDurationOnTimeout() > 0) {
+            if (endpointDefinition.getRetryDurationOnTimeout() > 0 || endpointDefinition.isRetryDurationOnTimeoutDynamic()) {
                 OMElement retryDelay = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.RETRY_DELAY,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
-                retryDelay.setText(Long.toString(endpointDefinition.getRetryDurationOnTimeout()));
+                if (endpointDefinition.isRetryDurationOnTimeoutDynamic()) {
+                    retryDelay.setText('{' + endpointDefinition.getDynamicRetryDurationOnTimeout().getExpression() + '}');
+                } else {
+                    retryDelay.setText(Long.toString(endpointDefinition.getRetryDurationOnTimeout()));
+                }
                 markAsTimedout.addChild(retryDelay);
             }
 

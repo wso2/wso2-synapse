@@ -158,22 +158,40 @@ public class EndpointDefinition implements AspectConfigurable {
      * action to perform when a timeout occurs (NONE | DISCARD | DISCARD_AND_FAULT) *
      */
     private int timeoutAction = SynapseConstants.NONE;
+    /** The expression to evaluate dynamic timeout action */
+    private SynapsePath dynamicTimeoutAction = null;
 
     /** The initial suspend duration when an endpoint is marked inactive */
     private long initialSuspendDuration = -1;
+    /**
+     * The expression to evaluate dynamic initial suspend duration.
+     */
+    private SynapsePath dynamicInitialSuspendDuration = null;
     /** The suspend duration ratio for the next duration - this is the geometric series multipler */
     private float suspendProgressionFactor = 1;
+    /** The expression to evaluate dynamic suspend progression factor */
+    private SynapsePath dynamicSuspendProgressionFactor = null;
     /** This is the maximum duration for which a node will be suspended */
     private long suspendMaximumDuration = Long.MAX_VALUE;
+    /** The expression to maximum duration for which a node will be suspended */
+    private SynapsePath dynamicSuspendMaximumDuration = null;
     /** A list of error codes, which directly puts an endpoint into suspend mode */
     private final List<Integer> suspendErrorCodes = new ArrayList<Integer>();
+    /** The expression to evaluate dynamic suspend error codes */
+    private SynapsePath dynamicSuspendErrorCodes = null;
 
     /** No of retries to attempt on timeout, before an endpoint is makred inactive */
     private int retriesOnTimeoutBeforeSuspend = 0;
+    /** The expression to evaluate dynamic retries on timeout before suspend */
+    private SynapsePath dynamicRetriesOnTimeoutBeforeSuspend = null;
     /** The delay between retries for a timeout out endpoint */
     private int retryDurationOnTimeout = 0;
+    /** The expression to evaluate dynamic retry duration on timeout */
+    private SynapsePath dynamicRetryDurationOnTimeout = null;
     /** A list of error codes which puts the endpoint into timeout mode */
     private final List<Integer> timeoutErrorCodes = new ArrayList<Integer>();
+    /** The expression to evaluate dynamic timeout error codes */
+    private SynapsePath dynamicTimeoutErrorCodes = null;
 
     private AspectConfiguration aspectConfiguration;
 
@@ -225,8 +243,6 @@ public class EndpointDefinition implements AspectConfigurable {
             if (stringValue != null) {
                 timeoutMilliSeconds = Long.parseLong(stringValue.trim());
             } else {
-                log.warn("Error while evaluating dynamic endpoint timeout expression." +
-                        "Synapse global timeout is taken as effective timeout.");
                 timeoutMilliSeconds = effectiveTimeout;
             }
         } catch (NumberFormatException e) {
@@ -574,6 +590,49 @@ public class EndpointDefinition implements AspectConfigurable {
         this.timeoutAction = timeoutAction;
     }
 
+    public SynapsePath getDynamicTimeoutAction() {
+
+        return dynamicTimeoutAction;
+    }
+
+    public void setDynamicTimeoutAction(SynapsePath dynamicTimeoutAction) {
+
+        this.dynamicTimeoutAction = dynamicTimeoutAction;
+    }
+
+    public boolean isTimeoutActionDynamic() {
+
+        return dynamicTimeoutAction != null;
+    }
+
+    public int evaluateDynamicTimeoutAction(MessageContext synCtx) {
+
+        int result = timeoutAction;
+        try {
+            String timeoutActionStr = dynamicTimeoutAction.stringValueOf(synCtx);
+            if (timeoutActionStr != null) {
+                if (EPConstants.DISCARD.equalsIgnoreCase(timeoutActionStr)) {
+                    result = SynapseConstants.DISCARD;
+                } else if (EPConstants.FAULT.equalsIgnoreCase(timeoutActionStr)) {
+                    result = SynapseConstants.DISCARD_AND_FAULT;
+                } else if (EPConstants.NEVER.equalsIgnoreCase(timeoutActionStr)) {
+                    result = SynapseConstants.NONE;
+                }
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while evaluating dynamic endpoint timeout action.");
+        }
+        return result;
+    }
+
+    public int getResolvedTimeoutAction(MessageContext messageContext) {
+
+        if (isTimeoutActionDynamic()) {
+            return evaluateDynamicTimeoutAction(messageContext);
+        }
+        return timeoutAction;
+    }
+
     public String getFormat() {
         return format;
     }
@@ -618,6 +677,44 @@ public class EndpointDefinition implements AspectConfigurable {
         this.initialSuspendDuration = initialSuspendDuration;
     }
 
+    public SynapsePath getDynamicInitialSuspendDuration() {
+
+        return dynamicInitialSuspendDuration;
+    }
+
+    public void setDynamicInitialSuspendDuration(SynapsePath dynamicInitialSuspendDuration) {
+
+        this.dynamicInitialSuspendDuration = dynamicInitialSuspendDuration;
+    }
+
+    public boolean isInitialSuspendDurationDynamic() {
+        if (dynamicInitialSuspendDuration != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public long evaluateDynamicInitialSuspendDuration(MessageContext synCtx) {
+        long result = initialSuspendDuration;
+        try {
+            String stringValue = dynamicInitialSuspendDuration.stringValueOf(synCtx);
+            if (stringValue != null) {
+                result = Long.parseLong(stringValue.trim());
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while evaluating dynamic initial suspend duration.");
+        }
+        return result;
+    }
+
+    public long getResolvedInitialSuspendDuration(MessageContext messageContext) {
+        if (isInitialSuspendDurationDynamic()) {
+            return evaluateDynamicInitialSuspendDuration(messageContext);
+        }
+        return initialSuspendDuration;
+    }
+
 //    public int getTraceState() {
 //        return traceState;
 //    }
@@ -634,12 +731,84 @@ public class EndpointDefinition implements AspectConfigurable {
         this.suspendProgressionFactor = suspendProgressionFactor;
     }
 
+    public SynapsePath getDynamicSuspendProgressionFactor() {
+
+        return dynamicSuspendProgressionFactor;
+    }
+
+    public void setDynamicSuspendProgressionFactor(SynapsePath dynamicSuspendProgressionFactor) {
+
+        this.dynamicSuspendProgressionFactor = dynamicSuspendProgressionFactor;
+    }
+
+    public boolean isSuspendProgressionFactorDynamic() {
+
+        return dynamicSuspendProgressionFactor != null;
+    }
+
+    public float evaluateDynamicSuspendProgressionFactor(MessageContext messageContext) {
+
+        float result = suspendProgressionFactor;
+        try {
+            String stringValue = dynamicSuspendProgressionFactor.stringValueOf(messageContext);
+            if (stringValue != null) {
+                result = Float.parseFloat(stringValue);
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while evaluating dynamic endpoint timeout expression.");
+        }
+        return result;
+    }
+
+    public float getResolvedSuspendProgressionFactor(MessageContext messageContext) {
+        if (isSuspendProgressionFactorDynamic()) {
+            return evaluateDynamicSuspendProgressionFactor(messageContext);
+        }
+        return suspendProgressionFactor;
+    }
+
     public long getSuspendMaximumDuration() {
         return suspendMaximumDuration;
     }
 
     public void setSuspendMaximumDuration(long suspendMaximumDuration) {
         this.suspendMaximumDuration = suspendMaximumDuration;
+    }
+
+    public SynapsePath getDynamicSuspendMaximumDuration() {
+
+        return dynamicSuspendMaximumDuration;
+    }
+
+    public void setDynamicSuspendMaximumDuration(SynapsePath dynamicSuspendMaximumDuration) {
+
+        this.dynamicSuspendMaximumDuration = dynamicSuspendMaximumDuration;
+    }
+
+    public boolean isSuspendMaximumDurationDynamic() {
+
+        return dynamicSuspendMaximumDuration != null;
+    }
+
+    public long evaluateDynamicSuspendMaximumDuration(MessageContext messageContext) {
+
+        long result = suspendMaximumDuration;
+        try {
+            String stringValue = dynamicSuspendMaximumDuration.stringValueOf(messageContext);
+            if (stringValue != null) {
+                result = Long.parseLong(stringValue);
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while evaluating dynamic endpoint timeout expression.");
+        }
+        return result;
+    }
+
+    public long getResolvedSuspendMaximumDuration(MessageContext messageContext) {
+        if (isSuspendMaximumDurationDynamic()) {
+            return evaluateDynamicSuspendMaximumDuration(messageContext);
+        }
+        return suspendMaximumDuration;
     }
 
     public int getRetriesOnTimeoutBeforeSuspend() {
@@ -650,12 +819,85 @@ public class EndpointDefinition implements AspectConfigurable {
         this.retriesOnTimeoutBeforeSuspend = retriesOnTimeoutBeforeSuspend;
     }
 
+    public SynapsePath getDynamicRetriesOnTimeoutBeforeSuspend() {
+
+        return dynamicRetriesOnTimeoutBeforeSuspend;
+    }
+
+    public void setDynamicRetriesOnTimeoutBeforeSuspend(
+            SynapsePath dynamicRetriesOnTimeoutBeforeSuspend) {
+
+        this.dynamicRetriesOnTimeoutBeforeSuspend = dynamicRetriesOnTimeoutBeforeSuspend;
+    }
+
+    public boolean isRetriesOnTimeoutBeforeSuspendDynamic() {
+
+        return dynamicRetriesOnTimeoutBeforeSuspend != null;
+    }
+
+    public int evaluateDynamicRetriesOnTimeoutBeforeSuspend(MessageContext messageContext) {
+
+        int result = retriesOnTimeoutBeforeSuspend;
+        try {
+            String stringValue = dynamicRetriesOnTimeoutBeforeSuspend.stringValueOf(messageContext);
+            if (stringValue != null) {
+                result = Integer.parseInt(stringValue);
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while evaluating dynamic endpoint timeout expression.");
+        }
+        return result;
+    }
+
+    public int getResolvedRetriesOnTimeoutBeforeSuspend(MessageContext messageContext) {
+        if (isRetriesOnTimeoutBeforeSuspendDynamic()) {
+            return evaluateDynamicRetriesOnTimeoutBeforeSuspend(messageContext);
+        }
+        return retriesOnTimeoutBeforeSuspend;
+    }
+
     public int getRetryDurationOnTimeout() {
         return retryDurationOnTimeout;
     }
 
     public void setRetryDurationOnTimeout(int retryDurationOnTimeout) {
         this.retryDurationOnTimeout = retryDurationOnTimeout;
+    }
+
+    public SynapsePath getDynamicRetryDurationOnTimeout() {
+
+        return dynamicRetryDurationOnTimeout;
+    }
+
+    public void setDynamicRetryDurationOnTimeout(SynapsePath dynamicRetryDurationOnTimeout) {
+
+        this.dynamicRetryDurationOnTimeout = dynamicRetryDurationOnTimeout;
+    }
+
+    public boolean isRetryDurationOnTimeoutDynamic() {
+
+        return dynamicRetryDurationOnTimeout != null;
+    }
+
+    public int evaluateDynamicRetryDurationOnTimeout(MessageContext messageContext) {
+
+        int result = retryDurationOnTimeout;
+        try {
+            String stringValue = dynamicRetryDurationOnTimeout.stringValueOf(messageContext);
+            if (stringValue != null) {
+                result = Integer.parseInt(stringValue);
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while evaluating dynamic endpoint timeout expression.");
+        }
+        return result;
+    }
+
+    public int getResolvedRetryDurationOnTimeout(MessageContext messageContext) {
+        if (isRetryDurationOnTimeoutDynamic()) {
+            return evaluateDynamicRetryDurationOnTimeout(messageContext);
+        }
+        return retryDurationOnTimeout;
     }
 
     public List<Integer> getSuspendErrorCodes() {
@@ -686,8 +928,88 @@ public class EndpointDefinition implements AspectConfigurable {
         suspendErrorCodes.add(code);
     }
 
+    public SynapsePath getDynamicSuspendErrorCodes() {
+
+        return dynamicSuspendErrorCodes;
+    }
+
+    public void setDynamicSuspendErrorCodes(SynapsePath dynamicSuspendErrorCodes) {
+
+        this.dynamicSuspendErrorCodes = dynamicSuspendErrorCodes;
+    }
+
+    public boolean isSuspendErrorCodesDynamic() {
+
+        return dynamicSuspendErrorCodes != null;
+    }
+
+    public List<Integer> evaluateDynamicSuspendErrorCodes(MessageContext messageContext) {
+
+        List<Integer> result = suspendErrorCodes;
+        try {
+            String stringValue = dynamicSuspendErrorCodes.stringValueOf(messageContext);
+            if (stringValue != null) {
+                String[] errorCodes = stringValue.split(",");
+                result = new ArrayList<Integer>();
+                for (String errorCode : errorCodes) {
+                    result.add(Integer.parseInt(errorCode.trim()));
+                }
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while evaluating dynamic endpoint timeout expression.");
+        }
+        return result;
+    }
+
+    public List<Integer> getResolvedSuspendErrorCodes(MessageContext messageContext) {
+        if (isSuspendErrorCodesDynamic()) {
+            return evaluateDynamicSuspendErrorCodes(messageContext);
+        }
+        return suspendErrorCodes;
+    }
+
     public void addTimeoutErrorCode(int code) {
         timeoutErrorCodes.add(code);
+    }
+
+    public SynapsePath getDynamicTimeoutErrorCodes() {
+
+        return dynamicTimeoutErrorCodes;
+    }
+
+    public void setDynamicTimeoutErrorCodes(SynapsePath dynamicTimeoutErrorCodes) {
+
+        this.dynamicTimeoutErrorCodes = dynamicTimeoutErrorCodes;
+    }
+
+    public boolean isTimeoutErrorCodesDynamic() {
+
+        return dynamicTimeoutErrorCodes != null;
+    }
+
+    public List<Integer> evaluateDynamicTimeoutErrorCodes(MessageContext messageContext) {
+
+        List<Integer> result = timeoutErrorCodes;
+        try {
+            String stringValue = dynamicTimeoutErrorCodes.stringValueOf(messageContext);
+            if (stringValue != null) {
+                String[] errorCodes = stringValue.split(",");
+                result = new ArrayList<Integer>();
+                for (String errorCode : errorCodes) {
+                    result.add(Integer.parseInt(errorCode.trim()));
+                }
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while evaluating dynamic endpoint timeout expression.");
+        }
+        return result;
+    }
+
+    public List<Integer> getResolvedTimeoutErrorCodes(MessageContext messageContext) {
+        if (isTimeoutErrorCodesDynamic()) {
+            return evaluateDynamicTimeoutErrorCodes(messageContext);
+        }
+        return timeoutErrorCodes;
     }
 
     public void addRetryDisabledErrorCode(int code) {

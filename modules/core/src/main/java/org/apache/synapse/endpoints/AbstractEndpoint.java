@@ -468,7 +468,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 			}
 		}
         if (errorCode != null) {
-            if (definition.getTimeoutErrorCodes().isEmpty()) {
+            if (definition.getResolvedTimeoutErrorCodes(synCtx).isEmpty()) {
                 // if timeout codes are not defined, assume only HTTP timeout and connection close
                 boolean isTimeout = SynapseConstants.NHTTP_CONNECTION_TIMEOUT == errorCode;
                 boolean isClosed = SynapseConstants.NHTTP_CONNECTION_CLOSED == errorCode;
@@ -482,11 +482,11 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                     return true;
                 }
             } else {
-                if (definition.getTimeoutErrorCodes().contains(errorCode)) {
+                if (definition.getResolvedTimeoutErrorCodes(synCtx).contains(errorCode)) {
                     if (log.isDebugEnabled()) {
                         log.debug("Encountered a mark for suspension error : " + errorCode
                                 + " defined " + "error codes are : "
-                                + definition.getTimeoutErrorCodes());
+                                + definition.getResolvedTimeoutErrorCodes(synCtx));
                     }
                     return true;
                 }
@@ -542,7 +542,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     protected boolean isSuspendFault(MessageContext synCtx) {
         Integer errorCode = (Integer) synCtx.getProperty(SynapseConstants.ERROR_CODE);
         if (errorCode != null) {
-            if (definition.getSuspendErrorCodes().isEmpty()) {
+            if (definition.getResolvedSuspendErrorCodes(synCtx).isEmpty()) {
                 // if suspend codes are not defined, any error will be fatal for the endpoint
                 if (log.isDebugEnabled()) {
                     log.debug(this.toString() + " encountered a fatal error : " + errorCode);
@@ -550,10 +550,10 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                 return true;
 
             } else {
-                if (definition.getSuspendErrorCodes().contains(errorCode)) {
+                if (definition.getResolvedSuspendErrorCodes(synCtx).contains(errorCode)) {
                     if (log.isDebugEnabled()) {
                         log.debug("Encountered a suspend error : " + errorCode +
-                            " defined suspend codes are : " + definition.getSuspendErrorCodes());
+                            " defined suspend codes are : " + definition.getResolvedSuspendErrorCodes(synCtx));
                     }
                     return true;
                 }
@@ -575,7 +575,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      */
     public void onFault(MessageContext synCtx) {
         EndpointDefinition endpointDefinition = getDefinition();
-        if (endpointDefinition != null && endpointDefinition.getTimeoutAction() == SynapseConstants.DISCARD) {
+        if (endpointDefinition != null && endpointDefinition.getResolvedTimeoutAction(synCtx) == SynapseConstants.DISCARD) {
             log.info("Ignoring fault handlers since the timeout action is set to DISCARD");
         } else {
             logSetter();
@@ -947,35 +947,35 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     /**
      * Set advanced properties of the endpoint to json object.
      */
-    protected void setAdvancedProperties() {
+    protected void setAdvancedProperties(MessageContext messageContext) {
 
         JSONObject advancedProps = new JSONObject();
         endpointJson.put("advanced", advancedProps);
-        setSuspendStateProperties(getDefinition(), advancedProps);
-        setTimeoutStateProperties(getDefinition(), advancedProps);
+        setSuspendStateProperties(getDefinition(), advancedProps, messageContext);
+        setTimeoutStateProperties(getDefinition(), advancedProps, messageContext);
     }
 
     /**
      * Set time-out state properties of the endpoint to json object.
      */
-    private void setTimeoutStateProperties(EndpointDefinition definition, JSONObject advancedProps) {
+    private void setTimeoutStateProperties(EndpointDefinition definition, JSONObject advancedProps, MessageContext messageContext) {
 
         JSONObject timeoutStateProps = new JSONObject();
         advancedProps.put("timeoutState", timeoutStateProps);
-        timeoutStateProps.put("errorCodes", definition.getTimeoutErrorCodes());
-        timeoutStateProps.put("reties", definition.getRetriesOnTimeoutBeforeSuspend());
+        timeoutStateProps.put("errorCodes", definition.getResolvedTimeoutErrorCodes(messageContext));
+        timeoutStateProps.put("reties", definition.getResolvedRetriesOnTimeoutBeforeSuspend(messageContext));
     }
 
     /**
      * Set suspend state properties of the endpoint to json object.
      */
-    private void setSuspendStateProperties(EndpointDefinition definition, JSONObject advancedProps) {
+    private void setSuspendStateProperties(EndpointDefinition definition, JSONObject advancedProps, MessageContext messageContext) {
 
         JSONObject suspendStatePros = new JSONObject();
         advancedProps.put("suspendState", suspendStatePros);
-        suspendStatePros.put("errorCodes", definition.getSuspendErrorCodes());
-        suspendStatePros.put("maxDuration", definition.getSuspendMaximumDuration());
-        suspendStatePros.put("initialDuration", definition.getInitialSuspendDuration());
+        suspendStatePros.put("errorCodes", definition.getResolvedSuspendErrorCodes(messageContext));
+        suspendStatePros.put("maxDuration", definition.getResolvedSuspendMaximumDuration(messageContext));
+        suspendStatePros.put("initialDuration", definition.getResolvedInitialSuspendDuration(messageContext));
     }
 
     protected JSONArray getEndpointChildrenAsJson(List<Endpoint> children) {
@@ -983,21 +983,20 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
         if (children != null && children.size() != 0) {
             for (Endpoint child : children) {
-                childrenJsonList.put(child.getJsonRepresentation());
+                childrenJsonList.put(child.getJsonRepresentation(null));
             }
         }
         return childrenJsonList;
     }
 
     @Override
-    public JSONObject getJsonRepresentation() {
+    public JSONObject getJsonRepresentation(MessageContext messageContext) {
 
         if (endpointJson == null) {
-            createJsonRepresentation();
+            createJsonRepresentation(messageContext);
         }
         return endpointJson;
     }
 
-    protected abstract void createJsonRepresentation();
-
+    protected abstract void createJsonRepresentation(MessageContext synCtx);
 }

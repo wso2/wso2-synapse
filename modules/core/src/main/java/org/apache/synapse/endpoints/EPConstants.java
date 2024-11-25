@@ -25,4 +25,8 @@ public class EPConstants {
     public static final int SUPER_TENANT_ID = -1234;
     public static final String TENANT_INFO_ID = "tenant.info.id";
     public static final String LOCAL_TRANSPORT_IDENTIFIER = "local://";
+
+    public static final String DISCARD = "discard";
+    public static final String FAULT = "fault";
+    public static final String NEVER = "never";
 }
