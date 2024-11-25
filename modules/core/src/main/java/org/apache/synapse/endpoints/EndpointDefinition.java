@@ -617,6 +617,8 @@ public class EndpointDefinition implements AspectConfigurable {
                     result = SynapseConstants.DISCARD;
                 } else if (EPConstants.FAULT.equalsIgnoreCase(timeoutActionStr)) {
                     result = SynapseConstants.DISCARD_AND_FAULT;
+                } else if (EPConstants.NEVER.equalsIgnoreCase(timeoutActionStr)) {
+                    result = SynapseConstants.NONE;
                 } else {
                     log.warn("Error while evaluating dynamic endpoint timeout action.");
                 }

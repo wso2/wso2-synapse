@@ -126,6 +126,29 @@ public class DynamicEndpointTest extends TestCase {
         assertEquals(endpoint.getDefinition().getResolvedTimeoutAction(synCtx), SynapseConstants.DISCARD);
     }
 
+    public void testContextPropertiesForNoTimeoutAction() throws Exception {
+
+        SynapseXPath xpath = new SynapseXPath("$ctx:timeoutAction");
+        AbstractEndpoint endpoint = new AddressEndpoint();
+        EndpointDefinition definition = new EndpointDefinition();
+        endpoint.setDefinition(definition);
+        definition.setDynamicTimeoutAction(xpath);
+        MessageContext synCtx = new TestMessageContext();
+        assertEquals(endpoint.getDefinition().getResolvedTimeoutAction(synCtx), SynapseConstants.NONE);
+    }
+
+    public void testContextPropertiesForTimeoutActionNever() throws Exception {
+
+        SynapseXPath xpath = new SynapseXPath("$ctx:timeoutAction");
+        AbstractEndpoint endpoint = new AddressEndpoint();
+        EndpointDefinition definition = new EndpointDefinition();
+        endpoint.setDefinition(definition);
+        definition.setDynamicTimeoutAction(xpath);
+        MessageContext synCtx = new TestMessageContext();
+        synCtx.setProperty("timeoutAction", "never");
+        assertEquals(endpoint.getDefinition().getResolvedTimeoutAction(synCtx), SynapseConstants.NONE);
+    }
+
     public void testContextPropertiesForSuspendErrorCodes() throws Exception {
 
         SynapseXPath xpath = new SynapseXPath("$ctx:suspendErrorCodes");

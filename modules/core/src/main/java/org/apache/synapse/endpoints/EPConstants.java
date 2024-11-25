@@ -28,4 +28,5 @@ public class EPConstants {
 
     public static final String DISCARD = "discard";
     public static final String FAULT = "fault";
+    public static final String NEVER = "never";
 }
