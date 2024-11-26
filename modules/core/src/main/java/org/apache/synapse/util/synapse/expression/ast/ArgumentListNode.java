@@ -40,7 +40,7 @@ public class ArgumentListNode implements ExpressionNode {
     }
 
     @Override
-    public ExpressionResult evaluate(EvaluationContext context) {
+    public ExpressionResult evaluate(EvaluationContext context, boolean isObjectValue) {
         return null;
     }
 

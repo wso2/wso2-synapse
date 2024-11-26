@@ -149,6 +149,8 @@ public class SynapseXPathVariableContext implements VariableContext {
 
                     return synCtx.getProperty(localName);
 
+                } else if (SynapseXPathConstants.VAR_CONTEXT_VARIABLE_PREFIX.equals(prefix)) {
+                    return synCtx.getVariable(localName);
                 } else if (SynapseXPathConstants.AXIS2_CONTEXT_VARIABLE_PREFIX.equals(prefix)) {
 
                     return ((Axis2MessageContext)

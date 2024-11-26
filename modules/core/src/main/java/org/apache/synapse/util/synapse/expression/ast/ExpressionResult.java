@@ -27,7 +27,10 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.internal.LazilyParsedNumber;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMNode;
 import org.apache.synapse.util.synapse.expression.exception.EvaluationException;
+
+import java.util.List;
 
 /**
  * This class represents the result of an expression evaluation.
@@ -44,7 +47,11 @@ public class ExpressionResult {
         this.value = value;
     }
 
-    public ExpressionResult(OMElement value) {
+    public ExpressionResult(OMNode value) {
+        this.value = value;
+    }
+
+    public ExpressionResult(List value) {
         this.value = value;
     }
 

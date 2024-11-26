@@ -36,8 +36,8 @@ public class SignedExpressionNode implements ExpressionNode {
     }
 
     @Override
-    public ExpressionResult evaluate(EvaluationContext context) {
-        ExpressionResult result = expression.evaluate(context);
+    public ExpressionResult evaluate(EvaluationContext context, boolean isObjectValue) {
+        ExpressionResult result = expression.evaluate(context, isObjectValue);
         if (result == null || result.isNull()) {
             throw new IllegalStateException("Cannot negate a null value");
         }

@@ -17,7 +17,6 @@
  */
 
 package org.apache.synapse.util.synapse.expression;
-import org.apache.synapse.SynapseConstants;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,11 +28,11 @@ public class PayloadAndVariableAccessTest {
     @Test
     public void testPayloadAccess() {
         TestUtils.clearMessageContext();
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("payload.name"));
+        Assert.assertNull(TestUtils.evaluateExpression("payload.name"));
         Assert.assertEquals("John", TestUtils.evaluateExpressionWithPayload("payload.name", 1));
         Assert.assertEquals("John", TestUtils.evaluateExpressionWithPayload("payload[\"name\"]", 1));
         Assert.assertEquals("BMW", TestUtils.evaluateExpressionWithPayload("$.cars[1]", 1));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpressionWithPayload("$.cars[10]", 1));
+        Assert.assertNull(TestUtils.evaluateExpressionWithPayload("$.cars[10]", 1));
         Assert.assertEquals("BMW", TestUtils.evaluateExpressionWithPayload("$.cars[$.index]", 1));
         Assert.assertEquals("[\"BMW\",\"Lexus\"]", TestUtils.evaluateExpressionWithPayload(
                 "$.cars[$.index,4]", 1));
@@ -47,7 +46,7 @@ public class PayloadAndVariableAccessTest {
                 TestUtils.evaluateExpressionWithPayload("payload.[:4]", 3));
         Assert.assertEquals("[\"Forget\",\"the\",\"wrong\",\"that\",\"I've\",\"done\"]",
                 TestUtils.evaluateExpressionWithPayload("payload[4:]", 3));
-        Assert.assertEquals(SynapseConstants.UNKNOWN,TestUtils.evaluateExpressionWithPayloadAndVariables(
+        Assert.assertNull(TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "payload.random", 1, 1));
     }
 
@@ -144,9 +143,9 @@ public class PayloadAndVariableAccessTest {
         Assert.assertEquals("[\"The Lord of the Rings\",\"To Kill a Mockingbird\"]",
                 TestUtils.evaluateExpressionWithPayloadAndVariables(
                         "var.[\"json2\"].store.[\"book\"][?(@.price > payload.expensive)].title", 2, 2));
-        Assert.assertEquals(SynapseConstants.UNKNOWN,TestUtils.evaluateExpressionWithPayloadAndVariables(
+        Assert.assertNull(TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "var.random", 0, 1));
-        Assert.assertEquals(SynapseConstants.UNKNOWN,TestUtils.evaluateExpressionWithPayloadAndVariables(
+        Assert.assertNull(TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "var.num1[0]", 0, 1));
     }
 }
