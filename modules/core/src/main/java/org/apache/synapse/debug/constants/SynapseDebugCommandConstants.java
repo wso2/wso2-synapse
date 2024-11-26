@@ -47,6 +47,10 @@ public class SynapseDebugCommandConstants {
     public static final String DEBUG_COMMAND_PROPERTY_NAME = "property-name";
     public static final String DEBUG_COMMAND_PROPERTY_VALUE = "property-value";
     public static final String DEBUG_COMMAND_PROPERTIES = "properties";
+    public static final String DEBUG_COMMAND_VARIABLES = "variables";
+    public static final String DEBUG_COMMAND_VARIABLE = "variable";
+    public static final String DEBUG_COMMAND_VARIABLE_NAME = "variable-name";
+    public static final String DEBUG_COMMAND_VARIABLE_VALUE = "variable-value";
     public static final String DEBUG_COMMAND_PROPERTY_CONTEXT = "context";
     public static final String DEBUG_COMMAND_PROPERTY_CONTEXT_ALL = "all";
     public static final String DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2 = "axis2";
@@ -61,6 +65,7 @@ public class SynapseDebugCommandConstants {
     public static final String DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_AXIS2CLIENT = "axis2Client-properties";
     public static final String DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_AXIS2TRANSPORT = "axis2Transport-properties";
     public static final String DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_AXIS2OPERATION = "axis2Operation-properties";
+    public static final String DEBUG_COMMAND_RESPONSE_VARIABLES = "message-variables";
     public static final String DEBUG_COMMAND_EXIT = "exit";
     public static final String DEBUG_COMMAND_RESUME = "resume";
     public static final String DEBUG_COMMAND_STEP = "step";
@@ -77,6 +82,8 @@ public class SynapseDebugCommandConstants {
     public static final String DEBUG_COMMAND_RESPONSE_UNABLE_TO_REGISTER_FLOW_POINT = "unable to register mediation flow point";
     public static final String DEBUG_COMMAND_RESPONSE_UNABLE_TO_ACQUIRE_MESSAGE_CONTEXT_PROPERTIES = "unable to acquire message context properties";
     public static final String DEBUG_COMMAND_RESPONSE_UNABLE_TO_ALTER_MESSAGE_CONTEXT_PROPERTY = "unable to alter message context property";
+    public static final String DEBUG_COMMAND_RESPONSE_UNABLE_TO_ACQUIRE_VARIABLES = "unable to acquire message variables";
+    public static final String DEBUG_COMMAND_RESPONSE_UNABLE_TO_ALTER_VARIABLE = "unable to alter message variable";
     public static final String DEBUG_COMMAND_RESPONSE_API_RESOURCE_NOT_FOUND = "api resource not found";
     public static final String DEBUG_COMMAND_RESPONSE_API_NOT_FOUND = "api not found";
     public static final String DEBUG_COMMAND_RESPONSE_PROXY_NOT_FOUND = "proxy not found";

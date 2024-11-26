@@ -322,6 +322,10 @@ public class SynapseDebugManager implements Observer {
                     JSONObject property_arguments = parsed_debug_line
                             .getJSONObject(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY);
                     this.addMediationFlowPointProperty(propertyContext, property_arguments, false);
+                } else if (skipOrBreakPointOrProperty.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_VARIABLE)) {
+                    JSONObject variable_arguments = parsed_debug_line
+                            .getJSONObject(SynapseDebugCommandConstants.DEBUG_COMMAND_VARIABLE);
+                    this.addMediationFlowPointVariable(variable_arguments, false);
                 } else {
                     String mediation_component = parsed_debug_line
                             .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT);
@@ -342,6 +346,10 @@ public class SynapseDebugManager implements Observer {
                     property_arguments = parsed_debug_line
                             .getJSONObject(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY);
                 }
+                if (propertyOrProperties.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_VARIABLE)) {
+                    property_arguments = parsed_debug_line
+                            .getJSONObject(SynapseDebugCommandConstants.DEBUG_COMMAND_VARIABLE);
+                }
                 this.acquireMediationFlowPointProperties(propertyOrProperties, propertyContext, property_arguments);
             } else if (command.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_RESUME)) {
                 this.debugResume();
@@ -354,6 +362,10 @@ public class SynapseDebugManager implements Observer {
                     JSONObject property_arguments = parsed_debug_line
                             .getJSONObject(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY);
                     this.addMediationFlowPointProperty(propertyContext, property_arguments, true);
+                } else if (skipOrBreakPointOrProperty.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_VARIABLE)) {
+                    JSONObject variable_arguments = parsed_debug_line
+                            .getJSONObject(SynapseDebugCommandConstants.DEBUG_COMMAND_VARIABLE);
+                    this.addMediationFlowPointVariable(variable_arguments, true);
                 } else {
                     String mediation_component = parsed_debug_line
                             .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT);
@@ -962,6 +974,25 @@ public class SynapseDebugManager implements Observer {
                     debugInterface.getPortListenWriter().flush();
                     log.debug("wirelog sent to devstudio - " + wireLog.toString());
                 }
+            } else if (propertyOrProperties.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_VARIABLES)) {
+                JSONObject data_synapse = new JSONObject(((Axis2MessageContext) synCtx).getVariables());
+                JSONObject data_synapse_variables = new JSONObject();
+                data_synapse_variables.put(SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_VARIABLES, data_synapse);
+                debugInterface.getPortListenWriter().println(data_synapse_variables);
+                debugInterface.getPortListenWriter().flush();
+            } else if (propertyOrProperties.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_VARIABLE)) {
+                JSONObject data_synapse = new JSONObject(((Axis2MessageContext) synCtx).getVariables());
+                Object result = null;
+                if (data_synapse.has(property_arguments
+                        .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_VARIABLE_NAME))) {
+                    result = data_synapse.get(property_arguments
+                            .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_VARIABLE_NAME));
+                }
+                JSONObject json_result = new JSONObject();
+                json_result.put(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_VARIABLE_NAME),
+                        result);
+                debugInterface.getPortListenWriter().println(json_result);
+                debugInterface.getPortListenWriter().flush();
             }
         } catch (JSONException ex) {
             log.error("Failed to acquire property in the scope: " + propertyContext, ex);
@@ -1332,5 +1363,34 @@ public class SynapseDebugManager implements Observer {
                 log.error("Failed to create debug event in JSON format", ex);
             }
         }
+    }
+
+    /**
+     * This method is used to add or remove a variable in the mediation flow point.
+     *
+     * @param variableArguments
+     * @param isActionSet
+     */
+    private void addMediationFlowPointVariable(JSONObject variableArguments, boolean isActionSet) {
+
+        try {
+            String variableName = variableArguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_VARIABLE_NAME);
+            if (isActionSet) {
+                String variableValue = variableArguments
+                        .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_VARIABLE_VALUE);
+                synCtx.setVariable(variableName, variableValue);
+            } else {
+                Set variableKeySet = synCtx.getVariableKeySet();
+                if (variableKeySet != null) {
+                    variableKeySet.remove(variableName);
+                }
+            }
+        } catch (JSONException e) {
+            log.error("Failed to set or remove variable.", e);
+            this.advertiseCommandResponse(createDebugCommandResponse(false,
+                    SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_UNABLE_TO_ALTER_VARIABLE)
+                    .toString());
+        }
+        this.advertiseCommandResponse(createDebugCommandResponse(true, null).toString());
     }
 }
