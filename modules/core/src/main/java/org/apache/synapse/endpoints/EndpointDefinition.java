@@ -28,6 +28,7 @@ import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.xml.SynapsePath;
+import org.apache.synapse.mediators.Value;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -134,7 +135,7 @@ public class EndpointDefinition implements AspectConfigurable {
     /**
      * The expression to evaluate dynamic timeout.
      */
-    private SynapsePath dynamicTimeout = null;
+    private Value dynamicTimeout = null;
 
     /**
      * Whether endpoint state replication should be disabled or not (only valid in clustered setups)
@@ -159,39 +160,39 @@ public class EndpointDefinition implements AspectConfigurable {
      */
     private int timeoutAction = SynapseConstants.NONE;
     /** The expression to evaluate dynamic timeout action */
-    private SynapsePath dynamicTimeoutAction = null;
+    private Value dynamicTimeoutAction = null;
 
     /** The initial suspend duration when an endpoint is marked inactive */
     private long initialSuspendDuration = -1;
     /**
      * The expression to evaluate dynamic initial suspend duration.
      */
-    private SynapsePath dynamicInitialSuspendDuration = null;
+    private Value dynamicInitialSuspendDuration = null;
     /** The suspend duration ratio for the next duration - this is the geometric series multipler */
     private float suspendProgressionFactor = 1;
     /** The expression to evaluate dynamic suspend progression factor */
-    private SynapsePath dynamicSuspendProgressionFactor = null;
+    private Value dynamicSuspendProgressionFactor = null;
     /** This is the maximum duration for which a node will be suspended */
     private long suspendMaximumDuration = Long.MAX_VALUE;
     /** The expression to maximum duration for which a node will be suspended */
-    private SynapsePath dynamicSuspendMaximumDuration = null;
+    private Value dynamicSuspendMaximumDuration = null;
     /** A list of error codes, which directly puts an endpoint into suspend mode */
     private final List<Integer> suspendErrorCodes = new ArrayList<Integer>();
     /** The expression to evaluate dynamic suspend error codes */
-    private SynapsePath dynamicSuspendErrorCodes = null;
+    private Value dynamicSuspendErrorCodes = null;
 
     /** No of retries to attempt on timeout, before an endpoint is makred inactive */
     private int retriesOnTimeoutBeforeSuspend = 0;
     /** The expression to evaluate dynamic retries on timeout before suspend */
-    private SynapsePath dynamicRetriesOnTimeoutBeforeSuspend = null;
+    private Value dynamicRetriesOnTimeoutBeforeSuspend = null;
     /** The delay between retries for a timeout out endpoint */
     private int retryDurationOnTimeout = 0;
     /** The expression to evaluate dynamic retry duration on timeout */
-    private SynapsePath dynamicRetryDurationOnTimeout = null;
+    private Value dynamicRetryDurationOnTimeout = null;
     /** A list of error codes which puts the endpoint into timeout mode */
     private final List<Integer> timeoutErrorCodes = new ArrayList<Integer>();
     /** The expression to evaluate dynamic timeout error codes */
-    private SynapsePath dynamicTimeoutErrorCodes = null;
+    private Value dynamicTimeoutErrorCodes = null;
 
     private AspectConfiguration aspectConfiguration;
 
@@ -220,12 +221,15 @@ public class EndpointDefinition implements AspectConfigurable {
         }
     }
 
-    public void setDynamicTimeoutExpression(SynapsePath expression) {
+    public void setDynamicTimeoutExpression(Value expression) {
         this.dynamicTimeout = expression;
     }
 
     public SynapsePath getDynamicTimeoutExpression() {
-        return this.dynamicTimeout;
+        if (dynamicTimeout == null) {
+            return null;
+        }
+        return this.dynamicTimeout.getExpression();
     }
 
     public boolean isDynamicTimeoutEndpoint() {
@@ -239,7 +243,7 @@ public class EndpointDefinition implements AspectConfigurable {
     public long evaluateDynamicEndpointTimeout(MessageContext synCtx) {
         long timeoutMilliSeconds;
         try {
-            String stringValue = dynamicTimeout.stringValueOf(synCtx);
+            String stringValue = dynamicTimeout.evaluateValue(synCtx);
             if (stringValue != null) {
                 timeoutMilliSeconds = Long.parseLong(stringValue.trim());
             } else {
@@ -592,10 +596,13 @@ public class EndpointDefinition implements AspectConfigurable {
 
     public SynapsePath getDynamicTimeoutAction() {
 
-        return dynamicTimeoutAction;
+        if (dynamicTimeoutAction == null) {
+            return null;
+        }
+        return dynamicTimeoutAction.getExpression();
     }
 
-    public void setDynamicTimeoutAction(SynapsePath dynamicTimeoutAction) {
+    public void setDynamicTimeoutAction(Value dynamicTimeoutAction) {
 
         this.dynamicTimeoutAction = dynamicTimeoutAction;
     }
@@ -609,7 +616,7 @@ public class EndpointDefinition implements AspectConfigurable {
 
         int result = timeoutAction;
         try {
-            String timeoutActionStr = dynamicTimeoutAction.stringValueOf(synCtx);
+            String timeoutActionStr = dynamicTimeoutAction.evaluateValue(synCtx);
             if (timeoutActionStr != null) {
                 if (EPConstants.DISCARD.equalsIgnoreCase(timeoutActionStr)) {
                     result = SynapseConstants.DISCARD;
@@ -677,10 +684,13 @@ public class EndpointDefinition implements AspectConfigurable {
 
     public SynapsePath getDynamicInitialSuspendDuration() {
 
-        return dynamicInitialSuspendDuration;
+        if (dynamicInitialSuspendDuration == null) {
+            return null;
+        }
+        return dynamicInitialSuspendDuration.getExpression();
     }
 
-    public void setDynamicInitialSuspendDuration(SynapsePath dynamicInitialSuspendDuration) {
+    public void setDynamicInitialSuspendDuration(Value dynamicInitialSuspendDuration) {
 
         this.dynamicInitialSuspendDuration = dynamicInitialSuspendDuration;
     }
@@ -696,7 +706,7 @@ public class EndpointDefinition implements AspectConfigurable {
     public long evaluateDynamicInitialSuspendDuration(MessageContext synCtx) {
         long result = initialSuspendDuration;
         try {
-            String stringValue = dynamicInitialSuspendDuration.stringValueOf(synCtx);
+            String stringValue = dynamicInitialSuspendDuration.evaluateValue(synCtx);
             if (stringValue != null) {
                 result = Long.parseLong(stringValue.trim());
             }
@@ -731,10 +741,13 @@ public class EndpointDefinition implements AspectConfigurable {
 
     public SynapsePath getDynamicSuspendProgressionFactor() {
 
-        return dynamicSuspendProgressionFactor;
+        if (dynamicSuspendProgressionFactor == null) {
+            return null;
+        }
+        return dynamicSuspendProgressionFactor.getExpression();
     }
 
-    public void setDynamicSuspendProgressionFactor(SynapsePath dynamicSuspendProgressionFactor) {
+    public void setDynamicSuspendProgressionFactor(Value dynamicSuspendProgressionFactor) {
 
         this.dynamicSuspendProgressionFactor = dynamicSuspendProgressionFactor;
     }
@@ -748,7 +761,7 @@ public class EndpointDefinition implements AspectConfigurable {
 
         float result = suspendProgressionFactor;
         try {
-            String stringValue = dynamicSuspendProgressionFactor.stringValueOf(messageContext);
+            String stringValue = dynamicSuspendProgressionFactor.evaluateValue(messageContext);
             if (stringValue != null) {
                 result = Float.parseFloat(stringValue);
             }
@@ -775,10 +788,13 @@ public class EndpointDefinition implements AspectConfigurable {
 
     public SynapsePath getDynamicSuspendMaximumDuration() {
 
-        return dynamicSuspendMaximumDuration;
+        if (dynamicSuspendMaximumDuration == null) {
+            return null;
+        }
+        return dynamicSuspendMaximumDuration.getExpression();
     }
 
-    public void setDynamicSuspendMaximumDuration(SynapsePath dynamicSuspendMaximumDuration) {
+    public void setDynamicSuspendMaximumDuration(Value dynamicSuspendMaximumDuration) {
 
         this.dynamicSuspendMaximumDuration = dynamicSuspendMaximumDuration;
     }
@@ -792,7 +808,7 @@ public class EndpointDefinition implements AspectConfigurable {
 
         long result = suspendMaximumDuration;
         try {
-            String stringValue = dynamicSuspendMaximumDuration.stringValueOf(messageContext);
+            String stringValue = dynamicSuspendMaximumDuration.evaluateValue(messageContext);
             if (stringValue != null) {
                 result = Long.parseLong(stringValue);
             }
@@ -819,11 +835,13 @@ public class EndpointDefinition implements AspectConfigurable {
 
     public SynapsePath getDynamicRetriesOnTimeoutBeforeSuspend() {
 
-        return dynamicRetriesOnTimeoutBeforeSuspend;
+        if (dynamicRetriesOnTimeoutBeforeSuspend == null) {
+            return null;
+        }
+        return dynamicRetriesOnTimeoutBeforeSuspend.getExpression();
     }
 
-    public void setDynamicRetriesOnTimeoutBeforeSuspend(
-            SynapsePath dynamicRetriesOnTimeoutBeforeSuspend) {
+    public void setDynamicRetriesOnTimeoutBeforeSuspend(Value dynamicRetriesOnTimeoutBeforeSuspend) {
 
         this.dynamicRetriesOnTimeoutBeforeSuspend = dynamicRetriesOnTimeoutBeforeSuspend;
     }
@@ -837,7 +855,7 @@ public class EndpointDefinition implements AspectConfigurable {
 
         int result = retriesOnTimeoutBeforeSuspend;
         try {
-            String stringValue = dynamicRetriesOnTimeoutBeforeSuspend.stringValueOf(messageContext);
+            String stringValue = dynamicRetriesOnTimeoutBeforeSuspend.evaluateValue(messageContext);
             if (stringValue != null) {
                 result = Integer.parseInt(stringValue);
             }
@@ -864,10 +882,13 @@ public class EndpointDefinition implements AspectConfigurable {
 
     public SynapsePath getDynamicRetryDurationOnTimeout() {
 
-        return dynamicRetryDurationOnTimeout;
+        if (dynamicRetryDurationOnTimeout == null) {
+            return null;
+        }
+        return dynamicRetryDurationOnTimeout.getExpression();
     }
 
-    public void setDynamicRetryDurationOnTimeout(SynapsePath dynamicRetryDurationOnTimeout) {
+    public void setDynamicRetryDurationOnTimeout(Value dynamicRetryDurationOnTimeout) {
 
         this.dynamicRetryDurationOnTimeout = dynamicRetryDurationOnTimeout;
     }
@@ -881,7 +902,7 @@ public class EndpointDefinition implements AspectConfigurable {
 
         int result = retryDurationOnTimeout;
         try {
-            String stringValue = dynamicRetryDurationOnTimeout.stringValueOf(messageContext);
+            String stringValue = dynamicRetryDurationOnTimeout.evaluateValue(messageContext);
             if (stringValue != null) {
                 result = Integer.parseInt(stringValue);
             }
@@ -928,10 +949,13 @@ public class EndpointDefinition implements AspectConfigurable {
 
     public SynapsePath getDynamicSuspendErrorCodes() {
 
-        return dynamicSuspendErrorCodes;
+        if (dynamicSuspendErrorCodes == null) {
+            return null;
+        }
+        return dynamicSuspendErrorCodes.getExpression();
     }
 
-    public void setDynamicSuspendErrorCodes(SynapsePath dynamicSuspendErrorCodes) {
+    public void setDynamicSuspendErrorCodes(Value dynamicSuspendErrorCodes) {
 
         this.dynamicSuspendErrorCodes = dynamicSuspendErrorCodes;
     }
@@ -945,7 +969,7 @@ public class EndpointDefinition implements AspectConfigurable {
 
         List<Integer> result = suspendErrorCodes;
         try {
-            String stringValue = dynamicSuspendErrorCodes.stringValueOf(messageContext);
+            String stringValue = dynamicSuspendErrorCodes.evaluateValue(messageContext);
             if (stringValue != null) {
                 String[] errorCodes = stringValue.split(",");
                 result = new ArrayList<Integer>();
@@ -972,10 +996,13 @@ public class EndpointDefinition implements AspectConfigurable {
 
     public SynapsePath getDynamicTimeoutErrorCodes() {
 
-        return dynamicTimeoutErrorCodes;
+        if (dynamicTimeoutErrorCodes == null) {
+            return null;
+        }
+        return dynamicTimeoutErrorCodes.getExpression();
     }
 
-    public void setDynamicTimeoutErrorCodes(SynapsePath dynamicTimeoutErrorCodes) {
+    public void setDynamicTimeoutErrorCodes(Value dynamicTimeoutErrorCodes) {
 
         this.dynamicTimeoutErrorCodes = dynamicTimeoutErrorCodes;
     }
@@ -989,7 +1016,7 @@ public class EndpointDefinition implements AspectConfigurable {
 
         List<Integer> result = timeoutErrorCodes;
         try {
-            String stringValue = dynamicTimeoutErrorCodes.stringValueOf(messageContext);
+            String stringValue = dynamicTimeoutErrorCodes.evaluateValue(messageContext);
             if (stringValue != null) {
                 String[] errorCodes = stringValue.split(",");
                 result = new ArrayList<Integer>();

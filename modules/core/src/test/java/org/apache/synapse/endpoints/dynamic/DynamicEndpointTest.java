@@ -17,9 +17,12 @@
 package org.apache.synapse.endpoints.dynamic;
 
 import junit.framework.TestCase;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.TestMessageContext;
+import org.apache.synapse.config.xml.ValueFactory;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.AddressEndpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
@@ -31,47 +34,48 @@ import java.util.List;
 public class DynamicEndpointTest extends TestCase {
 
     public void testContextProperties() throws Exception {
-        SynapseXPath xpath = new SynapseXPath("$ctx:timeout");
+
+        OMElement omElement = AXIOMUtil.stringToOM("<duration>{$ctx:timeout}</duration>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicTimeoutExpression(xpath);
+        definition.setDynamicTimeoutExpression(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("timeout", "90000");
-        assertEquals(Long.valueOf((String) xpath.evaluate(synCtx)).longValue(),
+        assertEquals(90000,
                 endpoint.getDefinition().evaluateDynamicEndpointTimeout(synCtx));
     }
 
     public void testContextPropertiesForInitialSuspendDuration() throws Exception {
 
-        SynapseXPath xpath = new SynapseXPath("$ctx:initialSuspendDuration");
+        OMElement omElement = AXIOMUtil.stringToOM("<initialDuration>{$ctx:suspendInitialDuration}</initialDuration>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicInitialSuspendDuration(xpath);
+        definition.setDynamicInitialSuspendDuration(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
-        synCtx.setProperty("initialSuspendDuration", "90000");
+        synCtx.setProperty("suspendInitialDuration", "90000");
         assertEquals(endpoint.getDefinition().getResolvedInitialSuspendDuration(synCtx), 90000);
     }
 
     public void testContextPropertiesForNoInitialSuspendDuration() throws Exception {
 
-        SynapseXPath xpath = new SynapseXPath("$ctx:initialSuspendDuration");
+        OMElement omElement = AXIOMUtil.stringToOM("<initialDuration>{$ctx:suspendInitialDuration}</initialDuration>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicInitialSuspendDuration(xpath);
+        definition.setDynamicInitialSuspendDuration(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         assertEquals(-1, endpoint.getDefinition().getResolvedInitialSuspendDuration(synCtx));
     }
 
     public void testContextPropertiesForSuspendMaximumDuration() throws Exception {
 
-        SynapseXPath xpath = new SynapseXPath("$ctx:suspendMaximumDuration");
+        OMElement omElement = AXIOMUtil.stringToOM("<maximumDuration>{$ctx:suspendMaximumDuration}</maximumDuration>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicSuspendMaximumDuration(xpath);
+        definition.setDynamicSuspendMaximumDuration(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("suspendMaximumDuration", "90000");
         assertEquals(endpoint.getDefinition().getResolvedSuspendMaximumDuration(synCtx), 90000);
@@ -79,22 +83,22 @@ public class DynamicEndpointTest extends TestCase {
 
     public void testContextPropertiesForNoSuspendMaximumDuration() throws Exception {
 
-        SynapseXPath xpath = new SynapseXPath("$ctx:suspendMaximumDuration");
+        OMElement omElement = AXIOMUtil.stringToOM("<maximumDuration>{$ctx:suspendMaximumDuration}</maximumDuration>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicSuspendMaximumDuration(xpath);
+        definition.setDynamicSuspendMaximumDuration(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         assertEquals(Long.MAX_VALUE, endpoint.getDefinition().getResolvedSuspendMaximumDuration(synCtx));
     }
 
     public void testContextPropertiesForSuspendProgressionFactor() throws Exception {
 
-        SynapseXPath xpath = new SynapseXPath("$ctx:suspendProgressionFactor");
+        OMElement omElement = AXIOMUtil.stringToOM("<progressionFactor>{$ctx:suspendProgressionFactor}</progressionFactor>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicSuspendProgressionFactor(xpath);
+        definition.setDynamicSuspendProgressionFactor(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("suspendProgressionFactor", "2");
         assertEquals(endpoint.getDefinition().getResolvedSuspendProgressionFactor(synCtx), 2.0f);
@@ -102,22 +106,22 @@ public class DynamicEndpointTest extends TestCase {
 
     public void testContextPropertiesForNoSuspendProgressionFactor() throws Exception {
 
-        SynapseXPath xpath = new SynapseXPath("$ctx:suspendProgressionFactor");
+        OMElement omElement = AXIOMUtil.stringToOM("<progressionFactor>{$ctx:suspendProgressionFactor}</progressionFactor>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicSuspendProgressionFactor(xpath);
+        definition.setDynamicSuspendProgressionFactor(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         assertEquals(1.0f, endpoint.getDefinition().getResolvedSuspendProgressionFactor(synCtx));
     }
 
     public void testContextPropertiesForRetriesOnTimeoutBeforeSuspend() throws Exception {
 
-        SynapseXPath xpath = new SynapseXPath("$ctx:retriesOnTimeoutBeforeSuspend");
+        OMElement omElement = AXIOMUtil.stringToOM("<retriesBeforeSuspension>{$ctx:retriesOnTimeoutBeforeSuspend}</retriesBeforeSuspension>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicRetriesOnTimeoutBeforeSuspend(xpath);
+        definition.setDynamicRetriesOnTimeoutBeforeSuspend(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("retriesOnTimeoutBeforeSuspend", "3");
         assertEquals(endpoint.getDefinition().getResolvedRetriesOnTimeoutBeforeSuspend(synCtx), 3);
@@ -125,22 +129,23 @@ public class DynamicEndpointTest extends TestCase {
 
     public void testContextPropertiesForNoRetriesOnTimeoutBeforeSuspend() throws Exception {
 
-        SynapseXPath xpath = new SynapseXPath("$ctx:retriesOnTimeoutBeforeSuspend");
+        OMElement omElement = AXIOMUtil.stringToOM("<retriesBeforeSuspension>{$ctx:retriesOnTimeoutBeforeSuspend}</retriesBeforeSuspension>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicRetriesOnTimeoutBeforeSuspend(xpath);
+        definition.setDynamicRetriesOnTimeoutBeforeSuspend(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         assertEquals(0, endpoint.getDefinition().getResolvedRetriesOnTimeoutBeforeSuspend(synCtx));
     }
 
     public void testContextPropertiesForRetryDurationOnTimeout() throws Exception {
 
+        OMElement omElement = AXIOMUtil.stringToOM("<retryDelay>{$ctx:retryDurationOnTimeout}</retryDelay>");
         SynapseXPath xpath = new SynapseXPath("$ctx:retryDurationOnTimeout");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicRetryDurationOnTimeout(xpath);
+        definition.setDynamicRetryDurationOnTimeout(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("retryDurationOnTimeout", "90000");
         assertEquals(endpoint.getDefinition().getResolvedRetryDurationOnTimeout(synCtx), 90000);
@@ -148,22 +153,22 @@ public class DynamicEndpointTest extends TestCase {
 
     public void testContextPropertiesForNoRetryDurationOnTimeout() throws Exception {
 
-        SynapseXPath xpath = new SynapseXPath("$ctx:retryDurationOnTimeout");
+        OMElement omElement = AXIOMUtil.stringToOM("<retryDelay>{$ctx:retryDurationOnTimeout}</retryDelay>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicRetryDurationOnTimeout(xpath);
+        definition.setDynamicRetryDurationOnTimeout(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         assertEquals(0, endpoint.getDefinition().getResolvedRetryDurationOnTimeout(synCtx));
     }
 
     public void testContextPropertiesForTimeoutActionFault() throws Exception {
 
-        SynapseXPath xpath = new SynapseXPath("$ctx:timeoutAction");
+        OMElement omElement = AXIOMUtil.stringToOM("<responseAction>{$ctx:timeoutAction}</responseAction>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicTimeoutAction(xpath);
+        definition.setDynamicTimeoutAction(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("timeoutAction", "fault");
         assertEquals(endpoint.getDefinition().getResolvedTimeoutAction(synCtx), SynapseConstants.DISCARD_AND_FAULT);
@@ -171,11 +176,11 @@ public class DynamicEndpointTest extends TestCase {
 
     public void testContextPropertiesForTimeoutActionDiscard() throws Exception {
 
-        SynapseXPath xpath = new SynapseXPath("$ctx:timeoutAction");
+        OMElement omElement = AXIOMUtil.stringToOM("<responseAction>{get-property('timeoutAction')}</responseAction>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicTimeoutAction(xpath);
+        definition.setDynamicTimeoutAction(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("timeoutAction", "discard");
         assertEquals(endpoint.getDefinition().getResolvedTimeoutAction(synCtx), SynapseConstants.DISCARD);
@@ -183,22 +188,22 @@ public class DynamicEndpointTest extends TestCase {
 
     public void testContextPropertiesForNoTimeoutAction() throws Exception {
 
-        SynapseXPath xpath = new SynapseXPath("$ctx:timeoutAction");
+        OMElement omElement = AXIOMUtil.stringToOM("<responseAction>{$ctx:timeoutAction}</responseAction>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicTimeoutAction(xpath);
+        definition.setDynamicTimeoutAction(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         assertEquals(endpoint.getDefinition().getResolvedTimeoutAction(synCtx), SynapseConstants.NONE);
     }
 
     public void testContextPropertiesForSuspendErrorCodes() throws Exception {
 
-        SynapseXPath xpath = new SynapseXPath("$ctx:suspendErrorCodes");
+        OMElement omElement = AXIOMUtil.stringToOM("<errorCodes>{$ctx:suspendErrorCodes}</errorCodes>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicSuspendErrorCodes(xpath);
+        definition.setDynamicSuspendErrorCodes(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("suspendErrorCodes", "101503,101504");
 
@@ -211,11 +216,11 @@ public class DynamicEndpointTest extends TestCase {
 
     public void testContextPropertiesForEmptySuspendErrorCodes() throws Exception {
 
-        SynapseXPath xpath = new SynapseXPath("$ctx:suspendErrorCodes");
+        OMElement omElement = AXIOMUtil.stringToOM("<errorCodes>{$ctx:suspendErrorCodes}</errorCodes>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicSuspendErrorCodes(xpath);
+        definition.setDynamicSuspendErrorCodes(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("suspendErrorCodes", "");
 
@@ -226,11 +231,11 @@ public class DynamicEndpointTest extends TestCase {
 
     public void testContextPropertiesForNoSuspendErrorCodes() throws Exception {
 
-        SynapseXPath xpath = new SynapseXPath("$ctx:suspendErrorCodes");
+        OMElement omElement = AXIOMUtil.stringToOM("<errorCodes>{$ctx:suspendErrorCodes}</errorCodes>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicSuspendErrorCodes(xpath);
+        definition.setDynamicSuspendErrorCodes(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         List<Integer> expectedSuspendErrorCodes = endpoint.getDefinition().getResolvedSuspendErrorCodes(synCtx);
         assertTrue(expectedSuspendErrorCodes.isEmpty());
@@ -238,11 +243,11 @@ public class DynamicEndpointTest extends TestCase {
 
     public void testContextPropertiesForTimeoutErrorCodes() throws Exception {
 
-        SynapseXPath xpath = new SynapseXPath("$ctx:timeoutErrorCodes");
+        OMElement omElement = AXIOMUtil.stringToOM("<errorCodes>{$ctx:timeoutErrorCodes}</errorCodes>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicTimeoutErrorCodes(xpath);
+        definition.setDynamicTimeoutErrorCodes(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("timeoutErrorCodes", "101503,101504");
 
@@ -255,11 +260,11 @@ public class DynamicEndpointTest extends TestCase {
 
     public void testContextPropertiesForEmptyTimeoutErrorCodes() throws Exception {
 
-        SynapseXPath xpath = new SynapseXPath("$ctx:timeoutErrorCodes");
+        OMElement omElement = AXIOMUtil.stringToOM("<errorCodes>{$ctx:timeoutErrorCodes}</errorCodes>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicTimeoutErrorCodes(xpath);
+        definition.setDynamicTimeoutErrorCodes(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("timeoutErrorCodes", "");
 
@@ -270,11 +275,11 @@ public class DynamicEndpointTest extends TestCase {
 
     public void testContextPropertiesForNoTimeoutErrorCodes() throws Exception {
 
-        SynapseXPath xpath = new SynapseXPath("$ctx:timeoutErrorCodes");
+        OMElement omElement = AXIOMUtil.stringToOM("<errorCodes>{$ctx:timeoutErrorCodes}</errorCodes>");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicTimeoutErrorCodes(xpath);
+        definition.setDynamicTimeoutErrorCodes(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         List<Integer> expectedTimeoutErrorCodes = endpoint.getDefinition().getResolvedTimeoutErrorCodes(synCtx);
         assertTrue(expectedTimeoutErrorCodes.isEmpty());
