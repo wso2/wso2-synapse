@@ -294,7 +294,7 @@ public class FailoverEndpoint extends AbstractEndpoint {
         return false;
     }
 
-    protected void createJsonRepresentation(MessageContext messageContext) {
+    protected void createJsonRepresentation() {
         endpointJson = new JSONObject();
         endpointJson.put(NAME_JSON_ATT, getName());
         endpointJson.put(TYPE_JSON_ATT, "Failover Endpoint");

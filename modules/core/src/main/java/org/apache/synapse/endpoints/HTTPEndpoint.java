@@ -87,15 +87,14 @@ public class HTTPEndpoint extends AbstractEndpoint {
         }
     }
 
-    @Override
-    protected void createJsonRepresentation(MessageContext messageContext) {
+    protected void createJsonRepresentation() {
         endpointJson = new JSONObject();
         endpointJson.put(NAME_JSON_ATT, getName());
         endpointJson.put(TYPE_JSON_ATT, "HTTP Endpoint");
         endpointJson.put("method", getHttpMethod());
         endpointJson.put("uriTemplate", getUriTemplate().expand());
         endpointJson.put("errorHandler", getErrorHandler());
-        setAdvancedProperties(messageContext);
+        setAdvancedProperties();
     }
 
     public void send(MessageContext synCtx) {

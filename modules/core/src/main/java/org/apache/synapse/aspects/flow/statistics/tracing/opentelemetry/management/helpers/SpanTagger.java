@@ -114,7 +114,7 @@ public class SpanTagger {
         }
         if (openStatisticsLog.getEndpoint() != null) {
             span.setAttribute(TelemetryConstants.ENDPOINT_ATTRIBUTE_KEY,
-                    String.valueOf(openStatisticsLog.getEndpoint().getJsonRepresentation(synCtx)));
+                    String.valueOf(openStatisticsLog.getEndpoint().getJsonRepresentation()));
         }
         if (synCtx.getProperty(CorrelationConstants.CORRELATION_ID) != null) {
             span.setAttribute(TelemetryConstants.CORRELATION_ID_ATTRIBUTE_KEY,

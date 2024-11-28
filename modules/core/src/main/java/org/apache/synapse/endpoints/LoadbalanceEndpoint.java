@@ -151,7 +151,7 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
         return loadBalanceEPInitialized;
     }
 
-    protected void createJsonRepresentation(MessageContext messageContext) {
+    protected void createJsonRepresentation() {
 
         endpointJson = new JSONObject();
         endpointJson.put(NAME_JSON_ATT, getName());

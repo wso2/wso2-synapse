@@ -156,6 +156,6 @@ public interface Endpoint extends ManagedLifecycle, SynapseArtifact, Nameable {
      *
      * @return JSONObject
      */
-    public JSONObject getJsonRepresentation(MessageContext messageContext);
+    public JSONObject getJsonRepresentation();
 
 }

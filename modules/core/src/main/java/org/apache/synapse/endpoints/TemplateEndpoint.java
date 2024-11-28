@@ -63,7 +63,7 @@ public class TemplateEndpoint extends AbstractEndpoint {
     }
 
     @Override
-    protected void createJsonRepresentation(MessageContext messageContext) {
+    protected void createJsonRepresentation() {
 
         endpointJson = new JSONObject();
         endpointJson.put(NAME_JSON_ATT, getName());

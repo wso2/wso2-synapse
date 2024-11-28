@@ -66,12 +66,12 @@ public class DefaultEndpoint extends AbstractEndpoint {
     }
 
     @Override
-    protected void createJsonRepresentation(MessageContext messageContext) {
+    protected void createJsonRepresentation() {
         endpointJson = new JSONObject();
         endpointJson.put(NAME_JSON_ATT, getName());
         endpointJson.put(TYPE_JSON_ATT, "Default Endpoint");
         endpointJson.put(CHILDREN_JSON_ATT, getEndpointChildrenAsJson(getChildren()));
-        setAdvancedProperties(messageContext);
+        setAdvancedProperties();
     }
 
     public void send(MessageContext synCtx) {

@@ -85,7 +85,7 @@ public class WSDLEndpoint extends AbstractEndpoint {
     }
 
     @Override
-    protected void createJsonRepresentation(MessageContext messageContext) {
+    protected void createJsonRepresentation() {
 
         endpointJson = new JSONObject();
         endpointJson.put(NAME_JSON_ATT, getName());
@@ -93,7 +93,7 @@ public class WSDLEndpoint extends AbstractEndpoint {
         endpointJson.put("wsdlUri", getWsdlURI());
         endpointJson.put("serviceName", getServiceName());
         endpointJson.put("portName", getPortName());
-        setAdvancedProperties(messageContext);
+        setAdvancedProperties();
     }
 
     public void send(MessageContext synCtx) {
