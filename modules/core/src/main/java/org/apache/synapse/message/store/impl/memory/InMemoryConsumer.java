@@ -98,4 +98,10 @@ public class InMemoryConsumer implements MessageConsumer {
         this.queue = queue;
         return this;
     }
+
+    @Override
+    public boolean reInitialize() {
+        // To keep the existing behaviour, return false
+        return false;
+    }
 }

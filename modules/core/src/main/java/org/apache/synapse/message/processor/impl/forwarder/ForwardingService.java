@@ -681,7 +681,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			// For each retry we need to have a fresh copy of the original message
 			getFreshCopyOfOriginalMessage(messageToDispatch, originalEnvelop, originalJsonInputStream);
 
-			if (messageConsumer != null && messageConsumer.isAlive()) {
+			if (messageConsumer != null && (messageConsumer.isAlive() || messageConsumer.reInitialize())) {
 				messageToDispatch.setProperty(SynapseConstants.BLOCKING_MSG_SENDER, sender);
 				// Clear the message context properties related to endpoint in last service invocation
 				Set keySet = messageToDispatch.getPropertyKeySet();
