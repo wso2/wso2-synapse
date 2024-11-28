@@ -283,6 +283,11 @@ public class JmsConsumer implements MessageConsumer {
         }
     }
 
+    public boolean reInitialize() {
+        // To keep the existing behaviour, return false
+        return false;
+    }
+
     private final class CachedMessage {
         private Message message = null;
         private MessageContext mc = null;

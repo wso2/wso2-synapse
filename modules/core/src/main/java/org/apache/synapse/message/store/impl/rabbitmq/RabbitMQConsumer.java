@@ -92,11 +92,26 @@ public class RabbitMQConsumer implements MessageConsumer {
             }
         } else {
             log.warn("The connection and channel to the RabbitMQ broker are unhealthy.");
+            reInitialize();
+        }
+        return null;
+    }
+
+    /**
+     * Reconnect to the RabbitMQ broker by creating a new connection and channel.
+     * return {@code true} if re-initialization is successful, {@code false} otherwise.
+     */
+    public boolean reInitialize() {
+        try {
+            log.info("Cleanup and Reinitializing connection and channel for " + getId());
             cleanup();
             setConnection(store.createConnection());
             setChannel(store.createChannel(connection));
+        } catch (Exception e) {
+            log.error("Failed to reinitialize connection and channel.", e);
+            return false;
         }
-        return null;
+        return true;
     }
 
     /**
@@ -136,13 +151,29 @@ public class RabbitMQConsumer implements MessageConsumer {
      */
     @Override
     public boolean cleanup() {
-        if (connection != null) {
-            connection.abort();
+        try {
+            if (channel != null) {
+                channel.abort(); // Forcefully close the channel
+            }
+        } catch (Exception e) {
+            //ignore
+        } finally {
+            channel = null; // Ensure channel is nullified
         }
-        channel = null;
-        connection = null;
-        return true;
+
+        try {
+            if (connection != null) {
+                connection.abort(); // Forcefully close the connection
+            }
+        } catch (Exception e) {
+            //ignore
+        } finally {
+            connection = null; // Ensure connection is nullified
+        }
+
+        return true; // Indicating cleanup was attempted
     }
+
 
     /**
      * Check availability of connectivity with the message store

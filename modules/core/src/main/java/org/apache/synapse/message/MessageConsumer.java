@@ -62,4 +62,10 @@ public interface MessageConsumer {
      * @return ID
      */
     public String getId();
+
+    /**
+     * Re-initializes the message consumer.
+     * @return {@code true} if re-initialization is successful, {@code false} otherwise.
+     */
+    public boolean reInitialize();
 }

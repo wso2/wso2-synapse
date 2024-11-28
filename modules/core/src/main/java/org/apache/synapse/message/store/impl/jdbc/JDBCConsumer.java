@@ -90,6 +90,11 @@ public class JDBCConsumer implements MessageConsumer {
         }
     }
 
+    public boolean reInitialize() {
+        // To keep the existing behaviour, return false
+        return false;
+    }
+
     /**
      * Ack on success message sending by processor
      *
