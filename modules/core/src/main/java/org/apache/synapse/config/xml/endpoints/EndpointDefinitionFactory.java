@@ -29,6 +29,7 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.config.xml.ValueFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
@@ -161,12 +162,11 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 String d = duration.getText();
                 if (d != null) {
                     try {
-                        if (isExpression(d)) {
-                            definition.setDynamicTimeoutExpression(valueFactory.createTextValue(duration));
-                        } else {
-                            long timeoutMilliSeconds = Long.parseLong(d.trim());
-                            definition.setTimeoutDuration(timeoutMilliSeconds);
+                        Value timeoutDurationValue = valueFactory.createTextValue(duration);
+                        if (timeoutDurationValue.getKeyValue() != null) {
+                            Long.parseLong(timeoutDurationValue.getKeyValue());
                         }
+                        definition.setTimeoutDuration(valueFactory.createTextValue(duration));
                     } catch (NumberFormatException e) {
                         handleException("Endpoint timeout duration expected as a " +
                                 "number but was not a number");
@@ -177,19 +177,12 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
             OMElement action = timeout.getFirstChildWithName(
                     new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "responseAction"));
             if (action != null && action.getText() != null) {
-                String actionString = action.getText().trim();
-                if (isExpression(actionString)) {
-                    definition.setDynamicTimeoutAction(valueFactory.createTextValue(action));
-                } else {
-                    if ("discard".equalsIgnoreCase(actionString)) {
-                        definition.setTimeoutAction(SynapseConstants.DISCARD);
-                    } else if ("fault".equalsIgnoreCase(actionString)) {
-                        definition.setTimeoutAction(SynapseConstants.DISCARD_AND_FAULT);
-                    } else {
-                        handleException("Invalid timeout action, action : "
-                                + actionString + " is not supported");
-                    }
+                Value timeoutActionValue = valueFactory.createTextValue(action);
+
+                if (timeoutActionValue.getKeyValue() != null && !timeoutActionValue.getKeyValue().equals("discard") && !timeoutActionValue.getKeyValue().equals("fault")) {
+                    handleException("Invalid timeout action, action : " + timeoutActionValue.getKeyValue() + " is not supported");
                 }
+                definition.setTimeoutAction(timeoutActionValue);
             }
         }
 
@@ -203,21 +196,20 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 SynapseConstants.SYNAPSE_NAMESPACE,
                 XMLConfigConstants.ERROR_CODES));
             if (timeoutCodes != null && timeoutCodes.getText() != null) {
-                String trimmedTimeoutCodes = timeoutCodes.getText().trim();
-                if (isExpression(trimmedTimeoutCodes)) {
-                    definition.setDynamicTimeoutErrorCodes(valueFactory.createTextValue(timeoutCodes));
-                } else {
+                Value timeoutErrorCodesValue = valueFactory.createTextValue(timeoutCodes);
+                if (timeoutErrorCodesValue.getKeyValue() != null) {
                     StringTokenizer st = new StringTokenizer(timeoutCodes.getText().trim(), ", ");
                     while (st.hasMoreTokens()) {
                         String s = st.nextToken();
                         try {
-                            definition.addTimeoutErrorCode(Integer.parseInt(s));
+                            Integer.parseInt(s);
                         } catch (NumberFormatException e) {
                             handleException("The timeout error codes should be specified " +
                                     "as valid numbers separated by commas : " + timeoutCodes.getText(), e);
                         }
                     }
                 }
+                definition.setTimeoutErrorCodes(timeoutErrorCodesValue);
             }
 
             OMElement retriesBeforeSuspend = markAsTimedOut.getFirstChildWithName(new QName(
@@ -225,13 +217,11 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 XMLConfigConstants.RETRIES_BEFORE_SUSPENSION));
             if (retriesBeforeSuspend != null && retriesBeforeSuspend.getText() != null) {
                 try {
-                    String trimmedRetriesBeforeSuspend = retriesBeforeSuspend.getText().trim();
-                    if (isExpression(trimmedRetriesBeforeSuspend)) {
-                        definition.setDynamicRetriesOnTimeoutBeforeSuspend(valueFactory.createTextValue(retriesBeforeSuspend));
-                    } else {
-                        definition.setRetriesOnTimeoutBeforeSuspend(
-                                Integer.parseInt(trimmedRetriesBeforeSuspend));
+                    Value retriesBeforeSuspendValue = valueFactory.createTextValue(retriesBeforeSuspend);
+                    if (retriesBeforeSuspendValue.getKeyValue() != null) {
+                        Integer.parseInt(retriesBeforeSuspendValue.getKeyValue());
                     }
+                    definition.setRetriesOnTimeoutBeforeSuspend(retriesBeforeSuspendValue);
                 } catch (NumberFormatException e) {
                     handleException("The retries before suspend [for timeouts] should be " +
                         "specified as a valid number : " + retriesBeforeSuspend.getText(), e);
@@ -243,13 +233,11 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 XMLConfigConstants.RETRY_DELAY));
             if (retryDelay != null && retryDelay.getText() != null) {
                 try {
-                    String trimmedRetryDelay = retryDelay.getText().trim();
-                    if (isExpression(trimmedRetryDelay)) {
-                        definition.setDynamicRetryDurationOnTimeout(valueFactory.createTextValue(retryDelay));
-                    } else {
-                        definition.setRetryDurationOnTimeout(
-                                Integer.parseInt(trimmedRetryDelay));
+                    Value retryDelayValue = valueFactory.createTextValue(retryDelay);
+                    if (retryDelayValue.getKeyValue() != null) {
+                        Integer.parseInt(retryDelayValue.getKeyValue());
                     }
+                    definition.setRetryDurationOnTimeout(valueFactory.createTextValue(retryDelay));
                 } catch (NumberFormatException e) {
                     handleException("The retry delay for timeouts should be specified " +
                         "as a valid number : " + retryDelay.getText(), e);
@@ -264,9 +252,9 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
 
             log.warn("Configuration uses deprecated style for endpoint 'suspendDurationOnFailure'");
             try {
-                definition.setInitialSuspendDuration(
-                        1000 * Long.parseLong(suspendDurationOnFailure.getText().trim()));
-                definition.setSuspendProgressionFactor((float) 1.0);
+                long suspendDurationValue = 1000 * Long.parseLong(suspendDurationOnFailure.getText().trim());
+                definition.setInitialSuspendDuration(new Value(String.valueOf(suspendDurationValue)));
+                definition.setSuspendProgressionFactor(new Value(String.valueOf((float) 1.0)));
             } catch (NumberFormatException e) {
                 handleException("The initial suspend duration should be specified " +
                     "as a valid number : " + suspendDurationOnFailure.getText(), e);
@@ -283,21 +271,20 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 SynapseConstants.SYNAPSE_NAMESPACE,
                 XMLConfigConstants.ERROR_CODES));
             if (suspendCodes != null && suspendCodes.getText() != null) {
-                String trimmedSuspendCodes = suspendCodes.getText().trim();
-                if (isExpression(trimmedSuspendCodes)) {
-                    definition.setDynamicSuspendErrorCodes(valueFactory.createTextValue(suspendCodes));
-                } else {
-                    StringTokenizer st = new StringTokenizer(trimmedSuspendCodes, ", ");
+                Value suspendErrorCodesValue = valueFactory.createTextValue(suspendCodes);
+                if (suspendErrorCodesValue.getKeyValue() != null) {
+                    StringTokenizer st = new StringTokenizer(suspendCodes.getText().trim(), ", ");
                     while (st.hasMoreTokens()) {
                         String s = st.nextToken();
                         try {
-                            definition.addSuspendErrorCode(Integer.parseInt(s));
+                            Integer.parseInt(s);
                         } catch (NumberFormatException e) {
                             handleException("The suspend error codes should be specified " +
                                     "as valid numbers separated by commas : " + suspendCodes.getText(), e);
                         }
                     }
                 }
+                definition.setSuspendErrorCodes(valueFactory.createTextValue(suspendCodes));
             }
 
             OMElement initialDuration = suspendOnFailure.getFirstChildWithName(new QName(
@@ -305,13 +292,11 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 XMLConfigConstants.SUSPEND_INITIAL_DURATION));
             if (initialDuration != null && initialDuration.getText() != null) {
                 try {
-                    String initialDurationTrimmed = initialDuration.getText().trim();
-                    if (isExpression(initialDurationTrimmed)) {
-                        definition.setDynamicInitialSuspendDuration(valueFactory.createTextValue(initialDuration));
-                    } else {
-                        definition.setInitialSuspendDuration(
-                                Integer.parseInt(initialDurationTrimmed));
+                    Value initialSuspendDurationValue = valueFactory.createTextValue(initialDuration);
+                    if (initialSuspendDurationValue.getKeyValue() != null) {
+                        Integer.parseInt(initialSuspendDurationValue.getKeyValue());
                     }
+                    definition.setInitialSuspendDuration(initialSuspendDurationValue);
                 } catch (NumberFormatException e) {
                     handleException("The initial suspend duration should be specified " +
                         "as a valid number : " + initialDuration.getText(), e);
@@ -323,13 +308,11 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 XMLConfigConstants.SUSPEND_PROGRESSION_FACTOR));
             if (progressionFactor != null && progressionFactor.getText() != null) {
                 try {
-                    String trimmedProgressionFactor = progressionFactor.getText().trim();
-                    if (isExpression(trimmedProgressionFactor)) {
-                        definition.setDynamicSuspendProgressionFactor(valueFactory.createTextValue(progressionFactor));
-                    } else {
-                        definition.setSuspendProgressionFactor(
-                                Float.parseFloat(trimmedProgressionFactor));
+                    Value progressionFactorValue = valueFactory.createTextValue(progressionFactor);
+                    if (progressionFactorValue.getKeyValue() != null) {
+                        Float.parseFloat(progressionFactorValue.getKeyValue());
                     }
+                    definition.setSuspendProgressionFactor(progressionFactorValue);
                 } catch (NumberFormatException e) {
                     handleException("The suspend duration progression factor should be specified " +
                         "as a valid float : " + progressionFactor.getText(), e);
@@ -341,13 +324,11 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 XMLConfigConstants.SUSPEND_MAXIMUM_DURATION));
             if (maximumDuration != null && maximumDuration.getText() != null) {
                 try {
-                    String trimmedMaximumDuration = maximumDuration.getText().trim();
-                    if (isExpression(trimmedMaximumDuration)) {
-                        definition.setDynamicSuspendMaximumDuration(valueFactory.createTextValue(maximumDuration));
-                    } else {
-                        definition.setSuspendMaximumDuration(
-                                Long.parseLong(maximumDuration.getText().trim()));
+                    Value suspendMaximumDurationValue = valueFactory.createTextValue(maximumDuration);
+                    if (suspendMaximumDurationValue.getKeyValue() != null) {
+                        Long.parseLong(suspendMaximumDurationValue.getKeyValue());
                     }
+                    definition.setSuspendMaximumDuration(suspendMaximumDurationValue);
                 } catch (NumberFormatException e) {
                     handleException("The maximum suspend duration should be specified " +
                         "as a valid number : " + maximumDuration.getText(), e);
@@ -401,14 +382,6 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
         }
 
         return definition;
-    }
-
-    private boolean isExpression(String expressionStr) {
-        Pattern pattern = Pattern.compile("\\{.*\\}");
-        if (pattern.matcher(expressionStr).matches()) {
-            return true;
-        }
-        return false;
     }
 
     protected static void handleException(String msg) {

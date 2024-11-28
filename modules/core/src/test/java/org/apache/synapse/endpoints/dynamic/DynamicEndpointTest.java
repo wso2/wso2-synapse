@@ -26,7 +26,6 @@ import org.apache.synapse.config.xml.ValueFactory;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.AddressEndpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
-import org.apache.synapse.util.xpath.SynapseXPath;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +38,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicTimeoutExpression(new ValueFactory().createTextValue(omElement));
+        definition.setTimeoutDuration(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("timeout", "90000");
         assertEquals(90000,
@@ -52,7 +51,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicInitialSuspendDuration(new ValueFactory().createTextValue(omElement));
+        definition.setInitialSuspendDuration(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("suspendInitialDuration", "90000");
         assertEquals(endpoint.getDefinition().getResolvedInitialSuspendDuration(synCtx), 90000);
@@ -64,7 +63,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicInitialSuspendDuration(new ValueFactory().createTextValue(omElement));
+        definition.setInitialSuspendDuration(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         assertEquals(-1, endpoint.getDefinition().getResolvedInitialSuspendDuration(synCtx));
     }
@@ -75,7 +74,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicSuspendMaximumDuration(new ValueFactory().createTextValue(omElement));
+        definition.setSuspendMaximumDuration(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("suspendMaximumDuration", "90000");
         assertEquals(endpoint.getDefinition().getResolvedSuspendMaximumDuration(synCtx), 90000);
@@ -87,7 +86,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicSuspendMaximumDuration(new ValueFactory().createTextValue(omElement));
+        definition.setSuspendMaximumDuration(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         assertEquals(Long.MAX_VALUE, endpoint.getDefinition().getResolvedSuspendMaximumDuration(synCtx));
     }
@@ -98,7 +97,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicSuspendProgressionFactor(new ValueFactory().createTextValue(omElement));
+        definition.setSuspendProgressionFactor(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("suspendProgressionFactor", "2");
         assertEquals(endpoint.getDefinition().getResolvedSuspendProgressionFactor(synCtx), 2.0f);
@@ -110,7 +109,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicSuspendProgressionFactor(new ValueFactory().createTextValue(omElement));
+        definition.setSuspendProgressionFactor(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         assertEquals(1.0f, endpoint.getDefinition().getResolvedSuspendProgressionFactor(synCtx));
     }
@@ -121,7 +120,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicRetriesOnTimeoutBeforeSuspend(new ValueFactory().createTextValue(omElement));
+        definition.setRetriesOnTimeoutBeforeSuspend(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("retriesOnTimeoutBeforeSuspend", "3");
         assertEquals(endpoint.getDefinition().getResolvedRetriesOnTimeoutBeforeSuspend(synCtx), 3);
@@ -133,7 +132,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicRetriesOnTimeoutBeforeSuspend(new ValueFactory().createTextValue(omElement));
+        definition.setRetriesOnTimeoutBeforeSuspend(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         assertEquals(0, endpoint.getDefinition().getResolvedRetriesOnTimeoutBeforeSuspend(synCtx));
     }
@@ -141,11 +140,10 @@ public class DynamicEndpointTest extends TestCase {
     public void testContextPropertiesForRetryDurationOnTimeout() throws Exception {
 
         OMElement omElement = AXIOMUtil.stringToOM("<retryDelay>{$ctx:retryDurationOnTimeout}</retryDelay>");
-        SynapseXPath xpath = new SynapseXPath("$ctx:retryDurationOnTimeout");
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicRetryDurationOnTimeout(new ValueFactory().createTextValue(omElement));
+        definition.setRetryDurationOnTimeout(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("retryDurationOnTimeout", "90000");
         assertEquals(endpoint.getDefinition().getResolvedRetryDurationOnTimeout(synCtx), 90000);
@@ -157,7 +155,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicRetryDurationOnTimeout(new ValueFactory().createTextValue(omElement));
+        definition.setRetryDurationOnTimeout(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         assertEquals(0, endpoint.getDefinition().getResolvedRetryDurationOnTimeout(synCtx));
     }
@@ -168,7 +166,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicTimeoutAction(new ValueFactory().createTextValue(omElement));
+        definition.setTimeoutAction(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("timeoutAction", "fault");
         assertEquals(endpoint.getDefinition().getResolvedTimeoutAction(synCtx), SynapseConstants.DISCARD_AND_FAULT);
@@ -180,7 +178,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicTimeoutAction(new ValueFactory().createTextValue(omElement));
+        definition.setTimeoutAction(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("timeoutAction", "discard");
         assertEquals(endpoint.getDefinition().getResolvedTimeoutAction(synCtx), SynapseConstants.DISCARD);
@@ -192,7 +190,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicTimeoutAction(new ValueFactory().createTextValue(omElement));
+        definition.setTimeoutAction(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         assertEquals(endpoint.getDefinition().getResolvedTimeoutAction(synCtx), SynapseConstants.NONE);
     }
@@ -203,7 +201,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicSuspendErrorCodes(new ValueFactory().createTextValue(omElement));
+        definition.setSuspendErrorCodes(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("suspendErrorCodes", "101503,101504");
 
@@ -220,7 +218,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicSuspendErrorCodes(new ValueFactory().createTextValue(omElement));
+        definition.setSuspendErrorCodes(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("suspendErrorCodes", "");
 
@@ -235,7 +233,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicSuspendErrorCodes(new ValueFactory().createTextValue(omElement));
+        definition.setSuspendErrorCodes(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         List<Integer> expectedSuspendErrorCodes = endpoint.getDefinition().getResolvedSuspendErrorCodes(synCtx);
         assertTrue(expectedSuspendErrorCodes.isEmpty());
@@ -247,7 +245,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicTimeoutErrorCodes(new ValueFactory().createTextValue(omElement));
+        definition.setTimeoutErrorCodes(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("timeoutErrorCodes", "101503,101504");
 
@@ -264,7 +262,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicTimeoutErrorCodes(new ValueFactory().createTextValue(omElement));
+        definition.setTimeoutErrorCodes(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         synCtx.setProperty("timeoutErrorCodes", "");
 
@@ -279,7 +277,7 @@ public class DynamicEndpointTest extends TestCase {
         AbstractEndpoint endpoint = new AddressEndpoint();
         EndpointDefinition definition = new EndpointDefinition();
         endpoint.setDefinition(definition);
-        definition.setDynamicTimeoutErrorCodes(new ValueFactory().createTextValue(omElement));
+        definition.setTimeoutErrorCodes(new ValueFactory().createTextValue(omElement));
         MessageContext synCtx = new TestMessageContext();
         List<Integer> expectedTimeoutErrorCodes = endpoint.getDefinition().getResolvedTimeoutErrorCodes(synCtx);
         assertTrue(expectedTimeoutErrorCodes.isEmpty());

@@ -102,33 +102,32 @@ public class EndpointDefinitionSerializer {
             element.addChild(sec);
         }
 
-        if (endpointDefinition.getTimeoutAction() != SynapseConstants.NONE || endpointDefinition.getDynamicTimeoutAction() != null ||
-                endpointDefinition.getTimeoutDuration() > 0 || endpointDefinition.isDynamicTimeoutEndpoint()) {
+        if (!endpointDefinition.getTimeoutAction().equals("none") || endpointDefinition.isTimeoutActionDynamic() ||
+                isStringPositiveNumber(endpointDefinition.getTimeoutDuration())  || endpointDefinition.isDynamicTimeoutEndpoint()) {
 
             OMElement timeout = fac.createOMElement(
                     "timeout", SynapseConstants.SYNAPSE_OMNAMESPACE);
             element.addChild(timeout);
 
-            if (endpointDefinition.getTimeoutDuration() > 0 || endpointDefinition.isDynamicTimeoutEndpoint()) {
+            if (isStringPositiveNumber(endpointDefinition.getTimeoutDuration()) || endpointDefinition.isDynamicTimeoutEndpoint()) {
                 OMElement duration = fac.createOMElement(
                         "duration", SynapseConstants.SYNAPSE_OMNAMESPACE);
                 if (!endpointDefinition.isDynamicTimeoutEndpoint()) {
-                    duration.setText(Long.toString(endpointDefinition.getTimeoutDuration()));
+                    duration.setText(endpointDefinition.getTimeoutDuration());
                 } else {
-                    duration.setText('{' + endpointDefinition.getDynamicTimeoutExpression().getExpression() + '}');
+                    duration.setText('{' + endpointDefinition.getTimeoutDuration() + '}');
                 }
                 timeout.addChild(duration);
             }
 
-            if (endpointDefinition.getTimeoutAction() != SynapseConstants.NONE || endpointDefinition.getDynamicTimeoutAction() != null) {
+            if (!endpointDefinition.getTimeoutAction().equals("none") || endpointDefinition.isTimeoutActionDynamic()) {
                 OMElement action = fac.createOMElement("responseAction", SynapseConstants.SYNAPSE_OMNAMESPACE);
                 if (endpointDefinition.isTimeoutActionDynamic()) {
-                    action.setText('{' + endpointDefinition.getDynamicTimeoutAction().getExpression() + '}');
+                    action.setText('{' + endpointDefinition.getTimeoutAction() + '}');
                 } else {
-                    if (endpointDefinition.getTimeoutAction() == SynapseConstants.DISCARD) {
+                    if (endpointDefinition.getTimeoutAction().equals("discard")) {
                         action.setText("discard");
-                    } else if (endpointDefinition.getTimeoutAction()
-                            == SynapseConstants.DISCARD_AND_FAULT) {
+                    } else if (endpointDefinition.getTimeoutAction().equals("fault")) {
                         action.setText("fault");
                     }
                 }
@@ -136,7 +135,7 @@ public class EndpointDefinitionSerializer {
             }
         }
 
-        if (endpointDefinition.getInitialSuspendDuration() != -1 || endpointDefinition.isInitialSuspendDurationDynamic() ||
+        if (!endpointDefinition.getInitialSuspendDuration().equals(String.valueOf(-1)) || endpointDefinition.isInitialSuspendDurationDynamic() ||
             !endpointDefinition.getSuspendErrorCodes().isEmpty() || endpointDefinition.isSuspendErrorCodesDynamic()) {
 
             OMElement suspendOnFailure = fac.createOMElement(
@@ -148,7 +147,7 @@ public class EndpointDefinitionSerializer {
                     org.apache.synapse.config.xml.XMLConfigConstants.ERROR_CODES,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
                 if (endpointDefinition.isSuspendErrorCodesDynamic()) {
-                    errorCodes.setText('{' + endpointDefinition.getDynamicSuspendErrorCodes().getExpression() + '}');
+                    errorCodes.setText('{' + endpointDefinition.getSuspendErrorCodes() + '}');
                 } else {
                     errorCodes.setText(endpointDefinition.getSuspendErrorCodes().
                             toString().replaceAll("[\\[\\] ]", ""));
@@ -156,39 +155,39 @@ public class EndpointDefinitionSerializer {
                 suspendOnFailure.addChild(errorCodes);
             }
 
-            if (endpointDefinition.getInitialSuspendDuration() != -1 || endpointDefinition.isInitialSuspendDurationDynamic()) {
+            if (!endpointDefinition.getInitialSuspendDuration().equals(String.valueOf(-1)) || endpointDefinition.isInitialSuspendDurationDynamic()) {
                 OMElement initialDuration = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_INITIAL_DURATION,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
                 if (!endpointDefinition.isInitialSuspendDurationDynamic()){
-                    initialDuration.setText(Long.toString(endpointDefinition.getInitialSuspendDuration()));
+                    initialDuration.setText(endpointDefinition.getInitialSuspendDuration());
                 } else {
-                    initialDuration.setText('{' + endpointDefinition.getDynamicInitialSuspendDuration().getExpression() + '}');
+                    initialDuration.setText('{' + endpointDefinition.getInitialSuspendDuration() + '}');
                 }
                 suspendOnFailure.addChild(initialDuration);
             }
 
-            if (endpointDefinition.getSuspendProgressionFactor() != -1 || endpointDefinition.isSuspendProgressionFactorDynamic()) {
+            if (!endpointDefinition.getSuspendProgressionFactor().equals(String.valueOf(-1)) || endpointDefinition.isSuspendProgressionFactorDynamic()) {
                 OMElement progressionFactor = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_PROGRESSION_FACTOR,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
                 if (endpointDefinition.isSuspendProgressionFactorDynamic()) {
-                    progressionFactor.setText('{' + endpointDefinition.getDynamicSuspendProgressionFactor().getExpression() + '}');
+                    progressionFactor.setText('{' + endpointDefinition.getSuspendProgressionFactor() + '}');
                 } else {
-                    progressionFactor.setText(Float.toString(endpointDefinition.getSuspendProgressionFactor()));
+                    progressionFactor.setText(endpointDefinition.getSuspendProgressionFactor());
                 }
                 suspendOnFailure.addChild(progressionFactor);
             }
 
-            if ((endpointDefinition.getSuspendMaximumDuration() != -1 &&
-                    endpointDefinition.getSuspendMaximumDuration() != Long.MAX_VALUE) || endpointDefinition.isSuspendMaximumDurationDynamic()) {
+            if ((!endpointDefinition.getSuspendMaximumDuration().equals(String.valueOf(-1)) &&
+                    !endpointDefinition.getSuspendMaximumDuration().equals(String.valueOf(Long.MAX_VALUE))) || endpointDefinition.isSuspendMaximumDurationDynamic()) {
                 OMElement suspendMaximum = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_MAXIMUM_DURATION,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
                 if (endpointDefinition.isSuspendMaximumDurationDynamic()) {
-                    suspendMaximum.setText('{' + endpointDefinition.getDynamicSuspendMaximumDuration().getExpression() + '}');
+                    suspendMaximum.setText('{' + endpointDefinition.getSuspendMaximumDuration() + '}');
                 } else {
-                    suspendMaximum.setText(Long.toString(endpointDefinition.getSuspendMaximumDuration()));
+                    suspendMaximum.setText(endpointDefinition.getSuspendMaximumDuration());
                 }
                 suspendOnFailure.addChild(suspendMaximum);
             }
@@ -196,7 +195,7 @@ public class EndpointDefinitionSerializer {
             element.addChild(suspendOnFailure);
         }
 
-        if (endpointDefinition.getRetryDurationOnTimeout() > 0 || endpointDefinition.isRetryDurationOnTimeoutDynamic() ||
+        if (isStringPositiveNumber(endpointDefinition.getRetryDurationOnTimeout()) || endpointDefinition.isRetryDurationOnTimeoutDynamic() ||
             !endpointDefinition.getTimeoutErrorCodes().isEmpty() || endpointDefinition.isTimeoutErrorCodesDynamic()) {
 
             OMElement markAsTimedout = fac.createOMElement(
@@ -208,7 +207,7 @@ public class EndpointDefinitionSerializer {
                     org.apache.synapse.config.xml.XMLConfigConstants.ERROR_CODES,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
                 if (endpointDefinition.isTimeoutErrorCodesDynamic()) {
-                    errorCodes.setText('{' + endpointDefinition.getDynamicTimeoutErrorCodes().getExpression() + '}');
+                    errorCodes.setText('{' + endpointDefinition.getTimeoutErrorCodes() + '}');
                 } else {
                     errorCodes.setText(endpointDefinition.getTimeoutErrorCodes().
                             toString().replaceAll("[\\[\\] ]", ""));
@@ -216,26 +215,26 @@ public class EndpointDefinitionSerializer {
                 markAsTimedout.addChild(errorCodes);
             }
 
-            if (endpointDefinition.getRetriesOnTimeoutBeforeSuspend() > 0 || endpointDefinition.isRetriesOnTimeoutBeforeSuspendDynamic()) {
+            if (isStringPositiveNumber(endpointDefinition.getRetriesOnTimeoutBeforeSuspend()) || endpointDefinition.isRetriesOnTimeoutBeforeSuspendDynamic()) {
                 OMElement retries = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.RETRIES_BEFORE_SUSPENSION,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
                 if (endpointDefinition.isRetriesOnTimeoutBeforeSuspendDynamic()) {
-                    retries.setText('{' + endpointDefinition.getDynamicRetriesOnTimeoutBeforeSuspend().getExpression() + '}');
+                    retries.setText('{' + endpointDefinition.getRetriesOnTimeoutBeforeSuspend() + '}');
                 } else {
-                    retries.setText(Long.toString(endpointDefinition.getRetriesOnTimeoutBeforeSuspend()));
+                    retries.setText(endpointDefinition.getRetriesOnTimeoutBeforeSuspend());
                 }
                 markAsTimedout.addChild(retries);
             }
 
-            if (endpointDefinition.getRetryDurationOnTimeout() > 0 || endpointDefinition.isRetryDurationOnTimeoutDynamic()) {
+            if (isStringPositiveNumber(endpointDefinition.getRetryDurationOnTimeout()) || endpointDefinition.isRetryDurationOnTimeoutDynamic()) {
                 OMElement retryDelay = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.RETRY_DELAY,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
                 if (endpointDefinition.isRetryDurationOnTimeoutDynamic()) {
-                    retryDelay.setText('{' + endpointDefinition.getDynamicRetryDurationOnTimeout().getExpression() + '}');
+                    retryDelay.setText('{' + endpointDefinition.getRetryDurationOnTimeout() + '}');
                 } else {
-                    retryDelay.setText(Long.toString(endpointDefinition.getRetryDurationOnTimeout()));
+                    retryDelay.setText(endpointDefinition.getRetryDurationOnTimeout());
                 }
                 markAsTimedout.addChild(retryDelay);
             }
@@ -261,6 +260,18 @@ public class EndpointDefinitionSerializer {
                     toString().replaceAll("[\\[\\] ]", ""));
             retryConfig.addChild(errorCodes);
             element.addChild(retryConfig);
+        }
+    }
+
+    private boolean isStringPositiveNumber(String input) {
+        if (input == null || input.isEmpty()) {
+            return false;
+        }
+        try {
+            float number = Float.parseFloat(input);
+            return number > 0;
+        } catch (NumberFormatException e) {
+            return false;
         }
     }
 }

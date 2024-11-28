@@ -178,8 +178,8 @@ public class HttpEndpointTest {
         OMElement omElement = AXIOMUtil.stringToOM(
                 "<http method=\"get\" uri-template=\"http://localhost:3000/banks\" xmlns=\"http://ws.apache.org/ns/synapse\"><timeout><duration>10</duration></timeout><suspendOnFailure><initialDuration>1000</initialDuration><progressionFactor>1</progressionFactor></suspendOnFailure><markForSuspension><retriesBeforeSuspension>0</retriesBeforeSuspension></markForSuspension></http>");
         EndpointDefinition ep1 = httpEndpointFactory.createEndpointDefinition(omElement);
-        Assert.assertEquals(ep1.getRetriesOnTimeoutBeforeSuspend(), 0);
-        Assert.assertEquals(ep1.getInitialSuspendDuration(), 1000);
+        Assert.assertEquals(ep1.getRetriesOnTimeoutBeforeSuspend(), "0");
+        Assert.assertEquals(ep1.getInitialSuspendDuration(), "1000");
     }
 
     @Test
