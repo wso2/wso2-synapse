@@ -125,8 +125,10 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
             return visit(ctx.headerAccess());
         } else if (ctx.configAccess() != null) {
             return visit(ctx.configAccess());
-        } else if (ctx.attributeAccess() != null) {
-            return visit(ctx.attributeAccess());
+        } else if (ctx.propertyAccess() != null) {
+            return visit(ctx.propertyAccess());
+        } else if (ctx.parameterAccess() != null) {
+            return visit(ctx.parameterAccess());
         }
         return null;
     }
@@ -410,8 +412,10 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
             return visit(ctx.headerAccess());
         } else if (ctx.configAccess() != null) {
             return visit(ctx.configAccess());
-        } else if (ctx.attributeAccess() != null) {
-            return visit(ctx.attributeAccess());
+        } else if (ctx.propertyAccess() != null) {
+            return visit(ctx.propertyAccess());
+        } else if (ctx.parameterAccess() != null) {
+            return visit(ctx.parameterAccess());
         }
         return null;
     }
@@ -445,7 +449,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
     }
 
     @Override
-    public ExpressionNode visitAttributeAccess(ExpressionParser.AttributeAccessContext ctx) {
+    public ExpressionNode visitPropertyAccess(ExpressionParser.PropertyAccessContext ctx) {
         if (ctx.propertyName() != null) {
             if (ctx.ID() != null) {
                 String scope = ctx.ID().getText();
@@ -454,6 +458,18 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
                         return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()), ExpressionConstants.AXIS2);
                     case SynapseConstants.SYNAPSE:
                         return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()), SynapseConstants.SYNAPSE);
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public ExpressionNode visitParameterAccess(ExpressionParser.ParameterAccessContext ctx) {
+        if (ctx.propertyName() != null) {
+            if (ctx.ID() != null) {
+                String scope = ctx.ID().getText();
+                switch (scope) {
                     case ExpressionConstants.QUERY_PARAM:
                         return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()),
                                 ExpressionConstants.QUERY_PARAM);
@@ -467,6 +483,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
         }
         return null;
     }
+
 
     @Override
     public ExpressionNode visitConditionalExpression(ExpressionParser.ConditionalExpressionContext ctx) {
