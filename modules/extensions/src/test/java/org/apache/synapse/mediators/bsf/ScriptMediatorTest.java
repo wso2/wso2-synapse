@@ -199,6 +199,34 @@ public class ScriptMediatorTest extends TestCase {
         assertEquals(true, result);
     }
 
+    public void testWithResourceScriptKey() throws Exception {
+
+        String request = "{\"status\": \"OK\"}";
+        MessageContext mc = TestUtils.getTestContextJson(request, null);
+        String scriptSrc = "function transform(mc) {\n"
+                + "    payload = mc.getPayloadJSON();\n"
+                + "    var response = 'succeed';\n"
+                + "    mc.setPayloadJSON(response);\n"
+                + "}";
+        String scriptKey = "gov:mi-resources/repository/esb/transform.js";
+        Entry e = new Entry();
+        DataSource dataSource = new ByteArrayDataSource(scriptSrc.getBytes());
+        DataHandler dataHandler = new DataHandler(dataSource);
+        OMText text = OMAbstractFactory.getOMFactory().createOMText(dataHandler, true);
+        e.setKey(scriptKey);
+        e.setValue(text);
+        mc.getConfiguration().addEntry(scriptKey, e);
+
+        Value v = new Value("resources:repository/esb/transform.js");
+        ScriptMediator mediator = new ScriptMediator("js", new LinkedHashMap<Value, Object>(), v, "transform", null);
+        boolean result = mediator.mediate(mc);
+        String response = JsonUtil.jsonPayloadToString(((Axis2MessageContext) mc).getAxis2MessageContext());
+        String expectedResponse = "\"succeed\"";
+
+        assertEquals(expectedResponse, response);
+        assertEquals(true, result);
+    }
+
     public static Test suite() {
         TestSuite suite = new TestSuite();
         for (int i = 0; i < 10; i++) {

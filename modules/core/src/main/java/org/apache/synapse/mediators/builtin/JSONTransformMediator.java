@@ -32,6 +32,7 @@ import org.apache.synapse.commons.staxon.core.json.JsonXMLOutputFactory;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
+import org.apache.synapse.mediators.Utils;
 import org.apache.synapse.mediators.Value;
 
 import java.io.IOException;
@@ -87,9 +88,10 @@ public class JSONTransformMediator extends AbstractMediator {
             }
         }
         if (schemaKey != null) {
-            // Derive actual key from message context
+            // Derive actual key from message context and transform
             String generatedSchemaKey = schemaKey.evaluateValue(synCtx);
-            Object jsonSchemaObj = synCtx.getEntry(generatedSchemaKey);
+            String transformedSchemaKey = Utils.transformFileKey(generatedSchemaKey);
+            Object jsonSchemaObj = synCtx.getEntry(transformedSchemaKey);
             if (jsonSchemaObj != null) {
                 String schema = "";
                 if (jsonSchemaObj instanceof OMTextImpl) {

@@ -1,0 +1,6 @@
+<p:addCustomer xmlns:p="http://ws.wso2.org/dataservice">
+    <xs:name xmlns:xs="http://ws.wso2.org/dataservice">$1</xs:name>
+    <xs:request_time xmlns:xs="http://ws.wso2.org/dataservice">$2</xs:request_time>
+    <xs:tp_number xmlns:xs="http://ws.wso2.org/dataservice">$3</xs:tp_number>
+    <xs:address xmlns:xs="http://ws.wso2.org/dataservice">$4</xs:address>
+</p:addCustomer>

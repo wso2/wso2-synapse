@@ -21,10 +21,17 @@ package org.apache.synapse.mediators.xquery;
 import junit.framework.TestCase;
 import net.sf.saxon.s9api.ItemType;
 import net.sf.saxon.s9api.XdmNodeKind;
+import org.apache.axiom.attachments.ByteArrayDataSource;
+import org.apache.axiom.om.OMAbstractFactory;
+import org.apache.axiom.om.OMText;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.mediators.TestUtils;
+import org.apache.synapse.mediators.Value;
 
+import javax.activation.DataHandler;
+import javax.activation.DataSource;
 import javax.xml.namespace.QName;
 import java.util.List;
 import java.util.ArrayList;
@@ -167,6 +174,32 @@ public class XQueryMediatorTest extends TestCase {
         mediator.addAllVariables(list);
         mediator.setQuerySource("declare variable $payload as document-node() external;" +
                 "$payload//bookstore/book/title");
+        assertTrue(mediator.mediate(mc));
+        assertEquals("Everyday Italian", mc.getEnvelope().getBody().getFirstElement().getText());
+    }
+
+    public void testQueryWithResourceKey() throws Exception {
+
+        MessageContext mc = TestUtils.getAxis2MessageContext(sampleXml, null);
+        String fileKey = "gov:mi-resources/sample/sample.txt";
+        String textSrc = "declare variable $payload as document-node() external;" +
+                "$payload//bookstore/book/title";
+        Entry e = new Entry();
+        DataSource dataSource = new ByteArrayDataSource(textSrc.getBytes());
+        DataHandler dataHandler = new DataHandler(dataSource);
+        OMText text = OMAbstractFactory.getOMFactory().createOMText(dataHandler, true);
+        e.setKey(fileKey);
+        e.setValue(text);
+        mc.getConfiguration().addEntry(fileKey, e);
+
+        XQueryMediator mediator = new XQueryMediator();
+        List<MediatorVariable> list = new ArrayList<MediatorVariable>();
+        MediatorVariable variable = new MediatorCustomVariable(new QName("payload"));
+        // variable.setType(ItemType.XQITEMKIND_DOCUMENT);
+        variable.setNodeKind(XdmNodeKind.DOCUMENT);
+        list.add(variable);
+        mediator.addAllVariables(list);
+        mediator.setQueryKey(new Value("resources:sample/sample.txt"));
         assertTrue(mediator.mediate(mc));
         assertEquals("Everyday Italian", mc.getEnvelope().getBody().getFirstElement().getText());
     }

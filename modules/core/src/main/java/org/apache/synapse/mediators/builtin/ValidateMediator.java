@@ -51,6 +51,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.MediatorProperty;
+import org.apache.synapse.mediators.Utils;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.AXIOMUtils;
 import org.apache.synapse.util.jaxp.SchemaResourceResolver;
@@ -207,8 +208,9 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                 if (reCreate || cachedJsonSchema == null) {
                     Object jsonSchemaObj = null;
                     for (Value schemaKey : schemaKeys) {
-                        // Derive actual key from message context
+                        // Derive actual key from message context and transform
                         String propName = schemaKey.evaluateValue(synCtx);
+                        propName = Utils.transformFileKey(propName);
                         jsonSchemaObj = synCtx.getEntry(propName);
                         cachedJsonSchemaKey.append(propName);
                     }
@@ -406,8 +408,9 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 
                     int i = 0;
                     for (Value schemaKey : schemaKeys) {
-                        // Derive actual key from message context
+                        // Derive actual key from message context and transform
                         String propName = schemaKey.evaluateValue(synCtx);
+                        propName = Utils.transformFileKey(propName);
                         Object schemaObject = synCtx.getEntry(propName);
                         if (schemaObject == null) {
                             throw new SynapseException("No Schema is available with the key  : " + propName);
@@ -531,8 +534,9 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
     private boolean isReCreate(MessageContext synCtx, StringBuilder combinedPropertyKey) {
         boolean reCreate = false;
         for (Value schemaKey : schemaKeys) {
-            // Derive actual key from message context
+            // Derive actual key from message context and transform
             String propKey = schemaKey.evaluateValue(synCtx);
+            propKey = Utils.transformFileKey(propKey);
             // Generating a property key
             combinedPropertyKey.append(propKey);
 

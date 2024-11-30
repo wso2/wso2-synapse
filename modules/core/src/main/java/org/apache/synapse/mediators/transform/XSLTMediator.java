@@ -35,6 +35,7 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
+import org.apache.synapse.mediators.Utils;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.jaxp.DOOMResultBuilderFactory;
 import org.apache.synapse.util.jaxp.DOOMSourceBuilderFactory;
@@ -281,10 +282,11 @@ public class XSLTMediator extends AbstractMediator {
         boolean isSoapBody = (sourceNode == synCtx.getEnvelope().getBody());
         boolean isSoapHeader = (sourceNode == synCtx.getEnvelope().getHeader());
 
-        // Derive actual key from message context
+        // Derive actual key from message context and transform
         String generatedXsltKey = xsltKey.evaluateValue(synCtx);
+        String transformedXsltKey = Utils.transformFileKey(generatedXsltKey);
 
-        // get templates from generatedXsltKey
+        // get templates from transformedXsltKey
         Templates cachedTemplates = null;
 
         if (synLog.isTraceTraceEnabled()) {
@@ -297,16 +299,16 @@ public class XSLTMediator extends AbstractMediator {
             synchronized (transformerLock) {
                 // only first thread should create the template
                 if (isCreationOrRecreationRequired(synCtx)) {
-                    cachedTemplates = createTemplate(synCtx, synLog, generatedXsltKey);
+                    cachedTemplates = createTemplate(synCtx, synLog, transformedXsltKey);
                 } else {
-                    cachedTemplates = cachedTemplatesMap.get(generatedXsltKey);
+                    cachedTemplates = cachedTemplatesMap.get(transformedXsltKey);
                 }
             }
         }
         else{
             //If already cached template then load it from cachedTemplatesMap
             synchronized (transformerLock){
-                cachedTemplates = cachedTemplatesMap.get(generatedXsltKey);
+                cachedTemplates = cachedTemplatesMap.get(transformedXsltKey);
             }
         }
 
@@ -499,15 +501,18 @@ public class XSLTMediator extends AbstractMediator {
             // Derive actual key from message context
             String generatedXsltKey = xsltKey.evaluateValue(synCtx);
 
+            // transform key if it indicates a file in resource structure
+            String transformedXsltKey = Utils.transformFileKey(generatedXsltKey);
+
             // if there are no cachedTemplates inside cachedTemplatesMap or
             // if the template related to this generated key is not cached
             // then it need to be cached
-            if (cachedTemplatesMap.isEmpty() || !cachedTemplatesMap.containsKey(generatedXsltKey)) {
+            if (cachedTemplatesMap.isEmpty() || !cachedTemplatesMap.containsKey(transformedXsltKey)) {
                 // this is a creation case
                 return true;
             } else {
                 // build transformer - if necessary
-                Entry dp = synCtx.getConfiguration().getEntryDefinition(generatedXsltKey);
+                Entry dp = synCtx.getConfiguration().getEntryDefinition(transformedXsltKey);
                 // if the xsltKey refers to a dynamic resource, and if it has been expired
                 // it is a recreation case
                 return dp != null && dp.isDynamic() && (!dp.isCached() || dp.isExpired());

@@ -173,6 +173,28 @@ public class XSLTMediatorTest extends TestCase {
         assertQuoteElement(synCtx.getEnvelope().getBody().getFirstOMChild().getNextOMSibling());
     }
 
+    public void testResourceKeyForXSLT() throws Exception {
+
+        XSLTMediator transformMediator = new XSLTMediator();
+        setXsltTransformationURL(transformMediator, "resources:xslt/sample.xslt");
+        MessageContext synCtx = new TestMessageContextBuilder().addFileEntry("gov:mi-resources/xslt/sample.xslt",
+                "../../repository/conf/sample/resources/transform/transform_unittest.xslt")
+                .setBodyFromString(SOURCE).setRequireAxis2MessageContext(true).addTextAroundBody().build();
+        transformMediator.mediate(synCtx);
+        assertQuoteElement(synCtx.getEnvelope().getBody().getFirstOMChild().getNextOMSibling());
+    }
+
+    public void testRegistryKeyForXSLT() throws Exception {
+
+        XSLTMediator transformMediator = new XSLTMediator();
+        setXsltTransformationURL(transformMediator, "gov:mi-resources/xslt/sample.xslt");
+        MessageContext synCtx = new TestMessageContextBuilder().addFileEntry("gov:mi-resources/xslt/sample.xslt",
+                "../../repository/conf/sample/resources/transform/transform_unittest.xslt")
+                .setBodyFromString(SOURCE).setRequireAxis2MessageContext(true).addTextAroundBody().build();
+        transformMediator.mediate(synCtx);
+        assertQuoteElement(synCtx.getEnvelope().getBody().getFirstOMChild().getNextOMSibling());
+    }
+
     public void testTransformXSLTLargeMessagesCSV() throws Exception {
 
         // create a new switch mediator

@@ -37,6 +37,7 @@ import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.mediators.Utils;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.bsf.access.control.AccessControlUtils;
 import org.apache.synapse.mediators.bsf.access.control.SandboxContextFactory;
@@ -505,7 +506,8 @@ public class ScriptMediator extends AbstractMediator {
 
         // Derive actual key from xpath expression or get static key
         String generatedScriptKey = key.evaluateValue(synCtx);
-        Entry entry = synCtx.getConfiguration().getEntryDefinition(generatedScriptKey);
+        String transformedScriptKey = Utils.transformFileKey(generatedScriptKey);
+        Entry entry = synCtx.getConfiguration().getEntryDefinition(transformedScriptKey);
         boolean needsReload = (entry != null) && entry.isDynamic() &&
                 (!entry.isCached() || entry.isExpired());
 
@@ -514,7 +516,7 @@ public class ScriptMediator extends AbstractMediator {
         engineBinding.clear(); // if we don't do this, previous state can affect successive executions! ESBJAVA-4583
 
         if (scriptSourceCode == null || needsReload || !sew.isInitialized()) {
-            Object o = synCtx.getEntry(generatedScriptKey);
+            Object o = synCtx.getEntry(transformedScriptKey);
             if (o instanceof OMElement) {
                 scriptSourceCode = ((OMElement) (o)).getText();
                 sew.getEngine().eval(scriptSourceCode, engineBinding);
@@ -561,13 +563,14 @@ public class ScriptMediator extends AbstractMediator {
             String includeSourceCode = (String) includes.get(includeKey);
 
             String generatedKey = includeKey.evaluateValue(synCtx);
+            String transformedKey = Utils.transformFileKey(generatedKey);
 
-            Entry includeEntry = synCtx.getConfiguration().getEntryDefinition(generatedKey);
+            Entry includeEntry = synCtx.getConfiguration().getEntryDefinition(transformedKey);
             boolean includeEntryNeedsReload = (includeEntry != null) && includeEntry.isDynamic()
                     && (!includeEntry.isCached() || includeEntry.isExpired());
             if (includeSourceCode == null || includeEntryNeedsReload || !sew.isInitialized()) {
                 log.debug("Re-/Loading the include script with key " + includeKey);
-                Object o = synCtx.getEntry(generatedKey);
+                Object o = synCtx.getEntry(transformedKey);
                 if (o instanceof OMElement) {
                     includeSourceCode = ((OMElement) (o)).getText();
                     sew.getEngine().eval(includeSourceCode, engineBinding);
