@@ -21,15 +21,33 @@ package org.apache.synapse.deployers;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.io.FileUtils;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.xml.EntryFactory;
 import org.apache.synapse.config.xml.EntrySerializer;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
+import org.apache.synapse.transport.dynamicconfigurations.KeyStoreReloaderHolder;
+import org.apache.synapse.transport.nhttp.config.SslSenderTrustStoreHolder;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.util.Iterator;
 import java.util.Properties;
+
+import javax.xml.namespace.QName;
 
 /**
  *  Handles the <code>LocalEntry</code> deployment and undeployment tasks
@@ -39,6 +57,10 @@ import java.util.Properties;
 public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
 
     private static Log log = LogFactory.getLog(LocalEntryDeployer.class);
+    private static final String RESOURCES_IDENTIFIER = "resources:";
+    private static final String CONVERTED_RESOURCES_IDENTIFIER = "gov:mi-resources" + File.separator;
+    private static final String HTTP_CONNECTION_IDENTIFIER = "http.init";
+    private static final String CERTIFICATE_EXTENSION = ".crt";
 
     @Override
     public String deploySynapseArtifact(OMElement artifactConfig, String fileName,
@@ -66,6 +88,7 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
                 }
                 log.info("LocalEntry named '" + e.getKey()
                         + "' has been deployed from file : " + fileName);
+                handleHttpConnectorCertificates(artifactConfig);
                 return e.getKey();
             } else {
                 handleSynapseArtifactDeploymentError("LocalEntry Deployment Failed. The artifact " +
@@ -77,6 +100,66 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
         }
 
         return null;
+    }
+
+    private void handleHttpConnectorCertificates(OMElement element) throws DeploymentException {
+
+        OMElement httpInitElement =
+                element.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, HTTP_CONNECTION_IDENTIFIER));
+        if (httpInitElement != null) {
+            Iterator childElementIterator = httpInitElement.getChildElements();
+            while (childElementIterator.hasNext()) {
+                OMElement childElement = (OMElement) childElementIterator.next();
+                String childElementValue = childElement.getText();
+                String transformedElementValue = getTransformedElementValue(childElementValue);
+                if (transformedElementValue.endsWith(CERTIFICATE_EXTENSION)) {
+                    loadCertificateFileToStore(transformedElementValue);
+                }
+            }
+        }
+    }
+
+    private void loadCertificateFileToStore(String certificateFileResourceKey) throws DeploymentException {
+
+        String certificateFilePath = getSynapseConfiguration().getRegistry().getRegistryEntry(certificateFileResourceKey).getName();
+        File certificateFile = new File(certificateFilePath);
+        String certificateAlias = certificateFile.getName().split("\\.")[0];
+        try {
+            FileInputStream certificateFileInputStream = FileUtils.openInputStream(new File(certificateFilePath));
+            SslSenderTrustStoreHolder sslSenderTrustStoreHolder = SslSenderTrustStoreHolder.getInstance();
+            KeyStore sslSenderTrustStore = sslSenderTrustStoreHolder.getKeyStore();
+            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+            Certificate certificate = certificateFactory.generateCertificate(certificateFileInputStream);
+            sslSenderTrustStore.setCertificateEntry(certificateAlias, certificate);
+
+            FileOutputStream fileOutputStream = new FileOutputStream(sslSenderTrustStoreHolder.getLocation());
+            sslSenderTrustStore.store(fileOutputStream, sslSenderTrustStoreHolder.getPassword().toCharArray());
+
+            FileInputStream fileInputStream = new FileInputStream(sslSenderTrustStoreHolder.getLocation());
+            InputStream dest = IOUtils.toBufferedInputStream(fileInputStream);
+            fileInputStream.close();
+            sslSenderTrustStore.load(dest, sslSenderTrustStoreHolder.getPassword().toCharArray());
+            dest.close();
+
+            sslSenderTrustStoreHolder.setKeyStore(sslSenderTrustStore);
+            KeyStoreReloaderHolder.getInstance().reloadAllKeyStores();
+        } catch (CertificateException | IOException | KeyStoreException | NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Transforms the given element value if it indicates a resource file.
+     *
+     * @param elementValue the value of the element to be transformed
+     * @return the transformed element value
+     */
+    private String getTransformedElementValue(String elementValue) {
+        String transformedElementValue = elementValue.trim();
+        if (transformedElementValue.startsWith(RESOURCES_IDENTIFIER)) {
+            transformedElementValue = transformedElementValue.replace(RESOURCES_IDENTIFIER, CONVERTED_RESOURCES_IDENTIFIER);
+        }
+        return transformedElementValue;
     }
 
     @Override
