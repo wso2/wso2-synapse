@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.OMText;
 import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.commons.json.JsonUtil;
@@ -30,6 +31,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.template.TemplateContext;
 import org.apache.synapse.registry.Registry;
 import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
+import org.apache.synapse.util.synapse.expression.exception.EvaluationException;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
@@ -73,7 +75,7 @@ public class EvaluationContext {
     }
 
     // Payload methods
-    public Object getJSONResult(boolean isObjectValue, String expression) throws IOException, JaxenException {
+    public Object getJSONResult(String expression) throws IOException, JaxenException {
         if (payload == null) {
             if (JsonUtil.hasAJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext())) {
                 payload = IOUtils.toString(Objects.requireNonNull(JsonUtil.getJsonPayload(((Axis2MessageContext) synCtx)
@@ -84,13 +86,11 @@ public class EvaluationContext {
                 SynapseJsonPath jsonPath = new SynapseJsonPath("$.");
                 payload = jsonPath.stringValueOf(synCtx);
             }
+            if (StringUtils.isEmpty(payload)) {
+                throw new EvaluationException("Payload is empty");
+            }
         }
-        if (isObjectValue) {
-            SynapseJsonPath jsonPath = new SynapseJsonPath(expression);
-            return jsonPath.evaluate(payload);
-        } else {
-            return JsonPath.parse(payload).read(expression);
-        }
+        return JsonPath.parse(payload).read(expression);
     }
 
     public Object getHeader(String name) {

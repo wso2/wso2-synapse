@@ -38,8 +38,8 @@ public class PreDefinedFunctionsTest {
                 "length(var.cars)", 2, 1));
         Assert.assertEquals("0", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "length(var[\"empty\"])", 2, 1));
-        Assert.assertNull(TestUtils.evaluateExpression("length(34)"));
-        Assert.assertNull(TestUtils.evaluateExpression("length(null)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("length(34)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("length(null)"));
     }
 
     @Test
@@ -50,8 +50,8 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("SPACE X", TestUtils.evaluateExpression("toUpper(\"space\") + \" X\""));
         Assert.assertEquals("GEORGE ORWELL",
                 TestUtils.evaluateExpressionWithPayload("toUpper(payload.store.book[4].author)", 2));
-        Assert.assertNull(TestUtils.evaluateExpression("toUpper(null)"));
-        Assert.assertNull(TestUtils.evaluateExpression("toUpper(34)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("toUpper(null)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("toUpper(34)"));
         Assert.assertEquals("", TestUtils.evaluateExpressionWithPayloadAndVariables("toUpper(var[\"empty\"])", 0, 1));
     }
 
@@ -63,8 +63,8 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("europa clipper", TestUtils.evaluateExpression("\"europa \" + toLower(\"CLIpper\")"));
         Assert.assertEquals("george orwell",
                 TestUtils.evaluateExpressionWithPayload("toLower(payload.store.book[4].author)", 2));
-        Assert.assertNull(TestUtils.evaluateExpression("toLower(34)"));
-        Assert.assertNull(TestUtils.evaluateExpression("toLower(null)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("toLower(34)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("toLower(null)"));
         Assert.assertEquals("", TestUtils.evaluateExpressionWithPayloadAndVariables("toLower(var[\"empty\"])",
                 0, 1));
     }
@@ -75,14 +75,14 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("hi", TestUtils.evaluateExpression("subString(\"Lahiru\",2,4)"));
         Assert.assertEquals("2", TestUtils.evaluateExpression("length(toUpper(subString(\"Lahiru\",2,4)))"));
         Assert.assertEquals("", TestUtils.evaluateExpression("subString(\"Hello\",5)"));
-        Assert.assertNull(TestUtils.evaluateExpression("subString(null,5)"));
-        Assert.assertNull(TestUtils.evaluateExpression("subString(\"hello\",null)"));
-        Assert.assertNull(TestUtils.evaluateExpression("subString(\"Hello\",\"a\",4)"));
-        Assert.assertNull(TestUtils.evaluateExpression("subString(\"Hello\",\"a\")"));
-        Assert.assertNull(TestUtils.evaluateExpression("subString(\"Hello\",20)"));
-        Assert.assertNull(TestUtils.evaluateExpression("subString(\"Hello\",-2)"));
-        Assert.assertNull(TestUtils.evaluateExpression("subString(\"Hello\",-2,4)"));
-        Assert.assertNull(TestUtils.evaluateExpression("subString(\"Hello\",2,var.num1)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("subString(null,5)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("subString(\"hello\",null)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("subString(\"Hello\",\"a\",4)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("subString(\"Hello\",\"a\")"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("subString(\"Hello\",20)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("subString(\"Hello\",-2)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("subString(\"Hello\",-2,4)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("subString(\"Hello\",2,var.num1)"));
     }
 
     @Test
@@ -93,8 +93,8 @@ public class PreDefinedFunctionsTest {
                 "startsWith(\"Curiosity\",$.store.bicycle.color)", 2));
         Assert.assertEquals("true", TestUtils.evaluateExpressionWithPayload(
                 "startsWith(\"red flag\",$.store.bicycle.color)", 2));
-        Assert.assertNull(TestUtils.evaluateExpression("startsWith(\"Curiosity\",34)"));
-        Assert.assertNull(TestUtils.evaluateExpressionWithPayload(
+        Assert.assertEquals("", TestUtils.evaluateExpression("startsWith(\"Curiosity\",34)"));
+        Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload(
                 "startsWith(payload.cars,\"Ford\")", 1));
     }
 
@@ -106,8 +106,8 @@ public class PreDefinedFunctionsTest {
                 "endsWith(\"Curiosity\",$.store.bicycle.color)", 2));
         Assert.assertEquals("true", TestUtils.evaluateExpressionWithPayload(
                 "endsWith(\"discovered\",$.store.bicycle.color)", 2));
-        Assert.assertNull(TestUtils.evaluateExpression("endsWith(\"Curiosity\",34)"));
-        Assert.assertNull(TestUtils.evaluateExpressionWithPayload(
+        Assert.assertEquals("", TestUtils.evaluateExpression("endsWith(\"Curiosity\",34)"));
+        Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload(
                 "endsWith(payload.cars,\"Ford\")", 1));
     }
 
@@ -120,8 +120,8 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("true", TestUtils.evaluateExpressionWithPayload(
                 "contains(\"discovered\",$.store.bicycle.color)", 2));
         Assert.assertEquals("false", TestUtils.evaluateExpression("contains(\"sever\",\"Perseverance\")"));
-        Assert.assertNull(TestUtils.evaluateExpression("contains(\"Curiosity\",34)"));
-        Assert.assertNull(TestUtils.evaluateExpressionWithPayload(
+        Assert.assertEquals("", TestUtils.evaluateExpression("contains(\"Curiosity\",34)"));
+        Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload(
                 "contains(payload.cars,\"Ford\")", 1));
     }
 
@@ -130,7 +130,7 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("Ingenuity", TestUtils.evaluateExpression("trim(\" Ingenuity \")"));
         Assert.assertEquals("true", TestUtils.evaluateExpression("trim(\" Ingenuity \") == \"Ingenuity\""));
         Assert.assertEquals("Hello World", TestUtils.evaluateExpressionWithPayload("trim($[\"string\"])", 1));
-        Assert.assertNull(TestUtils.evaluateExpression("trim(34)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("trim(34)"));
     }
 
     @Test
@@ -141,7 +141,7 @@ public class PreDefinedFunctionsTest {
                 "replace(\"Hello\", \"p\", payload.name)", 1));
         Assert.assertEquals("John has a BMW", TestUtils.evaluateExpressionWithPayload(
                 "replace(\"John has a \" + payload.cars[2], \"Fiat\" , payload.cars[1])", 1));
-        Assert.assertNull(TestUtils.evaluateExpressionWithPayload(
+        Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload(
                 "replace(\"John has a \" + payload.cars[2], \"Fiat\" , payload.cars)", 1));
     }
 
@@ -155,7 +155,7 @@ public class PreDefinedFunctionsTest {
                 "length(split(\"NASA, launches; rovers to explore. Mars\", \"[,; .]+\"))"));
         Assert.assertEquals("[\" Moon Mars \"]", TestUtils.evaluateExpression(
                 "split(\" Moon Mars \", \",\")"));
-        Assert.assertNull(TestUtils.evaluateExpressionWithPayload(
+        Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload(
                 "split(payload.cars, \"34\")", 1));
     }
 
@@ -169,7 +169,7 @@ public class PreDefinedFunctionsTest {
                 "abs(var.num4 + payload.expensive )", 2, 1));
         Assert.assertEquals("4.0", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "abs(var.num1 / var.num3)", 2, 1));
-        Assert.assertNull(TestUtils.evaluateExpressionWithPayload("abs(payload.cars)", 1));
+        Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload("abs(payload.cars)", 1));
     }
 
     @Test
@@ -178,7 +178,7 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("5.0", TestUtils.evaluateExpression("floor(5.9)"));
         Assert.assertEquals("-3.0", TestUtils.evaluateExpressionWithPayloadAndVariables("floor(var.num3)", 0, 1));
         Assert.assertEquals("2.0", TestUtils.evaluateExpressionWithPayloadAndVariables("floor(-1 * var.num3)", 0, 1));
-        Assert.assertNull(TestUtils.evaluateExpressionWithPayload("floor(payload.cars)", 1));
+        Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload("floor(payload.cars)", 1));
     }
 
     @Test
@@ -187,7 +187,7 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("6.0", TestUtils.evaluateExpression("ceil(5.9)"));
         Assert.assertEquals("-2.0", TestUtils.evaluateExpressionWithPayloadAndVariables("ceil(var.num3)", 0, 1));
         Assert.assertEquals("3.0", TestUtils.evaluateExpressionWithPayloadAndVariables("ceil(-1 * var.num3)", 0, 1));
-        Assert.assertNull(TestUtils.evaluateExpressionWithPayload("ceil(payload.cars)", 1));
+        Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload("ceil(payload.cars)", 1));
     }
 
     @Test
@@ -196,7 +196,7 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("NaN", TestUtils.evaluateExpression("sqrt(-25.0)"));
         Assert.assertEquals("10.0", TestUtils.evaluateExpressionWithPayloadAndVariables("sqrt(var.num1 * var.num1)", 0, 1));
         Assert.assertEquals("2.5", TestUtils.evaluateExpressionWithPayloadAndVariables("sqrt(var.num3 * var.num3)", 0, 1));
-        Assert.assertNull(TestUtils.evaluateExpressionWithPayload("sqrt(payload.cars)", 1));
+        Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload("sqrt(payload.cars)", 1));
     }
 
     @Test
@@ -207,7 +207,7 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("1.0", TestUtils.evaluateExpressionWithPayloadAndVariables("pow(var.num1,0)", 0, 1));
         Assert.assertEquals("1.0", TestUtils.evaluateExpressionWithPayloadAndVariables("pow(var.num3,0)", 0, 1));
         Assert.assertEquals("0.16", TestUtils.evaluateExpressionWithPayloadAndVariables("pow(var.num3,-2)", 0, 1));
-        Assert.assertNull(TestUtils.evaluateExpressionWithPayload("pow(payload.cars,2)", 1));
+        Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload("pow(payload.cars,2)", 1));
     }
 
     @Test
@@ -217,8 +217,8 @@ public class PreDefinedFunctionsTest {
                 "base64encode(payload[\"name\"])", 1, 0));
         Assert.assertEquals("Sm9obg==", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "base64encode(var.name,\"UTF-8\")", 0, 1));
-        Assert.assertNull(TestUtils.evaluateExpression("base64encode(34)"));
-        Assert.assertNull(TestUtils.evaluateExpression("base64encode(\"Hello\",\"UTF-99\")"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("base64encode(34)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("base64encode(\"Hello\",\"UTF-99\")"));
     }
 
     @Test
@@ -226,7 +226,7 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("admin:admin", TestUtils.evaluateExpression("base64decode(\"YWRtaW46YWRtaW4=\")"));
         Assert.assertEquals("WSO2MI", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "base64decode(var.encoded)", 0, 1));
-        Assert.assertNull(TestUtils.evaluateExpression("base64decode(34)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("base64decode(34)"));
     }
 
     @Test
@@ -234,8 +234,8 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("Hello+World", TestUtils.evaluateExpression("urlEncode(\"Hello World\")"));
         Assert.assertEquals("+Hello+World+", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "urlEncode(payload[\"string\"])", 1, 0));
-        Assert.assertNull(TestUtils.evaluateExpression("urlEncode(34)"));
-        Assert.assertNull(TestUtils.evaluateExpression("urlEncode(\"Hello\",\"UTF-99\")"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("urlEncode(34)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("urlEncode(\"Hello\",\"UTF-99\")"));
     }
 
     @Test
@@ -243,7 +243,7 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("Hello World", TestUtils.evaluateExpression("urlDecode(\"Hello+World\")"));
         Assert.assertEquals(" Hello World  &", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "urlDecode(payload[\"string\"]) + \" \" + urlDecode(\"%26\")", 1, 0));
-        Assert.assertNull(TestUtils.evaluateExpression("urlDecode(34)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("urlDecode(34)"));
     }
 
     @Test
@@ -256,10 +256,10 @@ public class PreDefinedFunctionsTest {
                 "isNumber(payload[\"string\"]) || isNumber(var.name)", 1, 1));
         Assert.assertEquals("false", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "isNumber(var[\"empty\"])", 1, 1));
-        Assert.assertNull(TestUtils.evaluateExpressionWithPayloadAndVariables(
+        Assert.assertEquals("", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "isNumber(var[\"empty2\"])", 1, 1));
         Assert.assertEquals("false", TestUtils.evaluateExpression("isNumber(\"Hello\")"));
-        Assert.assertNull(TestUtils.evaluateExpression("isNumber(null)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("isNumber(null)"));
     }
 
     @Test
@@ -271,7 +271,7 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("false", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "isString(payload[\"age\"]) || isString(var.num1)", 1, 1));
         Assert.assertEquals("true", TestUtils.evaluateExpression("isString(\"34\")"));
-        Assert.assertNull(TestUtils.evaluateExpression("isString(null)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("isString(null)"));
     }
 
     @Test
@@ -285,7 +285,7 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("true", TestUtils.evaluateExpression("isArray([\"34\"])"));
         Assert.assertEquals("true", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "isArray(payload)", 3, 1));
-        Assert.assertNull(TestUtils.evaluateExpression("isArray(null)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("isArray(null)"));
         Assert.assertEquals("true", TestUtils.evaluateExpression("isArray(\"[1,2,{\\\"abc\\\":5}]\")"));
         Assert.assertEquals("false", TestUtils.evaluateExpression("isArray(\"[1,2,{\\\"abc:5}]\")"));
     }
@@ -299,7 +299,7 @@ public class PreDefinedFunctionsTest {
                 "isObject(payload[\"age\"]) || isObject(var.num1)", 1, 1));
         Assert.assertEquals("true", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "isObject(payload.store)", 2, 1));
-        Assert.assertNull(TestUtils.evaluateExpression("isObject(null)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("isObject(null)"));
         Assert.assertEquals("true", TestUtils.evaluateExpression("isObject(\"{\\\"hello\\\": \\\"world\\\"}\")"));
         Assert.assertEquals("false", TestUtils.evaluateExpression("isObject(\"{\\\"hello: \\\"world\\\"}\")"));
     }
@@ -313,7 +313,7 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("[\"When\",\"my\",\"time\",\"comes\",\"Forget\",\"the\",\"wrong\",\"that\"," +
                 "\"I've\",\"done\"]", TestUtils.evaluateExpressionWithPayload("string(payload)", 3));
         Assert.assertEquals("300", TestUtils.evaluateExpressionWithPayloadAndVariables("string(var.age * 10)", 0, 1));
-        Assert.assertNull(TestUtils.evaluateExpression("string(null)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("string(null)"));
     }
 
     @Test
@@ -321,11 +321,10 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("34", TestUtils.evaluateExpression("integer(34)"));
         Assert.assertEquals("20", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "integer(payload[\"expensive\"]) + var.num1", 2, 1));
-        Assert.assertNull(TestUtils.evaluateExpression("integer(\"Hello\")"));
-        Assert.assertNull(TestUtils.evaluateExpression("integer(34.5)"));
-        Assert.assertNull(TestUtils.evaluateExpression("integer(null)"));
-        Assert.assertNull(TestUtils.evaluateExpressionWithPayload("integer(payload)", 3));
-
+        Assert.assertEquals("", TestUtils.evaluateExpression("integer(\"Hello\")"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("integer(34.5)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("integer(null)"));
+        Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload("integer(payload)", 3));
     }
 
     @Test
@@ -333,8 +332,8 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("-34.0", TestUtils.evaluateExpression("float(-34)"));
         Assert.assertEquals("15.0", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "float(payload[\"expensive\"]) + var.num2", 2, 1));
-        Assert.assertNull(TestUtils.evaluateExpression("float(\"Hello\")"));
-        Assert.assertNull(TestUtils.evaluateExpressionWithPayload("float(payload)", 3));
+        Assert.assertEquals("", TestUtils.evaluateExpression("float(\"Hello\")"));
+        Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload("float(payload)", 3));
     }
 
     @Test
@@ -344,7 +343,7 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("false", TestUtils.evaluateExpression("boolean(\"1\")"));
         Assert.assertEquals("true", TestUtils.evaluateExpression("boolean(\"0\") || (5 > 2)"));
         Assert.assertEquals("false", TestUtils.evaluateExpressionWithPayload("boolean(payload)", 3));
-        Assert.assertNull(TestUtils.evaluateExpression("boolean(null)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("boolean(null)"));
     }
 
     @Test
@@ -355,7 +354,7 @@ public class PreDefinedFunctionsTest {
                 "round(var.num4)", 0, 1));
         Assert.assertEquals("15", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "round(var.num1 + var.num2)", 0, 1));
-        Assert. assertNull(TestUtils.evaluateExpressionWithPayload("round(payload)", 3));
+        Assert. assertEquals("", TestUtils.evaluateExpressionWithPayload("round(payload)", 3));
     }
 
     @Test
@@ -375,23 +374,23 @@ public class PreDefinedFunctionsTest {
                 "object(\"{\\\"hello\\\":\\\"world\\\"}\").hello", 2));
         Assert.assertEquals("world", TestUtils.evaluateExpressionWithPayload(
                 "object(\"{\\\"hello\\\":\\\"world\\\"}\")[\"hello\"]", 2));
-        Assert.assertNull(TestUtils.evaluateExpression(
+        Assert.assertEquals("", TestUtils.evaluateExpression(
                 "object(\"[\\\"Hello\\\",\\\"World\\\"]\")"));
-        Assert.assertNull(TestUtils.evaluateExpression("object(34)"));
-        Assert.assertNull(TestUtils.evaluateExpression("object(null)"));
-        Assert.assertNull(TestUtils.evaluateExpressionWithPayload("object(payload)", 3));
+        Assert.assertEquals("", TestUtils.evaluateExpression("object(34)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("object(null)"));
+        Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload("object(payload)", 3));
     }
 
     @Test
     public void testConvertToArray() {
-        Assert.assertNull(TestUtils.evaluateExpression("registry(\"Hello\").bla"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("registry(\"Hello\").bla"));
         Assert.assertEquals("[\"Hello\",\"World\"]", TestUtils.evaluateExpression(
                 "array(\"[\\\"Hello\\\",\\\"World\\\"]\")"));
         Assert.assertEquals("Hello", TestUtils.evaluateExpression(
                 "array(\"[\\\"Hello\\\",\\\"World\\\"]\")[0]"));
-        Assert.assertNull(TestUtils.evaluateExpression("array(34)"));
-        Assert.assertNull(TestUtils.evaluateExpression("array(null)"));
-        Assert.assertNull(TestUtils.evaluateExpressionWithPayload("array(payload)", 2));
+        Assert.assertEquals("", TestUtils.evaluateExpression("array(34)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("array(null)"));
+        Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload("array(payload)", 2));
         Assert.assertEquals("TIME", TestUtils.evaluateExpressionWithPayload(
                 "toUpper(array(payload)[2])", 3));
     }
@@ -402,7 +401,7 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("false", TestUtils.evaluateExpression("not(true)"));
         Assert.assertEquals("true", TestUtils.evaluateExpression("not(false)"));
         Assert.assertEquals("true", TestUtils.evaluateExpression("not(5 > 6) ? true : false"));
-        Assert.assertNull(TestUtils.evaluateExpression("not(123)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("not(123)"));
     }
 
     @Test
@@ -418,8 +417,8 @@ public class PreDefinedFunctionsTest {
     @Test
     public void testCharAt() {
         Assert.assertEquals("W", TestUtils.evaluateExpression("charAt(\"Hello World\", 6)"));
-        Assert.assertNull(TestUtils.evaluateExpression("charAt(\"Hello World\", -1)"));
-        Assert.assertNull(TestUtils.evaluateExpression("charAt(\"Hello World\", 100)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("charAt(\"Hello World\", -1)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("charAt(\"Hello World\", 100)"));
         Assert.assertEquals(" ", TestUtils.evaluateExpressionWithPayload("charAt($.string, 0)", 1));
     }
 
@@ -435,6 +434,6 @@ public class PreDefinedFunctionsTest {
                 TestUtils.evaluateExpression("formatDateTime(\"29-09-1988\",\"dd-MM-yyyy\", \"yyyy MMM dd\")"));
         Assert.assertEquals("11 22 33",
                 TestUtils.evaluateExpression("formatDateTime(\"11-22-33\",\"HH-mm-ss\", \"HH mm ss\")"));
-        Assert.assertNull(TestUtils.evaluateExpression("formatDateTime(\"50-22-33\",\"HH-mm-ss\", \"HH mm ss\")"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("formatDateTime(\"50-22-33\",\"HH-mm-ss\", \"HH mm ss\")"));
     }
 }
