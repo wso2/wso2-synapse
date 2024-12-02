@@ -126,7 +126,7 @@ public class LogMediatorFactory extends AbstractMediatorFactory  {
         }
 
         logMediator.addAllProperties(MediatorPropertyFactory.getMediatorProperties(elem));
-
+        logMediator.processTemplateAndSetContentAware();
         addAllCommentChildrenToList(elem, logMediator.getCommentsList());
 
         return logMediator;

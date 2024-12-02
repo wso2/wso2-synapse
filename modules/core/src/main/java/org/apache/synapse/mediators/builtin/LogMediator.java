@@ -79,6 +79,7 @@ public class LogMediator extends AbstractMediator {
     private final List<MediatorProperty> properties = new ArrayList<MediatorProperty>();
 
     private String messageTemplate = "";
+    private boolean isContentAware = false;
 
     /**
      * Logs the current message according to the supplied semantics
@@ -331,14 +332,22 @@ public class LogMediator extends AbstractMediator {
 
     @Override
     public boolean isContentAware() {
+
+        return isContentAware;
+    }
+
+    public void processTemplateAndSetContentAware() {
+
         if (logLevel == MESSAGE_TEMPLATE || logLevel == CUSTOM) {
             for (MediatorProperty property : properties) {
                 if (property.getExpression() != null && property.getExpression().isContentAware()) {
-                    return true;
+                    isContentAware = true;
+                    return;
                 }
             }
-            return InlineExpressionUtil.isInlineSynapseExpressionsContentAware(messageTemplate);
+            isContentAware = InlineExpressionUtil.isInlineSynapseExpressionsContentAware(messageTemplate);
+        } else {
+            isContentAware = true;
         }
-        return true;
     }
 }

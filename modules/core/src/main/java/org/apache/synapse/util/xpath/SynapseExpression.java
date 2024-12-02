@@ -74,33 +74,7 @@ public class SynapseExpression extends SynapsePath {
             }
             throw new JaxenException(errorMessage.toString());
         }
-
-        // TODO : Need to improve the content aware detection logic
-        if (synapseExpression.equals("payload") || synapseExpression.equals("$")
-                || synapseExpression.contains("payload.") || synapseExpression.contains("$.")) {
-            isContentAware = true;
-        } else if (synapseExpression.contains("xpath(")) {
-            // TODO change the regex to support xpath + variable syntax
-            Pattern pattern = Pattern.compile("xpath\\(['\"](.*?)['\"]\\s*(,\\s*['\"](.*?)['\"])?\\)?");
-            Matcher matcher = pattern.matcher(synapseExpression);
-            // Find all matches
-            while (matcher.find()) {
-                if (matcher.group(2) != null) {
-                    // evaluating xpath on a variable so not content aware
-                    continue;
-                }
-                String xpath = matcher.group(1);
-                try {
-                    SynapseXPath synapseXPath = new SynapseXPath(xpath);
-                    if (synapseXPath.isContentAware()) {
-                        isContentAware = true;
-                        break;
-                    }
-                } catch (JaxenException e) {
-                    // Ignore the exception and continue
-                }
-            }
-        }
+        isContentAware = SynapseExpressionUtils.isSynapseExpressionContentAware(synapseExpression);
     }
 
     @Override

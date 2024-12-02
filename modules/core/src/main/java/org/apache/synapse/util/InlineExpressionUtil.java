@@ -19,7 +19,6 @@ package org.apache.synapse.util;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
@@ -30,8 +29,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.SynapsePath;
-import org.apache.synapse.config.xml.SynapsePathFactory;
 import org.apache.synapse.util.xpath.SynapseExpression;
+import org.apache.synapse.util.xpath.SynapseExpressionUtils;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
@@ -216,8 +215,8 @@ public final class InlineExpressionUtil {
         Matcher matcher = SYNAPSE_EXPRESSION_PLACEHOLDER_PATTERN.matcher(inlineText);
         while (matcher.find()) {
             // Extract the expression inside ${...}
-            String placeholder = matcher.group(1);
-            if (placeholder.contains("xpath(") || placeholder.contains("payload.") || placeholder.contains("$.")) {
+            String expression = matcher.group(1);
+            if (SynapseExpressionUtils.isSynapseExpressionContentAware(expression)) {
                 return true;
             }
         }
