@@ -18,7 +18,6 @@
 
 package org.apache.synapse.util.synapse.expression;
 
-import org.apache.synapse.SynapseConstants;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -34,18 +33,17 @@ public class ConditionalExpressionTest {
         Assert.assertEquals("true", TestUtils.evaluateExpression("true ? false ? false : true : false"));
         Assert.assertEquals("true", TestUtils.evaluateExpression(" 5 > 4 ? (false ? false : true) : false"));
         Assert.assertEquals("5", TestUtils.evaluateExpression(" 5.2 > 5 ? 5 : 4"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("\"bla\"? true : 123"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("45 == (  5 + 34 ? true : 456)"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN,
-                TestUtils.evaluateExpressionWithPayload("45 == (  $[\"null\"] ? true : 456)",1));
+        Assert.assertNull(TestUtils.evaluateExpression("\"bla\"? true : 123"));
+        Assert.assertNull(TestUtils.evaluateExpression("45 == (  5 + 34 ? true : 456)"));
+        Assert.assertNull(TestUtils.evaluateExpressionWithPayload("45 == (  $[\"null\"] ? true : 456)", 1));
         Assert.assertEquals("[22.99]", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "var.num1 > var.num2 ? $..book[?(@.author =~ /.*Tolkien/i)].price " +
                         ": $..book[(@.\"length\"-1)].title", 2,1));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("null == $[\"null\"] ? 123 : 456"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpressionWithPayload(
-                "$[\"null\"] ? 123 : 456",1));
+        Assert.assertNull(TestUtils.evaluateExpression("null == $[\"null\"] ? 123 : 456"));
+        Assert.assertNull(TestUtils.evaluateExpressionWithPayload(
+                "$[\"null\"] ? 123 : 456", 1));
         Assert.assertEquals("123", TestUtils.evaluateExpressionWithPayload(
                 "$[\"null\"] == null ? 123 : 456",1));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpressionWithPayload("null ? 4 : 5",1));
+        Assert.assertNull(TestUtils.evaluateExpressionWithPayload("null ? 4 : 5", 1));
     }
 }

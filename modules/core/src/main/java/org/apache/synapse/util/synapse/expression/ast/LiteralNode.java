@@ -50,7 +50,7 @@ public class LiteralNode implements ExpressionNode {
     }
 
     @Override
-    public ExpressionResult evaluate(EvaluationContext context) {
+    public ExpressionResult evaluate(EvaluationContext context, boolean isObjectValue) {
         switch (type) {
             case NUMBER:
                 return parseNumber(value);
@@ -61,7 +61,7 @@ public class LiteralNode implements ExpressionNode {
             case NULL:
                 return null;
             case ARRAY:
-                return parseArray(context);
+                return parseArray(context, isObjectValue);
             default:
                 throw new IllegalArgumentException("Unsupported type: " + type);
         }
@@ -83,10 +83,10 @@ public class LiteralNode implements ExpressionNode {
         }
     }
 
-    private ExpressionResult parseArray(EvaluationContext context) {
+    private ExpressionResult parseArray(EvaluationContext context, boolean isObjectValue) {
         JsonArray jsonArray = new JsonArray();
         for (ExpressionNode expressionNode : parameterList.getArguments()) {
-            ExpressionResult result = expressionNode.evaluate(context);
+            ExpressionResult result = expressionNode.evaluate(context, isObjectValue);
             if (result.getType().equals(JsonElement.class)) {
                 jsonArray.add(result.asJsonElement());
             } else if (result.isInteger()) {

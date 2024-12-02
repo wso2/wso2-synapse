@@ -31,16 +31,18 @@ import com.jayway.jsonpath.spi.json.GsonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.GsonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
+import org.apache.axiom.om.OMNode;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
 import org.apache.synapse.util.synapse.expression.context.EvaluationContext;
 import org.apache.synapse.util.synapse.expression.exception.EvaluationException;
 import org.apache.synapse.util.synapse.expression.utils.ExpressionUtils;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
+import org.jaxen.JaxenException;
 
 import java.io.IOException;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -50,7 +52,7 @@ import java.util.Set;
  * Resolve placeholders in the expression and evaluate the expression using JSONPath.
  */
 public class PayloadAccessNode implements ExpressionNode {
-    private static final Log log = LogFactory.getLog(PayloadAccessNode.class);
+
     private String expression;
     private final Map<String, ExpressionNode> arguments;
 
@@ -63,7 +65,7 @@ public class PayloadAccessNode implements ExpressionNode {
     }
 
     private final Type type;
-    private ExpressionNode predefinedFunctionNode = null;
+    private final ExpressionNode predefinedFunctionNode;
 
     public PayloadAccessNode(String expression, Map<String, ExpressionNode> arguments, Type type,
                              ExpressionNode predefinedFunctionNode) {
@@ -90,32 +92,29 @@ public class PayloadAccessNode implements ExpressionNode {
     }
 
     @Override
-    public ExpressionResult evaluate(EvaluationContext context) {
-        if (expression.startsWith(SynapseConstants.PAYLOAD)) {
-            expression = SynapseConstants.PAYLOAD_$ + expression.substring(SynapseConstants.PAYLOAD.length());
+    public ExpressionResult evaluate(EvaluationContext context, boolean isObjectValue) throws EvaluationException {
+        if (expression.startsWith(ExpressionConstants.PAYLOAD)) {
+            expression = ExpressionConstants.PAYLOAD_$ + expression.substring(ExpressionConstants.PAYLOAD.length());
         }
 
         for (Map.Entry<String, ExpressionNode> entry : arguments.entrySet()) {
             Optional.ofNullable(entry.getValue())
-                    .map(value -> value.evaluate(context))
+                    .map(value -> value.evaluate(context, isObjectValue))
                     .ifPresent(result -> processResult(entry, result));
         }
 
-        Object result = null;
+        Object result;
         switch (type) {
             case PAYLOAD:
                 try {
-                    result = context.getPayload();
-                    if (result == null) {
-                        throw new EvaluationException("Could not find a JSON payload to evaluate the expression: "
-                                + expression);
-                    }
-                    result = JsonPath.parse(context.getPayload().toString()).read(expression);
+                    result = context.getJSONResult(isObjectValue, expression);
                 } catch (PathNotFoundException e) {
                     // convert jsonPath error to native one
                     throw new EvaluationException(e.getMessage());
                 } catch (IOException e) {
                     throw new EvaluationException("Error while parsing payload");
+                } catch (JaxenException e) {
+                    throw new EvaluationException("Error while retrieving payload");
                 }
                 break;
             case VARIABLE:
@@ -131,19 +130,31 @@ public class PayloadAccessNode implements ExpressionNode {
                 } else {
                     expressionToEvaluate = expressionToEvaluate.startsWith(".") ? "$" + expressionToEvaluate
                             : "$." + expressionToEvaluate;
+                    if (ExpressionUtils.isXMLVariable(variable)) {
+                        throw new EvaluationException("Could not evaluate JSONPath expression: " + expression
+                                + " on non-JSON variable value");
+                    }
                     try {
-                        result = JsonPath.parse(variable.toString()).read(expressionToEvaluate);
+                        if (isObjectValue) {
+                            SynapseJsonPath jsonPath = new SynapseJsonPath(expressionToEvaluate);
+                            result = jsonPath.evaluate(variable.toString());
+                        } else {
+                            result = JsonPath.parse(variable.toString()).read(expressionToEvaluate);
+                        }
                     } catch (PathNotFoundException e) {
                         // convert jsonPath error to native one
                         throw new EvaluationException(e.getMessage());
+                    } catch (JaxenException e) {
+                        throw new EvaluationException("Error while parsing the expression: " + expressionToEvaluate);
                     }
                 }
                 break;
             case REGISTRY:
-                ExpressionResult registryValue = predefinedFunctionNode.evaluate(context);
+                ExpressionResult registryValue = predefinedFunctionNode.evaluate(context, isObjectValue);
                 try {
                     if (registryValue == null) {
-                        throw new EvaluationException("Could not find a JSON payload to evaluate the expression: " + expression);
+                        throw new EvaluationException("Could not find a JSON payload to evaluate the expression: "
+                                + expression);
                     } else if (registryValue.isOMElement()) {
                         throw new EvaluationException("Could not evaluate JSONPath expression: " + expression
                                 + " on non-JSON registry value");
@@ -158,7 +169,7 @@ public class PayloadAccessNode implements ExpressionNode {
             case ARRAY:
             case OBJECT:
                 expression = expression.startsWith(".") ? "$" + expression : "$." + expression;
-                ExpressionResult objFuncResult = predefinedFunctionNode.evaluate(context);
+                ExpressionResult objFuncResult = predefinedFunctionNode.evaluate(context, isObjectValue);
                 try {
                     result = JsonPath.parse(objFuncResult.asJsonElement()).read(expression);
                 } catch (PathNotFoundException e) {
@@ -185,6 +196,8 @@ public class PayloadAccessNode implements ExpressionNode {
             return new ExpressionResult((Double) result);
         } else if (result instanceof Boolean) {
             return new ExpressionResult((Boolean) result);
+        } else if (result instanceof List) {
+            return new ExpressionResult((List) result);
         }
         return null;
     }
@@ -202,20 +215,32 @@ public class PayloadAccessNode implements ExpressionNode {
     }
 
     private ExpressionResult parseVariable(Object variable) {
-        try {
-            return new ExpressionResult(Integer.parseInt(variable.toString()));
-        } catch (NumberFormatException e1) {
-            // If integer parsing fails, attempt to parse as double
+        if (variable instanceof List) {
+            return new ExpressionResult((List) variable);
+        } else if (variable instanceof OMNode) {
+            return new ExpressionResult((OMNode) variable);
+        } else if (variable instanceof JsonElement) {
+            return new ExpressionResult((JsonElement) variable);
+        } else {
             try {
-                return new ExpressionResult(Double.parseDouble(variable.toString()));
-            } catch (NumberFormatException e2) {
-                // If double parsing fails, attempt to parse as JSON
+                return new ExpressionResult(Integer.parseInt(variable.toString()));
+            } catch (NumberFormatException e1) {
+                // If integer parsing fails, attempt to parse as double
                 try {
-                    JsonElement jsonElement = JsonParser.parseString(variable.toString());
-                    return new ExpressionResult(jsonElement);
-                } catch (JsonSyntaxException e3) {
-                    // If JSON parsing fails, return the variable as a string
-                    return new ExpressionResult(variable.toString());
+                    return new ExpressionResult(Double.parseDouble(variable.toString()));
+                } catch (NumberFormatException e2) {
+                    // If double parsing fails, attempt to parse as JSON
+                    try {
+                        if (variable.equals("")) {
+                            // avoid converting empty string to NULL value
+                            return new ExpressionResult("");
+                        }
+                        JsonElement jsonElement = JsonParser.parseString(variable.toString());
+                        return new ExpressionResult(jsonElement);
+                    } catch (JsonSyntaxException e3) {
+                        // If JSON parsing fails, return the variable as a string
+                        return new ExpressionResult(variable.toString());
+                    }
                 }
             }
         }

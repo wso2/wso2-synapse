@@ -19,6 +19,7 @@ package org.apache.synapse.util.synapse.expression.visitor;
 
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.util.synapse.expression.ast.*;
+import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
 import org.apache.synapse.util.synapse_expression.ExpressionParser;
 import org.apache.synapse.util.synapse_expression.ExpressionParserBaseVisitor;
 import org.apache.synapse.util.synapse_expression.ExpressionParserVisitor;
@@ -124,8 +125,10 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
             return visit(ctx.headerAccess());
         } else if (ctx.configAccess() != null) {
             return visit(ctx.configAccess());
-        } else if (ctx.attributeAccess() != null) {
-            return visit(ctx.attributeAccess());
+        } else if (ctx.propertyAccess() != null) {
+            return visit(ctx.propertyAccess());
+        } else if (ctx.parameterAccess() != null) {
+            return visit(ctx.parameterAccess());
         }
         return null;
     }
@@ -141,112 +144,112 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
         if (ctx.ID() != null) {
             String functionName = ctx.ID().getText();
             switch (functionName) {
-                case SynapseConstants.LENGTH:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.LENGTH);
-                case SynapseConstants.TO_UPPER:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.TO_UPPER);
-                case SynapseConstants.TO_LOWER:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.TO_LOWER);
-                case SynapseConstants.SUBSTRING:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.SUBSTRING);
-                case SynapseConstants.STARTS_WITH:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.STARTS_WITH);
-                case SynapseConstants.ENDS_WITH:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.ENDS_WITH);
-                case SynapseConstants.CONTAINS:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.CONTAINS);
-                case SynapseConstants.TRIM:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.TRIM);
-                case SynapseConstants.REPLACE:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.REPLACE);
-                case SynapseConstants.SPLIT:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.SPLIT);
-                case SynapseConstants.INDEX_OF:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.INDEX_OF);
-                case SynapseConstants.NOW:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.NOW);
-                case SynapseConstants.FORMAT_DATE_TIME:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.FORMAT_DATE_TIME);
-                case SynapseConstants.CHAR_AT:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.CHAR_AT);
-                case SynapseConstants.ABS:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.ABS);
-                case SynapseConstants.CEIL:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.CEIL);
-                case SynapseConstants.FLOOR:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.FLOOR);
-                case SynapseConstants.SQRT:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.SQRT);
-                case SynapseConstants.LOG:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.LOG);
-                case SynapseConstants.POW:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.POW);
-                case SynapseConstants.B64ENCODE:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.B64ENCODE);
-                case SynapseConstants.B64DECODE:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.B64DECODE);
-                case SynapseConstants.URL_ENCODE:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.URL_ENCODE);
-                case SynapseConstants.URL_DECODE:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.URL_DECODE);
-                case SynapseConstants.IS_STRING:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.IS_STRING);
-                case SynapseConstants.IS_NUMBER:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.IS_NUMBER);
-                case SynapseConstants.IS_ARRAY:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.IS_ARRAY);
-                case SynapseConstants.IS_OBJECT:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.IS_OBJECT);
-                case SynapseConstants.STRING:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.STRING);
-                case SynapseConstants.FLOAT:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.FLOAT);
-                case SynapseConstants.BOOLEAN:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.BOOLEAN);
-                case SynapseConstants.INTEGER:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.INTEGER);
-                case SynapseConstants.ROUND:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.ROUND);
-                case SynapseConstants.EXISTS:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.EXISTS);
-                case SynapseConstants.XPATH:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.XPATH);
-                case SynapseConstants.SECRET:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.SECRET);
-                case SynapseConstants.NOT:
-                    return new PredefinedFunctionNode(parameterList, SynapseConstants.NOT);
-                case SynapseConstants.REGISTRY:
+                case ExpressionConstants.LENGTH:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.LENGTH);
+                case ExpressionConstants.TO_UPPER:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.TO_UPPER);
+                case ExpressionConstants.TO_LOWER:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.TO_LOWER);
+                case ExpressionConstants.SUBSTRING:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.SUBSTRING);
+                case ExpressionConstants.STARTS_WITH:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.STARTS_WITH);
+                case ExpressionConstants.ENDS_WITH:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.ENDS_WITH);
+                case ExpressionConstants.CONTAINS:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.CONTAINS);
+                case ExpressionConstants.TRIM:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.TRIM);
+                case ExpressionConstants.REPLACE:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.REPLACE);
+                case ExpressionConstants.SPLIT:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.SPLIT);
+                case ExpressionConstants.INDEX_OF:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.INDEX_OF);
+                case ExpressionConstants.NOW:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.NOW);
+                case ExpressionConstants.FORMAT_DATE_TIME:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.FORMAT_DATE_TIME);
+                case ExpressionConstants.CHAR_AT:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.CHAR_AT);
+                case ExpressionConstants.ABS:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.ABS);
+                case ExpressionConstants.CEIL:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.CEIL);
+                case ExpressionConstants.FLOOR:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.FLOOR);
+                case ExpressionConstants.SQRT:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.SQRT);
+                case ExpressionConstants.LOG:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.LOG);
+                case ExpressionConstants.POW:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.POW);
+                case ExpressionConstants.B64ENCODE:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.B64ENCODE);
+                case ExpressionConstants.B64DECODE:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.B64DECODE);
+                case ExpressionConstants.URL_ENCODE:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.URL_ENCODE);
+                case ExpressionConstants.URL_DECODE:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.URL_DECODE);
+                case ExpressionConstants.IS_STRING:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.IS_STRING);
+                case ExpressionConstants.IS_NUMBER:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.IS_NUMBER);
+                case ExpressionConstants.IS_ARRAY:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.IS_ARRAY);
+                case ExpressionConstants.IS_OBJECT:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.IS_OBJECT);
+                case ExpressionConstants.STRING:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.STRING);
+                case ExpressionConstants.FLOAT:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.FLOAT);
+                case ExpressionConstants.BOOLEAN:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.BOOLEAN);
+                case ExpressionConstants.INTEGER:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.INTEGER);
+                case ExpressionConstants.ROUND:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.ROUND);
+                case ExpressionConstants.EXISTS:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.EXISTS);
+                case ExpressionConstants.XPATH:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.XPATH);
+                case ExpressionConstants.SECRET:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.SECRET);
+                case ExpressionConstants.NOT:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.NOT);
+                case ExpressionConstants.REGISTRY:
                     if (ctx.functionCallSuffix() != null) {
                         if (ctx.functionCallSuffix().jsonPathExpression() != null) {
                             PredefinedFunctionNode node = new PredefinedFunctionNode(parameterList,
-                                    SynapseConstants.REGISTRY);
+                                    ExpressionConstants.REGISTRY);
                             return visitJsonPathAfterPayload(ctx.functionCallSuffix().jsonPathExpression(),
                                     node, PayloadAccessNode.Type.REGISTRY);
                         }
                     } else {
-                        return new PredefinedFunctionNode(parameterList, SynapseConstants.REGISTRY);
+                        return new PredefinedFunctionNode(parameterList, ExpressionConstants.REGISTRY);
                     }
-                case SynapseConstants.OBJECT:
+                case ExpressionConstants.OBJECT:
                     if (ctx.functionCallSuffix() != null) {
                         if (ctx.functionCallSuffix().jsonPathExpression() != null) {
                             PredefinedFunctionNode node = new PredefinedFunctionNode(parameterList,
-                                    SynapseConstants.OBJECT);
+                                    ExpressionConstants.OBJECT);
                             return visitJsonPathAfterPayload(ctx.functionCallSuffix().jsonPathExpression(),
                                     node, PayloadAccessNode.Type.OBJECT);
                         }
                     } else {
-                        return new PredefinedFunctionNode(parameterList, SynapseConstants.OBJECT);
+                        return new PredefinedFunctionNode(parameterList, ExpressionConstants.OBJECT);
                     }
-                case SynapseConstants.ARRAY:
+                case ExpressionConstants.ARRAY:
                     if (ctx.functionCallSuffix() != null) {
                         if (ctx.functionCallSuffix().jsonPathExpression() != null) {
                             PredefinedFunctionNode node = new PredefinedFunctionNode(parameterList,
-                                    SynapseConstants.ARRAY);
+                                    ExpressionConstants.ARRAY);
                             return visitJsonPathAfterPayload(ctx.functionCallSuffix().jsonPathExpression(),
                                     node, PayloadAccessNode.Type.ARRAY);
                         }
                     } else {
-                        return new PredefinedFunctionNode(parameterList, SynapseConstants.ARRAY);
+                        return new PredefinedFunctionNode(parameterList, ExpressionConstants.ARRAY);
                     }
             }
         }
@@ -409,8 +412,10 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
             return visit(ctx.headerAccess());
         } else if (ctx.configAccess() != null) {
             return visit(ctx.configAccess());
-        } else if (ctx.attributeAccess() != null) {
-            return visit(ctx.attributeAccess());
+        } else if (ctx.propertyAccess() != null) {
+            return visit(ctx.propertyAccess());
+        } else if (ctx.parameterAccess() != null) {
+            return visit(ctx.parameterAccess());
         }
         return null;
     }
@@ -444,25 +449,41 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
     }
 
     @Override
-    public ExpressionNode visitAttributeAccess(ExpressionParser.AttributeAccessContext ctx) {
+    public ExpressionNode visitPropertyAccess(ExpressionParser.PropertyAccessContext ctx) {
         if (ctx.propertyName() != null) {
             if (ctx.ID() != null) {
                 String scope = ctx.ID().getText();
                 switch (scope) {
-                    case SynapseConstants.AXIS2:
-                        return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()), SynapseConstants.AXIS2);
+                    case ExpressionConstants.AXIS2:
+                        return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()), ExpressionConstants.AXIS2);
                     case SynapseConstants.SYNAPSE:
                         return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()), SynapseConstants.SYNAPSE);
-                    case SynapseConstants.QUERY_PARAM:
-                        return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()),
-                                SynapseConstants.QUERY_PARAM);
-                    case SynapseConstants.URI_PARAM:
-                        return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()), SynapseConstants.URI_PARAM);
                 }
             }
         }
         return null;
     }
+
+    @Override
+    public ExpressionNode visitParameterAccess(ExpressionParser.ParameterAccessContext ctx) {
+        if (ctx.propertyName() != null) {
+            if (ctx.ID() != null) {
+                String scope = ctx.ID().getText();
+                switch (scope) {
+                    case ExpressionConstants.QUERY_PARAM:
+                        return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()),
+                                ExpressionConstants.QUERY_PARAM);
+                    case ExpressionConstants.URI_PARAM:
+                        return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()), ExpressionConstants.URI_PARAM);
+                    case ExpressionConstants.FUNC_PARAM:
+                        return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()),
+                                HeadersAndPropertiesAccessNode.Type.FUNCTION_PARAM);
+                }
+            }
+        }
+        return null;
+    }
+
 
     @Override
     public ExpressionNode visitConditionalExpression(ExpressionParser.ConditionalExpressionContext ctx) {

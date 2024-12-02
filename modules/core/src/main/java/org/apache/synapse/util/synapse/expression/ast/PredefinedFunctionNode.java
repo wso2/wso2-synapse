@@ -19,7 +19,8 @@ package org.apache.synapse.util.synapse.expression.ast;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonPrimitive;
-import org.apache.synapse.SynapseConstants;
+import org.apache.commons.lang.StringUtils;
+import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
 import org.apache.synapse.util.synapse.expression.context.EvaluationContext;
 import org.apache.synapse.util.synapse.expression.exception.EvaluationException;
 import org.apache.synapse.util.synapse.expression.utils.ExpressionUtils;
@@ -54,146 +55,148 @@ public class PredefinedFunctionNode implements ExpressionNode {
     }
 
     @Override
-    public ExpressionResult evaluate(EvaluationContext context) {
+    public ExpressionResult evaluate(EvaluationContext context, boolean isObjectValue) {
         if (arguments.isEmpty()) {
             return handleNoArgumentFunctions();
         } else if (arguments.size() == 1) {
-            return handleSingleArgumentFunctions(context);
+            return handleSingleArgumentFunctions(context, isObjectValue);
         } else if (arguments.size() == 2) {
-            return handleDoubleArgumentFunctions(context);
+            return handleDoubleArgumentFunctions(context, isObjectValue);
         } else if (arguments.size() == 3) {
-            return handleTripleArgumentFunctions(context);
+            return handleTripleArgumentFunctions(context, isObjectValue);
         }
         throw new EvaluationException("Invalid number of arguments: " + arguments.size()
                 + " provided for the function: " + functionName);
     }
 
     private ExpressionResult handleNoArgumentFunctions() {
-        if (functionName.equals(SynapseConstants.NOW)) {
+        if (functionName.equals(ExpressionConstants.NOW)) {
             return new ExpressionResult(System.currentTimeMillis());
         }
         throw new EvaluationException("Invalid function: " + functionName + " with no arguments");
     }
 
-    private ExpressionResult handleSingleArgumentFunctions(EvaluationContext context) {
+    private ExpressionResult handleSingleArgumentFunctions(EvaluationContext context, boolean isObjectValue) {
         ExpressionResult result = null;
         // do not evaluate the source for exists function - since we need to catch the exception
-        if (!functionName.equals(SynapseConstants.EXISTS)) {
-            result = arguments.get(0).evaluate(context);
+        if (!functionName.equals(ExpressionConstants.EXISTS)) {
+            result = arguments.get(0).evaluate(context, isObjectValue);
             checkArguments(result, "source");
         }
         switch (functionName) {
-            case SynapseConstants.LENGTH:
+            case ExpressionConstants.LENGTH:
                 return handleLengthFunction(result);
-            case SynapseConstants.TO_LOWER:
+            case ExpressionConstants.TO_LOWER:
                 return handleToLowerFunction(result);
-            case SynapseConstants.TO_UPPER:
+            case ExpressionConstants.TO_UPPER:
                 return handleToUpperFunction(result);
-            case SynapseConstants.TRIM:
+            case ExpressionConstants.TRIM:
                 return handleTrimFunction(result);
-            case SynapseConstants.ABS:
+            case ExpressionConstants.ABS:
                 return handleAbsFunction(result);
-            case SynapseConstants.CEIL:
+            case ExpressionConstants.CEIL:
                 return handleCeilFunction(result);
-            case SynapseConstants.FLOOR:
+            case ExpressionConstants.FLOOR:
                 return handleFloorFunction(result);
-            case SynapseConstants.ROUND:
+            case ExpressionConstants.ROUND:
                 return handleRoundFunction(result);
-            case SynapseConstants.SQRT:
+            case ExpressionConstants.SQRT:
                 return handleSqrtFunction(result);
-            case SynapseConstants.B64ENCODE:
+            case ExpressionConstants.B64ENCODE:
                 return handleBase64EncodeFunction(result);
-            case SynapseConstants.B64DECODE:
+            case ExpressionConstants.B64DECODE:
                 return handleBase64DecodeFunction(result);
-            case SynapseConstants.URL_ENCODE:
+            case ExpressionConstants.URL_ENCODE:
                 return handleUrlEncodeFunction(result);
-            case SynapseConstants.URL_DECODE:
+            case ExpressionConstants.URL_DECODE:
                 return handleUrlDecodeFunction(result);
-            case SynapseConstants.IS_STRING:
+            case ExpressionConstants.IS_STRING:
                 return new ExpressionResult(result.isString());
-            case SynapseConstants.IS_NUMBER:
+            case ExpressionConstants.IS_NUMBER:
                 return new ExpressionResult(result.isInteger() || result.isDouble());
-            case SynapseConstants.IS_ARRAY:
+            case ExpressionConstants.IS_ARRAY:
                 return new ExpressionResult(result.isArray());
-            case SynapseConstants.IS_OBJECT:
+            case ExpressionConstants.IS_OBJECT:
                 return new ExpressionResult(result.isObject());
-            case SynapseConstants.STRING:
+            case ExpressionConstants.STRING:
                 return new ExpressionResult(result.asString());
-            case SynapseConstants.INTEGER:
+            case ExpressionConstants.INTEGER:
                 return handleIntegerConversion(result);
-            case SynapseConstants.FLOAT:
+            case ExpressionConstants.FLOAT:
                 return handleFloatConversion(result);
-            case SynapseConstants.BOOLEAN:
+            case ExpressionConstants.BOOLEAN:
                 return handleBooleanConversion(result);
-            case SynapseConstants.REGISTRY:
+            case ExpressionConstants.REGISTRY:
                 return handleRegistryAccess(context, result, null);
-            case SynapseConstants.EXISTS:
-                return handleExistsCheck(context, arguments.get(0));
-            case SynapseConstants.OBJECT:
+            case ExpressionConstants.EXISTS:
+                return handleExistsCheck(context, arguments.get(0), isObjectValue);
+            case ExpressionConstants.OBJECT:
                 return convertToObject(result);
-            case SynapseConstants.ARRAY:
+            case ExpressionConstants.ARRAY:
                 return convertToArray(result);
-            case SynapseConstants.XPATH:
-                return evaluateXPATHExpression(context, result);
-            case SynapseConstants.SECRET:
+            case ExpressionConstants.XPATH:
+                return evaluateXPATHExpression(context, result, isObjectValue);
+            case ExpressionConstants.SECRET:
                 return fetchSecretValue(context, result.asString());
-            case SynapseConstants.NOT:
+            case ExpressionConstants.NOT:
                 return new ExpressionResult(!result.asBoolean());
             default:
                 throw new EvaluationException("Invalid function: " + functionName + " with one argument");
         }
     }
 
-    private ExpressionResult handleDoubleArgumentFunctions(EvaluationContext context) {
-        ExpressionResult source = arguments.get(0).evaluate(context);
-        ExpressionResult argument1 = arguments.get(1).evaluate(context);
+    private ExpressionResult handleDoubleArgumentFunctions(EvaluationContext context, boolean isObjectValue) {
+        ExpressionResult source = arguments.get(0).evaluate(context, isObjectValue);
+        ExpressionResult argument1 = arguments.get(1).evaluate(context, isObjectValue);
         checkArguments(source, "source");
         checkArguments(argument1, "argument1");
         switch (functionName) {
-            case SynapseConstants.SUBSTRING:
+            case ExpressionConstants.SUBSTRING:
                 return handleSubstringFunction(source, argument1);
-            case SynapseConstants.STARTS_WITH:
+            case ExpressionConstants.STARTS_WITH:
                 return handleStartsWithFunction(source, argument1);
-            case SynapseConstants.ENDS_WITH:
+            case ExpressionConstants.ENDS_WITH:
                 return handleEndsWithFunction(source, argument1);
-            case SynapseConstants.CONTAINS:
+            case ExpressionConstants.CONTAINS:
                 return handleContainsFunction(source, argument1);
-            case SynapseConstants.SPLIT:
+            case ExpressionConstants.SPLIT:
                 return handleSplitFunction(source, argument1);
-            case SynapseConstants.POW:
+            case ExpressionConstants.POW:
                 return handlePowFunction(source, argument1);
-            case SynapseConstants.B64ENCODE:
+            case ExpressionConstants.B64ENCODE:
                 return handleBase64EncodeFunction(source, argument1);
-            case SynapseConstants.URL_ENCODE:
+            case ExpressionConstants.URL_ENCODE:
                 return handleUrlEncodeFunction(source, argument1);
-            case SynapseConstants.REGISTRY:
+            case ExpressionConstants.REGISTRY:
                 return handleRegistryAccess(context, source, argument1);
-            case SynapseConstants.INDEX_OF:
+            case ExpressionConstants.INDEX_OF:
                 return handleIndexOfFunction(source, argument1);
-            case SynapseConstants.FORMAT_DATE_TIME:
+            case ExpressionConstants.FORMAT_DATE_TIME:
                 return handleFormatCurrentDateTimeFunction(source, argument1);
-            case SynapseConstants.CHAR_AT:
+            case ExpressionConstants.CHAR_AT:
                 return handleCharAtFunction(source, argument1);
+            case ExpressionConstants.XPATH:
+                return evaluateXPATHExpression(context, source, argument1.asString(), isObjectValue);
             default:
                 throw new EvaluationException("Invalid function: " + functionName + " with two arguments");
         }
     }
 
-    private ExpressionResult handleTripleArgumentFunctions(EvaluationContext context) {
-        ExpressionResult source = arguments.get(0).evaluate(context);
-        ExpressionResult argument1 = arguments.get(1).evaluate(context);
-        ExpressionResult argument2 = arguments.get(2).evaluate(context);
+    private ExpressionResult handleTripleArgumentFunctions(EvaluationContext context, boolean isObjectValue) {
+        ExpressionResult source = arguments.get(0).evaluate(context, isObjectValue);
+        ExpressionResult argument1 = arguments.get(1).evaluate(context, isObjectValue);
+        ExpressionResult argument2 = arguments.get(2).evaluate(context, isObjectValue);
         checkArguments(source, "source");
         checkArguments(argument1, "argument1");
         checkArguments(argument2, "argument2");
         switch (functionName) {
-            case SynapseConstants.SUBSTRING:
+            case ExpressionConstants.SUBSTRING:
                 return handleSubstringFunction(source, argument1, argument2);
-            case SynapseConstants.REPLACE:
+            case ExpressionConstants.REPLACE:
                 return handleReplaceFunction(source, argument1, argument2);
-            case SynapseConstants.INDEX_OF:
+            case ExpressionConstants.INDEX_OF:
                 return handleIndexOfFunction(source, argument1, argument2);
-            case SynapseConstants.FORMAT_DATE_TIME:
+            case ExpressionConstants.FORMAT_DATE_TIME:
                 return handleFormatDateTimeFunctions(source, argument1, argument2);
             default:
                 throw new EvaluationException("Invalid function: " + functionName + " with three arguments");
@@ -573,9 +576,10 @@ public class PredefinedFunctionNode implements ExpressionNode {
                 + ", propKey: " + propKey.asString());
     }
 
-    private ExpressionResult handleExistsCheck(EvaluationContext context, ExpressionNode expression) {
+    private ExpressionResult handleExistsCheck(EvaluationContext context, ExpressionNode expression,
+                                               boolean isObjectValue) {
         try {
-            ExpressionResult result = expression.evaluate(context);
+            ExpressionResult result = expression.evaluate(context, isObjectValue);
             return result != null ? new ExpressionResult(true) : new ExpressionResult(false);
         } catch (EvaluationException e) {
             // this is the only method we are handling the exceptions
@@ -597,9 +601,33 @@ public class PredefinedFunctionNode implements ExpressionNode {
         throw new EvaluationException("Argument cannot be converted to a JSON array");
     }
 
-    private ExpressionResult evaluateXPATHExpression(EvaluationContext context, ExpressionResult expression) {
+    private ExpressionResult evaluateXPATHExpression(EvaluationContext context, ExpressionResult expression,
+                                                     boolean isObjectValue) {
         try {
-            return new ExpressionResult(context.evaluateXpathExpression(expression.asString()));
+            Object result = context.evaluateXpathExpression(expression.asString(), isObjectValue);
+            if (isObjectValue) {
+                return new ExpressionResult((List<?>) result);
+            } else {
+                return new ExpressionResult(result.toString());
+            }
+        } catch (JaxenException e) {
+            throw new EvaluationException("Invalid XPATH expression : " + expression.asString());
+        }
+    }
+
+    private ExpressionResult evaluateXPATHExpression(EvaluationContext context, ExpressionResult expression,
+                                                     String variableName, boolean isObjectValue) {
+        try {
+            if (StringUtils.isEmpty(variableName)) {
+                throw new EvaluationException("Invalid variable name provided for XPATH function");
+            }
+            Object result = context.evaluateXpathExpression("$var:"+ variableName + expression.asString(),
+                    isObjectValue);
+            if (isObjectValue) {
+                return new ExpressionResult((List<?>) result);
+            } else {
+                return new ExpressionResult(result.toString());
+            }
         } catch (JaxenException e) {
             throw new EvaluationException("Invalid XPATH expression : " + expression.asString());
         }
@@ -609,7 +637,7 @@ public class PredefinedFunctionNode implements ExpressionNode {
         try {
             String result = context.fetchSecretValue(expression);
             // if vault-lookup fails it just return the same expression as the result
-            if (result.startsWith(SynapseConstants.VAULT_LOOKUP)) {
+            if (result.startsWith(ExpressionConstants.VAULT_LOOKUP)) {
                 throw new EvaluationException("Error fetching secret value for alias: " + expression);
             }
             return new ExpressionResult(result);

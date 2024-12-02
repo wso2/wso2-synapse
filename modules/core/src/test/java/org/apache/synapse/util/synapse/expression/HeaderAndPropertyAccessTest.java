@@ -133,7 +133,7 @@ public class HeaderAndPropertyAccessTest {
     @Test
     public void testTransportHeaderNotExist() throws Exception {
         SynapseExpression testPath = new SynapseExpression("headers[\"toUpper2\"]");
-        Assert.assertEquals(null, testPath.stringValueOf(synCtx));
+        Assert.assertNull(testPath.stringValueOf(synCtx));
     }
 
     @Test
@@ -144,53 +144,53 @@ public class HeaderAndPropertyAccessTest {
 
     @Test
     public void testAxis2Header() throws Exception {
-        SynapseExpression testPath = new SynapseExpression("attr.axis2.test");
+        SynapseExpression testPath = new SynapseExpression("props.axis2.test");
         Assert.assertEquals("Sic Mundus", testPath.stringValueOf(synCtx));
     }
 
     @Test
     public void testAxis2HeaderWithExpression() throws Exception {
-        SynapseExpression testPath = new SynapseExpression("attributes.axis2.test + \" \" " +
-                "+ attributes.axis2.test2");
+        SynapseExpression testPath = new SynapseExpression("properties.axis2.test + \" \" " +
+                "+ props.axis2.test2");
         Assert.assertEquals("Sic Mundus Creatus Est", testPath.stringValueOf(synCtx));
     }
 
     @Test
     public void testAxis2HeaderInFilter() throws Exception {
-        SynapseExpression testPath = new SynapseExpression("$..book[?(@.category == attributes.axis2.category)].title");
+        SynapseExpression testPath = new SynapseExpression("$..book[?(@.category == props.axis2.category)].title");
         Assert.assertEquals("[\"The Diary of a Young Girl\"]", testPath.stringValueOf(synCtx));
     }
     @Test
     public void testAxis2HeaderWithReservedName() throws Exception {
-        SynapseExpression testPath = new SynapseExpression("attributes.axis2.[\"empty\"]");
+        SynapseExpression testPath = new SynapseExpression("props.axis2.[\"empty\"]");
         Assert.assertEquals("Thus the world was created", testPath.stringValueOf(synCtx));
     }
 
     @Test
     public void testSynapseHeader() throws Exception {
-        SynapseExpression testPath = new SynapseExpression("attributes.synapse.phrase");
+        SynapseExpression testPath = new SynapseExpression("props.synapse.phrase");
         Assert.assertEquals("Now I Am Become Death, the Destroyer of Worlds", testPath.stringValueOf(synCtx));
     }
 
     @Test
     public void testSynapseHeaderWithFunction() throws Exception {
-        SynapseExpression testPath = new SynapseExpression("length(split(attributes.synapse.phrase, \" \"))");
+        SynapseExpression testPath = new SynapseExpression("length(split(properties.synapse.phrase, \" \"))");
         Assert.assertEquals("9", testPath.stringValueOf(synCtx));
     }
 
     @Test
     public void testSynapseHeaderInFilter() throws Exception {
-        SynapseExpression testPath = new SynapseExpression("$..book[?(@.title == attributes.synapse.[\"selected book\"])].price");
+        SynapseExpression testPath = new SynapseExpression("$..book[?(@.title == props.synapse.[\"selected book\"])].price");
         Assert.assertEquals("[7.99]", testPath.stringValueOf(synCtx));
     }
 
     @Test
     public void testNonExistingEmptyAndNull() throws Exception {
-        SynapseExpression testPath = new SynapseExpression("attributes.synapse.nonExisting");
-        Assert.assertEquals(null, testPath.stringValueOf(synCtx));
-        testPath = new SynapseExpression("attributes.synapse.[\"null\"]");
-        Assert.assertEquals(null, testPath.stringValueOf(synCtx));
-        testPath = new SynapseExpression("attributes.synapse[\"empty\"]");
+        SynapseExpression testPath = new SynapseExpression("props.synapse.nonExisting");
+        Assert.assertNull(testPath.stringValueOf(synCtx));
+        testPath = new SynapseExpression("props.synapse.[\"null\"]");
+        Assert.assertNull(testPath.stringValueOf(synCtx));
+        testPath = new SynapseExpression("props.synapse[\"empty\"]");
         Assert.assertEquals("", testPath.stringValueOf(synCtx));
     }
 }

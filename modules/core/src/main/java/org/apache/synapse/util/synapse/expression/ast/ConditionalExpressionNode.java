@@ -38,13 +38,14 @@ public class ConditionalExpressionNode implements ExpressionNode {
     }
 
     @Override
-    public ExpressionResult evaluate(EvaluationContext context) {
-        ExpressionResult conditionResult = condition.evaluate(context);
+    public ExpressionResult evaluate(EvaluationContext context, boolean isObjectValue) throws EvaluationException {
+        ExpressionResult conditionResult = condition.evaluate(context, isObjectValue);
         if (conditionResult == null || conditionResult.isNull()) {
             throw new EvaluationException("Condition is null in conditional expression");
         }
         if (conditionResult.isBoolean()) {
-            return conditionResult.asBoolean() ? trueExpression.evaluate(context) : falseExpression.evaluate(context);
+            return conditionResult.asBoolean() ? trueExpression.evaluate(context, isObjectValue)
+                    : falseExpression.evaluate(context, isObjectValue);
         } else {
             throw new EvaluationException("Condition is not a boolean in conditional expression");
         }

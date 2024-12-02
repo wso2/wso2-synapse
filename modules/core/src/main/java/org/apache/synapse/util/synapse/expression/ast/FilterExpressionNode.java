@@ -41,10 +41,10 @@ public class FilterExpressionNode implements ExpressionNode {
      * Not evaluating here.
      */
     @Override
-    public ExpressionResult evaluate(EvaluationContext context) {
+    public ExpressionResult evaluate(EvaluationContext context, boolean isObjectValue) {
         for (Map.Entry<String, ExpressionNode> entry : arguments.entrySet()) {
             if (entry.getValue() != null) {
-                ExpressionResult result = entry.getValue().evaluate(context);
+                ExpressionResult result = entry.getValue().evaluate(context, isObjectValue);
                 if (result != null) {
                     String regex = ExpressionUtils.escapeSpecialCharacters(entry.getKey());
                     String resultString = result.asString();

@@ -35,14 +35,14 @@ public class ArrayIndexNode implements ExpressionNode {
     }
 
     @Override
-    public ExpressionResult evaluate(EvaluationContext context) {
+    public ExpressionResult evaluate(EvaluationContext context, boolean isObjectValue) {
         List<String> indexList = new ArrayList<>();
         for (ExpressionNode index : indexArray) {
             if (index == null) {
                 indexList.add("");
                 continue;
             }
-            ExpressionResult result = index.evaluate(context);
+            ExpressionResult result = index.evaluate(context, isObjectValue);
             if (result != null) {
                 indexList.add(result.asString());
             }

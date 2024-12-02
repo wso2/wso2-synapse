@@ -25,5 +25,5 @@ import org.apache.synapse.util.synapse.expression.exception.EvaluationException;
  * Represents a node in the AST.
  */
 public interface ExpressionNode {
-    ExpressionResult evaluate(EvaluationContext context) throws EvaluationException;
+    ExpressionResult evaluate(EvaluationContext context, boolean isObjectValue) throws EvaluationException;
 }

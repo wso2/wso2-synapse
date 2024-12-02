@@ -71,9 +71,9 @@ public class BinaryOperationNode implements ExpressionNode {
     }
 
     @Override
-    public ExpressionResult evaluate(EvaluationContext context) throws EvaluationException {
-        ExpressionResult leftValue = left.evaluate(context);
-        ExpressionResult rightValue = right.evaluate(context);
+    public ExpressionResult evaluate(EvaluationContext context, boolean isObjectValue) throws EvaluationException {
+        ExpressionResult leftValue = left.evaluate(context, isObjectValue);
+        ExpressionResult rightValue = right.evaluate(context, isObjectValue);
         if ((leftValue == null || rightValue == null) &&
                 (operator != Operator.EQUALS && operator != Operator.NOT_EQUALS)) {
             throw new EvaluationException("Null inputs for " + operator + " operation: " + leftValue

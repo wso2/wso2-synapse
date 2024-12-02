@@ -38,7 +38,8 @@ factor
     | payloadAccess
     | headerAccess
     | configAccess
-    | attributeAccess
+    | parameterAccess
+    | propertyAccess
     | LPAREN expression RPAREN
     ;
 
@@ -50,8 +51,12 @@ headerAccess
     : HEADERS propertyName
     ;
 
-attributeAccess
-    : ATTRIBUTES (DOT ID  propertyName)
+parameterAccess
+    : PARAMS (DOT ID  propertyName)
+    ;
+
+propertyAccess
+    : PROPERTY (DOT ID  propertyName)
     ;
 
 propertyName
@@ -126,7 +131,8 @@ filterComponent
     | payloadAccess
     | headerAccess
     | configAccess
-    | attributeAccess
+    | parameterAccess
+    | propertyAccess
     | functionCall
     | stringOrOperator
     ;

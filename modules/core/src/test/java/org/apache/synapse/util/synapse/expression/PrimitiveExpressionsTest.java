@@ -17,7 +17,6 @@
  */
 package org.apache.synapse.util.synapse.expression;
 
-import org.apache.synapse.SynapseConstants;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -37,7 +36,7 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("true", TestUtils.evaluateExpression("null == null"));
         Assert.assertEquals("true", TestUtils.evaluateExpressionWithPayload("\"John\" == payload.name", 1));
         Assert.assertEquals("true", TestUtils.evaluateExpressionWithPayload("null == payload[\"null\"]", 1));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpressionWithPayload("\"abc\" == payload.age", 2));
+        Assert.assertNull(TestUtils.evaluateExpressionWithPayload("\"abc\" == payload.age", 2));
         Assert.assertEquals("true", TestUtils.evaluateExpressionWithPayload("$.store.book[0] == $.store.book[0]", 2));
         Assert.assertEquals("false", TestUtils.evaluateExpressionWithPayload("$.store.book[0] == $.store.book[1]", 2));
     }
@@ -52,7 +51,7 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("true", TestUtils.evaluateExpression("\"abc\" != \"pqr\""));
         Assert.assertEquals("false", TestUtils.evaluateExpression("null != null"));
         Assert.assertEquals("false", TestUtils.evaluateExpressionWithPayload("\"John\" != $.name",1));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpressionWithPayload("\"John\" != $.name",2));
+        Assert.assertNull(TestUtils.evaluateExpressionWithPayload("\"John\" != $.name", 2));
         Assert.assertEquals("false", TestUtils.evaluateExpressionWithPayload("$.store.book[0] == null", 2));
     }
 
@@ -61,10 +60,10 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("true", TestUtils.evaluateExpression("5 > 3"));
         Assert.assertEquals("true", TestUtils.evaluateExpression("5 > -3.4"));
         Assert.assertEquals("false", TestUtils.evaluateExpression("-5 > -3.4"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("5 > \"bla\""));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("5 > null"));
+        Assert.assertNull(TestUtils.evaluateExpression("5 > \"bla\""));
+        Assert.assertNull(TestUtils.evaluateExpression("5 > null"));
         Assert.assertEquals("true", TestUtils.evaluateExpressionWithPayloadAndVariables("$.age > var.num1",1,1));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpressionWithPayloadAndVariables("$.age > $[\"null\"]",1,1));
+        Assert.assertNull(TestUtils.evaluateExpressionWithPayloadAndVariables("$.age > $[\"null\"]", 1, 1));
     }
 
     @Test
@@ -73,7 +72,7 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("false", TestUtils.evaluateExpression("5 < -3.4"));
         Assert.assertEquals("true", TestUtils.evaluateExpression("-5 < -3.4"));
         Assert.assertEquals("true", TestUtils.evaluateExpression("5 == 5"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpressionWithPayload("$.age < \"bla\"", 1));
+        Assert.assertNull(TestUtils.evaluateExpressionWithPayload("$.age < \"bla\"", 1));
     }
 
     @Test
@@ -81,8 +80,8 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("true", TestUtils.evaluateExpression("5 >= 3"));
         Assert.assertEquals("true", TestUtils.evaluateExpression("5 >= -3.4"));
         Assert.assertEquals("false", TestUtils.evaluateExpression("-5 >= -3.4"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("true >= false"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpressionWithPayload("$.age >= \"bla\"", 1));
+        Assert.assertNull(TestUtils.evaluateExpression("true >= false"));
+        Assert.assertNull(TestUtils.evaluateExpressionWithPayload("$.age >= \"bla\"", 1));
     }
 
     @Test
@@ -90,7 +89,7 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("false", TestUtils.evaluateExpression("5 <= 3"));
         Assert.assertEquals("false", TestUtils.evaluateExpression("5 <= -3.4"));
         Assert.assertEquals("true", TestUtils.evaluateExpression("-5 <= -3.4"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpressionWithPayload("$.age <= \"bla\"", 1));
+        Assert.assertNull(TestUtils.evaluateExpressionWithPayload("$.age <= \"bla\"", 1));
     }
 
     @Test
@@ -98,8 +97,8 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("true", TestUtils.evaluateExpression("true and true"));
         Assert.assertEquals("false", TestUtils.evaluateExpression("true and false"));
         Assert.assertEquals("false", TestUtils.evaluateExpression("true && true && false"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("5 and \"bla\""));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("5 and null"));
+        Assert.assertNull(TestUtils.evaluateExpression("5 and \"bla\""));
+        Assert.assertNull(TestUtils.evaluateExpression("5 and null"));
     }
 
     @Test
@@ -108,7 +107,7 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("true", TestUtils.evaluateExpression("true or false"));
         Assert.assertEquals("true", TestUtils.evaluateExpression("true || true || false"));
         Assert.assertEquals("false", TestUtils.evaluateExpression("false or false"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("5 or \"bla\""));
+        Assert.assertNull(TestUtils.evaluateExpression("5 or \"bla\""));
     }
 
     @Test
@@ -117,15 +116,15 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("7", TestUtils.evaluateExpression("5 + 3 + -1"));
         Assert.assertEquals("8.5", TestUtils.evaluateExpression("5.5 + 3"));
         Assert.assertEquals("9.0", TestUtils.evaluateExpression("5.5 + 3.5"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("\"abc\" + 5"));
+        Assert.assertNull(TestUtils.evaluateExpression("\"abc\" + 5"));
         Assert.assertEquals("abcxyz", TestUtils.evaluateExpression("\"abc\" + \"xyz\""));
         Assert.assertEquals("7.5", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "var.num1 + var.num3", 2, 1));
         Assert.assertEquals("20", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "var.num1 + payload.expensive", 2, 1));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpressionWithPayloadAndVariables("5 + var.name", 2, 1));
+        Assert.assertNull(TestUtils.evaluateExpressionWithPayloadAndVariables("5 + var.name", 2, 1));
         // clear the synCtx to remove previous payload and variables.
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("var.num99 + 5"));
+        Assert.assertNull(TestUtils.evaluateExpression("var.num99 + 5"));
     }
 
     @Test
@@ -133,8 +132,8 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("-33", TestUtils.evaluateExpression("5 - 30 + 2 - 10"));
         Assert.assertEquals("2.5", TestUtils.evaluateExpression("5.5 - 3"));
         Assert.assertEquals("2.0", TestUtils.evaluateExpression("5.5 - 3.5"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("var.num99 - 5"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("5 - \"bla\""));
+        Assert.assertNull(TestUtils.evaluateExpression("var.num99 - 5"));
+        Assert.assertNull(TestUtils.evaluateExpression("5 - \"bla\""));
         Assert.assertEquals("12.5", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "var.num1 - var.num3", 2, 1));
     }
@@ -144,8 +143,8 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("-30", TestUtils.evaluateExpression("5 * 3 * -2"));
         Assert.assertEquals("16.5", TestUtils.evaluateExpression("5.5 * 3"));
         Assert.assertEquals("19.25", TestUtils.evaluateExpression("5.5 * 3.5"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("var.num99 * 5"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("5 * \"bla\""));
+        Assert.assertNull(TestUtils.evaluateExpression("var.num99 * 5"));
+        Assert.assertNull(TestUtils.evaluateExpression("5 * \"bla\""));
         Assert.assertEquals("-25.0", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "var.num1 * var.num3", 2, 1));
     }
@@ -155,8 +154,8 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("-4.0", TestUtils.evaluateExpression("10 / 2 / -2.5 * 2"));
         Assert.assertEquals("-4.0", TestUtils.evaluateExpression("10 / 2 / -2.5 * 2"));
         Assert.assertEquals("3", TestUtils.evaluateExpression("9 / 3"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("var.num99 / 5"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("5 / \"bla\""));
+        Assert.assertNull(TestUtils.evaluateExpression("var.num99 / 5"));
+        Assert.assertNull(TestUtils.evaluateExpression("5 / \"bla\""));
         Assert.assertEquals("5", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "var.num1 / 2", 2, 1));
     }
@@ -166,8 +165,8 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("1", TestUtils.evaluateExpression("10 % 3"));
         Assert.assertEquals("2.5", TestUtils.evaluateExpression("5.5 % 3"));
         Assert.assertEquals("2.0", TestUtils.evaluateExpression("5.5 % 3.5"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("var.num99 % 5"));
-        Assert.assertEquals(SynapseConstants.UNKNOWN, TestUtils.evaluateExpression("5 % \"bla\""));
+        Assert.assertNull(TestUtils.evaluateExpression("var.num99 % 5"));
+        Assert.assertNull(TestUtils.evaluateExpression("5 % \"bla\""));
         Assert.assertEquals("0", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "var.num1 % 2", 2, 1));
     }

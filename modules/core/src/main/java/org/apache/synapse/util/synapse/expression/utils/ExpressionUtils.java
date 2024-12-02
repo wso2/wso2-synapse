@@ -18,7 +18,9 @@
 
 package org.apache.synapse.util.synapse.expression.utils;
 
+import org.apache.axiom.om.OMNode;
 import java.nio.charset.Charset;
+import java.util.List;
 
 /**
  * Utility class for Synapse Expressions.
@@ -65,7 +67,7 @@ public class ExpressionUtils {
             String remaining = input.substring(4);
             int endDotIndex = remaining.indexOf(".");
             int beginArrIndex = remaining.indexOf("[");
-            String variableName = "";
+            String variableName;
             String expression = "";
 
             if (endDotIndex == -1 && beginArrIndex == -1) {
@@ -85,5 +87,26 @@ public class ExpressionUtils {
         } else {
             throw new IllegalArgumentException("Invalid input format. Could not parse variable and JSONPath.");
         }
+    }
+
+    /**
+     * Checks whether the given variable is a JSON object.
+     * @param variable The variable value to be checked.
+     * @return true if the variable is a JSON object, false otherwise.
+     */
+    public static boolean isXMLVariable(Object variable) {
+        boolean isXML = false;
+        if (variable instanceof OMNode) {
+            isXML = true;
+        } else if (variable instanceof List) {
+            List<?> list = (List<?>) variable;
+            for (Object obj : list) {
+                if (obj instanceof OMNode) {
+                    isXML = true;
+                    break;
+                }
+            }
+        }
+        return isXML;
     }
 }

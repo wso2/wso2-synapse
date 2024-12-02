@@ -26,8 +26,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.SynapsePath;
+import org.apache.synapse.util.synapse.expression.exception.SyntaxError;
 import org.apache.synapse.util.synapse_expression.ExpressionLexer;
 import org.apache.synapse.util.synapse_expression.ExpressionParser;
 import org.apache.synapse.util.synapse.expression.ast.ExpressionNode;
@@ -40,6 +40,8 @@ import org.jaxen.JaxenException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Represents a Synapse Expression
@@ -48,9 +50,7 @@ import java.util.Map;
 public class SynapseExpression extends SynapsePath {
     private static final Log log = LogFactory.getLog(SynapseExpression.class);
     private final ExpressionNode expressionNode;
-    private EvaluationContext context;
-    private final SyntaxErrorListener errorListener;
-    public Map<String,String> namespaceMap = new HashMap<>();
+    private final Map<String, String> namespaceMap = new HashMap<>();
     private boolean isContentAware = false;
 
     public SynapseExpression(String synapseExpression) throws JaxenException {
@@ -61,53 +61,74 @@ public class SynapseExpression extends SynapsePath {
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         ExpressionParser parser = new ExpressionParser(tokens);
         parser.removeErrorListeners();
-        errorListener = new SyntaxErrorListener();
+        SyntaxErrorListener errorListener = new SyntaxErrorListener();
         parser.addErrorListener(errorListener);
 
         ParseTree tree = parser.expression();
         ExpressionVisitor visitor = new ExpressionVisitor();
         expressionNode = visitor.visit(tree);
         if (errorListener.hasErrors()) {
-            throw new JaxenException("Syntax error in expression: " + synapseExpression);
+            StringBuilder errorMessage = new StringBuilder("Syntax error in expression: " + synapseExpression);
+            for (SyntaxError error : errorListener.getErrors()) {
+                errorMessage.append(" ").append(error.getMessage());
+            }
+            throw new JaxenException(errorMessage.toString());
         }
 
         // TODO : Need to improve the content aware detection logic
-        if (synapseExpression.contains("xpath(") || synapseExpression.contains("payload.") || synapseExpression.contains("$.")) {
+        if (synapseExpression.equals("payload") || synapseExpression.equals("$")
+                || synapseExpression.contains("payload.") || synapseExpression.contains("$.")) {
             isContentAware = true;
+        } else if (synapseExpression.contains("xpath(")) {
+            // TODO change the regex to support xpath + variable syntax
+            Pattern pattern = Pattern.compile("xpath\\(['\"](.*?)['\"]\\s*(,\\s*['\"](.*?)['\"])?\\)?");
+            Matcher matcher = pattern.matcher(synapseExpression);
+            // Find all matches
+            while (matcher.find()) {
+                if (matcher.group(2) != null) {
+                    // evaluating xpath on a variable so not content aware
+                    isContentAware = false;
+                    break;
+                }
+                String xpath = matcher.group(1);
+                try {
+                    SynapseXPath synapseXPath = new SynapseXPath(xpath);
+                    if (synapseXPath.isContentAware()) {
+                        isContentAware = true;
+                        break;
+                    }
+                } catch (JaxenException e) {
+                    // Ignore the exception and continue
+                }
+            }
         }
     }
 
     @Override
     public String stringValueOf(MessageContext synCtx) {
-        context = new EvaluationContext();
+        EvaluationContext context = new EvaluationContext();
         context.setNamespaceMap(namespaceMap);
         context.setSynCtx(synCtx);
-        ExpressionResult result = evaluateExpression(context);
-        return result != null ? result.asString() : "";
+        ExpressionResult result = evaluateExpression(context, false);
+        return result != null ? result.asString() : null;
     }
 
     @Override
     public Object objectValueOf(MessageContext synCtx) {
-        context = new EvaluationContext();
+        EvaluationContext context = new EvaluationContext();
         context.setNamespaceMap(namespaceMap);
         context.setSynCtx(synCtx);
-        ExpressionResult result = evaluateExpression(context);
+        ExpressionResult result = evaluateExpression(context, true);
         return result != null ? result.getValue() : null;
     }
 
-    private ExpressionResult evaluateExpression(EvaluationContext context) {
-        ExpressionResult result;
+    private ExpressionResult evaluateExpression(EvaluationContext context, boolean isObjectValue) {
         try {
-            result = expressionNode.evaluate(context);
+            return expressionNode.evaluate(context, isObjectValue);
         } catch (EvaluationException e) {
             log.warn("Error evaluating expression: " + expression + " cause : " + e.getMessage());
-            result = new ExpressionResult(SynapseConstants.UNKNOWN);
+            return null;
         }
-        return result;
-    }
-
-    public SyntaxErrorListener getErrorListener() {
-        return errorListener;
     }
 
     public void addNamespace(String var1, String var2) throws JaxenException {
