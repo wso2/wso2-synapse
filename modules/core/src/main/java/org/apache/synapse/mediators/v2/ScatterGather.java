@@ -448,7 +448,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
             }
         } else {
             synLog.traceOrDebug("Unable to find aggregation correlation property");
-            return true;
+            return false;
         }
         // if there is an aggregate continue on aggregation
         if (aggregate != null) {
@@ -471,7 +471,6 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
             }
         } else {
             synLog.traceOrDebug("Unable to find an aggregate for this message - skip");
-            return true;
         }
         return false;
     }
