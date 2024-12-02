@@ -169,10 +169,25 @@ public class VariableMediator extends AbstractMediator {
             return value;
         } else {
             if (expression != null) {
+                if (isOMType(type)) {
+                    return buildOMElement(expression.stringValueOf(synCtx));
+                } else if (isStringType(type)) {
+                    return expression.stringValueOf(synCtx);
+                }
                 return convertExpressionResult(expression.objectValueOf(synCtx), type);
             }
         }
         return null;
+    }
+
+    private boolean isOMType(String type) {
+
+        return type != null && XMLConfigConstants.DATA_TYPES.OM.equals(XMLConfigConstants.DATA_TYPES.valueOf(type));
+    }
+
+    private boolean isStringType(String type) {
+
+        return type != null && XMLConfigConstants.DATA_TYPES.STRING.equals(XMLConfigConstants.DATA_TYPES.valueOf(type));
     }
 
     private Object convertValue(String value, String type) {
