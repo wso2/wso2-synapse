@@ -92,47 +92,52 @@ public class RegexTemplateProcessor extends TemplateProcessor {
                 if (matcher.group(1) != null) {
                     // Handle "${...}" pattern (with quotes)
                     String expression = matcher.group(1);
-                    Object expressionResult = new SynapseExpression(expression).objectValueOf(synCtx);
+                    Object expressionResult = evaluateExpression(expression, synCtx);
                     if (expressionResult instanceof JsonPrimitive) {
-                        replacementValue = ((JsonPrimitive) expressionResult).getAsString();
-                        if (XML_TYPE.equals(mediaType)) {
-                            replacementValue = StringEscapeUtils.escapeXml10(replacementValue);
-                        } else if (JSON_TYPE.equals(mediaType)) {
-                            replacementValue = escapeSpecialChars(replacementValue);
-                        }
+                        replacementValue = prepareJSONPrimitiveReplacementValue(expressionResult, mediaType);
                     } else if (expressionResult instanceof JsonElement) {
+                        // Escape JSON object and Arrays since we need to consider it as
                         replacementValue = escapeJson(Matcher.quoteReplacement(gson.toJson(expressionResult)));
                         if (XML_TYPE.equals(mediaType)) {
                             replacementValue = convertJsonToXML(replacementValue);
                         }
                     } else {
                         replacementValue = expressionResult.toString();
-                    }
-                    if (JSON_TYPE.equals(mediaType) && isXML(replacementValue)) {
-                        // consider the replacement value as a literal XML
-                        replacementValue = Matcher.quoteReplacement(replacementValue);
-                        replacementValue = escapeSpecialChars(replacementValue);
+                        if (XML_TYPE.equals(mediaType)) {
+                            replacementValue = StringEscapeUtils.escapeXml10(replacementValue);
+                        } else if (JSON_TYPE.equals(mediaType)) {
+                            if (isXML(replacementValue)) {
+                                // consider the replacement value as a literal XML
+                                replacementValue = Matcher.quoteReplacement(replacementValue);
+                            } else {
+                                replacementValue = escapeSpecialCharactersOfJson(replacementValue);
+                            }
+                        }
                     }
                     matcher.appendReplacement(result, "\"" + replacementValue + "\"");
                 } else if (matcher.group(2) != null) {
                     // Handle ${...} pattern (without quotes)
                     String expression = matcher.group(2);
-                    Object expressionResult = new SynapseExpression(expression).objectValueOf(synCtx);
+                    Object expressionResult = evaluateExpression(expression, synCtx);
                     replacementValue = expressionResult.toString();
                     if (expressionResult instanceof JsonPrimitive) {
-                        replacementValue = ((JsonPrimitive) expressionResult).getAsString();
-                        if (XML_TYPE.equals(mediaType)) {
-                            replacementValue = StringEscapeUtils.escapeXml10(replacementValue);
-                        }
+                        replacementValue = prepareJSONPrimitiveReplacementValue(expressionResult, mediaType);
                     } else if (expressionResult instanceof JsonElement) {
                         if (XML_TYPE.equals(mediaType)) {
-                            replacementValue = convertJsonToXML(expressionResult.toString());
+                            replacementValue = convertJsonToXML(replacementValue);
+                            replacementValue = Matcher.quoteReplacement(replacementValue);
                         } else {
                             replacementValue = Matcher.quoteReplacement(gson.toJson(expressionResult));
                         }
-                    }
-                    if (JSON_TYPE.equals(mediaType) && isXML(replacementValue)) {
-                        replacementValue = convertXMLToJSON(replacementValue);
+                    } else {
+                        if (JSON_TYPE.equals(mediaType) && isXML(replacementValue)) {
+                            replacementValue = convertXMLToJSON(replacementValue);
+                        } else {
+                            if (XML_TYPE.equals(mediaType) && !isXML(replacementValue)) {
+                                replacementValue = StringEscapeUtils.escapeXml10(replacementValue);
+                            }
+                            replacementValue = Matcher.quoteReplacement(replacementValue);
+                        }
                     }
                     matcher.appendReplacement(result, replacementValue);
                 } else if (matcher.group(3) != null) {
@@ -152,6 +157,33 @@ public class RegexTemplateProcessor extends TemplateProcessor {
         matcher.appendTail(result);
     }
 
+    private String prepareJSONPrimitiveReplacementValue(Object expressionResult, String mediaType) {
+
+        String replacementValue = ((JsonPrimitive) expressionResult).getAsString();
+        replacementValue = escapeSpecialChars(Matcher.quoteReplacement(replacementValue));
+        if (XML_TYPE.equals(mediaType)) {
+            replacementValue = StringEscapeUtils.escapeXml10(replacementValue);
+        }
+        return replacementValue;
+    }
+
+    /**
+     * Evaluates the expression and returns the result as a string or an object.
+     * If the expression contains "xpath(", we meed to evaluate it as a string.
+     *
+     * @param expression expression to evaluate
+     * @param synCtx     message context
+     * @return evaluated result
+     * @throws JaxenException if an error occurs while evaluating the expression
+     */
+    private Object evaluateExpression(String expression, MessageContext synCtx) throws JaxenException {
+
+        if (expression.contains("xpath(")) {
+            return new SynapseExpression(expression).stringValueOf(synCtx);
+        }
+        return new SynapseExpression(expression).objectValueOf(synCtx);
+    }
+
     private String escapeJson(String value) {
         // Manual escape for JSON: escaping double quotes and backslashes
         return value.replace("\"", "\\\"").replace("\\", "\\\\");
@@ -160,7 +192,7 @@ public class RegexTemplateProcessor extends TemplateProcessor {
     private String convertJsonToXML(String replacementValue) {
 
         try {
-            replacementValue = escapeSpecialCharactersOfXml(replacementValue);
+//            replacementValue = Matcher.quoteReplacement(replacementValue);
             OMElement omXML = JsonUtil.toXml(IOUtils.toInputStream(replacementValue), false);
             if (JsonUtil.isAJsonPayloadElement(omXML)) { // remove <jsonObject/> from result.
                 Iterator children = omXML.getChildElements();
@@ -176,7 +208,7 @@ public class RegexTemplateProcessor extends TemplateProcessor {
             handleException(
                     "Error converting JSON to XML, please check your expressions return valid JSON: ");
         }
-        return replacementValue;
+        return escapeSpecialCharactersOfXml(replacementValue);
     }
 
     private String convertXMLToJSON(String replacementValue) {
