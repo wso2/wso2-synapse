@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.neethi.Policy;
 import org.apache.neethi.PolicyEngine;
 import org.apache.neethi.builders.xml.XmlPrimtiveAssertion;
+import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.commons.throttle.core.factory.CallerConfigurationFactory;
 import org.apache.synapse.commons.throttle.core.factory.ThrottleConfigurationFactory;
 import org.apache.synapse.commons.throttle.core.factory.ThrottleContextFactory;
@@ -458,6 +459,7 @@ public class ThrottleFactory {
                                     "Name of the policy cannot be null");
                         }
                         if (!value.equals("")) {
+                            String resolvedValue = ResolverFactory.getInstance().getResolver(value.trim()).resolve();
 
                             if (name.equals(
                                     ThrottleConstants.
@@ -466,7 +468,7 @@ public class ThrottleFactory {
                                 isFoundMaxCount = true;
                                 try {
                                     callerConfiguration.setMaximumRequestPerUnitTime(
-                                            Integer.parseInt(value.trim()));
+                                            Integer.parseInt(resolvedValue));
                                 } catch (NumberFormatException ignored) {
                                     log.error("Error occurred - " +
                                             "Invalid number for maximum " +
@@ -485,7 +487,7 @@ public class ThrottleFactory {
                                 long timeInMilliSec = 0;
                                 try {
                                     timeInMilliSec =
-                                            Long.parseLong(value.trim());
+                                            Long.parseLong(resolvedValue);
                                 } catch (NumberFormatException ignored) {
                                     log.error("Error occurred " +
                                                     "- Invalid number for unit time",
@@ -504,7 +506,7 @@ public class ThrottleFactory {
                                             PROHIBIT_TIME_PERIOD_PARAMETER_NAME)) {
                                 try {
                                     callerConfiguration.setProhibitTimePeriod(
-                                            Long.parseLong(value.trim()));
+                                            Long.parseLong(resolvedValue));
                                 } catch (NumberFormatException ignored) {
                                     log.error("Error occurred - Invalid" +
                                                     " number for prohibit time ",
