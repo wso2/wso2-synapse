@@ -110,7 +110,7 @@ public class SynapseExpression extends SynapsePath {
         context.setNamespaceMap(namespaceMap);
         context.setSynCtx(synCtx);
         ExpressionResult result = evaluateExpression(context, false);
-        return result != null ? result.asString() : null;
+        return result != null ? result.asString() : "";
     }
 
     @Override

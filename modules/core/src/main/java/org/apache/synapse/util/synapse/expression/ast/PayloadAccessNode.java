@@ -107,7 +107,7 @@ public class PayloadAccessNode implements ExpressionNode {
         switch (type) {
             case PAYLOAD:
                 try {
-                    result = context.getJSONResult(isObjectValue, expression);
+                    result = context.getJSONResult(expression);
                 } catch (PathNotFoundException e) {
                     // convert jsonPath error to native one
                     throw new EvaluationException(e.getMessage());
@@ -115,6 +115,8 @@ public class PayloadAccessNode implements ExpressionNode {
                     throw new EvaluationException("Error while parsing payload");
                 } catch (JaxenException e) {
                     throw new EvaluationException("Error while retrieving payload");
+                } catch (EvaluationException e) {
+                    throw new EvaluationException("Error while fetching the payload, " + e.getMessage());
                 }
                 break;
             case VARIABLE:
@@ -135,17 +137,10 @@ public class PayloadAccessNode implements ExpressionNode {
                                 + " on non-JSON variable value");
                     }
                     try {
-                        if (isObjectValue) {
-                            SynapseJsonPath jsonPath = new SynapseJsonPath(expressionToEvaluate);
-                            result = jsonPath.evaluate(variable.toString());
-                        } else {
-                            result = JsonPath.parse(variable.toString()).read(expressionToEvaluate);
-                        }
+                        result = JsonPath.parse(variable.toString()).read(expressionToEvaluate);
                     } catch (PathNotFoundException e) {
                         // convert jsonPath error to native one
                         throw new EvaluationException(e.getMessage());
-                    } catch (JaxenException e) {
-                        throw new EvaluationException("Error while parsing the expression: " + expressionToEvaluate);
                     }
                 }
                 break;

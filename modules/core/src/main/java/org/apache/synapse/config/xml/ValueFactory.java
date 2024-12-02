@@ -26,6 +26,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.Value;
+import org.apache.synapse.util.xpath.SynapseExpression;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
@@ -65,6 +66,10 @@ public class ValueFactory {
                     attributeValue = attributeValue.substring(1, attributeValue.length() - 1);
                     SynapseJsonPath synJsonPath = createSynJsonPath(attributeValue);
                     key = new Value(synJsonPath);
+                } else if (attributeValue.startsWith("{${") && attributeValue.endsWith("}}")) {
+                    attributeValue = attributeValue.substring(1, attributeValue.length() - 1);
+                    SynapseExpression synapseExpression = createSynapseExpression(attributeValue);
+                    key = new Value(synapseExpression);
                 } else {
                     SynapseXPath synXpath = createSynXpath(elem, attributeValue);
                     key = new Value(synXpath);
@@ -218,6 +223,17 @@ public class ValueFactory {
         }
 
         return synapseJsonPath;
+    }
+
+    private SynapseExpression createSynapseExpression(String key) {
+        String expression = key.trim().substring(2, key.length() - 1);
+        SynapseExpression synapseExpression = null;
+        try {
+            synapseExpression = new SynapseExpression(expression);
+        } catch (JaxenException e) {
+            handleException("Can not create SynapseExpression from given: " + key);
+        }
+        return synapseExpression;
     }
 
     /**

@@ -133,7 +133,7 @@ public class HeaderAndPropertyAccessTest {
     @Test
     public void testTransportHeaderNotExist() throws Exception {
         SynapseExpression testPath = new SynapseExpression("headers[\"toUpper2\"]");
-        Assert.assertNull(testPath.stringValueOf(synCtx));
+        Assert.assertEquals("", testPath.stringValueOf(synCtx));
     }
 
     @Test
@@ -187,9 +187,9 @@ public class HeaderAndPropertyAccessTest {
     @Test
     public void testNonExistingEmptyAndNull() throws Exception {
         SynapseExpression testPath = new SynapseExpression("props.synapse.nonExisting");
-        Assert.assertNull(testPath.stringValueOf(synCtx));
+        Assert.assertEquals("", testPath.stringValueOf(synCtx));
         testPath = new SynapseExpression("props.synapse.[\"null\"]");
-        Assert.assertNull(testPath.stringValueOf(synCtx));
+        Assert.assertEquals("", testPath.stringValueOf(synCtx));
         testPath = new SynapseExpression("props.synapse[\"empty\"]");
         Assert.assertEquals("", testPath.stringValueOf(synCtx));
     }
