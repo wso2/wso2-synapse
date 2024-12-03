@@ -26,6 +26,6 @@ public class SslSenderTrustStoreHolderTest {
     public void testGetInstance() {
         SslSenderTrustStoreHolder instance = SslSenderTrustStoreHolder.getInstance();
         SslSenderTrustStoreHolder instance2 = SslSenderTrustStoreHolder.getInstance();
-        Assert.assertEquals(instance, instance2);
+        Assert.assertEquals("Instances should be the same.", instance, instance2);
     }
 }
