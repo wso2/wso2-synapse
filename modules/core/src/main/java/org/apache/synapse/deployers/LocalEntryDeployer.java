@@ -124,27 +124,29 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
         String certificateFilePath = getSynapseConfiguration().getRegistry().getRegistryEntry(certificateFileResourceKey).getName();
         File certificateFile = new File(certificateFilePath);
         String certificateAlias = certificateFile.getName().split("\\.")[0];
-        try {
-            FileInputStream certificateFileInputStream = FileUtils.openInputStream(new File(certificateFilePath));
+        try (FileInputStream certificateFileInputStream = FileUtils.openInputStream(new File(certificateFilePath))) {
             SslSenderTrustStoreHolder sslSenderTrustStoreHolder = SslSenderTrustStoreHolder.getInstance();
             KeyStore sslSenderTrustStore = sslSenderTrustStoreHolder.getKeyStore();
+
             CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
             Certificate certificate = certificateFactory.generateCertificate(certificateFileInputStream);
             sslSenderTrustStore.setCertificateEntry(certificateAlias, certificate);
 
-            FileOutputStream fileOutputStream = new FileOutputStream(sslSenderTrustStoreHolder.getLocation());
-            sslSenderTrustStore.store(fileOutputStream, sslSenderTrustStoreHolder.getPassword().toCharArray());
+            try (FileOutputStream fileOutputStream = new FileOutputStream(sslSenderTrustStoreHolder.getLocation())) {
+                sslSenderTrustStore.store(fileOutputStream, sslSenderTrustStoreHolder.getPassword().toCharArray());
+            }
 
-            FileInputStream fileInputStream = new FileInputStream(sslSenderTrustStoreHolder.getLocation());
-            InputStream dest = IOUtils.toBufferedInputStream(fileInputStream);
-            fileInputStream.close();
-            sslSenderTrustStore.load(dest, sslSenderTrustStoreHolder.getPassword().toCharArray());
-            dest.close();
+            try (
+                FileInputStream fileInputStream = new FileInputStream(sslSenderTrustStoreHolder.getLocation());
+                InputStream bufferedInputStream = IOUtils.toBufferedInputStream(fileInputStream)
+            ) {
+                sslSenderTrustStore.load(bufferedInputStream, sslSenderTrustStoreHolder.getPassword().toCharArray());
+            }
 
             sslSenderTrustStoreHolder.setKeyStore(sslSenderTrustStore);
             KeyStoreReloaderHolder.getInstance().reloadAllKeyStores();
         } catch (CertificateException | IOException | KeyStoreException | NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
+            throw new DeploymentException("Failed to load certificate file to store: " + certificateFilePath, e);
         }
     }
 
