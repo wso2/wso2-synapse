@@ -19,7 +19,6 @@ package org.apache.synapse.util;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
@@ -30,6 +29,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.SynapsePath;
+import org.apache.synapse.util.xpath.SynapseExpression;
+import org.apache.synapse.util.xpath.SynapseExpressionUtils;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
@@ -48,6 +49,9 @@ public final class InlineExpressionUtil {
 
     // Regex to identify expressions in inline text
     private static final Pattern EXPRESSION_PATTERN = Pattern.compile("(\\{[^\\s\",<>}\\]]+})");
+
+    // Regex to identify synapse expressions ${expression} in inline text
+    private static final Pattern SYNAPSE_EXPRESSION_PLACEHOLDER_PATTERN = Pattern.compile("\\$\\{(.+?)}");
 
     private InlineExpressionUtil() {
 
@@ -196,5 +200,49 @@ public final class InlineExpressionUtil {
             // ignore
         }
         return false;
+    }
+
+    /**
+     * Checks whether inline template contains content aware synapse expressions.
+     * Inline expressions will be denoted inside ${}
+     * e.g.: ${var.var1}, ${payload.element.id}
+     *
+     * @param inlineText Inline text string
+     * @return true if the string contains content aware inline synapse expressions, false otherwise
+     */
+    public static boolean isInlineSynapseExpressionsContentAware(String inlineText) {
+
+        Matcher matcher = SYNAPSE_EXPRESSION_PLACEHOLDER_PATTERN.matcher(inlineText);
+        while (matcher.find()) {
+            // Extract the expression inside ${...}
+            String expression = matcher.group(1);
+            if (SynapseExpressionUtils.isSynapseExpressionContentAware(expression)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Process the inline template and replace the synapse expressions with the resolved values
+     *
+     * @param synCtx   Message Context
+     * @param template Inline template
+     * @return Processed inline template
+     */
+    public static String processInLineSynapseExpressionTemplate(MessageContext synCtx, String template)
+            throws JaxenException {
+
+        Matcher matcher = SYNAPSE_EXPRESSION_PLACEHOLDER_PATTERN.matcher(template);
+        StringBuffer result = new StringBuffer();
+        while (matcher.find()) {
+            // Extract the expression inside ${...}
+            String placeholder = matcher.group(1);
+            SynapseExpression expression = new SynapseExpression(placeholder);
+            String replacement = expression.stringValueOf(synCtx);
+            matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(result);
+        return result.toString();
     }
 }

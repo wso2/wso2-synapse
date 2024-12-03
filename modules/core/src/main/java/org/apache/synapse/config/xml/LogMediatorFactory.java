@@ -32,6 +32,7 @@ import java.util.Properties;
  *
  * <pre>
  * &lt;log [level="simple|headers|full|custom"]&gt;
+ *      &lt;message&gt;String template&lt;/message&gt;
  *      &lt;property&gt; *
  * &lt;/log&gt;
  * </pre>
@@ -52,6 +53,8 @@ public class LogMediatorFactory extends AbstractMediatorFactory  {
     private static final QName ATT_LEVEL = new QName("level");
     private static final QName ATT_SEPERATOR = new QName("separator");
     private static final QName ATT_CATEGORY = new QName("category");
+    protected static final QName ELEMENT_MESSAGE_Q
+            = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "message");
 
     public QName getTagQName() {
         return LOG_Q;
@@ -64,7 +67,14 @@ public class LogMediatorFactory extends AbstractMediatorFactory  {
         // after successfully creating the mediator
         // set its common attributes such as tracing etc
         processAuditStatus(logMediator,elem);
-        
+
+        boolean containMessageTemplate = false;
+        OMElement messageElement = elem.getFirstChildWithName(ELEMENT_MESSAGE_Q);
+        if (messageElement != null && messageElement.getText() != null) {
+            logMediator.setMessageTemplate(messageElement.getText());
+            containMessageTemplate = true;
+        }
+
         // Set the high level set of properties to be logged (i.e. log level)
         OMAttribute level = elem.getAttribute(ATT_LEVEL);
         if (level != null) {
@@ -80,6 +90,10 @@ public class LogMediatorFactory extends AbstractMediatorFactory  {
             } else {
                 handleException("Invalid log level. Level has to be one of the following : "
                         + "simple, headers, full, custom");
+            }
+        } else {
+            if (containMessageTemplate) {
+                logMediator.setLogLevel(LogMediator.MESSAGE_TEMPLATE);
             }
         }
 
@@ -112,7 +126,7 @@ public class LogMediatorFactory extends AbstractMediatorFactory  {
         }
 
         logMediator.addAllProperties(MediatorPropertyFactory.getMediatorProperties(elem));
-
+        logMediator.processTemplateAndSetContentAware();
         addAllCommentChildrenToList(elem, logMediator.getCommentsList());
 
         return logMediator;

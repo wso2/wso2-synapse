@@ -32,11 +32,12 @@ import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
+import org.apache.synapse.util.InlineExpressionUtil;
+import org.jaxen.JaxenException;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
 
 /**
  * Logs the specified message into the configured logger. The log levels specify
@@ -56,6 +57,9 @@ public class LogMediator extends AbstractMediator {
     /** all attributes of level 'simple' and the SOAP envelope and any properties */
     public static final int FULL    = 3;
 
+    /** The message template and the additional properties specified to the Log mediator */
+    public static final int MESSAGE_TEMPLATE = 4;
+
     public static final int CATEGORY_INFO = 0;
     public static final int CATEGORY_DEBUG = 1;
     public static final int CATEGORY_TRACE = 2;
@@ -73,6 +77,9 @@ public class LogMediator extends AbstractMediator {
     private int category = CATEGORY_INFO;
     /** The holder for the custom properties */
     private final List<MediatorProperty> properties = new ArrayList<MediatorProperty>();
+
+    private String messageTemplate = "";
+    private boolean isContentAware = false;
 
     /**
      * Logs the current message according to the supplied semantics
@@ -136,6 +143,7 @@ public class LogMediator extends AbstractMediator {
     private String getLogMessage(MessageContext synCtx) {
         switch (logLevel) {
             case CUSTOM:
+            case MESSAGE_TEMPLATE:
                 return getCustomLogMessage(synCtx);
             case SIMPLE:
                 return getSimpleLogMessage(synCtx);
@@ -150,12 +158,18 @@ public class LogMediator extends AbstractMediator {
 
     private String getCustomLogMessage(MessageContext synCtx) {
         StringBuffer sb = new StringBuffer();
+        processMessageTemplate(sb, synCtx, messageTemplate);
         setCustomProperties(sb, synCtx);
         return trimLeadingSeparator(sb);
     }
 
     private String getSimpleLogMessage(MessageContext synCtx) {
         StringBuffer sb = new StringBuffer();
+        processMessageTemplate(sb, synCtx, messageTemplate);
+        // append separator if the message template is not empty
+        if (sb.length() > 0) {
+            sb.append(separator);
+        }
         if (synCtx.getTo() != null)
             sb.append("To: ").append(synCtx.getTo().getAddress());
         else
@@ -180,6 +194,7 @@ public class LogMediator extends AbstractMediator {
 
     private String getHeadersLogMessage(MessageContext synCtx) {
         StringBuffer sb = new StringBuffer();
+        processMessageTemplate(sb, synCtx, messageTemplate);
         if (synCtx.getEnvelope() != null) {
             SOAPHeader header = synCtx.getEnvelope().getHeader();
             if (getCorrelationId(synCtx) != null)
@@ -288,6 +303,16 @@ public class LogMediator extends AbstractMediator {
         }
     }
 
+    public String getMessageTemplate() {
+
+        return messageTemplate;
+    }
+
+    public void setMessageTemplate(String messageTemplate) {
+
+        this.messageTemplate = messageTemplate.replace("\\n", "\n").replace("\\t", "\t");
+    }
+
     private String trimLeadingSeparator(StringBuffer sb) {
         String retStr = sb.toString();
         if (retStr.startsWith(separator)) {
@@ -297,16 +322,32 @@ public class LogMediator extends AbstractMediator {
         }
     }
 
+    private void processMessageTemplate(StringBuffer stringBuffer, MessageContext synCtx, String template) {
+        try {
+            stringBuffer.append(InlineExpressionUtil.processInLineSynapseExpressionTemplate(synCtx, template));
+        } catch (JaxenException e) {
+            handleException("Failed to process the message template : " + template, e, synCtx);
+        }
+    }
+
     @Override
     public boolean isContentAware() {
-        if (logLevel == CUSTOM) {
+
+        return isContentAware;
+    }
+
+    public void processTemplateAndSetContentAware() {
+
+        if (logLevel == MESSAGE_TEMPLATE || logLevel == CUSTOM) {
             for (MediatorProperty property : properties) {
                 if (property.getExpression() != null && property.getExpression().isContentAware()) {
-                    return true;
+                    isContentAware = true;
+                    return;
                 }
             }
-            return false;
+            isContentAware = InlineExpressionUtil.isInlineSynapseExpressionsContentAware(messageTemplate);
+        } else {
+            isContentAware = true;
         }
-        return true;
     }
 }
