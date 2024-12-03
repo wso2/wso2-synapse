@@ -52,6 +52,7 @@ public class ExpressionConstants {
     public static final String OBJECT = "object";
     public static final String ARRAY = "array";
     public static final String REGISTRY = "registry";
+    public static final String PROPERTY = "property";
     public static final String EXISTS = "exists";
     public static final String XPATH = "xpath";
     public static final String SECRET = "secret";

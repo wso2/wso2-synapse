@@ -220,7 +220,12 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
                     return new PredefinedFunctionNode(parameterList, ExpressionConstants.NOT);
                 case ExpressionConstants.REGISTRY:
                     if (ctx.functionCallSuffix() != null) {
-                        if (ctx.functionCallSuffix().jsonPathExpression() != null) {
+                        if (ctx.functionCallSuffix().ID() != null &&
+                                ExpressionConstants.PROPERTY.equals(ctx.functionCallSuffix().ID().getText()) &&
+                                !ctx.functionCallSuffix().expression().isEmpty()) {
+                            parameterList.addArgument(visit(ctx.functionCallSuffix().expression(0)));
+                            return new PredefinedFunctionNode(parameterList, ExpressionConstants.REGISTRY);
+                        } else if (ctx.functionCallSuffix().jsonPathExpression() != null) {
                             PredefinedFunctionNode node = new PredefinedFunctionNode(parameterList,
                                     ExpressionConstants.REGISTRY);
                             return visitJsonPathAfterPayload(ctx.functionCallSuffix().jsonPathExpression(),

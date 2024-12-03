@@ -20,9 +20,7 @@ package org.apache.synapse.util.synapse.expression.ast;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
-import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSyntaxException;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
@@ -37,7 +35,6 @@ import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
 import org.apache.synapse.util.synapse.expression.context.EvaluationContext;
 import org.apache.synapse.util.synapse.expression.exception.EvaluationException;
 import org.apache.synapse.util.synapse.expression.utils.ExpressionUtils;
-import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.jaxen.JaxenException;
 
 import java.io.IOException;
@@ -128,7 +125,7 @@ public class PayloadAccessNode implements ExpressionNode {
                 String expressionToEvaluate = variableAndExpression[1];
                 // if no expression just return variable
                 if (StringUtils.isEmpty(expressionToEvaluate)) {
-                    return parseVariable(variable);
+                    result = variable;
                 } else {
                     expressionToEvaluate = expressionToEvaluate.startsWith(".") ? "$" + expressionToEvaluate
                             : "$." + expressionToEvaluate;
@@ -193,6 +190,12 @@ public class PayloadAccessNode implements ExpressionNode {
             return new ExpressionResult((Boolean) result);
         } else if (result instanceof List) {
             return new ExpressionResult((List) result);
+        } else if (result instanceof Float) {
+            return new ExpressionResult((Double) result);
+        } else if (result instanceof Short) {
+            return new ExpressionResult((Integer) result);
+        } else if (result instanceof OMNode) {
+            return new ExpressionResult((OMNode) result);
         }
         return null;
     }
@@ -207,37 +210,5 @@ public class PayloadAccessNode implements ExpressionNode {
             resultString = resultString.replace("\"", "");
         }
         expression = expression.replaceFirst(regex, resultString);
-    }
-
-    private ExpressionResult parseVariable(Object variable) {
-        if (variable instanceof List) {
-            return new ExpressionResult((List) variable);
-        } else if (variable instanceof OMNode) {
-            return new ExpressionResult((OMNode) variable);
-        } else if (variable instanceof JsonElement) {
-            return new ExpressionResult((JsonElement) variable);
-        } else {
-            try {
-                return new ExpressionResult(Integer.parseInt(variable.toString()));
-            } catch (NumberFormatException e1) {
-                // If integer parsing fails, attempt to parse as double
-                try {
-                    return new ExpressionResult(Double.parseDouble(variable.toString()));
-                } catch (NumberFormatException e2) {
-                    // If double parsing fails, attempt to parse as JSON
-                    try {
-                        if (variable.equals("")) {
-                            // avoid converting empty string to NULL value
-                            return new ExpressionResult("");
-                        }
-                        JsonElement jsonElement = JsonParser.parseString(variable.toString());
-                        return new ExpressionResult(jsonElement);
-                    } catch (JsonSyntaxException e3) {
-                        // If JSON parsing fails, return the variable as a string
-                        return new ExpressionResult(variable.toString());
-                    }
-                }
-            }
-        }
     }
 }

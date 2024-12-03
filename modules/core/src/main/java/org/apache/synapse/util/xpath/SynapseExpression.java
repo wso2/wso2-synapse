@@ -87,8 +87,7 @@ public class SynapseExpression extends SynapsePath {
             while (matcher.find()) {
                 if (matcher.group(2) != null) {
                     // evaluating xpath on a variable so not content aware
-                    isContentAware = false;
-                    break;
+                    continue;
                 }
                 String xpath = matcher.group(1);
                 try {
