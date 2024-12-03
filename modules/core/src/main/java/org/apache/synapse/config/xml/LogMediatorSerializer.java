@@ -44,13 +44,25 @@ public class LogMediatorSerializer extends AbstractMediatorSerializer {
         OMElement log = fac.createOMElement("log", synNS);
         saveTracingState(log,mediator);
 
-        if (mediator.getLogLevel() != LogMediator.MESSAGE_TEMPLATE) {
-            log.addAttribute(fac.createOMAttribute(
-                "level", nullNS,
-                    mediator.getLogLevel() == LogMediator.HEADERS ? "headers" :
-                    mediator.getLogLevel() == LogMediator.FULL ? "full" :
-                    mediator.getLogLevel() == LogMediator.CUSTOM ? "custom" : "simple"
-                ));
+        String logLevel = "";
+        switch (mediator.getLogLevel()) {
+            case LogMediator.CUSTOM:
+                logLevel = "custom";
+                break;
+            case LogMediator.HEADERS:
+                logLevel = "headers";
+                break;
+            case LogMediator.FULL:
+                logLevel = "full";
+                break;
+            case LogMediator.MESSAGE_TEMPLATE:
+                OMElement messageElement = fac.createOMElement("message", synNS);
+                messageElement.setText(mediator.getMessageTemplate());
+                log.addChild(messageElement);
+                break;
+        }
+        if (StringUtils.isNotBlank(logLevel)) {
+            log.addAttribute(fac.createOMAttribute("level", nullNS, logLevel));
         }
 
         if (mediator.getCategory() != LogMediator.CATEGORY_INFO) {
@@ -73,12 +85,6 @@ public class LogMediatorSerializer extends AbstractMediatorSerializer {
         if (!LogMediator.DEFAULT_SEP.equals(mediator.getSeparator())) {
             log.addAttribute(fac.createOMAttribute(
                     "separator", nullNS, mediator.getSeparator()));
-        }
-
-        if (StringUtils.isNotBlank(mediator.getMessageTemplate())) {
-            OMElement onCompleteElem = fac.createOMElement("message", synNS);
-            onCompleteElem.setText(mediator.getMessageTemplate());
-            log.addChild(onCompleteElem);
         }
 
         super.serializeProperties(log, mediator.getProperties());

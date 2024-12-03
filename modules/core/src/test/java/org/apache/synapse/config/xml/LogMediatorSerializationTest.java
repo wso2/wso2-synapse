@@ -55,6 +55,7 @@ public class LogMediatorSerializationTest extends AbstractTestCase {
 
         assertTrue(serialization(getXmlOfLogMediatorWithTemplate(), logMediatorFactory, logMediatorSerializer));
         assertTrue(serialization(getXmlOfLogMediatorWithTemplateAndProps(), logMediatorFactory, logMediatorSerializer));
+        assertTrue(serialization(getXmlOfLogMediatorWithEmptyTemplateAndProps(), logMediatorFactory, logMediatorSerializer));
     }
 
     public void testLogMediatorSerializationSenarioOne() throws Exception {
@@ -147,6 +148,12 @@ public class LogMediatorSerializationTest extends AbstractTestCase {
                 "<property name=\"Text\" value=\"Sending quote request\"/></log>";
     }
 
+    private String getXmlOfLogMediatorWithEmptyTemplateAndProps() {
+        return "<log xmlns=\"http://ws.apache.org/ns/synapse\">" +
+                "<message></message>" +
+                "<property name=\"Text\" value=\"Sending quote request\"/></log>";
+    }
+
     private String getXmlOfMediatorScenarioOneA(String level) {
         return "<log level=\"" +
                 level + "\"><property name=\"Text\" value=\"Sending quote request\"/></log>";
@@ -161,7 +168,7 @@ public class LogMediatorSerializationTest extends AbstractTestCase {
     }
 
     private String getXmlOfMediatorScenarioThree(String category) {
-        return "<log xmlns=\"http://ws.apache.org/ns/synapse\" level=\"simple\" category=\"" +
+        return "<log xmlns=\"http://ws.apache.org/ns/synapse\" category=\"" +
                 category + "\"><property name=\"Text\" value=\"Sending quote request\"/></log>";
 
     }
