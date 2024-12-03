@@ -18,6 +18,7 @@
 
 package org.apache.synapse.util.synapse.expression;
 
+import com.google.gson.JsonParser;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -105,8 +106,8 @@ public class TestUtils {
     static {
         variableMap1 = new HashMap<>();
         variableMap1.put("name", "John");
-        variableMap1.put("age", "30");
-        variableMap1.put("cars", "[\"Ford\",\"BMW\",\"Fiat\",\"Honda\",\"Lexus\",\"KIA\"]");
+        variableMap1.put("age", 30);
+        variableMap1.put("cars", JsonParser.parseString("[\"Ford\",\"BMW\",\"Fiat\",\"Honda\",\"Lexus\",\"KIA\"]").getAsJsonArray());
         variableMap1.put("index", "1");
         variableMap1.put("num1", 10);
         variableMap1.put("num2", 5);
