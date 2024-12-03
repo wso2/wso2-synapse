@@ -17,6 +17,8 @@
  */
 package org.apache.synapse.transport.dynamicconfigurations;
 
+import org.apache.axis2.AxisFault;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +39,7 @@ public class KeyStoreReloaderHolder {
         keyStoreLoaders.add(keyStoreLoader);
     }
 
-    public void reloadAllKeyStores() {
+    public void reloadAllKeyStores() throws AxisFault {
         for (KeyStoreReloader keyStoreLoader : keyStoreLoaders) {
             keyStoreLoader.update();
         }

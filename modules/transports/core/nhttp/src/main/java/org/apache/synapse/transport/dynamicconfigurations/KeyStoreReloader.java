@@ -38,12 +38,8 @@ public class KeyStoreReloader {
         KeyStoreReloaderHolder.getInstance().addKeyStoreLoader(this);
     }
 
-    public void update() {
+    public void update() throws AxisFault {
 
-        try {
-            keyStoreLoader.loadKeyStore(transportOutDescription);
-        } catch (AxisFault e) {
-            throw new RuntimeException(e);
-        }
+        keyStoreLoader.loadKeyStore(transportOutDescription);
     }
 }
