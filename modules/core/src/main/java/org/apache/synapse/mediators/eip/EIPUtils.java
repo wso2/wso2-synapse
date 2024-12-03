@@ -434,4 +434,8 @@ public class EIPUtils {
         });
     }
 
+    public static JsonObject convertMapToJsonObj(Object map) {
+        return new GsonBuilder().create().toJsonTree(map).getAsJsonObject();
+    }
+
 }

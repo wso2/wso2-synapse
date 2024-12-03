@@ -42,6 +42,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.commons.json.Constants;
@@ -50,6 +51,7 @@ import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.apache.synapse.util.CallMediatorEnrichUtil;
 import org.apache.synapse.util.InlineExpressionUtil;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
@@ -58,7 +60,9 @@ import org.jaxen.JaxenException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -86,6 +90,8 @@ public class Target {
     private SynapsePath xpath = null;
 
     private String property = null;
+
+    private String variable = null;
 
     private int targetType = EnrichMediator.CUSTOM;
 
@@ -459,6 +465,18 @@ public class Target {
                 }
                 break;
             }
+            case EnrichMediator.VARIABLE:
+                if (action.equalsIgnoreCase(ACTION_REPLACE)) {
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("payload", sourceJsonElement);
+                    Map transportHeaders = (Map)((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                            .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+                    JsonObject headers = EIPUtils.convertMapToJsonObj(transportHeaders);
+                    result.put("headers", headers);
+                    result.put("attributes", CallMediatorEnrichUtil.populateTransportAttributes(synCtx));
+                    synCtx.setVariable(variable, result);
+                }
+                break;
             default: {
                 synLog.error("Case mismatch for type: " + targetType);
             }
@@ -681,6 +699,14 @@ public class Target {
 
     public void setProperty(String property) {
         this.property = property;
+    }
+
+    public void setVariable(String variable) {
+        this.variable    = variable;
+    }
+
+    public String getVariable() {
+        return variable;
     }
 
     public void setTargetType(int targetType) {

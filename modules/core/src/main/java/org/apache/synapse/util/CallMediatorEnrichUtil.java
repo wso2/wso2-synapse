@@ -37,6 +37,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -58,6 +59,7 @@ public class CallMediatorEnrichUtil {
     public static final String ENVELOPE = "envelope";
     public static final String BODY = "body";
     public static final String INLINE = "inline";
+    public static final String VARIABLE = "variable";
 
     public static final String JSON_TYPE = "application/json";
     public static final String TEXT_TYPE = "text/plain";
@@ -75,6 +77,8 @@ public class CallMediatorEnrichUtil {
             return EnrichMediator.CUSTOM;
         } else if (type.equals(INLINE)) {
             return EnrichMediator.INLINE;
+        } else if (type.equals(VARIABLE)) {
+            return EnrichMediator.VARIABLE;
         }
         return -1;
     }
@@ -295,6 +299,20 @@ public class CallMediatorEnrichUtil {
 
     public static SynapseLog getLog(MessageContext synCtx) {
         return new MediatorLog(log, false, synCtx);
+    }
+
+    public static JsonObject populateTransportAttributes(MessageContext synCtx) {
+        JsonObject attributes = new JsonObject();
+        Object httpStatusCodeObj = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(
+                SynapseConstants.HTTP_SC);
+        if (httpStatusCodeObj != null) {
+            if (httpStatusCodeObj instanceof String) {
+                attributes.addProperty("statusCode", (String) httpStatusCodeObj);
+            } else if (httpStatusCodeObj instanceof Integer) {
+                attributes.addProperty("statusCode", (Integer) httpStatusCodeObj);
+            }
+        }
+        return attributes;
     }
 
 }

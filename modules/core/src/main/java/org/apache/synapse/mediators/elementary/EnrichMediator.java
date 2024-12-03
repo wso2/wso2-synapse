@@ -85,6 +85,8 @@ public class EnrichMediator extends AbstractMediator {
 
     public static final int KEY = 5;
 
+    public static final int VARIABLE = 6;
+
     private Source source = null;
 
     private Target target = null;
