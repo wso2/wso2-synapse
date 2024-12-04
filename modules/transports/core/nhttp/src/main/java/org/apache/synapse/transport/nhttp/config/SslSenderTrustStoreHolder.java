@@ -83,4 +83,9 @@ public class SslSenderTrustStoreHolder {
     public String getType() {
         return this.type;
     }
+
+    public boolean isValid() {
+        return keyStore != null && location != null && !location.isEmpty() &&
+                password != null && !password.isEmpty();
+    }
 }

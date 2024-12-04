@@ -88,7 +88,7 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
                 }
                 log.info("LocalEntry named '" + e.getKey()
                         + "' has been deployed from file : " + fileName);
-                handleHttpConnectorCertificates(artifactConfig);
+                handleSSLSenderCertificates(artifactConfig);
                 return e.getKey();
             } else {
                 handleSynapseArtifactDeploymentError("LocalEntry Deployment Failed. The artifact " +
@@ -102,7 +102,7 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
         return null;
     }
 
-    private void handleHttpConnectorCertificates(OMElement element) throws DeploymentException {
+    private void handleSSLSenderCertificates(OMElement element) throws DeploymentException {
 
         OMElement httpInitElement =
                 element.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, HTTP_CONNECTION_IDENTIFIER));
@@ -113,40 +113,50 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
                 String childElementValue = childElement.getText();
                 String transformedElementValue = getTransformedElementValue(childElementValue);
                 if (transformedElementValue.endsWith(CERTIFICATE_EXTENSION)) {
-                    loadCertificateFileToStore(transformedElementValue);
+                    loadCertificateFileToSSLSenderTrustStore(transformedElementValue);
+                    loadUpdatedSSL();
                 }
             }
         }
     }
 
-    private void loadCertificateFileToStore(String certificateFileResourceKey) throws DeploymentException {
+    private void loadCertificateFileToSSLSenderTrustStore(String certificateFileResourceKey) throws DeploymentException {
 
         String certificateFilePath = getSynapseConfiguration().getRegistry().getRegistryEntry(certificateFileResourceKey).getName();
         File certificateFile = new File(certificateFilePath);
         String certificateAlias = certificateFile.getName().split("\\.")[0];
-        try (FileInputStream certificateFileInputStream = FileUtils.openInputStream(new File(certificateFilePath))) {
-            SslSenderTrustStoreHolder sslSenderTrustStoreHolder = SslSenderTrustStoreHolder.getInstance();
-            KeyStore sslSenderTrustStore = sslSenderTrustStoreHolder.getKeyStore();
+        SslSenderTrustStoreHolder sslSenderTrustStoreHolder = SslSenderTrustStoreHolder.getInstance();
+        if (sslSenderTrustStoreHolder.isValid()) {
+            try (FileInputStream certificateFileInputStream = FileUtils.openInputStream(new File(certificateFilePath))) {
+                KeyStore sslSenderTrustStore = sslSenderTrustStoreHolder.getKeyStore();
 
-            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-            Certificate certificate = certificateFactory.generateCertificate(certificateFileInputStream);
-            sslSenderTrustStore.setCertificateEntry(certificateAlias, certificate);
+                CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+                Certificate certificate = certificateFactory.generateCertificate(certificateFileInputStream);
+                sslSenderTrustStore.setCertificateEntry(certificateAlias, certificate);
 
-            try (FileOutputStream fileOutputStream = new FileOutputStream(sslSenderTrustStoreHolder.getLocation())) {
-                sslSenderTrustStore.store(fileOutputStream, sslSenderTrustStoreHolder.getPassword().toCharArray());
+                try (FileOutputStream fileOutputStream = new FileOutputStream(sslSenderTrustStoreHolder.getLocation())) {
+                    sslSenderTrustStore.store(fileOutputStream, sslSenderTrustStoreHolder.getPassword().toCharArray());
+                }
+            } catch (CertificateException | IOException | KeyStoreException | NoSuchAlgorithmException e) {
+                throw new DeploymentException("Failed to load certificate file to store: " + certificateFilePath, e);
             }
+        }
+    }
 
+    private void loadUpdatedSSL() throws DeploymentException {
+        SslSenderTrustStoreHolder sslSenderTrustStoreHolder = SslSenderTrustStoreHolder.getInstance();
+        KeyStore sslSenderTrustStore = sslSenderTrustStoreHolder.getKeyStore();
+        if (sslSenderTrustStoreHolder.isValid()) {
             try (
-                FileInputStream fileInputStream = new FileInputStream(sslSenderTrustStoreHolder.getLocation());
-                InputStream bufferedInputStream = IOUtils.toBufferedInputStream(fileInputStream)
+                    FileInputStream fileInputStream = new FileInputStream(sslSenderTrustStoreHolder.getLocation());
+                    InputStream bufferedInputStream = IOUtils.toBufferedInputStream(fileInputStream)
             ) {
                 sslSenderTrustStore.load(bufferedInputStream, sslSenderTrustStoreHolder.getPassword().toCharArray());
+                sslSenderTrustStoreHolder.setKeyStore(sslSenderTrustStore);
+                KeyStoreReloaderHolder.getInstance().reloadAllKeyStores();
+            } catch (IOException | CertificateException | NoSuchAlgorithmException e) {
+                throw new DeploymentException("Failed to load updated SSL configuration from the trust store at: " + sslSenderTrustStoreHolder.getLocation(), e);
             }
-
-            sslSenderTrustStoreHolder.setKeyStore(sslSenderTrustStore);
-            KeyStoreReloaderHolder.getInstance().reloadAllKeyStores();
-        } catch (CertificateException | IOException | KeyStoreException | NoSuchAlgorithmException e) {
-            throw new DeploymentException("Failed to load certificate file to store: " + certificateFilePath, e);
         }
     }
 
