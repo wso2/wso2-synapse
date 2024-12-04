@@ -97,24 +97,20 @@ public class MediatorWorker implements Runnable {
                 debugManager.advertiseMediationFlowStartPoint(synCtx);
             }
 
+            boolean result = seq.mediate(synCtx);
             // If this is a scatter message, then we need to use the continuation state and continue the mediation
-            if (isScatterMessage(synCtx)) {
-                boolean result = seq.mediate(synCtx);
-                if (result) {
-                    SeqContinuationState seqContinuationState = (SeqContinuationState) ContinuationStackManager.peakContinuationStateStack(synCtx);
-                    if (seqContinuationState == null) {
-                        return;
-                    }
-                    SequenceMediator sequenceMediator = ContinuationStackManager.retrieveSequence(synCtx, seqContinuationState);
-
-                    FlowContinuableMediator mediator =
-                            (FlowContinuableMediator) sequenceMediator.getChild(seqContinuationState.getPosition());
-
-                    synCtx.setProperty(SynapseConstants.CONTINUE_FLOW_TRIGGERED_FROM_MEDIATOR_WORKER, true);
-                    mediator.mediate(synCtx, seqContinuationState);
+            if (isScatterMessage(synCtx) && result) {
+                SeqContinuationState seqContinuationState = (SeqContinuationState) ContinuationStackManager.peakContinuationStateStack(synCtx);
+                if (seqContinuationState == null) {
+                    return;
                 }
-            } else {
-                seq.mediate(synCtx);
+                SequenceMediator sequenceMediator = ContinuationStackManager.retrieveSequence(synCtx, seqContinuationState);
+
+                FlowContinuableMediator mediator =
+                        (FlowContinuableMediator) sequenceMediator.getChild(seqContinuationState.getPosition());
+
+                synCtx.setProperty(SynapseConstants.CONTINUE_FLOW_TRIGGERED_FROM_MEDIATOR_WORKER, true);
+                mediator.mediate(synCtx, seqContinuationState);
             }
             //((Axis2MessageContext)synCtx).getAxis2MessageContext().getEnvelope().discard();
 
@@ -188,7 +184,7 @@ public class MediatorWorker implements Runnable {
      */
     private static boolean isScatterMessage(MessageContext synCtx) {
 
-        Boolean isSkipContinuationState = (Boolean) synCtx.getProperty(SynapseConstants.SCATTER_MESSAGES);
-        return isSkipContinuationState != null && isSkipContinuationState;
+        Boolean isScatterMessage = (Boolean) synCtx.getProperty(SynapseConstants.SCATTER_MESSAGES);
+        return isScatterMessage != null && isScatterMessage;
     }
 }

@@ -31,6 +31,7 @@ import org.apache.synapse.mediators.v2.ScatterGather;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TimerTask;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * An instance of this class is created to manage each aggregation group, and it holds
@@ -53,7 +54,7 @@ public class Aggregate extends TimerTask {
     private AggregateMediator aggregateMediator = null;
     private ScatterGather scatterGatherMediator = null;
     private List<MessageContext> messages = new ArrayList<MessageContext>();
-    private boolean locked = false;
+    private ReentrantLock lock = new ReentrantLock();
     private boolean completed = false;
     private SynapseEnvironment synEnv = null;
 
@@ -313,15 +314,15 @@ public class Aggregate extends TimerTask {
     }
 
     public synchronized boolean getLock() {
-        if (!locked) {
-            locked = true;
-            return true;
-        }
-        return false;
+
+        return lock.tryLock();
     }
 
     public synchronized void releaseLock() {
-        locked = false;
+
+        if (lock.isHeldByCurrentThread()) {
+            lock.unlock();
+        }
     }
 
     public boolean isCompleted() {
@@ -331,5 +332,4 @@ public class Aggregate extends TimerTask {
     public void setCompleted(boolean completed) {
         this.completed = completed;
     }
-
 }
