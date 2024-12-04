@@ -54,7 +54,7 @@ public class ScatterGatherMediatorFactory extends AbstractMediatorFactory {
             = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "scatter-gather");
     private static final QName ELEMENT_AGGREGATE_Q
             = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "aggregation");
-    private static final QName ATT_VALUE_TO_AGGREGATE = new QName("value");
+    private static final QName ATT_AGGREGATE_EXPRESSION = new QName("expression");
     private static final QName ATT_CONDITION = new QName("condition");
     private static final QName ATT_TIMEOUT = new QName("timeout");
     private static final QName ATT_MIN_MESSAGES = new QName("min-messages");
@@ -62,6 +62,7 @@ public class ScatterGatherMediatorFactory extends AbstractMediatorFactory {
     private static final QName SEQUENCE_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "sequence");
     private static final QName PARALLEL_EXEC_Q = new QName("parallel-execution");
     private static final QName RESULT_TARGET_Q = new QName("result-target");
+    private static final QName ROOT_ELEMENT_Q = new QName("root-element");
     private static final QName CONTENT_TYPE_Q = new QName("content-type");
 
     private static final SequenceMediatorFactory fac = new SequenceMediatorFactory();
@@ -87,7 +88,15 @@ public class ScatterGatherMediatorFactory extends AbstractMediatorFactory {
             if ("JSON".equals(contentTypeAttr.getAttributeValue())) {
                 mediator.setContentType(ScatterGather.JSON_TYPE);
             } else if ("XML".equals(contentTypeAttr.getAttributeValue())) {
-                mediator.setContentType(ScatterGather.XML_TYPE);
+                OMAttribute rootElementAttr = elem.getAttribute(ROOT_ELEMENT_Q);
+                if (rootElementAttr != null && StringUtils.isNotBlank(rootElementAttr.getAttributeValue())) {
+                    mediator.setRootElementName(rootElementAttr.getAttributeValue());
+                    mediator.setContentType(ScatterGather.XML_TYPE);
+                } else {
+                    String msg = "The 'root-element' attribute is required for the configuration of a " +
+                            "Scatter Gather mediator when the 'content-type' is 'XML'";
+                    throw new SynapseException(msg);
+                }
             } else {
                 String msg = "The 'content-type' attribute should be either 'JSON' or 'XML'";
                 throw new SynapseException(msg);
@@ -119,16 +128,16 @@ public class ScatterGatherMediatorFactory extends AbstractMediatorFactory {
 
         OMElement aggregateElement = elem.getFirstChildWithName(ELEMENT_AGGREGATE_Q);
         if (aggregateElement != null) {
-            OMAttribute aggregateExpr = aggregateElement.getAttribute(ATT_VALUE_TO_AGGREGATE);
+            OMAttribute aggregateExpr = aggregateElement.getAttribute(ATT_AGGREGATE_EXPRESSION);
             if (aggregateExpr != null) {
                 try {
                     mediator.setAggregationExpression(
-                            SynapsePathFactory.getSynapsePath(aggregateElement, ATT_VALUE_TO_AGGREGATE));
+                            SynapsePathFactory.getSynapsePath(aggregateElement, ATT_AGGREGATE_EXPRESSION));
                 } catch (JaxenException e) {
                     handleException("Unable to load the aggregating expression", e);
                 }
             } else {
-                String msg = "The 'value' attribute is required for the configuration of a Scatter Gather mediator";
+                String msg = "The 'expression' attribute is required for the configuration of a Scatter Gather mediator";
                 throw new SynapseException(msg);
             }
 

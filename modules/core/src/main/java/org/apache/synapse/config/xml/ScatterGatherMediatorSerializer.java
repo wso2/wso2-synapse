@@ -19,6 +19,7 @@
 package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.eip.Target;
 import org.apache.synapse.mediators.v2.ScatterGather;
@@ -47,11 +48,15 @@ public class ScatterGatherMediatorSerializer extends AbstractMediatorSerializer 
                 "result-target", nullNS, scatterGatherMediator.getResultTarget()));
         scatterGatherElement.addAttribute(fac.createOMAttribute(
                 "content-type", nullNS, scatterGatherMediator.getContentType()));
+        if (StringUtils.isNotBlank(scatterGatherMediator.getRootElementName())) {
+            scatterGatherElement.addAttribute(fac.createOMAttribute(
+                    "root-element", nullNS, scatterGatherMediator.getRootElementName()));
+        }
 
         OMElement aggregationElement = fac.createOMElement("aggregation", synNS);
 
         SynapsePathSerializer.serializePath(
-                scatterGatherMediator.getAggregationExpression(), aggregationElement, "value");
+                scatterGatherMediator.getAggregationExpression(), aggregationElement, "expression");
 
         if (scatterGatherMediator.getCorrelateExpression() != null) {
             SynapsePathSerializer.serializePath(

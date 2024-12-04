@@ -20,18 +20,19 @@ package org.apache.synapse.mediators.v2;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
+import org.apache.axiom.om.util.AXIOMUtil;
+import org.apache.axiom.soap.SOAP11Constants;
+import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.context.OperationContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.ContinuationState;
-import org.apache.synapse.JSONObjectExtensionException;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
@@ -59,12 +60,10 @@ import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.eip.EIPConstants;
-import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.mediators.eip.SharedDataHolder;
 import org.apache.synapse.mediators.eip.Target;
 import org.apache.synapse.mediators.eip.aggregator.Aggregate;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
-import org.apache.synapse.util.JSONMergeUtils;
 import org.apache.synapse.util.MessageHelper;
 
 import java.io.ByteArrayInputStream;
@@ -100,6 +99,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
     private boolean parallelExecution = true;
     private Integer statisticReportingIndex;
     private String contentType;
+    private String rootElementName;
     private String resultTarget;
     private SynapseEnvironment synapseEnv;
 
@@ -265,6 +265,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
         // If the continuation is triggered from a mediator worker and has children, then mediate through the sub branch
         // otherwise start aggregation
         if (isContinuationTriggeredFromMediatorWorker(synCtx)) {
+            synLog.traceOrDebug("Continuation is triggered from a mediator worker");
             if (continuationState.hasChild()) {
                 int subBranch = ((ReliantContinuationState) continuationState.getChildContState()).getSubBranch();
                 SequenceMediator branchSequence = targets.get(subBranch).getSequence();
@@ -280,6 +281,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
                 result = true;
             }
         } else {
+            synLog.traceOrDebug("Continuation is triggered from a callback");
             // If the continuation is triggered from a callback, continue the mediation from the continuation state
             int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
 
@@ -312,9 +314,10 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
         String correlationIdName = EIPConstants.AGGREGATE_CORRELATION + "." + id;
 
         Object correlationID = synCtx.getProperty(correlationIdName);
-        String correlation;
+        String correlation = (String) correlationID;
+        synLog.traceOrDebug("Aggregating messages started for correlation : " + correlation);
 
-        Object result = null;
+        boolean isAggregationConditionMet = false;
         // When the target sequences are not content aware, the message builder wont get triggered.
         // Therefore, we need to build the message to do the aggregation.
         try {
@@ -324,71 +327,12 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
         }
 
         if (correlateExpression != null) {
-            result = correlateExpression.objectValueOf(synCtx);
-            if (result instanceof List) {
-                if (((List) result).isEmpty()) {
-                    handleException("Failed to evaluate correlate expression: " + correlateExpression.toString(), synCtx);
-                }
-            }
-            if (result instanceof JsonPrimitive) {
-                if (!((JsonPrimitive) result).getAsBoolean()) {
-                    return false;
-                }
-            }
-            if (result instanceof Boolean) {
-                if (!(Boolean) result) {
-                    return false;
-                }
+            String expressionResult = correlateExpression.stringValueOf(synCtx);
+            if ("true".equalsIgnoreCase(expressionResult)) {
+                isAggregationConditionMet = true;
             }
         }
-        if (result != null) {
-            while (aggregate == null) {
-                synchronized (lock) {
-                    if (activeAggregates.containsKey(correlateExpression.toString())) {
-                        aggregate = activeAggregates.get(correlateExpression.toString());
-                        if (aggregate != null) {
-                            if (!aggregate.getLock()) {
-                                aggregate = null;
-                            }
-                        }
-                    } else {
-                        if (synLog.isTraceOrDebugEnabled()) {
-                            synLog.traceOrDebug("Creating new Aggregator - " +
-                                    (completionTimeoutMillis > 0 ? "expires in : "
-                                            + (completionTimeoutMillis / 1000) + "secs" :
-                                            "without expiry time"));
-                        }
-                        if (isAggregationCompleted(synCtx)) {
-                            return false;
-                        }
-
-                        Double minMsg = -1.0;
-                        if (minMessagesToComplete != null) {
-                            minMsg = Double.parseDouble(minMessagesToComplete.evaluateValue(synCtx));
-                        }
-                        Double maxMsg = -1.0;
-                        if (maxMessagesToComplete != null) {
-                            maxMsg = Double.parseDouble(maxMessagesToComplete.evaluateValue(synCtx));
-                        }
-
-                        aggregate = new Aggregate(
-                                synCtx.getEnvironment(),
-                                correlateExpression.toString(),
-                                completionTimeoutMillis,
-                                minMsg.intValue(),
-                                maxMsg.intValue(), this, synCtx.getFaultStack().peek());
-
-                        if (completionTimeoutMillis > 0) {
-                            synCtx.getConfiguration().getSynapseTimer().
-                                    schedule(aggregate, completionTimeoutMillis);
-                        }
-                        aggregate.getLock();
-                        activeAggregates.put(correlateExpression.toString(), aggregate);
-                    }
-                }
-            }
-        } else if (correlationID instanceof String) {
-            correlation = (String) correlationID;
+        if (correlateExpression == null || isAggregationConditionMet) {
             while (aggregate == null) {
                 synchronized (lock) {
                     if (activeAggregates.containsKey(correlation)) {
@@ -397,8 +341,6 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
                             if (!aggregate.getLock()) {
                                 aggregate = null;
                             }
-                        } else {
-                            break;
                         }
                     } else {
                         if (synLog.isTraceOrDebugEnabled()) {
@@ -446,9 +388,6 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
                     }
                 }
             }
-        } else {
-            synLog.traceOrDebug("Unable to find aggregation correlation property");
-            return false;
         }
         // if there is an aggregate continue on aggregation
         if (aggregate != null) {
@@ -463,9 +402,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
             }
             if (aggregate.isComplete(synLog)) {
                 synLog.traceOrDebug("Aggregation completed");
-                boolean onCompleteSeqResult = completeAggregate(aggregate);
-                synLog.traceOrDebug("End : Scatter Gather mediator");
-                return onCompleteSeqResult;
+                return completeAggregate(aggregate);
             } else {
                 aggregate.releaseLock();
             }
@@ -482,9 +419,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
         if (aggregateTimeoutHolderObj != null) {
             SharedDataHolder sharedDataHolder = (SharedDataHolder) aggregateTimeoutHolderObj;
             if (sharedDataHolder.isAggregationCompleted()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Received a response for already completed Aggregate");
-                }
+                log.debug("Received a response for already completed Aggregate");
                 return true;
             }
         }
@@ -498,10 +433,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
         if (wasComplete) {
             return false;
         }
-
-        if (log.isDebugEnabled()) {
-            log.debug("Aggregation completed or timed out");
-        }
+        log.debug("Aggregation completed or timed out");
 
         // cancel the timer
         synchronized (this) {
@@ -567,6 +499,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
                     statisticReportingIndex, isContentAltering());
         }
 
+        getLog(messageContext).traceOrDebug("End : Scatter Gather mediator");
         boolean result = false;
         if (seqContinuationState != null) {
             SequenceMediator sequenceMediator = ContinuationStackManager.retrieveSequence(messageContext, seqContinuationState);
@@ -646,145 +579,64 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
         }
     }
 
-    private static void enrichEnvelope(MessageContext messageContext, SynapsePath expression) {
-
-        OMElement enrichingElement;
-        List elementList = getMatchingElements(messageContext, expression);
-        if (EIPUtils.checkNotEmpty(elementList)) {
-            // attach at parent of the first result from the XPath, or to the SOAPBody
-            Object o = elementList.get(0);
-            if (o instanceof OMElement &&
-                    ((OMElement) o).getParent() != null &&
-                    ((OMElement) o).getParent() instanceof OMElement) {
-                enrichingElement = (OMElement) ((OMElement) o).getParent();
-                OMElement body = messageContext.getEnvelope().getBody();
-                if (!EIPUtils.isBody(body, enrichingElement)) {
-                    OMElement nonBodyElem = enrichingElement;
-                    enrichingElement = messageContext.getEnvelope().getBody();
-                    addChildren(elementList, enrichingElement);
-                    while (!EIPUtils.isBody(body, (OMElement) nonBodyElem.getParent())) {
-                        nonBodyElem = (OMElement) nonBodyElem.getParent();
-                    }
-                    nonBodyElem.detach();
-                }
-            }
-        }
-    }
-
     private void setAggregatedMessageAsVariable(MessageContext originalMessageContext, Aggregate aggregate) {
 
-        Object variable = originalMessageContext.getVariable(resultTarget);
-        if (variable == null) {
-            variable = createNewVariable(originalMessageContext, aggregate);
-            originalMessageContext.setVariable(resultTarget, variable);
-        }
+        Object variable = null;
         if (Objects.equals(contentType, JSON_TYPE)) {
-            setJSONResultToVariable((JsonElement) variable, aggregate);
-        } else if (Objects.equals(contentType, XML_TYPE) && variable instanceof OMElement) {
-            setXMLResultToVariable((OMElement) variable, aggregate);
+            log.debug("Merging aggregated JSON responses to variable");
+            variable = new JsonArray();
+            setJSONResultToVariable((JsonArray) variable, aggregate);
+        } else if (Objects.equals(contentType, XML_TYPE)) {
+            log.debug("Merging aggregated XML responses to variable");
+            variable = OMAbstractFactory.getOMFactory().createOMElement(new QName(rootElementName));
+            setXMLResultToRootOMElement((OMElement) variable, aggregate);
         } else {
-            handleInvalidVariableType(variable, aggregate, originalMessageContext);
+            handleException(aggregate, "Error merging aggregation results to variable : " + resultTarget +
+                    " unknown content type : " + contentType, null, originalMessageContext);
         }
+        originalMessageContext.setVariable(resultTarget, variable);
         StatisticDataCollectionHelper.collectAggregatedParents(aggregate.getMessages(), originalMessageContext);
     }
 
-    private void handleInvalidVariableType(Object variable, Aggregate aggregate, MessageContext synCtx) {
+    private void setJSONResultToVariable(JsonArray variable, Aggregate aggregate) {
 
-        String expectedType = Objects.equals(contentType, JSON_TYPE) ? "JSON" : "OMElement";
-        String actualType = variable != null ? variable.getClass().getName() : "null";
-        handleException(aggregate, "Error merging aggregation results to variable: " + resultTarget +
-                " expected a " + expectedType + " but found " + actualType, null, synCtx);
+        for (MessageContext synCtx : aggregate.getMessages()) {
+            Object evaluatedResult = aggregationExpression.objectValueOf(synCtx);
+            variable.add((JsonElement) evaluatedResult);
+        }
     }
 
-    private void setJSONResultToVariable(JsonElement variable, Aggregate aggregate) {
+    private void setXMLResultToRootOMElement(OMElement element, Aggregate aggregate) {
 
         try {
             for (MessageContext synCtx : aggregate.getMessages()) {
-                Object evaluatedResult = aggregationExpression.objectValueOf(synCtx);
-                if (variable instanceof JsonArray) {
-                    variable.getAsJsonArray().add((JsonElement) evaluatedResult);
-                } else if (variable instanceof JsonObject) {
-                    JSONMergeUtils.extendJSONObject((JsonObject) variable,
-                            JSONMergeUtils.ConflictStrategy.MERGE_INTO_ARRAY,
-                            ((JsonObject) evaluatedResult).getAsJsonObject());
-                } else {
-                    handleException(aggregate, "Error merging aggregation results to variable : " + resultTarget +
-                            " expected a JSON type variable but found " + variable.getClass().getName(), null, synCtx);
-                }
+                OMElement cloneResult = AXIOMUtil.stringToOM(aggregationExpression.stringValueOf(synCtx));
+                cloneResult.buildWithAttachments();
+                element.addChild(cloneResult);
             }
-        } catch (JSONObjectExtensionException e) {
-            handleException(aggregate, "Error merging aggregation results to JSON Object : " +
-                    aggregationExpression.toString(), e, aggregate.getLastMessage());
-        }
-    }
-
-    private void setXMLResultToVariable(OMElement variable, Aggregate aggregate) {
-
-        for (MessageContext synCtx : aggregate.getMessages()) {
-            List list = getMatchingElements(synCtx, aggregationExpression);
-            addChildren(list, variable);
-        }
-    }
-
-    private Object createNewVariable(MessageContext synCtx, Aggregate aggregate) {
-
-        if (Objects.equals(contentType, JSON_TYPE)) {
-            return new JsonArray();
-        } else if (Objects.equals(contentType, XML_TYPE)) {
-            return OMAbstractFactory.getOMFactory().createOMElement(new QName(resultTarget));
-        } else {
-            handleException(aggregate, "Error merging aggregation results to variable : " + resultTarget +
-                    " unknown content type : " + contentType, null, synCtx);
-            return null;
+        } catch (XMLStreamException e) {
+            handleException(aggregate, "Error reading XML element: " + aggregationExpression.toString(), e,
+                    aggregate.getLastMessage());
         }
     }
 
     private MessageContext getAggregatedMessage(Aggregate aggregate) {
 
         MessageContext newCtx = null;
-        JsonArray jsonArray = new JsonArray();
-
-        for (MessageContext synCtx : aggregate.getMessages()) {
-            if (newCtx == null) {
-                try {
-                    newCtx = MessageHelper.cloneMessageContext(synCtx, true, false, true);
-                } catch (AxisFault axisFault) {
-                    handleException(aggregate, "Error creating a copy of the message", axisFault, synCtx);
-                }
-
-                if (log.isDebugEnabled()) {
-                    log.debug("Generating Aggregated message from : " + newCtx.getEnvelope());
-                }
-                if (Objects.equals(contentType, JSON_TYPE)) {
-                    Object evaluatedResult = aggregationExpression.objectValueOf(synCtx);
-                    if (evaluatedResult instanceof JsonElement) {
-                        jsonArray.add((JsonElement) evaluatedResult);
-                    } else {
-                        handleException(aggregate, "Error merging aggregation results as expression : " +
-                                aggregationExpression.toString() + " did not resolve to a JSON value", null, synCtx);
-                    }
-                } else {
-                    enrichEnvelope(synCtx, aggregationExpression);
-                }
-            } else {
+        if (Objects.equals(contentType, JSON_TYPE)) {
+            JsonArray jsonArray = new JsonArray();
+            log.debug("Merging aggregated JSON responses to body");
+            for (MessageContext synCtx : aggregate.getMessages()) {
                 try {
                     if (log.isDebugEnabled()) {
                         log.debug("Merging message : " + synCtx.getEnvelope() + " using expression : " +
                                 aggregationExpression);
                     }
-                    if (Objects.equals(contentType, JSON_TYPE)) {
-                        Object evaluatedResult = aggregationExpression.objectValueOf(synCtx);
-                        if (evaluatedResult instanceof JsonElement) {
-                            jsonArray.add((JsonElement) evaluatedResult);
-                        } else {
-                            jsonArray.add(evaluatedResult.toString());
-                        }
+                    Object evaluatedResult = aggregationExpression.objectValueOf(synCtx);
+                    if (evaluatedResult instanceof JsonElement) {
+                        jsonArray.add((JsonElement) evaluatedResult);
                     } else {
-                        enrichEnvelope(synCtx, aggregationExpression);
-                    }
-
-                    if (log.isDebugEnabled()) {
-                        log.debug("Merged result : " + newCtx.getEnvelope());
+                        jsonArray.add(evaluatedResult.toString());
                     }
                 } catch (SynapseException e) {
                     handleException(aggregate, "Error evaluating expression: " + aggregationExpression.toString(), e, synCtx);
@@ -792,24 +644,50 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
                     handleException(aggregate, "Error reading JSON element: " + aggregationExpression.toString(), e, synCtx);
                 }
             }
-        }
-
-        StatisticDataCollectionHelper.collectAggregatedParents(aggregate.getMessages(), newCtx);
-        if (Objects.equals(contentType, JSON_TYPE)) {
             // setting the new JSON payload to the messageContext
             try {
+                newCtx = MessageHelper.cloneMessageContext(aggregate.getLastMessage(), false, false, true);
+                SOAPEnvelope newEnvelope = createNewSoapEnvelope(aggregate.getLastMessage().getEnvelope());
+                newCtx.setEnvelope(newEnvelope);
                 JsonUtil.getNewJsonPayload(((Axis2MessageContext) newCtx).getAxis2MessageContext(), new
                         ByteArrayInputStream(jsonArray.toString().getBytes()), true, true);
             } catch (AxisFault axisFault) {
-                log.error("Error occurred while setting the new JSON payload to the msg context", axisFault);
+                handleException(aggregate, "Error occurred while setting the new JSON payload to the message context",
+                        axisFault, newCtx);
             }
-        } else {
+        } else if (Objects.equals(contentType, XML_TYPE)) {
+            log.debug("Merging aggregated XML responses to body");
+            OMElement rootElement = OMAbstractFactory.getOMFactory().createOMElement(new QName(rootElementName));
+            setXMLResultToRootOMElement(rootElement, aggregate);
+            try {
+                newCtx = MessageHelper.cloneMessageContext(aggregate.getLastMessage(), false, false, true);
+                SOAPEnvelope newEnvelope = createNewSoapEnvelope(aggregate.getLastMessage().getEnvelope());
+                newEnvelope.getBody().addChild(rootElement);
+                newCtx.setEnvelope(newEnvelope);
+            } catch (AxisFault axisFault) {
+                handleException(aggregate, "Error creating a copy of the message", axisFault, aggregate.getLastMessage());
+            }
             // Removing the JSON stream after aggregated using XML path.
             // This will fix inconsistent behaviour in logging the payload.
             ((Axis2MessageContext) newCtx).getAxis2MessageContext()
                     .removeProperty(org.apache.synapse.commons.json.Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
+        } else {
+            handleException(aggregate, "Error aggregating results. Unknown content type : " + contentType, null,
+                    aggregate.getLastMessage());
         }
+        StatisticDataCollectionHelper.collectAggregatedParents(aggregate.getMessages(), newCtx);
         return newCtx;
+    }
+
+    private SOAPEnvelope createNewSoapEnvelope(SOAPEnvelope envelope) {
+
+        SOAPFactory fac;
+        if (SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI.equals(envelope.getBody().getNamespace().getNamespaceURI())) {
+            fac = OMAbstractFactory.getSOAP11Factory();
+        } else {
+            fac = OMAbstractFactory.getSOAP12Factory();
+        }
+        return fac.getDefaultEnvelope();
     }
 
     public SynapsePath getCorrelateExpression() {
@@ -930,6 +808,16 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
     public void setResultTarget(String resultTarget) {
 
         this.resultTarget = resultTarget;
+    }
+
+    public String getRootElementName() {
+
+        return rootElementName;
+    }
+
+    public void setRootElementName(String rootElementName) {
+
+        this.rootElementName = rootElementName;
     }
 
     private boolean isTargetBody() {
