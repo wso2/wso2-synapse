@@ -50,6 +50,7 @@ import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.util.CallMediatorEnrichUtil;
 import org.apache.synapse.util.InlineExpressionUtil;
@@ -91,7 +92,7 @@ public class Target {
 
     private String property = null;
 
-    private String variable = null;
+    private Value variable = null;
 
     private int targetType = EnrichMediator.CUSTOM;
 
@@ -474,7 +475,7 @@ public class Target {
                     JsonObject headers = EIPUtils.convertMapToJsonObj(transportHeaders);
                     result.put("headers", headers);
                     result.put("attributes", CallMediatorEnrichUtil.populateTransportAttributes(synCtx));
-                    synCtx.setVariable(variable, result);
+                    synCtx.setVariable(variable.evaluateValue(synCtx), result);
                 }
                 break;
             default: {
@@ -701,11 +702,11 @@ public class Target {
         this.property = property;
     }
 
-    public void setVariable(String variable) {
-        this.variable    = variable;
+    public void setVariable(Value variable) {
+        this.variable = variable;
     }
 
-    public String getVariable() {
+    public Value getVariable() {
         return variable;
     }
 

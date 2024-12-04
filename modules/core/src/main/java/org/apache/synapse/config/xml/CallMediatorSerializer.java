@@ -108,6 +108,8 @@ public class CallMediatorSerializer extends AbstractMediatorSerializer {
         targetEle.addAttribute(fac.createOMAttribute("type", nullNS, intTypeToString(target.getTargetType())));
         if (target.getTargetType() == EnrichMediator.PROPERTY) {
             targetEle.setText(target.getProperty());
+        } else if (target.getTargetType() == EnrichMediator.VARIABLE) {
+            targetEle.setText(target.getVariable().getKeyValue());
         }
 
         return targetEle;

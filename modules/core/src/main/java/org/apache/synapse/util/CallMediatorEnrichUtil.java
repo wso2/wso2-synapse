@@ -301,6 +301,12 @@ public class CallMediatorEnrichUtil {
         return new MediatorLog(log, false, synCtx);
     }
 
+    /**
+     * Populates the transport attributes of the message context to a JSON object.
+     *
+     * @param synCtx The message context.
+     * @return The JSON object containing the transport attributes.
+     */
     public static JsonObject populateTransportAttributes(MessageContext synCtx) {
         JsonObject attributes = new JsonObject();
         Object httpStatusCodeObj = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(
