@@ -147,5 +147,11 @@ public class PayloadAndVariableAccessTest {
                 "var.random", 0, 1));
         Assert.assertEquals("", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "var.num1[0]", 0, 1));
+        Assert.assertEquals("201", TestUtils.evaluateExpressionWithPayloadAndVariables(
+                "var.fileRead_1.['attributes'].statusCode", 0, 3));
+        Assert.assertEquals("101", TestUtils.evaluateExpressionWithPayloadAndVariables(
+                "var[\"fileRead_1\"][\"headers\"]['Content-Length']", 0, 3));
+        Assert.assertEquals("[\"Moby Dick\",\"To Kill a Mockingbird\"]", TestUtils.evaluateExpressionWithPayloadAndVariables(
+                "var.fileRead_1['payload'][\"store\"][\"book\"][1,3].title", 2, 3));
     }
 }
