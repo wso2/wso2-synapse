@@ -28,6 +28,9 @@ import java.util.regex.Pattern;
  */
 public class SynapseExpressionUtils {
 
+    private static final String regex = "xpath\\s*\\(\\s*'([^']+)'\\s*,\\s*'([^']+)'\\s*\\)";
+    private static final Pattern pattern = Pattern.compile(regex);
+
     /**
      * Checks whether the synapse expression is content aware
      *
@@ -62,5 +65,29 @@ public class SynapseExpressionUtils {
             }
         }
         return false;
+    }
+
+    public static boolean isVariableXPathExpression(String synapseExpression) {
+
+        Matcher matcher = pattern.matcher(synapseExpression);
+        return matcher.find();
+    }
+
+    public static String getVariableFromVariableXPathExpression(String synapseExpression) {
+
+        Matcher matcher = pattern.matcher(synapseExpression);
+        if (matcher.find()) {
+            return matcher.group(2);
+        }
+        return null;
+    }
+
+    public static String getXPathFromVariableXPathExpression(String synapseExpression) {
+
+        Matcher matcher = pattern.matcher(synapseExpression);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return null;
     }
 }
