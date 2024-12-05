@@ -54,6 +54,7 @@ import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.util.CallMediatorEnrichUtil;
 import org.apache.synapse.util.InlineExpressionUtil;
+import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.apache.synapse.util.xpath.SynapseXPathConstants;
@@ -239,6 +240,27 @@ public class Target {
 			}else{
 			synContext.setProperty(property, sourceNodeList);  
 			}
+        } else if (targetType == EnrichMediator.VARIABLE) {
+            if (action.equalsIgnoreCase(ACTION_REPLACE)) {
+                String key = variable.evaluateValue(synContext);
+                if (StringUtils.isEmpty(key)) {
+                    synLog.error("Variable key cannot be null");
+                    throw new SynapseException("Variable key cannot be null");
+                }
+                Map<String, Object> result = new HashMap<>();
+                result.put(ExpressionConstants.PAYLOAD, sourceNodeList);
+                Map transportHeaders = (Map)((Axis2MessageContext) synContext).getAxis2MessageContext()
+                        .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+                JsonObject headers = EIPUtils.convertMapToJsonObj(transportHeaders);
+                result.put(ExpressionConstants.HEADERS, headers);
+                result.put(ExpressionConstants.ATTRIBUTES, CallMediatorEnrichUtil.populateTransportAttributes(synContext));
+                synContext.setVariable(key, result);
+            } else {
+                synLog.error("Action " + action + " is not supported when enriching variables");
+            }
+        } else {
+            synLog.error("Invalid Target type");
+            throw new SynapseException("Invalid Target type");
         }
     }
 
@@ -468,14 +490,19 @@ public class Target {
             }
             case EnrichMediator.VARIABLE:
                 if (action.equalsIgnoreCase(ACTION_REPLACE)) {
+                    String key = variable.evaluateValue(synCtx);
+                    if (StringUtils.isEmpty(key)) {
+                        synLog.error("Variable key cannot be null");
+                        return;
+                    }
                     Map<String, Object> result = new HashMap<>();
-                    result.put("payload", sourceJsonElement);
+                    result.put(ExpressionConstants.PAYLOAD, sourceJsonElement);
                     Map transportHeaders = (Map)((Axis2MessageContext) synCtx).getAxis2MessageContext()
                             .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
                     JsonObject headers = EIPUtils.convertMapToJsonObj(transportHeaders);
-                    result.put("headers", headers);
-                    result.put("attributes", CallMediatorEnrichUtil.populateTransportAttributes(synCtx));
-                    synCtx.setVariable(variable.evaluateValue(synCtx), result);
+                    result.put(ExpressionConstants.HEADERS, headers);
+                    result.put(ExpressionConstants.ATTRIBUTES, CallMediatorEnrichUtil.populateTransportAttributes(synCtx));
+                    synCtx.setVariable(key, result);
                 }
                 break;
             default: {
