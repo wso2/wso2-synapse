@@ -23,6 +23,8 @@ import org.apache.synapse.api.API;
 
 import junit.framework.TestCase;
 import org.apache.synapse.endpoints.HTTPEndpoint;
+import org.apache.synapse.registry.url.SimpleURLRegistry;
+import org.apache.synapse.registry.url.SimpleURLRegistryTest;
 
 public class SynapseConfigurationTest extends TestCase {
 
@@ -119,5 +121,13 @@ public class SynapseConfigurationTest extends TestCase {
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	public void testGetEntryDefinition() throws Exception {
+
+		String key = "resources:xslt/sample.xslt";
+		SynapseConfiguration config = new SynapseConfiguration();
+		Entry entry = config.getEntryDefinition(key);
+		assertEquals("Key of entry should be transformed.", "gov:mi-resources/xslt/sample.xslt", entry.getKey());
 	}
 }
