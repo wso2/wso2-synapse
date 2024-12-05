@@ -41,7 +41,6 @@ import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
-import org.apache.synapse.mediators.Utils;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.transform.pfutils.TemplateProcessor;
 import org.apache.synapse.mediators.transform.pfutils.TemplateProcessorException;
@@ -169,16 +168,14 @@ public class PayloadFactoryMediator extends AbstractMediator {
         boolean reCreate = false;
         if (isFormatDynamic()) {
             if (templateType.equals(FREEMARKER_TEMPLATE_TYPE)) {
-                String transformedFormatKey = Utils.transformFileKey(formatKey.getKeyValue());
-                Entry template = synCtx.getConfiguration().getEntryDefinition(transformedFormatKey);
+                Entry template = synCtx.getConfiguration().getEntryDefinition(formatKey.getKeyValue());
                 if ((!template.isCached() || template.isExpired()) && version != template.getVersion()) {
                     reCreate = true;
                     version = template.getVersion();
                 }
             }
             String key = formatKey.evaluateValue(synCtx);
-            String transformedKey = Utils.transformFileKey(key);
-            Object entry = synCtx.getEntry(transformedKey);
+            Object entry = synCtx.getEntry(key);
             if (entry == null) {
                 handleException("Key " + key + " not found ", synCtx);
             }

@@ -34,7 +34,6 @@ import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
-import org.apache.synapse.mediators.Utils;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.xpath.SourceXPathSupport;
 import org.apache.synapse.util.xpath.SynapseXPath;
@@ -153,7 +152,6 @@ public class XQueryMediator extends AbstractMediator {
         boolean needSet = false;
         XQueryEvaluator queryEvaluator = null;
         String generatedQueryKey = null;
-        String transformedQueryKey = null;
         XQueryExecutable xQueryExecutable = null;
         XdmValue xdmValue;
         boolean isQueryKeyGenerated = false;
@@ -161,16 +159,15 @@ public class XQueryMediator extends AbstractMediator {
         if (queryKey != null) {
             // Derive actual key from xpath or get static key
             generatedQueryKey = queryKey.evaluateValue(synCtx);
-            transformedQueryKey = Utils.transformFileKey(generatedQueryKey);
         }
 
-        if (transformedQueryKey != null) {
+        if (generatedQueryKey != null) {
             isQueryKeyGenerated = true;
         }
 
-        if (transformedQueryKey != null && !"".equals(transformedQueryKey)) {
+        if (generatedQueryKey != null && !"".equals(generatedQueryKey)) {
 
-            Entry dp = synCtx.getConfiguration().getEntryDefinition(transformedQueryKey);
+            Entry dp = synCtx.getConfiguration().getEntryDefinition(generatedQueryKey);
             // if the queryKey refers to a dynamic resource
             if (dp != null && dp.isDynamic()) {
                 if (!dp.isCached() || dp.isExpired()) {
@@ -204,7 +201,7 @@ public class XQueryMediator extends AbstractMediator {
 
                 //If already cached evaluator then load it from cachedXQueryEvaluatorMap
                 if (isQueryKeyGenerated) {
-                    queryEvaluator = cachedXQueryEvaluatorMap.get(transformedQueryKey);
+                    queryEvaluator = cachedXQueryEvaluatorMap.get(generatedQueryKey);
                 }
 
                 if (reLoad || queryEvaluator == null) {
@@ -221,7 +218,7 @@ public class XQueryMediator extends AbstractMediator {
 
                         // if queryEvaluator is created then put it in to cachedXQueryEvaluatorMap
                         if (isQueryKeyGenerated) {
-                            cachedXQueryEvaluatorMap.put(transformedQueryKey, queryEvaluator);
+                            cachedXQueryEvaluatorMap.put(generatedQueryKey, queryEvaluator);
                         }
 
                         // need set because the expression just has recreated
@@ -230,7 +227,7 @@ public class XQueryMediator extends AbstractMediator {
 
                     } else {
 
-                        Object o = synCtx.getEntry(transformedQueryKey);
+                        Object o = synCtx.getEntry(generatedQueryKey);
                         if (o == null) {
                             if (synLog.isTraceOrDebugEnabled()) {
                                 synLog.traceOrDebug("Couldn't find the xquery source with a key "
@@ -294,7 +291,7 @@ public class XQueryMediator extends AbstractMediator {
 
                         // if queryEvaluator is created then put it in to cachedXQueryEvaluatorMap
                         if (isQueryKeyGenerated) {
-                            cachedXQueryEvaluatorMap.put(transformedQueryKey, queryEvaluator);
+                            cachedXQueryEvaluatorMap.put(generatedQueryKey, queryEvaluator);
                         }
 
                         // need set because the evaluator just has recreated

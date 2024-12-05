@@ -220,24 +220,6 @@ public class ValidateMediatorTest extends TestCase {
         test(validate, synCtx, false);
     }
 
-    public void testValidateMediatorWithTwoSchemasInResource() throws Exception {
-        // create a validate mediator
-        ValidateMediator validate = new ValidateMediator();
-
-        // set the schema url, source xpath and any name spaces
-        validate.setSchemaKeys(createKeyListFromMoreKeys("resources:sample1.xsd", "resources:sample2.xsd"));
-        validate.setSource(createXPath("//m1:Outer"));
-
-        MessageContext synCtx = new TestMessageContextBuilder()
-                .setRequireAxis2MessageContext(true)
-                .addFileEntry("gov:mi-resources/sample1.xsd", "./../../repository/conf/sample/resources/validate/validate.xsd")
-                .addFileEntry("gov:mi-resources/sample2.xsd", "./../../repository/conf/sample/resources/validate/validate2.xsd")
-                .setBodyFromString(VALID_ENVELOPE_TWO_SCHEMAS).build();
-
-        // test validate mediator, with static envelope
-        test(validate, synCtx, false);
-    }
-
     public void testValidateMediatorInvalidCaseTwoSchemas() throws Exception {
         // create a validate mediator
         ValidateMediator validate = new ValidateMediator();

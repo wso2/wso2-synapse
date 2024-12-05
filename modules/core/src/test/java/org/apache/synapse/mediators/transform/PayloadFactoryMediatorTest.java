@@ -20,9 +20,7 @@ package org.apache.synapse.mediators.transform;
 
 import junit.framework.TestCase;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.TestMessageContextBuilder;
 import org.apache.synapse.mediators.TestUtils;
-import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.transform.pfutils.RegexTemplateProcessor;
 import org.apache.synapse.util.xpath.SynapseXPath;
 
@@ -139,93 +137,5 @@ public class PayloadFactoryMediatorTest extends TestCase {
 
         assertEquals("PayloadFactory mediator has not "
                 + "set expected format", expectedEnvelope, synCtx.getEnvelope().getBody().toString());
-    }
-
-    public void testWithRegistryFormatKey() throws Exception {
-
-        PayloadFactoryMediator payloadFactoryMediator = new PayloadFactoryMediator();
-        payloadFactoryMediator.setTemplateProcessor(new RegexTemplateProcessor());
-        Value value = new Value("gov:payload/sample.xml");
-        payloadFactoryMediator.setFormatKey(value);
-        payloadFactoryMediator.setFormatDynamic(true);
-
-        //prepare arguments
-        Argument argument1 = new Argument();
-        argument1.setValue("John");
-        Argument argument2 = new Argument();
-        argument2.setValue("2017.09.26");
-        Argument argument3 = new Argument();
-        argument3.setValue("1234564632");
-        Argument argument4 = new Argument();
-        argument4.setValue("Colombo, Sri Lanka");
-
-        //add arguments
-        payloadFactoryMediator.getTemplateProcessor().addPathArgument(argument1);
-        payloadFactoryMediator.getTemplateProcessor().addPathArgument(argument2);
-        payloadFactoryMediator.getTemplateProcessor().addPathArgument(argument3);
-        payloadFactoryMediator.getTemplateProcessor().addPathArgument(argument4);
-
-        //do mediation
-        TestMessageContextBuilder builder = new TestMessageContextBuilder();
-        builder.setRequireAxis2MessageContext(true);
-        builder.setBodyFromString(inputPayload);
-        MessageContext synCtx = builder.addFileEntry("gov:payload/sample.xml",
-                        "../../repository/conf/sample/resources/payload/sample.xml").addTextAroundBody().build();
-        payloadFactoryMediator.mediate(synCtx);
-
-        String expectedEnv = "<soapenv:Body xmlns:soapenv=\"http://schemas.xmlsoap"
-                + ".org/soap/envelope/\"><p:addCustomer xmlns:p=\"http://ws.wso2.org/dataservice\">\n"
-                + "<xs:name xmlns:xs=\"http://ws.wso2.org/dataservice\">John</xs:name>\n"
-                + "<xs:request_time xmlns:xs=\"http://ws.wso2.org/dataservice\">2017.09.26</xs:request_time>\n"
-                + "<xs:tp_number xmlns:xs=\"http://ws.wso2.org/dataservice\">1234564632</xs:tp_number>\n"
-                + "<xs:address xmlns:xs=\"http://ws.wso2.org/dataservice\">Colombo, Sri Lanka</xs:address>\n"
-                + "</p:addCustomer></soapenv:Body>";
-
-        assertEquals("PayloadFactory mediator has not "
-                + "set expected format", expectedEnv.replaceAll("[\\r\\n]", ""), synCtx.getEnvelope().getBody().toString());
-    }
-
-    public void testWithResourceFormatKey() throws Exception {
-
-        PayloadFactoryMediator payloadFactoryMediator = new PayloadFactoryMediator();
-        payloadFactoryMediator.setTemplateProcessor(new RegexTemplateProcessor());
-        Value value = new Value("resources:payload/sample.xml");
-        payloadFactoryMediator.setFormatKey(value);
-        payloadFactoryMediator.setFormatDynamic(true);
-
-        //prepare arguments
-        Argument argument1 = new Argument();
-        argument1.setValue("John");
-        Argument argument2 = new Argument();
-        argument2.setValue("2017.09.26");
-        Argument argument3 = new Argument();
-        argument3.setValue("1234564632");
-        Argument argument4 = new Argument();
-        argument4.setValue("Colombo, Sri Lanka");
-
-        //add arguments
-        payloadFactoryMediator.getTemplateProcessor().addPathArgument(argument1);
-        payloadFactoryMediator.getTemplateProcessor().addPathArgument(argument2);
-        payloadFactoryMediator.getTemplateProcessor().addPathArgument(argument3);
-        payloadFactoryMediator.getTemplateProcessor().addPathArgument(argument4);
-
-        //do mediation
-        TestMessageContextBuilder builder = new TestMessageContextBuilder();
-        builder.setRequireAxis2MessageContext(true);
-        builder.setBodyFromString(inputPayload);
-        MessageContext synCtx = builder.addFileEntry("gov:mi-resources/payload/sample.xml",
-                "../../repository/conf/sample/resources/payload/sample.xml").addTextAroundBody().build();
-        payloadFactoryMediator.mediate(synCtx);
-
-        String expectedEnv = "<soapenv:Body xmlns:soapenv=\"http://schemas.xmlsoap"
-                + ".org/soap/envelope/\"><p:addCustomer xmlns:p=\"http://ws.wso2.org/dataservice\">\n"
-                + "<xs:name xmlns:xs=\"http://ws.wso2.org/dataservice\">John</xs:name>\n"
-                + "<xs:request_time xmlns:xs=\"http://ws.wso2.org/dataservice\">2017.09.26</xs:request_time>\n"
-                + "<xs:tp_number xmlns:xs=\"http://ws.wso2.org/dataservice\">1234564632</xs:tp_number>\n"
-                + "<xs:address xmlns:xs=\"http://ws.wso2.org/dataservice\">Colombo, Sri Lanka</xs:address>\n"
-                + "</p:addCustomer></soapenv:Body>";
-
-        assertEquals("PayloadFactory mediator has not "
-                + "set expected format", expectedEnv.replaceAll("[\\r\\n]", ""), synCtx.getEnvelope().getBody().toString());
     }
 }
