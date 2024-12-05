@@ -249,34 +249,42 @@ public class VariableMediator extends AbstractMediator {
                 if (!(evaluatedValue instanceof Boolean)) {
                     handleDataTypeException("BOOLEAN");
                 }
+                break;
             case DOUBLE:
                 if (!(evaluatedValue instanceof Double)) {
                     handleDataTypeException("DOUBLE");
                 }
+                break;
             case FLOAT:
                 if (!(evaluatedValue instanceof Float)) {
                     handleDataTypeException("FLOAT");
                 }
+                break;
             case INTEGER:
                 if (!(evaluatedValue instanceof Integer)) {
                     handleDataTypeException("INTEGER");
                 }
+                break;
             case LONG:
                 if (!(evaluatedValue instanceof Long)) {
                     handleDataTypeException("LONG");
                 }
+                break;
             case OM:
                 if (!(evaluatedValue instanceof OMElement)) {
                     handleDataTypeException("OM");
                 }
+                break;
             case SHORT:
                 if (!(evaluatedValue instanceof Short)) {
                     handleDataTypeException("SHORT");
                 }
+                break;
             case JSON:
                 if (!(evaluatedValue instanceof JsonElement)) {
                     handleDataTypeException("JSON");
                 }
+                break;
             default:
         }
         return evaluatedValue;
