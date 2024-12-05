@@ -78,4 +78,6 @@ public class ExpressionConstants {
 
     public static final String UNKNOWN = "unknown";
     public static final String VAULT_LOOKUP = "wso2:vault-lookup('";
+    public static final String HEADERS = "headers";
+    public static final String ATTRIBUTES = "attributes";
 }

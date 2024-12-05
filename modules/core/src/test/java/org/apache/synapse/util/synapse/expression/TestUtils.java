@@ -18,6 +18,7 @@
 
 package org.apache.synapse.util.synapse.expression;
 
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
@@ -97,11 +98,17 @@ public class TestUtils {
             "  \"selectedCategory\": \"biography\"\n" +
             "}\n";
 
+    private static final JsonObject responseHeaders;
+
+    private static final JsonObject responseAttributes;
+
     private static final String PAYLOAD3 = "[\"When\",\"my\",\"time\",\"comes\",\"Forget\",\"the\",\"wrong\",\"that\"" +
             ",\"I've\",\"done\"]";
     private static final Map<String, Object> variableMap1;
 
     private static final Map<String, Object> variableMap2;
+
+    private static final Map<String, Object> variableMap3;
 
     static {
         variableMap1 = new HashMap<>();
@@ -119,6 +126,18 @@ public class TestUtils {
         variableMap2.put("json1", PAYLOAD1);
         variableMap2.put("json2", PAYLOAD2);
         variableMap2.put("json3", "[1,2,3,\"abc\"]");
+        variableMap3 = new HashMap<>();
+        responseHeaders = new JsonObject();
+        responseHeaders.addProperty("Content-Type", "application/json");
+        responseHeaders.addProperty("Content-Length", "101");
+        responseAttributes = new JsonObject();
+        responseAttributes.addProperty("statusCode", 201);
+        Map<String, Object> result = new HashMap<>();
+        result.put("headers", responseHeaders);
+        result.put("attributes", responseAttributes);
+        result.put("payload", JsonParser.parseString(PAYLOAD2));
+        variableMap3.put("fileRead_1", result);
+
         try {
             synCtx = org.apache.synapse.mediators.TestUtils.getAxis2MessageContext("<test/>", null);
         } catch (Exception e) {
@@ -149,6 +168,10 @@ public class TestUtils {
                 }
             } else if (variableMapId == 2) {
                 for (Map.Entry<String, Object> entry : variableMap2.entrySet()) {
+                    synCtx.setVariable(entry.getKey(), entry.getValue());
+                }
+            } else if (variableMapId == 3) {
+                for (Map.Entry<String, Object> entry : variableMap3.entrySet()) {
                     synCtx.setVariable(entry.getKey(), entry.getValue());
                 }
             }

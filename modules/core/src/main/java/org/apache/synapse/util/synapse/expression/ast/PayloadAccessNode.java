@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Represents a node in the AST that accesses a value in the payload or variable.
@@ -126,6 +128,33 @@ public class PayloadAccessNode implements ExpressionNode {
                 // if no expression just return variable
                 if (StringUtils.isEmpty(expressionToEvaluate)) {
                     result = variable;
+                } else if (variable instanceof Map) {
+                    if (StringUtils.isNotEmpty(expressionToEvaluate)) {
+                        expressionToEvaluate = expressionToEvaluate.startsWith(".") ? "var" + expressionToEvaluate
+                                : "var." + expressionToEvaluate;
+                    }
+                    String[] keyAndExpression = ExpressionUtils.extractVariableAndJsonPath(expressionToEvaluate);
+                    String key = keyAndExpression[0];
+                    String expression = keyAndExpression[1];
+                    if (StringUtils.isNotEmpty(expression)) {
+                        expression = expression.startsWith(".") ? "$" + expression : "$." + expression;
+                    }
+                    Object keyValue = ((Map) variable).get(key);
+                    if (keyValue == null) {
+                        throw new EvaluationException("Could not find key: " + key + " in the variable: " + variable);
+                    } else if (StringUtils.isEmpty(expression)) {
+                        result = keyValue;
+                    } else if (keyValue instanceof JsonElement) {
+                        try {
+                            result = JsonPath.parse(keyValue.toString()).read(expression);
+                        } catch (PathNotFoundException e) {
+                            // convert jsonPath error to native one
+                            throw new EvaluationException(e.getMessage());
+                        }
+                    } else {
+                        throw new EvaluationException("Could not evaluate JSONPath expression: " + expression
+                                + " on non-JSON object");
+                    }
                 } else {
                     expressionToEvaluate = expressionToEvaluate.startsWith(".") ? "$" + expressionToEvaluate
                             : "$." + expressionToEvaluate;

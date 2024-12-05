@@ -111,6 +111,10 @@ public class ValueFactory {
                     textValue = textValue.substring(1, textValue.length() - 1);
                     SynapseJsonPath synJsonPath = createSynJsonPath(textValue);
                     key = new Value(synJsonPath);
+                } else if (textValue.startsWith("{${") && textValue.endsWith("}}")) {
+                    textValue = textValue.substring(1, textValue.length() - 1);
+                    SynapseExpression synapseExpression = createSynapseExpression(textValue);
+                    key = new Value(synapseExpression);
                 } else {
                     SynapseXPath synXpath = createSynXpath(elem, textValue);
                     key = new Value(synXpath);

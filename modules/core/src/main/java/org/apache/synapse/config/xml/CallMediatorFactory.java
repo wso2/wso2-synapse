@@ -237,8 +237,15 @@ public class CallMediatorFactory extends AbstractMediatorFactory {
             }
         } else if (target.getTargetType() == EnrichMediator.BODY) {
             callMediator.setTargetAvailable(false);
+        } else if (target.getTargetType() == EnrichMediator.VARIABLE) {
+            // check if variable is surrounded by curly braces
+            if (StringUtils.isNotEmpty(sourceEle.getText())) {
+                callMediator.setTargetAvailable(true);
+                target.setVariable(new ValueFactory().createTextValue(sourceEle));
+            } else {
+                handleException("Variable name is required for VARIABLE type");
+            }
         }
-
     }
 
     public QName getTagQName() {

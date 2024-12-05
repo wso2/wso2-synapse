@@ -44,6 +44,7 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.IndirectEndpoint;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.mediators.elementary.EnrichMediator;
 import org.apache.synapse.mediators.elementary.Source;
 import org.apache.synapse.mediators.elementary.Target;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
@@ -167,8 +168,11 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             sourceForInboundPayload.setClone(true);
             CallMediatorEnrichUtil
                     .doEnrich(synInCtx, sourceForInboundPayload, targetForOriginalPayload, originalMessageType);
-            CallMediatorEnrichUtil
-                    .doEnrich(synInCtx, sourceForOutboundPayload, targetForOutboundPayload, getSourceMessageType());
+            if (!(EnrichMediator.BODY == sourceForOutboundPayload.getSourceType() &&
+                EnrichMediator.BODY == targetForOutboundPayload.getTargetType())) {
+                CallMediatorEnrichUtil
+                        .doEnrich(synInCtx, sourceForOutboundPayload, targetForOutboundPayload, getSourceMessageType());
+            }
             if (!sourceMessageType.equalsIgnoreCase(originalMessageType)) {
                 CallMediatorEnrichUtil.setContentType(synInCtx, sourceMessageType, sourceMessageType);
                 if (originalMessageType.equalsIgnoreCase(JSON_TYPE)) {

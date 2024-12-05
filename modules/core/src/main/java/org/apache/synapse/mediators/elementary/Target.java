@@ -42,6 +42,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.commons.json.Constants;
@@ -49,8 +50,11 @@ import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.apache.synapse.util.CallMediatorEnrichUtil;
 import org.apache.synapse.util.InlineExpressionUtil;
+import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.apache.synapse.util.xpath.SynapseXPathConstants;
@@ -58,7 +62,9 @@ import org.jaxen.JaxenException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -86,6 +92,8 @@ public class Target {
     private SynapsePath xpath = null;
 
     private String property = null;
+
+    private Value variable = null;
 
     private int targetType = EnrichMediator.CUSTOM;
 
@@ -232,6 +240,27 @@ public class Target {
 			}else{
 			synContext.setProperty(property, sourceNodeList);  
 			}
+        } else if (targetType == EnrichMediator.VARIABLE) {
+            if (action.equalsIgnoreCase(ACTION_REPLACE)) {
+                String key = variable.evaluateValue(synContext);
+                if (StringUtils.isEmpty(key)) {
+                    synLog.error("Variable key cannot be null");
+                    throw new SynapseException("Variable key cannot be null");
+                }
+                Map<String, Object> result = new HashMap<>();
+                result.put(ExpressionConstants.PAYLOAD, sourceNodeList);
+                Map transportHeaders = (Map)((Axis2MessageContext) synContext).getAxis2MessageContext()
+                        .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+                JsonObject headers = EIPUtils.convertMapToJsonObj(transportHeaders);
+                result.put(ExpressionConstants.HEADERS, headers);
+                result.put(ExpressionConstants.ATTRIBUTES, CallMediatorEnrichUtil.populateTransportAttributes(synContext));
+                synContext.setVariable(key, result);
+            } else {
+                synLog.error("Action " + action + " is not supported when enriching variables");
+            }
+        } else {
+            synLog.error("Invalid Target type");
+            throw new SynapseException("Invalid Target type");
         }
     }
 
@@ -459,6 +488,23 @@ public class Target {
                 }
                 break;
             }
+            case EnrichMediator.VARIABLE:
+                if (action.equalsIgnoreCase(ACTION_REPLACE)) {
+                    String key = variable.evaluateValue(synCtx);
+                    if (StringUtils.isEmpty(key)) {
+                        synLog.error("Variable key cannot be null");
+                        return;
+                    }
+                    Map<String, Object> result = new HashMap<>();
+                    result.put(ExpressionConstants.PAYLOAD, sourceJsonElement);
+                    Map transportHeaders = (Map)((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                            .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+                    JsonObject headers = EIPUtils.convertMapToJsonObj(transportHeaders);
+                    result.put(ExpressionConstants.HEADERS, headers);
+                    result.put(ExpressionConstants.ATTRIBUTES, CallMediatorEnrichUtil.populateTransportAttributes(synCtx));
+                    synCtx.setVariable(key, result);
+                }
+                break;
             default: {
                 synLog.error("Case mismatch for type: " + targetType);
             }
@@ -681,6 +727,14 @@ public class Target {
 
     public void setProperty(String property) {
         this.property = property;
+    }
+
+    public void setVariable(Value variable) {
+        this.variable = variable;
+    }
+
+    public Value getVariable() {
+        return variable;
     }
 
     public void setTargetType(int targetType) {
