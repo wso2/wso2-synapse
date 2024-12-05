@@ -70,6 +70,7 @@ import static org.apache.synapse.mediators.transform.pfutils.Constants.NOT_SUPPO
 import static org.apache.synapse.mediators.transform.pfutils.Constants.PAYLOAD_INJECTING_NAME;
 import static org.apache.synapse.mediators.transform.pfutils.Constants.TEXT_PAYLOAD_TYPE;
 import static org.apache.synapse.mediators.transform.pfutils.Constants.TRANSPORT_PROPERTY_INJECTING_NAME;
+import static org.apache.synapse.mediators.transform.pfutils.Constants.VARIABLE_INJECTING_NAME;
 import static org.apache.synapse.mediators.transform.pfutils.Constants.XML_PAYLOAD_TYPE;
 import static org.apache.synapse.util.PayloadHelper.TEXTELT;
 import static org.apache.synapse.util.PayloadHelper.getXMLPayload;
@@ -88,6 +89,7 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
     private boolean usingPropertyAxis2;
     private boolean usingPropertyTransport;
     private boolean usingArgs;
+    private boolean usingVariables;
 
     private static final Log log = LogFactory.getLog(FreeMarkerTemplateProcessor.class);
     private boolean templateLoaded = false;
@@ -218,6 +220,7 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
         usingPropertyCtx = templateString.contains(CTX_PROPERTY_INJECTING_NAME);
         usingPropertyAxis2 = templateString.contains(AXIS2_PROPERTY_INJECTING_NAME);
         usingPropertyTransport = templateString.contains(TRANSPORT_PROPERTY_INJECTING_NAME);
+        usingVariables = templateString.contains(VARIABLE_INJECTING_NAME);
     }
 
     /**
@@ -400,6 +403,7 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
         injectCtxProperties(synCtx, data);
         injectAxis2Properties(synCtx, data);
         injectTransportProperties(synCtx, data);
+        injectVariables(synCtx, data);
     }
 
     private void injectCtxProperties(MessageContext synCtx, Map<String, Object> data) {
@@ -417,6 +421,21 @@ public class FreeMarkerTemplateProcessor extends TemplateProcessor {
             }
 
             data.put(CTX_PROPERTY_INJECTING_NAME, properties);
+        }
+    }
+
+    private void injectVariables(MessageContext synCtx, Map<String, Object> data) {
+
+        if (usingVariables) {
+            Map<String, String> variables = new HashMap<>();
+            for (Object o : synCtx.getVariableKeySet()) {
+                String varName = (String) o;
+                Object variable = synCtx.getVariable(varName);
+                if (variable != null) {
+                    variables.put(varName, variable.toString());
+                }
+            }
+            data.put(VARIABLE_INJECTING_NAME, variables);
         }
     }
 

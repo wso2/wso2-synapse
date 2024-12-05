@@ -40,6 +40,7 @@ public class Constants {
     public static final String CTX_PROPERTY_INJECTING_NAME = "ctx";
     public static final String AXIS2_PROPERTY_INJECTING_NAME = "axis2";
     public static final String TRANSPORT_PROPERTY_INJECTING_NAME = "trp";
+    public static final String VARIABLE_INJECTING_NAME = "var";
     public static final String JSON_TYPE = "json";
     public static final String XML_TYPE = "xml";
     public static final String TEXT_TYPE = "text";
