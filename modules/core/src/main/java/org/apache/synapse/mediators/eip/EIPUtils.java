@@ -189,7 +189,7 @@ public class EIPUtils {
         }
     }
 
-    private static boolean isBody(OMElement body, OMElement enrichingElement) {
+    public static boolean isBody(OMElement body, OMElement enrichingElement) {
         try {
             return (body.getLocalName().equals(enrichingElement.getLocalName()) &&
                     body.getNamespace().getNamespaceURI().equals(enrichingElement.getNamespace().getNamespaceURI()));
@@ -198,7 +198,7 @@ public class EIPUtils {
         }
     }
 
-    private static boolean checkNotEmpty(List list) {
+    public static boolean checkNotEmpty(List list) {
         return list != null && !list.isEmpty();
     }
 

@@ -45,4 +45,11 @@ public interface CloseEventHandler {
      * @param synCtx                    Message context.
      */
     void handleTryEndFlow(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx);
+
+    /**
+     * Handles a close flow event.
+     *
+     * @param synCtx Message context.
+     */
+    void handleScatterGatherFinishEvent(MessageContext synCtx);
 }
