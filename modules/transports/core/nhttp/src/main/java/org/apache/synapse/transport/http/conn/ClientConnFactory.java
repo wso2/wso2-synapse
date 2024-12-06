@@ -33,9 +33,11 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -195,6 +197,7 @@ public class ClientConnFactory {
             int port;
             if (endpoint != null && !endpoint.isEmpty()) {
                 URI endpointURI;
+                URL endpointURL;
                 try {
                     endpointURI = new URI(endpoint);
                 } catch (URISyntaxException e) {
@@ -202,6 +205,15 @@ public class ClientConnFactory {
                 }
                 hostname = endpointURI.getHost();
                 port = endpointURI.getPort();
+                if (hostname == null) {
+                    try {
+                        endpointURL = new URL(endpoint);
+                    } catch (MalformedURLException e) {
+                        throw new IllegalArgumentException("Invalid endpointURL");
+                    }
+                    hostname = endpointURL.getHost();
+                    port = endpointURL.getPort();
+                }
             } else {
                 hostname = ((InetSocketAddress) address).getHostName();
                 port = ((InetSocketAddress) address).getPort();

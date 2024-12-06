@@ -18,21 +18,24 @@
  */
 package org.apache.synapse.transport.http.conn;
 
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.SocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.Arrays;
+
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
+
 import org.apache.http.conn.ssl.AbstractVerifier;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.nio.reactor.ssl.SSLSetupHandler;
 import org.apache.synapse.transport.certificatevalidation.CertificateVerificationException;
 import org.apache.synapse.transport.certificatevalidation.CertificateVerificationManager;
-
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSession;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Arrays;
 
 public class ClientSSLSetupHandler implements SSLSetupHandler {
 
@@ -167,7 +170,16 @@ public class ClientSSLSetupHandler implements SSLSetupHandler {
         if (endpoint != null && !endpoint.isEmpty()) {
             try {
                 URI endpointURI = new URI(endpoint);
+                URL endpointURL;
                 address = endpointURI.getHost();
+                if (address == null) {
+                    try {
+                        endpointURL = new URL(endpoint);
+                    } catch (MalformedURLException e) {
+                        throw new IllegalArgumentException("Invalid endpointURL");
+                    }
+                    address = endpointURL.getHost();
+                }
             } catch (URISyntaxException e) {
                 throw new IllegalArgumentException("Invalid endpointURI: "+ endpoint, e);
             }
