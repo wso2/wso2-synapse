@@ -203,7 +203,7 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
             if (timeoutCodes != null && timeoutCodes.getText() != null) {
                 Value timeoutErrorCodesValue = valueFactory.createTextValue(timeoutCodes);
                 if (timeoutErrorCodesValue.getKeyValue() != null) {
-                    StringTokenizer st = new StringTokenizer(timeoutCodes.getText().trim(), ", ");
+                    StringTokenizer st = new StringTokenizer(timeoutCodes.getText().trim(), ",");
                     while (st.hasMoreTokens()) {
                         String s = st.nextToken();
                         try {
@@ -278,7 +278,7 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
             if (suspendCodes != null && suspendCodes.getText() != null) {
                 Value suspendErrorCodesValue = valueFactory.createTextValue(suspendCodes);
                 if (suspendErrorCodesValue.getKeyValue() != null) {
-                    StringTokenizer st = new StringTokenizer(suspendCodes.getText().trim(), ", ");
+                    StringTokenizer st = new StringTokenizer(suspendCodes.getText().trim(), ",");
                     while (st.hasMoreTokens()) {
                         String s = st.nextToken();
                         try {
@@ -351,7 +351,7 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
             if (retryDisabledErrorCodes != null && retryDisabledErrorCodes.getText() != null) {
 
                 StringTokenizer st = new StringTokenizer(
-                        retryDisabledErrorCodes.getText().trim(), ", ");
+                        retryDisabledErrorCodes.getText().trim(), ",");
                 while (st.hasMoreTokens()) {
                     String s = st.nextToken();
                     try {
