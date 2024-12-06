@@ -370,14 +370,18 @@ public class ClientConnFactoryBuilder {
                 if (log.isDebugEnabled()) {
                     log.debug(name + " Loading Trust Keystore from : " + location);
                 }
-                SslSenderTrustStoreHolder.getInstance().setLocation(location);
-                SslSenderTrustStoreHolder.getInstance().setPassword(passwordElement.getText());
-                SslSenderTrustStoreHolder.getInstance().setType(type);
+
                 trustStore.load(fis, storePassword.toCharArray());
                 TrustManagerFactory trustManagerfactory = TrustManagerFactory.getInstance(
                         TrustManagerFactory.getDefaultAlgorithm());
                 trustManagerfactory.init(trustStore);
                 trustManagers = trustManagerfactory.getTrustManagers();
+
+                SslSenderTrustStoreHolder sslSenderTrustStoreHolder = SslSenderTrustStoreHolder.getInstance();
+                sslSenderTrustStoreHolder.setKeyStore(trustStore);
+                sslSenderTrustStoreHolder.setLocation(location);
+                sslSenderTrustStoreHolder.setPassword(storePassword);
+                SslSenderTrustStoreHolder.getInstance().setType(type);
             } catch (GeneralSecurityException gse) {
                 log.error(name + " Error loading Key store : " + location, gse);
                 throw new AxisFault("Error loading Key store : " + location, gse);
@@ -471,6 +475,11 @@ public class ClientConnFactoryBuilder {
                         TrustManagerFactory.getDefaultAlgorithm());
                 trustManagerfactory.init(trustStore);
                 trustManagers = trustManagerfactory.getTrustManagers();
+
+                SslSenderTrustStoreHolder sslSenderTrustStoreHolder = SslSenderTrustStoreHolder.getInstance();
+                sslSenderTrustStoreHolder.setKeyStore(trustStore);
+                sslSenderTrustStoreHolder.setLocation(location);
+                sslSenderTrustStoreHolder.setPassword(storePassword);
 
             } catch (GeneralSecurityException gse) {
                 log.error(name + " Error loading Key store : " + location, gse);

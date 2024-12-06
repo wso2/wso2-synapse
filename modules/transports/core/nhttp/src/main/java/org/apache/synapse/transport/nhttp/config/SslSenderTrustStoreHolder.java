@@ -17,6 +17,8 @@
  */
 package org.apache.synapse.transport.nhttp.config;
 
+import java.security.KeyStore;
+
 /**
  * The SSL Sender TrustStore Holder class to store the client trust store's configurable details.
  */
@@ -26,6 +28,7 @@ public class SslSenderTrustStoreHolder {
 
     private SslSenderTrustStoreHolder() {}
 
+    private KeyStore keyStore;
     private String location;
     private String password;
     private String type;
@@ -33,13 +36,28 @@ public class SslSenderTrustStoreHolder {
     public static SslSenderTrustStoreHolder getInstance() {
 
         if (instance == null) {
-            synchronized (TrustStoreHolder.class) {
+            synchronized (SslSenderTrustStoreHolder.class) {
                 if (instance == null) {
                     instance = new SslSenderTrustStoreHolder();
                 }
             }
         }
         return instance;
+    }
+
+    public static void resetInstance() {
+
+        instance = null;
+    }
+
+    public KeyStore getKeyStore() {
+
+        return keyStore;
+    }
+
+    public void setKeyStore(KeyStore keyStore) {
+
+        this.keyStore = keyStore;
     }
 
     public void setLocation(String location) {
@@ -64,5 +82,10 @@ public class SslSenderTrustStoreHolder {
 
     public String getType() {
         return this.type;
+    }
+
+    public boolean isValid() {
+        return keyStore != null && location != null && !location.isEmpty() &&
+                password != null && !password.isEmpty();
     }
 }
