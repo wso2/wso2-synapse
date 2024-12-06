@@ -29,9 +29,11 @@ public class FilterExpressionNode implements ExpressionNode {
 
 
     private String expression;
+    private final String unProcessedExpression;
     private final Map<String, ExpressionNode> arguments;
 
     public FilterExpressionNode(String expression, Map<String, ExpressionNode> arguments) {
+        this.unProcessedExpression = expression;
         this.expression = expression;
         this.arguments = arguments;
     }
@@ -42,6 +44,7 @@ public class FilterExpressionNode implements ExpressionNode {
      */
     @Override
     public ExpressionResult evaluate(EvaluationContext context, boolean isObjectValue) {
+        expression = unProcessedExpression;
         for (Map.Entry<String, ExpressionNode> entry : arguments.entrySet()) {
             if (entry.getValue() != null) {
                 ExpressionResult result = entry.getValue().evaluate(context, isObjectValue);

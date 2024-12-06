@@ -53,6 +53,7 @@ import java.util.regex.Pattern;
 public class PayloadAccessNode implements ExpressionNode {
 
     private String expression;
+    private final String unProcessedExpression;
     private final Map<String, ExpressionNode> arguments;
 
     public enum Type {
@@ -69,6 +70,7 @@ public class PayloadAccessNode implements ExpressionNode {
     public PayloadAccessNode(String expression, Map<String, ExpressionNode> arguments, Type type,
                              ExpressionNode predefinedFunctionNode) {
         this.expression = expression;
+        this.unProcessedExpression = expression;
         this.arguments = arguments;
         this.type = type;
         this.predefinedFunctionNode = predefinedFunctionNode;
@@ -92,6 +94,8 @@ public class PayloadAccessNode implements ExpressionNode {
 
     @Override
     public ExpressionResult evaluate(EvaluationContext context, boolean isObjectValue) throws EvaluationException {
+        // Take a copy of the expression to avoid modifying the original expression
+        expression = unProcessedExpression;
         if (expression.startsWith(ExpressionConstants.PAYLOAD)) {
             expression = ExpressionConstants.PAYLOAD_$ + expression.substring(ExpressionConstants.PAYLOAD.length());
         }
