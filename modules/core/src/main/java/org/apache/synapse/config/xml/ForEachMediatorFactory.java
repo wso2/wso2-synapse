@@ -20,6 +20,7 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -27,6 +28,8 @@ import org.apache.synapse.mediators.builtin.CallMediator;
 import org.apache.synapse.mediators.builtin.CalloutMediator;
 import org.apache.synapse.mediators.builtin.ForEachMediator;
 import org.apache.synapse.mediators.builtin.SendMediator;
+import org.apache.synapse.mediators.eip.Target;
+import org.apache.synapse.mediators.v2.ForEachMediatorV2;
 import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
@@ -57,6 +60,13 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
     private static final QName CONTINUE_IN_FAULT_Q
             = new QName(XMLConfigConstants.NULL_NAMESPACE, "continueLoopOnFailure");
 
+    private static final QName ATT_COLLECTION = new QName("collection");
+    private static final QName SEQUENCE_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "sequence");
+    private static final QName PARALLEL_EXEC_Q = new QName("parallel-execution");
+    private static final QName RESULT_TARGET_Q = new QName("result-target");
+    private static final QName RESULT_TYPE_Q = new QName("result-type");
+    private static final QName ATT_COUNTER_VARIABLE = new QName("counter-variable");
+
     public QName getTagQName() {
         return FOREACH_Q;
     }
@@ -64,6 +74,12 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
     @Override
     protected Mediator createSpecificMediator(OMElement elem,
                                               Properties properties) {
+
+        OMAttribute collectionAttr = elem.getAttribute(ATT_COLLECTION);
+        if (collectionAttr != null && StringUtils.isNotBlank(collectionAttr.getAttributeValue())) {
+            return createForEachMediatorV2(elem, properties);
+        }
+
         ForEachMediator mediator = new ForEachMediator();
         processAuditStatus(mediator, elem);
 
@@ -126,4 +142,67 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
         return true;
     }
 
+    public Mediator createForEachMediatorV2(OMElement elem, Properties properties) {
+
+        boolean asynchronousExe = true;
+
+        ForEachMediatorV2 mediator = new ForEachMediatorV2();
+        processAuditStatus(mediator, elem);
+
+        OMAttribute parallelExecAttr = elem.getAttribute(PARALLEL_EXEC_Q);
+        if (parallelExecAttr != null && parallelExecAttr.getAttributeValue().equals("false")) {
+            asynchronousExe = false;
+        }
+        mediator.setParallelExecution(asynchronousExe);
+
+        OMAttribute resultTargetAttr = elem.getAttribute(RESULT_TARGET_Q);
+        if (resultTargetAttr != null && StringUtils.isNotBlank(resultTargetAttr.getAttributeValue())) {
+            OMAttribute contentTypeAttr = elem.getAttribute(RESULT_TYPE_Q);
+            if (contentTypeAttr == null || StringUtils.isBlank(contentTypeAttr.getAttributeValue())) {
+                handleException("The 'result-type' attribute is required when the 'result-target' attribute is present");
+            } else {
+                if ("JSON".equals(contentTypeAttr.getAttributeValue())) {
+                    mediator.setContentType(ForEachMediatorV2.JSON_TYPE);
+                } else if ("XML".equals(contentTypeAttr.getAttributeValue())) {
+                    mediator.setContentType(ForEachMediatorV2.XML_TYPE);
+                } else {
+                    handleException("The 'result-type' attribute should be either 'JSON' or 'XML'");
+                }
+                mediator.setResultTarget(resultTargetAttr.getAttributeValue());
+            }
+        }
+
+        OMAttribute counterVariableAttr = elem.getAttribute(ATT_COUNTER_VARIABLE);
+        if (counterVariableAttr != null && StringUtils.isNotBlank(counterVariableAttr.getAttributeValue())) {
+            if (asynchronousExe) {
+                handleException("The 'counter-variable' attribute is not allowed when parallel-execution is true");
+            }
+            mediator.setCounterVariable(counterVariableAttr.getAttributeValue());
+        }
+
+        OMAttribute collectionAttr = elem.getAttribute(ATT_COLLECTION);
+        if (collectionAttr == null || StringUtils.isBlank(collectionAttr.getAttributeValue())) {
+            handleException("The 'collection' attribute is required for the configuration of a Foreach mediator");
+        } else {
+            try {
+                mediator.setCollectionExpression(SynapsePathFactory.getSynapsePath(elem, ATT_COLLECTION));
+            } catch (JaxenException e) {
+                handleException("Unable to build the Foreach Mediator. Invalid expression "
+                        + collectionAttr.getAttributeValue(), e);
+            }
+        }
+
+        OMElement sequenceElement = elem.getFirstChildWithName(SEQUENCE_Q);
+        if (sequenceElement == null) {
+            handleException("A 'sequence' element is required for the configuration of a Foreach mediator");
+        } else {
+            Target target = new Target();
+            SequenceMediatorFactory fac = new SequenceMediatorFactory();
+            target.setSequence(fac.createAnonymousSequence(sequenceElement, properties));
+            target.setAsynchronous(asynchronousExe);
+            mediator.setTarget(target);
+        }
+        addAllCommentChildrenToList(elem, mediator.getCommentsList());
+        return mediator;
+    }
 }
