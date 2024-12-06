@@ -155,7 +155,7 @@ public class EndpointDefinition implements AspectConfigurable {
      * action to perform when a timeout occurs (NONE | DISCARD | DISCARD_AND_FAULT) *
      */
     private final int defaultTimeoutAction = SynapseConstants.NONE;
-    private Value timeoutAction = new Value("none");
+    private Value timeoutAction = new Value(EPConstants.NEVER);
 
     /** The initial suspend duration when an endpoint is marked inactive */
     private final long defaultInitialSuspendDuration = -1;
@@ -172,7 +172,7 @@ public class EndpointDefinition implements AspectConfigurable {
     private Value suspendMaximumDuration = new Value(String.valueOf(defaultSuspendMaximumDuration));
 
     /** A list of error codes, which directly puts an endpoint into suspend mode */
-    private Value suspendErrorCodes = new Value("");
+    private Value suspendErrorCodes = new Value(EPConstants.EMPTRY_STRING);
 
     /** No of retries to attempt on timeout, before an endpoint is makred inactive */
     private final int defaultRetriesOnTimeOutBeforeSuspend = 0;
@@ -183,7 +183,7 @@ public class EndpointDefinition implements AspectConfigurable {
     private Value retryDurationOnTimeout = new Value(String.valueOf(defaultRetryDurationOnTimeout));
 
     /** A list of error codes which puts the endpoint into timeout mode */
-    private Value timeoutErrorCodes = new Value("");
+    private Value timeoutErrorCodes = new Value(EPConstants.EMPTRY_STRING);
 
     private AspectConfiguration aspectConfiguration;
 
@@ -593,7 +593,7 @@ public class EndpointDefinition implements AspectConfigurable {
 
         int result = defaultTimeoutAction;
         String timeoutActionStr = timeoutAction.evaluateValue(synCtx);
-        if (timeoutActionStr != null) {
+        if (timeoutActionStr != null && !timeoutActionStr.trim().equalsIgnoreCase(EPConstants.NEVER)) {
             if (EPConstants.DISCARD.equalsIgnoreCase(timeoutActionStr)) {
                 result = SynapseConstants.DISCARD;
             } else if (EPConstants.FAULT.equalsIgnoreCase(timeoutActionStr)) {

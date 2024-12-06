@@ -28,6 +28,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.config.xml.ValueFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
+import org.apache.synapse.endpoints.EPConstants;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.xpath.SynapseXPath;
@@ -179,8 +180,12 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
             if (action != null && action.getText() != null) {
                 Value timeoutActionValue = valueFactory.createTextValue(action);
 
-                if (timeoutActionValue.getKeyValue() != null && !timeoutActionValue.getKeyValue().equals("discard") && !timeoutActionValue.getKeyValue().equals("fault")) {
-                    handleException("Invalid timeout action, action : " + timeoutActionValue.getKeyValue() + " is not supported");
+                if (timeoutActionValue.getKeyValue() != null &&
+                        !timeoutActionValue.getKeyValue().equalsIgnoreCase(EPConstants.NEVER) &&
+                        !timeoutActionValue.getKeyValue().equalsIgnoreCase(EPConstants.DISCARD) &&
+                        !timeoutActionValue.getKeyValue().equalsIgnoreCase(EPConstants.FAULT)) {
+                    handleException("Invalid timeout action, action : " + timeoutActionValue.getKeyValue() +
+                            " is not supported");
                 }
                 definition.setTimeoutAction(timeoutActionValue);
             }
