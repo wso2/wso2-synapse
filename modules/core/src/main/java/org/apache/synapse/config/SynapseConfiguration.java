@@ -1018,7 +1018,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      * @return its value
      */
     public Entry getEntryDefinition(String key) {
-        String transformedKey = Utils.transformFileKey(key);
+        String transformedKey = SynapseConfigUtils.transformFileKey(key);
         Object o = localRegistry.get(key);
         if (o == null || o instanceof Entry) {
             if (o == null) {
