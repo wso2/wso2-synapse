@@ -183,6 +183,27 @@ public class HttpEndpointTest {
     }
 
     @Test
+    public void testDefaultErrorHandlingValues() throws XMLStreamException, AxisFault {
+
+        HTTPEndpointFactory httpEndpointFactory = new HTTPEndpointFactory();
+        OMElement omElement = AXIOMUtil.stringToOM(
+                "<http method=\"get\" uri-template=\"http://localhost:3000/banks\" xmlns=\"http://ws.apache.org/ns/synapse\">\n" +
+                        "    </http>");
+        EndpointDefinition ep = httpEndpointFactory.createEndpointDefinition(omElement);
+        HTTPEndpoint httpEndpoint = new HTTPEndpoint();
+        httpEndpoint.setDefinition(ep);
+        MessageContext messageContext = createMessageContext();
+        Assert.assertEquals("Default timeout action should be 100", 100, httpEndpoint.getDefinition().getResolvedTimeoutAction(messageContext));
+        Assert.assertEquals("Default initial suspend duration should be -1", -1, httpEndpoint.getDefinition().getResolvedInitialSuspendDuration(messageContext));
+        Assert.assertEquals("Default maximum suspend duration should be 0", Long.MAX_VALUE, httpEndpoint.getDefinition().getResolvedSuspendMaximumDuration(messageContext));
+        Assert.assertEquals("Default suspend progression factor should be 1", 1f, httpEndpoint.getDefinition().getResolvedSuspendProgressionFactor(messageContext), 0.0f);
+        Assert.assertEquals("Default suspend error codes should be empty", new ArrayList<>(), httpEndpoint.getDefinition().getResolvedSuspendErrorCodes(messageContext));
+        Assert.assertEquals("Default timeout error codes should be empty", new ArrayList<>(), httpEndpoint.getDefinition().getResolvedTimeoutErrorCodes(messageContext));
+        Assert.assertEquals("Default retries on timeout before suspend should be 0", 0, httpEndpoint.getDefinition().getResolvedRetriesOnTimeoutBeforeSuspend(messageContext));
+        Assert.assertEquals("Default retry duration on timeout should be 0", 0, httpEndpoint.getDefinition().getResolvedRetryDurationOnTimeout(messageContext));
+    }
+
+    @Test
     public void testSetSuspendErrorCodes() throws XMLStreamException, AxisFault {
 
         HTTPEndpointFactory httpEndpointFactory = new HTTPEndpointFactory();
