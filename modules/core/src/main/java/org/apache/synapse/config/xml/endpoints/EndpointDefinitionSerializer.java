@@ -25,6 +25,7 @@ import org.apache.axiom.om.OMFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.statistics.StatisticsConfigurable;
 import org.apache.synapse.config.xml.XMLConfigConstants;
+import org.apache.synapse.endpoints.EPConstants;
 import org.apache.synapse.endpoints.EndpointDefinition;
 
 public class EndpointDefinitionSerializer {
@@ -102,7 +103,7 @@ public class EndpointDefinitionSerializer {
             element.addChild(sec);
         }
 
-        if (!endpointDefinition.getTimeoutAction().equals("none") || endpointDefinition.isTimeoutActionDynamic() ||
+        if (!endpointDefinition.getTimeoutAction().equals(EPConstants.NEVER) || endpointDefinition.isTimeoutActionDynamic() ||
                 isStringPositiveNumber(endpointDefinition.getTimeoutDuration())  || endpointDefinition.isDynamicTimeoutEndpoint()) {
 
             OMElement timeout = fac.createOMElement(
@@ -120,15 +121,16 @@ public class EndpointDefinitionSerializer {
                 timeout.addChild(duration);
             }
 
-            if (!endpointDefinition.getTimeoutAction().equals("none") || endpointDefinition.isTimeoutActionDynamic()) {
+            if (!endpointDefinition.getTimeoutAction().equals(
+                    EPConstants.NEVER) || endpointDefinition.isTimeoutActionDynamic()) {
                 OMElement action = fac.createOMElement("responseAction", SynapseConstants.SYNAPSE_OMNAMESPACE);
                 if (endpointDefinition.isTimeoutActionDynamic()) {
                     action.setText('{' + endpointDefinition.getTimeoutAction() + '}');
                 } else {
-                    if (endpointDefinition.getTimeoutAction().equals("discard")) {
-                        action.setText("discard");
-                    } else if (endpointDefinition.getTimeoutAction().equals("fault")) {
-                        action.setText("fault");
+                    if (endpointDefinition.getTimeoutAction().equals(EPConstants.DISCARD)) {
+                        action.setText(EPConstants.DISCARD);
+                    } else if (endpointDefinition.getTimeoutAction().equals(EPConstants.FAULT)) {
+                        action.setText(EPConstants.FAULT);
                     }
                 }
                 timeout.addChild(action);
