@@ -19,6 +19,7 @@
 
 package org.apache.synapse.endpoints;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -592,8 +593,8 @@ public class EndpointDefinition implements AspectConfigurable {
     public int getResolvedTimeoutAction(MessageContext synCtx) {
 
         int result = defaultTimeoutAction;
-        String timeoutActionStr = timeoutAction.evaluateValue(synCtx);
-        if (timeoutActionStr != null && !timeoutActionStr.trim().equalsIgnoreCase(EPConstants.NEVER)) {
+        String timeoutActionStr = (synCtx != null) ? timeoutAction.evaluateValue(synCtx) : timeoutAction.getKeyValue();
+        if (StringUtils.isNotEmpty(timeoutActionStr) && !timeoutActionStr.trim().equalsIgnoreCase(EPConstants.NEVER)) {
             if (EPConstants.DISCARD.equalsIgnoreCase(timeoutActionStr)) {
                 result = SynapseConstants.DISCARD;
             } else if (EPConstants.FAULT.equalsIgnoreCase(timeoutActionStr)) {
@@ -664,12 +665,14 @@ public class EndpointDefinition implements AspectConfigurable {
         long result = defaultInitialSuspendDuration;
         String stringValue = "";
         try {
-            stringValue = initialSuspendDuration.evaluateValue(synCtx);
-            if (stringValue != null) {
+            stringValue = (synCtx != null) ? initialSuspendDuration.evaluateValue(synCtx) : initialSuspendDuration.getKeyValue();
+            if (StringUtils.isNotEmpty(stringValue)) {
                 result = Long.parseLong(stringValue.trim());
             }
         } catch (NumberFormatException e) {
-            log.warn("Error while evaluating initial suspend duration. The resolved value '" + stringValue + "' should be a valid number. Hence the default value '" + defaultInitialSuspendDuration + "' is used.");
+            log.warn("Error while evaluating initial suspend duration. The resolved value '" +
+                    stringValue + "' should be a valid number. Hence the default value '" +
+                    defaultInitialSuspendDuration + "' is used.");
         }
         return result;
     }
@@ -697,12 +700,14 @@ public class EndpointDefinition implements AspectConfigurable {
         float result = defaultSuspendProgressionFactor;
         String stringValue = "";
         try {
-            stringValue = suspendProgressionFactor.evaluateValue(messageContext);
-            if (stringValue != null) {
+            stringValue = (messageContext != null) ? suspendProgressionFactor.evaluateValue(messageContext) : suspendProgressionFactor.getKeyValue();
+            if (StringUtils.isNotEmpty(stringValue)) {
                 result = Float.parseFloat(stringValue);
             }
         } catch (NumberFormatException e) {
-            log.warn("Error while evaluating suspend duration progression factor. The resolved value '" + stringValue + "' should be a valid float. Hence the default value '" + defaultSuspendProgressionFactor + "' is used.");
+            log.warn("Error while evaluating suspend duration progression factor. The resolved value '" +
+                    stringValue + "' should be a valid float. Hence the default value '" +
+                    defaultSuspendProgressionFactor + "' is used.");
         }
         return result;
     }
@@ -730,12 +735,14 @@ public class EndpointDefinition implements AspectConfigurable {
         long result = defaultSuspendMaximumDuration;
         String stringValue = "";
         try {
-            stringValue = suspendMaximumDuration.evaluateValue(messageContext);
-            if (stringValue != null) {
+            stringValue = (messageContext != null) ? suspendMaximumDuration.evaluateValue(messageContext) : suspendMaximumDuration.getKeyValue();
+            if (StringUtils.isNotEmpty(stringValue)) {
                 result = Long.parseLong(stringValue);
             }
         } catch (NumberFormatException e) {
-            log.warn("Error while evaluating suspend maximum duration. The resolved value '" + stringValue + "' should be a valid number. Hence the default value '" + defaultSuspendMaximumDuration + "' is used.");
+            log.warn("Error while evaluating suspend maximum duration. The resolved value '" +
+                    stringValue + "' should be a valid number. Hence the default value '" +
+                    defaultSuspendMaximumDuration + "' is used.");
         }
         return result;
     }
@@ -763,12 +770,14 @@ public class EndpointDefinition implements AspectConfigurable {
         int result = defaultRetriesOnTimeOutBeforeSuspend;
         String stringValue = "";
         try {
-            stringValue = retriesOnTimeoutBeforeSuspend.evaluateValue(messageContext);
-            if (stringValue != null) {
+            stringValue = (messageContext != null) ? retriesOnTimeoutBeforeSuspend.evaluateValue(messageContext) : retriesOnTimeoutBeforeSuspend.getKeyValue();
+            if (StringUtils.isNotEmpty(stringValue)) {
                 result = Integer.parseInt(stringValue);
             }
         } catch (NumberFormatException e) {
-            log.warn("Error while evaluating retries before suspend [for timeouts]. The resolved value '" + stringValue + "' should be a valid number. Hence the default value '" + defaultRetriesOnTimeOutBeforeSuspend + "' is used.");
+            log.warn("Error while evaluating retries before suspend [for timeouts]. " +
+                    "The resolved value '" + stringValue + "' should be a valid number. Hence the default value '" +
+                    defaultRetriesOnTimeOutBeforeSuspend + "' is used.");
         }
         return result;
     }
@@ -796,12 +805,14 @@ public class EndpointDefinition implements AspectConfigurable {
         int result = defaultRetryDurationOnTimeout;
         String stringValue = "";
         try {
-            stringValue = retryDurationOnTimeout.evaluateValue(messageContext);
-            if (stringValue != null) {
+            stringValue = (messageContext != null) ? retryDurationOnTimeout.evaluateValue(messageContext) : retryDurationOnTimeout.getKeyValue();
+            if (StringUtils.isNotEmpty(stringValue)) {
                 result = Integer.parseInt(stringValue);
             }
         } catch (NumberFormatException e) {
-            log.warn("Error while evaluating retry delay for timeouts. The resolved value '" + stringValue + "' should be a valid number. Hence the default value '" + defaultRetryDurationOnTimeout + "' is used.");
+            log.warn("Error while evaluating retry delay for timeouts. The resolved value '" +
+                    stringValue + "' should be a valid number. Hence the default value '" +
+                    defaultRetryDurationOnTimeout + "' is used.");
         }
         return result;
     }
@@ -860,8 +871,8 @@ public class EndpointDefinition implements AspectConfigurable {
         List<Integer> result = new ArrayList<>();
         String stringValue = "";
         try {
-            stringValue = suspendErrorCodes.evaluateValue(messageContext);
-            if (stringValue != null) {
+            stringValue = (messageContext != null) ? suspendErrorCodes.evaluateValue(messageContext) : suspendErrorCodes.getKeyValue();
+            if (StringUtils.isNotEmpty(stringValue)) {
                 String[] errorCodes = stringValue.split(",");
                 result = new ArrayList<Integer>();
                 for (String errorCode : errorCodes) {
@@ -869,7 +880,8 @@ public class EndpointDefinition implements AspectConfigurable {
                 }
             }
         } catch (NumberFormatException e) {
-            log.warn("Error while evaluating suspend error codes. The resolved value '" + stringValue + "' should be valid numbers separated by commas.");
+            log.warn("Error while evaluating suspend error codes. The resolved value '" +
+                    stringValue + "' should be valid numbers separated by commas.");
         }
         return result;
     }
@@ -896,8 +908,8 @@ public class EndpointDefinition implements AspectConfigurable {
         List<Integer> result = new ArrayList<>();
         String stringValue = "";
         try {
-            stringValue = timeoutErrorCodes.evaluateValue(messageContext);
-            if (stringValue != null) {
+            stringValue = (messageContext != null) ? timeoutErrorCodes.evaluateValue(messageContext) : timeoutErrorCodes.getKeyValue();
+            if (StringUtils.isNotEmpty(stringValue)) {
                 String[] errorCodes = stringValue.split(",");
                 result = new ArrayList<Integer>();
                 for (String errorCode : errorCodes) {
@@ -905,7 +917,8 @@ public class EndpointDefinition implements AspectConfigurable {
                 }
             }
         } catch (NumberFormatException e) {
-            log.warn("Error while evaluating timeout error codes. The resolved value '" + stringValue + "' should be valid numbers separated by commas.");
+            log.warn("Error while evaluating timeout error codes. The resolved value '" +
+                    stringValue + "' should be valid numbers separated by commas.");
         }
         return result;
     }

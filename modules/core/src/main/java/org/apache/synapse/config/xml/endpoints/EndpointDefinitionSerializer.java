@@ -25,6 +25,7 @@ import org.apache.axiom.om.OMFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.statistics.StatisticsConfigurable;
 import org.apache.synapse.config.xml.XMLConfigConstants;
+import org.apache.synapse.endpoints.EPConstants;
 import org.apache.synapse.endpoints.EndpointDefinition;
 
 public class EndpointDefinitionSerializer {
@@ -102,14 +103,14 @@ public class EndpointDefinitionSerializer {
             element.addChild(sec);
         }
 
-        if (!endpointDefinition.getTimeoutAction().equals("none") || endpointDefinition.isTimeoutActionDynamic() ||
-                isStringPositiveNumber(endpointDefinition.getTimeoutDuration())  || endpointDefinition.isDynamicTimeoutEndpoint()) {
+        if (!endpointDefinition.getTimeoutAction().equals(EPConstants.NEVER) || endpointDefinition.isTimeoutActionDynamic() ||
+                isPositiveNumber(endpointDefinition.getTimeoutDuration())  || endpointDefinition.isDynamicTimeoutEndpoint()) {
 
             OMElement timeout = fac.createOMElement(
                     "timeout", SynapseConstants.SYNAPSE_OMNAMESPACE);
             element.addChild(timeout);
 
-            if (isStringPositiveNumber(endpointDefinition.getTimeoutDuration()) || endpointDefinition.isDynamicTimeoutEndpoint()) {
+            if (isPositiveNumber(endpointDefinition.getTimeoutDuration()) || endpointDefinition.isDynamicTimeoutEndpoint()) {
                 OMElement duration = fac.createOMElement(
                         "duration", SynapseConstants.SYNAPSE_OMNAMESPACE);
                 if (!endpointDefinition.isDynamicTimeoutEndpoint()) {
@@ -120,15 +121,16 @@ public class EndpointDefinitionSerializer {
                 timeout.addChild(duration);
             }
 
-            if (!endpointDefinition.getTimeoutAction().equals("none") || endpointDefinition.isTimeoutActionDynamic()) {
+            if (!endpointDefinition.getTimeoutAction().equals(
+                    EPConstants.NEVER) || endpointDefinition.isTimeoutActionDynamic()) {
                 OMElement action = fac.createOMElement("responseAction", SynapseConstants.SYNAPSE_OMNAMESPACE);
                 if (endpointDefinition.isTimeoutActionDynamic()) {
                     action.setText('{' + endpointDefinition.getTimeoutAction() + '}');
                 } else {
-                    if (endpointDefinition.getTimeoutAction().equals("discard")) {
-                        action.setText("discard");
-                    } else if (endpointDefinition.getTimeoutAction().equals("fault")) {
-                        action.setText("fault");
+                    if (endpointDefinition.getTimeoutAction().equals(EPConstants.DISCARD)) {
+                        action.setText(EPConstants.DISCARD);
+                    } else if (endpointDefinition.getTimeoutAction().equals(EPConstants.FAULT)) {
+                        action.setText(EPConstants.FAULT);
                     }
                 }
                 timeout.addChild(action);
@@ -195,7 +197,7 @@ public class EndpointDefinitionSerializer {
             element.addChild(suspendOnFailure);
         }
 
-        if (isStringPositiveNumber(endpointDefinition.getRetryDurationOnTimeout()) || endpointDefinition.isRetryDurationOnTimeoutDynamic() ||
+        if (isPositiveNumber(endpointDefinition.getRetryDurationOnTimeout()) || endpointDefinition.isRetryDurationOnTimeoutDynamic() ||
             !endpointDefinition.getTimeoutErrorCodes().isEmpty() || endpointDefinition.isTimeoutErrorCodesDynamic()) {
 
             OMElement markAsTimedout = fac.createOMElement(
@@ -215,7 +217,7 @@ public class EndpointDefinitionSerializer {
                 markAsTimedout.addChild(errorCodes);
             }
 
-            if (isStringPositiveNumber(endpointDefinition.getRetriesOnTimeoutBeforeSuspend()) || endpointDefinition.isRetriesOnTimeoutBeforeSuspendDynamic()) {
+            if (isPositiveNumber(endpointDefinition.getRetriesOnTimeoutBeforeSuspend()) || endpointDefinition.isRetriesOnTimeoutBeforeSuspendDynamic()) {
                 OMElement retries = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.RETRIES_BEFORE_SUSPENSION,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
@@ -227,7 +229,7 @@ public class EndpointDefinitionSerializer {
                 markAsTimedout.addChild(retries);
             }
 
-            if (isStringPositiveNumber(endpointDefinition.getRetryDurationOnTimeout()) || endpointDefinition.isRetryDurationOnTimeoutDynamic()) {
+            if (isPositiveNumber(endpointDefinition.getRetryDurationOnTimeout()) || endpointDefinition.isRetryDurationOnTimeoutDynamic()) {
                 OMElement retryDelay = fac.createOMElement(
                     org.apache.synapse.config.xml.XMLConfigConstants.RETRY_DELAY,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);
@@ -263,7 +265,7 @@ public class EndpointDefinitionSerializer {
         }
     }
 
-    private boolean isStringPositiveNumber(String input) {
+    private boolean isPositiveNumber(String input) {
         if (input == null || input.isEmpty()) {
             return false;
         }
