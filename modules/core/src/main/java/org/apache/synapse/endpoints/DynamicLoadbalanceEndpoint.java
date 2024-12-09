@@ -40,6 +40,7 @@ import org.apache.synapse.endpoints.dispatch.Dispatcher;
 import org.apache.synapse.endpoints.dispatch.HttpSessionDispatcher;
 import org.apache.synapse.endpoints.dispatch.SALSessions;
 import org.apache.synapse.endpoints.dispatch.SessionInformation;
+import org.apache.synapse.mediators.Value;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 import java.net.MalformedURLException;
@@ -456,7 +457,7 @@ public class DynamicLoadbalanceEndpoint extends LoadbalanceEndpoint {
         endpoint.setName("DLB:" +  member.getHostName() +
                 ":" + member.getPort() + ":" + UUID.randomUUID());
         EndpointDefinition definition = new EndpointDefinition();
-        definition.setSuspendMaximumDuration(10000);
+        definition.setSuspendMaximumDuration(new Value("10000"));
         definition.setReplicationDisabled(true);
         definition.setAddress(to.getAddress());
         endpoint.setDefinition(definition);

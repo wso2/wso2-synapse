@@ -72,7 +72,7 @@ public class HTTPEndpoint extends AbstractEndpoint {
             if (isTimeout(synCtx)) {
                 getContext().onTimeout();
             } else if (isSuspendFault(synCtx)) {
-                getContext().onFault();
+                getContext().onFault(synCtx);
             }
         }
 
