@@ -337,6 +337,10 @@ public class EndpointContext {
      * Endpoint has processed a message successfully
      */
     public void onSuccess() {
+        onSuccess(null);
+    }
+
+    public void onSuccess(MessageContext messageContext) {
         if (isClustered) {
             Integer state = (Integer) cfgCtx.getPropertyNonReplicable(STATE_KEY);
 
@@ -344,14 +348,14 @@ public class EndpointContext {
                 log.info("Endpoint : " + endpointName + printEndpointAddress()
                         + " currently " + getStateAsString() +
                         " will now be marked active since it processed its last message");
-                setState(ST_ACTIVE);
+                setState(ST_ACTIVE, messageContext);
             }
         } else {
             if (localState != ST_ACTIVE && localState != ST_OFF) {
                 log.info("Endpoint : " + endpointName + printEndpointAddress()
                         + " currently " + getStateAsString() +
                         " will now be marked active since it processed its last message");
-                setState(ST_ACTIVE);
+                setState(ST_ACTIVE, messageContext);
             }
         }
     }
@@ -360,14 +364,9 @@ public class EndpointContext {
      * Endpoint failed processing a message
      */
     public void onFault() {
-        log.warn("Endpoint : " + endpointName + printEndpointAddress() +
-                " will be marked SUSPENDED as it failed");
-        setState(ST_SUSPENDED);
+        onFault(null);
     }
 
-    /**
-     * Endpoint failed processing a message
-     */
     public void onFault(MessageContext messageContext) {
         log.warn("Endpoint : " + endpointName + printEndpointAddress() +
                 " will be marked SUSPENDED as it failed");
@@ -378,11 +377,15 @@ public class EndpointContext {
      * Endpoint timeout processing a message
      */
     public void onTimeout() {
+        onTimeout(null);
+    }
+
+    public void onTimeout(MessageContext messageContext) {
         if (log.isDebugEnabled()) {
             log.debug("Endpoint : " + endpointName + printEndpointAddress() + " will be marked for " +
                     "SUSPENSION due to the occurrence of one of the configured errors");
         }
-        setState(ST_TIMEOUT);
+        setState(ST_TIMEOUT, messageContext);
     }
 
     /**

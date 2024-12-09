@@ -70,7 +70,7 @@ public class HTTPEndpoint extends AbstractEndpoint {
         } else {
             // is this really a fault or a timeout/connection close etc?
             if (isTimeout(synCtx)) {
-                getContext().onTimeout();
+                getContext().onTimeout(synCtx);
             } else if (isSuspendFault(synCtx)) {
                 getContext().onFault(synCtx);
             }
@@ -81,9 +81,9 @@ public class HTTPEndpoint extends AbstractEndpoint {
         super.onFault(synCtx);
     }
 
-    public void onSuccess() {
+    public void onSuccess(MessageContext synCtx) {
         if (getContext() != null) {
-            getContext().onSuccess();
+            getContext().onSuccess(synCtx);
         }
     }
 

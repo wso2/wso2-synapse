@@ -466,7 +466,7 @@ public class BlockingMsgSender {
 
                 if (faultStack.peek() instanceof AbstractEndpoint) {
                     successfulEndpoint = (AbstractEndpoint) faultStack.pop();
-                    successfulEndpoint.onSuccess();
+                    successfulEndpoint.onSuccess(synapseInMsgCtx);
                 }
 
                 if (successfulEndpoint instanceof OAuthConfiguredHTTPEndpoint) {

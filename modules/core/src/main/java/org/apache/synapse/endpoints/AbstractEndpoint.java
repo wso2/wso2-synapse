@@ -591,6 +591,9 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         // do nothing
     }
 
+    public void onSuccess(MessageContext messageContext) {
+        // do nothing
+    }
 
     /**
      * Should this mediator perform tracing? True if its explicitly asked to
