@@ -748,4 +748,15 @@ public class Axis2MessageContext implements MessageContext {
     public Set getVariableKeySet() {
         return variables.keySet();
     }
+
+    /**
+     * Get a read-only view of all the variables currently set on this
+     * message context
+     *
+     * @return an unmodifiable map of variables
+     */
+    public Map<String, Object> getVariables() {
+
+        return Collections.unmodifiableMap(variables);
+    }
 }
