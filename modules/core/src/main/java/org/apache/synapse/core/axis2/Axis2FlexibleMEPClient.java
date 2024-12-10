@@ -579,27 +579,25 @@ public class Axis2FlexibleMEPClient {
             if (endpoint != null) {
                 // set the timeout time and the timeout action to the callback, so that the
                 // TimeoutHandler can detect timed out callbacks and take appropriate action.
+                long endpointTimeout;
                 if (!endpoint.isDynamicTimeoutEndpoint()) {
-                    long endpointTimeout = endpoint.getEffectiveTimeout();
-                    callback.setTimeout(endpointTimeout);
-                    callback.setTimeOutAction(endpoint.getTimeoutAction());
-                    callback.setTimeoutType(endpoint.getEndpointTimeoutType());
+                    endpointTimeout = endpoint.getEffectiveTimeout();
                     if (log.isDebugEnabled()) {
                         log.debug("Setting Timeout for endpoint : " +
-                                  getEndpointLogMessage(synapseOutMessageContext, axisOutMsgCtx) +
-                                  " to static timeout value : " + endpointTimeout);
+                                getEndpointLogMessage(synapseOutMessageContext, axisOutMsgCtx) +
+                                " to static timeout value : " + endpointTimeout);
                     }
                 } else {
-                    long endpointTimeout = endpoint.evaluateDynamicEndpointTimeout(synapseOutMessageContext);
-                    callback.setTimeout(endpointTimeout);
-                    callback.setTimeOutAction(endpoint.getTimeoutAction());
-                    callback.setTimeoutType(endpoint.getEndpointTimeoutType());
+                    endpointTimeout = endpoint.evaluateDynamicEndpointTimeout(synapseOutMessageContext);
                     if (log.isDebugEnabled()) {
                         log.debug("Setting Timeout for endpoint : " +
-                                  getEndpointLogMessage(synapseOutMessageContext, axisOutMsgCtx) +
-                                  " to dynamic timeout value : " + endpointTimeout);
+                                getEndpointLogMessage(synapseOutMessageContext, axisOutMsgCtx) +
+                                " to dynamic timeout value : " + endpointTimeout);
                     }
                 }
+                callback.setTimeout(endpointTimeout);
+                callback.setTimeOutAction(endpoint.getResolvedTimeoutAction(synapseOutMessageContext));
+                callback.setTimeoutType(endpoint.getEndpointTimeoutType());
             } else {
                 long globalTimeout = synapseOutMessageContext.getEnvironment().getGlobalTimeout();
                 callback.setTimeout(globalTimeout);

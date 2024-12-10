@@ -71,6 +71,8 @@ public interface Endpoint extends ManagedLifecycle, SynapseArtifact, Nameable {
      */
     public void onSuccess();
 
+    public void onSuccess(MessageContext synCtx);
+
     /**
      * Returns true to indicate that the endpoint is ready to service requests
      * @return true if endpoint is ready to service requests

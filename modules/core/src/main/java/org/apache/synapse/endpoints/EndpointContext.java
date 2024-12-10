@@ -25,6 +25,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.util.MessageHelper;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.util.Replicator;
 
 import java.util.Calendar;
@@ -194,12 +195,16 @@ public class EndpointContext {
         }
     }
 
+    private void setState(int state) {
+        setState(state, null);
+    }
+
     /**
      * Update the internal state of the endpoint
      *
      * @param state the new state of the endpoint
      */
-    private void setState(int state) {
+    private void setState(int state, MessageContext messageContext) {
 
         recordStatistics(state);
 
@@ -209,7 +214,7 @@ public class EndpointContext {
             switch (state) {
                 case ST_ACTIVE: {
                     Replicator.setAndReplicateState(REMAINING_RETRIES_KEY,
-                            definition.getRetriesOnTimeoutBeforeSuspend(), cfgCtx);
+                            definition.getResolvedRetriesOnTimeoutBeforeSuspend(messageContext), cfgCtx);
                     Replicator.setAndReplicateState(LAST_SUSPEND_DURATION_KEY, null, cfgCtx);
                     Replicator.setAndReplicateState(REMAINING_RETRIES_KEY, maximumRetryLimit, cfgCtx);
                     if (maximumRecursiveRetryLimit != -1) {
@@ -221,24 +226,24 @@ public class EndpointContext {
                     Integer retries
                             = (Integer) cfgCtx.getPropertyNonReplicable(REMAINING_RETRIES_KEY);
                     if (retries == null) {
-                        retries = definition.getRetriesOnTimeoutBeforeSuspend();
+                        retries = definition.getResolvedRetriesOnTimeoutBeforeSuspend(messageContext);
                     }
 
                     if (retries <= 0) {
-                        log.info("Endpoint : " + endpointName + printEndpointAddress() +
+                        log.info("Endpoint : " + endpointName + printEndpointAddress(messageContext) +
                                 " has been marked for SUSPENSION," +
                                 " but no further retries remain. Thus it will be SUSPENDED.");
 
-                        setState(ST_SUSPENDED);
+                        setState(ST_SUSPENDED, messageContext);
 
                     } else {
                         Replicator.setAndReplicateState(
                                 REMAINING_RETRIES_KEY, (retries - 1), cfgCtx);
                         long nextRetry = System.currentTimeMillis()
-                                + definition.getRetryDurationOnTimeout();
+                                + definition.getResolvedRetryDurationOnTimeout(messageContext);
                         Replicator.setAndReplicateState(NEXT_RETRY_TIME_KEY, nextRetry, cfgCtx);
 
-                        log.warn("Endpoint : " + endpointName + printEndpointAddress() +
+                        log.warn("Endpoint : " + endpointName + printEndpointAddress(messageContext) +
                                 " is marked as TIMEOUT and " +
                                 "will be retried : " + (retries - 1) + " more time/s after : " +
                                 new Date(nextRetry) + " until its marked SUSPENDED for failure");
@@ -246,14 +251,14 @@ public class EndpointContext {
                     break;
                 }
                 case ST_SUSPENDED: {
-                    computeNextRetryTimeForSuspended();
+                    computeNextRetryTimeForSuspended(messageContext);
                     break;
                 }
                 case ST_OFF: {
                     // mark as in maintenence, and reset all other information
                     Replicator.setAndReplicateState(REMAINING_RETRIES_KEY,
                             definition == null ? -1 :
-                                    definition.getRetriesOnTimeoutBeforeSuspend(), cfgCtx);
+                                    definition.getResolvedRetriesOnTimeoutBeforeSuspend(messageContext), cfgCtx);
                     Replicator.setAndReplicateState(LAST_SUSPEND_DURATION_KEY, null, cfgCtx);
                     Replicator.setAndReplicateState(REMAINING_RETRIES_KEY, maximumRetryLimit, cfgCtx);
                     if (maximumRecursiveRetryLimit != -1) {
@@ -275,7 +280,7 @@ public class EndpointContext {
                 if (definition == null) return;
                 switch (state) {
                     case ST_ACTIVE: {
-                        localRemainingRetries = definition.getRetriesOnTimeoutBeforeSuspend();
+                        localRemainingRetries = definition.getResolvedRetriesOnTimeoutBeforeSuspend(messageContext);
                         localLastSuspendDuration = -1;
                         maximumRemainingRetries = maximumRetryLimit;
                         if (maximumRecursiveRetryLimit != -1) {
@@ -286,21 +291,21 @@ public class EndpointContext {
                     case ST_TIMEOUT: {
                         int retries = localRemainingRetries;
                         if (retries == -1) {
-                            retries = definition.getRetriesOnTimeoutBeforeSuspend();
+                            retries = definition.getResolvedRetriesOnTimeoutBeforeSuspend(messageContext);
                         }
 
                         if (retries <= 0) {
-                            log.info("Endpoint : " + endpointName + printEndpointAddress()
+                            log.info("Endpoint : " + endpointName + printEndpointAddress(messageContext)
                                     + " has been marked for SUSPENSION, "
                                     + "but no further retries remain. Thus it will be SUSPENDED.");
 
-                            setState(ST_SUSPENDED);
+                            setState(ST_SUSPENDED, messageContext);
 
                         } else {
                             localRemainingRetries = retries - 1;
                             localNextRetryTime =
-                                    System.currentTimeMillis() + definition.getRetryDurationOnTimeout();
-                            log.warn("Endpoint : " + endpointName + printEndpointAddress()
+                                    System.currentTimeMillis() + definition.getResolvedRetryDurationOnTimeout(messageContext);
+                            log.warn("Endpoint : " + endpointName + printEndpointAddress(messageContext)
                                     + " is marked as TIMEOUT and " +
                                     "will be retried : " + localRemainingRetries + " more time/s " +
                                     "after : " + new Date(localNextRetryTime)
@@ -309,13 +314,13 @@ public class EndpointContext {
                         break;
                     }
                     case ST_SUSPENDED: {
-                        computeNextRetryTimeForSuspended();
+                        computeNextRetryTimeForSuspended(messageContext);
                         break;
                     }
                     case ST_OFF: {
                         // mark as in maintenence, and reset all other information
                         localRemainingRetries = definition == null ?
-                                -1 : definition.getRetriesOnTimeoutBeforeSuspend();
+                                -1 : definition.getResolvedRetriesOnTimeoutBeforeSuspend(messageContext);
                         localLastSuspendDuration = -1;
                         maximumRemainingRetries = maximumRetryLimit;
                         if (maximumRecursiveRetryLimit != -1) {
@@ -332,21 +337,25 @@ public class EndpointContext {
      * Endpoint has processed a message successfully
      */
     public void onSuccess() {
+        onSuccess(null);
+    }
+
+    public void onSuccess(MessageContext messageContext) {
         if (isClustered) {
             Integer state = (Integer) cfgCtx.getPropertyNonReplicable(STATE_KEY);
 
             if ((state != null) && ((state != ST_ACTIVE) && (state != ST_OFF))) {
-                log.info("Endpoint : " + endpointName + printEndpointAddress()
+                log.info("Endpoint : " + endpointName + printEndpointAddress(messageContext)
                         + " currently " + getStateAsString() +
                         " will now be marked active since it processed its last message");
-                setState(ST_ACTIVE);
+                setState(ST_ACTIVE, messageContext);
             }
         } else {
             if (localState != ST_ACTIVE && localState != ST_OFF) {
-                log.info("Endpoint : " + endpointName + printEndpointAddress()
+                log.info("Endpoint : " + endpointName + printEndpointAddress(messageContext)
                         + " currently " + getStateAsString() +
                         " will now be marked active since it processed its last message");
-                setState(ST_ACTIVE);
+                setState(ST_ACTIVE, messageContext);
             }
         }
     }
@@ -355,28 +364,37 @@ public class EndpointContext {
      * Endpoint failed processing a message
      */
     public void onFault() {
-        log.warn("Endpoint : " + endpointName + printEndpointAddress() +
+        onFault(null);
+    }
+
+    public void onFault(MessageContext messageContext) {
+        log.warn("Endpoint : " + endpointName + printEndpointAddress(messageContext) +
                 " will be marked SUSPENDED as it failed");
-        setState(ST_SUSPENDED);
+        setState(ST_SUSPENDED, messageContext);
     }
 
     /**
      * Endpoint timeout processing a message
      */
     public void onTimeout() {
+        onTimeout(null);
+    }
+
+    public void onTimeout(MessageContext messageContext) {
         if (log.isDebugEnabled()) {
-            log.debug("Endpoint : " + endpointName + printEndpointAddress() + " will be marked for " +
+            log.debug("Endpoint : " + endpointName + printEndpointAddress(messageContext) + " will be marked for " +
                     "SUSPENSION due to the occurrence of one of the configured errors");
         }
-        setState(ST_TIMEOUT);
+        setState(ST_TIMEOUT, messageContext);
     }
 
     /**
      * Compute the suspension duration according to the geometric series parameters defined
      */
-    private void computeNextRetryTimeForSuspended() {
+    private void computeNextRetryTimeForSuspended(MessageContext messageContext) {
         boolean notYetSuspended = true;
-        long lastSuspendDuration = definition.getInitialSuspendDuration();
+        long lastSuspendDuration = definition.getResolvedInitialSuspendDuration(messageContext);
+
         if (isClustered) {
             Long lastDuration = (Long) cfgCtx.getPropertyNonReplicable(LAST_SUSPEND_DURATION_KEY);
             if (lastDuration != null) {
@@ -389,11 +407,11 @@ public class EndpointContext {
         }
 
         long nextSuspendDuration = (notYetSuspended ?
-                definition.getInitialSuspendDuration() :
-                (long) (lastSuspendDuration * definition.getSuspendProgressionFactor()));
+                definition.getResolvedInitialSuspendDuration(messageContext) :
+                (long) (lastSuspendDuration * definition.getResolvedSuspendProgressionFactor(messageContext)));
 
-        if (nextSuspendDuration > definition.getSuspendMaximumDuration()) {
-            nextSuspendDuration = definition.getSuspendMaximumDuration();
+        if (nextSuspendDuration > definition.getResolvedSuspendMaximumDuration(messageContext)) {
+            nextSuspendDuration = definition.getResolvedSuspendMaximumDuration(messageContext);
         } else if (nextSuspendDuration < 0) {
             nextSuspendDuration = SynapseConstants.DEFAULT_ENDPOINT_SUSPEND_TIME;
         }
@@ -408,7 +426,7 @@ public class EndpointContext {
             localNextRetryTime = nextRetryTime;
         }
 
-        log.warn("Suspending endpoint : " + endpointName + printEndpointAddress() +
+        log.warn("Suspending endpoint : " + endpointName + printEndpointAddress(messageContext) +
                 (notYetSuspended ? " -" :
                         " - last suspend duration was : " + lastSuspendDuration + "ms and") +
                 " current suspend duration is : " + nextSuspendDuration + "ms - " +
@@ -598,11 +616,22 @@ public class EndpointContext {
     }
 
     private String printEndpointAddress() {
+        return printEndpointAddress(null);
+    }
+
+    private String printEndpointAddress(MessageContext messageContext) {
         if(this.definition != null && this.definition.getAddress() != null) {
-            return " with address " + MessageHelper.maskURLPassword(this.definition.getAddress());
-        } else {
-            return " ";
+            String address = "";
+            if (messageContext != null) {
+                address = this.definition.getAddress(messageContext);
+            } else {
+                address = this.definition.getAddress();
+            }
+            if (address != null) {
+                return " with address " + MessageHelper.maskURLPassword(address);
+            }
         }
+        return " ";
     }
 
     /**

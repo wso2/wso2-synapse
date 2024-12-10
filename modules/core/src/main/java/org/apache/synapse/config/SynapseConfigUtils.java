@@ -32,6 +32,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfiguration;
@@ -53,12 +54,10 @@ import org.wso2.securevault.definition.TrustKeyStoreInformation;
 import org.xml.sax.InputSource;
 
 import javax.activation.DataHandler;
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.xml.stream.XMLInputFactory;
@@ -86,7 +85,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @SuppressWarnings({"UnusedDeclaration"})
 public class SynapseConfigUtils {
@@ -895,6 +895,32 @@ public class SynapseConfigUtils {
         return false;
     }
 
+    /**
+     * Replaces occurrences of a pattern in the input string with corresponding property values from the
+     * message context.
+     *
+     * @param input the input string containing patterns to be replaced
+     * @param pattern the pattern to be matched in the input string
+     * @param messageContext the message context containing property values
+     * @return the resulting string with patterns replaced by property values
+     */
+    public static String replacePatternWithProperties(String input, Pattern pattern, MessageContext messageContext) {
+        Matcher matcher = pattern.matcher(input);
+        StringBuilder result = new StringBuilder();
+
+        int s = 0;
+        while (matcher.find()) {
+            String propertyName = matcher.group(1);
+            Object propertyValue = messageContext.getProperty(propertyName);
+            if (propertyValue != null) {
+                result.append(input.substring(s, matcher.start()));
+                result.append(propertyValue.toString());
+                s = matcher.end();
+            }
+        }
+        result.append(input.substring(s));
+        return result.toString();
+    }
 
     public static SynapseConfiguration getSynapseConfiguration(String tenantDomain){
          return  lastRegisteredSynapseConfigurationMap.get(tenantDomain);

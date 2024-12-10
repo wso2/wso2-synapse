@@ -468,7 +468,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 			}
 		}
         if (errorCode != null) {
-            if (definition.getTimeoutErrorCodes().isEmpty()) {
+            if (definition.getResolvedTimeoutErrorCodes(synCtx).isEmpty()) {
                 // if timeout codes are not defined, assume only HTTP timeout and connection close
                 boolean isTimeout = SynapseConstants.NHTTP_CONNECTION_TIMEOUT == errorCode;
                 boolean isClosed = SynapseConstants.NHTTP_CONNECTION_CLOSED == errorCode;
@@ -482,11 +482,11 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                     return true;
                 }
             } else {
-                if (definition.getTimeoutErrorCodes().contains(errorCode)) {
+                if (definition.getResolvedTimeoutErrorCodes(synCtx).contains(errorCode)) {
                     if (log.isDebugEnabled()) {
                         log.debug("Encountered a mark for suspension error : " + errorCode
                                 + " defined " + "error codes are : "
-                                + definition.getTimeoutErrorCodes());
+                                + definition.getResolvedTimeoutErrorCodes(synCtx));
                     }
                     return true;
                 }
@@ -542,7 +542,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     protected boolean isSuspendFault(MessageContext synCtx) {
         Integer errorCode = (Integer) synCtx.getProperty(SynapseConstants.ERROR_CODE);
         if (errorCode != null) {
-            if (definition.getSuspendErrorCodes().isEmpty()) {
+            if (definition.getResolvedSuspendErrorCodes(synCtx).isEmpty()) {
                 // if suspend codes are not defined, any error will be fatal for the endpoint
                 if (log.isDebugEnabled()) {
                     log.debug(this.toString() + " encountered a fatal error : " + errorCode);
@@ -550,10 +550,10 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                 return true;
 
             } else {
-                if (definition.getSuspendErrorCodes().contains(errorCode)) {
+                if (definition.getResolvedSuspendErrorCodes(synCtx).contains(errorCode)) {
                     if (log.isDebugEnabled()) {
                         log.debug("Encountered a suspend error : " + errorCode +
-                            " defined suspend codes are : " + definition.getSuspendErrorCodes());
+                            " defined suspend codes are : " + definition.getResolvedSuspendErrorCodes(synCtx));
                     }
                     return true;
                 }
@@ -575,7 +575,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      */
     public void onFault(MessageContext synCtx) {
         EndpointDefinition endpointDefinition = getDefinition();
-        if (endpointDefinition != null && endpointDefinition.getTimeoutAction() == SynapseConstants.DISCARD) {
+        if (endpointDefinition != null && endpointDefinition.getResolvedTimeoutAction(synCtx) == SynapseConstants.DISCARD) {
             log.info("Ignoring fault handlers since the timeout action is set to DISCARD");
         } else {
             logSetter();
@@ -591,6 +591,9 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         // do nothing
     }
 
+    public void onSuccess(MessageContext messageContext) {
+        // do nothing
+    }
 
     /**
      * Should this mediator perform tracing? True if its explicitly asked to

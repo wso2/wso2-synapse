@@ -596,14 +596,14 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     }
                     return;
                 } else {
-                    successfulEndpoint.onSuccess();
+                    successfulEndpoint.onSuccess(synapseOutMsgCtx);
                     if(failOver) {
                         popFailOverEPFromFaultStack(synapseOutMsgCtx);
                     }
                 }
 
             } else if(successfulEndpoint != null) {
-                successfulEndpoint.onSuccess();
+                successfulEndpoint.onSuccess(synapseOutMsgCtx);
                 if(failOver) {
                     popFailOverEPFromFaultStack(synapseOutMsgCtx);
                 }
