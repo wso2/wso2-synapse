@@ -43,7 +43,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -184,13 +186,17 @@ public class ApiUtils {
     }
 
     public static Set<Resource> getAcceptableResources(Map<String, Resource> resources, MessageContext synCtx) {
-        Set<Resource> acceptableResources = new LinkedHashSet<Resource>();
+        List<Resource> acceptableResourcesList = new LinkedList<>();
         for (Resource r : resources.values()) {
             if (isBound(r, synCtx) && r.canProcess(synCtx)) {
-                acceptableResources.add(r);
+                if (Arrays.asList(r.getMethods()).contains(RESTConstants.METHOD_OPTIONS)) {
+                    acceptableResourcesList.add(0, r);
+                } else {
+                    acceptableResourcesList.add(r);
+                }
             }
         }
-        return acceptableResources;
+        return new LinkedHashSet<Resource>(acceptableResourcesList);
     }
 
     /**
