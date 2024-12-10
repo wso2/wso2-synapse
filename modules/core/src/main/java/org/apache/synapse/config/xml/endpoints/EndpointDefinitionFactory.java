@@ -167,7 +167,7 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                         if (timeoutDurationValue.getKeyValue() != null) {
                             Long.parseLong(timeoutDurationValue.getKeyValue());
                         }
-                        definition.setTimeoutDuration(valueFactory.createTextValue(duration));
+                        definition.setTimeoutDuration(timeoutDurationValue);
                     } catch (NumberFormatException e) {
                         handleException("Endpoint timeout duration expected as a " +
                                 "number but was not a number");
@@ -242,7 +242,7 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                     if (retryDelayValue.getKeyValue() != null) {
                         Integer.parseInt(retryDelayValue.getKeyValue());
                     }
-                    definition.setRetryDurationOnTimeout(valueFactory.createTextValue(retryDelay));
+                    definition.setRetryDurationOnTimeout(retryDelayValue);
                 } catch (NumberFormatException e) {
                     handleException("The retry delay for timeouts should be specified " +
                         "as a valid number : " + retryDelay.getText(), e);
@@ -289,7 +289,7 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                         }
                     }
                 }
-                definition.setSuspendErrorCodes(valueFactory.createTextValue(suspendCodes));
+                definition.setSuspendErrorCodes(suspendErrorCodesValue);
             }
 
             OMElement initialDuration = suspendOnFailure.getFirstChildWithName(new QName(

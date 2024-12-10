@@ -162,13 +162,21 @@ public class HttpEndpointTest {
 
         HTTPEndpointFactory httpEndpointFactory = new HTTPEndpointFactory();
         OMElement omElement = AXIOMUtil.stringToOM(
-                "<http method=\"get\" statistics=\"enable\" trace=\"enable\" uri-template=\"http://localhost:3000/banks\" xmlns=\"http://ws.apache.org/ns/synapse\"><enableAddressing separateListener=\"true\" version=\"final\"/><timeout><duration>12</duration><responseAction>{$ctx:timeoutAction}</responseAction></timeout></http>");
+                "<http method=\"get\" statistics=\"enable\" trace=\"enable\" " +
+                        "uri-template=\"http://localhost:3000/banks\" xmlns=\"http://ws.apache.org/ns/synapse\">" +
+                        "<enableAddressing separateListener=\"true\" version=\"final\"/>" +
+                        "<timeout>" +
+                            "<duration>12</duration>" +
+                            "<responseAction>{$ctx:timeoutAction}</responseAction>" +
+                        "</timeout>" +
+                        "</http>");
         EndpointDefinition ep = httpEndpointFactory.createEndpointDefinition(omElement);
         HTTPEndpoint httpEndpoint = new HTTPEndpoint();
         httpEndpoint.setDefinition(ep);
         MessageContext messageContext = createMessageContext();
         messageContext.setProperty("timeoutAction", "discard");
-        Assert.assertEquals(httpEndpoint.getDefinition().getResolvedTimeoutAction(messageContext), SynapseConstants.DISCARD);
+        Assert.assertEquals(
+                httpEndpoint.getDefinition().getResolvedTimeoutAction(messageContext), SynapseConstants.DISCARD);
     }
 
     @Test
@@ -176,7 +184,19 @@ public class HttpEndpointTest {
 
         HTTPEndpointFactory httpEndpointFactory = new HTTPEndpointFactory();
         OMElement omElement = AXIOMUtil.stringToOM(
-                "<http method=\"get\" uri-template=\"http://localhost:3000/banks\" xmlns=\"http://ws.apache.org/ns/synapse\"><timeout><duration>10</duration></timeout><suspendOnFailure><initialDuration>1000</initialDuration><progressionFactor>1</progressionFactor></suspendOnFailure><markForSuspension><retriesBeforeSuspension>0</retriesBeforeSuspension></markForSuspension></http>");
+                "<http method=\"get\" uri-template=\"http://localhost:3000/banks\" " +
+                        "xmlns=\"http://ws.apache.org/ns/synapse\">" +
+                        "<timeout>" +
+                            "<duration>10</duration>" +
+                        "</timeout>" +
+                        "<suspendOnFailure>" +
+                            "<initialDuration>1000</initialDuration>" +
+                            "<progressionFactor>1</progressionFactor>" +
+                        "</suspendOnFailure>" +
+                        "<markForSuspension>" +
+                            "<retriesBeforeSuspension>0</retriesBeforeSuspension>" +
+                        "</markForSuspension>" +
+                        "</http>");
         EndpointDefinition ep1 = httpEndpointFactory.createEndpointDefinition(omElement);
         Assert.assertEquals(ep1.getRetriesOnTimeoutBeforeSuspend(), "0");
         Assert.assertEquals(ep1.getInitialSuspendDuration(), "1000");
@@ -187,20 +207,28 @@ public class HttpEndpointTest {
 
         HTTPEndpointFactory httpEndpointFactory = new HTTPEndpointFactory();
         OMElement omElement = AXIOMUtil.stringToOM(
-                "<http method=\"get\" uri-template=\"http://localhost:3000/banks\" xmlns=\"http://ws.apache.org/ns/synapse\">\n" +
-                        "    </http>");
+                "<http method=\"get\" uri-template=\"http://localhost:3000/banks\" " +
+                        "xmlns=\"http://ws.apache.org/ns/synapse\"></http>");
         EndpointDefinition ep = httpEndpointFactory.createEndpointDefinition(omElement);
         HTTPEndpoint httpEndpoint = new HTTPEndpoint();
         httpEndpoint.setDefinition(ep);
         MessageContext messageContext = createMessageContext();
-        Assert.assertEquals("Default timeout action should be 100", 100, httpEndpoint.getDefinition().getResolvedTimeoutAction(messageContext));
-        Assert.assertEquals("Default initial suspend duration should be -1", -1, httpEndpoint.getDefinition().getResolvedInitialSuspendDuration(messageContext));
-        Assert.assertEquals("Default maximum suspend duration should be 0", Long.MAX_VALUE, httpEndpoint.getDefinition().getResolvedSuspendMaximumDuration(messageContext));
-        Assert.assertEquals("Default suspend progression factor should be 1", 1f, httpEndpoint.getDefinition().getResolvedSuspendProgressionFactor(messageContext), 0.0f);
-        Assert.assertEquals("Default suspend error codes should be empty", new ArrayList<>(), httpEndpoint.getDefinition().getResolvedSuspendErrorCodes(messageContext));
-        Assert.assertEquals("Default timeout error codes should be empty", new ArrayList<>(), httpEndpoint.getDefinition().getResolvedTimeoutErrorCodes(messageContext));
-        Assert.assertEquals("Default retries on timeout before suspend should be 0", 0, httpEndpoint.getDefinition().getResolvedRetriesOnTimeoutBeforeSuspend(messageContext));
-        Assert.assertEquals("Default retry duration on timeout should be 0", 0, httpEndpoint.getDefinition().getResolvedRetryDurationOnTimeout(messageContext));
+        Assert.assertEquals("Default timeout action should be 100", 100,
+                httpEndpoint.getDefinition().getResolvedTimeoutAction(messageContext));
+        Assert.assertEquals("Default initial suspend duration should be -1", -1,
+                httpEndpoint.getDefinition().getResolvedInitialSuspendDuration(messageContext));
+        Assert.assertEquals("Default maximum suspend duration should be 0", Long.MAX_VALUE,
+                httpEndpoint.getDefinition().getResolvedSuspendMaximumDuration(messageContext));
+        Assert.assertEquals("Default suspend progression factor should be 1", 1f,
+                httpEndpoint.getDefinition().getResolvedSuspendProgressionFactor(messageContext), 0.0f);
+        Assert.assertEquals("Default suspend error codes should be empty", new ArrayList<>(),
+                httpEndpoint.getDefinition().getResolvedSuspendErrorCodes(messageContext));
+        Assert.assertEquals("Default timeout error codes should be empty", new ArrayList<>(),
+                httpEndpoint.getDefinition().getResolvedTimeoutErrorCodes(messageContext));
+        Assert.assertEquals("Default retries on timeout before suspend should be 0", 0,
+                httpEndpoint.getDefinition().getResolvedRetriesOnTimeoutBeforeSuspend(messageContext));
+        Assert.assertEquals("Default retry duration on timeout should be 0", 0,
+                httpEndpoint.getDefinition().getResolvedRetryDurationOnTimeout(messageContext));
     }
 
     @Test
@@ -208,7 +236,8 @@ public class HttpEndpointTest {
 
         HTTPEndpointFactory httpEndpointFactory = new HTTPEndpointFactory();
         OMElement omElement = AXIOMUtil.stringToOM(
-                "<http method=\"get\" uri-template=\"http://localhost:3000/banks\" xmlns=\"http://ws.apache.org/ns/synapse\">\n" +
+                "<http method=\"get\" uri-template=\"http://localhost:3000/banks\" " +
+                        "xmlns=\"http://ws.apache.org/ns/synapse\">\n" +
                         "        <suspendOnFailure>\n" +
                         "            <errorCodes>{$ctx:suspendErrorCodes}</errorCodes>\n" +
                         "            <initialDuration>-1</initialDuration>\n" +
@@ -227,7 +256,8 @@ public class HttpEndpointTest {
         List<Integer> actualSuspendErrorCodes = new ArrayList<>();
         actualSuspendErrorCodes.add(101503);
         actualSuspendErrorCodes.add(101504);
-        List<Integer> expectedSuspendErrorCodes = httpEndpoint.getDefinition().getResolvedSuspendErrorCodes(messageContext);
+        List<Integer> expectedSuspendErrorCodes =
+                httpEndpoint.getDefinition().getResolvedSuspendErrorCodes(messageContext);
         Assert.assertTrue(expectedSuspendErrorCodes.equals(actualSuspendErrorCodes));
     }
 
@@ -236,7 +266,8 @@ public class HttpEndpointTest {
 
         HTTPEndpointFactory httpEndpointFactory = new HTTPEndpointFactory();
         OMElement omElement = AXIOMUtil.stringToOM(
-                "<http method=\"get\" uri-template=\"http://localhost:3000/banks\" xmlns=\"http://ws.apache.org/ns/synapse\">\n" +
+                "<http method=\"get\" uri-template=\"http://localhost:3000/banks\" " +
+                        "xmlns=\"http://ws.apache.org/ns/synapse\">\n" +
                         "        <markForSuspension>\n" +
                         "            <errorCodes>{$ctx:timeoutErrorCodes}</errorCodes>\n" +
                         "            <retriesBeforeSuspension>10</retriesBeforeSuspension>\n" +
@@ -251,7 +282,8 @@ public class HttpEndpointTest {
         List<Integer> actualTimeoutErrorCodes = new ArrayList<>();
         actualTimeoutErrorCodes.add(101503);
         actualTimeoutErrorCodes.add(101504);
-        List<Integer> expectedTimeoutErrorCodes = httpEndpoint.getDefinition().getResolvedTimeoutErrorCodes(messageContext);
+        List<Integer> expectedTimeoutErrorCodes =
+                httpEndpoint.getDefinition().getResolvedTimeoutErrorCodes(messageContext);
         Assert.assertTrue(expectedTimeoutErrorCodes.equals(actualTimeoutErrorCodes));
     }
 
