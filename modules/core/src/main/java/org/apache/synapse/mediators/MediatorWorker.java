@@ -19,13 +19,24 @@
 
 package org.apache.synapse.mediators;
 
-import org.apache.synapse.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.FaultHandler;
+import org.apache.synapse.Mediator;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticsCloseEventListener;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
+import org.apache.synapse.continuation.ContinuationStackManager;
+import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.debug.SynapseDebugManager;
+import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.util.logging.LoggingUtils;
 
 /**
@@ -86,7 +97,21 @@ public class MediatorWorker implements Runnable {
                 debugManager.advertiseMediationFlowStartPoint(synCtx);
             }
 
-            seq.mediate(synCtx);
+            boolean result = seq.mediate(synCtx);
+            // If this is a scatter message, then we need to use the continuation state and continue the mediation
+            if (isScatterMessage(synCtx) && result) {
+                SeqContinuationState seqContinuationState = (SeqContinuationState) ContinuationStackManager.peakContinuationStateStack(synCtx);
+                if (seqContinuationState == null) {
+                    return;
+                }
+                SequenceMediator sequenceMediator = ContinuationStackManager.retrieveSequence(synCtx, seqContinuationState);
+
+                FlowContinuableMediator mediator =
+                        (FlowContinuableMediator) sequenceMediator.getChild(seqContinuationState.getPosition());
+
+                synCtx.setProperty(SynapseConstants.CONTINUE_FLOW_TRIGGERED_FROM_MEDIATOR_WORKER, true);
+                mediator.mediate(synCtx, seqContinuationState);
+            }
             //((Axis2MessageContext)synCtx).getAxis2MessageContext().getEnvelope().discard();
 
         } catch (SynapseException syne) {
@@ -125,7 +150,7 @@ public class MediatorWorker implements Runnable {
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
                 debugManager.releaseMediationFlowLock();
             }
-            if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+            if (RuntimeStatisticCollector.isStatisticsEnabled() && !isScatterMessage(synCtx)) {
                 this.statisticsCloseEventListener.invokeCloseEventEntry(synCtx);
             }
         }
@@ -149,5 +174,17 @@ public class MediatorWorker implements Runnable {
 
     public void setStatisticsCloseEventListener(StatisticsCloseEventListener statisticsCloseEventListener) {
         this.statisticsCloseEventListener = statisticsCloseEventListener;
+    }
+
+    /**
+     * Check whether the message is a scatter message or not
+     *
+     * @param synCtx MessageContext
+     * @return true if the message is a scatter message
+     */
+    private static boolean isScatterMessage(MessageContext synCtx) {
+
+        Boolean isScatterMessage = (Boolean) synCtx.getProperty(SynapseConstants.SCATTER_MESSAGES);
+        return isScatterMessage != null && isScatterMessage;
     }
 }

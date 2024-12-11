@@ -148,4 +148,17 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 //			closeFlowForcefully(messageContext);
 		}
 	}
+
+	/**
+	 * This method will close the event collector and finish the flow when a Scatter Gather mediator is used.
+	 *
+	 * @param messageContext synapse message context.
+	 */
+	public static void closeEventsAfterScatterGather(MessageContext messageContext) {
+
+		if (isOpenTelemetryEnabled()) {
+			OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
+					.handleScatterGatherFinishEvent(messageContext);
+		}
+	}
 }
