@@ -22,6 +22,7 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.builtin.ForEachMediator;
+import org.apache.synapse.mediators.v2.ForEachMediatorV2;
 
 /**
  * <p>Serialize for each mediator as below : </p>
@@ -42,39 +43,73 @@ public class ForEachMediatorSerializer extends AbstractMediatorSerializer {
 
     @Override
     protected OMElement serializeSpecificMediator(Mediator m) {
-        if (!(m instanceof ForEachMediator)) {
-            handleException("Unsupported mediator passed in for serialization : " +
-                    m.getType());
-        }
+        if (m instanceof ForEachMediator) {
+            OMElement forEachElem = fac.createOMElement("foreach", synNS);
+            saveTracingState(forEachElem, m);
 
-        OMElement forEachElem = fac.createOMElement("foreach", synNS);
-        saveTracingState(forEachElem, m);
+            ForEachMediator forEachMed = (ForEachMediator) m;
 
-        ForEachMediator forEachMed = (ForEachMediator) m;
+            if (forEachMed.getId() != null) {
+                forEachElem.addAttribute("id", forEachMed.getId(), nullNS);
+            }
 
-        if (forEachMed.getId() != null) {
-            forEachElem.addAttribute("id", forEachMed.getId(), nullNS);
-        }
+            if (forEachMed.getExpression() != null) {
+                SynapsePathSerializer.serializePath(forEachMed.getExpression(),
+                        forEachElem, "expression");
+            } else {
+                handleException("Missing expression of the ForEach which is required.");
+            }
 
-        if (forEachMed.getExpression() != null) {
-            SynapsePathSerializer.serializePath(forEachMed.getExpression(),
-                    forEachElem, "expression");
+            if (forEachMed.getSequenceRef() != null) {
+                forEachElem.addAttribute("sequence", forEachMed.getSequenceRef(), null);
+            } else if (forEachMed.getSequence() != null) {
+                SequenceMediatorSerializer seqSerializer = new SequenceMediatorSerializer();
+                OMElement seqElement = seqSerializer.serializeAnonymousSequence(
+                        null, forEachMed.getSequence());
+                seqElement.setLocalName("sequence");
+                forEachElem.addChild(seqElement);
+            }
+
+            serializeComments(forEachElem, forEachMed.getCommentsList());
+
+            return forEachElem;
+        } else if (m instanceof ForEachMediatorV2) {
+            OMElement forEachElem = fac.createOMElement("foreach", synNS);
+            saveTracingState(forEachElem, m);
+
+            ForEachMediatorV2 forEachMediatorV2 = (ForEachMediatorV2) m;
+
+            if (forEachMediatorV2.getCollectionExpression() != null) {
+                SynapsePathSerializer.serializePath(forEachMediatorV2.getCollectionExpression(),
+                        forEachElem, "collection");
+            } else {
+                handleException("Missing collection of the ForEach which is required.");
+            }
+            forEachElem.addAttribute(fac.createOMAttribute(
+                    "parallel-execution", nullNS, Boolean.toString(forEachMediatorV2.getParallelExecution())));
+            if (forEachMediatorV2.getResultTarget() != null) {
+                forEachElem.addAttribute(fac.createOMAttribute(
+                        "result-target", nullNS, forEachMediatorV2.getResultTarget()));
+                forEachElem.addAttribute(fac.createOMAttribute(
+                        "result-type", nullNS, forEachMediatorV2.getContentType()));
+            }
+            if (forEachMediatorV2.getCounterVariable() != null) {
+                forEachElem.addAttribute(fac.createOMAttribute(
+                        "counter-variable", nullNS, forEachMediatorV2.getCounterVariable()));
+            }
+            if (forEachMediatorV2.getTarget() != null) {
+                if (forEachMediatorV2.getTarget() != null && forEachMediatorV2.getTarget().getSequence() != null) {
+                    SequenceMediatorSerializer serializer = new SequenceMediatorSerializer();
+                    serializer.serializeAnonymousSequence(forEachElem, forEachMediatorV2.getTarget().getSequence());
+                }
+            } else {
+                handleException("Missing sequence element of the ForEach which is required.");
+            }
+            serializeComments(forEachElem, forEachMediatorV2.getCommentsList());
+            return forEachElem;
         } else {
-            handleException("Missing expression of the ForEach which is required.");
+            handleException("Unsupported mediator passed in for serialization : " + m.getType());
+            return null;
         }
-
-        if (forEachMed.getSequenceRef() != null) {
-            forEachElem.addAttribute("sequence", forEachMed.getSequenceRef(), null);
-        } else if (forEachMed.getSequence() != null) {
-            SequenceMediatorSerializer seqSerializer = new SequenceMediatorSerializer();
-            OMElement seqElement = seqSerializer.serializeAnonymousSequence(
-                    null, forEachMed.getSequence());
-            seqElement.setLocalName("sequence");
-            forEachElem.addChild(seqElement);
-        }
-
-        serializeComments(forEachElem, forEachMed.getCommentsList());
-
-        return forEachElem;
     }
 }
