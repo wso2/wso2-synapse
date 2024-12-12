@@ -25,6 +25,7 @@ public class InboundEndpointConstants {
     public static final String INBOUND_ENDPOINT_PROTOCOL = "protocol";
     public static final String INBOUND_ENDPOINT_CLASS = "class";
     public static final String INBOUND_ENDPOINT_SUSPEND = "suspend";
+    public static final String INBOUND_ENDPOINT_PRESERVE_STATE = "preserve.state";
     public static final String INBOUND_ENDPOINT_SEQUENCE = "sequence";
     public static final String INBOUND_ENDPOINT_ERROR_SEQUENCE = "onError";
     public static final String INBOUND_ENDPOINT_PARAMETERS = "parameters";

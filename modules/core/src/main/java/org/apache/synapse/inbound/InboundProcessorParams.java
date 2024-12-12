@@ -20,7 +20,6 @@ import org.apache.synapse.commons.handlers.MessagingHandler;
 import org.apache.synapse.core.SynapseEnvironment;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -36,6 +35,17 @@ public class InboundProcessorParams {
     private String onErrorSeq;
     private SynapseEnvironment synapseEnvironment;
     private List<MessagingHandler> handlers;
+    private boolean startInPausedMode;
+
+    public boolean startInPausedMode() {
+
+        return startInPausedMode;
+    }
+
+    public void setStartInPausedMode(boolean startInPausedMode) {
+
+        this.startInPausedMode = startInPausedMode;
+    }
 
     /**
      * Get the name of the inbound endpoint
