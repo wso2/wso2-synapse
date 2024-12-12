@@ -626,6 +626,103 @@ public final class SynapseConstants {
 
     public static final String ANALYTICS_METADATA = "ANALYTICS_METADATA";
 
+    // Constants for the HTTP Connection
+    public static final String ENDPOINT_IDENTIFIER = "_INTERNAL_ENDPOINT_REFERENCE";
+    public static final String BASIC_AUTH = "Basic Auth";
+    public static final String OAUTH = "OAuth";
+    public static final String OAUTH_GRANT_TYPE_AUTHORIZATION_CODE = "Authorization Code";
+    public static final String OAUTH_GRANT_TYPE_CLIENT_CREDENTIALS = "Client Credentials";
+    public static final String OAUTH_GRANT_TYPE_PASSWORD = "Password";
+
+    public static final String NAME = "name";
+    public static final String BASE_URL = "baseUrl";
+    public static final String CONNECTION_TYPE = "connectionType";
+    public static final String CERTIFICATE_TYPE = "certificateType";
+    public static final String AUTH_TYPE = "authType";
+    public static final String OAUTH_AUTHORIZATION_MODE = "oauthAuthorizationMode";
+    public static final String OAUTH_GRANT_TYPE = "oauthGrantType";
+    public static final String BASIC_CREDENTIALS_USERNAME = "basicCredentialsUsername";
+    public static final String BASIC_CREDENTIALS_PASSWORD = "basicCredentialsPassword";
+    public static final String OAUTH_PASSWORD_GRANT_USERNAME = "oauthPasswordUsername";
+    public static final String OAUTH_PASSWORD_GRANT_PASSWORD = "oauthPasswordPassword";
+    public static final String OAUTH_PASSWORD_GRANT_CLIENT_ID = "oauthPasswordClientId";
+    public static final String OAUTH_PASSWORD_GRANT_CLIENT_SECRET = "oauthPasswordClientSecret";
+    public static final String OAUTH_PASSWORD_GRANT_TOKEN_URL = "oauthPasswordTokenUrl";
+    public static final String OAUTH_PASSWORD_GRANT_ADDITIONAL_PROPERTIES = "oauthPasswordAdditionalProperties";
+
+    public static final String OAUTH_CLIENT_CREDENTIALS_GRANT_CLIENT_ID = "oauthClientClientId";
+    public static final String OAUTH_CLIENT_CREDENTIALS_GRANT_CLIENT_SECRET = "oauthClientClientSecret";
+    public static final String OAUTH_CLIENT_CREDENTIALS_GRANT_TOKEN_URL = "oauthClientTokenUrl";
+    public static final String OAUTH_CLIENT_CREDENTIALS_GRANT_ADDITIONAL_PROPERTIES = "oauthClientAdditionalProperties";
+
+    public static final String OAUTH_AUTHORIZATION_GRANT_CLIENT_SECRET = "oauthAuthorizationClientSecret";
+    public static final String OAUTH_AUTHORIZATION_GRANT_CLIENT_ID = "oauthAuthorizationClientId";
+    public static final String OAUTH_AUTHORIZATION_GRANT_TOKEN_URL = "oauthAuthorizationTokenUrl";
+    public static final String OAUTH_AUTHORIZATION_GRANT_REFRESH_TOKEN = "oauthAuthorizationRefreshToken";
+    public static final String OAUTH_AUTHORIZATION_GRANT_ADDITIONAL_PROPERTIES = "oauthAuthorizationAdditionalProperties";
+
+    public static final String OAUTH_CLIENT_ID = "oauthClientId";
+    public static final String TIMEOUT_DURATION = "timeoutDuration";
+    public static final String TIMEOUT_ACTION = "timeoutAction";
+    public static final String SUSPEND_ERROR_CODES = "suspendErrorCodes";
+    public static final String SUSPEND_INITIAL_DURATION = "suspendInitialDuration";
+    public static final String SUSPEND_MAXIMUM_DURATION = "suspendMaximumDuration";
+    public static final String SUSPEND_PROGRESSION_FACTOR = "suspendProgressionFactor";
+    public static final String RETRY_ERROR_CODES = "retryErrorCodes";
+    public static final String RETRY_COUNT = "retryCount";
+    public static final String RETRY_DELAY = "retryDelay";
+
+    public static final String TRACE = "trace";
+    public static final String STATISTICS = "statistics";
+    public static final String MISCELLANEOUS_DESCRIPTION = "miscellaneousDescription";
+    public static final String MISCELLANEOUS_PROPERTIES = "miscellaneousProperties";
+    public static final String QUALITY_OF_SERVICE_ADDRESS_OPTION = "qualityServiceAddressOption";
+    public static final String QUALITY_OF_SERVICE_ADDRESS_VERSION = "qualityServiceAddressVersion";
+    public static final String QUALITY_OF_SERVICE_ADDRESS_SEPARATE_LISTENER = "qualityServiceAddressSeparateListener";
+
+    public static final String QUALITY_OF_SERVICE_SECURITY_OPTION = "qualityServiceSecurityOption";
+    public static final String QUALITY_OF_SERVICE_SECURITY_INBOUND_OUTBOUND_POLICY_OPTION = "qualityServiceSecurityInboundOutboundPolicyOption";
+    public static final String QUALITY_OF_SERVICE_SECURITY_INBOUND_POLICY_KEY = "qualityServiceSecurityInboundPolicyKey";
+    public static final String QUALITY_OF_SERVICE_SECURITY_OUTBOUND_POLICY_KEY = "qualityServiceSecurityOutboundPolicyKey";
+    public static final String QUALITY_OF_SERVICE_SECURITY_POLICY_KEY = "qualityServiceSecurityPolicyKey";
+
+    public static final String ENDPOINT = "endpoint";
+    public static final String HTTP = "http";
+    public static final String ENABLE = "enable";
+    public static final String URI_TEMPLATE = "uri-template";
+    public static final String ENABLE_ADDRESSING = "enableAddressing";
+    public static final String ENABLE_SECURITY = "enableSec";
+    public static final String SEPARATE_LISTENER = "separateListener";
+    public static final String VERSION = "version";
+    public static final String POLICY = "policy";
+    public static final String INBOUND_POLICY = "inboundPolicy";
+    public static final String OUTBOUND_POLICY = "outboundPolicy";
+    public static final String TIMEOUT = "timeout";
+    public static final String DURATION = "duration";
+    public static final String RESPONSE_ACTION = "responseAction";
+    public static final String NEVER = "never";
+    public static final String SUSPEND_ON_FAILURE = "suspendOnFailure";
+    public static final String ERROR_CODES = "errorCodes";
+    public static final String INITIAL_DURATION = "initialDuration";
+    public static final String MAXIMUM_DURATION = "maximumDuration";
+    public static final String PROGRESSION_FACTOR = "progressionFactor";
+    public static final String MARK_FOR_SUSPENSION = "markForSuspension";
+    public static final String RETRIES_BEFORE_SUSPENSION = "retriesBeforeSuspension";
+    public static final String AUTHENTICATION = "authentication";
+    public static final String DESCRIPTION = "description";
+    public static final String AUTHORIZATION_CODE = "authorizationCode";
+    public static final String PASSWORD_CREDENTIALS = "passwordCredentials";
+    public static final String CLIENT_CREDENTIALS = "clientCredentials";
+    public static final String TOKEN_URL = "tokenUrl";
+    public static final String CLIENT_ID = "clientId";
+    public static final String CLIENT_SECRET = "clientSecret";
+    public static final String USERNAME = "username";
+    public static final String PASSWORD = "password";
+    public static final String REFRESH_TOKEN = "refreshToken";
+    public static final String AUTH_MODE = "authMode";
+    public static final String REQUEST_PARAMETERS = "requestParameters";
+    public static final String BASIC_AUTH_TAG = "basicAuth";
+    public static final String OAUTH_TAG = "oauth";
     public static final String SCATTER_MESSAGES = "SCATTER_MESSAGES";
     public static final String CONTINUE_FLOW_TRIGGERED_FROM_MEDIATOR_WORKER = "CONTINUE_FLOW_TRIGGERED_FROM_MEDIATOR_WORKER";
 }
