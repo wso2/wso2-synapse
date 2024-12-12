@@ -108,7 +108,7 @@ public class RegexTemplateProcessor extends TemplateProcessor {
                         } else if (JSON_TYPE.equals(mediaType)) {
                             if (isXML(replacementValue)) {
                                 // consider the replacement value as a literal XML
-                                replacementValue = Matcher.quoteReplacement(replacementValue);
+                                replacementValue = escapeSpecialChars(Matcher.quoteReplacement(replacementValue));
                             } else {
                                 replacementValue = escapeSpecialCharactersOfJson(replacementValue);
                             }
