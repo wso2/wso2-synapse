@@ -18,6 +18,8 @@
 
 package org.apache.synapse.mediators.eip;
 
+import org.apache.synapse.MessageContext;
+
 /**
  * This class is used to hold the shared data for a particular message set
  * For an example we can use this to share some data across all the spawned spilt messages in iterate mediator
@@ -28,6 +30,17 @@ public class SharedDataHolder {
      * Variable to track whether aggregation is completed.
      */
     private boolean isAggregationCompleted = false;
+
+    private MessageContext synCtx;
+
+    public SharedDataHolder() {
+
+    }
+
+    public SharedDataHolder(MessageContext synCtx) {
+
+        this.synCtx = synCtx;
+    }
 
     /**
      * Check whether aggregation has been completed.
@@ -45,4 +58,8 @@ public class SharedDataHolder {
         isAggregationCompleted = true;
     }
 
+    public MessageContext getSynCtx() {
+
+        return synCtx;
+    }
 }
