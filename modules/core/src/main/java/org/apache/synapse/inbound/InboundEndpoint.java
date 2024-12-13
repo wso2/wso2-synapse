@@ -69,11 +69,6 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
     private SynapseEnvironment synapseEnvironment;
     private InboundRequestProcessor inboundRequestProcessor;
     private Registry registry;
-    /**
-     * This property determines whether the inbound endpoint should preserve its state
-     * across server restarts or configuration updates.
-     * */
-    private boolean preserveState = false;
     /** car file name which this endpoint deployed from */
     private String artifactContainerName;
     /** Whether the deployed inbound endpoint is edited via the management console */
@@ -88,7 +83,6 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
         log.info("Initializing Inbound Endpoint: " + getName());
         synapseEnvironment = se;
         registry = se.getSynapseConfiguration().getRegistry();
-        setPreserveState();
         startInPausedMode = startInPausedMode();
         inboundRequestProcessor = getInboundRequestProcessor();
         if (inboundRequestProcessor != null) {
@@ -176,24 +170,6 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
     }
 
     /**
-     * Configures the `preserveState` property for the inbound endpoint.
-     * <p>
-     * This method checks if the parameter {@code INBOUND_ENDPOINT_PRESERVE_STATE} is defined.
-     * If the parameter exists, its value is parsed as a boolean and assigned to the `preserveState` variable.
-     * </p>
-     *
-     * @see InboundEndpointConstants#INBOUND_ENDPOINT_PRESERVE_STATE
-     */
-    private void setPreserveState() {
-        if (getParameter(InboundEndpointConstants.INBOUND_ENDPOINT_PRESERVE_STATE) != null) {
-            preserveState = Boolean.parseBoolean(getParameter(InboundEndpointConstants.INBOUND_ENDPOINT_PRESERVE_STATE));
-        }
-        if (!preserveState) {
-            deleteInboundEndpointStateInRegistry();
-        }
-    }
-
-    /**
      * Remove inbound endpoints.
      * <p>
      * This was introduced as a fix for product-ei#1206.
@@ -208,9 +184,6 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
                     ((InboundTaskProcessor) inboundRequestProcessor).destroy(removeTask);
                 } else {
                     inboundRequestProcessor.destroy();
-                }
-                if (!preserveState) {
-                    deleteInboundEndpointStateInRegistry();
                 }
             } catch (Exception e) {
                 log.error("Unable to destroy Inbound endpoint", e);
@@ -478,7 +451,7 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
      * @param state the {@link InboundEndpointState} to be saved in the registry
      */
     private void setInboundEndpointStateInRegistry(InboundEndpointState state) {
-        if (Objects.isNull(registry) && preserveState) {
+        if (Objects.isNull(registry)) {
             log.warn("Registry not available! The state of the Inbound Endpoint will not be saved.");
             return;
         }
@@ -517,9 +490,6 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
      */
     private boolean startInPausedMode() {
 
-        if (!preserveState) {
-            return isSuspend();
-        }
         if (getInboundEndpointStateFromRegistry() == InboundEndpointState.INITIAL) {
             return isSuspend();
         }
