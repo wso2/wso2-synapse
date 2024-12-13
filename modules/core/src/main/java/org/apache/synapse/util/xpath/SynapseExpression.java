@@ -40,8 +40,6 @@ import org.jaxen.JaxenException;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Represents a Synapse Expression
@@ -51,7 +49,7 @@ public class SynapseExpression extends SynapsePath {
     private static final Log log = LogFactory.getLog(SynapseExpression.class);
     private final ExpressionNode expressionNode;
     private final Map<String, String> namespaceMap = new HashMap<>();
-    private boolean isContentAware = false;
+    private final boolean isContentAware;
 
     public SynapseExpression(String synapseExpression) throws JaxenException {
         super(synapseExpression, org.apache.synapse.config.xml.SynapsePath.JSON_PATH, log);
@@ -79,6 +77,9 @@ public class SynapseExpression extends SynapsePath {
 
     @Override
     public String stringValueOf(MessageContext synCtx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Evaluating expression (stringValueOf): " + expression);
+        }
         EvaluationContext context = new EvaluationContext();
         context.setNamespaceMap(namespaceMap);
         context.setSynCtx(synCtx);
@@ -88,11 +89,14 @@ public class SynapseExpression extends SynapsePath {
 
     @Override
     public Object objectValueOf(MessageContext synCtx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Evaluating expression (objectValueOf): " + expression);
+        }
         EvaluationContext context = new EvaluationContext();
         context.setNamespaceMap(namespaceMap);
         context.setSynCtx(synCtx);
         ExpressionResult result = evaluateExpression(context, true);
-        return result != null ? result.getValue() : null;
+        return result != null ? result.getValue() : "";
     }
 
     private ExpressionResult evaluateExpression(EvaluationContext context, boolean isObjectValue) {

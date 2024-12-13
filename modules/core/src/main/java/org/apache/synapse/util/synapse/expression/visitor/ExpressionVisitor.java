@@ -17,6 +17,8 @@
  */
 package org.apache.synapse.util.synapse.expression.visitor;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.util.synapse.expression.ast.*;
 import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
@@ -35,8 +37,13 @@ import java.util.Map;
 public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNode>
         implements ExpressionParserVisitor<ExpressionNode> {
 
+    private static final Log log = LogFactory.getLog(ExpressionVisitor.class);
+
     @Override
     public ExpressionNode visitExpression(ExpressionParser.ExpressionContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting expression: " + ctx.getText());
+        }
         if (ctx.comparisonExpression() != null) {
             return visitComparisonExpression(ctx.comparisonExpression());
         } else if (ctx.conditionalExpression() != null) {
@@ -47,6 +54,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitComparisonExpression(ExpressionParser.ComparisonExpressionContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting comparison expression: " + ctx.getText());
+        }
         if (ctx.logicalExpression() != null) {
             if (ctx.logicalExpression().size() == 1) {
                 return visitLogicalExpression(ctx.logicalExpression().get(0));
@@ -64,6 +74,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitLogicalExpression(ExpressionParser.LogicalExpressionContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting logical expression: " + ctx.getText());
+        }
         if (ctx.arithmeticExpression() != null) {
             ExpressionNode left = visit(ctx.arithmeticExpression());
             if (ctx.logicalExpression() != null && ctx.getChild(1) != null) {
@@ -77,6 +90,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitArithmeticExpression(ExpressionParser.ArithmeticExpressionContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting arithmetic expression: " + ctx.getText());
+        }
         if (ctx.term() != null) {
             if (ctx.term().size() == 1) {
                 return visit(ctx.term().get(0));
@@ -94,6 +110,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitTerm(ExpressionParser.TermContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting term: " + ctx.getText());
+        }
         if (ctx.factor() != null) {
             if (ctx.factor().size() == 1) {
                 return visit(ctx.factor().get(0));
@@ -111,6 +130,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitFactor(ExpressionParser.FactorContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting factor: " + ctx.getText());
+        }
         if (ctx.literal() != null) {
             return visit(ctx.literal());
         } else if (ctx.functionCall() != null) {
@@ -135,6 +157,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitFunctionCall(ExpressionParser.FunctionCallContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting function call: " + ctx.getText());
+        }
         ArgumentListNode parameterList = new ArgumentListNode();
         if (ctx.expression() != null) {
             for (ExpressionParser.ExpressionContext expressionContext : ctx.expression()) {
@@ -263,6 +288,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitLiteral(ExpressionParser.LiteralContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting literal: " + ctx.getText());
+        }
         if (ctx.NUMBER() != null) {
             return new LiteralNode(ctx.NUMBER().getText(), LiteralNode.Type.NUMBER);
         } else if (ctx.BOOLEAN_LITERAL() != null) {
@@ -279,6 +307,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitArrayLiteral(ExpressionParser.ArrayLiteralContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting array literal: " + ctx.getText());
+        }
         if (ctx.expression() != null) {
             ArgumentListNode parameterList = new ArgumentListNode();
             for (ExpressionParser.ExpressionContext expressionContext : ctx.expression()) {
@@ -291,6 +322,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitVariableAccess(ExpressionParser.VariableAccessContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting variable access: " + ctx.getText());
+        }
         Map<String, ExpressionNode> expressionNodeMap = new HashMap<>();
         if (ctx.jsonPathExpression() != null) {
             expressionNodeMap = visitJsonPath(ctx.jsonPathExpression());
@@ -300,6 +334,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitPayloadAccess(ExpressionParser.PayloadAccessContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting payload access: " + ctx.getText());
+        }
         Map<String, ExpressionNode> expressionNodeMap = new HashMap<>();
         if (ctx.jsonPathExpression() != null) {
             expressionNodeMap = visitJsonPath(ctx.jsonPathExpression());
@@ -308,6 +345,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
     }
 
     public Map<String, ExpressionNode> visitJsonPath(ExpressionParser.JsonPathExpressionContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting json path: " + ctx.getText());
+        }
         Map<String, ExpressionNode> expressionNodeMap = new HashMap<>();
         if (ctx.arrayIndex() != null) {
             for (ExpressionParser.ArrayIndexContext expressionContext : ctx.arrayIndex()) {
@@ -319,6 +359,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     public ExpressionNode visitJsonPathAfterPayload(ExpressionParser.JsonPathExpressionContext ctx,
                                                     PredefinedFunctionNode functionNode, PayloadAccessNode.Type type) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting json path after payload: " + ctx.getText());
+        }
         Map<String, ExpressionNode> expressionNodeMap = new HashMap<>();
         if (ctx.arrayIndex() != null) {
             for (ExpressionParser.ArrayIndexContext expressionContext : ctx.arrayIndex()) {
@@ -330,6 +373,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitArrayIndex(ExpressionParser.ArrayIndexContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting array index: " + ctx.getText());
+        }
         if (ctx.NUMBER() != null) {
             return new LiteralNode(ctx.NUMBER().getText(), LiteralNode.Type.NUMBER);
         } else if (ctx.STRING_LITERAL() != null) {
@@ -352,6 +398,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitMultipleArrayIndices(ExpressionParser.MultipleArrayIndicesContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting multiple array indices: " + ctx.getText());
+        }
         if (ctx.expression() != null) {
             ArgumentListNode expressionNodes = new ArgumentListNode();
             for (ExpressionParser.ExpressionContext expressionContext : ctx.expression()) {
@@ -364,6 +413,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitSliceArrayIndex(ExpressionParser.SliceArrayIndexContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting slice array index: " + ctx.getText());
+        }
         if (ctx.signedExpressions() != null) {
             ArgumentListNode expressionNodes = new ArgumentListNode();
             if (ctx.getChildCount() == 2 && ctx.getChild(0).getText().equals(":")) {
@@ -382,6 +434,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitSignedExpressions(ExpressionParser.SignedExpressionsContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting signed expressions: " + ctx.getText());
+        }
         if (ctx.expression() != null) {
             if (ctx.MINUS() != null) {
                 return new SignedExpressionNode(visit(ctx.expression()), true);
@@ -394,6 +449,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitFilterExpression(ExpressionParser.FilterExpressionContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting filter expression: " + ctx.getText());
+        }
         Map<String, ExpressionNode> expressionNodeMap = new HashMap<>();
         if (ctx.filterComponent() != null) {
             for (ExpressionParser.FilterComponentContext filterExpressionContext : ctx.filterComponent()) {
@@ -405,6 +463,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitFilterComponent(ExpressionParser.FilterComponentContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting filter component: " + ctx.getText());
+        }
         if (ctx.payloadAccess() != null) {
             return visit(ctx.payloadAccess());
         } else if (ctx.stringOrOperator() != null) {
@@ -427,6 +488,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitHeaderAccess(ExpressionParser.HeaderAccessContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting header access: " + ctx.getText());
+        }
         if (ctx.propertyName() != null) {
             return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()),
                     HeadersAndPropertiesAccessNode.Type.HEADER);
@@ -436,6 +500,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitPropertyName(ExpressionParser.PropertyNameContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting property name: " + ctx.getText());
+        }
         if (ctx.ID() != null) {
             return new LiteralNode(ctx.ID().getText(), LiteralNode.Type.STRING);
         } else if (ctx.STRING_LITERAL() != null) {
@@ -446,6 +513,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitConfigAccess(ExpressionParser.ConfigAccessContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting config access: " + ctx.getText());
+        }
         if (ctx.propertyName() != null) {
             return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()),
                     HeadersAndPropertiesAccessNode.Type.CONFIG);
@@ -455,6 +525,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitPropertyAccess(ExpressionParser.PropertyAccessContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting property access: " + ctx.getText());
+        }
         if (ctx.propertyName() != null) {
             if (ctx.ID() != null) {
                 String scope = ctx.ID().getText();
@@ -471,6 +544,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
 
     @Override
     public ExpressionNode visitParameterAccess(ExpressionParser.ParameterAccessContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting parameter access: " + ctx.getText());
+        }
         if (ctx.propertyName() != null) {
             if (ctx.ID() != null) {
                 String scope = ctx.ID().getText();
@@ -489,9 +565,11 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
         return null;
     }
 
-
     @Override
     public ExpressionNode visitConditionalExpression(ExpressionParser.ConditionalExpressionContext ctx) {
+        if (log.isDebugEnabled()) {
+            log.debug("Visiting conditional expression: " + ctx.getText());
+        }
         ExpressionNode condition = null;
         if (ctx.comparisonExpression() != null) {
             condition = visit(ctx.comparisonExpression());

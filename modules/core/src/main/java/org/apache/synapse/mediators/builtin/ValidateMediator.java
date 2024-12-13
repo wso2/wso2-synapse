@@ -57,6 +57,7 @@ import org.apache.synapse.util.jaxp.SchemaResourceResolver;
 import org.apache.synapse.util.resolver.ResourceMap;
 import org.apache.synapse.util.resolver.UserDefinedXmlSchemaURIResolver;
 import org.apache.synapse.util.xpath.SourceXPathSupport;
+import org.apache.synapse.util.xpath.SynapseExpression;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.xml.sax.SAXException;
@@ -279,10 +280,11 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                 String jsonPayload = null;
                 if (sourcePath != null) {
                     //evaluating
-                    if (sourcePath instanceof SynapseJsonPath) {
+                    if (sourcePath instanceof SynapseJsonPath || sourcePath instanceof SynapseExpression) {
                         jsonPayload = sourcePath.stringValueOf(synCtx);
                     } else {
-                        handleException("Could not find the JSONPath evaluator for Source", synCtx);
+                        handleException("Could not find JSONPath or Synapse Expression to extract the message " +
+                                "to validate from the payload", synCtx);
                     }
                 } else {
                     jsonPayload = JsonUtil.jsonPayloadToString(a2mc);

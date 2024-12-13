@@ -17,16 +17,12 @@
  */
 package org.apache.synapse.util.synapse.expression.ast;
 
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.util.synapse.expression.context.EvaluationContext;
 
 /**
  * Represents a node in the AST that holds a signed expression. ex: ( -var.num1 )
  */
 public class SignedExpressionNode implements ExpressionNode {
-    private static final Log log = LogFactory.getLog(SignedExpressionNode.class);
     private final ExpressionNode expression;
     private final boolean signed;
 
