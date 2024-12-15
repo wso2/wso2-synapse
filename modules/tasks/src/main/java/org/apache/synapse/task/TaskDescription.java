@@ -77,6 +77,12 @@ public final class TaskDescription {
         properties.put(name, value);
     }
 
+    public void removeProperty(String name) {
+        if (properties != null && name != null) {
+            properties.remove(name);
+        }
+    }
+
     public Object getProperty(String name) {
         return properties == null || name == null ? null : properties.get(name);
     }

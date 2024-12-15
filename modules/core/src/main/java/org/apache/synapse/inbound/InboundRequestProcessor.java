@@ -23,4 +23,10 @@ public interface InboundRequestProcessor {
     public void init();
 
     public void destroy();
+
+    public boolean activate();
+
+    public boolean deactivate();
+
+    public boolean isDeactivated();
 }
