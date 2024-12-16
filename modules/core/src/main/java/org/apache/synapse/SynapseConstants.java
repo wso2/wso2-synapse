@@ -628,4 +628,6 @@ public final class SynapseConstants {
 
     public static final String SCATTER_MESSAGES = "SCATTER_MESSAGES";
     public static final String CONTINUE_FLOW_TRIGGERED_FROM_MEDIATOR_WORKER = "CONTINUE_FLOW_TRIGGERED_FROM_MEDIATOR_WORKER";
+
+    public static final String DEFAULT_ERROR_TYPE = "ANY";
 }

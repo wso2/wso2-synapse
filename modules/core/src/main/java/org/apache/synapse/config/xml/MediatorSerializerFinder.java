@@ -78,7 +78,8 @@ public class MediatorSerializerFinder {
             JSONTransformMediatorSerializer.class,
             NTLMMediatorSerializer.class,
             VariableMediatorSerializer.class,
-            ScatterGatherMediatorSerializer.class
+            ScatterGatherMediatorSerializer.class,
+            TriggerErrorMediatorSerializer.class
     };
 
     private final static MediatorSerializerFinder instance = new MediatorSerializerFinder();
