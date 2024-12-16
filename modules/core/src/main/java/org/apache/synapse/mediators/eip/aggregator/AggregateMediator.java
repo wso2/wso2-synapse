@@ -830,7 +830,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
     
     private void handleException(Aggregate aggregate, String msg, Exception exception, MessageContext msgContext) {
         aggregate.clear();
-        activeAggregates.clear();
+        activeAggregates.remove(aggregate.getCorrelation());
         if (exception != null) {
             super.handleException(msg, exception, msgContext);
         } else {
