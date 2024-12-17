@@ -19,39 +19,39 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
-import org.apache.synapse.mediators.v2.TriggerError;
+import org.apache.synapse.mediators.v2.ThrowError;
 
 /**
  * <pre>
- * &lt;triggererror type="string" (errorMessage="string" | expression="expression")/&gt;
+ * &lt;throwError (type="string") (errorMessage=("string" | expression))/&gt;
  * </pre>
  */
-public class TriggerErrorMediatorSerializer extends AbstractMediatorSerializer{
+public class ThrowErrorMediatorSerializer extends AbstractMediatorSerializer{
+
     @Override
     protected OMElement serializeSpecificMediator(Mediator m) {
-        if (!(m instanceof TriggerError)) {
+        if (!(m instanceof ThrowError)) {
             handleException("Unsupported mediator passed in for serialization : " + m.getType());
         }
 
-        TriggerError mediator = (TriggerError) m;
-        OMElement triggerError = fac.createOMElement("triggererror", synNS);
-        saveTracingState(triggerError, mediator);
+        ThrowError mediator = (ThrowError) m;
+        OMElement throwError = fac.createOMElement("throwError", synNS);
+        saveTracingState(throwError, mediator);
 
         if (mediator.getType() != null) {
-            triggerError.addAttribute(fac.createOMAttribute("type", nullNS, mediator.getType()));
+            throwError.addAttribute(fac.createOMAttribute("type", nullNS, mediator.getType()));
         }
-        if (mediator.getExpression() != null) {
-            SynapsePathSerializer.serializePath(mediator.getExpression(), triggerError, "expression");
-        } else if (mediator.getErrorMsg() != null) {
-            triggerError.addAttribute(fac.createOMAttribute("errorMessage", nullNS, mediator.getErrorMsg()));
+        if (mediator.getErrorMsg() != null) {
+            ValueSerializer valueSerializer = new ValueSerializer();
+            valueSerializer.serializeValue(mediator.getErrorMsg(), "errorMessage", throwError);
         }
 
-        serializeComments(triggerError, mediator.getCommentsList());
-        return triggerError;
+        serializeComments(throwError, mediator.getCommentsList());
+        return throwError;
     }
 
     @Override
     public String getMediatorClassName() {
-        return TriggerError.class.getName();
+        return ThrowError.class.getName();
     }
 }

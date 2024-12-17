@@ -21,16 +21,15 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.mediators.Value;
 
 /**
- * This mediator is used to trigger an error in the mediation flow.
+ * This mediator is used to throw an error from the mediation flow.
  */
-public class TriggerError extends AbstractMediator {
+public class ThrowError extends AbstractMediator {
     private String type = null;
-    private String errorMsg = null;
-    private SynapsePath expression = null;
+    private Value errorMsg = null;
 
     @Override
     public boolean mediate(MessageContext synCtx) {
@@ -42,23 +41,18 @@ public class TriggerError extends AbstractMediator {
 
         SynapseLog synLog = getLog(synCtx);
         if (synLog.isTraceOrDebugEnabled()) {
-            synLog.traceOrDebug("Start : TriggerError mediator");
+            synLog.traceOrDebug("Start : ThrowError mediator");
             if (synLog.isTraceTraceEnabled()) {
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
             }
         }
 
-        String desc = null;
-        if (errorMsg != null) {
-            desc =  errorMsg.toString();
-        } else if (expression != null) {
-            desc = expression.stringValueOf(synCtx);
-        }
+        String error = errorMsg.evaluateValue(synCtx);
 
-        synLog.traceOrDebug("End : TriggerError mediator");
+        synLog.traceOrDebug("End : ThrowError mediator");
         synCtx.setProperty(SynapseConstants.ERROR_CODE, type);
-        synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, desc);
-        throw new SynapseException(desc, new Throwable(type));
+        synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, error);
+        throw new SynapseException(error, new Throwable(type));
     }
 
     @Override
@@ -70,20 +64,11 @@ public class TriggerError extends AbstractMediator {
         this.type = type;
     }
 
-
-    public SynapsePath getExpression() {
-        return expression;
-    }
-
-    public void setExpression(SynapsePath expression) {
-        this.expression = expression;
-    }
-
-    public String getErrorMsg() {
+    public Value getErrorMsg() {
         return errorMsg;
     }
 
-    public void setErrorMsg(String errorMsg) {
+    public void setErrorMsg(Value errorMsg) {
         this.errorMsg = errorMsg;
     }
 }

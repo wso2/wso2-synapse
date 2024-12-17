@@ -19,16 +19,16 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.AXIOMUtil;
-import org.apache.synapse.mediators.v2.TriggerError;
+import org.apache.synapse.mediators.v2.ThrowError;
 import org.junit.Assert;
 import org.junit.Test;
 
 import javax.xml.stream.XMLStreamException;
 
 /**
- * This is the test class for TriggerErrorMediatorFactory class.
+ * This is the test class for ThrowErrorMediatorFactory class.
  */
-public class TriggerErrorMediatorFactoryTest {
+public class ThrowErrorMediatorFactoryTest {
 
     /**
      * Test create TriggerError with given XML configuration and asserting it is created.
@@ -36,20 +36,20 @@ public class TriggerErrorMediatorFactoryTest {
      * @throws XMLStreamException - XMLStreamException
      */
     @Test
-    public void testTriggerErrorExp() throws XMLStreamException {
-        String inputXML = "<triggererror expression=\"${$.abc}\"/>";
+    public void testThrowErrorExp() throws XMLStreamException {
+        String inputXML = "<throwError type=\"HTTP:TIMEOUT\" errorMessage=\"{${$.abc}}\"/>";
         OMElement element = AXIOMUtil.stringToOM(inputXML);
-        TriggerErrorMediatorFactory triggerErrorMediatorFactory = new TriggerErrorMediatorFactory();
-        TriggerError triggerError = (TriggerError) triggerErrorMediatorFactory.createSpecificMediator(element,null);
-        Assert.assertNotNull("${$.abc}", triggerError.getExpression().toString());
+        ThrowErrorMediatorFactory throwErrorMediatorFactory = new ThrowErrorMediatorFactory();
+        ThrowError throwError = (ThrowError) throwErrorMediatorFactory.createSpecificMediator(element,null);
+        Assert.assertEquals("$.abc", throwError.getErrorMsg().getExpression().toString());
     }
 
     @Test
-    public void testTriggerErrorMsg() throws XMLStreamException {
-        String inputXML = "<triggererror errorMessage=\"abc\"/>";
+    public void testThrowErrorMsg() throws XMLStreamException {
+        String inputXML = "<throwError type=\"HTTP:TIMEOUT\" errorMessage=\"string error message\"/>";
         OMElement element = AXIOMUtil.stringToOM(inputXML);
-        TriggerErrorMediatorFactory triggerErrorMediatorFactory = new TriggerErrorMediatorFactory();
-        TriggerError triggerError = (TriggerError) triggerErrorMediatorFactory.createSpecificMediator(element,null);
-        Assert.assertNotNull("abc", triggerError.getErrorMsg());
+        ThrowErrorMediatorFactory throwErrorMediatorFactory = new ThrowErrorMediatorFactory();
+        ThrowError throwError = (ThrowError) throwErrorMediatorFactory.createSpecificMediator(element,null);
+        Assert.assertEquals("string error message", throwError.getErrorMsg().getKeyValue());
     }
 }

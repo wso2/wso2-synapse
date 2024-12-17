@@ -105,7 +105,7 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
             NTLMMediatorFactory.class,
             VariableMediatorFactory.class,
             ScatterGatherMediatorFactory.class,
-            TriggerErrorMediatorFactory.class
+            ThrowErrorMediatorFactory.class
     };
 
     private final static MediatorFactoryFinder instance  = new MediatorFactoryFinder();

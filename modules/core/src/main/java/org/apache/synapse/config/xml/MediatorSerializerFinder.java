@@ -79,7 +79,7 @@ public class MediatorSerializerFinder {
             NTLMMediatorSerializer.class,
             VariableMediatorSerializer.class,
             ScatterGatherMediatorSerializer.class,
-            TriggerErrorMediatorSerializer.class
+            ThrowErrorMediatorSerializer.class
     };
 
     private final static MediatorSerializerFinder instance = new MediatorSerializerFinder();
