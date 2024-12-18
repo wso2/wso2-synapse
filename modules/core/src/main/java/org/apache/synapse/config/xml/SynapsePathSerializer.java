@@ -71,6 +71,14 @@ public class SynapsePathSerializer {
             } else if(path.getPathType() == SynapsePath.X_PATH) {
                 elem.addAttribute(elem.getOMFactory().createOMAttribute(
                         attribName, nullNS, expression));
+            } else if (path.getPathType() == SynapsePath.SYNAPSE_EXPRESSIONS_PATH) {
+                if (expression.startsWith("{") && expression.endsWith("}")) {
+                    elem.addAttribute(elem.getOMFactory().createOMAttribute(
+                            attribName, nullNS, expression));
+                } else {
+                    elem.addAttribute(elem.getOMFactory().createOMAttribute(
+                            attribName, nullNS, "{" + expression + "}"));
+                }
             }
 
             serializeNamespaces(elem, path);
