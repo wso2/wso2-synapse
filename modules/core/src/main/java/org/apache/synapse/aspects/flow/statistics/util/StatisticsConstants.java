@@ -64,6 +64,11 @@ public class StatisticsConstants {
 	public final static String COLLECT_MESSAGE_PROPERTIES = "mediation.flow.statistics.tracer.collect.properties";
 
 	/**
+	 * Enable collecting message context variables.
+	 */
+	public final static String COLLECT_MESSAGE_VARIABLES = "mediation.flow.statistics.tracer.collect.variables";
+
+	/**
 	 * Enable statistics collecting for all artifacts
 	 */
 	public final static String COLLECT_ALL_STATISTICS = "mediation.flow.statistics.collect.all";

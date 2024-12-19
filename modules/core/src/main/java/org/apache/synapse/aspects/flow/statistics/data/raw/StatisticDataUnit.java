@@ -102,6 +102,11 @@ public class StatisticDataUnit extends BasicStatisticDataUnit {
 	private Map<String, Object> contextPropertyMap;
 
 	/**
+	 * Message context variable map.
+	 */
+	private Map<String, Object> contextVariableMap;
+
+	/**
 	 * Transport property map.
 	 */
 	private Map<String, Object> transportPropertyMap;
@@ -189,6 +194,14 @@ public class StatisticDataUnit extends BasicStatisticDataUnit {
 
 	public void setContextPropertyMap(Map<String, Object> contextPropertyMap) {
 		this.contextPropertyMap = contextPropertyMap;
+	}
+
+	public void setContextVariableMap(Map<String, Object> contextVariableMap) {
+		this.contextVariableMap = contextVariableMap;
+	}
+
+	public Map<String, Object> getContextVariableMap() {
+		return contextVariableMap;
 	}
 
 	public Map<String, Object> getTransportPropertyMap() {

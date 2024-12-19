@@ -60,6 +60,11 @@ public abstract class RuntimeStatisticCollector {
     private static boolean isCollectingProperties;
 
     /**
+     * Is message context variable collection enabled in synapse.properties file.
+     */
+    private static boolean isCollectingVariables;
+
+    /**
      * Is collecting statistics of all artifacts
      */
     private static boolean isCollectingAllStatistics;
@@ -102,6 +107,13 @@ public abstract class RuntimeStatisticCollector {
                 log.debug("Property collecting is not enabled in \'synapse.properties\' file.");
             }
 
+            isCollectingVariables =
+                    SynapsePropertiesLoader.getBooleanProperty(StatisticsConstants.COLLECT_MESSAGE_VARIABLES, false);
+
+            if (!isCollectingVariables && log.isDebugEnabled()) {
+                log.debug("Variable collecting is not enabled in \'synapse.properties\' file.");
+            }
+
             isCollectingAllStatistics =
                 SynapsePropertiesLoader.getBooleanProperty(StatisticsConstants.COLLECT_ALL_STATISTICS, false);
 
@@ -116,7 +128,7 @@ public abstract class RuntimeStatisticCollector {
                     log.debug("OpenTelemetry based tracing is enabled");
                 }
                 OpenTelemetryManagerHolder.loadTracerConfigurations();
-                OpenTelemetryManagerHolder.setCollectingFlags(isCollectingPayloads, isCollectingProperties);
+                OpenTelemetryManagerHolder.setCollectingFlags(isCollectingPayloads, isCollectingProperties, isCollectingVariables);
             }
         } else {
             if (log.isDebugEnabled()) {
@@ -200,6 +212,16 @@ public abstract class RuntimeStatisticCollector {
      */
     public static boolean isCollectingProperties() {
         return isStatisticsEnabled && isCollectingProperties;
+    }
+
+    /**
+     * Return whether collecting message variables is enabled.
+     *
+     * @return true if need to collect message-variables.
+     */
+    public static boolean isCollectingVariables() {
+
+        return isStatisticsEnabled && isCollectingVariables;
     }
 
     /**

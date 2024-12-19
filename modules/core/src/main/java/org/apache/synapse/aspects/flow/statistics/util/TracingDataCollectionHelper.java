@@ -90,6 +90,24 @@ public class TracingDataCollectionHelper {
 	}
 
 	/**
+	 * Extract context variables from the synapse message context.
+	 *
+	 * @param synCtx synapse message context
+	 * @return context variable map
+	 */
+	public static Map<String, Object> extractContextVariables(MessageContext synCtx) {
+
+		Set<String> variableSet = synCtx.getVariableKeySet();
+		Map<String, Object> variableMap = new TreeMap<>();
+
+		for (String variable : variableSet) {
+			Object variableValue = synCtx.getVariable(variable);
+			variableMap.put(variable, variableValue);
+		}
+		return variableMap;
+	}
+
+	/**
 	 * Extract transport headers from the synapse message context.
 	 *
 	 * @param synCtx synapse message context

@@ -33,6 +33,7 @@ public class OpenTelemetryManagerHolder {
     private static Log logger = LogFactory.getLog(OpenTelemetryManagerHolder.class);
     private static boolean isCollectingPayloads;
     private static boolean isCollectingProperties;
+    private static boolean isCollectingVariables;
     private static OpenTelemetryManager openTelemetryManager;
 
     /**
@@ -60,10 +61,12 @@ public class OpenTelemetryManagerHolder {
      *
      * @param collectPayloads   Whether to collect payloads
      * @param collectProperties Whether to collect properties
+     * @param collectVariables  Whether to collect variables
      */
-    public static void setCollectingFlags(boolean collectPayloads, boolean collectProperties) {
+    public static void setCollectingFlags(boolean collectPayloads, boolean collectProperties, boolean collectVariables) {
         isCollectingPayloads = collectPayloads;
         isCollectingProperties = collectProperties;
+        isCollectingVariables = collectVariables;
     }
 
     public static boolean isCollectingPayloads() {
@@ -72,6 +75,10 @@ public class OpenTelemetryManagerHolder {
 
     public static boolean isCollectingProperties() {
         return isCollectingProperties;
+    }
+
+    public static boolean isCollectingVariables() {
+        return isCollectingVariables;
     }
 
     public static OpenTelemetryManager getOpenTelemetryManager() {

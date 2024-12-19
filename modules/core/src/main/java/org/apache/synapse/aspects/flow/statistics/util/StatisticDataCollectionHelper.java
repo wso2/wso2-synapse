@@ -134,6 +134,10 @@ public class StatisticDataCollectionHelper {
 				statisticDataUnit.setTransportPropertyMap(
 						TracingDataCollectionHelper.extractTransportProperties(messageContext));
 			}
+			if (RuntimeStatisticCollector.isCollectingVariables()) {
+				statisticDataUnit
+						.setContextVariableMap(TracingDataCollectionHelper.extractContextVariables(messageContext));
+			}
 		}
 	}
 
