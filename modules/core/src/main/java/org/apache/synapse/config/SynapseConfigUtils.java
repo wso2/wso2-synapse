@@ -93,8 +93,6 @@ public class SynapseConfigUtils {
 
     private static final Log log = LogFactory.getLog(SynapseConfigUtils.class);
 
-    public static final String RESOURCES_IDENTIFIER = "resources:";
-    public static final String CONVERTED_RESOURCES_IDENTIFIER = "gov:mi-resources/";
 
     private static ConcurrentHashMap<String, SynapseConfiguration> lastRegisteredSynapseConfigurationMap =
                                                                  new ConcurrentHashMap<String, SynapseConfiguration>();
@@ -904,14 +902,6 @@ public class SynapseConfigUtils {
 
     public static void addSynapseConfiguration(String tenantDomain , SynapseConfiguration synapseConfiguration){
         lastRegisteredSynapseConfigurationMap.put(tenantDomain,synapseConfiguration);
-    }
-
-    public static String transformFileKey(String fileKey) {
-
-        if (fileKey.startsWith(RESOURCES_IDENTIFIER)) {
-            return CONVERTED_RESOURCES_IDENTIFIER + fileKey.substring(RESOURCES_IDENTIFIER.length());
-        }
-        return fileKey;
     }
 }
 

@@ -1018,7 +1018,6 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      * @return its value
      */
     public Entry getEntryDefinition(String key) {
-        String transformedKey = SynapseConfigUtils.transformFileKey(key);
         Object o = localRegistry.get(key);
         if (o == null || o instanceof Entry) {
             if (o == null) {
@@ -1026,7 +1025,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 synchronized (this) {
                     o = localRegistry.get(key);
                     if (o == null) {
-                        Entry entry = new Entry(transformedKey);
+                        Entry entry = new Entry(key);
                         entry.setType(Entry.REMOTE_ENTRY);
                         addEntry(key, entry);
                         return entry;
