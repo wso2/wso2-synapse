@@ -52,6 +52,7 @@ public class PublishingEventTest {
     private static final Integer FAULT_COUNT = 1;
     private static final Integer HASHCODE = 12345;
     private static final Map<String, Object> PROPERTY_MAP = new HashMap<>();
+    private static final Map<String, Object> VARIABLE_MAP = new HashMap<>();
 
     /**
      * Initializing PublishingEvent before tests.
@@ -62,6 +63,8 @@ public class PublishingEventTest {
         statisticDataUnit.setTime(START_TIME);
         PROPERTY_MAP.put("1", new Integer(1));
         statisticDataUnit.setContextPropertyMap(PROPERTY_MAP);
+        VARIABLE_MAP.put("var1", new String("John"));
+        statisticDataUnit.setContextVariableMap(VARIABLE_MAP);
         StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit);
         statisticsLog.setComponentType(ComponentType.ENDPOINT);
         statisticsLog.setComponentName(COMPONENT_NAME);
@@ -106,6 +109,7 @@ public class PublishingEventTest {
         Assert.assertEquals("comparing stored values", objectList.get(index++), AFTER_PAYLOAD);
         Assert.assertEquals("null since not initialized", objectList.get(index++), PROPERTY_MAP.toString());
         Assert.assertNull("null since not initialized", objectList.get(index++));
+        Assert.assertEquals("comparing stored variables", VARIABLE_MAP.toString(), objectList.get(index++));
         Assert.assertEquals("comparing stored values", objectList.get(index++), Arrays.toString(CHILDREN));
         Assert.assertEquals("comparing stored values", objectList.get(index++), ENTRY_POINT);
         Assert.assertEquals("comparing stored values", objectList.get(index++),
