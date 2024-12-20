@@ -30,8 +30,11 @@ import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.xml.EntryFactory;
 import org.apache.synapse.config.xml.EntrySerializer;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
+import org.apache.synapse.config.xml.endpoints.EndpointFactory;
+import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.transport.dynamicconfigurations.KeyStoreReloaderHolder;
 import org.apache.synapse.transport.nhttp.config.SslSenderTrustStoreHolder;
+import org.apache.synapse.util.HTTPConnectionUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -89,6 +92,7 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
                 log.info("LocalEntry named '" + e.getKey()
                         + "' has been deployed from file : " + fileName);
                 handleSSLSenderCertificates(artifactConfig);
+                deployEndpointsForHTTPConnection(artifactConfig, fileName, properties);
                 return e.getKey();
             } else {
                 handleSynapseArtifactDeploymentError("LocalEntry Deployment Failed. The artifact " +
@@ -100,6 +104,50 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
         }
 
         return null;
+    }
+
+    private void deployEndpointsForHTTPConnection(OMElement artifactConfig, String fileName, Properties properties) {
+
+        OMElement httpInitElement =
+                artifactConfig.getFirstChildWithName(
+                        new QName(SynapseConstants.SYNAPSE_NAMESPACE, HTTP_CONNECTION_IDENTIFIER));
+        if (httpInitElement != null) {
+            OMElement generatedEndpointElement = HTTPConnectionUtils.generateHTTPEndpointOMElement(httpInitElement);
+            deployHTTPEndpointForElement(generatedEndpointElement, fileName, properties);
+        }
+    }
+
+    private void deployHTTPEndpointForElement(OMElement documentElement, String fileName, Properties properties) {
+
+        try {
+            Endpoint ep = EndpointFactory.getEndpointFromElement(documentElement, false, properties);
+
+            //Set the car name
+            ep.setArtifactContainerName(customLogContent);
+            if (ep != null) {
+                ep.setFileName((new File(fileName)).getName());
+                if (log.isDebugEnabled()) {
+                    log.debug("Endpoint named '" + ep.getName()
+                            + "' has been built from the http connection file " + fileName);
+                }
+                ep.init(getSynapseEnvironment());
+                if (log.isDebugEnabled()) {
+                    log.debug("Initialized the endpoint : " + ep.getName());
+                }
+                getSynapseConfiguration().addEndpoint(ep.getName(), ep);
+                if (log.isDebugEnabled()) {
+                    log.debug("Endpoint Deployment from the http connection file : " + fileName + " : Completed");
+                }
+                log.info("Endpoint named '" + ep.getName()
+                        + "' has been deployed from the http connection file : " + fileName);
+            } else {
+                handleSynapseArtifactDeploymentError("Endpoint Deployment Failed. The artifact " +
+                        "described in the http connection file " + fileName + " has filed to describe an Endpoint");
+            }
+        } catch (Exception e) {
+            handleSynapseArtifactDeploymentError("Endpoint Deployment from the http connection file : "
+                    + fileName + " : Failed.", e);
+        }
     }
 
     private void handleSSLSenderCertificates(OMElement element) throws DeploymentException {
