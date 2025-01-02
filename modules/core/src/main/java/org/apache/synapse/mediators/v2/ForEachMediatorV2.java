@@ -100,19 +100,6 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
         id = String.valueOf(new Random().nextLong());
     }
 
-    /**
-     * Check whether the message is a foreach message or not
-     *
-     * @param synCtx MessageContext
-     * @return true if the message is a foreach message
-     */
-    private static boolean isContinuationTriggeredFromMediatorWorker(MessageContext synCtx) {
-
-        Boolean isContinuationTriggeredMediatorWorker =
-                (Boolean) synCtx.getProperty(SynapseConstants.CONTINUE_FLOW_TRIGGERED_FROM_MEDIATOR_WORKER);
-        return isContinuationTriggeredMediatorWorker != null && isContinuationTriggeredMediatorWorker;
-    }
-
     @Override
     public boolean mediate(MessageContext synCtx) {
 
@@ -262,44 +249,33 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
         }
 
         boolean result;
-        // If the continuation is triggered from a mediator worker and has children, then mediate through the sub branch
-        // otherwise start aggregation
-        if (isContinuationTriggeredFromMediatorWorker(synCtx)) {
-            synLog.traceOrDebug("Continuation is triggered from a mediator worker");
-            if (continuationState.hasChild()) {
-                SequenceMediator branchSequence = target.getSequence();
-                boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
-                FlowContinuableMediator mediator =
-                        (FlowContinuableMediator) branchSequence.getChild(continuationState.getChildContState().getPosition());
-
-                result = mediator.mediate(synCtx, continuationState.getChildContState());
-                if (isStatisticsEnabled) {
-                    ((Mediator) mediator).reportCloseStatistics(synCtx, null);
-                }
-            } else {
+        SequenceMediator branchSequence = target.getSequence();
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
+        // If there are no children and the continuation was triggered from a mediator worker start aggregation
+        // otherwise mediate through the sub branch sequence
+        if (!continuationState.hasChild()) {
+            if (ScatterGatherUtils.isContinuationTriggeredFromMediatorWorker(synCtx)) {
+                synLog.traceOrDebug("Continuation is triggered from a mediator worker");
                 result = true;
+            } else {
+                synLog.traceOrDebug("Continuation is triggered from a callback, mediating through the sub branch sequence");
+                result = branchSequence.mediate(synCtx, continuationState.getPosition() + 1);
             }
         } else {
-            synLog.traceOrDebug("Continuation is triggered from a callback");
-            // If the continuation is triggered from a callback, continue the mediation from the continuation state
-            SequenceMediator branchSequence = target.getSequence();
-            boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
-            if (!continuationState.hasChild()) {
-                result = branchSequence.mediate(synCtx, continuationState.getPosition() + 1);
-            } else {
-                FlowContinuableMediator mediator =
-                        (FlowContinuableMediator) branchSequence.getChild(continuationState.getPosition());
+            synLog.traceOrDebug("Continuation is triggered from a callback, mediating through the child continuation state");
+            FlowContinuableMediator mediator =
+                    (FlowContinuableMediator) branchSequence.getChild(continuationState.getPosition());
 
-                result = mediator.mediate(synCtx, continuationState.getChildContState());
-                if (isStatisticsEnabled) {
-                    ((Mediator) mediator).reportCloseStatistics(synCtx, null);
-                }
+            result = mediator.mediate(synCtx, continuationState.getChildContState());
+            if (isStatisticsEnabled) {
+                ((Mediator) mediator).reportCloseStatistics(synCtx, null);
             }
+        }
+
+        if (result) {
             // If the mediation is completed, remove the child continuation state from the stack, so the aggregation
             // will continue the mediation from the parent continuation state
             ContinuationStackManager.removeReliantContinuationState(synCtx);
-        }
-        if (result) {
             return aggregateMessages(synCtx, synLog);
         }
         return false;
@@ -432,7 +408,6 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
             activeAggregates.remove(aggregate.getCorrelation());
             // Update the continuation state to current mediator position as we are using the original message context
             ContinuationStackManager.updateSeqContinuationState(originalMessageContext, getMediatorPosition());
-            SeqContinuationState seqContinuationState = (SeqContinuationState) ContinuationStackManager.peakContinuationStateStack(originalMessageContext);
 
             getLog(originalMessageContext).traceOrDebug("End : Foreach mediator");
             boolean result = false;
@@ -443,14 +418,19 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
                 CloseEventCollector.closeEntryEvent(originalMessageContext, getMediatorName(), ComponentType.MEDIATOR,
                         statisticReportingIndex, isContentAltering());
             }
-
-            if (seqContinuationState != null) {
-                SequenceMediator sequenceMediator = ContinuationStackManager.retrieveSequence(originalMessageContext, seqContinuationState);
-                result = sequenceMediator.mediate(originalMessageContext, seqContinuationState);
-                if (RuntimeStatisticCollector.isStatisticsEnabled()) {
-                    sequenceMediator.reportCloseStatistics(originalMessageContext, null);
+            do {
+                SeqContinuationState seqContinuationState =
+                        (SeqContinuationState) ContinuationStackManager.peakContinuationStateStack(originalMessageContext);
+                if (seqContinuationState != null) {
+                    SequenceMediator sequenceMediator = ContinuationStackManager.retrieveSequence(originalMessageContext, seqContinuationState);
+                    result = sequenceMediator.mediate(originalMessageContext, seqContinuationState);
+                    if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                        sequenceMediator.reportCloseStatistics(originalMessageContext, null);
+                    }
+                } else {
+                    break;
                 }
-            }
+            } while (result && !originalMessageContext.getContinuationStateStack().isEmpty());
             CloseEventCollector.closeEventsAfterScatterGather(originalMessageContext);
             return result;
         } else {
