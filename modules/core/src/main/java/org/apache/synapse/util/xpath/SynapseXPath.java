@@ -425,7 +425,7 @@ public class SynapseXPath extends SynapsePath {
                     if (o == null && list.size() == 1) {
                         return null;
                     }
-                    if (list.size() == 1 && getExpression().contains("node()")) {
+                    if (list.size() == 1 && getExpression().endsWith("node()")) {
                         // when debugging found out that jaxen library itself return just the
                         // text content of this node by default so to keep backward compatibility return parent only
                         // when Expression contains the node()

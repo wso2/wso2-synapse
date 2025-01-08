@@ -21,9 +21,12 @@ package org.apache.synapse.startup.quartz;
 
 import javax.xml.namespace.QName;
 
+import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.config.xml.StartupFactory;
 import org.apache.synapse.Startup;
@@ -67,6 +70,35 @@ public class SimpleQuartzFactory implements StartupFactory {
             startUpController.setName(taskDescription.getName());
             startUpController.setTaskDescription(taskDescription);
             startUpController.setDescription(taskDescription.getTaskDescription());
+            String nameString = startUpController.getName();
+            if (nameString == null || "".equals(nameString)) {
+                nameString = SynapseConstants.TASK_NAME;
+            }
+            AspectConfiguration aspectConfiguration = new AspectConfiguration(nameString);
+            startUpController.configure(aspectConfiguration);
+
+            OMAttribute statistics =
+                    el.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE
+                            , XMLConfigConstants.STATISTICS_ATTRIB_NAME));
+            if (statistics != null) {
+                String statisticsValue = statistics.getAttributeValue();
+                if (statisticsValue != null) {
+                    if (XMLConfigConstants.STATISTICS_ENABLE.equals(statisticsValue)) {
+                        aspectConfiguration.enableStatistics();
+                    }
+                }
+            }
+
+            OMAttribute tracing = el.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE,
+                    XMLConfigConstants.TRACE_ATTRIB_NAME));
+            if (tracing != null) {
+                String tracingValue = tracing.getAttributeValue();
+                if (tracingValue != null) {
+                    if (XMLConfigConstants.TRACE_ENABLE.equals(tracingValue)) {
+                        aspectConfiguration.enableTracing();
+                    }
+                }
+            }
             return startUpController;
         } else {
             handleException("Syntax error in the task : wrong QName for the task");

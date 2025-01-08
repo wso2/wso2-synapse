@@ -35,6 +35,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -88,6 +89,8 @@ public class MessageInjector implements Task, ManagedLifecycle {
      */
     private SynapseEnvironment synapseEnvironment;
 
+    private String name = SynapseConstants.TASK_NAME;
+
     public final static String SOAP11_FORMAT = "soap11";
     public final static String SOAP12_FORMAT = "soap12";
     public final static String POX_FORMAT = "pox";
@@ -138,6 +141,12 @@ public class MessageInjector implements Task, ManagedLifecycle {
 		synapseEnvironment = se;
         runtimeProperties = new HashMap<String, Object>();
 	}
+
+    public void init(SynapseEnvironment se, String name) {
+        synapseEnvironment = se;
+        runtimeProperties = new HashMap<String, Object>();
+        this.name = name;
+    }
 
     /**
      * Set the message to be injected
@@ -416,6 +425,8 @@ public class MessageInjector implements Task, ManagedLifecycle {
                     mc.setProperty(entry.getKey(), entry.getValue());
                 }
             }
+
+            mc.setProperty(SynapseConstants.TASK_NAME, name);
 
             if (INJECT_TO_SEQUENCE.equalsIgnoreCase(injectTo)) {
                 if (sequenceName == null || sequenceName.equals("")) {

@@ -109,7 +109,7 @@ public class StatisticIdentityGenerator {
         // If event is a SEQ or Proxy - pop from stack, then update parent
         if (ComponentType.SEQUENCE == componentType || ComponentType.PROXYSERVICE == componentType
             || ComponentType.API ==componentType || ComponentType.RESOURCE == componentType
-            || ComponentType.INBOUNDENDPOINT == componentType) {
+            || ComponentType.INBOUNDENDPOINT == componentType || ComponentType.TASK == componentType) {
 
             holder.getStack().pop();
             if (!holder.getStack().isEmpty()){
@@ -142,7 +142,8 @@ public class StatisticIdentityGenerator {
     }
 
     private static void process(String name, ComponentType componentType, ArtifactHolder holder) {
-        if (ComponentType.PROXYSERVICE == componentType || ComponentType.API == componentType || ComponentType.INBOUNDENDPOINT == componentType) {
+        if (ComponentType.PROXYSERVICE == componentType || ComponentType.API == componentType
+                || ComponentType.INBOUNDENDPOINT == componentType || ComponentType.TASK == componentType) {
             StructuringElement proxyElem = new StructuringElement(name, componentType);
             holder.getStack().push(proxyElem);
             holder.getList().add(proxyElem);

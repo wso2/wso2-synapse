@@ -25,6 +25,7 @@ public enum ComponentType {
     PROXYSERVICE,
     ENDPOINT,
     INBOUNDENDPOINT,
+    TASK,
     SEQUENCE,
     MEDIATOR,
     API,

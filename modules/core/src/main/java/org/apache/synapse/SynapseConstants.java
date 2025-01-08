@@ -563,6 +563,7 @@ public final class SynapseConstants {
     public static final String INBOUND_PROXY_SERVICE_PARAM="inbound.only";
     public static final String INBOUND_JMS_PROTOCOL = "INBOUND_JMS_PROTOCOL";
     public static final String INBOUND_ENDPOINT_NAME = "inbound.endpoint.name";
+    public static final String TASK_NAME = "task.name";
     public static final String INBOUND_STATISTIC_ENABLE = "inbound.statistic.enable";
     public static final String ANNONYMOUS_INBOUND_ENDPOINT_NAME = "AnonymousInboundEndpoint";
     
