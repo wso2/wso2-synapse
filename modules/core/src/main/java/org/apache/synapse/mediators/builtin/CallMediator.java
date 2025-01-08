@@ -48,7 +48,7 @@ import org.apache.synapse.mediators.elementary.EnrichMediator;
 import org.apache.synapse.mediators.elementary.Source;
 import org.apache.synapse.mediators.elementary.Target;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
-import org.apache.synapse.util.CallMediatorEnrichUtil;
+import org.apache.synapse.util.MeidatorEnrichUtil;
 import org.apache.synapse.util.MessageHelper;
 
 import java.io.IOException;
@@ -158,33 +158,33 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             sourceMessageType = originalMessageType;
         }
         if (isSourceAvailable) {
-            CallMediatorEnrichUtil.buildMessage(synInCtx);
+            MeidatorEnrichUtil.buildMessage(synInCtx);
         }
         if (isSourceAvailable && isTargetAvailable) {
-            Source sourceForInboundPayload = CallMediatorEnrichUtil.createSourceWithBody();
+            Source sourceForInboundPayload = MeidatorEnrichUtil.createSourceWithBody();
             Target targetForOriginalPayload =
-                    CallMediatorEnrichUtil.createTargetWithProperty(INTERMEDIATE_ORIGINAL_BODY);
-            Target targetForOutboundPayload = CallMediatorEnrichUtil.createTargetWithBody();
+                    MeidatorEnrichUtil.createTargetWithProperty(INTERMEDIATE_ORIGINAL_BODY);
+            Target targetForOutboundPayload = MeidatorEnrichUtil.createTargetWithBody();
             sourceForInboundPayload.setClone(true);
-            CallMediatorEnrichUtil
+            MeidatorEnrichUtil
                     .doEnrich(synInCtx, sourceForInboundPayload, targetForOriginalPayload, originalMessageType);
             if (!(EnrichMediator.BODY == sourceForOutboundPayload.getSourceType() &&
                 EnrichMediator.BODY == targetForOutboundPayload.getTargetType())) {
-                CallMediatorEnrichUtil
+                MeidatorEnrichUtil
                         .doEnrich(synInCtx, sourceForOutboundPayload, targetForOutboundPayload, getSourceMessageType());
             }
             if (!sourceMessageType.equalsIgnoreCase(originalMessageType)) {
-                CallMediatorEnrichUtil.setContentType(synInCtx, sourceMessageType, sourceMessageType);
+                MeidatorEnrichUtil.setContentType(synInCtx, sourceMessageType, sourceMessageType);
                 if (originalMessageType.equalsIgnoreCase(JSON_TYPE)) {
                     JsonUtil.removeJsonStream(axis2MessageContext);
                 }
             }
         } else if (isSourceAvailable) {
-            Target targetForOutboundPayload = CallMediatorEnrichUtil.createTargetWithBody();
-            CallMediatorEnrichUtil
+            Target targetForOutboundPayload = MeidatorEnrichUtil.createTargetWithBody();
+            MeidatorEnrichUtil
                     .doEnrich(synInCtx, sourceForOutboundPayload, targetForOutboundPayload, getSourceMessageType());
             if (!sourceMessageType.equalsIgnoreCase(originalMessageType)) {
-                CallMediatorEnrichUtil.setContentType(synInCtx, sourceMessageType, sourceMessageType);
+                MeidatorEnrichUtil.setContentType(synInCtx, sourceMessageType, sourceMessageType);
                 if (originalMessageType.equalsIgnoreCase(JSON_TYPE)) {
                     JsonUtil.removeJsonStream(axis2MessageContext);
                 }
@@ -280,27 +280,27 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
     public void postMediate(MessageContext response, String originalMessageType, String originalContentType,
                             Map originalTransportHeaders) {
         if (isTargetAvailable()) {
-            CallMediatorEnrichUtil.buildMessage(response);
+            MeidatorEnrichUtil.buildMessage(response);
         }
         if (isTargetAvailable && isSourceAvailable) {
-            Source sourceForResponsePayload = CallMediatorEnrichUtil.createSourceWithBody();
+            Source sourceForResponsePayload = MeidatorEnrichUtil.createSourceWithBody();
             Source sourceForOriginalPayload =
-                    CallMediatorEnrichUtil.createSourceWithProperty(INTERMEDIATE_ORIGINAL_BODY);
-            Target targetForResponsePayload = CallMediatorEnrichUtil.createTargetWithBody();
-            CallMediatorEnrichUtil.doEnrich(response, sourceForResponsePayload, targetForInboundPayload,
+                    MeidatorEnrichUtil.createSourceWithProperty(INTERMEDIATE_ORIGINAL_BODY);
+            Target targetForResponsePayload = MeidatorEnrichUtil.createTargetWithBody();
+            MeidatorEnrichUtil.doEnrich(response, sourceForResponsePayload, targetForInboundPayload,
                     getSourceMessageType());
-            CallMediatorEnrichUtil.doEnrich(response, sourceForOriginalPayload, targetForResponsePayload,
+            MeidatorEnrichUtil.doEnrich(response, sourceForOriginalPayload, targetForResponsePayload,
                     originalMessageType);
-            CallMediatorEnrichUtil.preservetransportHeaders(response, originalTransportHeaders);
+            MeidatorEnrichUtil.preservetransportHeaders(response, originalTransportHeaders);
             if (!sourceMessageType.equalsIgnoreCase(originalMessageType)) {
-                CallMediatorEnrichUtil.setContentType(response, originalMessageType, originalContentType);
+                MeidatorEnrichUtil.setContentType(response, originalMessageType, originalContentType);
                 if (sourceMessageType.equalsIgnoreCase(JSON_TYPE)) {
                     JsonUtil.removeJsonStream(((Axis2MessageContext) response).getAxis2MessageContext());
                 }
             }
         } else if (isTargetAvailable) {
-            Source sourceForResponsePayload = CallMediatorEnrichUtil.createSourceWithBody();
-            CallMediatorEnrichUtil.doEnrich(response, sourceForResponsePayload, targetForInboundPayload,
+            Source sourceForResponsePayload = MeidatorEnrichUtil.createSourceWithBody();
+            MeidatorEnrichUtil.doEnrich(response, sourceForResponsePayload, targetForInboundPayload,
                     getSourceMessageType());
         }
     }

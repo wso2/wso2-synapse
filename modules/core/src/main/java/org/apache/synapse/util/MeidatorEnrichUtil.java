@@ -52,7 +52,7 @@ import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.Map;
 
-public class CallMediatorEnrichUtil {
+public class MeidatorEnrichUtil {
 
     public static final String CUSTOM = "custom";
     public static final String PROPERTY = "property";
@@ -63,7 +63,7 @@ public class CallMediatorEnrichUtil {
 
     public static final String JSON_TYPE = "application/json";
     public static final String TEXT_TYPE = "text/plain";
-    public static final Log log = LogFactory.getLog(CallMediatorEnrichUtil.class);
+    public static final Log log = LogFactory.getLog(MeidatorEnrichUtil.class);
     private final static QName TEXT_ELEMENT = new QName("http://ws.apache.org/commons/ns/payload", "text");
 
     public static int convertTypeToInt(String type) {
@@ -253,7 +253,7 @@ public class CallMediatorEnrichUtil {
 
     public static Source createSourceWithProperty(String propertyName) {
         Source source = new Source();
-        source.setSourceType(CallMediatorEnrichUtil.convertTypeToInt("property"));
+        source.setSourceType(MeidatorEnrichUtil.convertTypeToInt("property"));
         source.setProperty(propertyName);
         source.setClone(false);
         return source;
@@ -262,13 +262,13 @@ public class CallMediatorEnrichUtil {
     public static Source createSourceWithBody() {
         Source source = new Source();
         source.setClone(false);
-        source.setSourceType(CallMediatorEnrichUtil.convertTypeToInt("body"));
+        source.setSourceType(MeidatorEnrichUtil.convertTypeToInt("body"));
         return source;
     }
 
     public static Target createTargetWithProperty(String propertyName) {
         Target target = new Target();
-        target.setTargetType(CallMediatorEnrichUtil.convertTypeToInt("property"));
+        target.setTargetType(MeidatorEnrichUtil.convertTypeToInt("property"));
         target.setProperty(propertyName);
         target.setAction("replace");
         return target;
@@ -277,7 +277,7 @@ public class CallMediatorEnrichUtil {
     public static Target createTargetWithBody() {
         Target target = new Target();
         target.setAction("replace");
-        target.setTargetType(CallMediatorEnrichUtil.convertTypeToInt("body"));
+        target.setTargetType(MeidatorEnrichUtil.convertTypeToInt("body"));
         return target;
     }
 

@@ -69,7 +69,7 @@ import org.apache.synapse.task.SynapseTaskManager;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.unittest.UnitTestingExecutor;
-import org.apache.synapse.util.CallMediatorEnrichUtil;
+import org.apache.synapse.util.MeidatorEnrichUtil;
 import org.apache.synapse.util.concurrent.InboundThreadPool;
 import org.apache.synapse.util.concurrent.SynapseThreadPool;
 import org.apache.synapse.util.logging.LoggingUtils;
@@ -851,26 +851,26 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         Target targetForResponsePayload;
 
         if (isTargetAvailable) {
-            CallMediatorEnrichUtil.buildMessage(response);
+            MeidatorEnrichUtil.buildMessage(response);
         }
         if (isTargetAvailable && isSourceAvailable) {
-            sourceForResponsePayload = CallMediatorEnrichUtil.createSourceWithBody();
-            sourceForOriginalPayload = CallMediatorEnrichUtil.createSourceWithProperty(INTERMEDIATE_ORIGINAL_BODY);
-            targetForResponsePayload = CallMediatorEnrichUtil.createTargetWithBody();
-            CallMediatorEnrichUtil
+            sourceForResponsePayload = MeidatorEnrichUtil.createSourceWithBody();
+            sourceForOriginalPayload = MeidatorEnrichUtil.createSourceWithProperty(INTERMEDIATE_ORIGINAL_BODY);
+            targetForResponsePayload = MeidatorEnrichUtil.createTargetWithBody();
+            MeidatorEnrichUtil
                     .doEnrich(response, sourceForResponsePayload, targetForInboundPayload, sourceMessageType);
-            CallMediatorEnrichUtil
+            MeidatorEnrichUtil
                     .doEnrich(response, sourceForOriginalPayload, targetForResponsePayload, originalMessageType);
-            CallMediatorEnrichUtil.preservetransportHeaders(response, originalTransportHeaders);
+            MeidatorEnrichUtil.preservetransportHeaders(response, originalTransportHeaders);
             if (!sourceMessageType.equalsIgnoreCase(originalMessageType)) {
-                CallMediatorEnrichUtil.setContentType(response, originalMessageType, originalContentType);
+                MeidatorEnrichUtil.setContentType(response, originalMessageType, originalContentType);
                 if (sourceMessageType.equalsIgnoreCase(JSON_TYPE)) {
                     JsonUtil.removeJsonStream(((Axis2MessageContext) response).getAxis2MessageContext());
                 }
             }
         } else if (isTargetAvailable) {
-            sourceForResponsePayload = CallMediatorEnrichUtil.createSourceWithBody();
-            CallMediatorEnrichUtil
+            sourceForResponsePayload = MeidatorEnrichUtil.createSourceWithBody();
+            MeidatorEnrichUtil
                     .doEnrich(response, sourceForResponsePayload, targetForInboundPayload, sourceMessageType);
         }
         response.setProperty(IS_SOURCE_AVAILABLE, false);
