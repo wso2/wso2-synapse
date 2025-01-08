@@ -31,6 +31,8 @@ import org.apache.synapse.mediators.eip.splitter.IterateMediator;
 import org.apache.synapse.mediators.filters.FilterMediator;
 import org.apache.synapse.mediators.filters.SwitchMediator;
 import org.apache.synapse.mediators.template.InvokeMediator;
+import org.apache.synapse.mediators.v2.ForEachMediatorV2;
+import org.apache.synapse.mediators.v2.ScatterGather;
 
 /**
  * Helper class to locate a mediator while traversing the mediator tree given relative child position array
@@ -129,6 +131,10 @@ public class MediatorTreeTraverseUtil {
                         current_mediator = synCfg
                                 .getSequence(((ForEachMediator) current_mediator).getSequenceRef());
                     }
+                } else if (current_mediator instanceof ForEachMediatorV2) {
+                    if (((ForEachMediatorV2) current_mediator).getTarget().getSequence() != null) {
+                        current_mediator = ((ForEachMediatorV2) current_mediator).getTarget().getSequence();
+                    }
                 } else if (current_mediator instanceof IterateMediator) {
                     if (((IterateMediator) current_mediator).getTarget().getSequence() != null) {
                         current_mediator = ((IterateMediator) current_mediator).getTarget().getSequence();
@@ -142,6 +148,11 @@ public class MediatorTreeTraverseUtil {
                     } else if (((CloneMediator) current_mediator).getTargets().get(position[counter]).getSequenceRef() != null) {
                         current_mediator = synCfg.getSequence(((CloneMediator) current_mediator)
                                 .getTargets().get(position[counter]).getSequenceRef());
+                    }
+                    continue;
+                } else if (current_mediator instanceof ScatterGather) {
+                    if (((ScatterGather) current_mediator).getTargets().get(position[counter]).getSequence() != null) {
+                        current_mediator = ((ScatterGather) current_mediator).getTargets().get(position[counter]).getSequence();
                     }
                     continue;
                 } else if (current_mediator.getType().equals("ThrottleMediator")) {
