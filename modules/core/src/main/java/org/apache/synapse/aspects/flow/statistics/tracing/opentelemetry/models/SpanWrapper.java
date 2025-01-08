@@ -155,4 +155,8 @@ public class SpanWrapper {
             parentSpanWrapper.addKnownSynCtxHashCodeToAllParents(synCtxHashCode);
         }
     }
+
+    public SpanWrapper getParentSpanWrapper() {
+        return parentSpanWrapper;
+    }
 }

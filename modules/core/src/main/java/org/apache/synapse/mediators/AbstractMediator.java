@@ -497,6 +497,12 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         CloseEventCollector.closeEntryEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR, currentIndex,
                                             isContentAltering());
     }
+
+    public void reportCloseStatisticsWithError(MessageContext messageContext, Integer currentIndex) {
+        CloseEventCollector.closeEntryEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR, currentIndex,
+                isContentAltering(), null, true);
+    }
+
     public void registerMediationFlowPoint(SynapseMediationFlowPoint flowPoint) {
         this.flowPoint = flowPoint;
     }

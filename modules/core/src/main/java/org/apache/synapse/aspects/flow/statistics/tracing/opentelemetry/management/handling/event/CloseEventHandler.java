@@ -52,4 +52,11 @@ public interface CloseEventHandler {
      * @param synCtx Message context.
      */
     void handleScatterGatherFinishEvent(MessageContext synCtx);
+
+    /**
+     * Handles a close entry with error event.
+     * @param basicStatisticDataUnit    Basic statistic data unit object.
+     * @param synCtx                    Message context.
+     */
+    void handleCloseEntryWithErrorEvent(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx);
 }

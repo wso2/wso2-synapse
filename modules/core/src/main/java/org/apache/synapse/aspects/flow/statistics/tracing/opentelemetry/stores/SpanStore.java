@@ -19,6 +19,7 @@
 package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.stores;
 
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.helpers.SpanTagger;
@@ -119,9 +120,24 @@ public class SpanStore {
      * @param synCtx Synapse message context
      */
     public void finishSpan(SpanWrapper spanWrapper, MessageContext synCtx) {
+        finishSpan(spanWrapper, synCtx, false);
+    }
+
+    /**
+     * Denotes the end of a span.
+     * Adds tags to the span and removes reference to the appropriate span wrapper in activeSpanWrappers.
+     *
+     * @param spanWrapper Span wrapper object, which has been already created
+     * @param synCtx      Synapse message context
+     * @param isError     finishing the span with an error
+     */
+    public void finishSpan(SpanWrapper spanWrapper, MessageContext synCtx, boolean isError) {
         if (spanWrapper != null && spanWrapper.getSpan() != null) {
             if (spanWrapper.getStatisticDataUnit() != null) {
                 SpanTagger.setSpanTags(spanWrapper, synCtx);
+            }
+            if (isError) {
+                spanWrapper.getSpan().setStatus(StatusCode.ERROR);
             }
             spanWrapper.getSpan().end();
             activeSpanWrappers.remove(spanWrapper);
