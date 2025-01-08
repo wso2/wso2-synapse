@@ -726,6 +726,9 @@ public final class SynapseConstants {
     public static final String OAUTH_TAG = "oauth";
     public static final String SCATTER_MESSAGES = "SCATTER_MESSAGES";
     public static final String CONTINUE_FLOW_TRIGGERED_FROM_MEDIATOR_WORKER = "CONTINUE_FLOW_TRIGGERED_FROM_MEDIATOR_WORKER";
+    public static final String RESPONSE_VARIABLE = "responseVariable";
+    public static final String OVERWRITE_BODY = "overwriteBody";
+    public static final String ORIGINAL_PAYLOAD = "ORIGINAL_PAYLOAD";
 
     public static final String DEFAULT_ERROR_TYPE = "ANY";
     public static final String ERROR_STATS_REPORTED = "ERROR_STATS_REPORTED";

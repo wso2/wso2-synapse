@@ -30,7 +30,7 @@ import org.apache.synapse.mediators.builtin.CallMediator;
 import org.apache.synapse.mediators.elementary.EnrichMediator;
 import org.apache.synapse.mediators.elementary.Source;
 import org.apache.synapse.mediators.elementary.Target;
-import org.apache.synapse.util.CallMediatorEnrichUtil;
+import org.apache.synapse.util.MediatorEnrichUtil;
 import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
@@ -110,7 +110,7 @@ public class CallMediatorFactory extends AbstractMediatorFactory {
         OMElement targetEle = elem.getFirstChildWithName(TARGET_Q);
         if (targetEle != null) {
             if (sourceEle == null) {
-                Source source = CallMediatorEnrichUtil.createSourceWithBody();
+                Source source = MediatorEnrichUtil.createSourceWithBody();
                 callMediator.setSourceAvailable(true);
                 callMediator.setSourceForOutboundPayload(source);
             }
@@ -168,7 +168,7 @@ public class CallMediatorFactory extends AbstractMediatorFactory {
     private void populateSource(CallMediator callMediator, Source source, OMElement sourceEle) {
         OMAttribute typeAttr = sourceEle.getAttribute(ATT_TYPE);
         if (typeAttr != null && typeAttr.getAttributeValue() != null) {
-            source.setSourceType(CallMediatorEnrichUtil.convertTypeToInt(typeAttr.getAttributeValue()));
+            source.setSourceType(MediatorEnrichUtil.convertTypeToInt(typeAttr.getAttributeValue()));
         }
 
         OMAttribute contentTypeAtt = sourceEle.getAttribute(CONTENT_TYPE);
@@ -220,7 +220,7 @@ public class CallMediatorFactory extends AbstractMediatorFactory {
         OMAttribute typeAttr = sourceEle.getAttribute(ATT_TYPE);
         target.setAction("replace");
         if (typeAttr != null && typeAttr.getAttributeValue() != null) {
-            int type = CallMediatorEnrichUtil.convertTypeToInt(typeAttr.getAttributeValue());
+            int type = MediatorEnrichUtil.convertTypeToInt(typeAttr.getAttributeValue());
             if (type >= 0) {
                 target.setTargetType(type);
             } else {
