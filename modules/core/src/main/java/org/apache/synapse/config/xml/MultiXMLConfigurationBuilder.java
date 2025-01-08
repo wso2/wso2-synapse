@@ -567,35 +567,49 @@ public class MultiXMLConfigurationBuilder {
     private static void createAPIs(SynapseConfiguration synapseConfig,
                                    String rootDirPath, Properties properties) {
 
-        File apiDir = new File(rootDirPath, REST_API_DIR);
-        if (apiDir.exists()) {
-            if (log.isDebugEnabled()) {
-                log.debug("Loading APIs from :" + apiDir.getPath());
-            }
-
-            Iterator apiIterator = FileUtils.iterateFiles(apiDir, extensions, false);
-            while (apiIterator.hasNext()) {
-                File file = (File) apiIterator.next();
-                try {
-                    OMElement document = getOMElement(file);
-                    API api = SynapseXMLConfigurationFactory.defineAPI(synapseConfig, document, properties, false);
-                    if (api != null) {
-                        api.setFileName(file.getName());
-                        synapseConfig.getArtifactDeploymentStore().addArtifact(file.getAbsolutePath(),
-                                api.getName());
+        try {
+            File apiDir = new File(rootDirPath, REST_API_DIR);
+            if (apiDir.exists()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Loading APIs from :" + apiDir.getPath());
+                }
+                String[] apiFileDirectories = apiDir.list((dir, name) -> {
+                    for (String extension : extensions) {
+                        if (name.endsWith(extension)) {
+                            return true;
+                        }
                     }
+                    return false;
+                });
+                if (apiFileDirectories != null) {
+                    for (String fileName : apiFileDirectories) {
+                        try {
+                            File file = new File(apiDir, fileName);
+                            OMElement document = getOMElement(file);
+                            API api = SynapseXMLConfigurationFactory.defineAPI(synapseConfig, document, properties,
+                                    false);
+                            if (api != null) {
+                                api.setFileName(file.getName());
+                                synapseConfig.getArtifactDeploymentStore()
+                                        .addArtifact(file.getAbsolutePath(), api.getName());
+                            }
+                        } catch (Exception e) {
+                            String msg = "API configuration cannot be built from: " + fileName;
+                            handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_API, msg, e);
+                        }
+                    }
+                }
+                // order the apis based on context descending order
+                try {
+                    SynapseXMLConfigurationFactory.reOrderAPIs(synapseConfig);
                 } catch (Exception e) {
-                    String msg = "API configuration cannot be built from : " + file.getName();
+                    String msg = "Error while re-ordering apis";
                     handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_API, msg, e);
                 }
             }
-            // order the apis based on context descending order
-            try {
-                SynapseXMLConfigurationFactory.reOrderAPIs(synapseConfig);
-            } catch (Exception e) {
-                String msg = "Error while re-ordering apis";
-                handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_API, msg, e);
-            }
+        } catch (Exception e) {
+            String msg = "Error loading APIs";
+            handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_API, msg, e);
         }
     }
 
