@@ -24,6 +24,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.jaxen.Function;
 
 import java.util.ArrayList;
@@ -49,6 +50,34 @@ public class XpathExtensionUtil {
     private static final String SYNAPSE_XPATH_FUNCTION_EXTENSIONS = "synapse.xpath.func.extensions";
 
     private static final Log log = LogFactory.getLog(XpathExtensionUtil.class);
+
+    /**
+     * This method initializes Xpath Extensions available through synapse.properties file.
+     * Xpath Extensions can be defined in Variable Context Extensions + Function Context Extensions
+     * synapse.xpath.var.extensions --> Variable Extensions
+     * synapse.xpath.func.extensions --> Function Extensions
+     *
+     * @param synapseEnvironment SynapseEnvironment
+     */
+    public static void initXpathExtensions(SynapseEnvironment synapseEnvironment) {
+        Axis2SynapseEnvironment axis2SynapseEnvironment = (Axis2SynapseEnvironment) synapseEnvironment;
+
+        /*Initialize Function Context extensions for xpath
+         */
+        List<SynapseXpathFunctionContextProvider> functionExtensions =
+                XpathExtensionUtil.getRegisteredFunctionExtensions();
+        for (SynapseXpathFunctionContextProvider functionExtension : functionExtensions) {
+            axis2SynapseEnvironment.setXpathFunctionExtensions(functionExtension);
+        }
+
+        /*Initialize Variable Context extensions for xpath
+         */
+        List<SynapseXpathVariableResolver> variableExtensions =
+                XpathExtensionUtil.getRegisteredVariableExtensions();
+        for (SynapseXpathVariableResolver variableExtension : variableExtensions) {
+            axis2SynapseEnvironment.setXpathVariableExtensions(variableExtension);
+        }
+    }
 
     /**
      * Get all registered variable context extensions. Synapse will look for synapse.properties
