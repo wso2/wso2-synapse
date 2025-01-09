@@ -301,19 +301,36 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
 
     @Override
     public void handleCloseEntryEvent(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx) {
-        handleCloseEvent(basicStatisticDataUnit, synCtx);
+        handleCloseEvent(basicStatisticDataUnit, synCtx, false);
+    }
+
+    @Override
+    public void handleCloseEntryWithErrorEvent(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx) {
+        handleCloseEvent(basicStatisticDataUnit, synCtx, true);
     }
 
     @Override
     public void handleCloseFlowForcefully(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx) {
-        handleCloseEvent(basicStatisticDataUnit, synCtx);
+        TracingScope tracingScope = tracingScopeManager.getTracingScope(synCtx);
+        SpanStore spanStore = tracingScope.getSpanStore();
+        String spanWrapperId = TracingUtils.extractId(basicStatisticDataUnit);
+        SpanWrapper spanWrapper = spanStore.getSpanWrapper(spanWrapperId);
+
+        // finish the current span
+        handleCloseEvent(basicStatisticDataUnit, synCtx, false);
+
+        // finish outer level spans since the control is not returned to the original flow to close them gracefully.
+        while (spanWrapper.getParentSpanWrapper() != null) {
+            spanWrapper = spanWrapper.getParentSpanWrapper();
+            spanStore.finishSpan(spanWrapper, synCtx);
+        }
     }
 
-    private void handleCloseEvent(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx) {
+    private void handleCloseEvent(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx, boolean isError) {
         TracingScope tracingScope = tracingScopeManager.getTracingScope(synCtx);
         synchronized (tracingScope.getSpanStore()) {
             if (!isBufferedForContinuationState(basicStatisticDataUnit, tracingScope.getSpanStore())) {
-                finishSpan(basicStatisticDataUnit, synCtx, tracingScope.getSpanStore(), tracingScope);
+                finishSpan(basicStatisticDataUnit, synCtx, tracingScope.getSpanStore(), tracingScope, isError);
             }
             // Else: Absorb. Will end during pop from stack
         }
@@ -348,6 +365,13 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
                             MessageContext synCtx,
                             SpanStore spanStore,
                             TracingScope tracingScope) {
+        finishSpan(basicStatisticDataUnit, synCtx, spanStore, tracingScope, false);
+    }
+
+    private void finishSpan(BasicStatisticDataUnit basicStatisticDataUnit,
+                            MessageContext synCtx,
+                            SpanStore spanStore,
+                            TracingScope tracingScope, boolean isError) {
         String spanWrapperId = TracingUtils.extractId(basicStatisticDataUnit);
         SpanWrapper spanWrapper = spanStore.getSpanWrapper(spanWrapperId);
         //Set the statistic data unit of the close event into the span wrapper
@@ -356,12 +380,12 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         }
         if (!Objects.equals(spanWrapper, spanStore.getOuterLevelSpanWrapper())) {
             // A non-outer level span
-            spanStore.finishSpan(spanWrapper, synCtx);
+            spanStore.finishSpan(spanWrapper, synCtx, isError);
         } else {
             // An outer level span
             if (tracingScope.isEventCollectionFinished(synCtx)) {
                 cleanupContinuationStateSequences(spanStore, synCtx);
-                spanStore.finishSpan(spanWrapper, synCtx);
+                spanStore.finishSpan(spanWrapper, synCtx, isError);
                 tracingScopeManager.cleanupTracingScope(tracingScope.getTracingScopeId());
             }
             // Else - Absorb. Will be handled when all the callbacks are completed

@@ -116,5 +116,10 @@ public interface Mediator extends SynapseArtifact {
      */
     public void reportCloseStatistics(MessageContext synCtx, Integer currentIndex);
 
+    /**
+     * Report Close Statistic Event for the Mediator with error
+     */
+    public void reportCloseStatisticsWithError(MessageContext synCtx, Integer currentIndex);
+
     public void setComponentStatisticsId(ArtifactHolder holder);
 }

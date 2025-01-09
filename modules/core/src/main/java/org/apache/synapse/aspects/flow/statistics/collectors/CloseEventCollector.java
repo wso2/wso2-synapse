@@ -50,7 +50,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 	 */
 	public static void closeEntryEvent(MessageContext messageContext, String componentName, ComponentType componentType,
 									   Integer currentIndex, boolean isContentAltering) {
-		closeEntryEvent(messageContext, componentName, componentType, currentIndex, isContentAltering, null);
+		closeEntryEvent(messageContext, componentName, componentType, currentIndex, isContentAltering, null, false);
 	}
 
 	/**
@@ -65,8 +65,26 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 	 * @param propertyValue     value of the property
 	 */
 	public static void closeEntryEvent(MessageContext messageContext, String componentName,
-											   ComponentType componentType,
-											   Integer currentIndex, boolean isContentAltering, String propertyValue) {
+									   ComponentType componentType, Integer currentIndex, boolean isContentAltering,
+									   String propertyValue) {
+		closeEntryEvent(messageContext, componentName, componentType, currentIndex, isContentAltering, propertyValue, false);
+	}
+
+	/**
+	 * Enqueue statistics event to the event queue. This method receives statistics events from synapse mediation
+	 * engine for all the component types.
+	 *
+	 * @param messageContext    synapse message context.
+	 * @param componentName     name of the component reporting statistics.
+	 * @param componentType     component type of the reporting component.
+	 * @param currentIndex      component's level in this message flow.
+	 * @param isContentAltering true if content is altered
+	 * @param propertyValue     value of the property
+	 * @param isError           closing the span with an error
+	 */
+	public static void closeEntryEvent(MessageContext messageContext, String componentName,
+											   ComponentType componentType, Integer currentIndex,
+									   boolean isContentAltering, String propertyValue, boolean isError) {
 
 		if (shouldReportStatistic(messageContext)) {
 			Boolean isCollectingTracing =
@@ -96,8 +114,13 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 			}
 
 			if (isOpenTelemetryEnabled()) {
-				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler().
+				if (isError) {
+					OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler().
+							handleCloseEntryWithErrorEvent(statisticDataUnit, messageContext);
+				} else {
+					OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler().
 						handleCloseEntryEvent(statisticDataUnit, messageContext);
+				}
 			}
 
 		}

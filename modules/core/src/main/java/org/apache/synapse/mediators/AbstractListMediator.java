@@ -93,16 +93,17 @@ public abstract class AbstractListMediator extends AbstractMediator
                 observer.start(synCtx, ((SequenceMediator) this).getName());
             }
         }
+        Mediator mediator = null;
+        Integer statisticReportingIndex = 0;
         try {
             SynapseLog synLog = getLog(synCtx);
             if (synLog.isTraceOrDebugEnabled()) {
                 synLog.traceOrDebug("Sequence <" + getType() + "> :: mediate()");
                 synLog.traceOrDebug("Mediation started from mediator position : " + mediatorPosition);
             }
-
             for (int i = mediatorPosition; i < mediators.size(); i++) {
                 // ensure correct trace state after each invocation of a mediator
-                Mediator mediator = mediators.get(i);
+                mediator = mediators.get(i);
 
                 if (sequenceContentAware && (mediator.isContentAware() || isStreamXpathEnabled) &&
                         (!Boolean.TRUE.equals(synCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)))) {
@@ -110,7 +111,7 @@ public abstract class AbstractListMediator extends AbstractMediator
                 }
 
                 if (RuntimeStatisticCollector.isStatisticsEnabled()) {
-                    Integer statisticReportingIndex = mediator.reportOpenStatistics(synCtx, i == mediatorPosition);
+                    statisticReportingIndex = mediator.reportOpenStatistics(synCtx, i == mediatorPosition);
                     synCtx.setTracingState(myEffectiveTraceState);
                     if (!mediator.mediate(synCtx)) {
                         mediator.reportCloseStatistics(synCtx, statisticReportingIndex);
@@ -143,6 +144,8 @@ public abstract class AbstractListMediator extends AbstractMediator
                 }
             }
         } catch (SynapseException synEx) {
+            reportStatistics(synCtx, mediator, statisticReportingIndex);
+
             // Now create matcher object.
             Matcher msgBuildFailureExMatcher = msgBuildFailureExpattern.matcher(ExceptionUtils.getStackTrace(synEx));
             if (msgBuildFailureExMatcher.find()) {
@@ -156,6 +159,7 @@ public abstract class AbstractListMediator extends AbstractMediator
             }
             throw synEx;
         } catch (Exception ex) {
+            reportStatistics(synCtx, mediator, statisticReportingIndex);
             String errorMsg = ex.getMessage();
 
             // Now create matcher object.
@@ -171,6 +175,19 @@ public abstract class AbstractListMediator extends AbstractMediator
             synCtx.setTracingState(parentsEffectiveTraceState);
         }
         return returnVal;
+    }
+
+    private void reportStatistics(MessageContext synCtx, Mediator mediator, Integer statisticReportingIndex) {
+        if (RuntimeStatisticCollector.isStatisticsEnabled() && mediator != null) {
+            // check to see if the span closed as error.
+            if (!Boolean.TRUE.equals(synCtx.getProperty(SynapseConstants.ERROR_STATS_REPORTED))) {
+                mediator.reportCloseStatisticsWithError(synCtx, statisticReportingIndex);
+                synCtx.setProperty(SynapseConstants.ERROR_STATS_REPORTED, true);
+            } else {
+                // If inner span is already closed as error, close normally.
+                mediator.reportCloseStatistics(synCtx, statisticReportingIndex);
+            }
+        }
     }
 
     private void buildMessage(MessageContext synCtx, SynapseLog synLog) {
