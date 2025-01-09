@@ -32,6 +32,7 @@ import org.apache.synapse.deployers.LocalEntryDeployer;
 import org.apache.synapse.deployers.ProxyServiceDeployer;
 import org.apache.synapse.deployers.SequenceDeployer;
 import org.apache.synapse.deployers.TemplateDeployer;
+import org.apache.synapse.util.xpath.ext.XpathExtensionUtil;
 
 import java.util.AbstractMap;
 import java.util.Map;
@@ -209,6 +210,7 @@ class ConfigurationDeployer {
         axisConfiguration.addParameter(new Parameter(SynapseConstants.SYNAPSE_ENV, synapseEnvironment));
         axisConfiguration.addParameter(new Parameter(SynapseConstants.SYNAPSE_CONFIG, synapseConfiguration));
         configurationContext.setAxisConfiguration(axisConfiguration);
+        XpathExtensionUtil.initXpathExtensions(synapseEnvironment);
 
         return configurationContext;
     }

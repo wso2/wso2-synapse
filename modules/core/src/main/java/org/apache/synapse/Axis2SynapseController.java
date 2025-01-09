@@ -50,8 +50,6 @@ import org.apache.synapse.deployers.LibraryArtifactDeployer;
 import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.task.*;
 import org.wso2.securevault.secret.handler.SharedSecretCallbackHandlerCache;
-import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
-import org.apache.synapse.util.xpath.ext.SynapseXpathVariableResolver;
 import org.apache.synapse.util.xpath.ext.XpathExtensionUtil;
 
 import java.io.File;
@@ -396,7 +394,7 @@ public class Axis2SynapseController implements SynapseController {
         }
 
         //we initialize xpath extensions here since synapse environment is available
-        initXpathExtensions(synapseEnvironment);
+        XpathExtensionUtil.initXpathExtensions(synapseEnvironment);
 
         try {
             deployMediationLibraryArtifacts();
@@ -415,34 +413,6 @@ public class Axis2SynapseController implements SynapseController {
         synapseEnvironment.setInitialized(true);
 
         return synapseEnvironment;
-    }
-
-    /**
-     * This method initializes Xpath Extensions available through synapse.properties file.
-     * Xpath Extensions can be defined in Variable Context Extensions + Function Context Extensions
-     * synapse.xpath.var.extensions --> Variable Extensions
-     * synapse.xpath.func.extensions --> Function Extensions
-     *
-     * @param synapseEnvironment SynapseEnvironment
-     */
-    private void initXpathExtensions(SynapseEnvironment synapseEnvironment) {
-        Axis2SynapseEnvironment axis2SynapseEnvironment = (Axis2SynapseEnvironment) synapseEnvironment;
-
-        /*Initialize Function Context extensions for xpath
-         */
-        List<SynapseXpathFunctionContextProvider> functionExtensions =
-                XpathExtensionUtil.getRegisteredFunctionExtensions();
-        for (SynapseXpathFunctionContextProvider functionExtension : functionExtensions) {
-            axis2SynapseEnvironment.setXpathFunctionExtensions(functionExtension);
-        }
-
-        /*Initialize Variable Context extensions for xpath
-         */
-        List<SynapseXpathVariableResolver> variableExtensions =
-                XpathExtensionUtil.getRegisteredVariableExtensions();
-        for (SynapseXpathVariableResolver variableExtension : variableExtensions) {
-            axis2SynapseEnvironment.setXpathVariableExtensions(variableExtension);
-        }
     }
 
 	/**
