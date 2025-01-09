@@ -64,16 +64,14 @@ public class XpathExtensionUtil {
 
         /*Initialize Function Context extensions for xpath
          */
-        List<SynapseXpathFunctionContextProvider> functionExtensions =
-                XpathExtensionUtil.getRegisteredFunctionExtensions();
+        List<SynapseXpathFunctionContextProvider> functionExtensions = getRegisteredFunctionExtensions();
         for (SynapseXpathFunctionContextProvider functionExtension : functionExtensions) {
             axis2SynapseEnvironment.setXpathFunctionExtensions(functionExtension);
         }
 
         /*Initialize Variable Context extensions for xpath
          */
-        List<SynapseXpathVariableResolver> variableExtensions =
-                XpathExtensionUtil.getRegisteredVariableExtensions();
+        List<SynapseXpathVariableResolver> variableExtensions = getRegisteredVariableExtensions();
         for (SynapseXpathVariableResolver variableExtension : variableExtensions) {
             axis2SynapseEnvironment.setXpathVariableExtensions(variableExtension);
         }
