@@ -85,12 +85,12 @@ public class PayloadHelper {
 	public static OMElement getXMLPayload(SOAPEnvelope envelope) {
 		SOAPBody body = envelope.getBody();
 		if (body == null) {
-			log.error("No body found");
+			log.debug("No body found");
 			return null;
 		}
 		OMElement bodyEl = body.getFirstElement();
 		if (bodyEl == null) {
-			log.error("No body child found");
+			log.debug("No body child found");
 			return null;
 		}
 		return bodyEl;
