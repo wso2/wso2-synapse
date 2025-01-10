@@ -28,6 +28,7 @@ import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.util.xpath.SynapseExpression;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 
 import javax.xml.stream.XMLStreamException;
@@ -147,7 +148,8 @@ public class TemplateContext {
                         MessageHandlerProvider.getMessageHandler(axis2MsgCtx).buildMessage(axis2MsgCtx);
                     }
 
-                    if (expression.getExpression() instanceof SynapseJsonPath) {
+                    if (expression.getExpression() instanceof SynapseJsonPath ||
+                            expression.getExpression() instanceof SynapseExpression) {
                         return expression.evaluateValue(synCtx);
                     } else {
                         return resolveExpressionValue(synCtx, expression);
