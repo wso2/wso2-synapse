@@ -5,10 +5,10 @@ JSONPATH_PARAMS:  'in' | 'nin' | 'subsetof' | 'anyof' | 'noneof' | 'size' | 'emp
 JSONPATH_FUNCTIONS: 'length()' | 'size()' | 'min()' | 'max()' | 'avg()' | 'sum()' | 'stddev()' | 'keys()' | 'first()' | 'last()';
 
 // Tokens for identifiers, operators, and keywords
-VAR: 'var';
+VAR: 'vars';
 PAYLOAD: 'payload' | '$';
 HEADERS: 'headers';
-CONFIG: 'config';
+CONFIG: 'configs';
 PARAMS: 'params';
 PROPERTY: 'props' | 'properties';
 AND: 'and' | '&&';

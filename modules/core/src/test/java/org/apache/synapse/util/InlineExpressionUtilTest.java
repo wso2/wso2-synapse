@@ -138,7 +138,7 @@ public class InlineExpressionUtilTest extends TestCase {
         jsonObject.addProperty("street", "Palm Grove");
         jsonObject.addProperty("city", "Colombo");
         mc.setVariable("address", jsonObject);
-        String inlineExpression = "Processing user with age : ${var.age} lives at ${var.address}";
+        String inlineExpression = "Processing user with age : ${vars.age} lives at ${vars.address}";
 
         boolean isContentAware = InlineExpressionUtil.isInlineSynapseExpressionsContentAware(inlineExpression);
         Assert.assertFalse("Inline expression content aware should be false", isContentAware);
@@ -160,8 +160,8 @@ public class InlineExpressionUtilTest extends TestCase {
         jsonObject.addProperty("level", "3");
         mc.setVariable("experience", jsonObject);
         mc.setProperty("duration", "years");
-        String inlineExpression = "Processing user : ${payload.team[0].name}, role : ${var.role}, " +
-                "experience : ${var.experience.level} ${properties.synapse.duration}";
+        String inlineExpression = "Processing user : ${payload.team[0].name}, role : ${vars.role}, " +
+                "experience : ${vars.experience.level} ${properties.synapse.duration}";
 
         boolean isContentAware = InlineExpressionUtil.isInlineSynapseExpressionsContentAware(inlineExpression);
         Assert.assertTrue("Inline expression content aware should be true", isContentAware);
@@ -180,7 +180,7 @@ public class InlineExpressionUtilTest extends TestCase {
         MessageContext mc = TestUtils.getTestContextJson(payload, null);
         mc.setVariable("endpoint", "https://test.wso2.com/");
         mc.setProperty("method", "get");
-        String inlineExpression = "Processing using endpoint : ${var.endpoint}, method : ${properties.synapse.method}, role : ${payload.team[2].role}";
+        String inlineExpression = "Processing using endpoint : ${vars.endpoint}, method : ${properties.synapse.method}, role : ${payload.team[2].role}";
 
         boolean isContentAware = InlineExpressionUtil.isInlineSynapseExpressionsContentAware(inlineExpression);
         Assert.assertTrue("Inline expression content aware should be true", isContentAware);
@@ -205,7 +205,7 @@ public class InlineExpressionUtilTest extends TestCase {
 
         MessageContext mc = TestUtils.getTestContext(xmlPayload);
         mc.setVariable("endpoint", "https://test.wso2.com/");
-        String inlineExpression = "Using endpoint : ${var.endpoint} to process book : ${xpath('//catalog/book[1]')}";
+        String inlineExpression = "Using endpoint : ${vars.endpoint} to process book : ${xpath('//catalog/book[1]')}";
 
         boolean isContentAware = InlineExpressionUtil.isInlineSynapseExpressionsContentAware(inlineExpression);
         Assert.assertTrue("Inline expression content aware should be true", isContentAware);

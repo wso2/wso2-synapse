@@ -113,45 +113,60 @@ public class PayloadAndVariableAccessTest {
 
     @Test
     public void testVariableAccess() {
-        Assert.assertEquals("John", TestUtils.evaluateExpressionWithPayloadAndVariables("var.name", 1, 1));
-        Assert.assertEquals("10", TestUtils.evaluateExpressionWithPayloadAndVariables("var.num1", 1, 1));
+        Assert.assertEquals("John", TestUtils.evaluateExpressionWithPayloadAndVariables("vars.name", 1, 1));
+        Assert.assertEquals("10", TestUtils.evaluateExpressionWithPayloadAndVariables("vars.num1", 1, 1));
         Assert.assertEquals("-29.0", TestUtils.evaluateExpressionWithPayloadAndVariables(
-                "(var.num1 * var.num3) - var.num2 + payload.index", 1, 1));
+                "(vars.num1 * vars.num3) - vars.num2 + payload.index", 1, 1));
         Assert.assertEquals("true", TestUtils.evaluateExpressionWithPayloadAndVariables(
-                "var.num1 >= var.num2", 1, 1));
+                "vars.num1 >= vars.num2", 1, 1));
         Assert.assertEquals("2", TestUtils.evaluateExpressionWithPayloadAndVariables(
-                "var.json3[1]", 0, 2));
+                "vars.json3[1]", 0, 2));
         Assert.assertEquals("2", TestUtils.evaluateExpressionWithPayloadAndVariables(
-                "var[\"json3\"][1]", 0, 2));
+                "vars[\"json3\"][1]", 0, 2));
         Assert.assertEquals("[\"The Lord of the Rings\"]", TestUtils.evaluateExpressionWithPayloadAndVariables(
-                "var[\"json2\"][\"store\"][\"book\"][?(@.author=='J.R.R. Tolkien')].title", 0, 2));
+                "vars[\"json2\"][\"store\"][\"book\"][?(@.author=='J.R.R. Tolkien')].title", 0, 2));
         Assert.assertEquals("[\"Moby Dick\",\"To Kill a Mockingbird\"]",
                 TestUtils.evaluateExpressionWithPayloadAndVariables(
-                        "var[\"json2\"][\"store\"][\"book\"][1,3].title", 0, 2));
+                        "vars[\"json2\"][\"store\"][\"book\"][1,3].title", 0, 2));
         Assert.assertEquals("[\"Animal Farm\",\"The Diary of a Young Girl\"]",
                 TestUtils.evaluateExpressionWithPayloadAndVariables(
-                        "var[\"json2\"][\"store\"][\"book\"][-2:].title", 0, 2));
+                        "vars[\"json2\"][\"store\"][\"book\"][-2:].title", 0, 2));
         Assert.assertEquals("[\"Moby Dick\",\"The Lord of the Rings\",\"To Kill a Mockingbird\",\"Animal Farm\"]",
                 TestUtils.evaluateExpressionWithPayloadAndVariables(
-                        "var.json2.store.book[?(@.category=='fiction')].title", 0, 2));
+                        "vars.json2.store.book[?(@.category=='fiction')].title", 0, 2));
         Assert.assertEquals("[\"The Lord of the Rings\",\"To Kill a Mockingbird\"]",
                 TestUtils.evaluateExpressionWithPayloadAndVariables(
-                        "var[\"json2\"][\"store\"][\"book\"][?(@.price > payload.expensive)].title", 2, 2));
+                        "vars[\"json2\"][\"store\"][\"book\"][?(@.price > payload.expensive)].title", 2, 2));
         Assert.assertEquals("[\"The Lord of the Rings\",\"To Kill a Mockingbird\"]",
                 TestUtils.evaluateExpressionWithPayloadAndVariables(
-                        "var[\"json2\"].store.[\"book\"][?(@.price > payload.expensive)].title", 2, 2));
+                        "vars[\"json2\"].store.[\"book\"][?(@.price > payload.expensive)].title", 2, 2));
         Assert.assertEquals("[\"The Lord of the Rings\",\"To Kill a Mockingbird\"]",
                 TestUtils.evaluateExpressionWithPayloadAndVariables(
-                        "var.[\"json2\"].store.[\"book\"][?(@.price > payload.expensive)].title", 2, 2));
+                        "vars.[\"json2\"].store.[\"book\"][?(@.price > payload.expensive)].title", 2, 2));
         Assert.assertEquals("", TestUtils.evaluateExpressionWithPayloadAndVariables(
-                "var.random", 0, 1));
+                "vars.random", 0, 1));
         Assert.assertEquals("", TestUtils.evaluateExpressionWithPayloadAndVariables(
-                "var.num1[0]", 0, 1));
+                "vars.num1[0]", 0, 1));
         Assert.assertEquals("201", TestUtils.evaluateExpressionWithPayloadAndVariables(
-                "var.fileRead_1.['attributes'].statusCode", 0, 3));
+                "vars.fileRead_1.['attributes'].statusCode", 0, 3));
         Assert.assertEquals("101", TestUtils.evaluateExpressionWithPayloadAndVariables(
-                "var[\"fileRead_1\"][\"headers\"]['Content-Length']", 0, 3));
-        Assert.assertEquals("[\"Moby Dick\",\"To Kill a Mockingbird\"]", TestUtils.evaluateExpressionWithPayloadAndVariables(
-                "var.fileRead_1['payload'][\"store\"][\"book\"][1,3].title", 2, 3));
+                "vars[\"fileRead_1\"][\"headers\"]['Content-Length']", 0, 3));
+        Assert.assertEquals("[\"Moby Dick\",\"To Kill a Mockingbird\"]",
+                TestUtils.evaluateExpressionWithPayloadAndVariables(
+                "vars.fileRead_1['payload'][\"store\"][\"book\"][1,3].title", 2, 3));
+    }
+
+    @Test
+    public void testPayloadAccessWithKeywords() {
+        Assert.assertEquals("2", TestUtils.evaluateExpressionWithPayloadAndVariables(
+                "payload.payload.vars.pqr", 4, 0));
+        Assert.assertEquals("8", TestUtils.evaluateExpressionWithPayloadAndVariables(
+                "payload.payload.vars.pqr * payload.payload.vars.configs.payload.iop", 4, 0));
+        Assert.assertEquals("2", TestUtils.evaluateExpressionWithPayloadAndVariables(
+                "vars.payload.payload.vars.pqr", 0, 2));
+        Assert.assertEquals("2", TestUtils.evaluateExpressionWithPayloadAndVariables(
+                "vars.vars.payload.vars.pqr", 0, 2));
+        Assert.assertEquals("6", TestUtils.evaluateExpressionWithPayloadAndVariables(
+                "vars.vars.payload.vars.pqr + vars.payload.payload.vars.configs.payload.iop ", 0, 2));
     }
 }

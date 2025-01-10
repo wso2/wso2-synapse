@@ -20,7 +20,7 @@ package org.apache.synapse.util.synapse.expression.ast;
 import org.apache.synapse.util.synapse.expression.context.EvaluationContext;
 
 /**
- * Represents a node in the AST that holds a signed expression. ex: ( -var.num1 )
+ * Represents a node in the AST that holds a signed expression. ex: ( -vars.num1 )
  */
 public class SignedExpressionNode implements ExpressionNode {
     private final ExpressionNode expression;

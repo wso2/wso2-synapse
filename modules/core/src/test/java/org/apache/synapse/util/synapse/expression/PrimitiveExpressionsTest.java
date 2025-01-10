@@ -62,7 +62,7 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("false", TestUtils.evaluateExpression("-5 > -3.4"));
         Assert.assertEquals("", TestUtils.evaluateExpression("5 > \"bla\""));
         Assert.assertEquals("", TestUtils.evaluateExpression("5 > null"));
-        Assert.assertEquals("true", TestUtils.evaluateExpressionWithPayloadAndVariables("$.age > var.num1",1,1));
+        Assert.assertEquals("true", TestUtils.evaluateExpressionWithPayloadAndVariables("$.age > vars.num1",1,1));
         Assert.assertEquals("", TestUtils.evaluateExpressionWithPayloadAndVariables("$.age > $[\"null\"]", 1, 1));
     }
 
@@ -119,12 +119,12 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("", TestUtils.evaluateExpression("\"abc\" + 5"));
         Assert.assertEquals("abcxyz", TestUtils.evaluateExpression("\"abc\" + \"xyz\""));
         Assert.assertEquals("7.5", TestUtils.evaluateExpressionWithPayloadAndVariables(
-                "var.num1 + var.num3", 2, 1));
+                "vars.num1 + vars.num3", 2, 1));
         Assert.assertEquals("20", TestUtils.evaluateExpressionWithPayloadAndVariables(
-                "var.num1 + payload.expensive", 2, 1));
-        Assert.assertEquals("", TestUtils.evaluateExpressionWithPayloadAndVariables("5 + var.name", 2, 1));
+                "vars.num1 + payload.expensive", 2, 1));
+        Assert.assertEquals("", TestUtils.evaluateExpressionWithPayloadAndVariables("5 + vars.name", 2, 1));
         // clear the synCtx to remove previous payload and variables.
-        Assert.assertEquals("", TestUtils.evaluateExpression("var.num99 + 5"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("vars.num99 + 5"));
     }
 
     @Test
@@ -132,10 +132,10 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("-33", TestUtils.evaluateExpression("5 - 30 + 2 - 10"));
         Assert.assertEquals("2.5", TestUtils.evaluateExpression("5.5 - 3"));
         Assert.assertEquals("2.0", TestUtils.evaluateExpression("5.5 - 3.5"));
-        Assert.assertEquals("", TestUtils.evaluateExpression("var.num99 - 5"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("vars.num99 - 5"));
         Assert.assertEquals("", TestUtils.evaluateExpression("5 - \"bla\""));
         Assert.assertEquals("12.5", TestUtils.evaluateExpressionWithPayloadAndVariables(
-                "var.num1 - var.num3", 2, 1));
+                "vars.num1 - vars.num3", 2, 1));
     }
 
     @Test
@@ -143,10 +143,10 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("-30", TestUtils.evaluateExpression("5 * 3 * -2"));
         Assert.assertEquals("16.5", TestUtils.evaluateExpression("5.5 * 3"));
         Assert.assertEquals("19.25", TestUtils.evaluateExpression("5.5 * 3.5"));
-        Assert.assertEquals("", TestUtils.evaluateExpression("var.num99 * 5"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("vars.num99 * 5"));
         Assert.assertEquals("", TestUtils.evaluateExpression("5 * \"bla\""));
         Assert.assertEquals("-25.0", TestUtils.evaluateExpressionWithPayloadAndVariables(
-                "var.num1 * var.num3", 2, 1));
+                "vars.num1 * vars.num3", 2, 1));
     }
 
     @Test
@@ -154,10 +154,10 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("-4.0", TestUtils.evaluateExpression("10 / 2 / -2.5 * 2"));
         Assert.assertEquals("-4.0", TestUtils.evaluateExpression("10 / 2 / -2.5 * 2"));
         Assert.assertEquals("3", TestUtils.evaluateExpression("9 / 3"));
-        Assert.assertEquals("", TestUtils.evaluateExpression("var.num99 / 5"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("vars.num99 / 5"));
         Assert.assertEquals("", TestUtils.evaluateExpression("5 / \"bla\""));
         Assert.assertEquals("5", TestUtils.evaluateExpressionWithPayloadAndVariables(
-                "var.num1 / 2", 2, 1));
+                "vars.num1 / 2", 2, 1));
     }
 
     @Test
@@ -165,9 +165,9 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("1", TestUtils.evaluateExpression("10 % 3"));
         Assert.assertEquals("2.5", TestUtils.evaluateExpression("5.5 % 3"));
         Assert.assertEquals("2.0", TestUtils.evaluateExpression("5.5 % 3.5"));
-        Assert.assertEquals("", TestUtils.evaluateExpression("var.num99 % 5"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("vars.num99 % 5"));
         Assert.assertEquals("", TestUtils.evaluateExpression("5 % \"bla\""));
         Assert.assertEquals("0", TestUtils.evaluateExpressionWithPayloadAndVariables(
-                "var.num1 % 2", 2, 1));
+                "vars.num1 % 2", 2, 1));
     }
 }
