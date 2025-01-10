@@ -32,6 +32,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.mediators.v2.ScatterGatherUtils;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -157,7 +158,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
                 boolean result = super.mediate(synCtx);
 
-                if (result && !skipAddition) {
+                if (result && !skipAddition && !ScatterGatherUtils.isScatterMessage(synCtx)) {
                     // if flow completed remove the previously added SeqContinuationState
                     ContinuationStackManager.removeSeqContinuationState(synCtx, sequenceType);
                 }
