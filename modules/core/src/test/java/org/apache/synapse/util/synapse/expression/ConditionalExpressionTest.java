@@ -37,7 +37,7 @@ public class ConditionalExpressionTest {
         Assert.assertEquals("", TestUtils.evaluateExpression("45 == (  5 + 34 ? true : 456)"));
         Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload("45 == (  $[\"null\"] ? true : 456)", 1));
         Assert.assertEquals("[22.99]", TestUtils.evaluateExpressionWithPayloadAndVariables(
-                "var.num1 > var.num2 ? $..book[?(@.author =~ /.*Tolkien/i)].price " +
+                "vars.num1 > vars.num2 ? $..book[?(@.author =~ /.*Tolkien/i)].price " +
                         ": $..book[(@.\"length\"-1)].title", 2,1));
         Assert.assertEquals("", TestUtils.evaluateExpression("null == $[\"null\"] ? 123 : 456"));
         Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload(

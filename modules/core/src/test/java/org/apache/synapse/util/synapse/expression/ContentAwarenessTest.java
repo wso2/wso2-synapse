@@ -51,9 +51,9 @@ public class ContentAwarenessTest {
         Assert.assertTrue(synapsePath.isContentAware());
         synapsePath = new SynapseExpression("$..book[?(@.category==\"payload.category\")]");
         Assert.assertTrue(synapsePath.isContentAware());
-        synapsePath = new SynapseExpression("var.books[?(@.category==payload.category)]");
+        synapsePath = new SynapseExpression("vars.books[?(@.category==payload.category)]");
         Assert.assertTrue(synapsePath.isContentAware());
-        synapsePath = new SynapseExpression("var.books[?(@.category==$.category)]");
+        synapsePath = new SynapseExpression("vars.books[?(@.category==$.category)]");
         Assert.assertTrue(synapsePath.isContentAware());
     }
 
@@ -65,27 +65,27 @@ public class ContentAwarenessTest {
         Assert.assertTrue(synapsePath.isContentAware());
         synapsePath = new SynapseExpression("xpath(\"/student\")");
         Assert.assertTrue(synapsePath.isContentAware());
-        synapsePath = new SynapseExpression("xpath(\"//*\") + var.a$bc");
+        synapsePath = new SynapseExpression("xpath(\"//*\") + vars.a$bc");
         Assert.assertTrue(synapsePath.isContentAware());
         synapsePath = new SynapseExpression("xpath(\"$ctx:bla\") + $.age");
         Assert.assertTrue(synapsePath.isContentAware());
-        synapsePath = new SynapseExpression("var.num1 + var.[\"payload\"] + xpath(\"//num3\")");
+        synapsePath = new SynapseExpression("vars.num1 + vars.[\"payload\"] + xpath(\"//num3\")");
         Assert.assertTrue(synapsePath.isContentAware());
-        synapsePath = new SynapseExpression("var.num1 + var.[\"payload\"] + xpath(\"$ctx:num3\")");
+        synapsePath = new SynapseExpression("vars.num1 + vars.[\"payload\"] + xpath(\"$ctx:num3\")");
         Assert.assertFalse(synapsePath.isContentAware());
     }
 
     @Test
     public void testNegativeCases() throws JaxenException {
-        SynapseExpression synapsePath = new SynapseExpression("length(var.abc)");
+        SynapseExpression synapsePath = new SynapseExpression("length(vars.abc)");
         Assert.assertFalse(synapsePath.isContentAware());
-        synapsePath = new SynapseExpression("var[\"payload\"]");
+        synapsePath = new SynapseExpression("vars[\"payload\"]");
         Assert.assertFalse(synapsePath.isContentAware());
         synapsePath = new SynapseExpression("5 + var[\"payload\"].age");
         Assert.assertFalse(synapsePath.isContentAware());
-        synapsePath = new SynapseExpression("var.a$.bc");
+        synapsePath = new SynapseExpression("vars.a$.bc");
         Assert.assertFalse(synapsePath.isContentAware());
-        synapsePath = new SynapseExpression("var.books[?(@.category==\"payload.category\")]");
+        synapsePath = new SynapseExpression("vars.books[?(@.category==\"payload.category\")]");
         Assert.assertFalse(synapsePath.isContentAware());
     }
 }

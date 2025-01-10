@@ -98,12 +98,28 @@ public class TestUtils {
             "  \"selectedCategory\": \"biography\"\n" +
             "}\n";
 
+    private static final String PAYLOAD3 = "[\"When\",\"my\",\"time\",\"comes\",\"Forget\",\"the\",\"wrong\",\"that\"" +
+            ",\"I've\",\"done\"]";
+
+    private static final String PAYLOAD4 = "{\n" +
+            "    \"payload\" : {\n" +
+            "        \"vars\" : {\n" +
+            "            \"configs\" : {\n" +
+            "                \"payload\" : {\n" +
+            "                    \"iop\" : 4\n" +
+            "                },\n" +
+            "                \"zxc\": 3\n" +
+            "            },\n" +
+            "            \"pqr\": 2\n" +
+            "        },\n" +
+            "        \"abc\" : 1\n" +
+            "    }\n" +
+            "}";
+
     private static final JsonObject responseHeaders;
 
     private static final JsonObject responseAttributes;
 
-    private static final String PAYLOAD3 = "[\"When\",\"my\",\"time\",\"comes\",\"Forget\",\"the\",\"wrong\",\"that\"" +
-            ",\"I've\",\"done\"]";
     private static final Map<String, Object> variableMap1;
 
     private static final Map<String, Object> variableMap2;
@@ -126,6 +142,8 @@ public class TestUtils {
         variableMap2.put("json1", PAYLOAD1);
         variableMap2.put("json2", PAYLOAD2);
         variableMap2.put("json3", "[1,2,3,\"abc\"]");
+        variableMap2.put("payload", PAYLOAD4);
+        variableMap2.put("vars", PAYLOAD4);
         variableMap3 = new HashMap<>();
         responseHeaders = new JsonObject();
         responseHeaders.addProperty("Content-Type", "application/json");
@@ -155,12 +173,21 @@ public class TestUtils {
 
     public static String evaluateExpressionWithPayloadAndVariables(String expression, int payloadId, int variableMapId) {
         try {
-            if (payloadId == 1) {
-                JsonUtil.getNewJsonPayload(synCtx.getAxis2MessageContext(), PAYLOAD1, true, true);
-            } else if (payloadId == 2) {
-                JsonUtil.getNewJsonPayload(synCtx.getAxis2MessageContext(), PAYLOAD2, true, true);
-            } else if (payloadId == 3) {
-                JsonUtil.getNewJsonPayload(synCtx.getAxis2MessageContext(), PAYLOAD3, true, true);
+            switch (payloadId) {
+                case 1:
+                    JsonUtil.getNewJsonPayload(synCtx.getAxis2MessageContext(), PAYLOAD1, true, true);
+                    break;
+                case 2:
+                    JsonUtil.getNewJsonPayload(synCtx.getAxis2MessageContext(), PAYLOAD2, true, true);
+                    break;
+                case 3:
+                    JsonUtil.getNewJsonPayload(synCtx.getAxis2MessageContext(), PAYLOAD3, true, true);
+                    break;
+                case 4:
+                    JsonUtil.getNewJsonPayload(synCtx.getAxis2MessageContext(), PAYLOAD4, true, true);
+                    break;
+                default:
+                    break;
             }
             if (variableMapId == 1) {
                 for (Map.Entry<String, Object> entry : variableMap1.entrySet()) {

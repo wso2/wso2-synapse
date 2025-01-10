@@ -134,8 +134,8 @@ public class PayloadAccessNode implements ExpressionNode {
                     result = variable;
                 } else if (variable instanceof Map) {
                     if (StringUtils.isNotEmpty(expressionToEvaluate)) {
-                        expressionToEvaluate = expressionToEvaluate.startsWith(".") ? "var" + expressionToEvaluate
-                                : "var." + expressionToEvaluate;
+                        expressionToEvaluate = expressionToEvaluate.startsWith(".") ? "vars" + expressionToEvaluate
+                                : "vars." + expressionToEvaluate;
                     }
                     String[] keyAndExpression = ExpressionUtils.extractVariableAndJsonPath(expressionToEvaluate);
                     String key = keyAndExpression[0];

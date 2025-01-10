@@ -47,24 +47,27 @@ public class ExpressionUtils {
     /**
      * Extracts the variable name and JSONPath from the input expression.
      *
-     * @param input The input string (e.g., var.abc.students[1].name or var["abc"]["students"][1].name).
+     * @param input The input string (e.g., vars.abc.students[1].name or vars["abc"]["students"][1].name).
      * @return A string array where index 0 is the variable name and index 1 is the JSONPath.
      */
     public static String[] extractVariableAndJsonPath(String input) {
-        if (input.startsWith("var.[\"")) {
-            String remaining = input.substring(6);
+        String VAR_DOT_ARR = "vars.[\"";
+        String VAR_ARR = "vars[\"";
+        String VAR_DOT = "vars.";
+        if (input.startsWith(VAR_DOT_ARR)) {
+            String remaining = input.substring(VAR_DOT_ARR.length());
             int endBracketIndex = remaining.indexOf("\"]");
             String variableName = remaining.substring(0, endBracketIndex);
             String expression = remaining.substring(endBracketIndex + 2);
             return new String[]{variableName, expression};
-        } else if (input.startsWith("var[\"")) {
-            String remaining = input.substring(5);
+        } else if (input.startsWith(VAR_ARR)) {
+            String remaining = input.substring(VAR_ARR.length());
             int endBracketIndex = remaining.indexOf("\"]");
             String variableName = remaining.substring(0, endBracketIndex);
             String expression = remaining.substring(endBracketIndex + 2);
             return new String[]{variableName, expression};
-        } else if (input.startsWith("var.")) {
-            String remaining = input.substring(4);
+        } else if (input.startsWith(VAR_DOT)) {
+            String remaining = input.substring(VAR_DOT.length());
             int endDotIndex = remaining.indexOf(".");
             int beginArrIndex = remaining.indexOf("[");
             String variableName;

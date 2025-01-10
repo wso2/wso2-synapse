@@ -43,6 +43,15 @@ factor
     | LPAREN expression RPAREN
     ;
 
+keywords
+    : DOT VAR
+    | DOT PAYLOAD
+    | DOT HEADERS
+    | DOT CONFIG
+    | DOT PARAMS
+    | DOT PROPERTY
+    ;
+
 configAccess
     : CONFIG propertyName
     ;
@@ -61,6 +70,7 @@ propertyAccess
 
 propertyName
     : DOT ID
+    | keywords
     | (DOT)? LBRACKET STRING_LITERAL RBRACKET
     ;
 
@@ -74,9 +84,10 @@ literal
 
 jsonPathExpression
     :( DOT JSONPATH_FUNCTIONS
-     |DOUBLE_DOT ASTERISK
+     | DOUBLE_DOT ASTERISK
      | DOUBLE_DOT ID
      | DOT ID
+     | keywords
      | (DOT)? LBRACKET arrayIndex RBRACKET
      | DOT ASTERISK
      | DOUBLE_DOT ID (LBRACKET arrayIndex RBRACKET)?)+
@@ -86,6 +97,7 @@ jsonPathExpression
 variableAccess
     : VAR ( DOT ID
           | DOT STRING_LITERAL
+          | keywords
           | (DOT)? LBRACKET STRING_LITERAL RBRACKET  // Bracket notation: var["variableName"]
           )
       ( jsonPathExpression )?

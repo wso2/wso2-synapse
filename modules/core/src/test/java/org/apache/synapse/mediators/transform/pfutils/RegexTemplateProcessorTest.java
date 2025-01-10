@@ -108,7 +108,7 @@ public class RegexTemplateProcessorTest extends TestCase {
                             {
                                     "{\n" +
                                             "    \"description\": \"${payload.test1}\",\n" +
-                                            "    \"path\": ${var.path}\n" +
+                                            "    \"path\": ${vars.path}\n" +
                                             "}",
                                     "json",
                                     "application/json",
