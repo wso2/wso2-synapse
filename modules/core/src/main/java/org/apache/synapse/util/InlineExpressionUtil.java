@@ -30,7 +30,6 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.util.xpath.SynapseExpression;
-import org.apache.synapse.util.xpath.SynapseExpressionUtils;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
@@ -216,8 +215,14 @@ public final class InlineExpressionUtil {
         while (matcher.find()) {
             // Extract the expression inside ${...}
             String expression = matcher.group(1);
-            if (SynapseExpressionUtils.isSynapseExpressionContentAware(expression)) {
-                return true;
+            try {
+                SynapseExpression synapseExpression = new SynapseExpression(expression);
+                if (synapseExpression.isContentAware()) {
+                    return true;
+                }
+            } catch (JaxenException e) {
+                // If the expression is not a valid synapse expression, continue to the next expression
+                continue;
             }
         }
         return false;

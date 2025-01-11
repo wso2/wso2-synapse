@@ -1471,6 +1471,7 @@
       <module>modules/packaging/package-archetype</module>
       <module>modules/integration</module>
       <module>modules/coverage-report</module>
+      <module>modules/synapse-expression</module>
    </modules>
    <properties>
       <maven.javadoc.plugin.version>3.4.1</maven.javadoc.plugin.version>

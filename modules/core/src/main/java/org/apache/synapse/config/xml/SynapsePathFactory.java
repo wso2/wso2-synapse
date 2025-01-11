@@ -26,7 +26,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapsePropertiesLoader;
-import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseExpression;
 import org.apache.synapse.util.xpath.SynapseXPath;
@@ -51,8 +50,8 @@ public class SynapsePathFactory {
 
             if(pathAttrib.getAttributeValue().startsWith("json-eval(")) {
                 path = new SynapseJsonPath(pathAttrib.getAttributeValue().substring(10, pathAttrib.getAttributeValue().length() - 1));
-            } else if (pathAttrib.getAttributeValue().startsWith(ExpressionConstants.SYNAPSE_EXPRESSION_IDENTIFIER_START) &&
-                    pathAttrib.getAttributeValue().endsWith(ExpressionConstants.SYNAPSE_EXPRESSION_IDENTIFIER_END)) {
+            } else if (pathAttrib.getAttributeValue().startsWith(SynapseConstants.SYNAPSE_EXPRESSION_IDENTIFIER_START) &&
+                    pathAttrib.getAttributeValue().endsWith(SynapseConstants.SYNAPSE_EXPRESSION_IDENTIFIER_END)) {
                 path = new SynapseExpression(pathAttrib.getAttributeValue().substring(2, pathAttrib.getAttributeValue().length() - 1));
             } else {
                 try {

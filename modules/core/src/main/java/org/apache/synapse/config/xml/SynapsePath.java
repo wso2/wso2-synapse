@@ -4,13 +4,13 @@ import org.apache.axiom.om.*;
 import org.apache.axiom.om.xpath.AXIOMXPath;
 import org.apache.commons.logging.Log;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.streaming_xpath.custom.components.ParserComponent;
-import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
 import org.apache.synapse.util.xpath.DOMSynapseXPathNamespaceMap;
 import org.jaxen.JaxenException;
 
@@ -63,8 +63,8 @@ public abstract class SynapsePath extends AXIOMXPath {
 	private String inferPathType(String expression) {
 		if (expression.startsWith("json-eval(")) {
 			return JSON_PATH;
-		} else if (expression.startsWith(ExpressionConstants.SYNAPSE_EXPRESSION_IDENTIFIER_START)
-				&& expression.endsWith(ExpressionConstants.SYNAPSE_EXPRESSION_IDENTIFIER_END)) {
+		} else if (expression.startsWith(SynapseConstants.SYNAPSE_EXPRESSION_IDENTIFIER_START)
+				&& expression.endsWith(SynapseConstants.SYNAPSE_EXPRESSION_IDENTIFIER_END)) {
 			return SYNAPSE_EXPRESSIONS_PATH;
 		} else {
 			return X_PATH;

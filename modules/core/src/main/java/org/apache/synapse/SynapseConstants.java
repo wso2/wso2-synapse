@@ -729,4 +729,15 @@ public final class SynapseConstants {
 
     public static final String DEFAULT_ERROR_TYPE = "ANY";
     public static final String ERROR_STATS_REPORTED = "ERROR_STATS_REPORTED";
+    public static final String SYNAPSE_EXPRESSION_IDENTIFIER_START = "${";
+    public static final String SYNAPSE_EXPRESSION_IDENTIFIER_END = "}";
+
+    public static final String PAYLOAD = "payload";
+    public static final String HEADERS = "headers";
+    public static final String ATTRIBUTES = "attributes";
+
+    // configure SynapseExpression implementation
+    public static final String SYNAPSE_EXPRESSION_IMPL = "synapse.expression.impl.class";
+    // remove
+    public static final String PAYLOAD_$ = "$";
 }

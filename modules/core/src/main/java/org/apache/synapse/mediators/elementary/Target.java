@@ -54,7 +54,6 @@ import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.util.CallMediatorEnrichUtil;
 import org.apache.synapse.util.InlineExpressionUtil;
-import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.apache.synapse.util.xpath.SynapseXPathConstants;
@@ -248,12 +247,12 @@ public class Target {
                     throw new SynapseException("Variable key cannot be null");
                 }
                 Map<String, Object> result = new HashMap<>();
-                result.put(ExpressionConstants.PAYLOAD, sourceNodeList);
+                result.put(SynapseConstants.PAYLOAD, sourceNodeList);
                 Map transportHeaders = (Map)((Axis2MessageContext) synContext).getAxis2MessageContext()
                         .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
                 JsonObject headers = EIPUtils.convertMapToJsonObj(transportHeaders);
-                result.put(ExpressionConstants.HEADERS, headers);
-                result.put(ExpressionConstants.ATTRIBUTES, CallMediatorEnrichUtil.populateTransportAttributes(synContext));
+                result.put(SynapseConstants.HEADERS, headers);
+                result.put(SynapseConstants.ATTRIBUTES, CallMediatorEnrichUtil.populateTransportAttributes(synContext));
                 synContext.setVariable(key, result);
             } else {
                 synLog.error("Action " + action + " is not supported when enriching variables");
@@ -503,12 +502,12 @@ public class Target {
                         return;
                     }
                     Map<String, Object> result = new HashMap<>();
-                    result.put(ExpressionConstants.PAYLOAD, sourceJsonElement);
+                    result.put(SynapseConstants.PAYLOAD, sourceJsonElement);
                     Map transportHeaders = (Map)((Axis2MessageContext) synCtx).getAxis2MessageContext()
                             .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
                     JsonObject headers = EIPUtils.convertMapToJsonObj(transportHeaders);
-                    result.put(ExpressionConstants.HEADERS, headers);
-                    result.put(ExpressionConstants.ATTRIBUTES, CallMediatorEnrichUtil.populateTransportAttributes(synCtx));
+                    result.put(SynapseConstants.HEADERS, headers);
+                    result.put(SynapseConstants.ATTRIBUTES, CallMediatorEnrichUtil.populateTransportAttributes(synCtx));
                     synCtx.setVariable(key, result);
                 }
                 break;
