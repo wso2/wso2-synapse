@@ -125,6 +125,8 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("", TestUtils.evaluateExpressionWithPayloadAndVariables("5 + vars.name", 2, 1));
         // clear the synCtx to remove previous payload and variables.
         Assert.assertEquals("", TestUtils.evaluateExpression("vars.num99 + 5"));
+        // Integer type overflow test
+        Assert.assertEquals("2.147483648E9", TestUtils.evaluateExpression("2147483647 + 1"));
     }
 
     @Test
@@ -147,6 +149,8 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("", TestUtils.evaluateExpression("5 * \"bla\""));
         Assert.assertEquals("-25.0", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "vars.num1 * vars.num3", 2, 1));
+        // Integer type overflow test
+        Assert.assertEquals("-4.294967294E9", TestUtils.evaluateExpression("2147483647 * -2"));
     }
 
     @Test

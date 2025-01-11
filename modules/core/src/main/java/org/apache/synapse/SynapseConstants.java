@@ -733,11 +733,10 @@ public final class SynapseConstants {
     public static final String SYNAPSE_EXPRESSION_IDENTIFIER_END = "}";
 
     public static final String PAYLOAD = "payload";
+    public static final String PAYLOAD_$ = "$";
     public static final String HEADERS = "headers";
     public static final String ATTRIBUTES = "attributes";
 
     // configure SynapseExpression implementation
     public static final String SYNAPSE_EXPRESSION_IMPL = "synapse.expression.impl.class";
-    // remove
-    public static final String PAYLOAD_$ = "$";
 }

@@ -19,6 +19,7 @@ package org.apache.synapse.expression.impl.ast;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import org.apache.synapse.expression.impl.context.EvaluationContext;
 
 /**
@@ -93,6 +94,12 @@ public class LiteralNode implements ExpressionNode {
                 jsonArray.add(result.asInt());
             } else if (result.isDouble()) {
                 jsonArray.add(result.asDouble());
+            } else if (result.isLong()) {
+                jsonArray.add(result.asLong());
+            } else if (result.isBoolean()) {
+                jsonArray.add(result.asBoolean());
+            }  else if (result.isNull()) {
+                jsonArray.add(JsonNull.INSTANCE);
             } else {
                 jsonArray.add(result.asString());
             }

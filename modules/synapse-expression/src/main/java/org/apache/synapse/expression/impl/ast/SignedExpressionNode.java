@@ -42,6 +42,8 @@ public class SignedExpressionNode implements ExpressionNode {
                 return new ExpressionResult(-result.asInt());
             } else if (result.isDouble()) {
                 return new ExpressionResult(-result.asDouble());
+            } else if (result.isLong()) {
+                return new ExpressionResult(-result.asLong());
             }
             throw new IllegalStateException("Cannot negate a non-numeric value : " + result.asString());
         }

@@ -78,6 +78,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.apache.synapse.SynapseConstants.SYNAPSE_VALIDATE_MEDIATOR_REDEPLOYMENT_CACHE_CLEAR;
+
 /**
  * Validate a message or an element against a schema
  * <p/>

@@ -223,9 +223,9 @@ public class PayloadAccessNode implements ExpressionNode {
         } else if (result instanceof List) {
             return new ExpressionResult((List) result);
         } else if (result instanceof Float) {
-            return new ExpressionResult((Double) result);
+            return new ExpressionResult((Float) result);
         } else if (result instanceof Short) {
-            return new ExpressionResult((Integer) result);
+            return new ExpressionResult((Short) result);
         } else if (result instanceof OMNode) {
             return new ExpressionResult((OMNode) result);
         }

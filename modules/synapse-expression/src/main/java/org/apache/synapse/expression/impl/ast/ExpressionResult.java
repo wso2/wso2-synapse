@@ -180,11 +180,15 @@ public class ExpressionResult {
     }
 
     public boolean isNumeric() {
-        return isInteger() || isDouble();
+        return isInteger() || isDouble() || isLong();
     }
 
     public boolean isInteger() {
         return value instanceof Integer || (value instanceof JsonPrimitive && isInteger((JsonPrimitive) value));
+    }
+
+    public boolean isLong() {
+        return value instanceof Long || (value instanceof JsonPrimitive && isLong((JsonPrimitive) value));
     }
 
     public boolean isDouble() {
@@ -235,8 +239,10 @@ public class ExpressionResult {
         if (jsonPrimitive.isNumber()) {
             Number number = jsonPrimitive.getAsNumber();
             // Check if the number is an instance of integer types (int, long, short)
-            boolean initialCheck = number instanceof Integer || number instanceof Long || number instanceof Short;
-            if (!initialCheck && number instanceof LazilyParsedNumber) {
+            if (number instanceof Long && number.longValue() <= Integer.MAX_VALUE) {
+                return true;
+            }
+            if (number instanceof LazilyParsedNumber) {
                 // Check if the number is an instance of integer types (int, long, short)
                 String numberString = number.toString();
                 try {
@@ -246,17 +252,36 @@ public class ExpressionResult {
                     return false;
                 }
             }
-            return initialCheck;
         }
-        return false; // Not a number, so it's not an integer
+        return false;
+    }
+
+    private boolean isLong(JsonPrimitive jsonPrimitive) {
+        if (jsonPrimitive.isNumber()) {
+            Number number = jsonPrimitive.getAsNumber();
+            // Check if the number is an instance of integer types (int, long, short)
+            if (number instanceof Long && number.longValue() > Integer.MAX_VALUE) {
+                return true;
+            }
+            if (number instanceof LazilyParsedNumber) {
+                // Check if the number is an instance of integer types (int, long, short)
+                String numberString = number.toString();
+                try {
+                    Long.parseLong(numberString);
+                    return true;
+                } catch (NumberFormatException e) {
+                    return false;
+                }
+            }
+        }
+        return false;
     }
 
     private boolean isDouble(JsonPrimitive jsonPrimitive) {
         if (jsonPrimitive.isNumber()) {
             Number number = jsonPrimitive.getAsNumber();
             // Check if the number is an instance of floating-point types (float, double)
-            boolean initialCheck = number instanceof Float || number instanceof Double;
-            if (initialCheck) {
+            if (number instanceof Float || number instanceof Double) {
                 return true;
             }
             if (number instanceof LazilyParsedNumber) {
@@ -270,7 +295,7 @@ public class ExpressionResult {
                 }
             }
         }
-        return false; // Not a number, so it's not a double
+        return false;
     }
 
     public boolean isOMElement() {

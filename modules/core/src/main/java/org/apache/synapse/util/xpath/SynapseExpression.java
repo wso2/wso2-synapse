@@ -38,22 +38,32 @@ public class SynapseExpression extends SynapsePath {
 
     private static final Log log = LogFactory.getLog(SynapseExpression.class);
 
+    private static Class<?> loadedClass = null;
+
     public SynapseExpression(String synapseExpression) throws JaxenException {
-        super(synapseExpression, org.apache.synapse.config.xml.SynapsePath.SYNAPSE_EXPRESSIONS_PATH, log);
-        String expressionClass = SynapsePropertiesLoader.loadSynapseProperties().
-                getProperty(SynapseConstants.SYNAPSE_EXPRESSION_IMPL);
-        if (!StringUtils.isEmpty(expressionClass)) {
-            if (log.isDebugEnabled()) {
-                log.debug("Trying to load the SynapseExpression implementation");
-            }
+        super(synapseExpression, SynapsePath.SYNAPSE_EXPRESSIONS_PATH, log);
+        if (loadedClass != null) {
             try {
-                Class<?> clazz = Class.forName(expressionClass);
-                this.expression = (SynapsePath) clazz.getConstructor(String.class).newInstance(synapseExpression);
-            } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+                this.expression = (SynapsePath) loadedClass.getConstructor(String.class).newInstance(synapseExpression);
+            } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
                 throw new JaxenException("Error while loading the SynapseExpression implementation class", e);
             }
         } else {
-            throw new JaxenException("SynapseExpression implementation class is not defined in the properties");
+            String expressionClass = SynapsePropertiesLoader.loadSynapseProperties().
+                    getProperty(SynapseConstants.SYNAPSE_EXPRESSION_IMPL);
+            if (!StringUtils.isEmpty(expressionClass)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Trying to load the SynapseExpression implementation");
+                }
+                try {
+                    loadedClass = Class.forName(expressionClass);
+                    this.expression = (SynapsePath) loadedClass.getConstructor(String.class).newInstance(synapseExpression);
+                } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+                    throw new JaxenException("Error while loading the SynapseExpression implementation class", e);
+                }
+            } else {
+                throw new JaxenException("SynapseExpression implementation class is not defined in the properties");
+            }
         }
     }
 
@@ -70,5 +80,9 @@ public class SynapseExpression extends SynapsePath {
     @Override
     public boolean isContentAware() {
         return this.expression.isContentAware();
+    }
+
+    public void addNamespace(String var1, String var2) throws JaxenException {
+        this.expression.addNamespace(var1, var2);
     }
 }

@@ -113,7 +113,7 @@ public class PredefinedFunctionNode implements ExpressionNode {
             case ExpressionConstants.IS_STRING:
                 return new ExpressionResult(result.isString());
             case ExpressionConstants.IS_NUMBER:
-                return new ExpressionResult(result.isInteger() || result.isDouble());
+                return new ExpressionResult(result.isNumeric());
             case ExpressionConstants.IS_ARRAY:
                 return new ExpressionResult(result.isArray());
             case ExpressionConstants.IS_OBJECT:
@@ -248,13 +248,15 @@ public class PredefinedFunctionNode implements ExpressionNode {
             return new ExpressionResult(Math.abs(result.asInt()));
         } else if (result.isDouble()) {
             return new ExpressionResult(Math.abs(result.asDouble()));
+        } else if (result.isLong()) {
+            return new ExpressionResult(Math.abs(result.asLong()));
         }
         throw new EvaluationException("Invalid argument provided for abs function");
     }
 
     private ExpressionResult handleCeilFunction(ExpressionResult result) {
-        if (result.isInteger()) {
-            return new ExpressionResult(result.asInt());
+        if (result.isInteger() || result.isLong()) {
+            return result;
         } else if (result.isDouble()) {
             return new ExpressionResult(Math.ceil(result.asDouble()));
         }
@@ -262,8 +264,8 @@ public class PredefinedFunctionNode implements ExpressionNode {
     }
 
     private ExpressionResult handleFloorFunction(ExpressionResult result) {
-        if (result.isInteger()) {
-            return new ExpressionResult(result.asInt());
+        if (result.isInteger() || result.isLong()) {
+            return result;
         } else if (result.isDouble()) {
             return new ExpressionResult(Math.floor(result.asDouble()));
         }
@@ -273,8 +275,8 @@ public class PredefinedFunctionNode implements ExpressionNode {
     private ExpressionResult handleRoundFunction(ExpressionResult result) {
         if (result.isDouble()) {
             return new ExpressionResult((int) Math.round(result.asDouble()));
-        } else if (result.isInteger()) {
-            return new ExpressionResult(result.asInt());
+        } else if (result.isInteger() || result.isLong()) {
+            return result;
         }
         throw new EvaluationException("Invalid argument provided for round function");
     }
@@ -284,6 +286,8 @@ public class PredefinedFunctionNode implements ExpressionNode {
             return new ExpressionResult(Math.sqrt(result.asInt()));
         } else if (result.isDouble()) {
             return new ExpressionResult(Math.sqrt(result.asDouble()));
+        } else if (result.isLong()) {
+            return new ExpressionResult(Math.sqrt(result.asLong()));
         }
         throw new EvaluationException("Invalid argument provided for sqrt function");
     }
@@ -489,7 +493,7 @@ public class PredefinedFunctionNode implements ExpressionNode {
     }
 
     private ExpressionResult handlePowFunction(ExpressionResult source, ExpressionResult argument1) {
-        if ((source.isDouble() || source.isInteger()) && (argument1.isDouble() || argument1.isInteger())) {
+        if (source.isNumeric() && argument1.isNumeric()) {
             return new ExpressionResult(Math.pow(source.asDouble(), argument1.asDouble()));
         }
         throw new EvaluationException("Invalid argument provided for pow function. source: " + source.asString()

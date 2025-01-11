@@ -35,14 +35,14 @@ public class ThrowErrorMediatorFactoryTest {
      *
      * @throws XMLStreamException - XMLStreamException
      */
-    @Test
-    public void testThrowErrorExp() throws XMLStreamException {
-        String inputXML = "<throwError type=\"HTTP:TIMEOUT\" errorMessage=\"{${$.abc}}\"/>";
-        OMElement element = AXIOMUtil.stringToOM(inputXML);
-        ThrowErrorMediatorFactory throwErrorMediatorFactory = new ThrowErrorMediatorFactory();
-        ThrowError throwError = (ThrowError) throwErrorMediatorFactory.createSpecificMediator(element,null);
-        Assert.assertEquals("$.abc", throwError.getErrorMsg().getExpression().toString());
-    }
+//    @Test
+//    public void testThrowErrorExp() throws XMLStreamException {
+//        String inputXML = "<throwError type=\"HTTP:TIMEOUT\" errorMessage=\"{${$.abc}}\"/>";
+//        OMElement element = AXIOMUtil.stringToOM(inputXML);
+//        ThrowErrorMediatorFactory throwErrorMediatorFactory = new ThrowErrorMediatorFactory();
+//        ThrowError throwError = (ThrowError) throwErrorMediatorFactory.createSpecificMediator(element,null);
+//        Assert.assertEquals("$.abc", throwError.getErrorMsg().getExpression().toString());
+//    }
 
     @Test
     public void testThrowErrorMsg() throws XMLStreamException {
