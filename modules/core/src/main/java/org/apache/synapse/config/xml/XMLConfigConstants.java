@@ -66,7 +66,7 @@ public class XMLConfigConstants {
 
     /** The set of supported data types */
     public static enum DATA_TYPES {
-        STRING, BOOLEAN, INTEGER, LONG, SHORT, FLOAT, DOUBLE, OM, JSON, XML
+        STRING, BOOLEAN, INTEGER, LONG, SHORT, FLOAT, DOUBLE, OM, JSON
     }
 
     public static enum VARIABLE_DATA_TYPES {
