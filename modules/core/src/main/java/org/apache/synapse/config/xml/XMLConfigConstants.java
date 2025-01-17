@@ -69,6 +69,10 @@ public class XMLConfigConstants {
         STRING, BOOLEAN, INTEGER, LONG, SHORT, FLOAT, DOUBLE, OM, JSON
     }
 
+    public static enum VARIABLE_DATA_TYPES {
+        STRING, BOOLEAN, INTEGER, LONG, DOUBLE, JSON, XML
+    }
+
     //-- WS-RM sequence mediator --
     /** WS-RM version 1.0*/
     public static final String SEQUENCE_VERSION_1_0 = "1.0";

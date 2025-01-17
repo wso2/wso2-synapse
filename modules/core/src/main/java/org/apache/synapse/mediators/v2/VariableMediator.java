@@ -118,7 +118,7 @@ public class VariableMediator extends AbstractMediator {
 
     /**
      * Set the value to be set by this variable mediator and the data type to be used when setting the value.
-     * Accepted type names are defined in XMLConfigConstants.DATA_TYPES enumeration. Passing null as the type
+     * Accepted type names are defined in XMLConfigConstants.VARIABLE_DATA_TYPES enumeration. Passing null as the type
      * implies that 'STRING' type should be used.
      *
      * @param value the value to be set as a string
@@ -169,7 +169,7 @@ public class VariableMediator extends AbstractMediator {
             return value;
         } else {
             if (expression != null) {
-                if (isOMType(type)) {
+                if (isXMLType(type)) {
                     return buildOMElement(expression.stringValueOf(synCtx));
                 } else if (isStringType(type)) {
                     return expression.stringValueOf(synCtx);
@@ -180,14 +180,14 @@ public class VariableMediator extends AbstractMediator {
         return null;
     }
 
-    private boolean isOMType(String type) {
+    private boolean isXMLType(String type) {
 
-        return type != null && XMLConfigConstants.DATA_TYPES.OM.equals(XMLConfigConstants.DATA_TYPES.valueOf(type));
+        return type != null && XMLConfigConstants.VARIABLE_DATA_TYPES.XML.equals(XMLConfigConstants.VARIABLE_DATA_TYPES.valueOf(type));
     }
 
     private boolean isStringType(String type) {
 
-        return type != null && XMLConfigConstants.DATA_TYPES.STRING.equals(XMLConfigConstants.DATA_TYPES.valueOf(type));
+        return type != null && XMLConfigConstants.VARIABLE_DATA_TYPES.STRING.equals(XMLConfigConstants.VARIABLE_DATA_TYPES.valueOf(type));
     }
 
     private Object convertValue(String value, String type) {
@@ -197,22 +197,18 @@ public class VariableMediator extends AbstractMediator {
         }
 
         try {
-            XMLConfigConstants.DATA_TYPES dataType = XMLConfigConstants.DATA_TYPES.valueOf(type);
+            XMLConfigConstants.VARIABLE_DATA_TYPES dataType = XMLConfigConstants.VARIABLE_DATA_TYPES.valueOf(type);
             switch (dataType) {
                 case BOOLEAN:
                     return JavaUtils.isTrueExplicitly(value);
                 case DOUBLE:
                     return Double.parseDouble(value);
-                case FLOAT:
-                    return Float.parseFloat(value);
                 case INTEGER:
                     return Integer.parseInt(value);
                 case LONG:
                     return Long.parseLong(value);
-                case OM:
+                case XML:
                     return buildOMElement(value);
-                case SHORT:
-                    return Short.parseShort(value);
                 case JSON:
                     return buildJSONElement(value);
                 default:
@@ -243,7 +239,7 @@ public class VariableMediator extends AbstractMediator {
             return convertJsonPrimitive((JsonPrimitive) evaluatedValue, type);
         }
 
-        XMLConfigConstants.DATA_TYPES dataType = XMLConfigConstants.DATA_TYPES.valueOf(type);
+        XMLConfigConstants.VARIABLE_DATA_TYPES dataType = XMLConfigConstants.VARIABLE_DATA_TYPES.valueOf(type);
         switch (dataType) {
             case BOOLEAN:
                 if (!(evaluatedValue instanceof Boolean)) {
@@ -253,11 +249,6 @@ public class VariableMediator extends AbstractMediator {
             case DOUBLE:
                 if (!(evaluatedValue instanceof Double)) {
                     handleDataTypeException("DOUBLE");
-                }
-                break;
-            case FLOAT:
-                if (!(evaluatedValue instanceof Float)) {
-                    handleDataTypeException("FLOAT");
                 }
                 break;
             case INTEGER:
@@ -270,14 +261,9 @@ public class VariableMediator extends AbstractMediator {
                     handleDataTypeException("LONG");
                 }
                 break;
-            case OM:
+            case XML:
                 if (!(evaluatedValue instanceof OMElement)) {
-                    handleDataTypeException("OM");
-                }
-                break;
-            case SHORT:
-                if (!(evaluatedValue instanceof Short)) {
-                    handleDataTypeException("SHORT");
+                    handleDataTypeException("XML");
                 }
                 break;
             case JSON:
@@ -299,7 +285,7 @@ public class VariableMediator extends AbstractMediator {
      */
     public Object convertJsonPrimitive(JsonPrimitive jsonPrimitive, String type) {
 
-        XMLConfigConstants.DATA_TYPES dataType = XMLConfigConstants.DATA_TYPES.valueOf(type);
+        XMLConfigConstants.VARIABLE_DATA_TYPES dataType = XMLConfigConstants.VARIABLE_DATA_TYPES.valueOf(type);
         switch (dataType) {
             case BOOLEAN:
                 if (jsonPrimitive.isBoolean()) {
@@ -313,12 +299,6 @@ public class VariableMediator extends AbstractMediator {
                 } else {
                     handleDataTypeException("DOUBLE");
                 }
-            case FLOAT:
-                if (jsonPrimitive.isNumber()) {
-                    return jsonPrimitive.getAsFloat();
-                } else {
-                    handleDataTypeException("FLOAT");
-                }
             case INTEGER:
                 if (jsonPrimitive.isNumber()) {
                     return jsonPrimitive.getAsInt();
@@ -330,12 +310,6 @@ public class VariableMediator extends AbstractMediator {
                     return jsonPrimitive.getAsLong();
                 } else {
                     handleDataTypeException("LONG");
-                }
-            case SHORT:
-                if (jsonPrimitive.isNumber()) {
-                    return jsonPrimitive.getAsShort();
-                } else {
-                    handleDataTypeException("SHORT");
                 }
             default:
                 return jsonPrimitive.getAsString();
