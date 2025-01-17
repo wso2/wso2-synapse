@@ -66,7 +66,11 @@ public class XMLConfigConstants {
 
     /** The set of supported data types */
     public static enum DATA_TYPES {
-        STRING, BOOLEAN, INTEGER, LONG, SHORT, FLOAT, DOUBLE, OM, JSON
+        STRING, BOOLEAN, INTEGER, LONG, SHORT, FLOAT, DOUBLE, OM, JSON, XML
+    }
+
+    public static enum VARIABLE_DATA_TYPES {
+        STRING, BOOLEAN, INTEGER, LONG, DOUBLE, JSON, XML
     }
 
     //-- WS-RM sequence mediator --
