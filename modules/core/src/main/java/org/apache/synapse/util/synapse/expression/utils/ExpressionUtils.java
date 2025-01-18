@@ -19,6 +19,9 @@
 package org.apache.synapse.util.synapse.expression.utils;
 
 import org.apache.axiom.om.OMNode;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.Charset;
 import java.util.List;
 
@@ -111,5 +114,17 @@ public class ExpressionUtils {
             }
         }
         return isXML;
+    }
+
+    /**
+     * Rounds the given value to the specified number of decimal places.
+     * @param value The value to be rounded.
+     * @param decimalPlaces The number of decimal places to round to.
+     * @return The rounded value.
+     */
+    public static Double round (double value, int decimalPlaces) {
+        BigDecimal bd = new BigDecimal(Double.toString(value));
+        bd = bd.setScale(decimalPlaces, RoundingMode.HALF_UP);
+        return bd.doubleValue();
     }
 }

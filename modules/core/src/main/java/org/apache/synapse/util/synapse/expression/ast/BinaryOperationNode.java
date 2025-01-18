@@ -20,6 +20,7 @@ package org.apache.synapse.util.synapse.expression.ast;
 import org.apache.synapse.util.synapse.expression.context.EvaluationContext;
 import org.apache.synapse.util.synapse.expression.exception.EvaluationException;
 
+import java.math.BigDecimal;
 import java.util.function.BiFunction;
 
 /**
@@ -149,10 +150,23 @@ public class BinaryOperationNode implements ExpressionNode {
     }
 
     private ExpressionResult handleAddition(ExpressionResult leftValue, ExpressionResult rightValue) {
-        if (leftValue.isDouble() || rightValue.isDouble()) {
-            return new ExpressionResult(leftValue.asDouble() + rightValue.asDouble());
-        } else if (leftValue.isInteger() && rightValue.isInteger()) {
-            return new ExpressionResult(leftValue.asInt() + rightValue.asInt());
+        if (leftValue.isNumeric() && rightValue.isNumeric()) {
+            if (leftValue.isDouble() || rightValue.isDouble()) {
+                BigDecimal left = new BigDecimal(leftValue.asString());
+                BigDecimal right = new BigDecimal(rightValue.asString());
+                BigDecimal sum = left.add(right);
+                return new ExpressionResult(sum.doubleValue());
+            } else if (leftValue.isLong() || rightValue.isLong()) {
+                return new ExpressionResult(leftValue.asLong() + rightValue.asLong());
+            } else {
+                try {
+                    int result = Math.addExact(leftValue.asInt(), rightValue.asInt());
+                    return new ExpressionResult(result);
+                } catch (ArithmeticException e) {
+                    // handle overflow
+                    return new ExpressionResult(leftValue.asLong() + rightValue.asLong());
+                }
+            }
         } else if (leftValue.isString() && rightValue.isString()) {
             return new ExpressionResult(leftValue.asString().concat(rightValue.asString()));
         }
@@ -166,23 +180,109 @@ public class BinaryOperationNode implements ExpressionNode {
             throw new EvaluationException("Arithmetic operation: " + operator + " between non-numeric values: "
                     + leftValue.asString() + " and " + rightValue.asString());
         }
-        boolean isInteger = leftValue.isInteger() && rightValue.isInteger();
+        boolean leftIsDouble = leftValue.isDouble();
+        boolean leftIsLong = leftValue.isLong();
+        boolean rightIsDouble = rightValue.isDouble();
+        boolean rightIsLong = rightValue.isLong();
+
+        // Promote to the highest precision type
+        if (leftIsDouble || rightIsDouble) {
+            double left = leftValue.asDouble();
+            double right = rightValue.asDouble();
+            return performDoubleOperation(left, right, operator);
+        } else if (leftIsLong || rightIsLong) {
+            long left = leftValue.asLong();
+            long right = rightValue.asLong();
+            return performLongOperation(left, right, operator);
+        } else {
+            // Default to int
+            int left = leftValue.asInt();
+            int right = rightValue.asInt();
+            return performIntOperation(left, right, operator);
+        }
+    }
+
+    private ExpressionResult performDoubleOperation(double left, double right, Operator operator) {
+        BigDecimal left1 = new BigDecimal(String.valueOf(left));
+        BigDecimal right1 = new BigDecimal(String.valueOf(right));
         switch (operator) {
             case SUBTRACT:
-                return isInteger ? new ExpressionResult(leftValue.asInt() - rightValue.asInt()) :
-                        new ExpressionResult(leftValue.asDouble() - rightValue.asDouble());
+                BigDecimal sum = left1.subtract(right1);
+                return new ExpressionResult(sum.doubleValue());
             case MULTIPLY:
-                return isInteger ? new ExpressionResult(leftValue.asInt() * rightValue.asInt()) :
-                        new ExpressionResult(leftValue.asDouble() * rightValue.asDouble());
+                BigDecimal product = left1.multiply(right1);
+                return new ExpressionResult(product.doubleValue());
             case DIVIDE:
-                return isInteger ? new ExpressionResult(leftValue.asInt() / rightValue.asInt()) :
-                        new ExpressionResult(leftValue.asDouble() / rightValue.asDouble());
+                if (right == 0) {
+                    throw new EvaluationException("Division by zero");
+                }
+                BigDecimal quotient = left1.divide(right1, BigDecimal.ROUND_HALF_UP);
+                return new ExpressionResult(quotient.doubleValue());
             case MODULO:
-                return isInteger ? new ExpressionResult(leftValue.asInt() % rightValue.asInt()) :
-                        new ExpressionResult(leftValue.asDouble() % rightValue.asDouble());
+                if (right == 0) {
+                    throw new EvaluationException("Modulo by zero");
+                }
+                BigDecimal remainder = left1.remainder(right1);
+                return new ExpressionResult(remainder.doubleValue());
             default:
                 throw new EvaluationException("Unsupported operator: " + operator + " between "
-                        + leftValue.asString() + " and " + rightValue.asString());
+                        + left + " and " + right);
+        }
+    }
+
+    private ExpressionResult performLongOperation(long left, long right, Operator operator) {
+        switch (operator) {
+            case SUBTRACT:
+                return new ExpressionResult(left - right);
+            case MULTIPLY:
+                return new ExpressionResult(left * right);
+            case DIVIDE:
+                if (right == 0L) {
+                    throw new EvaluationException("Division by zero");
+                }
+                return new ExpressionResult((double) left / right);
+            case MODULO:
+                if (right == 0L) {
+                    throw new EvaluationException("Modulo by zero");
+                }
+                return new ExpressionResult(left % right);
+            default:
+                throw new EvaluationException("Unsupported operator: " + operator + " between "
+                        + left + " and " + right);
+        }
+    }
+
+    private ExpressionResult performIntOperation(int left, int right, Operator operator) {
+        switch (operator) {
+            case SUBTRACT:
+                return new ExpressionResult(left - right);
+            case MULTIPLY:
+                try {
+                    int result = Math.multiplyExact(left, right);
+                    return new ExpressionResult(result);
+                } catch (ArithmeticException e) {
+                    // handle overflow
+                    return new ExpressionResult((long) left * (long) right);
+                }
+            case DIVIDE:
+                if (right == 0) {
+                    throw new EvaluationException("Division by zero");
+                }
+                if (left % right == 0) {
+                    // Exact division, return as integer
+                    return new ExpressionResult(left / right);
+                } else {
+                    // Division has a fractional part, return as double
+                    return new ExpressionResult((double) left / right);
+                }
+            case MODULO:
+                if (right == 0) {
+                    throw new EvaluationException("Modulo by zero");
+                }
+                return new ExpressionResult(left % right);
+            default:
+                throw new EvaluationException("Unsupported operator: " + operator + " between "
+                        + left + " and " + right);
         }
     }
 }

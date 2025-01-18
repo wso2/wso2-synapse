@@ -72,7 +72,7 @@ public class LiteralNode implements ExpressionNode {
             return new ExpressionResult(Integer.parseInt(value));
         } catch (NumberFormatException e1) {
             try {
-                return new ExpressionResult(Float.parseFloat(value));
+                return new ExpressionResult(Long.parseLong(value));
             } catch (NumberFormatException e2) {
                 try {
                     return new ExpressionResult(Double.parseDouble(value));

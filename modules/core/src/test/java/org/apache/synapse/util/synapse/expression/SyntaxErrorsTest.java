@@ -52,4 +52,9 @@ public class SyntaxErrorsTest {
 
         syntaxErrorListener.clearErrors();
     }
+
+    @Test (expected = RuntimeException.class)
+    public void testInvalidExpressionByLength() {
+        TestUtils.evaluateExpression("payload.products[0].stock + abc");
+    }
 }

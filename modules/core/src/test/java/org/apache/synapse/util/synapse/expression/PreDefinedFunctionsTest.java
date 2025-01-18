@@ -355,6 +355,15 @@ public class PreDefinedFunctionsTest {
         Assert.assertEquals("15", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "round(vars.num1 + vars.num2)", 0, 1));
         Assert. assertEquals("", TestUtils.evaluateExpressionWithPayload("round(payload)", 3));
+        Assert. assertEquals("", TestUtils.evaluateExpressionWithPayload("round(payload)", 3));
+        Assert.assertEquals("9.0", TestUtils.evaluateExpression("round(8.89 + 0.12,1)"));
+        Assert.assertEquals("9.01", TestUtils.evaluateExpression("round(8.89 + 0.12,2)"));
+        Assert.assertEquals("0.11", TestUtils.evaluateExpression("round(0.111,2)"));
+        Assert.assertEquals("0.12", TestUtils.evaluateExpression("round(0.115,2)"));
+        Assert.assertEquals("0.111", TestUtils.evaluateExpression("round(0.111,3)"));
+        Assert.assertEquals("0.111", TestUtils.evaluateExpression("round(0.111,4)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("round(0.111,0)"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("round(0.111,\"asdf\")"));
     }
 
     @Test
