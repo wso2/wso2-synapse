@@ -35,7 +35,7 @@ public class ResolverFactory {
     private static final String SYSTEM_VARIABLE_PREFIX = "$SYSTEM";
     private static final String FILE_PROPERTY_VARIABLE_PREFIX = "$FILE";
     private static final String CUSTOM_PROPERTY_VARIABLE_PREFIX = "$CUSTOM_";
-    private static final String CONFIGURABLE_VARIABLE_PREFIX = "$config:";
+    private static final String CONFIGURABLE_VARIABLE_PREFIX = "$configs:";
 
     private final Map<String, Class<? extends Resolver>> resolverMap = new HashMap<>();
 
@@ -94,7 +94,7 @@ public class ResolverFactory {
     private void registerResolvers() {
         resolverMap.put("system", SystemResolver.class);
         resolverMap.put("file", FilePropertyResolver.class);
-        resolverMap.put("config", ConfigResolver.class);
+        resolverMap.put("configs", ConfigResolver.class);
     }
 
     private void registerExterns() {
