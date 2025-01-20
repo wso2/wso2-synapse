@@ -26,7 +26,7 @@
    </parent>
    <groupId>org.apache.synapse</groupId>
    <artifactId>Apache-Synapse</artifactId>
-   <version>4.0.0-wso2v174-SNAPSHOT</version>
+   <version>4.0.0-wso2v175-SNAPSHOT</version>
    <name>Apache Synapse</name>
    <description>Apache Synapse</description>
    <packaging>pom</packaging>
