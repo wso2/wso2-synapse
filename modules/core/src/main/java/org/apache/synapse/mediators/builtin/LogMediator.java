@@ -33,11 +33,14 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.util.InlineExpressionUtil;
+import org.apache.synapse.util.xpath.SynapseExpression;
 import org.jaxen.JaxenException;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Logs the specified message into the configured logger. The log levels specify
@@ -80,6 +83,7 @@ public class LogMediator extends AbstractMediator {
 
     private String messageTemplate = "";
     private boolean isContentAware = false;
+    private final Map<String, SynapseExpression> inlineExpressionCache = new ConcurrentHashMap<>();
 
     /**
      * Logs the current message according to the supplied semantics
@@ -285,6 +289,12 @@ public class LogMediator extends AbstractMediator {
 
     public void addAllProperties(List<MediatorProperty> list) {
         properties.addAll(list);
+        for (MediatorProperty property : properties) {
+            if (property.getExpression() != null && property.getExpression().isContentAware()) {
+                isContentAware = true;
+                return;
+            }
+        }
     }
 
     public List<MediatorProperty> getProperties() {
@@ -324,7 +334,8 @@ public class LogMediator extends AbstractMediator {
 
     private void processMessageTemplate(StringBuffer stringBuffer, MessageContext synCtx, String template) {
         try {
-            stringBuffer.append(InlineExpressionUtil.processInLineSynapseExpressionTemplate(synCtx, template));
+            stringBuffer.append(InlineExpressionUtil.processInLineSynapseExpressionTemplate(synCtx, template,
+                    inlineExpressionCache));
         } catch (JaxenException e) {
             handleException("Failed to process the message template : " + template, e, synCtx);
         }
@@ -333,21 +344,14 @@ public class LogMediator extends AbstractMediator {
     @Override
     public boolean isContentAware() {
 
-        return isContentAware;
+        if (logLevel == MESSAGE_TEMPLATE || logLevel == CUSTOM) {
+            return isContentAware;
+        }
+        return true;
     }
 
-    public void processTemplateAndSetContentAware() {
+    public void processTemplateAndSetContentAware() throws JaxenException {
 
-        if (logLevel == MESSAGE_TEMPLATE || logLevel == CUSTOM) {
-            for (MediatorProperty property : properties) {
-                if (property.getExpression() != null && property.getExpression().isContentAware()) {
-                    isContentAware = true;
-                    return;
-                }
-            }
-            isContentAware = InlineExpressionUtil.isInlineSynapseExpressionsContentAware(messageTemplate);
-        } else {
-            isContentAware = true;
-        }
+        isContentAware = InlineExpressionUtil.initInlineSynapseExpressions(messageTemplate, inlineExpressionCache);
     }
 }

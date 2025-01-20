@@ -22,7 +22,9 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.builtin.LogMediator;
+import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
 import java.util.Properties;
@@ -71,8 +73,15 @@ public class LogMediatorFactory extends AbstractMediatorFactory  {
         boolean containMessageTemplate = false;
         OMElement messageElement = elem.getFirstChildWithName(ELEMENT_MESSAGE_Q);
         if (messageElement != null && messageElement.getText() != null) {
-            logMediator.setMessageTemplate(messageElement.getText());
-            containMessageTemplate = true;
+            try {
+                containMessageTemplate = true;
+                logMediator.setMessageTemplate(messageElement.getText());
+                logMediator.processTemplateAndSetContentAware();
+            } catch (JaxenException e) {
+                String msg = "Invalid message template : " + e.getMessage();
+                log.error(msg);
+                throw new SynapseException(msg);
+            }
         }
 
         // Set the high level set of properties to be logged (i.e. log level)
@@ -126,7 +135,6 @@ public class LogMediatorFactory extends AbstractMediatorFactory  {
         }
 
         logMediator.addAllProperties(MediatorPropertyFactory.getMediatorProperties(elem));
-        logMediator.processTemplateAndSetContentAware();
         addAllCommentChildrenToList(elem, logMediator.getCommentsList());
 
         return logMediator;

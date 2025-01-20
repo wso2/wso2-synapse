@@ -35,6 +35,7 @@ import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamException;
@@ -203,34 +204,41 @@ public final class InlineExpressionUtil {
     }
 
     /**
-     * Checks whether inline template contains content aware synapse expressions.
+     * Initialize the inline synapse expressions in the inline text and return whether the inline text is content aware
      * Inline expressions will be denoted inside ${}
      * e.g.: ${var.var1}, ${payload.element.id}
      *
-     * @param inlineText Inline text string
+     * @param inlineText      Inline text string
+     * @param expressionCache Cache to store the synapse expressions
      * @return true if the string contains content aware inline synapse expressions, false otherwise
      */
-    public static boolean isInlineSynapseExpressionsContentAware(String inlineText) {
+    public static boolean initInlineSynapseExpressions(String inlineText, Map<String, SynapseExpression> expressionCache)
+            throws JaxenException {
 
+        boolean isContentAware = false;
         Matcher matcher = SYNAPSE_EXPRESSION_PLACEHOLDER_PATTERN.matcher(inlineText);
         while (matcher.find()) {
-            // Extract the expression inside ${...}
-            String expression = matcher.group(1);
-            if (SynapseExpressionUtils.isSynapseExpressionContentAware(expression)) {
-                return true;
+            // Extract the expression inside ${...} and add it to the cache
+            String placeholder = matcher.group(1);
+            SynapseExpression expression = new SynapseExpression(placeholder);
+            if (expression.isContentAware()) {
+                isContentAware = true;
             }
+            expressionCache.put(placeholder, expression);
         }
-        return false;
+        return isContentAware;
     }
 
     /**
      * Process the inline template and replace the synapse expressions with the resolved values
      *
-     * @param synCtx   Message Context
-     * @param template Inline template
+     * @param synCtx          Message Context
+     * @param template        Inline template
+     * @param expressionCache Cache to store the synapse expressions
      * @return Processed inline template
      */
-    public static String processInLineSynapseExpressionTemplate(MessageContext synCtx, String template)
+    public static String processInLineSynapseExpressionTemplate(MessageContext synCtx, String template,
+                                                                Map<String, SynapseExpression> expressionCache)
             throws JaxenException {
 
         Matcher matcher = SYNAPSE_EXPRESSION_PLACEHOLDER_PATTERN.matcher(template);
@@ -238,7 +246,11 @@ public final class InlineExpressionUtil {
         while (matcher.find()) {
             // Extract the expression inside ${...}
             String placeholder = matcher.group(1);
-            SynapseExpression expression = new SynapseExpression(placeholder);
+            SynapseExpression expression = expressionCache.get(placeholder);
+            if (expression == null) {
+                expression = new SynapseExpression(placeholder);
+                expressionCache.put(placeholder, expression);
+            }
             String replacement = expression.stringValueOf(synCtx);
             matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
         }
