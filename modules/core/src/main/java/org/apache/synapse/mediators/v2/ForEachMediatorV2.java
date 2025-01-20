@@ -63,6 +63,7 @@ import org.apache.synapse.mediators.eip.Target;
 import org.apache.synapse.mediators.eip.aggregator.ForEachAggregate;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.MessageHelper;
+import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
 import org.apache.synapse.util.xpath.SynapseExpression;
 import org.apache.synapse.util.xpath.SynapseExpressionUtils;
 import org.apache.synapse.util.xpath.SynapseXPath;
@@ -81,6 +82,7 @@ import javax.xml.stream.XMLStreamException;
 
 public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecycle, FlowContinuableMediator {
 
+    public static final String VARIABLE_DOT = ExpressionConstants.VARIABLES + ".";
     public static final String JSON_TYPE = "JSON";
     public static final String XML_TYPE = "XML";
     private final Object lock = new Object();
@@ -479,7 +481,7 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
             String[] msgSequence = prop.toString().split(EIPConstants.MESSAGE_SEQUENCE_DELEMITER);
             JsonElement jsonElement = null;
             try {
-                Object result = new SynapseExpression("payload").objectValueOf(synCtx);
+                Object result = new SynapseExpression(ExpressionConstants.PAYLOAD).objectValueOf(synCtx);
                 if (result instanceof JsonElement) {
                     jsonElement = (JsonElement) result;
                 }
@@ -513,7 +515,7 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
                     Object prop = synCtx.getProperty(EIPConstants.MESSAGE_SEQUENCE + "." + id);
                     String[] msgSequence = prop.toString().split(EIPConstants.MESSAGE_SEQUENCE_DELEMITER);
                     JsonElement jsonElement = null;
-                    Object result = new SynapseExpression("payload").objectValueOf(synCtx);
+                    Object result = new SynapseExpression(ExpressionConstants.PAYLOAD).objectValueOf(synCtx);
                     if (result instanceof JsonElement) {
                         jsonElement = (JsonElement) result;
                     }
@@ -705,24 +707,26 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
 
     private boolean isCollectionReferencedByVariable(SynapsePath expression) {
 
-        return expression.getExpression().startsWith("var.");
+        return expression.getExpression().startsWith(VARIABLE_DOT);
     }
 
     private JsonPath getJsonPathFromExpression(String expression) {
 
         String jsonPath = expression;
-        if (jsonPath.startsWith("payload")) {
-            jsonPath = jsonPath.replace("payload", "$");
-        } else if (jsonPath.startsWith("var.")) {
-            // Remove the "var." prefix and variable name and replace it with "$" for JSON path
-            jsonPath = expression.replaceAll("var\\.\\w+\\.(\\w+)", "\\$.$1").replaceAll("var\\.\\w+", "\\$");
+        if (jsonPath.startsWith(ExpressionConstants.PAYLOAD)) {
+            jsonPath = jsonPath.replace(ExpressionConstants.PAYLOAD, ExpressionConstants.PAYLOAD_$);
+        } else if (jsonPath.startsWith(VARIABLE_DOT)) {
+            // Remove the "vars." prefix and variable name and replace it with "$" for JSON path
+            jsonPath = expression.replaceAll(ExpressionConstants.VARIABLES + "\\.\\w+\\.(\\w+)", "\\$.$1")
+                    .replaceAll(ExpressionConstants.VARIABLES + "\\.\\w+", "\\$");
         }
         return JsonPath.compile(jsonPath);
     }
 
     private boolean isWholeContent(JsonPath jsonPath) {
 
-        return "$".equals(jsonPath.getPath().trim()) || "$.".equals(jsonPath.getPath().trim());
+        return ExpressionConstants.PAYLOAD_$.equals(jsonPath.getPath().trim())
+                || ExpressionConstants.PAYLOAD_$.equals(jsonPath.getPath().trim());
     }
 
     public String getCounterVariable() {
