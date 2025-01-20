@@ -65,7 +65,7 @@ public class ContentAwarenessTest {
         Assert.assertTrue(synapsePath.isContentAware());
         synapsePath = new SynapseExpression("xpath(\"/student\")");
         Assert.assertTrue(synapsePath.isContentAware());
-        synapsePath = new SynapseExpression("xpath(\"//*\") + vars.a$bc");
+        synapsePath = new SynapseExpression("xpath(\"//*\") + vars.abc");
         Assert.assertTrue(synapsePath.isContentAware());
         synapsePath = new SynapseExpression("xpath(\"$ctx:bla\") + $.age");
         Assert.assertTrue(synapsePath.isContentAware());
@@ -81,9 +81,9 @@ public class ContentAwarenessTest {
         Assert.assertFalse(synapsePath.isContentAware());
         synapsePath = new SynapseExpression("vars[\"payload\"]");
         Assert.assertFalse(synapsePath.isContentAware());
-        synapsePath = new SynapseExpression("5 + var[\"payload\"].age");
+        synapsePath = new SynapseExpression("5 + vars[\"payload\"].age");
         Assert.assertFalse(synapsePath.isContentAware());
-        synapsePath = new SynapseExpression("vars.a$.bc");
+        synapsePath = new SynapseExpression("vars.a.bc");
         Assert.assertFalse(synapsePath.isContentAware());
         synapsePath = new SynapseExpression("vars.books[?(@.category==\"payload.category\")]");
         Assert.assertFalse(synapsePath.isContentAware());

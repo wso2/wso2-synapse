@@ -24,7 +24,7 @@ public class ThrowErrorMediatorSerializerTest {
         OMElement element = throwErrorMediatorSerializer.serializeSpecificMediator(mediator);
         Assert.assertEquals("invalid type", type, element.getAttributeValue(new QName("type")));
         Assert.assertEquals("invalid error message", err, element.getAttributeValue(new QName("errorMessage")));
-        mediator.setErrorMsg(new Value(new SynapseExpression(exp)));
+        mediator.setErrorMsg(new Value(new SynapseExpression("payload.err")));
         element = throwErrorMediatorSerializer.serializeSpecificMediator(mediator);
         Assert.assertEquals("invalid error message", "{" + exp + "}", element.getAttributeValue(new QName("errorMessage")));
     }

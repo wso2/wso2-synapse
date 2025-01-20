@@ -112,6 +112,7 @@ public class PrimitiveExpressionsTest {
 
     @Test
     public void testAdd() {
+        Assert.assertEquals("17.94", TestUtils.evaluateExpression("8.95 + 8.99"));
         Assert.assertEquals("8.5", TestUtils.evaluateExpression("5.5 + 3"));
         Assert.assertEquals("7", TestUtils.evaluateExpression("5 + 3 + -1"));
         Assert.assertEquals("8.5", TestUtils.evaluateExpression("5.5 + 3"));
@@ -125,10 +126,14 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("", TestUtils.evaluateExpressionWithPayloadAndVariables("5 + vars.name", 2, 1));
         // clear the synCtx to remove previous payload and variables.
         Assert.assertEquals("", TestUtils.evaluateExpression("vars.num99 + 5"));
+        // Integer type overflow test
+        Assert.assertEquals("2147483648", TestUtils.evaluateExpression("2147483647 + 1"));
     }
 
     @Test
     public void testSubtract() {
+        Assert.assertEquals("1000000", TestUtils.evaluateExpression("3148483647 - 3147483647"));
+        Assert.assertEquals("0.0111", TestUtils.evaluateExpression("8.9567 - 8.9456"));
         Assert.assertEquals("-33", TestUtils.evaluateExpression("5 - 30 + 2 - 10"));
         Assert.assertEquals("2.5", TestUtils.evaluateExpression("5.5 - 3"));
         Assert.assertEquals("2.0", TestUtils.evaluateExpression("5.5 - 3.5"));
@@ -140,6 +145,9 @@ public class PrimitiveExpressionsTest {
 
     @Test
     public void testMultiply() {
+        Assert.assertEquals("80.8201", TestUtils.evaluateExpression("8.99 * 8.99"));
+        Assert.assertEquals("26.25", TestUtils.evaluateExpression("25 * 1.05"));
+        Assert.assertEquals("25.025", TestUtils.evaluateExpression("25 * 1.001"));
         Assert.assertEquals("-30", TestUtils.evaluateExpression("5 * 3 * -2"));
         Assert.assertEquals("16.5", TestUtils.evaluateExpression("5.5 * 3"));
         Assert.assertEquals("19.25", TestUtils.evaluateExpression("5.5 * 3.5"));
@@ -147,10 +155,14 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("", TestUtils.evaluateExpression("5 * \"bla\""));
         Assert.assertEquals("-25.0", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "vars.num1 * vars.num3", 2, 1));
+        // Integer type overflow test
+        Assert.assertEquals("-4294967294", TestUtils.evaluateExpression("2147483647 * -2"));
+        Assert.assertEquals("4294927294", TestUtils.evaluateExpression("2147463647 * 2"));
     }
 
     @Test
     public void testDivide() {
+        Assert.assertEquals("10.01", TestUtils.evaluateExpression("34.45 / 3.44"));
         Assert.assertEquals("-4.0", TestUtils.evaluateExpression("10 / 2 / -2.5 * 2"));
         Assert.assertEquals("-4.0", TestUtils.evaluateExpression("10 / 2 / -2.5 * 2"));
         Assert.assertEquals("3", TestUtils.evaluateExpression("9 / 3"));
@@ -158,10 +170,19 @@ public class PrimitiveExpressionsTest {
         Assert.assertEquals("", TestUtils.evaluateExpression("5 / \"bla\""));
         Assert.assertEquals("5", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "vars.num1 / 2", 2, 1));
+        Assert.assertEquals("", TestUtils.evaluateExpression("5/0"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("5.2/0"));
+        Assert.assertEquals("0.001", TestUtils.evaluateExpression("10/10000"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("2147483650/0"));
+        Assert.assertEquals("0.5", TestUtils.evaluateExpression("5/10"));
+        Assert.assertEquals("2.0E9", TestUtils.evaluateExpression("20000000000/10"));
+        Assert.assertEquals("20000000", TestUtils.evaluateExpression("200000000/10"));
+        Assert.assertEquals("10.0", TestUtils.evaluateExpression("100/10.0"));
     }
 
     @Test
     public void testMod() {
+        Assert.assertEquals("0.06", TestUtils.evaluateExpression("34.56 % 3.45"));
         Assert.assertEquals("1", TestUtils.evaluateExpression("10 % 3"));
         Assert.assertEquals("2.5", TestUtils.evaluateExpression("5.5 % 3"));
         Assert.assertEquals("2.0", TestUtils.evaluateExpression("5.5 % 3.5"));

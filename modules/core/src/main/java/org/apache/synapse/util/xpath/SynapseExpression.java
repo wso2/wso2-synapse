@@ -21,6 +21,7 @@ package org.apache.synapse.util.xpath;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -63,6 +64,11 @@ public class SynapseExpression extends SynapsePath {
         parser.addErrorListener(errorListener);
 
         ParseTree tree = parser.expression();
+        // if there are any tokens left after parsing the expression, throw an exception
+        if (tokens.LA(1) != Token.EOF) {
+            throw new JaxenException("Parse error: leftover input after parsing expression in " + synapseExpression);
+        }
+
         ExpressionVisitor visitor = new ExpressionVisitor();
         expressionNode = visitor.visit(tree);
         if (errorListener.hasErrors()) {
@@ -73,6 +79,7 @@ public class SynapseExpression extends SynapsePath {
             throw new JaxenException(errorMessage.toString());
         }
         isContentAware = SynapseExpressionUtils.isSynapseExpressionContentAware(synapseExpression);
+        this.setPathType(SynapsePath.SYNAPSE_EXPRESSIONS_PATH);
     }
 
     @Override

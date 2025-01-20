@@ -177,6 +177,8 @@ public class PredefinedFunctionNode implements ExpressionNode {
                 return handleCharAtFunction(source, argument1);
             case ExpressionConstants.XPATH:
                 return evaluateXPATHExpression(context, source, argument1.asString(), isObjectValue);
+            case ExpressionConstants.ROUND:
+                return handleRoundFunction(source, argument1);
             default:
                 throw new EvaluationException("Invalid function: " + functionName + " with two arguments");
         }
@@ -275,6 +277,15 @@ public class PredefinedFunctionNode implements ExpressionNode {
             return new ExpressionResult((int) Math.round(result.asDouble()));
         } else if (result.isInteger()) {
             return new ExpressionResult(result.asInt());
+        }
+        throw new EvaluationException("Invalid argument provided for round function");
+    }
+
+    private ExpressionResult handleRoundFunction(ExpressionResult result, ExpressionResult decimalPlaces) {
+        if (result.isDouble() && decimalPlaces.isInteger() && decimalPlaces.asInt() > 0) {
+            return new ExpressionResult(ExpressionUtils.round(result.asDouble(), decimalPlaces.asInt()));
+        } else if (result.isInteger() || result.isLong()) {
+            return result;
         }
         throw new EvaluationException("Invalid argument provided for round function");
     }
