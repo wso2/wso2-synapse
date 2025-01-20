@@ -275,15 +275,16 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
         }
 
         if (result) {
-            // If the mediation is completed, remove the child continuation state from the stack, so the aggregation
-            // will continue the mediation from the parent continuation state
-            ContinuationStackManager.removeReliantContinuationState(synCtx);
             return aggregateMessages(synCtx, synLog);
         }
         return false;
     }
 
     private boolean aggregateMessages(MessageContext synCtx, SynapseLog synLog) {
+
+        // If the mediation is completed, remove the child continuation state from the stack, so the aggregation
+        // will continue the mediation from the parent continuation state
+        ContinuationStackManager.removeReliantContinuationState(synCtx);
 
         ForEachAggregate aggregate = null;
         String correlationIdName = EIPConstants.AGGREGATE_CORRELATION + "." + id;
