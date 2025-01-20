@@ -31,6 +31,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.mediators.transform.Argument;
@@ -90,7 +91,7 @@ public abstract class TemplateProcessor {
     /**
      * Execute pre-processing steps if needed
      */
-    public abstract void init();
+    public abstract void init() throws SynapseException;
 
     /**
      * Goes through SynapsePath argument list, evaluating each by calling stringValueOf and returns a HashMap String, String

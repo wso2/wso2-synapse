@@ -33,12 +33,14 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.mediators.transform.ArgumentDetails;
+import org.apache.synapse.util.InlineExpressionUtil;
 import org.apache.synapse.util.xpath.SynapseExpression;
 import org.jaxen.JaxenException;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamException;
@@ -50,9 +52,10 @@ public class RegexTemplateProcessor extends TemplateProcessor {
 
     private static final Log log = LogFactory.getLog(RegexTemplateProcessor.class);
     // Pattern matches "${...}" (quoted), ${...} (unquoted), and $n
-    private final Pattern pattern = Pattern.compile("\"\\$\\{(.+?)\\}\"|\\$\\{(.+?)\\}|\\$(\\d+)");
+    private final Pattern pattern = Pattern.compile("\"\\$\\{([^}]+)\\}\"|\\$\\{([^}]+)\\}|\\$(\\d+)");
 
     private final Gson gson = new Gson();
+    private final Map<String, SynapseExpression> inlineExpressionCache = new ConcurrentHashMap<>();
 
     @Override
     public String processTemplate(String template, String mediaType, MessageContext synCtx) {
@@ -63,7 +66,16 @@ public class RegexTemplateProcessor extends TemplateProcessor {
     }
 
     @Override
-    public void init() {
+    public void init() throws SynapseException {
+        String format = getFormat();
+        if (format != null) {
+            try {
+                InlineExpressionUtil.initInlineSynapseExpressions(format, inlineExpressionCache);
+            } catch (JaxenException e) {
+                String msg = "Invalid Payload format : " + e.getMessage();
+                throw new SynapseException(msg);
+            }
+        }
         this.readInputFactoryProperties();
     }
 
@@ -76,6 +88,7 @@ public class RegexTemplateProcessor extends TemplateProcessor {
      */
     private void replace(String format, StringBuffer result, String mediaType, MessageContext synCtx) {
 
+        Map<String, Object> inlineExpressionResults = new ConcurrentHashMap<>();
         HashMap<String, ArgumentDetails>[] argValues = getArgValues(mediaType, synCtx);
         HashMap<String, ArgumentDetails> replacement;
         Map.Entry<String, ArgumentDetails> replacementEntry;
@@ -92,7 +105,7 @@ public class RegexTemplateProcessor extends TemplateProcessor {
                 if (matcher.group(1) != null) {
                     // Handle "${...}" pattern (with quotes)
                     String expression = matcher.group(1);
-                    Object expressionResult = evaluateExpression(expression, synCtx);
+                    Object expressionResult = evaluateExpression(expression, synCtx, inlineExpressionResults);
                     if (expressionResult instanceof JsonPrimitive) {
                         replacementValue = prepareJSONPrimitiveReplacementValue(expressionResult, mediaType);
                     } else if (expressionResult instanceof JsonElement) {
@@ -118,7 +131,7 @@ public class RegexTemplateProcessor extends TemplateProcessor {
                 } else if (matcher.group(2) != null) {
                     // Handle ${...} pattern (without quotes)
                     String expression = matcher.group(2);
-                    Object expressionResult = evaluateExpression(expression, synCtx);
+                    Object expressionResult = evaluateExpression(expression, synCtx, inlineExpressionResults);
                     replacementValue = expressionResult.toString();
                     if (expressionResult instanceof JsonPrimitive) {
                         replacementValue = prepareJSONPrimitiveReplacementValue(expressionResult, mediaType);
@@ -176,12 +189,26 @@ public class RegexTemplateProcessor extends TemplateProcessor {
      * @return evaluated result
      * @throws JaxenException if an error occurs while evaluating the expression
      */
-    private Object evaluateExpression(String expression, MessageContext synCtx) throws JaxenException {
+    private Object evaluateExpression(String expression, MessageContext synCtx,
+                                      Map<String, Object> inlineExpressionResults) throws JaxenException {
 
-        if (expression.contains("xpath(")) {
-            return new SynapseExpression(expression).stringValueOf(synCtx);
+        SynapseExpression expressionObj = inlineExpressionCache.get(expression);
+        if (expressionObj == null) {
+            expressionObj = new SynapseExpression(expression);
+            inlineExpressionCache.put(expression, expressionObj);
         }
-        return new SynapseExpression(expression).objectValueOf(synCtx);
+        if (inlineExpressionResults.containsKey(expression)) {
+            return inlineExpressionResults.get(expression);
+        } else {
+            Object result;
+            if (expression.contains("xpath(")) {
+                result = expressionObj.stringValueOf(synCtx);
+            } else {
+                result = expressionObj.objectValueOf(synCtx);
+            }
+            inlineExpressionResults.put(expression, result);
+            return result;
+        }
     }
 
     private String escapeJson(String value) {

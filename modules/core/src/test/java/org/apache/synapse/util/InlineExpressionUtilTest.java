@@ -24,6 +24,8 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.mediators.TestUtils;
 import org.junit.Assert;
 
+import java.util.HashMap;
+
 public class InlineExpressionUtilTest extends TestCase {
 
     private static String payload = "{\n" +
@@ -83,10 +85,10 @@ public class InlineExpressionUtilTest extends TestCase {
         MessageContext mc = TestUtils.getTestContextJson(payload, null);
         String inlineExpression = "Processing payload : ${payload.team[0]}";
 
-        boolean isContentAware = InlineExpressionUtil.isInlineSynapseExpressionsContentAware(inlineExpression);
+        boolean isContentAware = InlineExpressionUtil.initInlineSynapseExpressions(inlineExpression, new HashMap<>());
         Assert.assertTrue("Inline expression content aware should be true", isContentAware);
 
-        String result = InlineExpressionUtil.processInLineSynapseExpressionTemplate(mc, inlineExpression);
+        String result = InlineExpressionUtil.processInLineSynapseExpressionTemplate(mc, inlineExpression, new HashMap<>());
         Assert.assertEquals("Inline expression result mismatch", expected, result);
     }
 
@@ -100,10 +102,10 @@ public class InlineExpressionUtilTest extends TestCase {
         MessageContext mc = TestUtils.getTestContextJson(payload, null);
         String inlineExpression = "Processing user : ${payload.team[0].name}";
 
-        boolean isContentAware = InlineExpressionUtil.isInlineSynapseExpressionsContentAware(inlineExpression);
+        boolean isContentAware = InlineExpressionUtil.initInlineSynapseExpressions(inlineExpression, new HashMap<>());
         Assert.assertTrue("Inline expression content aware should be true", isContentAware);
 
-        String result = InlineExpressionUtil.processInLineSynapseExpressionTemplate(mc, inlineExpression);
+        String result = InlineExpressionUtil.processInLineSynapseExpressionTemplate(mc, inlineExpression, new HashMap<>());
         Assert.assertEquals("Inline expression result mismatch", expected, result);
     }
 
@@ -117,10 +119,10 @@ public class InlineExpressionUtilTest extends TestCase {
         MessageContext mc = TestUtils.getTestContextJson(payload, null);
         String inlineExpression = "Processing user : ${payload.team[0].age}";
 
-        boolean isContentAware = InlineExpressionUtil.isInlineSynapseExpressionsContentAware(inlineExpression);
+        boolean isContentAware = InlineExpressionUtil.initInlineSynapseExpressions(inlineExpression, new HashMap<>());
         Assert.assertTrue("Inline expression content aware should be true", isContentAware);
 
-        String result = InlineExpressionUtil.processInLineSynapseExpressionTemplate(mc, inlineExpression);
+        String result = InlineExpressionUtil.processInLineSynapseExpressionTemplate(mc, inlineExpression, new HashMap<>());
         Assert.assertEquals("Inline expression result mismatch", expected, result);
     }
 
@@ -140,10 +142,10 @@ public class InlineExpressionUtilTest extends TestCase {
         mc.setVariable("address", jsonObject);
         String inlineExpression = "Processing user with age : ${vars.age} lives at ${vars.address}";
 
-        boolean isContentAware = InlineExpressionUtil.isInlineSynapseExpressionsContentAware(inlineExpression);
+        boolean isContentAware = InlineExpressionUtil.initInlineSynapseExpressions(inlineExpression, new HashMap<>());
         Assert.assertFalse("Inline expression content aware should be false", isContentAware);
 
-        String result = InlineExpressionUtil.processInLineSynapseExpressionTemplate(mc, inlineExpression);
+        String result = InlineExpressionUtil.processInLineSynapseExpressionTemplate(mc, inlineExpression, new HashMap<>());
         Assert.assertEquals("Inline expression result mismatch", expected, result);
     }
 
@@ -163,10 +165,10 @@ public class InlineExpressionUtilTest extends TestCase {
         String inlineExpression = "Processing user : ${payload.team[0].name}, role : ${vars.role}, " +
                 "experience : ${vars.experience.level} ${properties.synapse.duration}";
 
-        boolean isContentAware = InlineExpressionUtil.isInlineSynapseExpressionsContentAware(inlineExpression);
+        boolean isContentAware = InlineExpressionUtil.initInlineSynapseExpressions(inlineExpression, new HashMap<>());
         Assert.assertTrue("Inline expression content aware should be true", isContentAware);
 
-        String result = InlineExpressionUtil.processInLineSynapseExpressionTemplate(mc, inlineExpression);
+        String result = InlineExpressionUtil.processInLineSynapseExpressionTemplate(mc, inlineExpression, new HashMap<>());
         Assert.assertEquals("Inline expression result mismatch", expected, result);
     }
 
@@ -182,10 +184,10 @@ public class InlineExpressionUtilTest extends TestCase {
         mc.setProperty("method", "get");
         String inlineExpression = "Processing using endpoint : ${vars.endpoint}, method : ${properties.synapse.method}, role : ${payload.team[2].role}";
 
-        boolean isContentAware = InlineExpressionUtil.isInlineSynapseExpressionsContentAware(inlineExpression);
+        boolean isContentAware = InlineExpressionUtil.initInlineSynapseExpressions(inlineExpression, new HashMap<>());
         Assert.assertTrue("Inline expression content aware should be true", isContentAware);
 
-        String result = InlineExpressionUtil.processInLineSynapseExpressionTemplate(mc, inlineExpression);
+        String result = InlineExpressionUtil.processInLineSynapseExpressionTemplate(mc, inlineExpression, new HashMap<>());
         Assert.assertEquals("Inline expression result mismatch", expected, result);
     }
 
@@ -207,10 +209,30 @@ public class InlineExpressionUtilTest extends TestCase {
         mc.setVariable("endpoint", "https://test.wso2.com/");
         String inlineExpression = "Using endpoint : ${vars.endpoint} to process book : ${xpath('//catalog/book[1]')}";
 
-        boolean isContentAware = InlineExpressionUtil.isInlineSynapseExpressionsContentAware(inlineExpression);
+        boolean isContentAware = InlineExpressionUtil.initInlineSynapseExpressions(inlineExpression, new HashMap<>());
         Assert.assertTrue("Inline expression content aware should be true", isContentAware);
 
-        String result = InlineExpressionUtil.processInLineSynapseExpressionTemplate(mc, inlineExpression);
+        String result = InlineExpressionUtil.processInLineSynapseExpressionTemplate(mc, inlineExpression, new HashMap<>());
+        Assert.assertEquals("Inline expression result mismatch", expected, result);
+    }
+
+    /**
+     * Test inline synapse expression template processing with multiple expressions.
+     */
+    public void testsInLineSynapseExpressionTemplate8() throws Exception {
+
+        String expected = "Using endpoint : https://test.wso2.com/integration to process sum = 15 and status = true";
+
+        MessageContext mc = TestUtils.getTestContextJson(payload, null);
+        mc.setVariable("endpoint", "https://test.wso2.com/");
+        mc.setVariable("completed", true);
+        String inlineExpression = "Using endpoint : ${vars.endpoint + 'integration'} to process sum = " +
+                "${payload.team[0].experience + 12} and status = ${(payload.team[0].experience > 2) && (vars.completed)}";
+
+        boolean isContentAware = InlineExpressionUtil.initInlineSynapseExpressions(inlineExpression, new HashMap<>());
+        Assert.assertTrue("Inline expression content aware should be true", isContentAware);
+
+        String result = InlineExpressionUtil.processInLineSynapseExpressionTemplate(mc, inlineExpression, new HashMap<>());
         Assert.assertEquals("Inline expression result mismatch", expected, result);
     }
 }
