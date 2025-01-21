@@ -61,7 +61,6 @@ public class ScatterGatherMediatorFactory extends AbstractMediatorFactory {
     private static final QName ATT_MAX_MESSAGES = new QName("max-messages");
     private static final QName SEQUENCE_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "sequence");
     private static final QName PARALLEL_EXEC_Q = new QName("parallel-execution");
-    private static final QName RESULT_TARGET_Q = new QName("result-target");
     private static final QName ROOT_ELEMENT_Q = new QName("root-element");
     private static final QName CONTENT_TYPE_Q = new QName("content-type");
 

@@ -63,4 +63,15 @@ public class ScriptMediatorSerializationTest extends AbstractTestCase {
         assertTrue(serialization(inputXml, mediatorFactory, scriptMediatorSerializer));
         assertTrue(serialization(inputXml, scriptMediatorSerializer));
     }
+
+    public void testV2ScriptMediator() throws XMLComparisonException {
+        String inputXml = "<script xmlns=\"http://ws.apache.org/ns/synapse\" language=\"js\" key=\"resources:js/test_math.js\" function=\"sum_js\" result-target=\"var1\">" +
+                "<inputs>" +
+                "<argument name=\"num1\" type=\"INTEGER\" expression=\"${payload.requestId}\" />" +
+                "<argument name=\"num2\" type=\"INTEGER\" value=\"20\" />" +
+                "</inputs>" +
+                "</script>";
+        assertTrue(serialization(inputXml, mediatorFactory, scriptMediatorSerializer));
+        assertTrue(serialization(inputXml, scriptMediatorSerializer));
+    }
 }

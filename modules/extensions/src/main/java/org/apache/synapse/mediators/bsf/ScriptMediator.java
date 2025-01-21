@@ -18,15 +18,19 @@
 
 package org.apache.synapse.mediators.bsf;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.oracle.truffle.js.scriptengine.GraalJSEngineFactory;
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import com.sun.script.groovy.GroovyScriptEngineFactory;
 import com.sun.script.jruby.JRubyScriptEngineFactory;
 import com.sun.script.jython.JythonScriptEngineFactory;
+import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMText;
+import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.bsf.xml.XMLHelper;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -43,15 +47,20 @@ import org.apache.synapse.mediators.bsf.access.control.SandboxContextFactory;
 import org.apache.synapse.mediators.bsf.access.control.config.AccessControlConfig;
 import org.apache.synapse.mediators.bsf.access.control.config.AccessControlListType;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.apache.synapse.mediators.v2.ScatterGatherUtils;
+import org.apache.synapse.mediators.v2.ext.InputArgument;
 import org.graalvm.polyglot.Context;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.ContextFactory;
 
 import javax.activation.DataHandler;
 import javax.script.*;
+import javax.xml.namespace.QName;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -178,6 +187,8 @@ public class ScriptMediator extends AbstractMediator {
      * Store java method access config
      */
     private AccessControlConfig nativeObjectAccessControlConfig;
+    private final List<InputArgument> inputArgumentList = new ArrayList<>();
+    private String resultTarget;
 
     /**
      * Create a script mediator for the given language and given script source.
@@ -293,11 +304,39 @@ public class ScriptMediator extends AbstractMediator {
             Object returnObject;
             if (key != null) {
                 returnObject = mediateWithExternalScript(synCtx, context);
+                // If result target is set, this is V2 script mediator
+                // Set the result to the target and returnValue to true
+                if (StringUtils.isNotBlank(resultTarget)) {
+                    if (isTargetBody()) {
+                        // set result to body
+                        if (returnObject instanceof JsonElement) {
+                            JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(), new
+                                    ByteArrayInputStream(returnObject.toString().getBytes()), true, true);
+                        } else {
+                            OMElement rootElement = OMAbstractFactory.getOMFactory().createOMElement(new QName(
+                                    "result"));
+                            rootElement.setText(returnObject.toString());
+                            SOAPEnvelope newEnvelope = ScatterGatherUtils.createNewSoapEnvelope(synCtx.getEnvelope());
+                            newEnvelope.getBody().addChild(rootElement);
+                            synCtx.setEnvelope(newEnvelope);
+                        }
+                    } else {
+                        // set result to variable
+                        if (isValidReturnObjectType(returnObject)) {
+                            synCtx.setVariable(resultTarget, returnObject);
+                        } else {
+                            throw new SynapseException("Return object type is not supported. Supported types are " +
+                                    "String, Boolean, Integer, Long, Double, JSON, OMElement");
+                        }
+                    }
+                    returnValue = true;
+                } else {
+                    returnValue = !(returnObject != null && returnObject instanceof Boolean) || (Boolean) returnObject;
+                }
             } else {
                 returnObject = mediateForInlineScript(synCtx, context);
+                returnValue = !(returnObject != null && returnObject instanceof Boolean) || (Boolean) returnObject;
             }
-            returnValue = !(returnObject != null && returnObject instanceof Boolean) || (Boolean) returnObject;
-
         } catch (ScriptException e) {
             handleException("The script engine returned an error executing the " +
                     (key == null ? "inlined " : "external ") + language + " script" +
@@ -329,6 +368,23 @@ public class ScriptMediator extends AbstractMediator {
     }
 
     /**
+     * This method is used to check whether the JS return object is a valid variable type
+     *
+     * @param returnObject return object
+     * @return true if the return object is a valid type
+     */
+    private boolean isValidReturnObjectType(Object returnObject) {
+
+        return returnObject instanceof String ||
+                returnObject instanceof Boolean ||
+                returnObject instanceof Integer ||
+                returnObject instanceof Long ||
+                returnObject instanceof Double ||
+                returnObject instanceof OMElement ||
+                returnObject instanceof JsonElement;
+    }
+
+    /**
      * Mediation implementation when the script to be executed should be loaded from the registry
      *
      * @param synCtx the message context
@@ -355,7 +411,13 @@ public class ScriptMediator extends AbstractMediator {
             processJSONPayload(synCtx, scriptMC);
             Invocable invocableScript = (Invocable) sew.getEngine();
 
-            obj = invocableScript.invokeFunction(function, new Object[]{scriptMC});
+            List<Object> scriptArgs = new ArrayList<>();
+            // First argument is always the ScriptMessageContext
+            scriptArgs.add(scriptMC);
+            for (InputArgument inputArgument : inputArgumentList) {
+                scriptArgs.add(inputArgument.getResolvedArgument(synCtx));
+            }
+            obj = invocableScript.invokeFunction(function, scriptArgs.toArray());
         } finally {
           if(sew != null){
               // return engine to front of queue or drop if queue is full (i.e. if getNewScriptEngine() spawns a new engine)
@@ -822,4 +884,28 @@ public class ScriptMediator extends AbstractMediator {
         }
     }
 
+    public void setInputArgumentMap(List<InputArgument> inputArgumentList) {
+
+        this.inputArgumentList.addAll(inputArgumentList);
+    }
+
+    public List<InputArgument> getInputArgumentList() {
+
+        return inputArgumentList;
+    }
+
+    public void setResultTarget(String resultTarget) {
+
+        this.resultTarget = resultTarget;
+    }
+
+    public String getResultTarget() {
+
+        return resultTarget;
+    }
+
+    private boolean isTargetBody() {
+
+        return "body".equalsIgnoreCase(resultTarget);
+    }
 }

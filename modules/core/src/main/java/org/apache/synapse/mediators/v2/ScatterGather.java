@@ -615,7 +615,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
             // setting the new JSON payload to the messageContext
             try {
                 newCtx = MessageHelper.cloneMessageContext(aggregate.getLastMessage(), false, false, true);
-                SOAPEnvelope newEnvelope = createNewSoapEnvelope(aggregate.getLastMessage().getEnvelope());
+                SOAPEnvelope newEnvelope = ScatterGatherUtils.createNewSoapEnvelope(aggregate.getLastMessage().getEnvelope());
                 newCtx.setEnvelope(newEnvelope);
                 JsonUtil.getNewJsonPayload(((Axis2MessageContext) newCtx).getAxis2MessageContext(), new
                         ByteArrayInputStream(jsonArray.toString().getBytes()), true, true);
@@ -629,7 +629,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
             setXMLResultToRootOMElement(rootElement, aggregate);
             try {
                 newCtx = MessageHelper.cloneMessageContext(aggregate.getLastMessage(), false, false, true);
-                SOAPEnvelope newEnvelope = createNewSoapEnvelope(aggregate.getLastMessage().getEnvelope());
+                SOAPEnvelope newEnvelope = ScatterGatherUtils.createNewSoapEnvelope(aggregate.getLastMessage().getEnvelope());
                 newEnvelope.getBody().addChild(rootElement);
                 newCtx.setEnvelope(newEnvelope);
             } catch (AxisFault axisFault) {
@@ -645,17 +645,6 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
         }
         StatisticDataCollectionHelper.collectAggregatedParents(aggregate.getMessages(), newCtx);
         return newCtx;
-    }
-
-    private SOAPEnvelope createNewSoapEnvelope(SOAPEnvelope envelope) {
-
-        SOAPFactory fac;
-        if (SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI.equals(envelope.getBody().getNamespace().getNamespaceURI())) {
-            fac = OMAbstractFactory.getSOAP11Factory();
-        } else {
-            fac = OMAbstractFactory.getSOAP12Factory();
-        }
-        return fac.getDefaultEnvelope();
     }
 
     public SynapsePath getCorrelateExpression() {

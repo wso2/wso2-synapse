@@ -31,8 +31,11 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.mediators.v2.ext.InputArgument;
+import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -75,6 +78,10 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
             = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "target");
     protected static final QName DESCRIPTION_Q
             = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "description");
+
+    protected static final QName RESULT_TARGET_Q = new QName("result-target");
+    protected static final QName ATT_TYPE = new QName("type");
+    protected static final QName ATT_ARGUMENT = new QName("argument");
 
     /**
      * A constructor that makes subclasses pick up the correct logger
@@ -237,5 +244,38 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
                 }
             }
         }
+    }
+
+    /**
+     * This method is used to get the input arguments of the script mediator.
+     *
+     * @param inputArgsElement input arguments element
+     * @return List of input arguments
+     */
+    protected List<InputArgument> getInputArguments(OMElement inputArgsElement) {
+
+        List<InputArgument> inputArgsMap = new ArrayList<>();
+        Iterator inputIterator = inputArgsElement.getChildrenWithName(ATT_ARGUMENT);
+        while (inputIterator.hasNext()) {
+            OMElement inputElement = (OMElement) inputIterator.next();
+            String nameAttribute = inputElement.getAttributeValue(ATT_NAME);
+            String typeAttribute = inputElement.getAttributeValue(ATT_TYPE);
+            String valueAttribute = inputElement.getAttributeValue(ATT_VALUE);
+            String expressionAttribute = inputElement.getAttributeValue(ATT_EXPRN);
+            InputArgument argument = new InputArgument(nameAttribute);
+            if (valueAttribute != null) {
+                argument.setValue(valueAttribute, typeAttribute);
+            } else if (expressionAttribute != null) {
+                try {
+                    argument.setExpression(SynapsePathFactory.getSynapsePath(inputElement,
+                            new QName("expression")), typeAttribute);
+                } catch (JaxenException e) {
+                    handleException("Error setting expression : " + expressionAttribute + " as an input argument to " +
+                            "script mediator. " + e.getMessage(), e);
+                }
+            }
+            inputArgsMap.add(argument);
+        }
+        return inputArgsMap;
     }
 }
