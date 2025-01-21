@@ -18,17 +18,14 @@
 
 package org.apache.synapse.mediators.bsf;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.oracle.truffle.js.scriptengine.GraalJSEngineFactory;
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import com.sun.script.groovy.GroovyScriptEngineFactory;
 import com.sun.script.jruby.JRubyScriptEngineFactory;
 import com.sun.script.jython.JythonScriptEngineFactory;
-import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMText;
-import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.bsf.xml.XMLHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
@@ -55,9 +52,7 @@ import org.mozilla.javascript.ContextFactory;
 
 import javax.activation.DataHandler;
 import javax.script.*;
-import javax.xml.namespace.QName;
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -307,29 +302,7 @@ public class ScriptMediator extends AbstractMediator {
                 // If result target is set, this is V2 script mediator
                 // Set the result to the target and returnValue to true
                 if (StringUtils.isNotBlank(resultTarget)) {
-                    if (isTargetBody()) {
-                        // set result to body
-                        if (returnObject instanceof JsonElement) {
-                            JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(), new
-                                    ByteArrayInputStream(returnObject.toString().getBytes()), true, true);
-                        } else {
-                            OMElement rootElement = OMAbstractFactory.getOMFactory().createOMElement(new QName(
-                                    "result"));
-                            rootElement.setText(returnObject.toString());
-                            SOAPEnvelope newEnvelope = ScatterGatherUtils.createNewSoapEnvelope(synCtx.getEnvelope());
-                            newEnvelope.getBody().addChild(rootElement);
-                            synCtx.setEnvelope(newEnvelope);
-                        }
-                    } else {
-                        // set result to variable
-                        if (isValidReturnObjectType(returnObject)) {
-                            synCtx.setVariable(resultTarget, returnObject);
-                        } else {
-                            throw new SynapseException("Return object type is not supported. Supported types are " +
-                                    "String, Boolean, Integer, Long, Double, JSON, OMElement");
-                        }
-                    }
-                    returnValue = true;
+                    returnValue = ScatterGatherUtils.setResultTarget(synCtx, resultTarget, returnObject);
                 } else {
                     returnValue = !(returnObject != null && returnObject instanceof Boolean) || (Boolean) returnObject;
                 }
@@ -365,23 +338,6 @@ public class ScriptMediator extends AbstractMediator {
         }
 
         return returnValue;
-    }
-
-    /**
-     * This method is used to check whether the JS return object is a valid variable type
-     *
-     * @param returnObject return object
-     * @return true if the return object is a valid type
-     */
-    private boolean isValidReturnObjectType(Object returnObject) {
-
-        return returnObject instanceof String ||
-                returnObject instanceof Boolean ||
-                returnObject instanceof Integer ||
-                returnObject instanceof Long ||
-                returnObject instanceof Double ||
-                returnObject instanceof OMElement ||
-                returnObject instanceof JsonElement;
     }
 
     /**
@@ -902,10 +858,5 @@ public class ScriptMediator extends AbstractMediator {
     public String getResultTarget() {
 
         return resultTarget;
-    }
-
-    private boolean isTargetBody() {
-
-        return "body".equalsIgnoreCase(resultTarget);
     }
 }

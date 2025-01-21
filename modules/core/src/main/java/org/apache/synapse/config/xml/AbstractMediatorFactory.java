@@ -82,6 +82,8 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
     protected static final QName RESULT_TARGET_Q = new QName("result-target");
     protected static final QName ATT_TYPE = new QName("type");
     protected static final QName ATT_ARGUMENT = new QName("argument");
+    protected static final QName INPUTS
+            = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "inputs");
 
     /**
      * A constructor that makes subclasses pick up the correct logger
@@ -252,7 +254,7 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
      * @param inputArgsElement input arguments element
      * @return List of input arguments
      */
-    protected List<InputArgument> getInputArguments(OMElement inputArgsElement) {
+    protected List<InputArgument> getInputArguments(OMElement inputArgsElement, String mediator) {
 
         List<InputArgument> inputArgsMap = new ArrayList<>();
         Iterator inputIterator = inputArgsElement.getChildrenWithName(ATT_ARGUMENT);
@@ -271,7 +273,7 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
                             new QName("expression")), typeAttribute);
                 } catch (JaxenException e) {
                     handleException("Error setting expression : " + expressionAttribute + " as an input argument to " +
-                            "script mediator. " + e.getMessage(), e);
+                                    mediator + " mediator. " + e.getMessage(), e);
                 }
             }
             inputArgsMap.add(argument);

@@ -21,13 +21,20 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.mediators.ext.ClassMediator;
+import org.apache.synapse.mediators.v2.ext.AbstractClassMediator;
+import org.apache.synapse.mediators.v2.ext.InputArgument;
 
 import javax.xml.namespace.QName;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -114,7 +121,40 @@ public class ClassMediatorFactory extends AbstractMediatorFactory {
             throw new SynapseException(msg, e);
         }
 
-        classMediator.addAllProperties(MediatorPropertyFactory.getMediatorProperties(elem, mediator));
+        String targetAtt = elem.getAttributeValue(RESULT_TARGET_Q);
+        if (StringUtils.isNotBlank(targetAtt)) {
+            // This a V2 class mediator. Set the result target and input arguments
+            String methodAtt = elem.getAttributeValue(new QName(XMLConfigConstants.NULL_NAMESPACE,
+                    "method"));
+            if (StringUtils.isBlank(methodAtt)) {
+                String msg = "The 'method' attribute is required for the class mediator " + clazz.getName();
+                log.error(msg);
+                throw new SynapseException(msg);
+            }
+            classMediator.setResultTarget(targetAtt);
+            classMediator.setMethodName(methodAtt);
+            OMElement inputArgsElement = elem.getFirstChildWithName(INPUTS);
+            if (inputArgsElement != null) {
+                List<InputArgument> inputArgsMap = getInputArguments(inputArgsElement, clazz.getName() + " class");
+                classMediator.setInputArguments(inputArgsMap);
+            }
+            Method[] methods = clazz.getMethods();
+            for (Method method : methods) {
+                if (method.getName().equals(methodAtt)) {
+                    List<AbstractClassMediator.Arg> arguments = new ArrayList<>();
+                    for (Parameter parameter : method.getParameters()) {
+                        if (parameter.isAnnotationPresent(AbstractClassMediator.Arg.class)) {
+                            AbstractClassMediator.Arg arg = parameter.getAnnotation(AbstractClassMediator.Arg.class);
+                            arguments.add(arg);
+                        }
+                    }
+                    classMediator.setArguments(arguments);
+                    break;
+                }
+            }
+        } else {
+            classMediator.addAllProperties(MediatorPropertyFactory.getMediatorProperties(elem, mediator));
+        }
 
         // after successfully creating the mediator
         // set its common attributes such as tracing etc

@@ -75,9 +75,6 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
     private static final QName INCLUDE_Q
             = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "include");
 
-    private static final QName INPUTS
-            = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "inputs");
-
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
         ScriptMediator mediator;
@@ -120,7 +117,7 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
                 mediator.setResultTarget(targetAtt);
                 OMElement inputArgsElement = elem.getFirstChildWithName(INPUTS);
                 if (inputArgsElement != null) {
-                    List<InputArgument> inputArgsMap = getInputArguments(inputArgsElement);
+                    List<InputArgument> inputArgsMap = getInputArguments(inputArgsElement, "script");
                     mediator.setInputArgumentMap(inputArgsMap);
                 }
             }

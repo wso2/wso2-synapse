@@ -19,6 +19,7 @@
 
 package org.apache.synapse.mediators.ext;
 
+import org.apache.axis2.AxisFault;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
@@ -29,8 +30,14 @@ import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
+import org.apache.synapse.mediators.v2.ScatterGatherUtils;
+import org.apache.synapse.mediators.v2.ext.AbstractClassMediator;
+import org.apache.synapse.mediators.v2.ext.InputArgument;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -53,6 +60,11 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
 
     /** Contains Dynamic Expressions/not */
     private boolean hasDynamicProperties = false;
+
+    private List<AbstractClassMediator.Arg> arguments = new ArrayList<>();
+    private HashMap<String, InputArgument> inputArguments = new HashMap<>();
+    private String methodName;
+    private String resultTarget;
 
     /**
 	 * Don't use a new instance... do one instance of the object per instance of
@@ -87,12 +99,16 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
         boolean result;
 
         try {
-            if (hasDynamicProperties) {
-                synchronized (mediator) {
+            if (mediator instanceof AbstractClassMediator) {
+                result = invokeClassMediatorV2(synCtx);
+            } else {
+                if (hasDynamicProperties) {
+                    synchronized (mediator) {
+                        result = updateInstancePropertiesAndMediate(synCtx);
+                    }
+                } else {
                     result = updateInstancePropertiesAndMediate(synCtx);
                 }
-            } else {
-                result = updateInstancePropertiesAndMediate(synCtx);
             }
         } catch (Exception e) {
             // throw Synapse Exception for any exception in class meditor
@@ -103,6 +119,47 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
         synLog.traceOrDebug("End : Class mediator");
         
         return result;
+    }
+
+    private boolean invokeClassMediatorV2(MessageContext synCtx) {
+
+        List<Object> methodArgs = new ArrayList<>();
+        methodArgs.add(synCtx);
+        arguments.forEach(arg -> methodArgs.add(getArgument(synCtx, arg.name())));
+        Method[] methods = mediator.getClass().getMethods();
+        Method targetMethod = null;
+        for (Method method : methods) {
+            if (method.getName().equals(methodName) && method.getParameterCount() == methodArgs.size()) {
+                targetMethod = method;
+                break;
+            }
+        }
+        if (targetMethod == null) {
+            handleException("No suitable method found for name: " + methodName + " with " + methodArgs.size()
+                    + " arguments for class " + mediator.getClass().getSimpleName(), synCtx);
+        }
+        try {
+            Object result = targetMethod.invoke(mediator, methodArgs.toArray());
+            return ScatterGatherUtils.setResultTarget(synCtx, resultTarget, result);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            handleException("Error while invoking method: " + methodName + " in class "
+                    + mediator.getClass().getSimpleName(), e, synCtx);
+        } catch (AxisFault e) {
+            handleException("Error while setting Class mediator '" + mediator.getClass().getName()
+                    + "' result to body", e, synCtx);
+        } catch (SynapseException e) {
+            handleException("Error while setting Class mediator '" + mediator.getClass().getName()
+                    + "' result", e, synCtx);
+        }
+        return false;
+    }
+
+    private Object getArgument(MessageContext context, String argName) {
+
+        if (inputArguments.containsKey(argName)) {
+            return inputArguments.get(argName).getResolvedArgument(context);
+        }
+        return null;
     }
 
     public void destroy() {
@@ -180,5 +237,41 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
             }
         }
         return mediator.mediate(synCtx);
+    }
+
+
+    public void setInputArguments(List<InputArgument> inputArguments) {
+
+        inputArguments.forEach(arg -> this.inputArguments.put(arg.getName(), arg));
+    }
+
+    public List<InputArgument> getInputArguments() {
+
+        return new ArrayList<>(inputArguments.values());
+    }
+
+    public void setArguments(List<AbstractClassMediator.Arg> arguments) {
+
+        this.arguments.addAll(arguments);
+    }
+
+    public void setResultTarget(String resultTarget) {
+
+        this.resultTarget = resultTarget;
+    }
+
+    public String getResultTarget() {
+
+        return resultTarget;
+    }
+
+    public void setMethodName(String methodName) {
+
+        this.methodName = methodName;
+    }
+
+    public String getMethodName() {
+
+        return methodName;
     }
 }

@@ -21,6 +21,7 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.ext.ClassMediator;
 
@@ -51,7 +52,14 @@ public class ClassMediatorSerializer extends AbstractMediatorSerializer  {
             handleException("Invalid class mediator. The class name is required");
         }
 
-        super.serializeProperties(clazz, mediator.getProperties());
+        if (StringUtils.isNotBlank(mediator.getResultTarget())) {
+            // If result target is set, this is V2 class mediator
+            clazz.addAttribute(fac.createOMAttribute("result-target", nullNS, mediator.getResultTarget()));
+            clazz.addAttribute(fac.createOMAttribute("method", nullNS, mediator.getMethodName()));
+            clazz.addChild(InputArgumentSerializer.serializeInputArguments(mediator.getInputArguments()));
+        } else {
+            super.serializeProperties(clazz, mediator.getProperties());
+        }
 
         serializeComments(clazz, mediator.getCommentsList());
 

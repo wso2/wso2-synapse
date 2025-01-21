@@ -27,14 +27,20 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.SOAPFactory;
+import org.apache.axis2.AxisFault;
 import org.apache.axis2.util.JavaUtils;
 import org.apache.commons.logging.Log;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
+
+import java.io.ByteArrayInputStream;
+import javax.xml.namespace.QName;
 
 public class ScatterGatherUtils {
 
@@ -266,5 +272,78 @@ public class ScatterGatherUtils {
             fac = OMAbstractFactory.getSOAP12Factory();
         }
         return fac.getDefaultEnvelope();
+    }
+
+    /**
+     * This method is used to check whether the return object is a valid variable type
+     *
+     * @param returnObject return object
+     * @return true if the return object is a valid type
+     */
+    public static boolean isValidReturnObjectType(Object returnObject) {
+
+        return returnObject instanceof String ||
+                returnObject instanceof Boolean ||
+                returnObject instanceof Integer ||
+                returnObject instanceof Long ||
+                returnObject instanceof Double ||
+                returnObject instanceof OMElement ||
+                returnObject instanceof JsonElement;
+    }
+
+    public static boolean isTargetBody(String resultTarget) {
+
+        return "body".equalsIgnoreCase(resultTarget);
+    }
+
+    public static boolean isTargetNone(String resultTarget) {
+
+        return "none".equalsIgnoreCase(resultTarget);
+    }
+
+    /**
+     * This method is used to set the result to the target
+     *
+     * @param synCtx       MessageContext
+     * @param resultTarget Target to set the result
+     * @param result       Result object to set
+     * @return true if the result is set successfully
+     * @throws AxisFault
+     * @throws SynapseException
+     */
+    public static boolean setResultTarget(MessageContext synCtx, String resultTarget, Object result) throws AxisFault,
+            SynapseException {
+
+        if (ScatterGatherUtils.isTargetNone(resultTarget)) {
+            return true;
+        }
+        if (result != null) {
+            if (ScatterGatherUtils.isTargetBody(resultTarget)) {
+                // set result to body
+                if (result instanceof JsonElement) {
+                    JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(), new
+                            ByteArrayInputStream(result.toString().getBytes()), true, true);
+                } else {
+                    OMElement rootElement = OMAbstractFactory.getOMFactory().createOMElement(new QName(
+                            "result"));
+                    rootElement.setText(result.toString());
+                    SOAPEnvelope newEnvelope = ScatterGatherUtils.createNewSoapEnvelope(synCtx.getEnvelope());
+                    newEnvelope.getBody().addChild(rootElement);
+                    synCtx.setEnvelope(newEnvelope);
+                }
+            } else {
+                // set result to variable
+                if (ScatterGatherUtils.isValidReturnObjectType(result)) {
+                    synCtx.setVariable(resultTarget, result);
+                } else {
+                    throw new SynapseException("Return object type is not supported. Supported types are " +
+                            "String, Boolean, Integer, Long, Double, JsonElement, OMElement");
+                }
+            }
+            return true;
+        } else {
+            throw new SynapseException("Return object is null. Cannot set null object to the target : " +
+                    resultTarget);
+        }
     }
 }
