@@ -50,6 +50,7 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.FailoverEndpoint;
+import org.apache.synapse.endpoints.LoadbalanceEndpoint;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
 import org.apache.synapse.endpoints.auth.oauth.MessageCache;
@@ -600,12 +601,18 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     if(failOver) {
                         popFailOverEPFromFaultStack(synapseOutMsgCtx);
                     }
+                    if (isChildOfLoadBalanceEP(successfulEndpoint)) {
+                        popLoadBalanceEPFromFaultStack(synapseOutMsgCtx);
+                    }
                 }
 
             } else if(successfulEndpoint != null) {
                 successfulEndpoint.onSuccess();
                 if(failOver) {
                     popFailOverEPFromFaultStack(synapseOutMsgCtx);
+                }
+                if (isChildOfLoadBalanceEP(successfulEndpoint)) {
+                    popLoadBalanceEPFromFaultStack(synapseOutMsgCtx);
                 }
             }
 
@@ -807,6 +814,30 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         if (faultStack != null && !faultStack.isEmpty()) {
             Object o = faultStack.peek();
             if (o instanceof FailoverEndpoint) {
+                faultStack.pop();
+            }
+        }
+    }
+
+    /**
+     * Check if the endpoint is a child of LoadBalance EP.
+     *
+     * @param endpoint Endpoint to be checked.
+     * @return true if the given endpoint is a child of a LoadBalance EP.
+     */
+    private boolean isChildOfLoadBalanceEP(Endpoint endpoint) {
+        if (endpoint instanceof AbstractEndpoint) {
+            Endpoint parentEndpoint = ((AbstractEndpoint) endpoint).getParentEndpoint();
+            return parentEndpoint instanceof LoadbalanceEndpoint;
+        }
+        return false;
+    }
+
+    private void popLoadBalanceEPFromFaultStack(org.apache.synapse.MessageContext synCtx) {
+        Stack<FaultHandler> faultStack = synCtx.getFaultStack();
+        if (faultStack != null && !faultStack.isEmpty()) {
+            Object o = faultStack.peek();
+            if (o instanceof LoadbalanceEndpoint) {
                 faultStack.pop();
             }
         }
