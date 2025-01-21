@@ -246,15 +246,33 @@ public final class InlineExpressionUtil {
         while (matcher.find()) {
             // Extract the expression inside ${...}
             String placeholder = matcher.group(1);
-            SynapseExpression expression = expressionCache.get(placeholder);
-            if (expression == null) {
+            SynapseExpression expression;
+            if (expressionCache != null) {
+                expression = expressionCache.get(placeholder);
+                if (expression == null) {
+                    expression = new SynapseExpression(placeholder);
+                    expressionCache.put(placeholder, expression);
+                }
+            } else {
                 expression = new SynapseExpression(placeholder);
-                expressionCache.put(placeholder, expression);
             }
             String replacement = expression.stringValueOf(synCtx);
             matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
         }
         matcher.appendTail(result);
         return result.toString();
+    }
+
+    /**
+     * Process the inline template and replace the synapse expressions with the resolved values
+     *d
+     * @param synCtx          Message Context
+     * @param template        Inline template
+     * @return Processed inline template
+     */
+    public static String processInLineSynapseExpressionTemplate(MessageContext synCtx, String template)
+            throws JaxenException {
+
+        return processInLineSynapseExpressionTemplate(synCtx, template, null);
     }
 }
