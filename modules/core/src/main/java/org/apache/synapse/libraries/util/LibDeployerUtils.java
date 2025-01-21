@@ -76,23 +76,15 @@ public class LibDeployerUtils {
         if (deployedLibClassLoader == null) {
             //create a ClassLoader for loading this synapse lib classes/resources
             try {
+                ClassLoader libLoader;
                 if (classLoader != null) {
-                    synapseLib.setLibClassLoader(classLoader);
-                    SynapseConfiguration.addLibraryClassLoader(libArtifactName, classLoader);
-                    if (classLoader instanceof LibClassLoader) {
-                        try {
-                            ((LibClassLoader) classLoader).addURL(new File(extractPath).toURI().toURL());
-                        } catch (MalformedURLException e) {
-                            throw new DeploymentException("Error while adding URL to the classloader", e);
-                        }
-                    }
+                    libLoader = Utils.getClassLoader(classLoader, extractPath, false);
                 } else {
-                    ClassLoader libLoader = Utils.getClassLoader(LibDeployerUtils.class.getClassLoader(),
-                        extractPath, false);
-                    SynapseConfiguration.addLibraryClassLoader(libArtifactName, libLoader);
-                    synapseLib.setLibClassLoader(libLoader);
+                    libLoader = Utils.getClassLoader(LibDeployerUtils.class.getClassLoader(),
+                            extractPath, false);
                 }
-
+                SynapseConfiguration.addLibraryClassLoader(libArtifactName, libLoader);
+                synapseLib.setLibClassLoader(libLoader);
             } catch (DeploymentException e) {
                 throw new SynapseArtifactDeploymentException("Error setting up lib classpath for Synapse" +
                         " Library  : " + libFile.getAbsolutePath(), e);
