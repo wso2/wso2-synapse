@@ -53,6 +53,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Stack;
+import java.util.TreeMap;
 
 import static org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS;
 import static org.apache.synapse.mediators.builtin.CallMediator.ORIGINAL_MESSAGE_TYPE;
@@ -345,10 +346,12 @@ public class InvokeMediator extends AbstractMediator implements
                 ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         Object messageType = axis2MessageContext.getProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE);
         Object headers = axis2MessageContext.getProperty(TRANSPORT_HEADERS);
-        Map originalTransportHeaders = (Map) headers;
+        Map transportHeadersMap = (Map) headers;
+        // Create a clone of the original transport headers
+        transportHeadersMap = new TreeMap(transportHeadersMap);
         String originalMessageType = (String) messageType;
         synCtx.setProperty(ORIGINAL_MESSAGE_TYPE + "_" + synCtx.getMessageID(), originalMessageType);
-        synCtx.setProperty(ORIGINAL_TRANSPORT_HEADERS + "_" + synCtx.getMessageID(), originalTransportHeaders);
+        synCtx.setProperty(ORIGINAL_TRANSPORT_HEADERS + "_" + synCtx.getMessageID(), transportHeadersMap);
         boolean overwriteBody = Boolean.parseBoolean(pName2ExpressionMap.get(
                 SynapseConstants.OVERWRITE_BODY).evaluateValue(synCtx));
         if (!overwriteBody) {
