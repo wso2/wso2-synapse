@@ -21,6 +21,7 @@ package org.apache.synapse.mediators.bsf;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
@@ -29,7 +30,7 @@ import org.apache.synapse.config.xml.AbstractMediatorFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.config.xml.ValueFactory;
-import org.mozilla.javascript.Context;
+import org.apache.synapse.mediators.v2.ext.InputArgument;
 
 import javax.xml.namespace.QName;
 import java.util.Iterator;
@@ -111,6 +112,15 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
             String functionName = (functionAtt == null ? null : functionAtt.getAttributeValue());
             mediator = new ScriptMediator(langAtt.getAttributeValue(),
                     includeKeysMap, generatedKey, functionName,classLoader);
+            String targetAtt = elem.getAttributeValue(RESULT_TARGET_Q);
+            if (StringUtils.isNotBlank(targetAtt)) {
+                mediator.setResultTarget(targetAtt);
+                OMElement inputArgsElement = elem.getFirstChildWithName(INPUTS);
+                if (inputArgsElement != null) {
+                    List<InputArgument> inputArgsMap = getInputArguments(inputArgsElement, "script");
+                    mediator.setInputArgumentMap(inputArgsMap);
+                }
+            }
         } else {
             String language = langAtt.getAttributeValue();
             if (language.equals(JAVA_SCRIPT) &&

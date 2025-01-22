@@ -24,9 +24,7 @@ import com.google.gson.JsonSyntaxException;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.AXIOMUtil;
-import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAPEnvelope;
-import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.context.OperationContext;
@@ -268,7 +266,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
         // If there are no children and the continuation was triggered from a mediator worker start aggregation
         // otherwise mediate through the sub branch sequence
         if (!continuationState.hasChild()) {
-            if (ScatterGatherUtils.isContinuationTriggeredFromMediatorWorker(synCtx)) {
+            if (Utils.isContinuationTriggeredFromMediatorWorker(synCtx)) {
                 synLog.traceOrDebug("Continuation is triggered from a mediator worker");
                 result = true;
             } else {
@@ -615,7 +613,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
             // setting the new JSON payload to the messageContext
             try {
                 newCtx = MessageHelper.cloneMessageContext(aggregate.getLastMessage(), false, false, true);
-                SOAPEnvelope newEnvelope = createNewSoapEnvelope(aggregate.getLastMessage().getEnvelope());
+                SOAPEnvelope newEnvelope = Utils.createNewSoapEnvelope(aggregate.getLastMessage().getEnvelope());
                 newCtx.setEnvelope(newEnvelope);
                 JsonUtil.getNewJsonPayload(((Axis2MessageContext) newCtx).getAxis2MessageContext(), new
                         ByteArrayInputStream(jsonArray.toString().getBytes()), true, true);
@@ -629,7 +627,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
             setXMLResultToRootOMElement(rootElement, aggregate);
             try {
                 newCtx = MessageHelper.cloneMessageContext(aggregate.getLastMessage(), false, false, true);
-                SOAPEnvelope newEnvelope = createNewSoapEnvelope(aggregate.getLastMessage().getEnvelope());
+                SOAPEnvelope newEnvelope = Utils.createNewSoapEnvelope(aggregate.getLastMessage().getEnvelope());
                 newEnvelope.getBody().addChild(rootElement);
                 newCtx.setEnvelope(newEnvelope);
             } catch (AxisFault axisFault) {
@@ -645,17 +643,6 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
         }
         StatisticDataCollectionHelper.collectAggregatedParents(aggregate.getMessages(), newCtx);
         return newCtx;
-    }
-
-    private SOAPEnvelope createNewSoapEnvelope(SOAPEnvelope envelope) {
-
-        SOAPFactory fac;
-        if (SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI.equals(envelope.getBody().getNamespace().getNamespaceURI())) {
-            fac = OMAbstractFactory.getSOAP11Factory();
-        } else {
-            fac = OMAbstractFactory.getSOAP12Factory();
-        }
-        return fac.getDefaultEnvelope();
     }
 
     public SynapsePath getCorrelateExpression() {

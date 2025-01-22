@@ -27,6 +27,7 @@ import com.sun.script.jython.JythonScriptEngineFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMText;
 import org.apache.bsf.xml.XMLHelper;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -43,6 +44,8 @@ import org.apache.synapse.mediators.bsf.access.control.SandboxContextFactory;
 import org.apache.synapse.mediators.bsf.access.control.config.AccessControlConfig;
 import org.apache.synapse.mediators.bsf.access.control.config.AccessControlListType;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.apache.synapse.mediators.v2.Utils;
+import org.apache.synapse.mediators.v2.ext.InputArgument;
 import org.graalvm.polyglot.Context;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.ContextFactory;
@@ -52,6 +55,7 @@ import javax.script.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -178,6 +182,8 @@ public class ScriptMediator extends AbstractMediator {
      * Store java method access config
      */
     private AccessControlConfig nativeObjectAccessControlConfig;
+    private final List<InputArgument> inputArgumentList = new ArrayList<>();
+    private String resultTarget;
 
     /**
      * Create a script mediator for the given language and given script source.
@@ -293,11 +299,17 @@ public class ScriptMediator extends AbstractMediator {
             Object returnObject;
             if (key != null) {
                 returnObject = mediateWithExternalScript(synCtx, context);
+                // If result target is set, this is V2 script mediator
+                // Set the result to the target and returnValue to true
+                if (StringUtils.isNotBlank(resultTarget)) {
+                    returnValue = Utils.setResultTarget(synCtx, resultTarget, returnObject);
+                } else {
+                    returnValue = !(returnObject != null && returnObject instanceof Boolean) || (Boolean) returnObject;
+                }
             } else {
                 returnObject = mediateForInlineScript(synCtx, context);
+                returnValue = !(returnObject != null && returnObject instanceof Boolean) || (Boolean) returnObject;
             }
-            returnValue = !(returnObject != null && returnObject instanceof Boolean) || (Boolean) returnObject;
-
         } catch (ScriptException e) {
             handleException("The script engine returned an error executing the " +
                     (key == null ? "inlined " : "external ") + language + " script" +
@@ -355,7 +367,13 @@ public class ScriptMediator extends AbstractMediator {
             processJSONPayload(synCtx, scriptMC);
             Invocable invocableScript = (Invocable) sew.getEngine();
 
-            obj = invocableScript.invokeFunction(function, new Object[]{scriptMC});
+            List<Object> scriptArgs = new ArrayList<>();
+            // First argument is always the ScriptMessageContext
+            scriptArgs.add(scriptMC);
+            for (InputArgument inputArgument : inputArgumentList) {
+                scriptArgs.add(inputArgument.getResolvedArgument(synCtx));
+            }
+            obj = invocableScript.invokeFunction(function, scriptArgs.toArray());
         } finally {
           if(sew != null){
               // return engine to front of queue or drop if queue is full (i.e. if getNewScriptEngine() spawns a new engine)
@@ -822,4 +840,23 @@ public class ScriptMediator extends AbstractMediator {
         }
     }
 
+    public void setInputArgumentMap(List<InputArgument> inputArgumentList) {
+
+        this.inputArgumentList.addAll(inputArgumentList);
+    }
+
+    public List<InputArgument> getInputArgumentList() {
+
+        return inputArgumentList;
+    }
+
+    public void setResultTarget(String resultTarget) {
+
+        this.resultTarget = resultTarget;
+    }
+
+    public String getResultTarget() {
+
+        return resultTarget;
+    }
 }

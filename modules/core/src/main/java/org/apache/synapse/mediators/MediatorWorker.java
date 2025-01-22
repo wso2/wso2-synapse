@@ -33,7 +33,7 @@ import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.debug.SynapseDebugManager;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.mediators.v2.ScatterGatherUtils;
+import org.apache.synapse.mediators.v2.Utils;
 import org.apache.synapse.util.logging.LoggingUtils;
 
 /**
@@ -96,7 +96,7 @@ public class MediatorWorker implements Runnable {
 
             boolean result = seq.mediate(synCtx);
             // If this is a scatter message, then we need to use the continuation state and continue the mediation
-            if (ScatterGatherUtils.isScatterMessage(synCtx) && result) {
+            if (Utils.isScatterMessage(synCtx) && result) {
                 SeqContinuationState seqContinuationState = (SeqContinuationState) ContinuationStackManager.peakContinuationStateStack(synCtx);
                 if (seqContinuationState == null) {
                     return;
@@ -143,7 +143,7 @@ public class MediatorWorker implements Runnable {
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
                 debugManager.releaseMediationFlowLock();
             }
-            if (RuntimeStatisticCollector.isStatisticsEnabled() && !ScatterGatherUtils.isScatterMessage(synCtx)) {
+            if (RuntimeStatisticCollector.isStatisticsEnabled() && !Utils.isScatterMessage(synCtx)) {
                 this.statisticsCloseEventListener.invokeCloseEventEntry(synCtx);
             }
         }

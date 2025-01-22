@@ -20,8 +20,10 @@ package org.apache.synapse.mediators.bsf;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.llom.OMTextImpl;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.config.xml.AbstractMediatorSerializer;
+import org.apache.synapse.config.xml.InputArgumentSerializer;
 import org.apache.synapse.config.xml.ValueSerializer;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.mediators.Value;
@@ -58,6 +60,11 @@ public class ScriptMediatorSerializer extends AbstractMediatorSerializer {
 
             if (!function.equals("mediate")) {
                 script.addAttribute(fac.createOMAttribute("function", nullNS, function));
+            }
+            if (StringUtils.isNotBlank(scriptMediator.getResultTarget())) {
+                // If result target is set, this is V2 script mediator
+                script.addAttribute(fac.createOMAttribute("result-target", nullNS, scriptMediator.getResultTarget()));
+                script.addChild(InputArgumentSerializer.serializeInputArguments(scriptMediator.getInputArgumentList()));
             }
         } else {
             script.addAttribute(fac.createOMAttribute("language", nullNS, language));

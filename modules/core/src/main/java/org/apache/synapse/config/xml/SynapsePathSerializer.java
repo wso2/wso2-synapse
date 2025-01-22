@@ -80,7 +80,7 @@ public class SynapsePathSerializer {
                             attribName, nullNS, "{${" + expression.substring(1, expression.length() - 1) + "}}"));
                 } else {
                     elem.addAttribute(elem.getOMFactory().createOMAttribute(
-                            attribName, nullNS, "{${" + expression + "}"));
+                            attribName, nullNS, "${" + expression + "}"));
                 }
             }
 

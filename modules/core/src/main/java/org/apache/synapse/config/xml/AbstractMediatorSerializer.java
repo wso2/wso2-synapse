@@ -32,8 +32,10 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.statistics.StatisticsConfigurable;
+import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.mediators.builtin.CommentMediator;
+import org.apache.synapse.mediators.v2.ext.InputArgument;
 
 import javax.xml.namespace.QName;
 import java.util.Collection;
