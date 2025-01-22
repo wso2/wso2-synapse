@@ -256,7 +256,7 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
         // If there are no children and the continuation was triggered from a mediator worker start aggregation
         // otherwise mediate through the sub branch sequence
         if (!continuationState.hasChild()) {
-            if (ScatterGatherUtils.isContinuationTriggeredFromMediatorWorker(synCtx)) {
+            if (Utils.isContinuationTriggeredFromMediatorWorker(synCtx)) {
                 synLog.traceOrDebug("Continuation is triggered from a mediator worker");
                 result = true;
             } else {

@@ -44,7 +44,7 @@ import org.apache.synapse.mediators.bsf.access.control.SandboxContextFactory;
 import org.apache.synapse.mediators.bsf.access.control.config.AccessControlConfig;
 import org.apache.synapse.mediators.bsf.access.control.config.AccessControlListType;
 import org.apache.synapse.mediators.eip.EIPUtils;
-import org.apache.synapse.mediators.v2.ScatterGatherUtils;
+import org.apache.synapse.mediators.v2.Utils;
 import org.apache.synapse.mediators.v2.ext.InputArgument;
 import org.graalvm.polyglot.Context;
 import org.mozilla.javascript.ClassShutter;
@@ -302,7 +302,7 @@ public class ScriptMediator extends AbstractMediator {
                 // If result target is set, this is V2 script mediator
                 // Set the result to the target and returnValue to true
                 if (StringUtils.isNotBlank(resultTarget)) {
-                    returnValue = ScatterGatherUtils.setResultTarget(synCtx, resultTarget, returnObject);
+                    returnValue = Utils.setResultTarget(synCtx, resultTarget, returnObject);
                 } else {
                     returnValue = !(returnObject != null && returnObject instanceof Boolean) || (Boolean) returnObject;
                 }

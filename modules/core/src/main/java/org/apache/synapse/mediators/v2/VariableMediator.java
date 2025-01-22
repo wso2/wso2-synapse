@@ -119,7 +119,7 @@ public class VariableMediator extends AbstractMediator {
     public void setValue(String value, String type) {
 
         this.type = type;
-        this.value = ScatterGatherUtils.convertValue(value, type, log);
+        this.value = Utils.convertValue(value, type, log);
     }
 
     public String getType() {
@@ -157,7 +157,7 @@ public class VariableMediator extends AbstractMediator {
 
     private Object getResultValue(MessageContext synCtx) {
 
-        return ScatterGatherUtils.getResolvedValue(synCtx, expression, value, type, log);
+        return Utils.getResolvedValue(synCtx, expression, value, type, log);
     }
 
     @Override

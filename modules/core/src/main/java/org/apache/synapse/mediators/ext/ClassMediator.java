@@ -30,7 +30,7 @@ import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
-import org.apache.synapse.mediators.v2.ScatterGatherUtils;
+import org.apache.synapse.mediators.v2.Utils;
 import org.apache.synapse.mediators.v2.ext.AbstractClassMediator;
 import org.apache.synapse.mediators.v2.ext.InputArgument;
 
@@ -140,7 +140,7 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
         }
         try {
             Object result = targetMethod.invoke(mediator, methodArgs.toArray());
-            return ScatterGatherUtils.setResultTarget(synCtx, resultTarget, result);
+            return Utils.setResultTarget(synCtx, resultTarget, result);
         } catch (IllegalAccessException | InvocationTargetException e) {
             handleException("Error while invoking method: " + methodName + " in class "
                     + mediator.getClass().getSimpleName(), e, synCtx);

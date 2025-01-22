@@ -22,7 +22,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.config.xml.SynapsePath;
-import org.apache.synapse.mediators.v2.ScatterGatherUtils;
+import org.apache.synapse.mediators.v2.Utils;
 
 public class InputArgument {
 
@@ -39,7 +39,7 @@ public class InputArgument {
 
     public Object getResolvedArgument(MessageContext synCtx) {
 
-        return ScatterGatherUtils.getResolvedValue(synCtx, expression, value, type, log);
+        return Utils.getResolvedValue(synCtx, expression, value, type, log);
     }
 
     public void setExpression(SynapsePath expression, String type) {
@@ -51,7 +51,7 @@ public class InputArgument {
     public void setValue(String value, String type) {
 
         this.type = type;
-        this.value = ScatterGatherUtils.convertValue(value, type, log);
+        this.value = Utils.convertValue(value, type, log);
     }
 
     public String getName() {

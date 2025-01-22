@@ -42,7 +42,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import java.io.ByteArrayInputStream;
 import javax.xml.namespace.QName;
 
-public class ScatterGatherUtils {
+public class Utils {
 
     /**
      * Check whether the message is a scatter message or not
@@ -146,7 +146,7 @@ public class ScatterGatherUtils {
         } else {
             if (expression != null) {
                 if (isXMLType(type)) {
-                    return ScatterGatherUtils.buildOMElement(expression.stringValueOf(synCtx));
+                    return Utils.buildOMElement(expression.stringValueOf(synCtx));
                 } else if (isStringType(type)) {
                     return expression.stringValueOf(synCtx);
                 }
@@ -314,11 +314,11 @@ public class ScatterGatherUtils {
     public static boolean setResultTarget(MessageContext synCtx, String resultTarget, Object result) throws AxisFault,
             SynapseException {
 
-        if (ScatterGatherUtils.isTargetNone(resultTarget)) {
+        if (Utils.isTargetNone(resultTarget)) {
             return true;
         }
         if (result != null) {
-            if (ScatterGatherUtils.isTargetBody(resultTarget)) {
+            if (Utils.isTargetBody(resultTarget)) {
                 // set result to body
                 if (result instanceof JsonElement) {
                     JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(), new
@@ -327,13 +327,13 @@ public class ScatterGatherUtils {
                     OMElement rootElement = OMAbstractFactory.getOMFactory().createOMElement(new QName(
                             "result"));
                     rootElement.setText(result.toString());
-                    SOAPEnvelope newEnvelope = ScatterGatherUtils.createNewSoapEnvelope(synCtx.getEnvelope());
+                    SOAPEnvelope newEnvelope = Utils.createNewSoapEnvelope(synCtx.getEnvelope());
                     newEnvelope.getBody().addChild(rootElement);
                     synCtx.setEnvelope(newEnvelope);
                 }
             } else {
                 // set result to variable
-                if (ScatterGatherUtils.isValidReturnObjectType(result)) {
+                if (Utils.isValidReturnObjectType(result)) {
                     synCtx.setVariable(resultTarget, result);
                 } else {
                     throw new SynapseException("Return object type is not supported. Supported types are " +
