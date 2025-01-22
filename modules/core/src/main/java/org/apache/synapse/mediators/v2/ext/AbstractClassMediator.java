@@ -9,6 +9,11 @@ import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.PARAMETER;
 
+/**
+ * This is the super class for custom class mediators. The user can extend this class and implement a custom method with
+ * the allowed argument types. The method parameters should be annotated with the @Arg annotation to specify the
+ * argument name and the type. The method may return a value if needed. The return type should be one of the allowed.
+ */
 public class AbstractClassMediator extends AbstractMediator {
 
     @Override
