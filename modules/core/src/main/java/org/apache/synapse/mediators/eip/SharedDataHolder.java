@@ -18,7 +18,10 @@
 
 package org.apache.synapse.mediators.eip;
 
+import org.apache.synapse.ContinuationState;
 import org.apache.synapse.MessageContext;
+
+import java.util.Stack;
 
 /**
  * This class is used to hold the shared data for a particular message set
@@ -32,6 +35,7 @@ public class SharedDataHolder {
     private boolean isAggregationCompleted = false;
 
     private MessageContext synCtx;
+    private Stack<ContinuationState> continuationStateStack;
 
     public SharedDataHolder() {
 
@@ -61,5 +65,20 @@ public class SharedDataHolder {
     public MessageContext getSynCtx() {
 
         return synCtx;
+    }
+
+    public void setContinuationStateStack(Stack<ContinuationState> continuationStateStack) {
+
+        this.continuationStateStack = continuationStateStack;
+    }
+
+    public Stack<ContinuationState> getContinuationStateStack() {
+
+        return continuationStateStack;
+    }
+
+    public void setSynCtx(MessageContext synCtx) {
+
+        this.synCtx = synCtx;
     }
 }

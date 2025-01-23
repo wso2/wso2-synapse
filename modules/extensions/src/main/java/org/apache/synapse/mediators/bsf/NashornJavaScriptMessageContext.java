@@ -842,6 +842,11 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
         return mc.getContinuationStateStack();
     }
 
+    @Override
+    public void restoreContinuationStateStack(Stack<ContinuationState> continuationStateStack) {
+        mc.restoreContinuationStateStack(continuationStateStack);
+    }
+
     /**
      * {@inheritDoc}
      */

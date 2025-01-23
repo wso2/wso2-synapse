@@ -411,6 +411,7 @@ public OMElement getFormat(String key);
     public Stack<ContinuationState> getContinuationStateStack();
 
     public void pushContinuationState(ContinuationState continuationState);
+    public void restoreContinuationStateStack(Stack<ContinuationState> continuationStateStack);
 
     /**
      * is ContinuationStateStack stack Operations enabled

@@ -865,6 +865,11 @@ public class GraalVMJavaScriptMessageContext implements ScriptMessageContext {
         return mc.getContinuationStateStack();
     }
 
+    @Override
+    public void restoreContinuationStateStack(Stack<ContinuationState> continuationStateStack) {
+        mc.restoreContinuationStateStack(continuationStateStack);
+    }
+
     /**
      * {@inheritDoc}
      */
