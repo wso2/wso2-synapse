@@ -121,18 +121,25 @@ public class ClassMediatorFactory extends AbstractMediatorFactory {
             throw new SynapseException(msg, e);
         }
 
-        String targetAtt = elem.getAttributeValue(RESULT_TARGET_Q);
+        String targetAtt = elem.getAttributeValue(ATT_TARGET);
         if (StringUtils.isNotBlank(targetAtt)) {
             // This a V2 class mediator. Set the result target and input arguments
-            String methodAtt = elem.getAttributeValue(new QName(XMLConfigConstants.NULL_NAMESPACE,
-                    "method"));
-            if (StringUtils.isBlank(methodAtt)) {
-                String msg = "The 'method' attribute is required for the class mediator " + clazz.getName();
-                log.error(msg);
-                throw new SynapseException(msg);
+            if ("variable".equalsIgnoreCase(targetAtt)) {
+                String variableNameAttr = elem.getAttributeValue(ATT_VARIABLE_NAME);
+                if (StringUtils.isBlank(variableNameAttr)) {
+                    String msg = "The 'variable-name' attribute is required for the configuration of a " +
+                            "Class mediator when the 'target' is 'variable'";
+                    throw new SynapseException(msg);
+                }
+                classMediator.setVariableName(variableNameAttr);
             }
             classMediator.setResultTarget(targetAtt);
-            classMediator.setMethodName(methodAtt);
+            String methodAtt = elem.getAttributeValue(new QName(XMLConfigConstants.NULL_NAMESPACE,
+                    "method"));
+            if (StringUtils.isNotBlank(methodAtt)) {
+                classMediator.setMethodName(methodAtt);
+            }
+            classMediator.setResultTarget(targetAtt);
             OMElement inputArgsElement = elem.getFirstChildWithName(INPUTS);
             if (inputArgsElement != null) {
                 List<InputArgument> inputArgsMap = getInputArguments(inputArgsElement, clazz.getName() + " class");

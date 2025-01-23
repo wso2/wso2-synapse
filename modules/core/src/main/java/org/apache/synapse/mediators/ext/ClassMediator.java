@@ -63,8 +63,9 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
 
     private List<AbstractClassMediator.Arg> arguments = new ArrayList<>();
     private HashMap<String, InputArgument> inputArguments = new HashMap<>();
-    private String methodName;
+    private String methodName = "mediate";
     private String resultTarget;
+    private String variableName;
 
     /**
 	 * Don't use a new instance... do one instance of the object per instance of
@@ -140,7 +141,7 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
         }
         try {
             Object result = targetMethod.invoke(mediator, methodArgs.toArray());
-            return Utils.setResultTarget(synCtx, resultTarget, result);
+            return Utils.setResultTarget(synCtx, resultTarget, variableName, result);
         } catch (IllegalAccessException | InvocationTargetException e) {
             handleException("Error while invoking method: " + methodName + " in class "
                     + mediator.getClass().getSimpleName(), e, synCtx);
@@ -273,5 +274,15 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
     public String getMethodName() {
 
         return methodName;
+    }
+
+    public void setVariableName(String variableName) {
+
+        this.variableName = variableName;
+    }
+
+    public String getVariableName() {
+
+        return variableName;
     }
 }

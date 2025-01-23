@@ -91,9 +91,13 @@ public class ForEachMediatorSerializer extends AbstractMediatorSerializer {
                 forEachElem.addAttribute(fac.createOMAttribute(
                         "continue-without-aggregation", nullNS, "true"));
             } else {
-                if (forEachMediatorV2.getResultTarget() != null) {
+                forEachElem.addAttribute(fac.createOMAttribute(
+                        "update-original", nullNS, Boolean.toString(forEachMediatorV2.isUpdateOriginal())));
+                if (!forEachMediatorV2.isUpdateOriginal()) {
                     forEachElem.addAttribute(fac.createOMAttribute(
-                            "result-target", nullNS, forEachMediatorV2.getResultTarget()));
+                            "target", nullNS, "variable"));
+                    forEachElem.addAttribute(fac.createOMAttribute(
+                            "variable-name", nullNS, forEachMediatorV2.getVariableName()));
                     forEachElem.addAttribute(fac.createOMAttribute(
                             "result-type", nullNS, forEachMediatorV2.getContentType()));
                 }

@@ -79,7 +79,9 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
     protected static final QName DESCRIPTION_Q
             = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "description");
 
-    protected static final QName RESULT_TARGET_Q = new QName("result-target");
+    protected static final QName ATT_VARIABLE_NAME = new QName("variable-name");
+    protected static final QName ATT_ROOT_ELEMENT = new QName("result-enclosing-element");
+    protected static final QName RESULT_TYPE_Q = new QName("result-content-type");
     protected static final QName ATT_TYPE = new QName("type");
     protected static final QName ATT_ARGUMENT = new QName("argument");
     protected static final QName INPUTS

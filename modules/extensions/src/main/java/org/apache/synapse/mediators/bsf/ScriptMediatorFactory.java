@@ -30,13 +30,12 @@ import org.apache.synapse.config.xml.AbstractMediatorFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.config.xml.ValueFactory;
-import org.apache.synapse.mediators.v2.ext.InputArgument;
+import org.apache.synapse.mediators.v2.Utils;
 
 import javax.xml.namespace.QName;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
-import java.util.TreeMap;
 import java.util.*;
 
 import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.DEFAULT_SCRIPT_ENGINE;
@@ -112,13 +111,27 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
             String functionName = (functionAtt == null ? null : functionAtt.getAttributeValue());
             mediator = new ScriptMediator(langAtt.getAttributeValue(),
                     includeKeysMap, generatedKey, functionName,classLoader);
-            String targetAtt = elem.getAttributeValue(RESULT_TARGET_Q);
+            String targetAtt = elem.getAttributeValue(ATT_TARGET);
             if (StringUtils.isNotBlank(targetAtt)) {
-                mediator.setResultTarget(targetAtt);
-                OMElement inputArgsElement = elem.getFirstChildWithName(INPUTS);
-                if (inputArgsElement != null) {
-                    List<InputArgument> inputArgsMap = getInputArguments(inputArgsElement, "script");
-                    mediator.setInputArgumentMap(inputArgsMap);
+                // This is V2 script mediator
+                if (StringUtils.isNotBlank(targetAtt)) {
+                    if (Utils.isTargetBody(targetAtt)) {
+                        mediator.setResultTarget(Utils.TARGET_BODY);
+                    } else if (Utils.isTargetVariable(targetAtt)) {
+                        String variableNameAttr = elem.getAttributeValue(ATT_VARIABLE_NAME);
+                        if (StringUtils.isBlank(variableNameAttr)) {
+                            String msg = "The 'variable-name' attribute is required for the configuration of a " +
+                                    "Script mediator when the 'target' is 'variable'";
+                            throw new SynapseException(msg);
+                        }
+                        mediator.setResultTarget(Utils.TARGET_VARIABLE);
+                        mediator.setVariableName(variableNameAttr);
+                    } else if (Utils.isTargetNone(targetAtt)) {
+                        mediator.setResultTarget(Utils.TARGET_NONE);
+                    } else {
+                        throw new SynapseException("Invalid 'target' attribute value for script mediator : " + targetAtt
+                                + ". It should be either 'body', 'variable' or 'none'");
+                    }
                 }
             }
         } else {

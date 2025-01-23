@@ -99,6 +99,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
     private String contentType;
     private String rootElementName;
     private String resultTarget;
+    private String variableName;
     private SynapseEnvironment synapseEnv;
 
     public ScatterGather() {
@@ -138,7 +139,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
 
         SharedDataHolder sharedDataHolder = new SharedDataHolder();
         MessageContext orginalMessageContext = null;
-        if (!isTargetBody()) {
+        if (!Utils.isTargetBody(resultTarget)) {
             try {
                 // Clone the original MessageContext and save it to continue the flow using it when the scatter gather
                 // output is set to a variable
@@ -452,7 +453,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
             return false;
         }
 
-        if (isTargetBody()) {
+        if (Utils.isTargetBody(resultTarget)) {
             MessageContext newSynCtx = getAggregatedMessage(aggregate);
             return processAggregation(newSynCtx, aggregate);
         } else {
@@ -476,7 +477,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
         aggregate.clear();
         activeAggregates.remove(aggregate.getCorrelation());
 
-        if (isTargetBody()) {
+        if (Utils.isTargetBody(resultTarget)) {
             // Set content type to the aggregated message
             setContentType(messageContext);
         } else {
@@ -578,10 +579,10 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
             variable = OMAbstractFactory.getOMFactory().createOMElement(new QName(rootElementName));
             setXMLResultToRootOMElement((OMElement) variable, aggregate);
         } else {
-            handleException(aggregate, "Error merging aggregation results to variable : " + resultTarget +
+            handleException(aggregate, "Error merging aggregation results to variable : " + variableName +
                     " unknown content type : " + contentType, null, originalMessageContext);
         }
-        originalMessageContext.setVariable(resultTarget, variable);
+        originalMessageContext.setVariable(variableName, variable);
         StatisticDataCollectionHelper.collectAggregatedParents(aggregate.getMessages(), originalMessageContext);
     }
 
@@ -788,8 +789,13 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
         this.rootElementName = rootElementName;
     }
 
-    private boolean isTargetBody() {
+    public String getVariableName() {
 
-        return "body".equalsIgnoreCase(resultTarget);
+        return variableName;
+    }
+
+    public void setVariableName(String variableName) {
+
+        this.variableName = variableName;
     }
 }

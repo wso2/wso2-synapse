@@ -24,6 +24,7 @@ import org.apache.axiom.om.OMNode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.ext.ClassMediator;
+import org.apache.synapse.mediators.v2.Utils;
 
 import java.util.Iterator;
 
@@ -54,8 +55,10 @@ public class ClassMediatorSerializer extends AbstractMediatorSerializer  {
 
         if (StringUtils.isNotBlank(mediator.getResultTarget())) {
             // If result target is set, this is V2 class mediator
-            clazz.addAttribute(fac.createOMAttribute("result-target", nullNS, mediator.getResultTarget()));
-            clazz.addAttribute(fac.createOMAttribute("method", nullNS, mediator.getMethodName()));
+            clazz.addAttribute(fac.createOMAttribute("target", nullNS, mediator.getResultTarget()));
+            if (Utils.isTargetVariable(mediator.getResultTarget())) {
+                clazz.addAttribute(fac.createOMAttribute("variable", nullNS, mediator.getVariableName()));
+            }
             clazz.addChild(InputArgumentSerializer.serializeInputArguments(mediator.getInputArguments()));
         } else {
             super.serializeProperties(clazz, mediator.getProperties());

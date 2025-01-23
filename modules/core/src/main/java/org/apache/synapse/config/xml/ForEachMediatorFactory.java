@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.builtin.CallMediator;
 import org.apache.synapse.mediators.builtin.CalloutMediator;
@@ -63,8 +64,8 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
     private static final QName ATT_COLLECTION = new QName("collection");
     private static final QName SEQUENCE_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "sequence");
     private static final QName PARALLEL_EXEC_Q = new QName("parallel-execution");
-    private static final QName RESULT_TARGET_Q = new QName("result-target");
-    private static final QName RESULT_TYPE_Q = new QName("result-type");
+    private static final QName ATT_UPDATE_ORIGINAL = new QName("update-original");
+    private static final QName ATT_TARGET_VARIABLE_NAME = new QName("target-variable");
     private static final QName ATT_COUNTER_VARIABLE = new QName("counter-variable");
     private static final QName ATT_CONTINUE_WITHOUT_AGGREGATION  = new QName("continue-without-aggregation");
 
@@ -161,20 +162,31 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
         if ("true".equalsIgnoreCase(continueWithoutAggregationAttr)) {
             mediator.setContinueWithoutAggregation(true);
         } else {
-            OMAttribute resultTargetAttr = elem.getAttribute(RESULT_TARGET_Q);
-            if (resultTargetAttr != null && StringUtils.isNotBlank(resultTargetAttr.getAttributeValue())) {
-                OMAttribute contentTypeAttr = elem.getAttribute(RESULT_TYPE_Q);
-                if (contentTypeAttr == null || StringUtils.isBlank(contentTypeAttr.getAttributeValue())) {
-                    handleException("The 'result-type' attribute is required when the 'result-target' attribute is present");
-                } else {
-                    if ("JSON".equals(contentTypeAttr.getAttributeValue())) {
+            OMAttribute updateOriginalAttr = elem.getAttribute(ATT_UPDATE_ORIGINAL);
+            if (updateOriginalAttr != null && "false".equals(updateOriginalAttr.getAttributeValue())) {
+                mediator.setUpdateOriginal(false);
+                String contentTypeAttr = elem.getAttributeValue(RESULT_TYPE_Q);
+                String variableNameAttr = elem.getAttributeValue(ATT_TARGET_VARIABLE_NAME);
+                if (StringUtils.isNotBlank(contentTypeAttr) && StringUtils.isNotBlank(variableNameAttr)) {
+                    mediator.setVariableName(variableNameAttr);
+                    if ("JSON".equals(contentTypeAttr)) {
                         mediator.setContentType(ForEachMediatorV2.JSON_TYPE);
-                    } else if ("XML".equals(contentTypeAttr.getAttributeValue())) {
-                        mediator.setContentType(ForEachMediatorV2.XML_TYPE);
+                    } else if ("XML".equals(contentTypeAttr)) {
+                        String rootElementAttr = elem.getAttributeValue(ATT_ROOT_ELEMENT);
+                        if (StringUtils.isNotBlank(rootElementAttr)) {
+                            mediator.setRootElementName(rootElementAttr);
+                            mediator.setContentType(ForEachMediatorV2.XML_TYPE);
+                        } else {
+                            String msg = "The 'result-enclosing-element' attribute is required for the configuration of a " +
+                                    "Foreach mediator when the 'result-type' is 'XML'";
+                            throw new SynapseException(msg);
+                        }
                     } else {
-                        handleException("The 'result-type' attribute should be either 'JSON' or 'XML'");
+                        handleException("The 'result-content-type' attribute should be either 'JSON' or 'XML'");
                     }
-                    mediator.setResultTarget(resultTargetAttr.getAttributeValue());
+                } else {
+                    handleException("The 'result-content-type' and 'target-variable' attributes are required when the " +
+                            "'update-original' attribute is 'false'");
                 }
             }
         }

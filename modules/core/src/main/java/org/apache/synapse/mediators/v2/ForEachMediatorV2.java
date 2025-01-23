@@ -93,7 +93,9 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
     private boolean parallelExecution = true;
     private Integer statisticReportingIndex;
     private String contentType;
-    private String resultTarget = null;
+    private boolean updateOriginal = true;
+    private String variableName;
+    private String rootElementName;
     private String counterVariableName = null;
     private boolean continueWithoutAggregation = false;
     private SynapseEnvironment synapseEnv;
@@ -410,7 +412,7 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
         MessageContext originalMessageContext = getOriginalMessageContext(aggregate);
 
         if (originalMessageContext != null) {
-            if (updateOriginalContent()) {
+            if (updateOriginal) {
                 updateOriginalPayload(originalMessageContext, aggregate);
             } else {
                 setAggregatedMessageAsVariable(originalMessageContext, aggregate);
@@ -475,13 +477,13 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
             setJSONResultToVariable((JsonArray) variable, aggregate);
         } else if (Objects.equals(contentType, XML_TYPE)) {
             log.debug("Merging aggregated XML responses to variable");
-            variable = OMAbstractFactory.getOMFactory().createOMElement(new QName(resultTarget));
+            variable = OMAbstractFactory.getOMFactory().createOMElement(new QName(rootElementName));
             setXMLResultToVariable((OMElement) variable, aggregate);
         } else {
-            handleException(aggregate, "Error merging aggregation results to variable : " + resultTarget +
+            handleException(aggregate, "Error merging aggregation results to variable : " + variableName +
                     " unknown content type : " + contentType, null, originalMessageContext);
         }
-        originalMessageContext.setVariable(resultTarget, variable);
+        originalMessageContext.setVariable(variableName, variable);
     }
 
     private void setJSONResultToVariable(JsonArray variable, ForEachAggregate aggregate) {
@@ -670,16 +672,6 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
         this.contentType = contentType;
     }
 
-    public String getResultTarget() {
-
-        return resultTarget;
-    }
-
-    public void setResultTarget(String resultTarget) {
-
-        this.resultTarget = resultTarget;
-    }
-
     public SynapsePath getCollectionExpression() {
 
         return collectionExpression;
@@ -698,11 +690,6 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
     public void setParallelExecution(boolean parallelExecution) {
 
         this.parallelExecution = parallelExecution;
-    }
-
-    private boolean updateOriginalContent() {
-
-        return resultTarget == null;
     }
 
     public String getId() {
@@ -757,5 +744,35 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
     public boolean isContinueWithoutAggregation() {
 
         return continueWithoutAggregation;
+    }
+
+    public String getVariableName() {
+
+        return variableName;
+    }
+
+    public void setVariableName(String variableName) {
+
+        this.variableName = variableName;
+    }
+
+    public boolean isUpdateOriginal() {
+
+        return updateOriginal;
+    }
+
+    public void setUpdateOriginal(boolean updateOriginal) {
+
+        this.updateOriginal = updateOriginal;
+    }
+
+    public String getRootElementName() {
+
+        return rootElementName;
+    }
+
+    public void setRootElementName(String rootElementName) {
+
+        this.rootElementName = rootElementName;
     }
 }

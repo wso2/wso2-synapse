@@ -76,7 +76,7 @@ public class ClassMediatorSerializationTest extends AbstractTestCase {
     public void testV2ClassMediator() throws Exception {
 
         String inputXml = "<class xmlns=\"http://ws.apache.org/ns/synapse\" name=\"org.apache.synapse.config.xml.TestMediator\" " +
-                "method=\"mediate\" result-target=\"body\">" +
+                "target=\"body\">" +
                 "<inputs>" +
                 "<argument name=\"num1\" expression=\"${payload.requestId}\" type=\"INTEGER\"/>" +
                 "<argument name=\"num2\" value=\"20\" type=\"INTEGER\"/>" +

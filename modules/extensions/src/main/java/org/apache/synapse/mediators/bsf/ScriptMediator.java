@@ -184,6 +184,7 @@ public class ScriptMediator extends AbstractMediator {
     private AccessControlConfig nativeObjectAccessControlConfig;
     private final List<InputArgument> inputArgumentList = new ArrayList<>();
     private String resultTarget;
+    private String variableName;
 
     /**
      * Create a script mediator for the given language and given script source.
@@ -302,7 +303,7 @@ public class ScriptMediator extends AbstractMediator {
                 // If result target is set, this is V2 script mediator
                 // Set the result to the target and returnValue to true
                 if (StringUtils.isNotBlank(resultTarget)) {
-                    returnValue = Utils.setResultTarget(synCtx, resultTarget, returnObject);
+                    returnValue = Utils.setResultTarget(synCtx, resultTarget, variableName, returnObject);
                 } else {
                     returnValue = !(returnObject != null && returnObject instanceof Boolean) || (Boolean) returnObject;
                 }
@@ -858,5 +859,15 @@ public class ScriptMediator extends AbstractMediator {
     public String getResultTarget() {
 
         return resultTarget;
+    }
+
+    public void setVariableName(String variableName) {
+
+        this.variableName = variableName;
+    }
+
+    public String getVariableName() {
+
+        return variableName;
     }
 }
