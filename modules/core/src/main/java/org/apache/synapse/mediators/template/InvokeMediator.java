@@ -310,18 +310,14 @@ public class InvokeMediator extends AbstractMediator implements
 
     private boolean storeResponseInVariableEnabled(MessageContext synCtx) {
 
-        if (pName2ExpressionMap.keySet().contains(SynapseConstants.OVERWRITE_BODY) &&
-                pName2ExpressionMap.keySet().contains(SynapseConstants.RESPONSE_VARIABLE)) {
+        if (pName2ExpressionMap.containsKey(SynapseConstants.RESPONSE_VARIABLE)) {
             Value responseVariable = pName2ExpressionMap.get(SynapseConstants.RESPONSE_VARIABLE);
-            Value overwriteBody = pName2ExpressionMap.get(SynapseConstants.OVERWRITE_BODY);
-            if (responseVariable != null && overwriteBody != null) {
+            if (responseVariable != null) {
                 String responseVariableValue = responseVariable.evaluateValue(synCtx);
-                String overwriteBodyValue = overwriteBody.evaluateValue(synCtx);
                 if (log.isDebugEnabled()) {
                     log.debug("Response variable value: " + responseVariableValue);
-                    log.debug("Overwrite body value: " + overwriteBodyValue);
                 }
-                if (responseVariableValue != null && overwriteBodyValue != null) {
+                if (responseVariableValue != null) {
                     return true;
                 } else {
                     if (log.isDebugEnabled()) {
@@ -352,8 +348,11 @@ public class InvokeMediator extends AbstractMediator implements
         String originalMessageType = (String) messageType;
         synCtx.setProperty(ORIGINAL_MESSAGE_TYPE + "_" + synCtx.getMessageID(), originalMessageType);
         synCtx.setProperty(ORIGINAL_TRANSPORT_HEADERS + "_" + synCtx.getMessageID(), transportHeadersMap);
-        boolean overwriteBody = Boolean.parseBoolean(pName2ExpressionMap.get(
-                SynapseConstants.OVERWRITE_BODY).evaluateValue(synCtx));
+		Value overwriteBodyValue = pName2ExpressionMap.get(SynapseConstants.OVERWRITE_BODY);
+		boolean overwriteBody = false;
+		if (overwriteBodyValue != null) {
+			overwriteBody = Boolean.parseBoolean(overwriteBodyValue.evaluateValue(synCtx));
+		}
         if (!overwriteBody) {
             Source source = MediatorEnrichUtil.createSourceWithBody();
             String targetPropertyName = SynapseConstants.ORIGINAL_PAYLOAD + "_" + synCtx.getMessageID();
