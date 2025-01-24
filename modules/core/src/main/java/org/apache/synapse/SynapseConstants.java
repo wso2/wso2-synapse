@@ -673,6 +673,16 @@ public final class SynapseConstants {
     public static final String RETRY_COUNT = "retryCount";
     public static final String RETRY_DELAY = "retryDelay";
 
+    // Constants for statistics details
+    public static final String STATISTICS_METADATA = "statisticsMetadata";
+    public static final String INBOUND_PORT = "inboundPort";
+    public static final String PORT = "port";
+    public static final String HOSTNAME = "host";
+    public static final String CONNECTION = "connection";
+    public static final String FILE_URI = "fileURI";
+    public static final String TOPIC = "topic";
+    public static final String QUEUE = "queue";
+
     public static final String TRACE = "trace";
     public static final String STATISTICS = "statistics";
     public static final String MISCELLANEOUS_DESCRIPTION = "miscellaneousDescription";
