@@ -145,6 +145,7 @@ public class PrimitiveExpressionsTest {
 
     @Test
     public void testMultiply() {
+        Assert.assertEquals("75.600", TestUtils.evaluateExpression("72.0 * 1.05"));
         Assert.assertEquals("80.8201", TestUtils.evaluateExpression("8.99 * 8.99"));
         Assert.assertEquals("26.25", TestUtils.evaluateExpression("25 * 1.05"));
         Assert.assertEquals("25.025", TestUtils.evaluateExpression("25 * 1.001"));

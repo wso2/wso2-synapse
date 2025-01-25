@@ -18,15 +18,25 @@
 
 package org.apache.synapse.util;
 
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import junit.framework.TestCase;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.spi.json.GsonJsonProvider;
+import com.jayway.jsonpath.spi.json.JsonProvider;
+import com.jayway.jsonpath.spi.mapper.GsonMappingProvider;
+import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.mediators.TestUtils;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
+import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Set;
 
-public class InlineExpressionUtilTest extends TestCase {
+public class InlineExpressionUtilTest {
 
     private static String payload = "{\n" +
             "  \"team\": [\n" +
@@ -75,9 +85,30 @@ public class InlineExpressionUtilTest extends TestCase {
             "    </book>\n" +
             "</catalog>\n";
 
+    @Before
+    public void init() {
+        Configuration.setDefaults(new Configuration.Defaults() {
+            private final JsonProvider jsonProvider = new GsonJsonProvider(new GsonBuilder().serializeNulls().create());
+            private final MappingProvider mappingProvider = new GsonMappingProvider();
+
+            public JsonProvider jsonProvider() {
+                return jsonProvider;
+            }
+
+            public MappingProvider mappingProvider() {
+                return mappingProvider;
+            }
+
+            public Set<Option> options() {
+                return EnumSet.noneOf(Option.class);
+            }
+        });
+    }
+
     /**
      * Test inline synapse expression template processing with a JSON object.
      */
+    @Test
     public void testsInLineSynapseExpressionTemplate1() throws Exception {
 
         String expected = "Processing payload : {\"name\":\"Alice\",\"role\":\"Developer\",\"experience\":3}";
@@ -95,6 +126,7 @@ public class InlineExpressionUtilTest extends TestCase {
     /**
      * Test inline synapse expression template processing with a JSON primitive.
      */
+    @Test
     public void testsInLineSynapseExpressionTemplate2() throws Exception {
 
         String expected = "Processing user : Alice";
@@ -112,6 +144,7 @@ public class InlineExpressionUtilTest extends TestCase {
     /**
      * Test inline synapse expression template processing with non-existing expression.
      */
+    @Test
     public void testsInLineSynapseExpressionTemplate3() throws Exception {
 
         String expected = "Processing user : ";
@@ -129,6 +162,7 @@ public class InlineExpressionUtilTest extends TestCase {
     /**
      * Test inline synapse expression template processing with variables.
      */
+    @Test
     public void testsInLineSynapseExpressionTemplate4() throws Exception {
 
         String expected = "Processing user with age : 3 lives at {\"no\":110,\"street\":\"Palm Grove\",\"city\":\"Colombo\"}";
@@ -152,6 +186,7 @@ public class InlineExpressionUtilTest extends TestCase {
     /**
      * Test inline synapse expression template processing with multiple expressions.
      */
+    @Test
     public void testsInLineSynapseExpressionTemplate5() throws Exception {
 
         String expected = "Processing user : Alice, role : Developer, experience : 3 years";
@@ -175,6 +210,7 @@ public class InlineExpressionUtilTest extends TestCase {
     /**
      * Test inline synapse expression template processing with multiple expressions.
      */
+    @Test
     public void testsInLineSynapseExpressionTemplate6() throws Exception {
 
         String expected = "Processing using endpoint : https://test.wso2.com/, method : get, role : Product Manager";
@@ -194,6 +230,7 @@ public class InlineExpressionUtilTest extends TestCase {
     /**
      * Test inline synapse expression template processing with multiple expressions.
      */
+    @Test
     public void testsInLineSynapseExpressionTemplate7() throws Exception {
 
         String expected = "Using endpoint : https://test.wso2.com/ to process book : <book>\n" +
@@ -219,6 +256,7 @@ public class InlineExpressionUtilTest extends TestCase {
     /**
      * Test inline synapse expression template processing with multiple expressions.
      */
+    @Test
     public void testsInLineSynapseExpressionTemplate8() throws Exception {
 
         String expected = "Using endpoint : https://test.wso2.com/integration to process sum = 15 and status = true";

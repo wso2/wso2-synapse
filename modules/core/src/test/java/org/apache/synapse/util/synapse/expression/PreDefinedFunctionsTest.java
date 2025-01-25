@@ -174,19 +174,19 @@ public class PreDefinedFunctionsTest {
 
     @Test
     public void testFloor() {
-        Assert.assertEquals("-6.0", TestUtils.evaluateExpression("floor(-5.4)"));
-        Assert.assertEquals("5.0", TestUtils.evaluateExpression("floor(5.9)"));
-        Assert.assertEquals("-3.0", TestUtils.evaluateExpressionWithPayloadAndVariables("floor(vars.num3)", 0, 1));
-        Assert.assertEquals("2.0", TestUtils.evaluateExpressionWithPayloadAndVariables("floor(-1 * vars.num3)", 0, 1));
+        Assert.assertEquals("-6", TestUtils.evaluateExpression("floor(-5.4)"));
+        Assert.assertEquals("5", TestUtils.evaluateExpression("floor(5.9)"));
+        Assert.assertEquals("-3", TestUtils.evaluateExpressionWithPayloadAndVariables("floor(vars.num3)", 0, 1));
+        Assert.assertEquals("2", TestUtils.evaluateExpressionWithPayloadAndVariables("floor(-1 * vars.num3)", 0, 1));
         Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload("floor(payload.cars)", 1));
     }
 
     @Test
     public void testCeil() {
-        Assert.assertEquals("-5.0", TestUtils.evaluateExpression("ceil(-5.4)"));
-        Assert.assertEquals("6.0", TestUtils.evaluateExpression("ceil(5.9)"));
-        Assert.assertEquals("-2.0", TestUtils.evaluateExpressionWithPayloadAndVariables("ceil(vars.num3)", 0, 1));
-        Assert.assertEquals("3.0", TestUtils.evaluateExpressionWithPayloadAndVariables("ceil(-1 * vars.num3)", 0, 1));
+        Assert.assertEquals("-5", TestUtils.evaluateExpression("ceil(-5.4)"));
+        Assert.assertEquals("6", TestUtils.evaluateExpression("ceil(5.9)"));
+        Assert.assertEquals("-2", TestUtils.evaluateExpressionWithPayloadAndVariables("ceil(vars.num3)", 0, 1));
+        Assert.assertEquals("3", TestUtils.evaluateExpressionWithPayloadAndVariables("ceil(-1 * vars.num3)", 0, 1));
         Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload("ceil(payload.cars)", 1));
     }
 
@@ -231,11 +231,12 @@ public class PreDefinedFunctionsTest {
 
     @Test
     public void testUrlEncode() {
-        Assert.assertEquals("Hello+World", TestUtils.evaluateExpression("urlEncode(\"Hello World\")"));
-        Assert.assertEquals("+Hello+World+", TestUtils.evaluateExpressionWithPayloadAndVariables(
+        Assert.assertEquals("Hello%20World", TestUtils.evaluateExpression("urlEncode(\"Hello World\")"));
+        Assert.assertEquals("%20Hello%20World%20", TestUtils.evaluateExpressionWithPayloadAndVariables(
                 "urlEncode(payload[\"string\"])", 1, 0));
         Assert.assertEquals("", TestUtils.evaluateExpression("urlEncode(34)"));
         Assert.assertEquals("", TestUtils.evaluateExpression("urlEncode(\"Hello\",\"UTF-99\")"));
+        Assert.assertEquals("%20%2A%7E", TestUtils.evaluateExpression("urlEncode(\" *~\")"));
     }
 
     @Test
