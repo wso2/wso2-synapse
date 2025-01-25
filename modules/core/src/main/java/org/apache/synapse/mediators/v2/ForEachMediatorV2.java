@@ -95,6 +95,7 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
     private String contentType;
     private String resultTarget = null;
     private String counterVariableName = null;
+    private boolean continueWithoutAggregation = false;
     private SynapseEnvironment synapseEnv;
 
     public ForEachMediatorV2() {
@@ -118,9 +119,11 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
         }
 
         try {
-            // Clone the original MessageContext and save it to continue the flow
-            MessageContext clonedMessageContext = MessageHelper.cloneMessageContext(synCtx);
-            synCtx.setProperty(EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id, new SharedDataHolder(clonedMessageContext));
+            if (!continueWithoutAggregation) {
+                // Clone the original MessageContext and save it to continue the flow after aggregation
+                MessageContext clonedMessageContext = MessageHelper.cloneMessageContext(synCtx);
+                synCtx.setProperty(EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id, new SharedDataHolder(clonedMessageContext));
+            }
 
             Object collection = collectionExpression.objectValueOf(synCtx);
 
@@ -136,7 +139,7 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
                     MessageContext iteratedMsgCtx = getIteratedMessage(synCtx, msgNumber++, msgCount, item);
                     ContinuationStackManager.addReliantContinuationState(iteratedMsgCtx, 0, getMediatorPosition());
                     boolean result = target.mediate(iteratedMsgCtx);
-                    if (!parallelExecution && result) {
+                    if (!parallelExecution && result && !continueWithoutAggregation) {
                         aggregationResult = aggregateMessages(iteratedMsgCtx, synLog);
                     }
                 }
@@ -152,7 +155,7 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
                     MessageContext iteratedMsgCtx = getIteratedMessage(synCtx, msgNumber++, msgCount, item);
                     ContinuationStackManager.addReliantContinuationState(iteratedMsgCtx, 0, getMediatorPosition());
                     boolean result = target.mediate(iteratedMsgCtx);
-                    if (!parallelExecution && result) {
+                    if (!parallelExecution && result && !continueWithoutAggregation) {
                         aggregationResult = aggregateMessages(iteratedMsgCtx, synLog);
                     }
                 }
@@ -162,14 +165,17 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
         } catch (AxisFault e) {
             handleException("Error executing Foreach mediator", e, synCtx);
         }
-
-        OperationContext opCtx
-                = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getOperationContext();
-        if (opCtx != null) {
-            opCtx.setProperty(Constants.RESPONSE_WRITTEN, "SKIP");
+        if (continueWithoutAggregation) {
+            return true;
+        } else {
+            OperationContext opCtx
+                    = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getOperationContext();
+            if (opCtx != null) {
+                opCtx.setProperty(Constants.RESPONSE_WRITTEN, "SKIP");
+            }
+            synCtx.setProperty(StatisticsConstants.CONTINUE_STATISTICS_FLOW, true);
+            return aggregationResult;
         }
-        synCtx.setProperty(StatisticsConstants.CONTINUE_STATISTICS_FLOW, true);
-        return aggregationResult;
     }
 
     private MessageContext getIteratedMessage(MessageContext synCtx, int msgNumber, int msgCount, Object node) throws AxisFault {
@@ -273,7 +279,10 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
                 ((Mediator) mediator).reportCloseStatistics(synCtx, null);
             }
         }
-
+        // If this a continue without aggregation scenario, return false to end the mediation
+        if (continueWithoutAggregation) {
+            return false;
+        }
         if (result) {
             return aggregateMessages(synCtx, synLog);
         }
@@ -738,5 +747,15 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
     public void setCounterVariable(String counterVariableName) {
 
         this.counterVariableName = counterVariableName;
+    }
+
+    public void setContinueWithoutAggregation(boolean continueWithoutAggregation) {
+
+        this.continueWithoutAggregation = continueWithoutAggregation;
+    }
+
+    public boolean isContinueWithoutAggregation() {
+
+        return continueWithoutAggregation;
     }
 }

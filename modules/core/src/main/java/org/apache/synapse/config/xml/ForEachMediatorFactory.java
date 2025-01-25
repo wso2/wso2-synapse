@@ -66,6 +66,7 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
     private static final QName RESULT_TARGET_Q = new QName("result-target");
     private static final QName RESULT_TYPE_Q = new QName("result-type");
     private static final QName ATT_COUNTER_VARIABLE = new QName("counter-variable");
+    private static final QName ATT_CONTINUE_WITHOUT_AGGREGATION  = new QName("continue-without-aggregation");
 
     public QName getTagQName() {
         return FOREACH_Q;
@@ -155,20 +156,26 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
         }
         mediator.setParallelExecution(asynchronousExe);
 
-        OMAttribute resultTargetAttr = elem.getAttribute(RESULT_TARGET_Q);
-        if (resultTargetAttr != null && StringUtils.isNotBlank(resultTargetAttr.getAttributeValue())) {
-            OMAttribute contentTypeAttr = elem.getAttribute(RESULT_TYPE_Q);
-            if (contentTypeAttr == null || StringUtils.isBlank(contentTypeAttr.getAttributeValue())) {
-                handleException("The 'result-type' attribute is required when the 'result-target' attribute is present");
-            } else {
-                if ("JSON".equals(contentTypeAttr.getAttributeValue())) {
-                    mediator.setContentType(ForEachMediatorV2.JSON_TYPE);
-                } else if ("XML".equals(contentTypeAttr.getAttributeValue())) {
-                    mediator.setContentType(ForEachMediatorV2.XML_TYPE);
+        String continueWithoutAggregationAttr = elem.getAttributeValue(ATT_CONTINUE_WITHOUT_AGGREGATION);
+        // If the continue-without-aggregation attribute is set to true, the mediator will not wait for the aggregation
+        if ("true".equalsIgnoreCase(continueWithoutAggregationAttr)) {
+            mediator.setContinueWithoutAggregation(true);
+        } else {
+            OMAttribute resultTargetAttr = elem.getAttribute(RESULT_TARGET_Q);
+            if (resultTargetAttr != null && StringUtils.isNotBlank(resultTargetAttr.getAttributeValue())) {
+                OMAttribute contentTypeAttr = elem.getAttribute(RESULT_TYPE_Q);
+                if (contentTypeAttr == null || StringUtils.isBlank(contentTypeAttr.getAttributeValue())) {
+                    handleException("The 'result-type' attribute is required when the 'result-target' attribute is present");
                 } else {
-                    handleException("The 'result-type' attribute should be either 'JSON' or 'XML'");
+                    if ("JSON".equals(contentTypeAttr.getAttributeValue())) {
+                        mediator.setContentType(ForEachMediatorV2.JSON_TYPE);
+                    } else if ("XML".equals(contentTypeAttr.getAttributeValue())) {
+                        mediator.setContentType(ForEachMediatorV2.XML_TYPE);
+                    } else {
+                        handleException("The 'result-type' attribute should be either 'JSON' or 'XML'");
+                    }
+                    mediator.setResultTarget(resultTargetAttr.getAttributeValue());
                 }
-                mediator.setResultTarget(resultTargetAttr.getAttributeValue());
             }
         }
 
