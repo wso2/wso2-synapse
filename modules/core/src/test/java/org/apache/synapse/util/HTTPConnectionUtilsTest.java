@@ -396,8 +396,8 @@ public class HTTPConnectionUtilsTest {
                         "    <retryCount>3</retryCount>\n" +
                         "    <retryDelay>20</retryDelay>\n" +
                         "    <timeoutAction>Discard</timeoutAction>\n" +
-                        "    <basicCredentialsUsername>admin</basicCredentialsUsername>\n" +
-                        "    <basicCredentialsPassword>admin</basicCredentialsPassword>\n" +
+                        "    <username>admin</username>\n" +
+                        "    <password>admin</password>\n" +
                         "</http.init>";
         String expectedEndpointOMElementString =
                 "<endpoint xmlns=\"http://ws.apache.org/ns/synapse\" name=\"library_INTERNAL_ENDPOINT_REFERENCE\">" +
@@ -455,10 +455,10 @@ public class HTTPConnectionUtilsTest {
                         "    <retryCount>3</retryCount>\n" +
                         "    <retryDelay>20</retryDelay>\n" +
                         "    <timeoutAction>Discard</timeoutAction>\n" +
-                        "    <oauthAuthorizationClientId>admin</oauthAuthorizationClientId>\n" +
-                        "    <oauthAuthorizationClientSecret>admin</oauthAuthorizationClientSecret>\n" +
-                        "    <oauthAuthorizationTokenUrl>admin</oauthAuthorizationTokenUrl>\n" +
-                        "    <oauthAuthorizationRefreshToken>admin</oauthAuthorizationRefreshToken>\n" +
+                        "    <clientId>admin</clientId>\n" +
+                        "    <clientSecret>admin</clientSecret>\n" +
+                        "    <tokenUrl>admin</tokenUrl>\n" +
+                        "    <refreshToken>admin</refreshToken>\n" +
                         "</http.init>";
         String expectedEndpointOMElementString =
                 "<endpoint xmlns=\"http://ws.apache.org/ns/synapse\" name=\"library_INTERNAL_ENDPOINT_REFERENCE\">" +
@@ -522,11 +522,11 @@ public class HTTPConnectionUtilsTest {
                         "    <retryCount>3</retryCount>\n" +
                         "    <retryDelay>20</retryDelay>\n" +
                         "    <timeoutAction>Discard</timeoutAction>\n" +
-                        "    <oauthAuthorizationClientId>admin</oauthAuthorizationClientId>\n" +
-                        "    <oauthAuthorizationClientSecret>admin</oauthAuthorizationClientSecret>\n" +
-                        "    <oauthAuthorizationTokenUrl>admin</oauthAuthorizationTokenUrl>\n" +
-                        "    <oauthAuthorizationRefreshToken>admin</oauthAuthorizationRefreshToken>\n" +
-                        "    <oauthAuthorizationAdditionalProperties>name1:value1, name2:value2</oauthAuthorizationAdditionalProperties>\n" +
+                        "    <clientId>admin</clientId>\n" +
+                        "    <clientSecret>admin</clientSecret>\n" +
+                        "    <tokenUrl>admin</tokenUrl>\n" +
+                        "    <refreshToken>admin</refreshToken>\n" +
+                        "    <additionalProperties>name1:value1, name2:value2</additionalProperties>\n" +
                         "</http.init>";
         String expectedEndpointOMElementString =
                 "<endpoint xmlns=\"http://ws.apache.org/ns/synapse\" name=\"library_INTERNAL_ENDPOINT_REFERENCE\">" +
@@ -595,10 +595,10 @@ public class HTTPConnectionUtilsTest {
                         "    <retryCount>3</retryCount>\n" +
                         "    <retryDelay>20</retryDelay>\n" +
                         "    <timeoutAction>Discard</timeoutAction>\n" +
-                        "    <oauthAuthorizationClientId>{$ctx:admin}</oauthAuthorizationClientId>\n" +
-                        "    <oauthAuthorizationClientSecret>{$ctx:admin}</oauthAuthorizationClientSecret>\n" +
-                        "    <oauthAuthorizationTokenUrl>{$ctx:admin}</oauthAuthorizationTokenUrl>\n" +
-                        "    <oauthAuthorizationRefreshToken>{$ctx:admin}</oauthAuthorizationRefreshToken>\n" +
+                        "    <clientId>{$ctx:admin}</clientId>\n" +
+                        "    <clientSecret>{$ctx:admin}</clientSecret>\n" +
+                        "    <tokenUrl>{$ctx:admin}</tokenUrl>\n" +
+                        "    <refreshToken>{$ctx:admin}</refreshToken>\n" +
                         "</http.init>";
         String expectedEndpointOMElementString =
                 "<endpoint xmlns=\"http://ws.apache.org/ns/synapse\" name=\"library_INTERNAL_ENDPOINT_REFERENCE\">" +
@@ -662,9 +662,9 @@ public class HTTPConnectionUtilsTest {
                         "    <retryCount>3</retryCount>\n" +
                         "    <retryDelay>20</retryDelay>\n" +
                         "    <timeoutAction>Discard</timeoutAction>\n" +
-                        "    <oauthClientClientId>admin</oauthClientClientId>\n" +
-                        "    <oauthClientClientSecret>admin</oauthClientClientSecret>\n" +
-                        "    <oauthClientTokenUrl>admin</oauthClientTokenUrl>\n" +
+                        "    <clientId>admin</clientId>\n" +
+                        "    <clientSecret>admin</clientSecret>\n" +
+                        "    <tokenUrl>admin</tokenUrl>\n" +
                         "</http.init>";
         String expectedEndpointOMElementString =
                 "<endpoint xmlns=\"http://ws.apache.org/ns/synapse\" name=\"library_INTERNAL_ENDPOINT_REFERENCE\">" +
@@ -727,11 +727,11 @@ public class HTTPConnectionUtilsTest {
                         "    <retryCount>3</retryCount>\n" +
                         "    <retryDelay>20</retryDelay>\n" +
                         "    <timeoutAction>Discard</timeoutAction>\n" +
-                        "    <oauthPasswordClientId>admin</oauthPasswordClientId>\n" +
-                        "    <oauthPasswordClientSecret>admin</oauthPasswordClientSecret>\n" +
-                        "    <oauthPasswordTokenUrl>admin</oauthPasswordTokenUrl>\n" +
-                        "    <oauthPasswordUsername>admin</oauthPasswordUsername>\n" +
-                        "    <oauthPasswordPassword>admin</oauthPasswordPassword>\n" +
+                        "    <clientId>admin</clientId>\n" +
+                        "    <clientSecret>admin</clientSecret>\n" +
+                        "    <tokenUrl>admin</tokenUrl>\n" +
+                        "    <username>admin</username>\n" +
+                        "    <password>admin</password>\n" +
                         "</http.init>";
         String expectedEndpointOMElementString =
                 "<endpoint xmlns=\"http://ws.apache.org/ns/synapse\" name=\"library_INTERNAL_ENDPOINT_REFERENCE\">" +

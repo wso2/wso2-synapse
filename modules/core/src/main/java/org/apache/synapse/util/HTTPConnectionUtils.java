@@ -652,12 +652,10 @@ public class HTTPConnectionUtils {
                 case SynapseConstants.AUTH_TYPE:
                     connectionElementsMap.put(SynapseConstants.AUTH_TYPE, connectionElement.getText());
                     break;
-                case SynapseConstants.BASIC_CREDENTIALS_USERNAME:
-                case SynapseConstants.OAUTH_PASSWORD_GRANT_USERNAME:
+                case SynapseConstants.USERNAME:
                     connectionElementsMap.put(SynapseConstants.USERNAME, connectionElement.getText());
                     break;
-                case SynapseConstants.BASIC_CREDENTIALS_PASSWORD:
-                case SynapseConstants.OAUTH_PASSWORD_GRANT_PASSWORD:
+                case SynapseConstants.PASSWORD:
                     connectionElementsMap.put(SynapseConstants.PASSWORD, connectionElement.getText());
                     break;
                 case SynapseConstants.OAUTH_AUTHORIZATION_MODE:
@@ -666,27 +664,19 @@ public class HTTPConnectionUtils {
                 case SynapseConstants.OAUTH_GRANT_TYPE:
                     connectionElementsMap.put(SynapseConstants.OAUTH_GRANT_TYPE, connectionElement.getText());
                     break;
-                case SynapseConstants.OAUTH_AUTHORIZATION_GRANT_CLIENT_ID:
-                case SynapseConstants.OAUTH_CLIENT_CREDENTIALS_GRANT_CLIENT_ID:
-                case SynapseConstants.OAUTH_PASSWORD_GRANT_CLIENT_ID:
+                case SynapseConstants.CLIENT_ID:
                     connectionElementsMap.put(SynapseConstants.CLIENT_ID, connectionElement.getText());
                     break;
-                case SynapseConstants.OAUTH_AUTHORIZATION_GRANT_CLIENT_SECRET:
-                case SynapseConstants.OAUTH_CLIENT_CREDENTIALS_GRANT_CLIENT_SECRET:
-                case SynapseConstants.OAUTH_PASSWORD_GRANT_CLIENT_SECRET:
+                case SynapseConstants.CLIENT_SECRET:
                     connectionElementsMap.put(SynapseConstants.CLIENT_SECRET, connectionElement.getText());
                     break;
-                case SynapseConstants.OAUTH_AUTHORIZATION_GRANT_TOKEN_URL:
-                case SynapseConstants.OAUTH_CLIENT_CREDENTIALS_GRANT_TOKEN_URL:
-                case SynapseConstants.OAUTH_PASSWORD_GRANT_TOKEN_URL:
+                case SynapseConstants.TOKEN_URL:
                     connectionElementsMap.put(SynapseConstants.TOKEN_URL, connectionElement.getText());
                     break;
-                case SynapseConstants.OAUTH_AUTHORIZATION_GRANT_REFRESH_TOKEN:
+                case SynapseConstants.REFRESH_TOKEN:
                     connectionElementsMap.put(SynapseConstants.REFRESH_TOKEN, connectionElement.getText());
                     break;
-                case SynapseConstants.OAUTH_AUTHORIZATION_GRANT_ADDITIONAL_PROPERTIES:
-                case SynapseConstants.OAUTH_CLIENT_CREDENTIALS_GRANT_ADDITIONAL_PROPERTIES:
-                case SynapseConstants.OAUTH_PASSWORD_GRANT_ADDITIONAL_PROPERTIES:
+                case SynapseConstants.ADDITIONAL_PROPERTIES:
                     connectionElementsMap.put(SynapseConstants.REQUEST_PARAMETERS, connectionElement.getText());
                     break;
                 case SynapseConstants.TIMEOUT_DURATION:
