@@ -17,6 +17,13 @@
  */
 package org.apache.synapse.util.synapse.expression;
 
+import com.google.gson.GsonBuilder;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.spi.json.GsonJsonProvider;
+import com.jayway.jsonpath.spi.json.JsonProvider;
+import com.jayway.jsonpath.spi.mapper.GsonMappingProvider;
+import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.TestUtils;
@@ -25,8 +32,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Test class for header and property access.
@@ -37,6 +46,22 @@ public class HeaderAndPropertyAccessTest {
 
     @Before
     public void setUp() throws Exception {
+        Configuration.setDefaults(new Configuration.Defaults() {
+            private final JsonProvider jsonProvider = new GsonJsonProvider(new GsonBuilder().serializeNulls().create());
+            private final MappingProvider mappingProvider = new GsonMappingProvider();
+
+            public JsonProvider jsonProvider() {
+                return jsonProvider;
+            }
+
+            public MappingProvider mappingProvider() {
+                return mappingProvider;
+            }
+
+            public Set<Option> options() {
+                return EnumSet.noneOf(Option.class);
+            }
+        });
         synCtx = TestUtils.getAxis2MessageContext("<test/>", null);
         Map<String, String> headersMap = new HashMap<>();
         headersMap.put("test", "Hello World");

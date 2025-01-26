@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,7 +53,6 @@ import java.util.regex.Pattern;
  */
 public class PayloadAccessNode implements ExpressionNode {
 
-    private String expression;
     private final String unProcessedExpression;
     private final Map<String, ExpressionNode> arguments;
 
@@ -69,42 +69,39 @@ public class PayloadAccessNode implements ExpressionNode {
 
     public PayloadAccessNode(String expression, Map<String, ExpressionNode> arguments, Type type,
                              ExpressionNode predefinedFunctionNode) {
-        this.expression = expression;
         this.unProcessedExpression = expression;
         this.arguments = arguments;
         this.type = type;
         this.predefinedFunctionNode = predefinedFunctionNode;
-        Configuration.setDefaults(new Configuration.Defaults() {
-            private final JsonProvider jsonProvider = new GsonJsonProvider(new GsonBuilder().serializeNulls().create());
-            private final MappingProvider mappingProvider = new GsonMappingProvider();
 
-            public JsonProvider jsonProvider() {
-                return jsonProvider;
-            }
-
-            public MappingProvider mappingProvider() {
-                return mappingProvider;
-            }
-
-            public Set<Option> options() {
-                return EnumSet.noneOf(Option.class);
-            }
-        });
     }
 
     @Override
     public ExpressionResult evaluate(EvaluationContext context, boolean isObjectValue) throws EvaluationException {
         // Take a copy of the expression to avoid modifying the original expression
-        expression = unProcessedExpression;
+        String expression = unProcessedExpression;
+
         if (expression.startsWith(ExpressionConstants.PAYLOAD)) {
             expression = ExpressionConstants.PAYLOAD_$ + expression.substring(ExpressionConstants.PAYLOAD.length());
         }
+        AtomicReference<String> expressionRef = new AtomicReference<>(expression);
 
         for (Map.Entry<String, ExpressionNode> entry : arguments.entrySet()) {
             Optional.ofNullable(entry.getValue())
                     .map(value -> value.evaluate(context, isObjectValue))
-                    .ifPresent(result -> processResult(entry, result));
+                    .ifPresent(result -> {
+                        String regex = ExpressionUtils.escapeSpecialCharacters(entry.getKey());
+                        String resultString = result.asString();
+                        if (result.isString() && !entry.getValue().getClass().equals(FilterExpressionNode.class)) {
+                            resultString = "\"" + resultString + "\"";
+                        }
+                        if (entry.getValue().getClass().equals(ArrayIndexNode.class)) {
+                            resultString = resultString.replace("\"", "");
+                        }
+                        expressionRef.set(expressionRef.get().replaceFirst(regex, resultString));
+                    });
         }
+        expression = expressionRef.get();
 
         Object result;
         switch (type) {
@@ -139,24 +136,24 @@ public class PayloadAccessNode implements ExpressionNode {
                     }
                     String[] keyAndExpression = ExpressionUtils.extractVariableAndJsonPath(expressionToEvaluate);
                     String key = keyAndExpression[0];
-                    String expression = keyAndExpression[1];
-                    if (StringUtils.isNotEmpty(expression)) {
-                        expression = expression.startsWith(".") ? "$" + expression : "$." + expression;
+                    String newExpression = keyAndExpression[1];
+                    if (StringUtils.isNotEmpty(newExpression)) {
+                        newExpression = newExpression.startsWith(".") ? "$" + newExpression : "$." + newExpression;
                     }
                     Object keyValue = ((Map) variable).get(key);
                     if (keyValue == null) {
                         throw new EvaluationException("Could not find key: " + key + " in the variable: " + variable);
-                    } else if (StringUtils.isEmpty(expression)) {
+                    } else if (StringUtils.isEmpty(newExpression)) {
                         result = keyValue;
                     } else if (keyValue instanceof JsonElement) {
                         try {
-                            result = JsonPath.parse(keyValue.toString()).read(expression);
+                            result = JsonPath.parse(keyValue.toString()).read(newExpression);
                         } catch (PathNotFoundException e) {
                             // convert jsonPath error to native one
                             throw new EvaluationException(e.getMessage());
                         }
                     } else {
-                        throw new EvaluationException("Could not evaluate JSONPath expression: " + expression
+                        throw new EvaluationException("Could not evaluate JSONPath expression: " + newExpression
                                 + " on non-JSON object");
                     }
                 } else {
@@ -231,17 +228,5 @@ public class PayloadAccessNode implements ExpressionNode {
             return new ExpressionResult((OMNode) result);
         }
         return null;
-    }
-
-    private void processResult(Map.Entry<String, ExpressionNode> entry, ExpressionResult result) {
-        String regex = ExpressionUtils.escapeSpecialCharacters(entry.getKey());
-        String resultString = result.asString();
-        if (result.isString() && !entry.getValue().getClass().equals(FilterExpressionNode.class)) {
-            resultString = "\"" + resultString + "\"";
-        }
-        if (entry.getValue().getClass().equals(ArrayIndexNode.class)) {
-            resultString = resultString.replace("\"", "");
-        }
-        expression = expression.replaceFirst(regex, resultString);
     }
 }

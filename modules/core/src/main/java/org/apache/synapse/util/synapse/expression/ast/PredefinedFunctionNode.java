@@ -27,6 +27,8 @@ import org.apache.synapse.util.synapse.expression.utils.ExpressionUtils;
 import org.jaxen.JaxenException;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.UnsupportedCharsetException;
@@ -249,7 +251,7 @@ public class PredefinedFunctionNode implements ExpressionNode {
         if (result.isInteger()) {
             return new ExpressionResult(Math.abs(result.asInt()));
         } else if (result.isDouble()) {
-            return new ExpressionResult(Math.abs(result.asDouble()));
+            return new ExpressionResult(result.asDouble().abs());
         }
         throw new EvaluationException("Invalid argument provided for abs function");
     }
@@ -258,7 +260,7 @@ public class PredefinedFunctionNode implements ExpressionNode {
         if (result.isInteger()) {
             return new ExpressionResult(result.asInt());
         } else if (result.isDouble()) {
-            return new ExpressionResult(Math.ceil(result.asDouble()));
+            return new ExpressionResult(result.asDouble().setScale(0, RoundingMode.CEILING));
         }
         throw new EvaluationException("Invalid argument provided for ceil function");
     }
@@ -267,14 +269,14 @@ public class PredefinedFunctionNode implements ExpressionNode {
         if (result.isInteger()) {
             return new ExpressionResult(result.asInt());
         } else if (result.isDouble()) {
-            return new ExpressionResult(Math.floor(result.asDouble()));
+            return new ExpressionResult(result.asDouble().setScale(0, RoundingMode.FLOOR));
         }
         throw new EvaluationException("Invalid argument provided for floor function");
     }
 
     private ExpressionResult handleRoundFunction(ExpressionResult result) {
         if (result.isDouble()) {
-            return new ExpressionResult((int) Math.round(result.asDouble()));
+            return new ExpressionResult((int) Math.round(result.asDouble().doubleValue()));
         } else if (result.isInteger()) {
             return new ExpressionResult(result.asInt());
         }
@@ -283,7 +285,7 @@ public class PredefinedFunctionNode implements ExpressionNode {
 
     private ExpressionResult handleRoundFunction(ExpressionResult result, ExpressionResult decimalPlaces) {
         if (result.isDouble() && decimalPlaces.isInteger() && decimalPlaces.asInt() > 0) {
-            return new ExpressionResult(ExpressionUtils.round(result.asDouble(), decimalPlaces.asInt()));
+            return new ExpressionResult(ExpressionUtils.round(result.asDouble().doubleValue(), decimalPlaces.asInt()));
         } else if (result.isInteger() || result.isLong()) {
             return result;
         }
@@ -294,7 +296,7 @@ public class PredefinedFunctionNode implements ExpressionNode {
         if (result.isInteger()) {
             return new ExpressionResult(Math.sqrt(result.asInt()));
         } else if (result.isDouble()) {
-            return new ExpressionResult(Math.sqrt(result.asDouble()));
+            return new ExpressionResult(Math.sqrt(result.asDouble().doubleValue()));
         }
         throw new EvaluationException("Invalid argument provided for sqrt function");
     }
@@ -316,7 +318,8 @@ public class PredefinedFunctionNode implements ExpressionNode {
     private ExpressionResult handleUrlEncodeFunction(ExpressionResult result) {
         if (result.isString()) {
             try {
-                return new ExpressionResult(URLEncoder.encode(result.asString(), "UTF-8"));
+                return new ExpressionResult(URLEncoder.encode(result.asString(), "UTF-8")
+                        .replace("+", "%20").replace("*", "%2A"));
             } catch (UnsupportedEncodingException e) {
                 throw new EvaluationException("unsupported encoding provided for urlEncode function");
             }
@@ -501,7 +504,7 @@ public class PredefinedFunctionNode implements ExpressionNode {
 
     private ExpressionResult handlePowFunction(ExpressionResult source, ExpressionResult argument1) {
         if ((source.isDouble() || source.isInteger()) && (argument1.isDouble() || argument1.isInteger())) {
-            return new ExpressionResult(Math.pow(source.asDouble(), argument1.asDouble()));
+            return new ExpressionResult(Math.pow(source.asDouble().doubleValue(), argument1.asDouble().doubleValue()));
         }
         throw new EvaluationException("Invalid argument provided for pow function. source: " + source.asString()
                 + ", argument1: " + argument1.asString());
@@ -526,7 +529,8 @@ public class PredefinedFunctionNode implements ExpressionNode {
     private ExpressionResult handleUrlEncodeFunction(ExpressionResult source, ExpressionResult argument1) {
         if (source.isString() && argument1.isString()) {
             try {
-                return new ExpressionResult(URLEncoder.encode(source.asString(), ExpressionUtils.getCharset(argument1.asString())));
+                return new ExpressionResult(URLEncoder.encode(source.asString(), ExpressionUtils.getCharset(
+                        argument1.asString())).replace("+", "%20").replace("*", "%2A"));
             } catch (UnsupportedCharsetException e) {
                 throw new EvaluationException("Invalid charset provided for urlEncode function. Charset: "
                         + argument1.asString());

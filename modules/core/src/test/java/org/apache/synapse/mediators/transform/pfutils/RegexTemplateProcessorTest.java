@@ -18,10 +18,18 @@
 
 package org.apache.synapse.mediators.transform.pfutils;
 
+import com.google.gson.GsonBuilder;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.spi.json.GsonJsonProvider;
+import com.jayway.jsonpath.spi.json.JsonProvider;
+import com.jayway.jsonpath.spi.mapper.GsonMappingProvider;
+import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import junit.framework.TestCase;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.mediators.TestUtils;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
@@ -29,6 +37,8 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * Unit tests for Payload factory Regex Template Processor with inline synapse expressions
@@ -212,7 +222,22 @@ public class RegexTemplateProcessorTest extends TestCase {
 
         @Test
         public void testPrepareReplacementValueWithEscapeXmlChars() {
+            Configuration.setDefaults(new Configuration.Defaults() {
+                private final JsonProvider jsonProvider = new GsonJsonProvider(new GsonBuilder().serializeNulls().create());
+                private final MappingProvider mappingProvider = new GsonMappingProvider();
 
+                public JsonProvider jsonProvider() {
+                    return jsonProvider;
+                }
+
+                public MappingProvider mappingProvider() {
+                    return mappingProvider;
+                }
+
+                public Set<Option> options() {
+                    return EnumSet.noneOf(Option.class);
+                }
+            });
             TemplateProcessor templateProcessor = new RegexTemplateProcessor();
             String result = templateProcessor.processTemplate(template, mediaType, messageContext);
             Assert.assertEquals(expectedOutput, result);

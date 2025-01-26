@@ -28,7 +28,10 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.internal.LazilyParsedNumber;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
+import org.apache.axis2.databinding.types.xsd._double;
 import org.apache.synapse.util.synapse.expression.exception.EvaluationException;
+
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -70,7 +73,7 @@ public class ExpressionResult {
         this.value = value;
     }
 
-    public ExpressionResult(double value) {
+    public ExpressionResult(BigDecimal value) {
         this.value = value;
     }
 
@@ -106,7 +109,9 @@ public class ExpressionResult {
 
     // Method to get value as int
     public int asInt() {
-        if (value instanceof Number) {
+        if (value instanceof Integer) {
+            return (Integer) value;
+        } else if (value instanceof Number) {
             return ((Number) value).intValue();
         } else if (value instanceof JsonPrimitive && ((JsonPrimitive) value).isNumber()) {
             return ((JsonPrimitive) value).getAsInt();
@@ -115,11 +120,13 @@ public class ExpressionResult {
     }
 
     // Method to get value as double
-    public double asDouble() {
-        if (value instanceof Number) {
-            return ((Number) value).doubleValue();
+    public BigDecimal asDouble() {
+        if (value instanceof BigDecimal) {
+            return (BigDecimal) value;
+        } else if (value instanceof Number) {
+            return new BigDecimal(value.toString());
         } else if (value instanceof JsonPrimitive && ((JsonPrimitive) value).isNumber()) {
-            return ((JsonPrimitive) value).getAsDouble();
+            return new BigDecimal(((JsonPrimitive) value).getAsString());
         }
         throw new EvaluationException("Value : " + value + " cannot be converted to double");
     }
@@ -191,7 +198,8 @@ public class ExpressionResult {
     }
 
     public boolean isDouble() {
-        return value instanceof Double || (value instanceof JsonPrimitive && isDouble((JsonPrimitive) value));
+        return value instanceof BigDecimal || value instanceof Double ||
+                (value instanceof JsonPrimitive && isDouble((JsonPrimitive) value));
     }
 
     public boolean isBoolean() {
