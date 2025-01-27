@@ -27,10 +27,13 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.AbstractMediatorFactory;
+import org.apache.synapse.config.xml.SynapsePathFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.config.xml.ValueFactory;
 import org.apache.synapse.mediators.v2.Utils;
+import org.apache.synapse.mediators.v2.ext.InputArgument;
+import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
 import java.util.Iterator;
@@ -118,10 +121,11 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
                     if (Utils.isTargetBody(targetAtt)) {
                         mediator.setResultTarget(Utils.TARGET_BODY);
                     } else if (Utils.isTargetVariable(targetAtt)) {
-                        String variableNameAttr = elem.getAttributeValue(ATT_VARIABLE_NAME);
+                        String variableNameAttr = elem.getAttributeValue(ATT_TARGET_VARIABLE);
                         if (StringUtils.isBlank(variableNameAttr)) {
-                            String msg = "The 'variable-name' attribute is required for the configuration of a " +
-                                    "Script mediator when the 'target' is 'variable'";
+                            String msg = "The '" + AbstractMediatorFactory.ATT_TARGET_VARIABLE + "' attribute is required " +
+                                    "for the configuration of a Script mediator when the '" +
+                                    AbstractMediatorFactory.ATT_TARGET + "' is 'variable'";
                             throw new SynapseException(msg);
                         }
                         mediator.setResultTarget(Utils.TARGET_VARIABLE);
@@ -129,8 +133,13 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
                     } else if (Utils.isTargetNone(targetAtt)) {
                         mediator.setResultTarget(Utils.TARGET_NONE);
                     } else {
-                        throw new SynapseException("Invalid 'target' attribute value for script mediator : " + targetAtt
-                                + ". It should be either 'body', 'variable' or 'none'");
+                        throw new SynapseException("Invalid '" + AbstractMediatorFactory.ATT_TARGET + "' attribute " +
+                                "value for script mediator : " + targetAtt + ". It should be either 'body', 'variable' or 'none'");
+                    }
+                    OMElement inputArgsElement = elem.getFirstChildWithName(INPUTS);
+                    if (inputArgsElement != null) {
+                        Map<String, InputArgument> inputArgsMap = getInputArguments(inputArgsElement);
+                        mediator.setInputArgumentMap(inputArgsMap);
                     }
                 }
             }
@@ -149,6 +158,33 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
         addAllCommentChildrenToList(elem, mediator.getCommentsList());
 
         return mediator;
+    }
+
+    private Map<String, InputArgument> getInputArguments(OMElement inputArgsElement) {
+
+        Map<String, InputArgument> inputArgsMap = new LinkedHashMap<>();
+        Iterator inputIterator = inputArgsElement.getChildrenWithName(ATT_ARGUMENT);
+        while (inputIterator.hasNext()) {
+            OMElement inputElement = (OMElement) inputIterator.next();
+            String nameAttribute = inputElement.getAttributeValue(ATT_NAME);
+            String typeAttribute = inputElement.getAttributeValue(ATT_TYPE);
+            String valueAttribute = inputElement.getAttributeValue(ATT_VALUE);
+            String expressionAttribute = inputElement.getAttributeValue(ATT_EXPRN);
+            InputArgument argument = new InputArgument(nameAttribute);
+            if (valueAttribute != null) {
+                argument.setValue(valueAttribute, typeAttribute);
+            } else if (expressionAttribute != null) {
+                try {
+                    argument.setExpression(SynapsePathFactory.getSynapsePath(inputElement,
+                            new QName("expression")), typeAttribute);
+                } catch (JaxenException e) {
+                    handleException("Error setting expression : " + expressionAttribute + " as an input argument to " +
+                            "script mediator. " + e.getMessage(), e);
+                }
+            }
+            inputArgsMap.put(nameAttribute, argument);
+        }
+        return inputArgsMap;
     }
 
     private Map<Value, Object> getIncludeKeysMap(OMElement elem) {

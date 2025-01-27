@@ -22,11 +22,13 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.config.xml.AbstractMediatorFactory;
 import org.apache.synapse.config.xml.AbstractMediatorSerializer;
 import org.apache.synapse.config.xml.InputArgumentSerializer;
 import org.apache.synapse.config.xml.ValueSerializer;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.mediators.Value;
+import org.apache.synapse.mediators.v2.Utils;
 
 import javax.xml.stream.XMLStreamConstants;
 import java.util.Map;
@@ -63,8 +65,14 @@ public class ScriptMediatorSerializer extends AbstractMediatorSerializer {
             }
             if (StringUtils.isNotBlank(scriptMediator.getResultTarget())) {
                 // If result target is set, this is V2 script mediator
-                script.addAttribute(fac.createOMAttribute("result-target", nullNS, scriptMediator.getResultTarget()));
-                script.addChild(InputArgumentSerializer.serializeInputArguments(scriptMediator.getInputArgumentList()));
+                script.addAttribute(fac.createOMAttribute(AbstractMediatorFactory.ATT_TARGET.getLocalPart(), nullNS,
+                        scriptMediator.getResultTarget()));
+                if (Utils.isTargetVariable(scriptMediator.getResultTarget())) {
+                    script.addAttribute(fac.createOMAttribute(AbstractMediatorFactory.ATT_TARGET_VARIABLE.getLocalPart(),
+                            nullNS, scriptMediator.getVariableName()));
+                }
+                script.addChild(InputArgumentSerializer.serializeInputArguments(scriptMediator.getInputArgumentList(),
+                        true));
             }
         } else {
             script.addAttribute(fac.createOMAttribute("language", nullNS, language));

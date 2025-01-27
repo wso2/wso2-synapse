@@ -37,7 +37,7 @@ import javax.xml.namespace.QName;
  * different message contexts and aggregate the responses back.
  *
  * <pre>
- * &lt;scatter-gather parallel-execution=(true | false) target=(body | variable) variable-name=(string) result-content-type=(JSON | XML)&gt;
+ * &lt;scatter-gather parallel-execution=(true | false) target=(body | variable) target-variable=(string) result-content-type=(JSON | XML)&gt;
  *   &lt;aggregation value="expression" condition="expression" timeout="long"
  *     min-messages="expression" max-messages="expression"/&gt;
  *   &lt;sequence&gt;
@@ -80,7 +80,7 @@ public class ScatterGatherMediatorFactory extends AbstractMediatorFactory {
 
         OMAttribute contentTypeAttr = elem.getAttribute(RESULT_TYPE_Q);
         if (contentTypeAttr == null || StringUtils.isBlank(contentTypeAttr.getAttributeValue())) {
-            String msg = "The 'result-content-type' attribute is required for the configuration of a Scatter Gather mediator";
+            String msg = "The '" + RESULT_TYPE_Q + "' attribute is required for the configuration of a Scatter Gather mediator";
             throw new SynapseException(msg);
         } else {
             if ("JSON".equals(contentTypeAttr.getAttributeValue())) {
@@ -91,26 +91,26 @@ public class ScatterGatherMediatorFactory extends AbstractMediatorFactory {
                     mediator.setRootElementName(rootElementAttr.getAttributeValue());
                     mediator.setContentType(ScatterGather.XML_TYPE);
                 } else {
-                    String msg = "The 'result-enclosing-element' attribute is required for the configuration of a " +
-                            "Scatter Gather mediator when the 'result-content-type' is 'XML'";
+                    String msg = "The '" + ATT_ROOT_ELEMENT + "' attribute is required for the configuration of a " +
+                            "Scatter Gather mediator when the '" + RESULT_TYPE_Q + "' is 'XML'";
                     throw new SynapseException(msg);
                 }
             } else {
-                String msg = "The 'result-content-type' attribute should be either 'JSON' or 'XML'";
+                String msg = "The '" + RESULT_TYPE_Q + "' attribute should be either 'JSON' or 'XML'";
                 throw new SynapseException(msg);
             }
         }
 
         OMAttribute resultTargetAttr = elem.getAttribute(ATT_TARGET);
         if (resultTargetAttr == null || StringUtils.isBlank(resultTargetAttr.getAttributeValue())) {
-            String msg = "The 'target' attribute is required for the configuration of a Scatter Gather mediator";
+            String msg = "The '" + ATT_TARGET + "' attribute is required for the configuration of a Scatter Gather mediator";
             throw new SynapseException(msg);
         } else {
             if (Utils.isTargetVariable(resultTargetAttr.getAttributeValue())) {
-                OMAttribute variableNameAttr = elem.getAttribute(ATT_VARIABLE_NAME);
+                OMAttribute variableNameAttr = elem.getAttribute(ATT_TARGET_VARIABLE);
                 if (variableNameAttr == null || StringUtils.isBlank(variableNameAttr.getAttributeValue())) {
-                    String msg = "The 'variable-name' attribute is required for the configuration of a " +
-                            "Scatter Gather mediator when the 'target' is 'variable'";
+                    String msg = "The '" + ATT_TARGET_VARIABLE + "' attribute is required for the configuration of a " +
+                            "Scatter Gather mediator when the '" + ATT_TARGET + "' is 'variable'";
                     throw new SynapseException(msg);
                 }
                 mediator.setResultTarget(Utils.TARGET_VARIABLE);
@@ -118,7 +118,7 @@ public class ScatterGatherMediatorFactory extends AbstractMediatorFactory {
             } else if (Utils.isTargetBody(resultTargetAttr.getAttributeValue())) {
                 mediator.setResultTarget(Utils.TARGET_BODY);
             } else {
-                String msg = "The 'target' attribute should be either 'body' or 'variable'";
+                String msg = "The '" + ATT_TARGET + "' attribute should be either 'body' or 'variable'";
                 throw new SynapseException(msg);
             }
         }

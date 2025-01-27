@@ -65,7 +65,8 @@ public class ScriptMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testV2ScriptMediator() throws XMLComparisonException {
-        String inputXml = "<script xmlns=\"http://ws.apache.org/ns/synapse\" language=\"js\" key=\"resources:js/test_math.js\" function=\"sum_js\" result-target=\"var1\">" +
+        String inputXml = "<script xmlns=\"http://ws.apache.org/ns/synapse\" language=\"js\" key=\"resources:js/test_math.js\" " +
+                "function=\"sum_js\" target=\"variable\" target-variable=\"var1\">" +
                 "<inputs>" +
                 "<argument name=\"num1\" type=\"INTEGER\" expression=\"${payload.requestId}\" />" +
                 "<argument name=\"num2\" type=\"INTEGER\" value=\"20\" />" +

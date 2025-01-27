@@ -25,7 +25,7 @@ import org.apache.axiom.om.OMNamespace;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.mediators.v2.ext.InputArgument;
 
-import java.util.List;
+import java.util.Map;
 
 /**
  * Serializer for input arguments
@@ -41,13 +41,21 @@ public class InputArgumentSerializer {
     private static final String EXPRESSION = "expression";
     private static final String VALUE = "value";
 
-    public static OMElement serializeInputArguments(List<InputArgument> inputArguments) {
+    public static OMElement serializeInputArguments(Map<String, InputArgument> inputArguments) {
+
+        return serializeInputArguments(inputArguments, false);
+    }
+
+    public static OMElement serializeInputArguments(Map<String, InputArgument> inputArguments, boolean includeType) {
 
         OMElement inputElement = fac.createOMElement(INPUTS, SynapseConstants.SYNAPSE_OMNAMESPACE);
-        for (InputArgument inputArgument : inputArguments) {
+        for (Map.Entry<String, InputArgument> entry : inputArguments.entrySet()) {
+            InputArgument inputArgument = entry.getValue();
             OMElement inputArgElement = fac.createOMElement(ARGUMENT, SynapseConstants.SYNAPSE_OMNAMESPACE);
+            if (includeType) {
+                inputArgElement.addAttribute(fac.createOMAttribute(TYPE, nullNS, inputArgument.getType()));
+            }
             inputArgElement.addAttribute(fac.createOMAttribute(NAME, nullNS, inputArgument.getName()));
-            inputArgElement.addAttribute(fac.createOMAttribute(TYPE, nullNS, inputArgument.getType()));
             if (inputArgument.getExpression() != null) {
                 SynapsePathSerializer.serializePath(inputArgument.getExpression(),
                         inputArgument.getExpression().getExpression(), inputArgElement, EXPRESSION);

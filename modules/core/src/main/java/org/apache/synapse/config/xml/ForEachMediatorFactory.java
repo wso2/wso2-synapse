@@ -64,10 +64,9 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
     private static final QName ATT_COLLECTION = new QName("collection");
     private static final QName SEQUENCE_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "sequence");
     private static final QName PARALLEL_EXEC_Q = new QName("parallel-execution");
-    private static final QName ATT_UPDATE_ORIGINAL = new QName("update-original");
-    private static final QName ATT_TARGET_VARIABLE_NAME = new QName("target-variable");
+    public static final QName ATT_UPDATE_ORIGINAL = new QName("update-original");
     private static final QName ATT_COUNTER_VARIABLE = new QName("counter-variable");
-    private static final QName ATT_CONTINUE_WITHOUT_AGGREGATION  = new QName("continue-without-aggregation");
+    public static final QName ATT_CONTINUE_WITHOUT_AGGREGATION  = new QName("continue-without-aggregation");
 
     public QName getTagQName() {
         return FOREACH_Q;
@@ -166,7 +165,7 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
             if (updateOriginalAttr != null && "false".equals(updateOriginalAttr.getAttributeValue())) {
                 mediator.setUpdateOriginal(false);
                 String contentTypeAttr = elem.getAttributeValue(RESULT_TYPE_Q);
-                String variableNameAttr = elem.getAttributeValue(ATT_TARGET_VARIABLE_NAME);
+                String variableNameAttr = elem.getAttributeValue(ATT_TARGET_VARIABLE);
                 if (StringUtils.isNotBlank(contentTypeAttr) && StringUtils.isNotBlank(variableNameAttr)) {
                     mediator.setVariableName(variableNameAttr);
                     if ("JSON".equals(contentTypeAttr)) {
@@ -177,16 +176,16 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
                             mediator.setRootElementName(rootElementAttr);
                             mediator.setContentType(ForEachMediatorV2.XML_TYPE);
                         } else {
-                            String msg = "The 'result-enclosing-element' attribute is required for the configuration of a " +
-                                    "Foreach mediator when the 'result-type' is 'XML'";
+                            String msg = "The '" + ATT_ROOT_ELEMENT + "' attribute is required for the configuration of a " +
+                                    "Foreach mediator when the '" + RESULT_TYPE_Q + "' is 'XML'";
                             throw new SynapseException(msg);
                         }
                     } else {
-                        handleException("The 'result-content-type' attribute should be either 'JSON' or 'XML'");
+                        handleException("The '" + RESULT_TYPE_Q + "' attribute should be either 'JSON' or 'XML'");
                     }
                 } else {
-                    handleException("The 'result-content-type' and 'target-variable' attributes are required when the " +
-                            "'update-original' attribute is 'false'");
+                    handleException("The '" + RESULT_TYPE_Q + "' and '" + ATT_TARGET_VARIABLE + "' attributes are required when the " +
+                            "'" + ATT_UPDATE_ORIGINAL + "' attribute is 'false'");
                 }
             }
         }

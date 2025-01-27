@@ -58,6 +58,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -182,7 +183,7 @@ public class ScriptMediator extends AbstractMediator {
      * Store java method access config
      */
     private AccessControlConfig nativeObjectAccessControlConfig;
-    private final List<InputArgument> inputArgumentList = new ArrayList<>();
+    private Map<String, InputArgument> inputArgumentMap = new LinkedHashMap<>();
     private String resultTarget;
     private String variableName;
 
@@ -371,7 +372,7 @@ public class ScriptMediator extends AbstractMediator {
             List<Object> scriptArgs = new ArrayList<>();
             // First argument is always the ScriptMessageContext
             scriptArgs.add(scriptMC);
-            for (InputArgument inputArgument : inputArgumentList) {
+            for (InputArgument inputArgument : inputArgumentMap.values()) {
                 scriptArgs.add(inputArgument.getResolvedArgument(synCtx));
             }
             obj = invocableScript.invokeFunction(function, scriptArgs.toArray());
@@ -841,14 +842,14 @@ public class ScriptMediator extends AbstractMediator {
         }
     }
 
-    public void setInputArgumentMap(List<InputArgument> inputArgumentList) {
+    public void setInputArgumentMap(Map<String, InputArgument> inputArgumentMap) {
 
-        this.inputArgumentList.addAll(inputArgumentList);
+        this.inputArgumentMap.putAll(inputArgumentMap);
     }
 
-    public List<InputArgument> getInputArgumentList() {
+    public Map<String, InputArgument> getInputArgumentList() {
 
-        return inputArgumentList;
+        return inputArgumentMap;
     }
 
     public void setResultTarget(String resultTarget) {

@@ -55,9 +55,11 @@ public class ClassMediatorSerializer extends AbstractMediatorSerializer  {
 
         if (StringUtils.isNotBlank(mediator.getResultTarget())) {
             // If result target is set, this is V2 class mediator
-            clazz.addAttribute(fac.createOMAttribute("target", nullNS, mediator.getResultTarget()));
+            clazz.addAttribute(fac.createOMAttribute(AbstractMediatorFactory.ATT_TARGET.getLocalPart(), nullNS,
+                    mediator.getResultTarget()));
             if (Utils.isTargetVariable(mediator.getResultTarget())) {
-                clazz.addAttribute(fac.createOMAttribute("variable", nullNS, mediator.getVariableName()));
+                clazz.addAttribute(fac.createOMAttribute(AbstractMediatorFactory.ATT_TARGET_VARIABLE.getLocalPart(),
+                        nullNS, mediator.getVariableName()));
             }
             clazz.addChild(InputArgumentSerializer.serializeInputArguments(mediator.getInputArguments()));
         } else {

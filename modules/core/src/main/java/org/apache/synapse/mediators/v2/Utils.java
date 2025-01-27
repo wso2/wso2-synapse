@@ -323,8 +323,7 @@ public class Utils {
      * @throws SynapseException
      */
     public static boolean setResultTarget(MessageContext synCtx, String resultTarget, String variableName,
-                                          Object result) throws AxisFault,
-            SynapseException {
+                                          Object result) throws AxisFault, SynapseException {
 
         if (Utils.isTargetNone(resultTarget)) {
             return true;
@@ -332,20 +331,13 @@ public class Utils {
         if (result != null) {
             if (Utils.isTargetBody(resultTarget)) {
                 // set result to body
-                if (result instanceof JsonElement) {
-                    JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(), new
-                            ByteArrayInputStream(result.toString().getBytes()), true, true);
-                } else if (result instanceof OMElement) {
+                if (result instanceof OMElement) {
                     SOAPEnvelope newEnvelope = Utils.createNewSoapEnvelope(synCtx.getEnvelope());
                     newEnvelope.getBody().addChild((OMElement) result);
                     synCtx.setEnvelope(newEnvelope);
                 } else {
-                    OMElement rootElement = OMAbstractFactory.getOMFactory().createOMElement(new QName(
-                            "result"));
-                    rootElement.setText(result.toString());
-                    SOAPEnvelope newEnvelope = Utils.createNewSoapEnvelope(synCtx.getEnvelope());
-                    newEnvelope.getBody().addChild(rootElement);
-                    synCtx.setEnvelope(newEnvelope);
+                    JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(), new
+                            ByteArrayInputStream(result.toString().getBytes()), true, true);
                 }
             } else {
                 // set result to variable

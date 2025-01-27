@@ -37,8 +37,8 @@ import org.apache.synapse.mediators.v2.ext.InputArgument;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The class mediator delegates the mediation to a single instance of a specified
@@ -62,7 +62,7 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
     private boolean hasDynamicProperties = false;
 
     private List<AbstractClassMediator.Arg> arguments = new ArrayList<>();
-    private HashMap<String, InputArgument> inputArguments = new HashMap<>();
+    private Map<String, InputArgument> inputArguments;
     private String methodName = "mediate";
     private String resultTarget;
     private String variableName;
@@ -142,7 +142,7 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
         try {
             Object result = targetMethod.invoke(mediator, methodArgs.toArray());
             return Utils.setResultTarget(synCtx, resultTarget, variableName, result);
-        } catch (IllegalAccessException | InvocationTargetException e) {
+        } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
             handleException("Error while invoking method: " + methodName + " in class "
                     + mediator.getClass().getSimpleName(), e, synCtx);
         } catch (AxisFault e) {
@@ -157,7 +157,7 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
 
     private Object getArgument(MessageContext context, String argName) {
 
-        if (inputArguments.containsKey(argName)) {
+        if (inputArguments != null && inputArguments.containsKey(argName)) {
             return inputArguments.get(argName).getResolvedArgument(context);
         }
         return null;
@@ -241,14 +241,14 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
     }
 
 
-    public void setInputArguments(List<InputArgument> inputArguments) {
+    public void setInputArguments(Map<String, InputArgument> inputArguments) {
 
-        inputArguments.forEach(arg -> this.inputArguments.put(arg.getName(), arg));
+        this.inputArguments = inputArguments;
     }
 
-    public List<InputArgument> getInputArguments() {
+    public Map<String, InputArgument> getInputArguments() {
 
-        return new ArrayList<>(inputArguments.values());
+        return inputArguments;
     }
 
     public void setArguments(List<AbstractClassMediator.Arg> arguments) {

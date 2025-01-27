@@ -46,16 +46,16 @@ public class ScatterGatherMediatorSerializer extends AbstractMediatorSerializer 
         scatterGatherElement.addAttribute(fac.createOMAttribute(
                 "parallel-execution", nullNS, Boolean.toString(scatterGatherMediator.getParallelExecution())));
         scatterGatherElement.addAttribute(fac.createOMAttribute(
-                "target", nullNS, scatterGatherMediator.getResultTarget()));
+                AbstractMediatorFactory.ATT_TARGET.getLocalPart(), nullNS, scatterGatherMediator.getResultTarget()));
         if (Utils.isTargetVariable(scatterGatherMediator.getResultTarget())) {
             scatterGatherElement.addAttribute(fac.createOMAttribute(
-                    "variable-name", nullNS, scatterGatherMediator.getVariableName()));
+                    AbstractMediatorFactory.ATT_TARGET_VARIABLE.getLocalPart(), nullNS, scatterGatherMediator.getVariableName()));
         }
         scatterGatherElement.addAttribute(fac.createOMAttribute(
-                "result-content-type", nullNS, scatterGatherMediator.getContentType()));
+                AbstractMediatorFactory.RESULT_TYPE_Q.getLocalPart(), nullNS, scatterGatherMediator.getContentType()));
         if (StringUtils.isNotBlank(scatterGatherMediator.getRootElementName())) {
             scatterGatherElement.addAttribute(fac.createOMAttribute(
-                    "result-enclosing-element", nullNS, scatterGatherMediator.getRootElementName()));
+                    AbstractMediatorFactory.ATT_ROOT_ELEMENT.getLocalPart(), nullNS, scatterGatherMediator.getRootElementName()));
         }
 
         OMElement aggregationElement = fac.createOMElement("aggregation", synNS);
