@@ -499,6 +499,152 @@ public class HTTPConnectionUtilsTest {
     }
 
     /**
+     * Tests the generation of an OMElement for an HTTP endpoint configuration with OAuth Authorization Code grant type
+     * with timeout properties.
+     *
+     * @throws XMLStreamException if an error occurs while parsing the XML
+     */
+    @Test
+    public void testEndpointOMElementGenerationWithOAuthAuthorizationCodeWithTimeoutProperties() throws XMLStreamException {
+
+        String omElementString =
+                "<http.init>\n" +
+                        "    <connectionType>https</connectionType>\n" +
+                        "    <name>library</name>\n" +
+                        "    <certificateInputType>File</certificateInputType>\n" +
+                        "    <authType>OAuth</authType>\n" +
+                        "    <oauthAuthorizationMode>Header</oauthAuthorizationMode>\n" +
+                        "    <oauthGrantType>Authorization Code</oauthGrantType>\n" +
+                        "    <baseUrl>http://jsonplaceholder.typicode.com/posts</baseUrl>\n" +
+                        "    <trustStoreCertificatePath>resources:certificates/serverpubliccert.crt</trustStoreCertificatePath>\n" +
+                        "    <suspendErrorCodes>403</suspendErrorCodes>\n" +
+                        "    <suspendProgressionFactor>1</suspendProgressionFactor>\n" +
+                        "    <retryErrorCodes>300</retryErrorCodes>\n" +
+                        "    <retryCount>3</retryCount>\n" +
+                        "    <retryDelay>20</retryDelay>\n" +
+                        "    <timeoutAction>Discard</timeoutAction>\n" +
+                        "    <clientId>admin</clientId>\n" +
+                        "    <clientSecret>admin</clientSecret>\n" +
+                        "    <tokenUrl>admin</tokenUrl>\n" +
+                        "    <refreshToken>admin</refreshToken>\n" +
+                        "    <oauthConnectionTimeout>10000</oauthConnectionTimeout>\n" +
+                        "    <oauthConnectionRequestTimeout>30000</oauthConnectionRequestTimeout>\n" +
+                        "    <oauthSocketTimeout>50000</oauthSocketTimeout>\n" +
+                        "</http.init>";
+        String expectedEndpointOMElementString =
+                "<endpoint xmlns=\"http://ws.apache.org/ns/synapse\" name=\"library_INTERNAL_ENDPOINT_REFERENCE\">" +
+                        "<http uri-template=\"{uri.var.base}{+uri.var.path}{+uri.var.query}\">" +
+                        "<timeout>" +
+                        "<responseAction>Discard</responseAction>" +
+                        "</timeout>" +
+                        "<suspendOnFailure>" +
+                        "<errorCodes>403</errorCodes>" +
+                        "<progressionFactor>1</progressionFactor>" +
+                        "</suspendOnFailure>" +
+                        "<markForSuspension>" +
+                        "<errorCodes>300</errorCodes>" +
+                        "<retriesBeforeSuspension>3</retriesBeforeSuspension>" +
+                        "<retryDelay>20</retryDelay>" +
+                        "</markForSuspension>" +
+                        "<authentication>" +
+                        "<oauth>" +
+                        "<authorizationCode>" +
+                        "<refreshToken>admin</refreshToken>" +
+                        "<clientId>admin</clientId>" +
+                        "<clientSecret>admin</clientSecret>" +
+                        "<tokenUrl>admin</tokenUrl>" +
+                        "<authMode>Header</authMode>" +
+                        "<connectionTimeout>10000</connectionTimeout>" +
+                        "<connectionRequestTimeout>30000</connectionRequestTimeout>" +
+                        "<socketTimeout>50000</socketTimeout>" +
+                        "</authorizationCode>" +
+                        "</oauth>" +
+                        "</authentication>" +
+                        "</http>" +
+                        "</endpoint>";
+        InputStream inputStream = new ByteArrayInputStream(omElementString.getBytes(StandardCharsets.UTF_8));
+        OMElement documentElement =
+                new StAXOMBuilder(StAXUtils.createXMLStreamReader(inputStream)).getDocumentElement();
+
+        OMElement generatedEndpointOMElement = HTTPConnectionUtils.generateHTTPEndpointOMElement(documentElement);
+        Assert.assertEquals(
+                "Generated OMElement with OAuth Authorization Code grant type does not match the expected structure",
+                expectedEndpointOMElementString, generatedEndpointOMElement.toString());
+    }
+
+    /**
+     * Tests the generation of an OMElement for an HTTP endpoint configuration with OAuth Authorization Code grant type
+     * with some timeout properties.
+     *
+     * @throws XMLStreamException if an error occurs while parsing the XML
+     */
+    @Test
+    public void testEndpointOMElementGenerationWithOAuthAuthorizationCodeWithSomeTimeoutProperties() throws XMLStreamException {
+
+        String omElementString =
+                "<http.init>\n" +
+                        "    <connectionType>https</connectionType>\n" +
+                        "    <name>library</name>\n" +
+                        "    <certificateInputType>File</certificateInputType>\n" +
+                        "    <authType>OAuth</authType>\n" +
+                        "    <oauthAuthorizationMode>Header</oauthAuthorizationMode>\n" +
+                        "    <oauthGrantType>Authorization Code</oauthGrantType>\n" +
+                        "    <baseUrl>http://jsonplaceholder.typicode.com/posts</baseUrl>\n" +
+                        "    <trustStoreCertificatePath>resources:certificates/serverpubliccert.crt</trustStoreCertificatePath>\n" +
+                        "    <suspendErrorCodes>403</suspendErrorCodes>\n" +
+                        "    <suspendProgressionFactor>1</suspendProgressionFactor>\n" +
+                        "    <retryErrorCodes>300</retryErrorCodes>\n" +
+                        "    <retryCount>3</retryCount>\n" +
+                        "    <retryDelay>20</retryDelay>\n" +
+                        "    <timeoutAction>Discard</timeoutAction>\n" +
+                        "    <clientId>admin</clientId>\n" +
+                        "    <clientSecret>admin</clientSecret>\n" +
+                        "    <tokenUrl>admin</tokenUrl>\n" +
+                        "    <refreshToken>admin</refreshToken>\n" +
+                        "    <oauthConnectionTimeout>10000</oauthConnectionTimeout>\n" +
+                        "    <oauthConnectionRequestTimeout>30000</oauthConnectionRequestTimeout>\n" +
+                        "</http.init>";
+        String expectedEndpointOMElementString =
+                "<endpoint xmlns=\"http://ws.apache.org/ns/synapse\" name=\"library_INTERNAL_ENDPOINT_REFERENCE\">" +
+                        "<http uri-template=\"{uri.var.base}{+uri.var.path}{+uri.var.query}\">" +
+                        "<timeout>" +
+                        "<responseAction>Discard</responseAction>" +
+                        "</timeout>" +
+                        "<suspendOnFailure>" +
+                        "<errorCodes>403</errorCodes>" +
+                        "<progressionFactor>1</progressionFactor>" +
+                        "</suspendOnFailure>" +
+                        "<markForSuspension>" +
+                        "<errorCodes>300</errorCodes>" +
+                        "<retriesBeforeSuspension>3</retriesBeforeSuspension>" +
+                        "<retryDelay>20</retryDelay>" +
+                        "</markForSuspension>" +
+                        "<authentication>" +
+                        "<oauth>" +
+                        "<authorizationCode>" +
+                        "<refreshToken>admin</refreshToken>" +
+                        "<clientId>admin</clientId>" +
+                        "<clientSecret>admin</clientSecret>" +
+                        "<tokenUrl>admin</tokenUrl>" +
+                        "<authMode>Header</authMode>" +
+                        "<connectionTimeout>10000</connectionTimeout>" +
+                        "<connectionRequestTimeout>30000</connectionRequestTimeout>" +
+                        "</authorizationCode>" +
+                        "</oauth>" +
+                        "</authentication>" +
+                        "</http>" +
+                        "</endpoint>";
+        InputStream inputStream = new ByteArrayInputStream(omElementString.getBytes(StandardCharsets.UTF_8));
+        OMElement documentElement =
+                new StAXOMBuilder(StAXUtils.createXMLStreamReader(inputStream)).getDocumentElement();
+
+        OMElement generatedEndpointOMElement = HTTPConnectionUtils.generateHTTPEndpointOMElement(documentElement);
+        Assert.assertEquals(
+                "Generated OMElement with OAuth Authorization Code grant type does not match the expected structure",
+                expectedEndpointOMElementString, generatedEndpointOMElement.toString());
+    }
+
+    /**
      * Tests the generation of an OMElement for an HTTP endpoint configuration with OAuth Client Credentials grant type.
      *
      * @throws XMLStreamException if an error occurs while parsing the XML
@@ -704,6 +850,152 @@ public class HTTPConnectionUtilsTest {
     }
 
     /**
+     * Tests the generation of an OMElement for an HTTP endpoint configuration with OAuth Client Credentials grant type
+     * with timeout properties.
+     *
+     * @throws XMLStreamException if an error occurs while parsing the XML
+     */
+    @Test
+    public void testEndpointOMElementGenerationWithOAuthClientCredentialsWithTimeoutProperties() throws XMLStreamException {
+
+        String omElementString =
+                "<http.init>\n" +
+                        "    <connectionType>https</connectionType>\n" +
+                        "    <name>library</name>\n" +
+                        "    <certificateInputType>File</certificateInputType>\n" +
+                        "    <authType>OAuth</authType>\n" +
+                        "    <oauthAuthorizationMode>Header</oauthAuthorizationMode>\n" +
+                        "    <oauthGrantType>Client Credentials</oauthGrantType>\n" +
+                        "    <baseUrl>http://jsonplaceholder.typicode.com/posts</baseUrl>\n" +
+                        "    <trustStoreCertificatePath>resources:certificates/serverpubliccert.crt</trustStoreCertificatePath>\n" +
+                        "    <suspendErrorCodes>403</suspendErrorCodes>\n" +
+                        "    <suspendProgressionFactor>1</suspendProgressionFactor>\n" +
+                        "    <retryErrorCodes>300</retryErrorCodes>\n" +
+                        "    <retryCount>3</retryCount>\n" +
+                        "    <retryDelay>20</retryDelay>\n" +
+                        "    <timeoutDuration>20000</timeoutDuration>\n" +
+                        "    <timeoutAction>Discard</timeoutAction>\n" +
+                        "    <clientId>admin</clientId>\n" +
+                        "    <clientSecret>admin</clientSecret>\n" +
+                        "    <oauthConnectionTimeout>10000</oauthConnectionTimeout>\n" +
+                        "    <oauthConnectionRequestTimeout>30000</oauthConnectionRequestTimeout>\n" +
+                        "    <oauthSocketTimeout>50000</oauthSocketTimeout>\n" +
+                        "    <tokenUrl>asdfcli</tokenUrl>\n" +
+                        "</http.init>";
+        String expectedEndpointOMElementString =
+                "<endpoint xmlns=\"http://ws.apache.org/ns/synapse\" name=\"library_INTERNAL_ENDPOINT_REFERENCE\">" +
+                        "<http uri-template=\"{uri.var.base}{+uri.var.path}{+uri.var.query}\">" +
+                        "<timeout>" +
+                        "<duration>20000</duration>" +
+                        "<responseAction>Discard</responseAction>" +
+                        "</timeout>" +
+                        "<suspendOnFailure>" +
+                        "<errorCodes>403</errorCodes>" +
+                        "<progressionFactor>1</progressionFactor>" +
+                        "</suspendOnFailure>" +
+                        "<markForSuspension>" +
+                        "<errorCodes>300</errorCodes>" +
+                        "<retriesBeforeSuspension>3</retriesBeforeSuspension>" +
+                        "<retryDelay>20</retryDelay>" +
+                        "</markForSuspension>" +
+                        "<authentication>" +
+                        "<oauth>" +
+                        "<clientCredentials>" +
+                        "<clientId>admin</clientId>" +
+                        "<clientSecret>admin</clientSecret>" +
+                        "<tokenUrl>asdfcli</tokenUrl>" +
+                        "<authMode>Header</authMode>" +
+                        "<connectionTimeout>10000</connectionTimeout>" +
+                        "<connectionRequestTimeout>30000</connectionRequestTimeout>" +
+                        "<socketTimeout>50000</socketTimeout>" +
+                        "</clientCredentials>" +
+                        "</oauth>" +
+                        "</authentication>" +
+                        "</http>" +
+                        "</endpoint>";
+        InputStream inputStream = new ByteArrayInputStream(omElementString.getBytes(StandardCharsets.UTF_8));
+        OMElement documentElement =
+                new StAXOMBuilder(StAXUtils.createXMLStreamReader(inputStream)).getDocumentElement();
+
+        OMElement generatedEndpointOMElement = HTTPConnectionUtils.generateHTTPEndpointOMElement(documentElement);
+        Assert.assertEquals(
+                "Generated OMElement with OAuth Client Credentials grant type does not match the expected structure",
+                expectedEndpointOMElementString, generatedEndpointOMElement.toString());
+    }
+
+    /**
+     * Tests the generation of an OMElement for an HTTP endpoint configuration with OAuth Client Credentials grant type
+     * with some timeout properties.
+     *
+     * @throws XMLStreamException if an error occurs while parsing the XML
+     */
+    @Test
+    public void testEndpointOMElementGenerationWithOAuthClientCredentialsWithSomeTimeoutProperties() throws XMLStreamException {
+
+        String omElementString =
+                "<http.init>\n" +
+                        "    <connectionType>https</connectionType>\n" +
+                        "    <name>library</name>\n" +
+                        "    <certificateInputType>File</certificateInputType>\n" +
+                        "    <authType>OAuth</authType>\n" +
+                        "    <oauthAuthorizationMode>Header</oauthAuthorizationMode>\n" +
+                        "    <oauthGrantType>Client Credentials</oauthGrantType>\n" +
+                        "    <baseUrl>http://jsonplaceholder.typicode.com/posts</baseUrl>\n" +
+                        "    <trustStoreCertificatePath>resources:certificates/serverpubliccert.crt</trustStoreCertificatePath>\n" +
+                        "    <suspendErrorCodes>403</suspendErrorCodes>\n" +
+                        "    <suspendProgressionFactor>1</suspendProgressionFactor>\n" +
+                        "    <retryErrorCodes>300</retryErrorCodes>\n" +
+                        "    <retryCount>3</retryCount>\n" +
+                        "    <retryDelay>20</retryDelay>\n" +
+                        "    <timeoutDuration>20000</timeoutDuration>\n" +
+                        "    <timeoutAction>Discard</timeoutAction>\n" +
+                        "    <clientId>admin</clientId>\n" +
+                        "    <clientSecret>admin</clientSecret>\n" +
+                        "    <oauthConnectionTimeout>10000</oauthConnectionTimeout>\n" +
+                        "    <oauthSocketTimeout>50000</oauthSocketTimeout>\n" +
+                        "    <tokenUrl>asdfcli</tokenUrl>\n" +
+                        "</http.init>";
+        String expectedEndpointOMElementString =
+                "<endpoint xmlns=\"http://ws.apache.org/ns/synapse\" name=\"library_INTERNAL_ENDPOINT_REFERENCE\">" +
+                        "<http uri-template=\"{uri.var.base}{+uri.var.path}{+uri.var.query}\">" +
+                        "<timeout>" +
+                        "<duration>20000</duration>" +
+                        "<responseAction>Discard</responseAction>" +
+                        "</timeout>" +
+                        "<suspendOnFailure>" +
+                        "<errorCodes>403</errorCodes>" +
+                        "<progressionFactor>1</progressionFactor>" +
+                        "</suspendOnFailure>" +
+                        "<markForSuspension>" +
+                        "<errorCodes>300</errorCodes>" +
+                        "<retriesBeforeSuspension>3</retriesBeforeSuspension>" +
+                        "<retryDelay>20</retryDelay>" +
+                        "</markForSuspension>" +
+                        "<authentication>" +
+                        "<oauth>" +
+                        "<clientCredentials>" +
+                        "<clientId>admin</clientId>" +
+                        "<clientSecret>admin</clientSecret>" +
+                        "<tokenUrl>asdfcli</tokenUrl>" +
+                        "<authMode>Header</authMode>" +
+                        "<connectionTimeout>10000</connectionTimeout>" +
+                        "<socketTimeout>50000</socketTimeout>" +
+                        "</clientCredentials>" +
+                        "</oauth>" +
+                        "</authentication>" +
+                        "</http>" +
+                        "</endpoint>";
+        InputStream inputStream = new ByteArrayInputStream(omElementString.getBytes(StandardCharsets.UTF_8));
+        OMElement documentElement =
+                new StAXOMBuilder(StAXUtils.createXMLStreamReader(inputStream)).getDocumentElement();
+
+        OMElement generatedEndpointOMElement = HTTPConnectionUtils.generateHTTPEndpointOMElement(documentElement);
+        Assert.assertEquals(
+                "Generated OMElement with OAuth Client Credentials grant type does not match the expected structure",
+                expectedEndpointOMElementString, generatedEndpointOMElement.toString());
+    }
+
+    /**
      * Tests the generation of an OMElement for an HTTP endpoint configuration with OAuth Password Credentials grant type.
      *
      * @throws XMLStreamException if an error occurs while parsing the XML
@@ -757,6 +1049,156 @@ public class HTTPConnectionUtilsTest {
                         "<clientSecret>admin</clientSecret>" +
                         "<tokenUrl>admin</tokenUrl>" +
                         "<authMode>Header</authMode>" +
+                        "</passwordCredentials>" +
+                        "</oauth>" +
+                        "</authentication>" +
+                        "</http>" +
+                        "</endpoint>";
+        InputStream inputStream = new ByteArrayInputStream(omElementString.getBytes(StandardCharsets.UTF_8));
+        OMElement documentElement =
+                new StAXOMBuilder(StAXUtils.createXMLStreamReader(inputStream)).getDocumentElement();
+
+        OMElement generatedEndpointOMElement = HTTPConnectionUtils.generateHTTPEndpointOMElement(documentElement);
+        Assert.assertEquals(
+                "Generated OMElement with OAuth Password Credentials grant type does not match the expected structure",
+                expectedEndpointOMElementString, generatedEndpointOMElement.toString());
+    }
+
+    /**
+     * Tests the generation of an OMElement for an HTTP endpoint configuration with OAuth Password Credentials grant type
+     * with timeout properties.
+     *
+     * @throws XMLStreamException if an error occurs while parsing the XML
+     */
+    @Test
+    public void testEndpointOMElementGenerationWithOAuthPasswordWithTimeoutProperties() throws XMLStreamException {
+
+        String omElementString =
+                "<http.init>\n" +
+                        "    <connectionType>https</connectionType>\n" +
+                        "    <name>library</name>\n" +
+                        "    <certificateInputType>File</certificateInputType>\n" +
+                        "    <authType>OAuth</authType>\n" +
+                        "    <oauthAuthorizationMode>Header</oauthAuthorizationMode>\n" +
+                        "    <oauthGrantType>Password</oauthGrantType>\n" +
+                        "    <baseUrl>http://jsonplaceholder.typicode.com/posts</baseUrl>\n" +
+                        "    <trustStoreCertificatePath>resources:certificates/serverpubliccert.crt</trustStoreCertificatePath>\n" +
+                        "    <suspendErrorCodes>403</suspendErrorCodes>\n" +
+                        "    <suspendProgressionFactor>1</suspendProgressionFactor>\n" +
+                        "    <retryErrorCodes>300</retryErrorCodes>\n" +
+                        "    <retryCount>3</retryCount>\n" +
+                        "    <retryDelay>20</retryDelay>\n" +
+                        "    <timeoutAction>Discard</timeoutAction>\n" +
+                        "    <clientId>admin</clientId>\n" +
+                        "    <clientSecret>admin</clientSecret>\n" +
+                        "    <tokenUrl>admin</tokenUrl>\n" +
+                        "    <username>admin</username>\n" +
+                        "    <password>admin</password>\n" +
+                        "    <oauthConnectionTimeout>10000</oauthConnectionTimeout>\n" +
+                        "    <oauthConnectionRequestTimeout>30000</oauthConnectionRequestTimeout>\n" +
+                        "    <oauthSocketTimeout>50000</oauthSocketTimeout>\n" +
+                        "</http.init>";
+        String expectedEndpointOMElementString =
+                "<endpoint xmlns=\"http://ws.apache.org/ns/synapse\" name=\"library_INTERNAL_ENDPOINT_REFERENCE\">" +
+                        "<http uri-template=\"{uri.var.base}{+uri.var.path}{+uri.var.query}\">" +
+                        "<timeout>" +
+                        "<responseAction>Discard</responseAction>" +
+                        "</timeout>" +
+                        "<suspendOnFailure>" +
+                        "<errorCodes>403</errorCodes>" +
+                        "<progressionFactor>1</progressionFactor>" +
+                        "</suspendOnFailure>" +
+                        "<markForSuspension>" +
+                        "<errorCodes>300</errorCodes>" +
+                        "<retriesBeforeSuspension>3</retriesBeforeSuspension>" +
+                        "<retryDelay>20</retryDelay>" +
+                        "</markForSuspension>" +
+                        "<authentication>" +
+                        "<oauth>" +
+                        "<passwordCredentials>" +
+                        "<username>admin</username>" +
+                        "<password>admin</password>" +
+                        "<clientId>admin</clientId>" +
+                        "<clientSecret>admin</clientSecret>" +
+                        "<tokenUrl>admin</tokenUrl>" +
+                        "<authMode>Header</authMode>" +
+                        "<connectionTimeout>10000</connectionTimeout>" +
+                        "<connectionRequestTimeout>30000</connectionRequestTimeout>" +
+                        "<socketTimeout>50000</socketTimeout>" +
+                        "</passwordCredentials>" +
+                        "</oauth>" +
+                        "</authentication>" +
+                        "</http>" +
+                        "</endpoint>";
+        InputStream inputStream = new ByteArrayInputStream(omElementString.getBytes(StandardCharsets.UTF_8));
+        OMElement documentElement =
+                new StAXOMBuilder(StAXUtils.createXMLStreamReader(inputStream)).getDocumentElement();
+
+        OMElement generatedEndpointOMElement = HTTPConnectionUtils.generateHTTPEndpointOMElement(documentElement);
+        Assert.assertEquals(
+                "Generated OMElement with OAuth Password Credentials grant type does not match the expected structure",
+                expectedEndpointOMElementString, generatedEndpointOMElement.toString());
+    }
+
+    /**
+     * Tests the generation of an OMElement for an HTTP endpoint configuration with OAuth Password Credentials grant type
+     * with some timeout properties.
+     *
+     * @throws XMLStreamException if an error occurs while parsing the XML
+     */
+    @Test
+    public void testEndpointOMElementGenerationWithOAuthPasswordWithSomeTimeoutProperties() throws XMLStreamException {
+
+        String omElementString =
+                "<http.init>\n" +
+                        "    <connectionType>https</connectionType>\n" +
+                        "    <name>library</name>\n" +
+                        "    <certificateInputType>File</certificateInputType>\n" +
+                        "    <authType>OAuth</authType>\n" +
+                        "    <oauthAuthorizationMode>Header</oauthAuthorizationMode>\n" +
+                        "    <oauthGrantType>Password</oauthGrantType>\n" +
+                        "    <baseUrl>http://jsonplaceholder.typicode.com/posts</baseUrl>\n" +
+                        "    <trustStoreCertificatePath>resources:certificates/serverpubliccert.crt</trustStoreCertificatePath>\n" +
+                        "    <suspendErrorCodes>403</suspendErrorCodes>\n" +
+                        "    <suspendProgressionFactor>1</suspendProgressionFactor>\n" +
+                        "    <retryErrorCodes>300</retryErrorCodes>\n" +
+                        "    <retryCount>3</retryCount>\n" +
+                        "    <retryDelay>20</retryDelay>\n" +
+                        "    <timeoutAction>Discard</timeoutAction>\n" +
+                        "    <clientId>admin</clientId>\n" +
+                        "    <clientSecret>admin</clientSecret>\n" +
+                        "    <tokenUrl>admin</tokenUrl>\n" +
+                        "    <username>admin</username>\n" +
+                        "    <password>admin</password>\n" +
+                        "    <oauthConnectionRequestTimeout>30000</oauthConnectionRequestTimeout>\n" +
+                        "    <oauthSocketTimeout>50000</oauthSocketTimeout>\n" +
+                        "</http.init>";
+        String expectedEndpointOMElementString =
+                "<endpoint xmlns=\"http://ws.apache.org/ns/synapse\" name=\"library_INTERNAL_ENDPOINT_REFERENCE\">" +
+                        "<http uri-template=\"{uri.var.base}{+uri.var.path}{+uri.var.query}\">" +
+                        "<timeout>" +
+                        "<responseAction>Discard</responseAction>" +
+                        "</timeout>" +
+                        "<suspendOnFailure>" +
+                        "<errorCodes>403</errorCodes>" +
+                        "<progressionFactor>1</progressionFactor>" +
+                        "</suspendOnFailure>" +
+                        "<markForSuspension>" +
+                        "<errorCodes>300</errorCodes>" +
+                        "<retriesBeforeSuspension>3</retriesBeforeSuspension>" +
+                        "<retryDelay>20</retryDelay>" +
+                        "</markForSuspension>" +
+                        "<authentication>" +
+                        "<oauth>" +
+                        "<passwordCredentials>" +
+                        "<username>admin</username>" +
+                        "<password>admin</password>" +
+                        "<clientId>admin</clientId>" +
+                        "<clientSecret>admin</clientSecret>" +
+                        "<tokenUrl>admin</tokenUrl>" +
+                        "<authMode>Header</authMode>" +
+                        "<connectionRequestTimeout>30000</connectionRequestTimeout>" +
+                        "<socketTimeout>50000</socketTimeout>" +
                         "</passwordCredentials>" +
                         "</oauth>" +
                         "</authentication>" +

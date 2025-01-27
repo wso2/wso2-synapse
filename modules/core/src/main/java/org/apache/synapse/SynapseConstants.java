@@ -693,6 +693,12 @@ public final class SynapseConstants {
     public static final String TOKEN_URL = "tokenUrl";
     public static final String CLIENT_ID = "clientId";
     public static final String CLIENT_SECRET = "clientSecret";
+    public static final String OAUTH_CONNECTION_TIMEOUT = "oauthConnectionTimeout";
+    public static final String OAUTH_CONNECTION_REQUEST_TIMEOUT = "oauthConnectionRequestTimeout";
+    public static final String OAUTH_SOCKET_TIMEOUT = "oauthSocketTimeout";
+    public static final String CONNECTION_TIMEOUT = "connectionTimeout";
+    public static final String CONNECTION_REQUEST_TIMEOUT = "connectionRequestTimeout";
+    public static final String SOCKET_TIMEOUT = "socketTimeout";
     public static final String USERNAME = "username";
     public static final String PASSWORD = "password";
     public static final String REFRESH_TOKEN = "refreshToken";
