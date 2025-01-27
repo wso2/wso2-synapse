@@ -21,8 +21,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import org.apache.synapse.util.synapse.expression.context.EvaluationContext;
 
-import java.math.BigDecimal;
-
 /**
  * Represents a leaf node in the AST that holds a literal value.
  */
@@ -77,9 +75,7 @@ public class LiteralNode implements ExpressionNode {
                 return new ExpressionResult(Long.parseLong(value));
             } catch (NumberFormatException e2) {
                 try {
-                    Double.parseDouble(value);
-                    // if double stored as big decimal, for accurate calculations
-                    return new ExpressionResult(new BigDecimal(value));
+                    return new ExpressionResult(Double.parseDouble(value));
                 } catch (NumberFormatException e3) {
                     throw new IllegalArgumentException("Value " + value + " is not a number");
                 }

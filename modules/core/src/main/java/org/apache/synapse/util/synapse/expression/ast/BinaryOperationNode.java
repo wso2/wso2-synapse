@@ -94,13 +94,13 @@ public class BinaryOperationNode implements ExpressionNode {
             case NOT_EQUALS:
                 return handleNotEquality(leftValue, rightValue);
             case LESS_THAN:
-                return handleComparison(leftValue, rightValue, (a, b) -> a.compareTo(b)<0);
+                return handleComparison(leftValue, rightValue, (a, b) -> a < b);
             case LESS_THAN_OR_EQUAL:
-                return handleComparison(leftValue, rightValue, (a, b) -> a.compareTo(b)<=0);
+                return handleComparison(leftValue, rightValue, (a, b) -> a <= b);
             case GREATER_THAN:
-                return handleComparison(leftValue, rightValue, (a, b) -> a.compareTo(b)>0);
+                return handleComparison(leftValue, rightValue, (a, b) -> a > b);
             case GREATER_THAN_OR_EQUAL:
-                return handleComparison(leftValue, rightValue, (a, b) -> a.compareTo(b)>=0);
+                return handleComparison(leftValue, rightValue, (a, b) -> a >= b);
             case AND:
             case AND_SYMBOL:
             case OR:
@@ -113,7 +113,7 @@ public class BinaryOperationNode implements ExpressionNode {
     }
 
     private ExpressionResult handleComparison(ExpressionResult leftValue, ExpressionResult rightValue,
-                                              BiFunction<BigDecimal, BigDecimal, Boolean> comparison) {
+                                              BiFunction<Double, Double, Boolean> comparison) {
         if ((leftValue.isDouble() || leftValue.isInteger()) && (rightValue.isDouble() || rightValue.isInteger())) {
             return new ExpressionResult(comparison.apply(leftValue.asDouble(), rightValue.asDouble()));
         }
@@ -152,7 +152,10 @@ public class BinaryOperationNode implements ExpressionNode {
     private ExpressionResult handleAddition(ExpressionResult leftValue, ExpressionResult rightValue) {
         if (leftValue.isNumeric() && rightValue.isNumeric()) {
             if (leftValue.isDouble() || rightValue.isDouble()) {
-                return new ExpressionResult(leftValue.asDouble().add(rightValue.asDouble()));
+                BigDecimal left = new BigDecimal(leftValue.asString());
+                BigDecimal right = new BigDecimal(rightValue.asString());
+                BigDecimal sum = left.add(right);
+                return new ExpressionResult(sum.doubleValue());
             } else if (leftValue.isLong() || rightValue.isLong()) {
                 return new ExpressionResult(leftValue.asLong() + rightValue.asLong());
             } else {
@@ -184,8 +187,8 @@ public class BinaryOperationNode implements ExpressionNode {
 
         // Promote to the highest precision type
         if (leftIsDouble || rightIsDouble) {
-            BigDecimal left = leftValue.asDouble();
-            BigDecimal right = rightValue.asDouble();
+            double left = leftValue.asDouble();
+            double right = rightValue.asDouble();
             return performDoubleOperation(left, right, operator);
         } else if (leftIsLong || rightIsLong) {
             long left = leftValue.asLong();
@@ -199,25 +202,27 @@ public class BinaryOperationNode implements ExpressionNode {
         }
     }
 
-    private ExpressionResult performDoubleOperation(BigDecimal left, BigDecimal right, Operator operator) {
+    private ExpressionResult performDoubleOperation(double left, double right, Operator operator) {
+        BigDecimal left1 = new BigDecimal(String.valueOf(left));
+        BigDecimal right1 = new BigDecimal(String.valueOf(right));
         switch (operator) {
             case SUBTRACT:
-                BigDecimal sum = left.subtract(right);
+                BigDecimal sum = left1.subtract(right1);
                 return new ExpressionResult(sum.doubleValue());
             case MULTIPLY:
-                BigDecimal product = left.multiply(right);
-                return new ExpressionResult(product);
+                BigDecimal product = left1.multiply(right1);
+                return new ExpressionResult(product.doubleValue());
             case DIVIDE:
-                if (right.compareTo(BigDecimal.ZERO) == 0) {
+                if (right == 0) {
                     throw new EvaluationException("Division by zero");
                 }
-                BigDecimal quotient = left.divide(right, BigDecimal.ROUND_HALF_UP);
+                BigDecimal quotient = left1.divide(right1, BigDecimal.ROUND_HALF_UP);
                 return new ExpressionResult(quotient.doubleValue());
             case MODULO:
-                if (right.compareTo(BigDecimal.ZERO) == 0) {
+                if (right == 0) {
                     throw new EvaluationException("Modulo by zero");
                 }
-                BigDecimal remainder = left.remainder(right);
+                BigDecimal remainder = left1.remainder(right1);
                 return new ExpressionResult(remainder.doubleValue());
             default:
                 throw new EvaluationException("Unsupported operator: " + operator + " between "

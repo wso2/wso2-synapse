@@ -174,19 +174,19 @@ public class PreDefinedFunctionsTest {
 
     @Test
     public void testFloor() {
-        Assert.assertEquals("-6", TestUtils.evaluateExpression("floor(-5.4)"));
-        Assert.assertEquals("5", TestUtils.evaluateExpression("floor(5.9)"));
-        Assert.assertEquals("-3", TestUtils.evaluateExpressionWithPayloadAndVariables("floor(vars.num3)", 0, 1));
-        Assert.assertEquals("2", TestUtils.evaluateExpressionWithPayloadAndVariables("floor(-1 * vars.num3)", 0, 1));
+        Assert.assertEquals("-6.0", TestUtils.evaluateExpression("floor(-5.4)"));
+        Assert.assertEquals("5.0", TestUtils.evaluateExpression("floor(5.9)"));
+        Assert.assertEquals("-3.0", TestUtils.evaluateExpressionWithPayloadAndVariables("floor(vars.num3)", 0, 1));
+        Assert.assertEquals("2.0", TestUtils.evaluateExpressionWithPayloadAndVariables("floor(-1 * vars.num3)", 0, 1));
         Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload("floor(payload.cars)", 1));
     }
 
     @Test
     public void testCeil() {
-        Assert.assertEquals("-5", TestUtils.evaluateExpression("ceil(-5.4)"));
-        Assert.assertEquals("6", TestUtils.evaluateExpression("ceil(5.9)"));
-        Assert.assertEquals("-2", TestUtils.evaluateExpressionWithPayloadAndVariables("ceil(vars.num3)", 0, 1));
-        Assert.assertEquals("3", TestUtils.evaluateExpressionWithPayloadAndVariables("ceil(-1 * vars.num3)", 0, 1));
+        Assert.assertEquals("-5.0", TestUtils.evaluateExpression("ceil(-5.4)"));
+        Assert.assertEquals("6.0", TestUtils.evaluateExpression("ceil(5.9)"));
+        Assert.assertEquals("-2.0", TestUtils.evaluateExpressionWithPayloadAndVariables("ceil(vars.num3)", 0, 1));
+        Assert.assertEquals("3.0", TestUtils.evaluateExpressionWithPayloadAndVariables("ceil(-1 * vars.num3)", 0, 1));
         Assert.assertEquals("", TestUtils.evaluateExpressionWithPayload("ceil(payload.cars)", 1));
     }
 

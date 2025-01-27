@@ -99,9 +99,7 @@ public class HeadersAndPropertiesAccessNode implements ExpressionNode {
                 return new ExpressionResult(Long.parseLong(value));
             } catch (NumberFormatException e2) {
                 try {
-                    Double.parseDouble(value);
-                    // if double stored as big decimal, for accurate calculations
-                    return new ExpressionResult(new BigDecimal(value));
+                    return new ExpressionResult(Double.parseDouble(value));
                 } catch (NumberFormatException e3) {
                     return new ExpressionResult(value);
                 }

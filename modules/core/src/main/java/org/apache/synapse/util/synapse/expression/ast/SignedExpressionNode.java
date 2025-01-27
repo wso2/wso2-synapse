@@ -19,8 +19,6 @@ package org.apache.synapse.util.synapse.expression.ast;
 
 import org.apache.synapse.util.synapse.expression.context.EvaluationContext;
 
-import java.math.BigDecimal;
-
 /**
  * Represents a node in the AST that holds a signed expression. ex: ( -vars.num1 )
  */
@@ -43,7 +41,7 @@ public class SignedExpressionNode implements ExpressionNode {
             if (result.isInteger()) {
                 return new ExpressionResult(-result.asInt());
             } else if (result.isDouble()) {
-                return new ExpressionResult(result.asDouble().multiply(BigDecimal.valueOf(-1)));
+                return new ExpressionResult(-result.asDouble());
             }
             throw new IllegalStateException("Cannot negate a non-numeric value : " + result.asString());
         }
