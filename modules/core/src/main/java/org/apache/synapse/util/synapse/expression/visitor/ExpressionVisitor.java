@@ -554,8 +554,8 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
                     case ExpressionConstants.QUERY_PARAM:
                         return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()),
                                 ExpressionConstants.QUERY_PARAM);
-                    case ExpressionConstants.URI_PARAM:
-                        return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()), ExpressionConstants.URI_PARAM);
+                    case ExpressionConstants.PATH_PARAM:
+                        return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()), ExpressionConstants.PATH_PARAM);
                     case ExpressionConstants.FUNC_PARAM:
                         return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()),
                                 HeadersAndPropertiesAccessNode.Type.FUNCTION_PARAM);
