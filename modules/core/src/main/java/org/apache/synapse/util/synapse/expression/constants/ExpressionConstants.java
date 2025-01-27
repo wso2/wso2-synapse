@@ -72,7 +72,7 @@ public class ExpressionConstants {
     public static final String SYNAPSE_EXPRESSION_IDENTIFIER_END = "}";
     public static final String AXIS2 = "axis2";
     public static final String QUERY_PARAM = "queryParams";
-    public static final String URI_PARAM = "uriParams";
+    public static final String PATH_PARAM = "pathParams";
     public static final String FUNC_PARAM = "functionParams";
 
 

@@ -73,7 +73,7 @@ public class HeadersAndPropertiesAccessNode implements ExpressionNode {
             } else if (Type.FUNCTION_PARAM.equals(type)) {
                 value = context.getFunctionParam(name);
             } else {
-                if (ExpressionConstants.URI_PARAM.equals(scope)) {
+                if (ExpressionConstants.PATH_PARAM.equals(scope)) {
                     value = context.getProperty("uri.var." + name, SynapseConstants.SYNAPSE);
                 } else if (ExpressionConstants.QUERY_PARAM.equals(scope)) {
                     value = context.getProperty("query.param." + name, SynapseConstants.SYNAPSE);
