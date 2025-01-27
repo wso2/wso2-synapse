@@ -25,6 +25,8 @@ import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
 import org.apache.synapse.util.synapse.expression.context.EvaluationContext;
 import org.apache.synapse.util.synapse.expression.exception.EvaluationException;
 
+import java.math.BigDecimal;
+
 /**
  * Represents a node in the abstract syntax tree that provides access to headers and properties.
  */
@@ -80,11 +82,31 @@ public class HeadersAndPropertiesAccessNode implements ExpressionNode {
                 }
             }
             if (value != null) {
-                return new ExpressionResult(value.toString());
+                return tryParseNumber(value.toString());
             } else {
                 throw new EvaluationException("Could not fetch the value of the key: " + name);
             }
         }
         throw new EvaluationException("Key cannot be null when accessing headers or properties");
     }
+
+
+    private ExpressionResult tryParseNumber(String value) {
+        try {
+            return new ExpressionResult(Integer.parseInt(value));
+        } catch (NumberFormatException e1) {
+            try {
+                return new ExpressionResult(Long.parseLong(value));
+            } catch (NumberFormatException e2) {
+                try {
+                    Double.parseDouble(value);
+                    // if double stored as big decimal, for accurate calculations
+                    return new ExpressionResult(new BigDecimal(value));
+                } catch (NumberFormatException e3) {
+                    return new ExpressionResult(value);
+                }
+            }
+        }
+    }
+
 }

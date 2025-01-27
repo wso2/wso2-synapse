@@ -529,8 +529,12 @@ public class PredefinedFunctionNode implements ExpressionNode {
     private ExpressionResult handleUrlEncodeFunction(ExpressionResult source, ExpressionResult argument1) {
         if (source.isString() && argument1.isString()) {
             try {
-                return new ExpressionResult(URLEncoder.encode(source.asString(), ExpressionUtils.getCharset(
-                        argument1.asString())).replace("+", "%20").replace("*", "%2A"));
+                String result = URLEncoder.encode(source.asString(), ExpressionUtils.getCharset(argument1.asString()));
+                if (argument1.asString().equals("UTF-8")) {
+                    return new ExpressionResult(result.replace("+", "%20").replace("*", "%2A"));
+                } else {
+                    return new ExpressionResult(result);
+                }
             } catch (UnsupportedCharsetException e) {
                 throw new EvaluationException("Invalid charset provided for urlEncode function. Charset: "
                         + argument1.asString());
