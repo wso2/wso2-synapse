@@ -17,18 +17,11 @@
  */
 package org.apache.synapse.util.synapse.expression.ast;
 
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonPrimitive;
-import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.PathNotFoundException;
-import com.jayway.jsonpath.spi.json.GsonJsonProvider;
-import com.jayway.jsonpath.spi.json.JsonProvider;
-import com.jayway.jsonpath.spi.mapper.GsonMappingProvider;
-import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.apache.axiom.om.OMNode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
@@ -38,14 +31,11 @@ import org.apache.synapse.util.synapse.expression.utils.ExpressionUtils;
 import org.jaxen.JaxenException;
 
 import java.io.IOException;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 
 /**
  * Represents a node in the AST that accesses a value in the payload or variable.
@@ -53,6 +43,7 @@ import java.util.regex.Pattern;
  */
 public class PayloadAccessNode implements ExpressionNode {
 
+    private String expression;
     private final String unProcessedExpression;
     private final Map<String, ExpressionNode> arguments;
 
@@ -73,14 +64,12 @@ public class PayloadAccessNode implements ExpressionNode {
         this.arguments = arguments;
         this.type = type;
         this.predefinedFunctionNode = predefinedFunctionNode;
-
     }
 
     @Override
     public ExpressionResult evaluate(EvaluationContext context, boolean isObjectValue) throws EvaluationException {
         // Take a copy of the expression to avoid modifying the original expression
         String expression = unProcessedExpression;
-
         if (expression.startsWith(ExpressionConstants.PAYLOAD)) {
             expression = ExpressionConstants.PAYLOAD_$ + expression.substring(ExpressionConstants.PAYLOAD.length());
         }

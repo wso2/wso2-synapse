@@ -40,7 +40,6 @@ import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 
 import java.io.ByteArrayInputStream;
-import java.math.BigDecimal;
 import javax.xml.namespace.QName;
 
 public class Utils {
@@ -185,7 +184,6 @@ public class Utils {
                 if (!(evaluatedValue instanceof Double)) {
                     handleDataTypeException("DOUBLE", expression, log);
                 }
-                evaluatedValue = BigDecimal.valueOf((Double) evaluatedValue);
                 break;
             case INTEGER:
                 if (!(evaluatedValue instanceof Integer)) {
