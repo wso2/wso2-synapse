@@ -509,6 +509,11 @@ public class Axis2MessageContext implements MessageContext {
         return this.continuationStateStack;
     }
 
+    public void restoreContinuationStateStack(Stack<ContinuationState> continuationStateStack) {
+        this.continuationStateStack.clear();
+        this.continuationStateStack.addAll(continuationStateStack);
+    }
+
     /**
      * Return the service level Log for this message context or null
      *

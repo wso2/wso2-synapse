@@ -334,6 +334,10 @@ public class TestMessageContext implements MessageContext {
         return null;
     }
 
+    @Override
+    public void restoreContinuationStateStack(Stack<ContinuationState> continuationStateStack) {
+    }
+
     public boolean isContinuationEnabled() {
         return false;
     }

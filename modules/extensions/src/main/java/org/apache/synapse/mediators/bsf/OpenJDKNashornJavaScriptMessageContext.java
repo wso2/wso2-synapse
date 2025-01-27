@@ -848,6 +848,11 @@ public class OpenJDKNashornJavaScriptMessageContext implements ScriptMessageCont
         return mc.getContinuationStateStack();
     }
 
+    @Override
+    public void restoreContinuationStateStack(Stack<ContinuationState> continuationStateStack) {
+        mc.restoreContinuationStateStack(continuationStateStack);
+    }
+
     /**
      * {@inheritDoc}
      */

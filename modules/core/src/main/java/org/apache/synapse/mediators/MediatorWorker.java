@@ -94,16 +94,22 @@ public class MediatorWorker implements Runnable {
                 debugManager.advertiseMediationFlowStartPoint(synCtx);
             }
 
-            boolean result = seq.mediate(synCtx);
-            // If this is a scatter message, then we need to use the continuation state and continue the mediation
-            if (Utils.isScatterMessage(synCtx) && result) {
+            // If this is a scatter message, then we need to use the clone the continuation state and continue the mediation
+            if (Utils.isScatterMessage(synCtx)) {
                 SeqContinuationState seqContinuationState = (SeqContinuationState) ContinuationStackManager.peakContinuationStateStack(synCtx);
                 if (seqContinuationState == null) {
+                    log.error("Sequence Continuation State cannot be found in the stack, hence cannot continue the mediation.");
                     return;
                 }
-                SequenceMediator sequenceMediator = ContinuationStackManager.retrieveSequence(synCtx, seqContinuationState);
-                synCtx.setProperty(SynapseConstants.CONTINUE_FLOW_TRIGGERED_FROM_MEDIATOR_WORKER, true);
-                sequenceMediator.mediate(synCtx, seqContinuationState);
+                SeqContinuationState clonedSeqContinuationState = ContinuationStackManager.getClonedSeqContinuationState(seqContinuationState);
+                boolean result = seq.mediate(synCtx);
+                if (result) {
+                    SequenceMediator sequenceMediator = ContinuationStackManager.retrieveSequence(synCtx, clonedSeqContinuationState);
+                    synCtx.setProperty(SynapseConstants.CONTINUE_FLOW_TRIGGERED_FROM_MEDIATOR_WORKER, true);
+                    sequenceMediator.mediate(synCtx, clonedSeqContinuationState);
+                }
+            } else {
+                seq.mediate(synCtx);
             }
             //((Axis2MessageContext)synCtx).getAxis2MessageContext().getEnvelope().discard();
 

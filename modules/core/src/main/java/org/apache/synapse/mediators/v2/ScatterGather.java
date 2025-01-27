@@ -73,6 +73,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import java.util.Stack;
 import java.util.Timer;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
@@ -135,18 +136,25 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
             }
         }
 
+        SharedDataHolder sharedDataHolder = new SharedDataHolder();
         MessageContext orginalMessageContext = null;
         if (!isTargetBody()) {
             try {
                 // Clone the original MessageContext and save it to continue the flow using it when the scatter gather
                 // output is set to a variable
                 orginalMessageContext = MessageHelper.cloneMessageContext(synCtx);
+                sharedDataHolder.setSynCtx(orginalMessageContext);
             } catch (AxisFault e) {
                 handleException("Error cloning the message context", e, synCtx);
             }
+        } else {
+            //  Make a copy of ContinuationStateStack and set it to the sharedDataHolder to continue the flow after aggregation
+            Stack<ContinuationState> continuationStateStack = new Stack<>();
+            continuationStateStack.addAll(synCtx.getContinuationStateStack());
+            sharedDataHolder.setContinuationStateStack(continuationStateStack);
         }
 
-        synCtx.setProperty(EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id, new SharedDataHolder(orginalMessageContext));
+        synCtx.setProperty(EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id, sharedDataHolder);
         Iterator<Target> iter = targets.iterator();
         int i = 0;
         while (iter.hasNext()) {
@@ -520,6 +528,19 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
         return null;
     }
 
+    private Stack<ContinuationState> getOriginalContinuationStateStack(Aggregate aggregate) {
+
+        MessageContext lastMessage = aggregate.getLastMessage();
+        if (lastMessage != null) {
+            Object aggregateHolderObj = lastMessage.getProperty(EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id);
+            if (aggregateHolderObj != null) {
+                SharedDataHolder sharedDataHolder = (SharedDataHolder) aggregateHolderObj;
+                return sharedDataHolder.getContinuationStateStack();
+            }
+        }
+        return null;
+    }
+
     private void setContentType(MessageContext synCtx) {
 
         org.apache.axis2.context.MessageContext a2mc = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
@@ -642,6 +663,11 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
                     aggregate.getLastMessage());
         }
         StatisticDataCollectionHelper.collectAggregatedParents(aggregate.getMessages(), newCtx);
+        if (getOriginalContinuationStateStack(aggregate) != null) {
+            newCtx.restoreContinuationStateStack(getOriginalContinuationStateStack(aggregate));
+        } else {
+            handleException(aggregate, "Error restoring the continuation state stack", null, newCtx);
+        }
         return newCtx;
     }
 
