@@ -81,17 +81,22 @@ public class ForEachMediatorSerializer extends AbstractMediatorSerializer {
 
             if (forEachMediatorV2.getCollectionExpression() != null) {
                 SynapsePathSerializer.serializePath(forEachMediatorV2.getCollectionExpression(),
-                        forEachElem, "collection");
+                        forEachMediatorV2.getCollectionExpression().getExpression(), forEachElem, "collection");
             } else {
                 handleException("Missing collection of the ForEach which is required.");
             }
             forEachElem.addAttribute(fac.createOMAttribute(
                     "parallel-execution", nullNS, Boolean.toString(forEachMediatorV2.getParallelExecution())));
-            if (forEachMediatorV2.getResultTarget() != null) {
+            if (forEachMediatorV2.isContinueWithoutAggregation()) {
                 forEachElem.addAttribute(fac.createOMAttribute(
-                        "result-target", nullNS, forEachMediatorV2.getResultTarget()));
-                forEachElem.addAttribute(fac.createOMAttribute(
-                        "result-type", nullNS, forEachMediatorV2.getContentType()));
+                        "continue-without-aggregation", nullNS, "true"));
+            } else {
+                if (forEachMediatorV2.getResultTarget() != null) {
+                    forEachElem.addAttribute(fac.createOMAttribute(
+                            "result-target", nullNS, forEachMediatorV2.getResultTarget()));
+                    forEachElem.addAttribute(fac.createOMAttribute(
+                            "result-type", nullNS, forEachMediatorV2.getContentType()));
+                }
             }
             if (forEachMediatorV2.getCounterVariable() != null) {
                 forEachElem.addAttribute(fac.createOMAttribute(

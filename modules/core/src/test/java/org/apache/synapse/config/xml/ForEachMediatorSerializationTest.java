@@ -57,4 +57,17 @@ public class ForEachMediatorSerializationTest extends AbstractTestCase {
         assertTrue(serialization(inputXml, foreachMediatorFactory, foreachMediatorSerializer));
         assertTrue(serialization(inputXml, foreachMediatorSerializer));
     }
+
+    public void testForEachMediatorV2_continueWithoutAggregation() throws Exception {
+        String inputXML = "<foreach collection=\"${payload.array}\" parallel-execution=\"true\" " +
+                "continue-without-aggregation=\"true\" xmlns=\"http://ws.apache.org/ns/synapse\">" +
+                "<sequence>" +
+                "<log>" +
+                "<message>Processing payload ${payload}</message>" +
+                "</log>" +
+                "</sequence>" +
+                "</foreach>";
+        assertTrue(serialization(inputXML, foreachMediatorFactory, foreachMediatorSerializer));
+        assertTrue(serialization(inputXML, foreachMediatorSerializer));
+    }
 }
