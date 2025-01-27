@@ -98,7 +98,11 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                     if (isFreeMarkerTemplate(payloadFactoryMediator)) {
                         format = PayloadFactoryMediatorSerializer.removeCDATAFromPayload(copy.getText());
                     } else {
-                        format = copy.getFirstElement().toString();
+                        if (formatElem.getFirstElement() != null) {
+                            format = copy.getFirstElement().toString();
+                        } else {
+                            format = copy.getText();
+                        }
                     }
                 }
                 payloadFactoryMediator.setFormat(format);
