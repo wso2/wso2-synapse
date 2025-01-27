@@ -33,6 +33,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.util.InlineExpressionUtil;
+import org.apache.synapse.util.logging.LoggingUtils;
 import org.apache.synapse.util.xpath.SynapseExpression;
 import org.jaxen.JaxenException;
 
@@ -114,6 +115,11 @@ public class LogMediator extends AbstractMediator {
             }
         }
 
+        if (this.getLogLevel() == MESSAGE_TEMPLATE) {
+            // Entry points info should be logged for audit logs only. Hence, the property "logEntryPointInfo"
+            // should be set at this point just before the audit logs and removed just after audit logs.
+            synCtx.setProperty(LoggingUtils.LOG_ENTRY_POINT_INFO, "true");
+        }
         switch (category) {
             case CATEGORY_INFO :
                 synLog.auditLog(getLogMessage(synCtx));
@@ -139,6 +145,7 @@ public class LogMediator extends AbstractMediator {
                 break;
         }
 
+        synCtx.getPropertyKeySet().remove(LoggingUtils.LOG_ENTRY_POINT_INFO);
         synLog.traceOrDebug("End : Log mediator");
 
         return true;
