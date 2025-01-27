@@ -729,6 +729,7 @@ public final class SynapseConstants {
     public static final String RESPONSE_VARIABLE = "responseVariable";
     public static final String OVERWRITE_BODY = "overwriteBody";
     public static final String ORIGINAL_PAYLOAD = "ORIGINAL_PAYLOAD";
+    public static final String BEFORE_INVOKE_TEMPLATE = "BEFORE_INVOKE_TEMPLATE";
 
     public static final String DEFAULT_ERROR_TYPE = "ANY";
     public static final String ERROR_STATS_REPORTED = "ERROR_STATS_REPORTED";
