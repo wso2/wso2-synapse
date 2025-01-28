@@ -19,6 +19,8 @@
 package org.apache.synapse.mediators.template;
 
 import com.google.gson.JsonObject;
+import org.apache.axis2.transport.TransportUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
@@ -45,6 +47,7 @@ import org.apache.synapse.mediators.elementary.EnrichMediator;
 import org.apache.synapse.mediators.elementary.Source;
 import org.apache.synapse.mediators.elementary.Target;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.util.MediatorEnrichUtil;
 import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
 
@@ -56,7 +59,9 @@ import java.util.Stack;
 import java.util.TreeMap;
 
 import static org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS;
+import static org.apache.synapse.mediators.builtin.CallMediator.ORIGINAL_CONTENT_TYPE;
 import static org.apache.synapse.mediators.builtin.CallMediator.ORIGINAL_MESSAGE_TYPE;
+import static org.apache.synapse.mediators.builtin.CallMediator.ORIGINAL_NO_ENTITY_BODY;
 import static org.apache.synapse.mediators.builtin.CallMediator.ORIGINAL_TRANSPORT_HEADERS;
 
 /**
@@ -220,6 +225,10 @@ public class InvokeMediator extends AbstractMediator implements
 		while (parameterNames.hasNext()) {
 			String parameterName = parameterNames.next();
 			if (!"".equals(parameterName)) {
+				if (SynapseConstants.RESPONSE_VARIABLE.equals(parameterName) ||
+						SynapseConstants.OVERWRITE_BODY.equals(parameterName)) {
+					return true;
+				}
 				Value parameter = pName2ExpressionMap.get(parameterName);
 				SynapsePath expression = parameter.getExpression();
 				if (expression != null && expression.isContentAware()) {
@@ -310,18 +319,14 @@ public class InvokeMediator extends AbstractMediator implements
 
     private boolean storeResponseInVariableEnabled(MessageContext synCtx) {
 
-        if (pName2ExpressionMap.keySet().contains(SynapseConstants.OVERWRITE_BODY) &&
-                pName2ExpressionMap.keySet().contains(SynapseConstants.RESPONSE_VARIABLE)) {
+        if (pName2ExpressionMap.containsKey(SynapseConstants.RESPONSE_VARIABLE)) {
             Value responseVariable = pName2ExpressionMap.get(SynapseConstants.RESPONSE_VARIABLE);
-            Value overwriteBody = pName2ExpressionMap.get(SynapseConstants.OVERWRITE_BODY);
-            if (responseVariable != null && overwriteBody != null) {
+            if (responseVariable != null) {
                 String responseVariableValue = responseVariable.evaluateValue(synCtx);
-                String overwriteBodyValue = overwriteBody.evaluateValue(synCtx);
                 if (log.isDebugEnabled()) {
                     log.debug("Response variable value: " + responseVariableValue);
-                    log.debug("Overwrite body value: " + overwriteBodyValue);
                 }
-                if (responseVariableValue != null && overwriteBodyValue != null) {
+                if (StringUtils.isNotEmpty(responseVariableValue)) {
                     return true;
                 } else {
                     if (log.isDebugEnabled()) {
@@ -341,24 +346,34 @@ public class InvokeMediator extends AbstractMediator implements
         if (!storeResponseInVariableEnabled(synCtx)) {
             return;
         }
-
-        org.apache.axis2.context.MessageContext axis2MessageContext =
-                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-        Object messageType = axis2MessageContext.getProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE);
-        Object headers = axis2MessageContext.getProperty(TRANSPORT_HEADERS);
-        Map transportHeadersMap = (Map) headers;
-        // Create a clone of the original transport headers
-        transportHeadersMap = new TreeMap(transportHeadersMap);
-        String originalMessageType = (String) messageType;
-        synCtx.setProperty(ORIGINAL_MESSAGE_TYPE + "_" + synCtx.getMessageID(), originalMessageType);
-        synCtx.setProperty(ORIGINAL_TRANSPORT_HEADERS + "_" + synCtx.getMessageID(), transportHeadersMap);
-        boolean overwriteBody = Boolean.parseBoolean(pName2ExpressionMap.get(
-                SynapseConstants.OVERWRITE_BODY).evaluateValue(synCtx));
+        Value overwriteBodyValue = pName2ExpressionMap.get(SynapseConstants.OVERWRITE_BODY);
+        boolean overwriteBody = false;
+        if (overwriteBodyValue != null) {
+            overwriteBody = Boolean.parseBoolean(overwriteBodyValue.evaluateValue(synCtx));
+        }
         if (!overwriteBody) {
-            Source source = MediatorEnrichUtil.createSourceWithBody();
-            String targetPropertyName = SynapseConstants.ORIGINAL_PAYLOAD + "_" + synCtx.getMessageID();
-            Target target = MediatorEnrichUtil.createTargetWithProperty(targetPropertyName);
-            MediatorEnrichUtil.doEnrich(synCtx, source, target, originalMessageType);
+            org.apache.axis2.context.MessageContext axis2MessageContext =
+                    ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+            Object messageType = axis2MessageContext.getProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE);
+            Object contentType = axis2MessageContext.getProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE);
+            Object headers = axis2MessageContext.getProperty(TRANSPORT_HEADERS);
+            Map transportHeadersMap = (Map) headers;
+            // Create a clone of the original transport headers
+            transportHeadersMap = new TreeMap(transportHeadersMap);
+            synCtx.setProperty(ORIGINAL_MESSAGE_TYPE + "_" + SynapseConstants.BEFORE_INVOKE_TEMPLATE, messageType);
+            synCtx.setProperty(ORIGINAL_CONTENT_TYPE + "_" + SynapseConstants.BEFORE_INVOKE_TEMPLATE, contentType);
+            synCtx.setProperty(ORIGINAL_TRANSPORT_HEADERS + "_" +
+                    SynapseConstants.BEFORE_INVOKE_TEMPLATE, transportHeadersMap);
+            Object noEntityBody = axis2MessageContext.getProperty(PassThroughConstants.NO_ENTITY_BODY);
+            synCtx.setProperty(ORIGINAL_NO_ENTITY_BODY + "_" +
+                    SynapseConstants.BEFORE_INVOKE_TEMPLATE, noEntityBody);
+            if (!Boolean.TRUE.equals(noEntityBody)) {
+                Source source = MediatorEnrichUtil.createSourceWithBody();
+                String targetPropertyName = SynapseConstants.ORIGINAL_PAYLOAD + "_" +
+                        SynapseConstants.BEFORE_INVOKE_TEMPLATE;
+                Target target = MediatorEnrichUtil.createTargetWithProperty(targetPropertyName);
+                doEnrich(synCtx, source, target);
+            }
         }
     }
 
@@ -367,23 +382,43 @@ public class InvokeMediator extends AbstractMediator implements
         if (!storeResponseInVariableEnabled(synCtx)) {
             return;
         }
-        processConnectorResponse(synCtx);
         boolean overwriteBody = Boolean.parseBoolean(pName2ExpressionMap.get(
                 SynapseConstants.OVERWRITE_BODY).evaluateValue(synCtx));
+        processConnectorResponse(synCtx, overwriteBody);
         if (!overwriteBody) {
-            String originalMessageType =
-                    (String) synCtx.getProperty(ORIGINAL_MESSAGE_TYPE + "_" + synCtx.getMessageID());
             Map originalTransportHeaders =
-                    (Map) synCtx.getProperty(ORIGINAL_TRANSPORT_HEADERS + "_" + synCtx.getMessageID());
-            Source sourceForResponseProperty = MediatorEnrichUtil.createSourceWithProperty(
-                    SynapseConstants.ORIGINAL_PAYLOAD + "_" + synCtx.getMessageID());
-            Target targetForResponseProperty = MediatorEnrichUtil.createTargetWithBody();
-            MediatorEnrichUtil.doEnrich(
-                    synCtx, sourceForResponseProperty, targetForResponseProperty, originalMessageType);
+                    (Map) synCtx.getProperty(ORIGINAL_TRANSPORT_HEADERS + "_" +
+                            SynapseConstants.BEFORE_INVOKE_TEMPLATE);
             org.apache.axis2.context.MessageContext axis2MsgCtx =
                     ((Axis2MessageContext) synCtx).getAxis2MessageContext();
             axis2MsgCtx.setProperty(TRANSPORT_HEADERS, originalTransportHeaders);
+            axis2MsgCtx.setProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE,
+                    synCtx.getProperty(ORIGINAL_MESSAGE_TYPE + "_" + SynapseConstants.BEFORE_INVOKE_TEMPLATE));
+            axis2MsgCtx.setProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE,
+                    synCtx.getProperty(ORIGINAL_CONTENT_TYPE + "_" + SynapseConstants.BEFORE_INVOKE_TEMPLATE));
+            Object noEntityBody = synCtx.getProperty(ORIGINAL_NO_ENTITY_BODY + "_" +
+                    SynapseConstants.BEFORE_INVOKE_TEMPLATE);
+            if (!Boolean.TRUE.equals(noEntityBody)) {
+                Source sourceForResponsePayload = MediatorEnrichUtil.createSourceWithProperty(
+                        SynapseConstants.ORIGINAL_PAYLOAD + "_" + SynapseConstants.BEFORE_INVOKE_TEMPLATE);
+                Target targetForResponsePayload = MediatorEnrichUtil.createTargetWithBody();
+                doEnrich(synCtx, sourceForResponsePayload, targetForResponsePayload);
+            } else {
+                axis2MsgCtx.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
+                TransportUtils.createSOAPEnvelope(null);
+            }
+
+            // Remove the temporary properties
+            synCtx.getPropertyKeySet().remove(SynapseConstants.ORIGINAL_PAYLOAD + "_" +
+                    SynapseConstants.BEFORE_INVOKE_TEMPLATE);
+            synCtx.getPropertyKeySet().remove(ORIGINAL_MESSAGE_TYPE + "_" + SynapseConstants.BEFORE_INVOKE_TEMPLATE);
+            synCtx.getPropertyKeySet().remove(ORIGINAL_CONTENT_TYPE + "_" + SynapseConstants.BEFORE_INVOKE_TEMPLATE);
+            synCtx.getPropertyKeySet().remove(ORIGINAL_NO_ENTITY_BODY + "_" +
+                    SynapseConstants.BEFORE_INVOKE_TEMPLATE);
+            synCtx.getPropertyKeySet().remove(ORIGINAL_TRANSPORT_HEADERS + "_" +
+                    SynapseConstants.BEFORE_INVOKE_TEMPLATE);
         }
+
     }
 
 	public String getTargetTemplate() {
@@ -458,21 +493,25 @@ public class InvokeMediator extends AbstractMediator implements
         }
     }
 
-    private void processConnectorResponse(MessageContext synCtx) {
+    private void processConnectorResponse(MessageContext synCtx, boolean overwriteBody) {
 
         String responseVariableName = pName2ExpressionMap.get(SynapseConstants.RESPONSE_VARIABLE).evaluateValue(synCtx);
         ConnectorResponse connectorResponse = (ConnectorResponse) synCtx.getVariable(responseVariableName);
         Map<String, Object> responseMap = new HashMap<>();
         if (connectorResponse == null) {
-            String messageType = (String) synCtx.getProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE);
             Source sourceForResponsePayload = MediatorEnrichUtil.createSourceWithBody();
             Target targetForResponsePayload = new Target();
             targetForResponsePayload.setTargetType(EnrichMediator.VARIABLE);
             targetForResponsePayload.setVariable(pName2ExpressionMap.get(SynapseConstants.RESPONSE_VARIABLE));
-            MediatorEnrichUtil.doEnrich(synCtx, sourceForResponsePayload, targetForResponsePayload, messageType);
+            doEnrich(synCtx, sourceForResponsePayload, targetForResponsePayload);
+            if (overwriteBody) {
+                // If overwrite body is enabled, no need to store the payload in the variable
+                Map response = (Map) synCtx.getVariable(responseVariableName);
+                response.remove(ExpressionConstants.PAYLOAD);
+            }
         } else {
             Object payload = connectorResponse.getPayload();
-            if (payload != null) {
+            if (!overwriteBody && payload != null) {
                 responseMap.put(ExpressionConstants.PAYLOAD, payload);
             }
             Map<String, Object> headers = connectorResponse.getHeaders();
@@ -485,6 +524,19 @@ public class InvokeMediator extends AbstractMediator implements
             }
             synCtx.setVariable(responseVariableName, responseMap);
         }
+    }
+
+    private void doEnrich(MessageContext synCtx, Source source, Target target) {
+
+        // If the message builder is not invoked, build the message
+        if (!Boolean.TRUE.equals(synCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
+            MediatorEnrichUtil.buildMessage(synCtx);
+        }
+        EnrichMediator enrichMediator = new EnrichMediator();
+        enrichMediator.setSource(source);
+        enrichMediator.setTarget(target);
+        enrichMediator.setNativeJsonSupportEnabled(true);
+        enrichMediator.mediate(synCtx);
     }
 
     private JsonObject convertMapToJson(Map<String, Object> map) {

@@ -39,7 +39,9 @@ public class DefaultConnectorResponse implements ConnectorResponse {
 
     @Override
     public void setHeaders(Map<String, Object> headers) {
-        this.headers = headers;
+        if (headers != null) {
+            this.headers = headers;
+        }
     }
 
     @Override
@@ -49,7 +51,9 @@ public class DefaultConnectorResponse implements ConnectorResponse {
 
     @Override
     public void setAttributes(Map<String, Object> attributes) {
-        this.attributes = attributes;
+        if (attributes != null) {
+            this.attributes = attributes;
+        }
     }
 
     @Override

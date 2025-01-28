@@ -122,6 +122,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
     public static final String IS_TARGET_AVAILABLE = "IS_TARGET_AVAILABLE";
     public static final String ORIGINAL_TRANSPORT_HEADERS = "_ORIGINAL_TRANSPORT_HEADERS";
     public static final String ORIGINAL_CONTENT_TYPE = "_ORIGINAL_CONTENT_TYPE";
+    public static final String ORIGINAL_NO_ENTITY_BODY = "_ORIGINAL_NO_ENTITY_BODY";
 
     public static final String JSON_TYPE = "application/json";
 
