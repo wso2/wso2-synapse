@@ -71,7 +71,7 @@ NULL_LITERAL
     ;
 
 // Identifiers
-ID: [a-zA-Z_][a-zA-Z_0-9]*;
+ID: [a-zA-Z_][a-zA-Z_0-9-]*;
 
 // Special symbols for JSONPath filter expressions
 QUESTION: '?';
