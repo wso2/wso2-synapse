@@ -64,7 +64,7 @@ public class LibClassLoader extends URLClassLoader {
         if (libFiles.exists() && libFiles.isDirectory()) {
             File[] files = libFiles.listFiles();
             for (int i = 0; i < files.length; ++i) {
-                if (files[i].getName().endsWith(".jar")) {
+                if (!files[i].isDirectory() && files[i].getName().endsWith(".jar")) {
                     urls.add(files[i].toURL());
                 }
             }
