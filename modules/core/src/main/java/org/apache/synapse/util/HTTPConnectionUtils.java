@@ -184,7 +184,10 @@ public class HTTPConnectionUtils {
                             connectionElements.get(SynapseConstants.CLIENT_SECRET),
                             connectionElements.get(SynapseConstants.TOKEN_URL),
                             connectionElements.get(SynapseConstants.OAUTH_AUTHORIZATION_MODE),
-                            connectionElements.get(SynapseConstants.REQUEST_PARAMETERS));
+                            connectionElements.get(SynapseConstants.REQUEST_PARAMETERS),
+                            connectionElements.get(SynapseConstants.CONNECTION_TIMEOUT),
+                            connectionElements.get(SynapseConstants.CONNECTION_REQUEST_TIMEOUT),
+                            connectionElements.get(SynapseConstants.SOCKET_TIMEOUT));
                     oauth.addChild(authorizationCode);
                     authentication.addChild(oauth);
                     http.addChild(authentication);
@@ -195,7 +198,10 @@ public class HTTPConnectionUtils {
                             connectionElements.get(SynapseConstants.CLIENT_SECRET),
                             connectionElements.get(SynapseConstants.TOKEN_URL),
                             connectionElements.get(SynapseConstants.OAUTH_AUTHORIZATION_MODE),
-                            connectionElements.get(SynapseConstants.REQUEST_PARAMETERS));
+                            connectionElements.get(SynapseConstants.REQUEST_PARAMETERS),
+                            connectionElements.get(SynapseConstants.CONNECTION_TIMEOUT),
+                            connectionElements.get(SynapseConstants.CONNECTION_REQUEST_TIMEOUT),
+                            connectionElements.get(SynapseConstants.SOCKET_TIMEOUT));
                     oauth.addChild(clientCredentials);
                     authentication.addChild(oauth);
                     http.addChild(authentication);
@@ -208,7 +214,10 @@ public class HTTPConnectionUtils {
                             connectionElements.get(SynapseConstants.CLIENT_SECRET),
                             connectionElements.get(SynapseConstants.TOKEN_URL),
                             connectionElements.get(SynapseConstants.OAUTH_AUTHORIZATION_MODE),
-                            connectionElements.get(SynapseConstants.REQUEST_PARAMETERS));
+                            connectionElements.get(SynapseConstants.REQUEST_PARAMETERS),
+                            connectionElements.get(SynapseConstants.CONNECTION_TIMEOUT),
+                            connectionElements.get(SynapseConstants.CONNECTION_REQUEST_TIMEOUT),
+                            connectionElements.get(SynapseConstants.SOCKET_TIMEOUT));
                     oauth.addChild(passwordCredentials);
                     authentication.addChild(oauth);
                     http.addChild(authentication);
@@ -368,13 +377,19 @@ public class HTTPConnectionUtils {
      * @param tokenUrl                  the token URL
      * @param authMode                  the authorization mode
      * @param oauthAdditionalProperties the additional properties for OAuth authentication
+     * @param connectionTimeout         the connection timeout
+     * @param connectionRequestTimeout  the connection request timeout
+     * @param socketTimeout             the socket timeout
      * @return the OMElement representing the OAuth password credentials grant type
      */
     private static OMElement generateOAuthPasswordCredentialsElement(OMFactory factory, OMNamespace synapseNS,
                                                                      String username, String password, String clientId,
                                                                      String clientSecret, String tokenUrl,
                                                                      String authMode,
-                                                                     String oauthAdditionalProperties) {
+                                                                     String oauthAdditionalProperties,
+                                                                     String connectionTimeout,
+                                                                     String connectionRequestTimeout,
+                                                                     String socketTimeout) {
 
         OMElement passwordCredentials = factory.createOMElement(SynapseConstants.PASSWORD_CREDENTIALS, synapseNS);
 
@@ -391,6 +406,8 @@ public class HTTPConnectionUtils {
         passwordCredentials.addChild(clientSecretElement);
         passwordCredentials.addChild(tokenUrlElement);
         passwordCredentials.addChild(authModeElement);
+        handleOAuthTimeouts(
+                factory, synapseNS, passwordCredentials, connectionTimeout, connectionRequestTimeout, socketTimeout);
 
         if (StringUtils.isNotEmpty(oauthAdditionalProperties)) {
             OMElement additionalProperties =
@@ -412,12 +429,18 @@ public class HTTPConnectionUtils {
      * @param tokenUrl                  the token URL
      * @param authMode                  the authorization mode
      * @param oauthAdditionalProperties the additional properties for OAuth authentication
+     * @param connectionTimeout         the connection timeout
+     * @param connectionRequestTimeout  the connection request timeout
+     * @param socketTimeout             the socket timeout
      * @return the OMElement representing the OAuth client credentials grant type
      */
     private static OMElement generateOAuthClientCredentialsElement(OMFactory factory, OMNamespace synapseNS,
                                                                    String clientId, String clientSecret,
                                                                    String tokenUrl, String authMode,
-                                                                   String oauthAdditionalProperties) {
+                                                                   String oauthAdditionalProperties,
+                                                                   String connectionTimeout,
+                                                                   String connectionRequestTimeout,
+                                                                   String socketTimeout) {
 
         OMElement clientCredentials = factory.createOMElement(SynapseConstants.CLIENT_CREDENTIALS, synapseNS);
 
@@ -430,6 +453,7 @@ public class HTTPConnectionUtils {
         clientCredentials.addChild(oauthClientSecret);
         clientCredentials.addChild(oauthTokenUrl);
         clientCredentials.addChild(authorizationMode);
+        handleOAuthTimeouts(factory, synapseNS, clientCredentials, connectionTimeout, connectionRequestTimeout, socketTimeout);
 
         if (StringUtils.isNotEmpty(oauthAdditionalProperties)) {
             OMElement additionalProperties =
@@ -437,6 +461,80 @@ public class HTTPConnectionUtils {
             clientCredentials.addChild(additionalProperties);
         }
         return clientCredentials;
+    }
+
+    /**
+     * Handles the OAuth timeouts.
+     *
+     * @param factory                  the OMFactory used to create OMElements
+     * @param synapseNS                the OMNamespace for the Synapse configuration
+     * @param targetOAuthElement       the target OAuth OMElement
+     * @param connectionTimeout        the connection timeout
+     * @param connectionRequestTimeout the connection request timeout
+     * @param socketTimeout            the socket timeout
+     */
+    private static void handleOAuthTimeouts(OMFactory factory, OMNamespace synapseNS, OMElement targetOAuthElement,
+                                            String connectionTimeout, String connectionRequestTimeout,
+                                            String socketTimeout) {
+
+        if (StringUtils.isNotEmpty(connectionTimeout)) {
+            OMElement connectionTimeoutElement = generateOAuthConnectionTimeoutElement(factory, synapseNS, connectionTimeout);
+            targetOAuthElement.addChild(connectionTimeoutElement);
+        }
+        if (StringUtils.isNotEmpty(connectionRequestTimeout)) {
+            OMElement connectionRequestTimeoutElement = generateOAuthConnectionRequestTimeoutElement(factory, synapseNS, connectionRequestTimeout);
+            targetOAuthElement.addChild(connectionRequestTimeoutElement);
+        }
+        if (StringUtils.isNotEmpty(socketTimeout)) {
+            OMElement socketTimeoutElement = generateOAuthSocketTimeoutElement(factory, synapseNS, socketTimeout);
+            targetOAuthElement.addChild(socketTimeoutElement);
+        }
+    }
+
+    /**
+     * Generates an OMElement representing the OAuth socket timeout.
+     *
+     * @param factory           the OMFactory used to create OMElements
+     * @param synapseNS         the OMNamespace for the Synapse configuration
+     * @param socketTimeout     the socket timeout
+     * @return the OMElement representing the OAuth socket timeout
+     */
+    private static OMElement generateOAuthSocketTimeoutElement(OMFactory factory, OMNamespace synapseNS, String socketTimeout) {
+
+        OMElement oauthSocketTimeout = factory.createOMElement(SynapseConstants.SOCKET_TIMEOUT, synapseNS);
+        oauthSocketTimeout.setText(socketTimeout);
+        return oauthSocketTimeout;
+    }
+
+    /**
+     * Generates an OMElement representing the OAuth connection request timeout.
+     *
+     * @param factory                the OMFactory used to create OMElements
+     * @param synapseNS              the OMNamespace for the Synapse configuration
+     * @param connectionRequestTimeout the connection request timeout
+     * @return the OMElement representing the OAuth connection request timeout
+     */
+    private static OMElement generateOAuthConnectionRequestTimeoutElement(OMFactory factory, OMNamespace synapseNS, String connectionRequestTimeout) {
+
+        OMElement oauthConnectionRequestTimeout = factory.createOMElement(SynapseConstants.CONNECTION_REQUEST_TIMEOUT, synapseNS);
+        oauthConnectionRequestTimeout.setText(connectionRequestTimeout);
+        return oauthConnectionRequestTimeout;
+    }
+
+    /**
+     * Generates an OMElement representing the OAuth connection timeout.
+     *
+     * @param factory           the OMFactory used to create OMElements
+     * @param synapseNS         the OMNamespace for the Synapse configuration
+     * @param connectionTimeout the connection timeout
+     * @return the OMElement representing the OAuth connection timeout
+     */
+    private static OMElement generateOAuthConnectionTimeoutElement(OMFactory factory, OMNamespace synapseNS,
+                                                                   String connectionTimeout) {
+
+        OMElement oauthConnectionTimeout = factory.createOMElement(SynapseConstants.CONNECTION_TIMEOUT, synapseNS);
+        oauthConnectionTimeout.setText(connectionTimeout);
+        return oauthConnectionTimeout;
     }
 
     /**
@@ -457,7 +555,10 @@ public class HTTPConnectionUtils {
     private static OMElement generateOAuthAuthorizationCodeElement(OMFactory factory, OMNamespace synapseNS,
                                                                    String refreshToken, String clientId,
                                                                    String clientSecret, String tokenUrl,
-                                                                   String authMode, String oauthAdditionalProperties) {
+                                                                   String authMode, String oauthAdditionalProperties,
+                                                                   String connectionTimeout,
+                                                                   String connectionRequestTimeout,
+                                                                   String socketTimeout) {
 
         OMElement authorizationCode = factory.createOMElement(SynapseConstants.AUTHORIZATION_CODE, synapseNS);
 
@@ -472,6 +573,7 @@ public class HTTPConnectionUtils {
         authorizationCode.addChild(oauthClientSecret);
         authorizationCode.addChild(oauthTokenUrl);
         authorizationCode.addChild(authorizationMode);
+        handleOAuthTimeouts(factory, synapseNS, authorizationCode, connectionTimeout, connectionRequestTimeout, socketTimeout);
 
         if (StringUtils.isNotEmpty(oauthAdditionalProperties)) {
             OMElement additionalProperties =
@@ -652,12 +754,10 @@ public class HTTPConnectionUtils {
                 case SynapseConstants.AUTH_TYPE:
                     connectionElementsMap.put(SynapseConstants.AUTH_TYPE, connectionElement.getText());
                     break;
-                case SynapseConstants.BASIC_CREDENTIALS_USERNAME:
-                case SynapseConstants.OAUTH_PASSWORD_GRANT_USERNAME:
+                case SynapseConstants.USERNAME:
                     connectionElementsMap.put(SynapseConstants.USERNAME, connectionElement.getText());
                     break;
-                case SynapseConstants.BASIC_CREDENTIALS_PASSWORD:
-                case SynapseConstants.OAUTH_PASSWORD_GRANT_PASSWORD:
+                case SynapseConstants.PASSWORD:
                     connectionElementsMap.put(SynapseConstants.PASSWORD, connectionElement.getText());
                     break;
                 case SynapseConstants.OAUTH_AUTHORIZATION_MODE:
@@ -666,27 +766,28 @@ public class HTTPConnectionUtils {
                 case SynapseConstants.OAUTH_GRANT_TYPE:
                     connectionElementsMap.put(SynapseConstants.OAUTH_GRANT_TYPE, connectionElement.getText());
                     break;
-                case SynapseConstants.OAUTH_AUTHORIZATION_GRANT_CLIENT_ID:
-                case SynapseConstants.OAUTH_CLIENT_CREDENTIALS_GRANT_CLIENT_ID:
-                case SynapseConstants.OAUTH_PASSWORD_GRANT_CLIENT_ID:
+                case SynapseConstants.CLIENT_ID:
                     connectionElementsMap.put(SynapseConstants.CLIENT_ID, connectionElement.getText());
                     break;
-                case SynapseConstants.OAUTH_AUTHORIZATION_GRANT_CLIENT_SECRET:
-                case SynapseConstants.OAUTH_CLIENT_CREDENTIALS_GRANT_CLIENT_SECRET:
-                case SynapseConstants.OAUTH_PASSWORD_GRANT_CLIENT_SECRET:
+                case SynapseConstants.CLIENT_SECRET:
                     connectionElementsMap.put(SynapseConstants.CLIENT_SECRET, connectionElement.getText());
                     break;
-                case SynapseConstants.OAUTH_AUTHORIZATION_GRANT_TOKEN_URL:
-                case SynapseConstants.OAUTH_CLIENT_CREDENTIALS_GRANT_TOKEN_URL:
-                case SynapseConstants.OAUTH_PASSWORD_GRANT_TOKEN_URL:
+                case SynapseConstants.OAUTH_CONNECTION_TIMEOUT:
+                    connectionElementsMap.put(SynapseConstants.CONNECTION_TIMEOUT, connectionElement.getText());
+                    break;
+                case SynapseConstants.OAUTH_CONNECTION_REQUEST_TIMEOUT:
+                    connectionElementsMap.put(SynapseConstants.CONNECTION_REQUEST_TIMEOUT, connectionElement.getText());
+                    break;
+                case SynapseConstants.OAUTH_SOCKET_TIMEOUT:
+                    connectionElementsMap.put(SynapseConstants.SOCKET_TIMEOUT, connectionElement.getText());
+                    break;
+                case SynapseConstants.TOKEN_URL:
                     connectionElementsMap.put(SynapseConstants.TOKEN_URL, connectionElement.getText());
                     break;
-                case SynapseConstants.OAUTH_AUTHORIZATION_GRANT_REFRESH_TOKEN:
+                case SynapseConstants.REFRESH_TOKEN:
                     connectionElementsMap.put(SynapseConstants.REFRESH_TOKEN, connectionElement.getText());
                     break;
-                case SynapseConstants.OAUTH_AUTHORIZATION_GRANT_ADDITIONAL_PROPERTIES:
-                case SynapseConstants.OAUTH_CLIENT_CREDENTIALS_GRANT_ADDITIONAL_PROPERTIES:
-                case SynapseConstants.OAUTH_PASSWORD_GRANT_ADDITIONAL_PROPERTIES:
+                case SynapseConstants.ADDITIONAL_PROPERTIES:
                     connectionElementsMap.put(SynapseConstants.REQUEST_PARAMETERS, connectionElement.getText());
                     break;
                 case SynapseConstants.TIMEOUT_DURATION:

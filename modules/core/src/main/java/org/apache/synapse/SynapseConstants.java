@@ -636,33 +636,9 @@ public final class SynapseConstants {
     public static final String OAUTH_GRANT_TYPE_PASSWORD = "Password";
 
     public static final String NAME = "name";
-    public static final String BASE_URL = "baseUrl";
-    public static final String CONNECTION_TYPE = "connectionType";
-    public static final String CERTIFICATE_TYPE = "certificateType";
     public static final String AUTH_TYPE = "authType";
     public static final String OAUTH_AUTHORIZATION_MODE = "oauthAuthorizationMode";
     public static final String OAUTH_GRANT_TYPE = "oauthGrantType";
-    public static final String BASIC_CREDENTIALS_USERNAME = "basicCredentialsUsername";
-    public static final String BASIC_CREDENTIALS_PASSWORD = "basicCredentialsPassword";
-    public static final String OAUTH_PASSWORD_GRANT_USERNAME = "oauthPasswordUsername";
-    public static final String OAUTH_PASSWORD_GRANT_PASSWORD = "oauthPasswordPassword";
-    public static final String OAUTH_PASSWORD_GRANT_CLIENT_ID = "oauthPasswordClientId";
-    public static final String OAUTH_PASSWORD_GRANT_CLIENT_SECRET = "oauthPasswordClientSecret";
-    public static final String OAUTH_PASSWORD_GRANT_TOKEN_URL = "oauthPasswordTokenUrl";
-    public static final String OAUTH_PASSWORD_GRANT_ADDITIONAL_PROPERTIES = "oauthPasswordAdditionalProperties";
-
-    public static final String OAUTH_CLIENT_CREDENTIALS_GRANT_CLIENT_ID = "oauthClientClientId";
-    public static final String OAUTH_CLIENT_CREDENTIALS_GRANT_CLIENT_SECRET = "oauthClientClientSecret";
-    public static final String OAUTH_CLIENT_CREDENTIALS_GRANT_TOKEN_URL = "oauthClientTokenUrl";
-    public static final String OAUTH_CLIENT_CREDENTIALS_GRANT_ADDITIONAL_PROPERTIES = "oauthClientAdditionalProperties";
-
-    public static final String OAUTH_AUTHORIZATION_GRANT_CLIENT_SECRET = "oauthAuthorizationClientSecret";
-    public static final String OAUTH_AUTHORIZATION_GRANT_CLIENT_ID = "oauthAuthorizationClientId";
-    public static final String OAUTH_AUTHORIZATION_GRANT_TOKEN_URL = "oauthAuthorizationTokenUrl";
-    public static final String OAUTH_AUTHORIZATION_GRANT_REFRESH_TOKEN = "oauthAuthorizationRefreshToken";
-    public static final String OAUTH_AUTHORIZATION_GRANT_ADDITIONAL_PROPERTIES = "oauthAuthorizationAdditionalProperties";
-
-    public static final String OAUTH_CLIENT_ID = "oauthClientId";
     public static final String TIMEOUT_DURATION = "timeoutDuration";
     public static final String TIMEOUT_ACTION = "timeoutAction";
     public static final String SUSPEND_ERROR_CODES = "suspendErrorCodes";
@@ -727,10 +703,17 @@ public final class SynapseConstants {
     public static final String TOKEN_URL = "tokenUrl";
     public static final String CLIENT_ID = "clientId";
     public static final String CLIENT_SECRET = "clientSecret";
+    public static final String OAUTH_CONNECTION_TIMEOUT = "oauthConnectionTimeout";
+    public static final String OAUTH_CONNECTION_REQUEST_TIMEOUT = "oauthConnectionRequestTimeout";
+    public static final String OAUTH_SOCKET_TIMEOUT = "oauthSocketTimeout";
+    public static final String CONNECTION_TIMEOUT = "connectionTimeout";
+    public static final String CONNECTION_REQUEST_TIMEOUT = "connectionRequestTimeout";
+    public static final String SOCKET_TIMEOUT = "socketTimeout";
     public static final String USERNAME = "username";
     public static final String PASSWORD = "password";
     public static final String REFRESH_TOKEN = "refreshToken";
     public static final String AUTH_MODE = "authMode";
+    public static final String ADDITIONAL_PROPERTIES = "additionalProperties";
     public static final String REQUEST_PARAMETERS = "requestParameters";
     public static final String BASIC_AUTH_TAG = "basicAuth";
     public static final String OAUTH_TAG = "oauth";
