@@ -239,8 +239,10 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
                     return new PredefinedFunctionNode(parameterList, ExpressionConstants.EXISTS);
                 case ExpressionConstants.XPATH:
                     return new PredefinedFunctionNode(parameterList, ExpressionConstants.XPATH);
-                case ExpressionConstants.SECRET:
-                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.SECRET);
+                case ExpressionConstants.WSO2_VAULT:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.WSO2_VAULT);
+                case ExpressionConstants.HASHICORP_VAULT:
+                    return new PredefinedFunctionNode(parameterList, ExpressionConstants.HASHICORP_VAULT);
                 case ExpressionConstants.NOT:
                     return new PredefinedFunctionNode(parameterList, ExpressionConstants.NOT);
                 case ExpressionConstants.REGISTRY:

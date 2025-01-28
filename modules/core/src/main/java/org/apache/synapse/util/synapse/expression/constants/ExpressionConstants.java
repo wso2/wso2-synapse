@@ -55,7 +55,8 @@ public class ExpressionConstants {
     public static final String PROPERTY = "property";
     public static final String EXISTS = "exists";
     public static final String XPATH = "xpath";
-    public static final String SECRET = "secret";
+    public static final String WSO2_VAULT = "wso2-vault";
+    public static final String HASHICORP_VAULT = "hashicorp-vault";
     public static final String NOW = "now";
     public static final String FORMAT_DATE_TIME = "formatDateTime";
     public static final String CHAR_AT = "charAt";
@@ -75,9 +76,8 @@ public class ExpressionConstants {
     public static final String PATH_PARAM = "pathParams";
     public static final String FUNC_PARAM = "functionParams";
 
-
-    public static final String UNKNOWN = "unknown";
     public static final String VAULT_LOOKUP = "wso2:vault-lookup('";
+    public static final String HASHICORP_LOOKUP = "hashicorp:vault-lookup('";
     public static final String HEADERS = "headers";
     public static final String ATTRIBUTES = "attributes";
     public static final String VARIABLES = "vars";

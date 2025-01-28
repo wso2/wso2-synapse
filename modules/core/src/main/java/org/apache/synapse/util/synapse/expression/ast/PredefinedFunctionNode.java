@@ -27,8 +27,6 @@ import org.apache.synapse.util.synapse.expression.utils.ExpressionUtils;
 import org.jaxen.JaxenException;
 
 import java.io.UnsupportedEncodingException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.UnsupportedCharsetException;
@@ -138,7 +136,7 @@ public class PredefinedFunctionNode implements ExpressionNode {
                 return convertToArray(result);
             case ExpressionConstants.XPATH:
                 return evaluateXPATHExpression(context, result, isObjectValue);
-            case ExpressionConstants.SECRET:
+            case ExpressionConstants.WSO2_VAULT:
                 return fetchSecretValue(context, result.asString());
             case ExpressionConstants.NOT:
                 return new ExpressionResult(!result.asBoolean());
@@ -181,6 +179,8 @@ public class PredefinedFunctionNode implements ExpressionNode {
                 return evaluateXPATHExpression(context, source, argument1.asString(), isObjectValue);
             case ExpressionConstants.ROUND:
                 return handleRoundFunction(source, argument1);
+            case ExpressionConstants.HASHICORP_VAULT:
+                return fetchHashicorpSecretValue(context, source.asString(), argument1.asString());
             default:
                 throw new EvaluationException("Invalid function: " + functionName + " with two arguments");
         }
@@ -202,6 +202,8 @@ public class PredefinedFunctionNode implements ExpressionNode {
                 return handleIndexOfFunction(source, argument1, argument2);
             case ExpressionConstants.FORMAT_DATE_TIME:
                 return handleFormatDateTimeFunctions(source, argument1, argument2);
+            case ExpressionConstants.HASHICORP_VAULT:
+                return fetchHashicorpSecretValue(context, source.asString(), argument1.asString(), argument2.asString());
             default:
                 throw new EvaluationException("Invalid function: " + functionName + " with three arguments");
         }
@@ -640,7 +642,7 @@ public class PredefinedFunctionNode implements ExpressionNode {
             if (StringUtils.isEmpty(variableName)) {
                 throw new EvaluationException("Invalid variable name provided for XPATH function");
             }
-            Object result = context.evaluateXpathExpression("$var:"+ variableName + expression.asString(),
+            Object result = context.evaluateXpathExpression("$var:" + variableName + expression.asString(),
                     isObjectValue);
             if (isObjectValue) {
                 return new ExpressionResult((List<?>) result);
@@ -662,6 +664,25 @@ public class PredefinedFunctionNode implements ExpressionNode {
             return new ExpressionResult(result);
         } catch (JaxenException e) {
             throw new EvaluationException("Error fetching secret value for alias: " + expression);
+        }
+    }
+
+    private ExpressionResult fetchHashicorpSecretValue(EvaluationContext context, String pathName, String fieldName) {
+        try {
+            return new ExpressionResult(context.fetchHashicorpSecretValue(pathName, fieldName));
+        } catch (JaxenException e) {
+            throw new EvaluationException("Error fetching hashicorp secret value for path: " + pathName +
+                    " and field: " + fieldName);
+        }
+    }
+
+    private ExpressionResult fetchHashicorpSecretValue(EvaluationContext context, String namespace, String pathName,
+                                                       String fieldName) {
+        try {
+            return new ExpressionResult(context.fetchHashicorpSecretValue(namespace, pathName, fieldName));
+        } catch (JaxenException e) {
+            throw new EvaluationException("Error fetching hashicorp secret value for path: " + pathName +
+                    " field: " + fieldName + " and namespace: " + namespace);
         }
     }
 }

@@ -193,6 +193,18 @@ public class EvaluationContext {
         return xpath.stringValueOf(synCtx);
     }
 
+    public String fetchHashicorpSecretValue(String nameSpace, String pathName, String fieldName) throws JaxenException {
+        SynapseXPath xpath = new SynapseXPath(ExpressionConstants.HASHICORP_LOOKUP
+                + nameSpace + "', '" + pathName + "', '" + fieldName + "')");
+        return xpath.stringValueOf(synCtx);
+    }
+
+    public String fetchHashicorpSecretValue(String pathName, String fieldName) throws JaxenException {
+        SynapseXPath xpath = new SynapseXPath(ExpressionConstants.HASHICORP_LOOKUP
+                + pathName + "', '" + fieldName + "')");
+        return xpath.stringValueOf(synCtx);
+    }
+
     public void setSynCtx(MessageContext synCtx) {
         this.synCtx = synCtx;
     }
