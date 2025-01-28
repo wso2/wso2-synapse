@@ -36,8 +36,8 @@ public class ScatterGatherMediatorSerializationTest extends AbstractTestCase {
 
     public void testScatterGatherXMLTypeSerialization() {
 
-        String inputXML = "<scatter-gather xmlns=\"http://ws.apache.org/ns/synapse\" result-target=\"body\" " +
-                "content-type=\"XML\" root-element=\"result\" parallel-execution=\"true\">" +
+        String inputXML = "<scatter-gather xmlns=\"http://ws.apache.org/ns/synapse\" target=\"body\" " +
+                "result-content-type=\"XML\" result-enclosing-element=\"result\" parallel-execution=\"true\">" +
                 "<aggregation expression=\"json-eval($)\" /><sequence>" +
                 "<payloadFactory media-type=\"json\"><format>{                    \"pet\": {                        " +
                 "\"name\": \"pet1\",                        \"type\": \"dog\"                    },                    " +
@@ -52,8 +52,8 @@ public class ScatterGatherMediatorSerializationTest extends AbstractTestCase {
 
     public void testScatterGatherJSONTypeSerialization() {
 
-        String inputXML = "<scatter-gather xmlns=\"http://ws.apache.org/ns/synapse\" result-target=\"variable1\" " +
-                "content-type=\"JSON\" parallel-execution=\"false\">" +
+        String inputXML = "<scatter-gather xmlns=\"http://ws.apache.org/ns/synapse\" target=\"variable\" " +
+                "result-content-type=\"JSON\" parallel-execution=\"false\" target-variable=\"var1\">" +
                 "<aggregation expression=\"json-eval($)\" /><sequence>" +
                 "<payloadFactory media-type=\"json\"><format>{                    \"pet\": {                        " +
                 "\"name\": \"pet1\",                        \"type\": \"dog\"                    },                    " +

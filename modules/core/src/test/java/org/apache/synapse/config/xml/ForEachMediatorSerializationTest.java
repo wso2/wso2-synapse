@@ -70,4 +70,29 @@ public class ForEachMediatorSerializationTest extends AbstractTestCase {
         assertTrue(serialization(inputXML, foreachMediatorFactory, foreachMediatorSerializer));
         assertTrue(serialization(inputXML, foreachMediatorSerializer));
     }
+
+    public void testForEachMediatorV2_XML_Variable_Out() throws Exception {
+        String inputXML = "<foreach collection=\"${payload.products}\" parallel-execution=\"true\" " +
+                "update-original=\"false\" target-variable=\"foreach_out\" result-content-type=\"XML\"" +
+                " result-enclosing-element=\"ForEachResult\" xmlns=\"http://ws.apache.org/ns/synapse\">" +
+                "<sequence>" +
+                "<payloadFactory media-type=\"xml\"><format><data xmlns=\"\">updated</data></format><args /></payloadFactory>" +
+                "</sequence>" +
+                "</foreach>";
+        assertTrue(serialization(inputXML, foreachMediatorFactory, foreachMediatorSerializer));
+        assertTrue(serialization(inputXML, foreachMediatorSerializer));
+    }
+
+    public void testForEachMediatorV2_JSON() throws Exception {
+        String inputXML = "<foreach collection=\"${payload.products}\" parallel-execution=\"true\"" +
+                " update-original=\"true\" xmlns=\"http://ws.apache.org/ns/synapse\">" +
+                "<sequence>" +
+                "<payloadFactory media-type=\"json\">" +
+                "<format>{\"data\":\"updated\"}</format><args />" +
+                "</payloadFactory>" +
+                "</sequence>" +
+                "</foreach>";
+        assertTrue(serialization(inputXML, foreachMediatorFactory, foreachMediatorSerializer));
+        assertTrue(serialization(inputXML, foreachMediatorSerializer));
+    }
 }

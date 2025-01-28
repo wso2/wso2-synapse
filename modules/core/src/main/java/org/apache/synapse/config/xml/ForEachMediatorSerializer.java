@@ -89,13 +89,19 @@ public class ForEachMediatorSerializer extends AbstractMediatorSerializer {
                     "parallel-execution", nullNS, Boolean.toString(forEachMediatorV2.getParallelExecution())));
             if (forEachMediatorV2.isContinueWithoutAggregation()) {
                 forEachElem.addAttribute(fac.createOMAttribute(
-                        "continue-without-aggregation", nullNS, "true"));
+                        ForEachMediatorFactory.ATT_CONTINUE_WITHOUT_AGGREGATION.getLocalPart(), nullNS, "true"));
             } else {
-                if (forEachMediatorV2.getResultTarget() != null) {
+                forEachElem.addAttribute(fac.createOMAttribute(
+                        ForEachMediatorFactory.ATT_UPDATE_ORIGINAL.getLocalPart(), nullNS, Boolean.toString(forEachMediatorV2.isUpdateOriginal())));
+                if (!forEachMediatorV2.isUpdateOriginal()) {
                     forEachElem.addAttribute(fac.createOMAttribute(
-                            "result-target", nullNS, forEachMediatorV2.getResultTarget()));
+                            AbstractMediatorFactory.ATT_TARGET_VARIABLE.getLocalPart(), nullNS, forEachMediatorV2.getVariableName()));
                     forEachElem.addAttribute(fac.createOMAttribute(
-                            "result-type", nullNS, forEachMediatorV2.getContentType()));
+                            AbstractMediatorFactory.RESULT_TYPE_Q.getLocalPart(), nullNS, forEachMediatorV2.getContentType()));
+                    if ("XML".equalsIgnoreCase(forEachMediatorV2.getContentType())) {
+                        forEachElem.addAttribute(fac.createOMAttribute(
+                                AbstractMediatorFactory.ATT_ROOT_ELEMENT.getLocalPart(), nullNS, forEachMediatorV2.getRootElementName()));
+                    }
                 }
             }
             if (forEachMediatorV2.getCounterVariable() != null) {

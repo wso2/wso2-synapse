@@ -33,13 +33,13 @@ public class AbstractClassMediator extends AbstractMediator {
     }
 
     public enum ArgumentType {
-        STRING("String"),
-        BOOLEAN("Boolean"),
-        INTEGER("Integer"),
-        LONG("Long"),
-        DOUBLE("Double"),
-        JSON("Json"),
-        XML("Xml");
+        STRING("STRING"),
+        BOOLEAN("BOOLEAN"),
+        INTEGER("INTEGER"),
+        LONG("LONG"),
+        DOUBLE("DOUBLE"),
+        JSON("JSON"),
+        XML("XML");
 
         private final String typeName;
 

@@ -44,6 +44,10 @@ import javax.xml.namespace.QName;
 
 public class Utils {
 
+    public static final String TARGET_BODY = "body";
+    public static final String TARGET_VARIABLE = "variable";
+    public static final String TARGET_NONE = "none";
+
     /**
      * Check whether the message is a scatter message or not
      *
@@ -293,12 +297,17 @@ public class Utils {
 
     public static boolean isTargetBody(String resultTarget) {
 
-        return "body".equalsIgnoreCase(resultTarget);
+        return TARGET_BODY.equalsIgnoreCase(resultTarget);
+    }
+
+    public static boolean isTargetVariable(String resultTarget) {
+
+        return TARGET_VARIABLE.equalsIgnoreCase(resultTarget);
     }
 
     public static boolean isTargetNone(String resultTarget) {
 
-        return "none".equalsIgnoreCase(resultTarget);
+        return TARGET_NONE.equalsIgnoreCase(resultTarget);
     }
 
     /**
@@ -311,8 +320,8 @@ public class Utils {
      * @throws AxisFault
      * @throws SynapseException
      */
-    public static boolean setResultTarget(MessageContext synCtx, String resultTarget, Object result) throws AxisFault,
-            SynapseException {
+    public static boolean setResultTarget(MessageContext synCtx, String resultTarget, String variableName,
+                                          Object result) throws AxisFault, SynapseException {
 
         if (Utils.isTargetNone(resultTarget)) {
             return true;
@@ -320,21 +329,18 @@ public class Utils {
         if (result != null) {
             if (Utils.isTargetBody(resultTarget)) {
                 // set result to body
-                if (result instanceof JsonElement) {
+                if (result instanceof OMElement) {
+                    SOAPEnvelope newEnvelope = Utils.createNewSoapEnvelope(synCtx.getEnvelope());
+                    newEnvelope.getBody().addChild((OMElement) result);
+                    synCtx.setEnvelope(newEnvelope);
+                } else {
                     JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(), new
                             ByteArrayInputStream(result.toString().getBytes()), true, true);
-                } else {
-                    OMElement rootElement = OMAbstractFactory.getOMFactory().createOMElement(new QName(
-                            "result"));
-                    rootElement.setText(result.toString());
-                    SOAPEnvelope newEnvelope = Utils.createNewSoapEnvelope(synCtx.getEnvelope());
-                    newEnvelope.getBody().addChild(rootElement);
-                    synCtx.setEnvelope(newEnvelope);
                 }
             } else {
                 // set result to variable
                 if (Utils.isValidReturnObjectType(result)) {
-                    synCtx.setVariable(resultTarget, result);
+                    synCtx.setVariable(variableName, result);
                 } else {
                     throw new SynapseException("Return object type is not supported. Supported types are " +
                             "String, Boolean, Integer, Long, Double, JsonElement, OMElement");

@@ -18,6 +18,8 @@
 
 package org.apache.synapse.mediators.bsf;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.oracle.truffle.js.scriptengine.GraalJSEngineFactory;
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
@@ -58,6 +60,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -182,8 +185,10 @@ public class ScriptMediator extends AbstractMediator {
      * Store java method access config
      */
     private AccessControlConfig nativeObjectAccessControlConfig;
-    private final List<InputArgument> inputArgumentList = new ArrayList<>();
+    private Map<String, InputArgument> inputArgumentMap = new LinkedHashMap<>();
     private String resultTarget;
+    private String variableName;
+    private Gson gson = new Gson();
 
     /**
      * Create a script mediator for the given language and given script source.
@@ -301,8 +306,9 @@ public class ScriptMediator extends AbstractMediator {
                 returnObject = mediateWithExternalScript(synCtx, context);
                 // If result target is set, this is V2 script mediator
                 // Set the result to the target and returnValue to true
-                if (StringUtils.isNotBlank(resultTarget)) {
-                    returnValue = Utils.setResultTarget(synCtx, resultTarget, returnObject);
+                if (StringUtils.isNotBlank(resultTarget) && language.equals(JAVA_SCRIPT)) {
+                    returnObject = processJSONOutput(returnObject);
+                    returnValue = Utils.setResultTarget(synCtx, resultTarget, variableName, returnObject);
                 } else {
                     returnValue = !(returnObject != null && returnObject instanceof Boolean) || (Boolean) returnObject;
                 }
@@ -370,8 +376,14 @@ public class ScriptMediator extends AbstractMediator {
             List<Object> scriptArgs = new ArrayList<>();
             // First argument is always the ScriptMessageContext
             scriptArgs.add(scriptMC);
-            for (InputArgument inputArgument : inputArgumentList) {
-                scriptArgs.add(inputArgument.getResolvedArgument(synCtx));
+            if (language.equals(JAVA_SCRIPT)) {
+                for (InputArgument inputArgument : inputArgumentMap.values()) {
+                    Object resolvedInputArgument = inputArgument.getResolvedArgument(synCtx);
+                    if (resolvedInputArgument instanceof JsonElement) {
+                        resolvedInputArgument = preprocessJSONInputArgument((JsonElement) resolvedInputArgument, scriptMC);
+                    }
+                    scriptArgs.add(resolvedInputArgument);
+                }
             }
             obj = invocableScript.invokeFunction(function, scriptArgs.toArray());
         } finally {
@@ -383,6 +395,32 @@ public class ScriptMediator extends AbstractMediator {
 
 
         return obj;
+    }
+
+    /**
+     * Process the input arguments of the script to convert it to a JSON object if it is a Map or List
+     *
+     * @param jsonElement the json element to be processed
+     * @param scriptMC    the script message context
+     * @return the processed object
+     */
+    private Object preprocessJSONInputArgument(JsonElement jsonElement, ScriptMessageContext scriptMC) {
+
+        return ((GraalVMJavaScriptMessageContext) scriptMC).jsonSerializerCallMember("parse", jsonElement.toString());
+    }
+
+    /**
+     * Process the output of the script to convert it to a JSON object if it is a Map or List
+     *
+     * @param returnObject the object returned by the script
+     * @return the processed object
+     */
+    private Object processJSONOutput(Object returnObject) {
+
+        if (returnObject instanceof Map || returnObject instanceof List) {
+            return gson.toJsonTree(returnObject);
+        }
+        return returnObject;
     }
 
     /**
@@ -840,14 +878,14 @@ public class ScriptMediator extends AbstractMediator {
         }
     }
 
-    public void setInputArgumentMap(List<InputArgument> inputArgumentList) {
+    public void setInputArgumentMap(Map<String, InputArgument> inputArgumentMap) {
 
-        this.inputArgumentList.addAll(inputArgumentList);
+        this.inputArgumentMap.putAll(inputArgumentMap);
     }
 
-    public List<InputArgument> getInputArgumentList() {
+    public Map<String, InputArgument> getInputArgumentList() {
 
-        return inputArgumentList;
+        return inputArgumentMap;
     }
 
     public void setResultTarget(String resultTarget) {
@@ -858,5 +896,15 @@ public class ScriptMediator extends AbstractMediator {
     public String getResultTarget() {
 
         return resultTarget;
+    }
+
+    public void setVariableName(String variableName) {
+
+        this.variableName = variableName;
+    }
+
+    public String getVariableName() {
+
+        return variableName;
     }
 }

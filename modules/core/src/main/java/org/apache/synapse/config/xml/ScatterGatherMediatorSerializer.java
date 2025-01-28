@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.eip.Target;
 import org.apache.synapse.mediators.v2.ScatterGather;
+import org.apache.synapse.mediators.v2.Utils;
 
 /**
  * Serializer for {@link ScatterGather} instances.
@@ -45,12 +46,16 @@ public class ScatterGatherMediatorSerializer extends AbstractMediatorSerializer 
         scatterGatherElement.addAttribute(fac.createOMAttribute(
                 "parallel-execution", nullNS, Boolean.toString(scatterGatherMediator.getParallelExecution())));
         scatterGatherElement.addAttribute(fac.createOMAttribute(
-                "result-target", nullNS, scatterGatherMediator.getResultTarget()));
+                AbstractMediatorFactory.ATT_TARGET.getLocalPart(), nullNS, scatterGatherMediator.getResultTarget()));
+        if (Utils.isTargetVariable(scatterGatherMediator.getResultTarget())) {
+            scatterGatherElement.addAttribute(fac.createOMAttribute(
+                    AbstractMediatorFactory.ATT_TARGET_VARIABLE.getLocalPart(), nullNS, scatterGatherMediator.getVariableName()));
+        }
         scatterGatherElement.addAttribute(fac.createOMAttribute(
-                "content-type", nullNS, scatterGatherMediator.getContentType()));
+                AbstractMediatorFactory.RESULT_TYPE_Q.getLocalPart(), nullNS, scatterGatherMediator.getContentType()));
         if (StringUtils.isNotBlank(scatterGatherMediator.getRootElementName())) {
             scatterGatherElement.addAttribute(fac.createOMAttribute(
-                    "root-element", nullNS, scatterGatherMediator.getRootElementName()));
+                    AbstractMediatorFactory.ATT_ROOT_ELEMENT.getLocalPart(), nullNS, scatterGatherMediator.getRootElementName()));
         }
 
         OMElement aggregationElement = fac.createOMElement("aggregation", synNS);

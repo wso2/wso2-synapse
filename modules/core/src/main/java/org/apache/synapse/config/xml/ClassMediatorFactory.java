@@ -26,15 +26,18 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.mediators.ext.ClassMediator;
+import org.apache.synapse.mediators.v2.Utils;
 import org.apache.synapse.mediators.v2.ext.AbstractClassMediator;
 import org.apache.synapse.mediators.v2.ext.InputArgument;
+import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -121,34 +124,55 @@ public class ClassMediatorFactory extends AbstractMediatorFactory {
             throw new SynapseException(msg, e);
         }
 
-        String targetAtt = elem.getAttributeValue(RESULT_TARGET_Q);
+        String targetAtt = elem.getAttributeValue(ATT_TARGET);
         if (StringUtils.isNotBlank(targetAtt)) {
             // This a V2 class mediator. Set the result target and input arguments
+            if (Utils.isTargetBody(targetAtt)) {
+                classMediator.setResultTarget(Utils.TARGET_BODY);
+            } else if (Utils.isTargetVariable(targetAtt)) {
+                String variableNameAttr = elem.getAttributeValue(ATT_TARGET_VARIABLE);
+                if (StringUtils.isBlank(variableNameAttr)) {
+                    String msg = "The '" + AbstractMediatorFactory.ATT_TARGET_VARIABLE + "' attribute is required for the configuration of a " +
+                            "Class mediator when the '" + AbstractMediatorFactory.ATT_TARGET + "' is 'variable'";
+                    throw new SynapseException(msg);
+                }
+                classMediator.setResultTarget(Utils.TARGET_VARIABLE);
+                classMediator.setVariableName(variableNameAttr);
+            } else if (Utils.isTargetNone(targetAtt)) {
+                classMediator.setResultTarget(Utils.TARGET_NONE);
+            } else {
+                throw new SynapseException("Invalid '" + AbstractMediatorFactory.ATT_TARGET + "' attribute value for " +
+                        "class mediator : " + targetAtt + ". It should be either 'body', 'variable' or 'none'");
+            }
             String methodAtt = elem.getAttributeValue(new QName(XMLConfigConstants.NULL_NAMESPACE,
                     "method"));
             if (StringUtils.isBlank(methodAtt)) {
-                String msg = "The 'method' attribute is required for the class mediator " + clazz.getName();
-                log.error(msg);
-                throw new SynapseException(msg);
+                methodAtt = "mediate";
             }
-            classMediator.setResultTarget(targetAtt);
             classMediator.setMethodName(methodAtt);
-            OMElement inputArgsElement = elem.getFirstChildWithName(INPUTS);
-            if (inputArgsElement != null) {
-                List<InputArgument> inputArgsMap = getInputArguments(inputArgsElement, clazz.getName() + " class");
-                classMediator.setInputArguments(inputArgsMap);
-            }
             Method[] methods = clazz.getMethods();
             for (Method method : methods) {
                 if (method.getName().equals(methodAtt)) {
-                    List<AbstractClassMediator.Arg> arguments = new ArrayList<>();
+                    Map<String, AbstractClassMediator.Arg> arguments = new LinkedHashMap<>();
                     for (Parameter parameter : method.getParameters()) {
                         if (parameter.isAnnotationPresent(AbstractClassMediator.Arg.class)) {
                             AbstractClassMediator.Arg arg = parameter.getAnnotation(AbstractClassMediator.Arg.class);
-                            arguments.add(arg);
+                            arguments.put(arg.name(), arg);
                         }
                     }
-                    classMediator.setArguments(arguments);
+                    classMediator.setArguments(new ArrayList<>(arguments.values()));
+                    if (!arguments.isEmpty()) {
+                        OMElement inputArgsElement = elem.getFirstChildWithName(INPUTS);
+                        if (inputArgsElement != null) {
+                            Map<String, InputArgument> inputArgsMap = getInputArguments(arguments, inputArgsElement,
+                                    clazz.getName() + " class");
+                            classMediator.setInputArguments(inputArgsMap);
+                        } else {
+                            String msg = "The 'inputs' element is required for the configuration of a " +
+                                    "Class mediator.";
+                            throw new SynapseException(msg);
+                        }
+                    }
                     break;
                 }
             }
@@ -168,5 +192,46 @@ public class ClassMediatorFactory extends AbstractMediatorFactory {
 
     public QName getTagQName() {
         return CLASS_Q;
+    }
+
+
+    /**
+     * This method is used to get the input arguments of the V2 class mediator.
+     *
+     * @param inputArgsElement input arguments element
+     * @return Map of input arguments
+     */
+    private Map<String, InputArgument> getInputArguments(Map<String, AbstractClassMediator.Arg> args,
+                                                           OMElement inputArgsElement, String mediator) {
+
+        Map<String, InputArgument> inputArgsMap = new LinkedHashMap<>();
+        Iterator inputIterator = inputArgsElement.getChildrenWithName(ATT_ARGUMENT);
+        while (inputIterator.hasNext()) {
+            OMElement inputElement = (OMElement) inputIterator.next();
+            String nameAttribute = inputElement.getAttributeValue(ATT_NAME);
+            if (args.containsKey(nameAttribute)) {
+                String type = args.get(nameAttribute).type().getTypeName();
+                String valueAttribute = inputElement.getAttributeValue(ATT_VALUE);
+                String expressionAttribute = inputElement.getAttributeValue(ATT_EXPRN);
+                InputArgument argument = new InputArgument(nameAttribute);
+                if (valueAttribute != null) {
+                    argument.setValue(valueAttribute, type);
+                } else if (expressionAttribute != null) {
+                    try {
+                        argument.setExpression(SynapsePathFactory.getSynapsePath(inputElement,
+                                new QName("expression")), type);
+                    } catch (JaxenException e) {
+                        handleException("Error setting expression : " + expressionAttribute + " as an input argument to " +
+                                mediator + " mediator. " + e.getMessage(), e);
+                    }
+                }
+                inputArgsMap.put(nameAttribute, argument);
+            }
+        }
+        if (inputArgsMap.size() != args.size()) {
+            handleException("The input arguments provided in the configuration of the " + mediator +
+                    " mediator does not match with the method signature. Please provide the correct input arguments.");
+        }
+        return inputArgsMap;
     }
 }
