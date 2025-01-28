@@ -20,7 +20,7 @@ package org.apache.synapse.util.logging;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
-
+import org.apache.synapse.rest.RESTConstants;
 /**
  * Util class to get formatted logs for audit purposes.
  */
@@ -28,6 +28,7 @@ public class LoggingUtils {
 
     private static final String OPEN_BRACKETS = "{";
     private static final String CLOSE_BRACKETS = "}";
+    public static final String LOG_ENTRY_POINT_INFO = "logEntryPointInfo";
 
     private LoggingUtils() {
         // do nothing
@@ -42,7 +43,7 @@ public class LoggingUtils {
                 return getFormattedLog(SynapseConstants.PROXY_SERVICE_TYPE,
                                        artifactName.substring(SynapseConstants.PROXY_SERVICE_TYPE.length()), msg);
             } else if (artifactName.startsWith(SynapseConstants.FAIL_SAFE_MODE_API)) {
-                return getFormattedLog(SynapseConstants.FAIL_SAFE_MODE_API,
+                return getFormattedLogForAPI(synCtx, SynapseConstants.FAIL_SAFE_MODE_API,
                                        artifactName.substring(SynapseConstants.FAIL_SAFE_MODE_API.length()), msg);
             } else if (artifactName.startsWith(SynapseConstants.FAIL_SAFE_MODE_INBOUND_ENDPOINT)) {
                 return getFormattedLog(SynapseConstants.FAIL_SAFE_MODE_INBOUND_ENDPOINT, artifactName
@@ -51,6 +52,23 @@ public class LoggingUtils {
             return getFormattedString(artifactName, msg);
         }
         return msg.toString();
+    }
+
+    private static String getFormattedLogForAPI(MessageContext synCtx, String artifactType, Object artifactName,
+                                                Object msg) {
+        boolean logEntryPointInfo = Boolean.parseBoolean((String) synCtx.getProperty(LoggingUtils.LOG_ENTRY_POINT_INFO));
+        if (!logEntryPointInfo) {
+            return getFormattedLog(artifactType, artifactName, msg);
+        }
+        String name = artifactName != null ? artifactName.toString() : "";
+        String artifactInfo = artifactType.concat(":").concat(name);
+        String method = (String) synCtx.getProperty(RESTConstants.REST_METHOD);
+        String restFullRequestPath = (String) synCtx.getProperty(RESTConstants.REST_FULL_REQUEST_PATH);
+
+        String apiInfo = String.join(" ", artifactInfo, method != null ? method : "",
+                restFullRequestPath != null ? restFullRequestPath : "").trim();
+
+        return getFormattedString(apiInfo, msg);
     }
 
     public static String getFormattedLog(String artifactType, Object artifactName, Object msg) {
