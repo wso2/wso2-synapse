@@ -78,7 +78,14 @@ public class LibDeployerUtils {
             try {
                 ClassLoader libLoader;
                 if (classLoader != null) {
-                    libLoader = Utils.getClassLoader(classLoader, extractPath, false);
+                    libLoader = classLoader;
+                    if (classLoader instanceof LibClassLoader) {
+                        try {
+                            ((LibClassLoader) classLoader).addToClassPath(extractPath);
+                        } catch (MalformedURLException e) {
+                            throw new DeploymentException("Error while adding URL to the classloader", e);
+                        }
+                    }
                 } else {
                     libLoader = Utils.getClassLoader(LibDeployerUtils.class.getClassLoader(),
                             extractPath, false);
