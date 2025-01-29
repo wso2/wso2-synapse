@@ -32,10 +32,11 @@ public class ResolverFactory {
     private static final int RESOLVER_INDEX = 2;
     private static final ResolverFactory resolverFactory = new ResolverFactory();
     private final Pattern rePattern = Pattern.compile("(\\$)([_a-zA-Z0-9]+):([_a-zA-Z0-9]+)");
+    private final Pattern configPattern = Pattern.compile("(\\$\\{)([_a-zA-Z0-9]+).([_a-zA-Z0-9]+)(})");
     private static final String SYSTEM_VARIABLE_PREFIX = "$SYSTEM";
     private static final String FILE_PROPERTY_VARIABLE_PREFIX = "$FILE";
     private static final String CUSTOM_PROPERTY_VARIABLE_PREFIX = "$CUSTOM_";
-    private static final String CONFIGURABLE_VARIABLE_PREFIX = "$configs:";
+    private static final String CONFIGURABLE_VARIABLE_PREFIX = "${configs.";
 
     private final Map<String, Class<? extends Resolver>> resolverMap = new HashMap<>();
 
@@ -62,20 +63,24 @@ public class ResolverFactory {
         if (input == null) {
             return null;
         }
-        Matcher matcher = rePattern.matcher(input);
+        Matcher matcher;
         if (input.startsWith(CONFIGURABLE_VARIABLE_PREFIX)) {
+            matcher = configPattern.matcher(input);
             if (matcher.find()) {
                 return getResolver(matcher.group(RESOLVER_INDEX).toLowerCase(), matcher);
             }
         } else if (input.startsWith(SYSTEM_VARIABLE_PREFIX)) {
+            matcher = rePattern.matcher(input);
             if (matcher.find()) {
                 return getResolver(matcher.group(RESOLVER_INDEX).toLowerCase(), matcher);
             }
         } else if(input.startsWith(FILE_PROPERTY_VARIABLE_PREFIX)) {
+            matcher = rePattern.matcher(input);
             if (matcher.find()) {
                 return getResolver(matcher.group(RESOLVER_INDEX).toLowerCase(), matcher);
             }
         } else if(input.startsWith(CUSTOM_PROPERTY_VARIABLE_PREFIX)) {
+            matcher = rePattern.matcher(input);
             if (matcher.find()){
                 String nameWithPlaceholder = matcher.group(RESOLVER_INDEX).toLowerCase();
                 String className = nameWithPlaceholder.substring(CUSTOM_PROPERTY_VARIABLE_PREFIX.length() - 1);
