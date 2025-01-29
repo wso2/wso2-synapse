@@ -32,7 +32,7 @@ public class ResolverFactory {
     private static final int RESOLVER_INDEX = 2;
     private static final ResolverFactory resolverFactory = new ResolverFactory();
     private final Pattern rePattern = Pattern.compile("(\\$)([_a-zA-Z0-9]+):([_a-zA-Z0-9]+)");
-    private final Pattern configPattern = Pattern.compile("(\\$\\{)([_a-zA-Z0-9]+).([_a-zA-Z0-9]+})");
+    private final Pattern configPattern = Pattern.compile("(\\$\\{)([_a-zA-Z0-9]+).([_a-zA-Z0-9]+)(})");
     private static final String SYSTEM_VARIABLE_PREFIX = "$SYSTEM";
     private static final String FILE_PROPERTY_VARIABLE_PREFIX = "$FILE";
     private static final String CUSTOM_PROPERTY_VARIABLE_PREFIX = "$CUSTOM_";
