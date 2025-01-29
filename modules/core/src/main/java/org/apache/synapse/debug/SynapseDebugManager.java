@@ -16,15 +16,25 @@
 
 package org.apache.synapse.debug;
 
+import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMException;
+import org.apache.axiom.om.OMFactory;
+import org.apache.axiom.om.impl.builder.StAXBuilder;
+import org.apache.axiom.om.impl.builder.StAXOMBuilder;
+import org.apache.axiom.soap.SOAP11Constants;
+import org.apache.axiom.soap.SOAP12Constants;
+import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.SOAPHeader;
 import org.apache.axiom.soap.SOAPHeaderBlock;
+import org.apache.axis2.AxisFault;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -46,12 +56,14 @@ import org.apache.synapse.debug.utils.TemplateDebugUtil;
 import org.apache.synapse.transport.http.conn.SynapseBackEndWireLogs;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.http.conn.SynapseWireLogHolder;
+import org.apache.synapse.util.AXIOMUtils;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -63,6 +75,10 @@ import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.ReentrantLock;
 
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+
 /**
  * Main class that integrates mediation debugging capabilities to Synapse Engine, Debug Manager
  * single instance is created to handle debugging centrally, by either persisting or retrieving
@@ -71,6 +87,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class SynapseDebugManager implements Observer {
     private static final java.lang.String METHOD_ARRAY_SEPERATOR = ",";
+    private static final QName TEXT_ELEMENT = new QName("http://ws.apache.org/commons/ns/payload", "text");
     private static final String EMPTY_STRING = "";
     /* to ensure a single mediation flow at a given time */
     private static volatile ReentrantLock mediationFlowLock;
@@ -86,6 +103,9 @@ public class SynapseDebugManager implements Observer {
     private boolean initialised = false;
     private static final Log log = LogFactory.getLog(SynapseDebugManager.class);
     private Map addedPropertyValuesMap;
+    private final XMLInputFactory inputFactory = XMLInputFactory.newInstance();
+    private static final String JSON_CONTENT_TYPE = "application/json";
+    private static final String TEXT_CONTENT_TYPE = "text/plain";
 
     protected SynapseDebugManager() {
         mediationFlowLock = new ReentrantLock();
@@ -1233,6 +1253,9 @@ public class SynapseDebugManager implements Observer {
                         && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
                     axis2smc.getAxis2MessageContext().getOperationContext().setProperty(propertyKey, propertyValue);
+                } else if (propertyContext.equals(SynapseDebugCommandConstants.AXIS2_PROPERTY_ENVELOPE) &&
+                        synCtx instanceof Axis2MessageContext) {
+                    setEnvelope(propertyValue, synCtx);
                 }
             } else {
                 if (propertyContext == null || SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_DEFAULT
@@ -1281,6 +1304,50 @@ public class SynapseDebugManager implements Observer {
                     .toString());
         }
         this.advertiseCommandResponse(createDebugCommandResponse(true, null).toString());
+    }
+
+    private void setEnvelope(String propertyValue, MessageContext synCtx) {
+
+        String mediaType = (String) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                .getProperty(SynapseConstants.AXIS2_PROPERTY_CONTENT_TYPE);
+        org.apache.axis2.context.MessageContext axis2MessageContext =
+                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        if (SynapseConstants.XML_CONTENT_TYPE.equals(mediaType)) {
+            try {
+                JsonUtil.removeJsonPayload(axis2MessageContext);
+                OMElement omXML = convertStringToOM(propertyValue);
+                axis2MessageContext.getEnvelope().getBody().addChild(omXML);
+            } catch (XMLStreamException e) {
+                log.error("Error creating SOAP Envelope from source " + propertyValue, e);
+            }
+        } else if (JSON_CONTENT_TYPE.equals(mediaType)) {
+            try {
+                JsonUtil.getNewJsonPayload(axis2MessageContext, propertyValue, true, true);
+            } catch (AxisFault axisFault) {
+                log.error("Error creating JSON Payload from source " + propertyValue, axisFault);
+            }
+        } else if (TEXT_CONTENT_TYPE.equals(mediaType)) {
+            JsonUtil.removeJsonPayload(axis2MessageContext);
+            axis2MessageContext.getEnvelope().getBody().addChild(getTextElement(propertyValue));
+        }
+    }
+
+    private OMElement getTextElement(String content) {
+
+        OMFactory factory = OMAbstractFactory.getOMFactory();
+        OMElement textElement = factory.createOMElement(TEXT_ELEMENT);
+        if (content == null) {
+            content = "";
+        }
+        textElement.setText(content);
+        return textElement;
+    }
+
+    private OMElement convertStringToOM(String value) throws XMLStreamException, OMException {
+
+        javax.xml.stream.XMLStreamReader xmlReader = inputFactory.createXMLStreamReader(new StringReader(value));
+        StAXBuilder builder = new StAXOMBuilder(xmlReader);
+        return builder.getDocumentElement();
     }
 
     private void setAxis2Property(String propertyKey, String propertyValue,
