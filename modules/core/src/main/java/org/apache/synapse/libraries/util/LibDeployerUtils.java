@@ -31,7 +31,6 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.SynapseXMLConfigurationFactory;
 import org.apache.synapse.deployers.SynapseArtifactDeploymentException;
-import org.apache.synapse.libraries.LibClassLoader;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.libraries.model.LibraryArtifact;
@@ -40,7 +39,6 @@ import org.apache.synapse.libraries.model.SynapseLibrary;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 import java.io.*;
-import java.net.MalformedURLException;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -60,10 +58,6 @@ public class LibDeployerUtils {
     private static final Log log = LogFactory.getLog(LibDeployerUtils.class);
 
     public static Library createSynapseLibrary(String libPath) throws DeploymentException {
-        return createSynapseLibrary(libPath, null);
-    }
-
-    public static Library createSynapseLibrary(String libPath, ClassLoader classLoader) throws DeploymentException {
         File libFile = new File(libPath);
         //extract
         String extractPath = LibDeployerUtils.extractSynapseLib(libFile);
@@ -76,22 +70,10 @@ public class LibDeployerUtils {
         if (deployedLibClassLoader == null) {
             //create a ClassLoader for loading this synapse lib classes/resources
             try {
-                if (classLoader != null) {
-                    synapseLib.setLibClassLoader(classLoader);
-                    SynapseConfiguration.addLibraryClassLoader(libArtifactName, classLoader);
-                    if (classLoader instanceof LibClassLoader) {
-                        try {
-                            ((LibClassLoader) classLoader).addURL(new File(extractPath).toURI().toURL());
-                        } catch (MalformedURLException e) {
-                            throw new DeploymentException("Error while adding URL to the classloader", e);
-                        }
-                    }
-                } else {
-                    ClassLoader libLoader = Utils.getClassLoader(LibDeployerUtils.class.getClassLoader(),
+                ClassLoader libLoader = Utils.getClassLoader(LibDeployerUtils.class.getClassLoader(),
                             extractPath, false);
-                    SynapseConfiguration.addLibraryClassLoader(libArtifactName, libLoader);
-                    synapseLib.setLibClassLoader(libLoader);
-                }
+                SynapseConfiguration.addLibraryClassLoader(libArtifactName, libLoader);
+                synapseLib.setLibClassLoader(libLoader);
             } catch (DeploymentException e) {
                 throw new SynapseArtifactDeploymentException("Error setting up lib classpath for Synapse" +
                         " Library  : " + libFile.getAbsolutePath(), e);
