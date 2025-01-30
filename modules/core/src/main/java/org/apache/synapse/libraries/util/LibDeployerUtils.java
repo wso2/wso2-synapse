@@ -108,7 +108,8 @@ public class LibDeployerUtils {
      * @param libraryName - name of the Synapse Library
      * @param dependencyPath - path to the dependency
      */
-    public static void addDependencyToSynapseLibrary(String libraryName, String dependencyPath) {
+    public static void addDependencyToSynapseLibrary(String libraryName, String dependencyPath)
+            throws DeploymentException {
 
         ClassLoader classLoader = SynapseConfiguration.getClassLoader(libraryName);
         if (classLoader == null) {
@@ -118,7 +119,7 @@ public class LibDeployerUtils {
                 libClassLoader.addToClassPath(dependencyPath);
                 SynapseConfiguration.addLibraryClassLoader(libraryName, libClassLoader);
             } catch (MalformedURLException e) {
-                throw new SynapseArtifactDeploymentException("Error while adding dependency to the Synapse Library : " +
+                throw new DeploymentException("Error while adding dependency to the Synapse Library : " +
                         libraryName, e);
             }
         } else {

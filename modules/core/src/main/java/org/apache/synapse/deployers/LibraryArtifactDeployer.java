@@ -125,6 +125,7 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 					deploymentFileData.getAbsolutePath() + " : STARTED");
 		}
 		String libFilePath = FilenameUtils.normalize(deploymentFileData.getAbsolutePath());
+		log.info("Deploying dependency from file : " + libFilePath + " to the library : " + libraryName);
 		LibDeployerUtils.addDependencyToSynapseLibrary(libraryName, libFilePath);
 		if (log.isDebugEnabled()) {
 			log.debug("Deployment of the synapse library dependency artifact from file : " +
