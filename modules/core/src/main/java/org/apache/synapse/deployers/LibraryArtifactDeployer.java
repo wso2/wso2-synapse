@@ -117,6 +117,21 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 
     }
 
+	public void deployLibraryDependency(DeploymentFileData deploymentFileData, String libraryName)
+			throws DeploymentException {
+
+		if (log.isDebugEnabled()) {
+			log.debug("Deployment of the synapse library dependency artifact from file : " +
+					deploymentFileData.getAbsolutePath() + " : STARTED");
+		}
+		String libFilePath = FilenameUtils.normalize(deploymentFileData.getAbsolutePath());
+		LibDeployerUtils.addDependencyToSynapseLibrary(libraryName, libFilePath);
+		if (log.isDebugEnabled()) {
+			log.debug("Deployment of the synapse library dependency artifact from file : " +
+					deploymentFileData.getAbsolutePath() + " : COMPLETED");
+		}
+	}
+
     private void completeDeployment(Library lib, String libArtifactName) throws DeploymentException {
 	getSynapseConfiguration().addSynapseLibrary(lib.getQName().toString(), lib);
 	if (log.isDebugEnabled()) {

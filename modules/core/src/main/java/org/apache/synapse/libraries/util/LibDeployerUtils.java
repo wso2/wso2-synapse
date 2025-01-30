@@ -31,6 +31,7 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.SynapseXMLConfigurationFactory;
 import org.apache.synapse.deployers.SynapseArtifactDeploymentException;
+import org.apache.synapse.libraries.LibClassLoader;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.libraries.model.LibraryArtifact;
@@ -39,6 +40,8 @@ import org.apache.synapse.libraries.model.SynapseLibrary;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -79,6 +82,14 @@ public class LibDeployerUtils {
                         " Library  : " + libFile.getAbsolutePath(), e);
             }
         } else {
+            if (deployedLibClassLoader instanceof LibClassLoader) {
+                try {
+                    ((LibClassLoader) deployedLibClassLoader).addToClassPath(extractPath);
+                } catch (MalformedURLException e) {
+                    throw new SynapseArtifactDeploymentException("Error setting up lib classpath for Synapse" +
+                            " Library  : " + libFile.getAbsolutePath(), e);
+                }
+            }
             synapseLib.setLibClassLoader(deployedLibClassLoader);
         }
         //resolve synapse lib artifacts
@@ -89,6 +100,39 @@ public class LibDeployerUtils {
 
         synapseLib.setFileName(libFile.getAbsolutePath());
         return synapseLib;
+    }
+
+    /**
+     * Add a dependency to the Synapse Library
+     *
+     * @param libraryName - name of the Synapse Library
+     * @param dependencyPath - path to the dependency
+     */
+    public static void addDependencyToSynapseLibrary(String libraryName, String dependencyPath) {
+
+        ClassLoader classLoader = SynapseConfiguration.getClassLoader(libraryName);
+        if (classLoader == null) {
+            // dependencies needed to be added to the class loader before the library is loaded
+            LibClassLoader libClassLoader = new LibClassLoader(new URL[]{}, LibDeployerUtils.class.getClassLoader());
+            try {
+                libClassLoader.addToClassPath(dependencyPath);
+                SynapseConfiguration.addLibraryClassLoader(libraryName, libClassLoader);
+            } catch (MalformedURLException e) {
+                throw new SynapseArtifactDeploymentException("Error while adding dependency to the Synapse Library : " +
+                        libraryName, e);
+            }
+        } else {
+            if (classLoader instanceof LibClassLoader) {
+                LibClassLoader libClassLoader = (LibClassLoader) classLoader;
+                try {
+                    libClassLoader.addToClassPath(dependencyPath);
+                } catch (MalformedURLException e) {
+                    throw new SynapseArtifactDeploymentException("Error while adding dependency to the Synapse Library : " +
+                            libraryName, e);
+                }
+            }
+        }
+
     }
 
     private static void populateLocalEnties(SynapseLibrary synapseLibrary,String localEntriesFilePath) {
