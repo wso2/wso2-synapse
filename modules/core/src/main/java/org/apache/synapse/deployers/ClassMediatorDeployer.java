@@ -30,6 +30,7 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.libraries.LibClassLoader;
 
 import java.io.File;
+import java.net.MalformedURLException;
 
 public class ClassMediatorDeployer extends AbstractDeployer {
 
@@ -65,13 +66,17 @@ public class ClassMediatorDeployer extends AbstractDeployer {
         String mediatorPath = FilenameUtils.normalize(deploymentFileData.getAbsolutePath());
 
         log.info("Deploying library from file : " + mediatorPath);
-        ClassLoader classLoader = deploymentFileData.getClassLoader();
-        if (classLoader instanceof LibClassLoader) {
-            classLoader = Utils.getClassLoader(classLoader, mediatorPath, false);
+        if (deploymentFileData.getClassLoader() != null) {
+            try {
+                ((LibClassLoader) deploymentFileData.getClassLoader()).addURL(new File(mediatorPath).toURI().toURL());
+            } catch (MalformedURLException e) {
+                throw new DeploymentException("Error adding URL to lib class loader", e);
+            }
         } else {
-            classLoader = Utils.getClassLoader(ClassMediatorDeployer.class.getClassLoader(), mediatorPath, false);
+            ClassLoader mediatorLoader = Utils.getClassLoader(ClassMediatorDeployer.class.getClassLoader(),
+                    mediatorPath, false);
+            getDeploymentStore().addClassMediatorClassLoader(mediatorPath, mediatorLoader);
         }
-        getDeploymentStore().addClassMediatorClassLoader(mediatorPath, classLoader);
     }
 
     /**
