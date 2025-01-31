@@ -59,7 +59,7 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 	    SynapseArtifactDeploymentStore deploymentStore = getSynapseConfiguration()
 		    .getArtifactDeploymentStore();
 
-	    Library lib = LibDeployerUtils.createSynapseLibrary(libFilePath, deploymentFileData.getClassLoader());
+		Library lib = LibDeployerUtils.createSynapseLibrary(libFilePath);
 	    String libArtifactName = lib.getQName().toString();
 		if (this.getSynapseConfiguration().getSynapseLibraries().get(lib.getQName().toString()) != null) {
 			log.warn("Hot deployment thread picked up an already deployed synapse library - Ignoring");
@@ -116,6 +116,22 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 	}
 
     }
+
+	public void deployLibraryDependency(DeploymentFileData deploymentFileData, String libraryName)
+			throws DeploymentException {
+
+		if (log.isDebugEnabled()) {
+			log.debug("Deployment of the synapse library dependency artifact from file : " +
+					deploymentFileData.getAbsolutePath() + " : STARTED");
+		}
+		String libFilePath = FilenameUtils.normalize(deploymentFileData.getAbsolutePath());
+		log.info("Deploying dependency from file : " + libFilePath + " to the library : " + libraryName);
+		LibDeployerUtils.addDependencyToSynapseLibrary(libraryName, libFilePath);
+		if (log.isDebugEnabled()) {
+			log.debug("Deployment of the synapse library dependency artifact from file : " +
+					deploymentFileData.getAbsolutePath() + " : COMPLETED");
+		}
+	}
 
     private void completeDeployment(Library lib, String libArtifactName) throws DeploymentException {
 	getSynapseConfiguration().addSynapseLibrary(lib.getQName().toString(), lib);

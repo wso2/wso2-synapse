@@ -27,10 +27,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapseConfiguration;
-import org.apache.synapse.libraries.LibClassLoader;
 
 import java.io.File;
-import java.net.MalformedURLException;
 
 public class ClassMediatorDeployer extends AbstractDeployer {
 
@@ -65,18 +63,10 @@ public class ClassMediatorDeployer extends AbstractDeployer {
 
         String mediatorPath = FilenameUtils.normalize(deploymentFileData.getAbsolutePath());
 
-        log.info("Deploying library from file : " + mediatorPath);
-        ClassLoader classLoader = deploymentFileData.getClassLoader();
-        if (classLoader instanceof LibClassLoader) {
-            try {
-                ((LibClassLoader) deploymentFileData.getClassLoader()).addURL(new File(mediatorPath).toURI().toURL());
-            } catch (MalformedURLException e) {
-                throw new DeploymentException("Error adding URL to lib class loader", e);
-            }
-        } else {
-            classLoader = Utils.getClassLoader(ClassMediatorDeployer.class.getClassLoader(), mediatorPath, false);
-        }
-        getDeploymentStore().addClassMediatorClassLoader(mediatorPath, classLoader);
+        log.info("Deploying Class mediators from file : " + mediatorPath);
+        ClassLoader mediatorLoader = Utils.getClassLoader(ClassMediatorDeployer.class.getClassLoader(),
+                mediatorPath, false);
+        getDeploymentStore().addClassMediatorClassLoader(mediatorPath, mediatorLoader);
     }
 
     /**
@@ -87,7 +77,7 @@ public class ClassMediatorDeployer extends AbstractDeployer {
      */
     public void undeploy(String fileName) throws DeploymentException {
         String mediatorPath = FilenameUtils.normalize(fileName);
-        log.info("Undeploying library : " +
+        log.info("Undeploying Class mediator : " +
                  mediatorPath.substring(mediatorPath.lastIndexOf(File.separator)+1));
         getDeploymentStore().removeClassMediatorClassLoader(mediatorPath);
     }
@@ -108,4 +98,5 @@ public class ClassMediatorDeployer extends AbstractDeployer {
     public void setExtension(String s) {
        // Changing the extension is not supported
     }
+
 }
