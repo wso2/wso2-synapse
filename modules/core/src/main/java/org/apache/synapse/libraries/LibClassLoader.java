@@ -74,24 +74,4 @@ public class LibClassLoader extends URLClassLoader {
         }
     }
 
-    @Override
-    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        // Check if the class has already been loaded
-        Class<?> clazz = findLoadedClass(name);
-
-        if (clazz == null) {
-            try {
-                // Try to find the class in the current class loader
-                clazz = findClass(name);
-            } catch (ClassNotFoundException e) {
-                // If not found, delegate to parent class loader
-                clazz = super.loadClass(name, resolve);
-            }
-        }
-
-        if (resolve) {
-            resolveClass(clazz);
-        }
-        return clazz;
-    }
 }
