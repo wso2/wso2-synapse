@@ -16,7 +16,7 @@
 	<parent>
 		<groupId>org.apache.synapse</groupId>
 		<artifactId>Apache-Synapse</artifactId>
-		<version>4.0.0-wso2v201-SNAPSHOT</version>
+		<version>4.0.0-wso2v201</version>
 		<relativePath>../../pom.xml</relativePath>
 	</parent>
 
