@@ -57,6 +57,7 @@ public class LogMediatorFactory extends AbstractMediatorFactory  {
     private static final QName ATT_CATEGORY = new QName("category");
     protected static final QName ELEMENT_MESSAGE_Q
             = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "message");
+    private static final QName ATT_LOG_FULL_PAYLOAD = new QName("logFullPayload");
 
     public QName getTagQName() {
         return LOG_Q;
@@ -84,9 +85,12 @@ public class LogMediatorFactory extends AbstractMediatorFactory  {
             }
         }
 
+        OMAttribute logFullPayload = elem.getAttribute(ATT_LOG_FULL_PAYLOAD);
         // Set the high level set of properties to be logged (i.e. log level)
         OMAttribute level = elem.getAttribute(ATT_LEVEL);
-        if (level != null) {
+        if (logFullPayload != null && Boolean.parseBoolean(logFullPayload.getAttributeValue())) {
+            logMediator.setLogLevel(LogMediator.FULL);
+        } else if (level != null) {
             String levelstr = level.getAttributeValue();
             if (SIMPLE.equals(levelstr)) {
                 logMediator.setLogLevel(LogMediator.SIMPLE);
