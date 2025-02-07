@@ -1654,6 +1654,7 @@
        <nashorn.core.version>15.4</nashorn.core.version>
        <graalvm.version>22.3.4</graalvm.version>
        <icu.version>72.1</icu.version>
+       <xmlbeans.imp.pkg.version>[3.1.0,4.0.0)</xmlbeans.imp.pkg.version>
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->

@@ -239,6 +239,7 @@
                             javax.xml.soap; version=${javax.xml.soap.version},
                             org.apache.commons.io; version=0.0.0,
                             org.quartz.*;version="${quartz.version}",
+                            org.apache.xmlbeans;version="${xmlbeans.imp.pkg.version}",
                             *;resolution:=optional
                         </Import-Package>
 						<DynamicImport-Package>*</DynamicImport-Package>
