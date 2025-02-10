@@ -22,18 +22,18 @@ import org.apache.axis2.description.ParameterInclude;
 
 public class KeyStoreReloader {
 
-    private IKeyStoreLoader keyStoreLoader;
-    private ParameterInclude transportOutDescription;
+    private final IKeyStoreLoader keyStoreLoader;
+    private final ParameterInclude transportOutDescription;
 
     public KeyStoreReloader(IKeyStoreLoader keyStoreLoader, ParameterInclude transportOutDescription) {
 
         this.keyStoreLoader = keyStoreLoader;
         this.transportOutDescription = transportOutDescription;
 
-        registerListener(transportOutDescription);
+        registerListener();
     }
 
-    private void registerListener(ParameterInclude transportOutDescription) {
+    private void registerListener() {
 
         KeyStoreReloaderHolder.getInstance().addKeyStoreLoader(this);
     }
