@@ -123,27 +123,21 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
 
             //Set the car name
             ep.setArtifactContainerName(customLogContent);
-            if (ep != null) {
-                ep.setFileName((new File(fileName)).getName());
-                if (log.isDebugEnabled()) {
-                    log.debug("Endpoint named '" + ep.getName() + "' has been built from the http connection file " +
-                            fileName);
-                }
-                ep.init(getSynapseEnvironment());
-                if (log.isDebugEnabled()) {
-                    log.debug("Initialized the endpoint : " + ep.getName());
-                }
-                getSynapseConfiguration().addEndpoint(ep.getName(), ep);
-                if (log.isDebugEnabled()) {
-                    log.debug("Endpoint Deployment from the http connection file : " + fileName + " : Completed");
-                }
-                log.info("Endpoint named '" + ep.getName() + "' has been deployed from the http connection file : " +
+            ep.setFileName((new File(fileName)).getName());
+            if (log.isDebugEnabled()) {
+                log.debug("Endpoint named '" + ep.getName() + "' has been built from the http connection file " +
                         fileName);
-            } else {
-                handleSynapseArtifactDeploymentError(
-                        "Endpoint Deployment Failed. The artifact " + "described in the http connection file " +
-                                fileName + " has filed to describe an Endpoint");
             }
+            ep.init(getSynapseEnvironment());
+            if (log.isDebugEnabled()) {
+                log.debug("Initialized the endpoint : " + ep.getName());
+            }
+            getSynapseConfiguration().addEndpoint(ep.getName(), ep);
+            if (log.isDebugEnabled()) {
+                log.debug("Endpoint Deployment from the http connection file : " + fileName + " : Completed");
+            }
+            log.info("Endpoint named '" + ep.getName() + "' has been deployed from the http connection file : " +
+                    fileName);
         } catch (Exception e) {
             handleSynapseArtifactDeploymentError(
                     "Endpoint Deployment from the http connection file : " + fileName + " : Failed.", e);
