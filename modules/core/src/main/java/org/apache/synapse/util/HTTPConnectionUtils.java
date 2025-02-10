@@ -72,8 +72,8 @@ public class HTTPConnectionUtils {
         endpoint.addChild(http);
 
         if (StringUtils.isNotEmpty(connectionElements.get(SynapseConstants.MISCELLANEOUS_PROPERTIES))) {
-            List<OMElement> miscellaneousProperties = generateMiscellaneousPropertiesElement(
-                    factory, synapseNS, connectionElements.get(SynapseConstants.MISCELLANEOUS_PROPERTIES));
+            List<OMElement> miscellaneousProperties = generateMiscellaneousPropertiesElement(factory, synapseNS,
+                    connectionElements.get(SynapseConstants.MISCELLANEOUS_PROPERTIES));
             for (OMElement property : miscellaneousProperties) {
                 endpoint.addChild(property);
             }
@@ -94,15 +94,14 @@ public class HTTPConnectionUtils {
      * @param http               the OMElement representing the HTTP endpoint
      * @param connectionElements the map containing the HTTP connection parameters
      */
-    private static void populateEnableSecurityElement(OMFactory factory, OMNamespace synapseNS,
-                                                      OMElement http, Map<String, String> connectionElements) {
+    private static void populateEnableSecurityElement(OMFactory factory, OMNamespace synapseNS, OMElement http,
+                                                      Map<String, String> connectionElements) {
 
         if (SynapseConstants.ENABLE.equalsIgnoreCase(
                 connectionElements.get(SynapseConstants.QUALITY_OF_SERVICE_SECURITY_OPTION))) {
             OMElement enableSecurity = factory.createOMElement(SynapseConstants.ENABLE_SECURITY, synapseNS);
-            if (SynapseConstants.ENABLE.equalsIgnoreCase(
-                    connectionElements.get(
-                            SynapseConstants.QUALITY_OF_SERVICE_SECURITY_INBOUND_OUTBOUND_POLICY_OPTION))) {
+            if (SynapseConstants.ENABLE.equalsIgnoreCase(connectionElements.get(
+                    SynapseConstants.QUALITY_OF_SERVICE_SECURITY_INBOUND_OUTBOUND_POLICY_OPTION))) {
                 if (StringUtils.isNotEmpty(
                         connectionElements.get(SynapseConstants.QUALITY_OF_SERVICE_SECURITY_INBOUND_POLICY_KEY))) {
                     enableSecurity.addAttribute(SynapseConstants.INBOUND_POLICY,
@@ -140,12 +139,11 @@ public class HTTPConnectionUtils {
         if (SynapseConstants.ENABLE.equalsIgnoreCase(
                 connectionElements.get(SynapseConstants.QUALITY_OF_SERVICE_ADDRESS_OPTION))) {
             OMElement enableAddressing = factory.createOMElement(SynapseConstants.ENABLE_ADDRESSING, synapseNS);
-            if (SynapseConstants.ENABLE.equalsIgnoreCase(connectionElements.get(
-                    SynapseConstants.QUALITY_OF_SERVICE_ADDRESS_SEPARATE_LISTENER))) {
+            if (SynapseConstants.ENABLE.equalsIgnoreCase(
+                    connectionElements.get(SynapseConstants.QUALITY_OF_SERVICE_ADDRESS_SEPARATE_LISTENER))) {
                 enableAddressing.addAttribute(SynapseConstants.SEPARATE_LISTENER, "true", null);
             }
-            if (StringUtils.isNotEmpty(connectionElements.get(
-                    SynapseConstants.QUALITY_OF_SERVICE_ADDRESS_VERSION))) {
+            if (StringUtils.isNotEmpty(connectionElements.get(SynapseConstants.QUALITY_OF_SERVICE_ADDRESS_VERSION))) {
                 enableAddressing.addAttribute(SynapseConstants.VERSION,
                         connectionElements.get(SynapseConstants.QUALITY_OF_SERVICE_ADDRESS_VERSION), null);
             }
@@ -162,8 +160,8 @@ public class HTTPConnectionUtils {
      * @param http               the OMElement representing the HTTP endpoint
      * @param connectionElements the map containing the HTTP connection parameters
      */
-    private static void populateAuthenticationElement(OMFactory factory, OMNamespace synapseNS,
-                                                      OMElement http, Map<String, String> connectionElements) {
+    private static void populateAuthenticationElement(OMFactory factory, OMNamespace synapseNS, OMElement http,
+                                                      Map<String, String> connectionElements) {
 
         if (StringUtils.isNotEmpty(connectionElements.get(SynapseConstants.AUTH_TYPE))) {
             if (SynapseConstants.BASIC_AUTH.equalsIgnoreCase(connectionElements.get(SynapseConstants.AUTH_TYPE))) {
@@ -315,8 +313,8 @@ public class HTTPConnectionUtils {
      * @param httpEndpointElement the OMElement representing the HTTP endpoint
      * @param connectionElements  the map containing the HTTP connection parameters
      */
-    private static void populateTimeoutElement(OMFactory factory, OMNamespace synapseNS,
-                                               OMElement httpEndpointElement, Map<String, String> connectionElements) {
+    private static void populateTimeoutElement(OMFactory factory, OMNamespace synapseNS, OMElement httpEndpointElement,
+                                               Map<String, String> connectionElements) {
 
         if (StringUtils.isNotEmpty(connectionElements.get(SynapseConstants.TIMEOUT_DURATION)) ||
                 StringUtils.isNotEmpty(connectionElements.get(SynapseConstants.TIMEOUT_ACTION))) {
@@ -385,8 +383,7 @@ public class HTTPConnectionUtils {
     private static OMElement generateOAuthPasswordCredentialsElement(OMFactory factory, OMNamespace synapseNS,
                                                                      String username, String password, String clientId,
                                                                      String clientSecret, String tokenUrl,
-                                                                     String authMode,
-                                                                     String oauthAdditionalProperties,
+                                                                     String authMode, String oauthAdditionalProperties,
                                                                      String connectionTimeout,
                                                                      String connectionRequestTimeout,
                                                                      String socketTimeout) {
@@ -406,8 +403,8 @@ public class HTTPConnectionUtils {
         passwordCredentials.addChild(clientSecretElement);
         passwordCredentials.addChild(tokenUrlElement);
         passwordCredentials.addChild(authModeElement);
-        handleOAuthTimeouts(
-                factory, synapseNS, passwordCredentials, connectionTimeout, connectionRequestTimeout, socketTimeout);
+        handleOAuthTimeouts(factory, synapseNS, passwordCredentials, connectionTimeout, connectionRequestTimeout,
+                socketTimeout);
 
         if (StringUtils.isNotEmpty(oauthAdditionalProperties)) {
             OMElement additionalProperties =
@@ -453,7 +450,8 @@ public class HTTPConnectionUtils {
         clientCredentials.addChild(oauthClientSecret);
         clientCredentials.addChild(oauthTokenUrl);
         clientCredentials.addChild(authorizationMode);
-        handleOAuthTimeouts(factory, synapseNS, clientCredentials, connectionTimeout, connectionRequestTimeout, socketTimeout);
+        handleOAuthTimeouts(factory, synapseNS, clientCredentials, connectionTimeout, connectionRequestTimeout,
+                socketTimeout);
 
         if (StringUtils.isNotEmpty(oauthAdditionalProperties)) {
             OMElement additionalProperties =
@@ -478,11 +476,13 @@ public class HTTPConnectionUtils {
                                             String socketTimeout) {
 
         if (StringUtils.isNotEmpty(connectionTimeout)) {
-            OMElement connectionTimeoutElement = generateOAuthConnectionTimeoutElement(factory, synapseNS, connectionTimeout);
+            OMElement connectionTimeoutElement =
+                    generateOAuthConnectionTimeoutElement(factory, synapseNS, connectionTimeout);
             targetOAuthElement.addChild(connectionTimeoutElement);
         }
         if (StringUtils.isNotEmpty(connectionRequestTimeout)) {
-            OMElement connectionRequestTimeoutElement = generateOAuthConnectionRequestTimeoutElement(factory, synapseNS, connectionRequestTimeout);
+            OMElement connectionRequestTimeoutElement =
+                    generateOAuthConnectionRequestTimeoutElement(factory, synapseNS, connectionRequestTimeout);
             targetOAuthElement.addChild(connectionRequestTimeoutElement);
         }
         if (StringUtils.isNotEmpty(socketTimeout)) {
@@ -494,12 +494,13 @@ public class HTTPConnectionUtils {
     /**
      * Generates an OMElement representing the OAuth socket timeout.
      *
-     * @param factory           the OMFactory used to create OMElements
-     * @param synapseNS         the OMNamespace for the Synapse configuration
-     * @param socketTimeout     the socket timeout
+     * @param factory       the OMFactory used to create OMElements
+     * @param synapseNS     the OMNamespace for the Synapse configuration
+     * @param socketTimeout the socket timeout
      * @return the OMElement representing the OAuth socket timeout
      */
-    private static OMElement generateOAuthSocketTimeoutElement(OMFactory factory, OMNamespace synapseNS, String socketTimeout) {
+    private static OMElement generateOAuthSocketTimeoutElement(OMFactory factory, OMNamespace synapseNS,
+                                                               String socketTimeout) {
 
         OMElement oauthSocketTimeout = factory.createOMElement(SynapseConstants.SOCKET_TIMEOUT, synapseNS);
         oauthSocketTimeout.setText(socketTimeout);
@@ -509,14 +510,16 @@ public class HTTPConnectionUtils {
     /**
      * Generates an OMElement representing the OAuth connection request timeout.
      *
-     * @param factory                the OMFactory used to create OMElements
-     * @param synapseNS              the OMNamespace for the Synapse configuration
+     * @param factory                  the OMFactory used to create OMElements
+     * @param synapseNS                the OMNamespace for the Synapse configuration
      * @param connectionRequestTimeout the connection request timeout
      * @return the OMElement representing the OAuth connection request timeout
      */
-    private static OMElement generateOAuthConnectionRequestTimeoutElement(OMFactory factory, OMNamespace synapseNS, String connectionRequestTimeout) {
+    private static OMElement generateOAuthConnectionRequestTimeoutElement(OMFactory factory, OMNamespace synapseNS,
+                                                                          String connectionRequestTimeout) {
 
-        OMElement oauthConnectionRequestTimeout = factory.createOMElement(SynapseConstants.CONNECTION_REQUEST_TIMEOUT, synapseNS);
+        OMElement oauthConnectionRequestTimeout =
+                factory.createOMElement(SynapseConstants.CONNECTION_REQUEST_TIMEOUT, synapseNS);
         oauthConnectionRequestTimeout.setText(connectionRequestTimeout);
         return oauthConnectionRequestTimeout;
     }
@@ -573,7 +576,8 @@ public class HTTPConnectionUtils {
         authorizationCode.addChild(oauthClientSecret);
         authorizationCode.addChild(oauthTokenUrl);
         authorizationCode.addChild(authorizationMode);
-        handleOAuthTimeouts(factory, synapseNS, authorizationCode, connectionTimeout, connectionRequestTimeout, socketTimeout);
+        handleOAuthTimeouts(factory, synapseNS, authorizationCode, connectionTimeout, connectionRequestTimeout,
+                socketTimeout);
 
         if (StringUtils.isNotEmpty(oauthAdditionalProperties)) {
             OMElement additionalProperties =

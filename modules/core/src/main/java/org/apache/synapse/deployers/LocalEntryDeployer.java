@@ -108,9 +108,8 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
 
     private void deployEndpointsForHTTPConnection(OMElement artifactConfig, String fileName, Properties properties) {
 
-        OMElement httpInitElement =
-                artifactConfig.getFirstChildWithName(
-                        new QName(SynapseConstants.SYNAPSE_NAMESPACE, HTTP_CONNECTION_IDENTIFIER));
+        OMElement httpInitElement = artifactConfig.getFirstChildWithName(
+                new QName(SynapseConstants.SYNAPSE_NAMESPACE, HTTP_CONNECTION_IDENTIFIER));
         if (httpInitElement != null) {
             OMElement generatedEndpointElement = HTTPConnectionUtils.generateHTTPEndpointOMElement(httpInitElement);
             deployHTTPEndpointForElement(generatedEndpointElement, fileName, properties);
@@ -127,8 +126,8 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
             if (ep != null) {
                 ep.setFileName((new File(fileName)).getName());
                 if (log.isDebugEnabled()) {
-                    log.debug("Endpoint named '" + ep.getName()
-                            + "' has been built from the http connection file " + fileName);
+                    log.debug("Endpoint named '" + ep.getName() + "' has been built from the http connection file " +
+                            fileName);
                 }
                 ep.init(getSynapseEnvironment());
                 if (log.isDebugEnabled()) {
@@ -138,22 +137,23 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
                 if (log.isDebugEnabled()) {
                     log.debug("Endpoint Deployment from the http connection file : " + fileName + " : Completed");
                 }
-                log.info("Endpoint named '" + ep.getName()
-                        + "' has been deployed from the http connection file : " + fileName);
+                log.info("Endpoint named '" + ep.getName() + "' has been deployed from the http connection file : " +
+                        fileName);
             } else {
-                handleSynapseArtifactDeploymentError("Endpoint Deployment Failed. The artifact " +
-                        "described in the http connection file " + fileName + " has filed to describe an Endpoint");
+                handleSynapseArtifactDeploymentError(
+                        "Endpoint Deployment Failed. The artifact " + "described in the http connection file " +
+                                fileName + " has filed to describe an Endpoint");
             }
         } catch (Exception e) {
-            handleSynapseArtifactDeploymentError("Endpoint Deployment from the http connection file : "
-                    + fileName + " : Failed.", e);
+            handleSynapseArtifactDeploymentError(
+                    "Endpoint Deployment from the http connection file : " + fileName + " : Failed.", e);
         }
     }
 
     private void handleSSLSenderCertificates(OMElement element) throws DeploymentException {
 
-        OMElement httpInitElement =
-                element.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, HTTP_CONNECTION_IDENTIFIER));
+        OMElement httpInitElement = element.getFirstChildWithName(
+                new QName(SynapseConstants.SYNAPSE_NAMESPACE, HTTP_CONNECTION_IDENTIFIER));
         if (httpInitElement != null) {
             Iterator childElementIterator = httpInitElement.getChildElements();
             while (childElementIterator.hasNext()) {
@@ -168,21 +168,25 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
         }
     }
 
-    private void loadCertificateFileToSSLSenderTrustStore(String certificateFileResourceKey) throws DeploymentException {
+    private void loadCertificateFileToSSLSenderTrustStore(String certificateFileResourceKey)
+            throws DeploymentException {
 
-        String certificateFilePath = getSynapseConfiguration().getRegistry().getRegistryEntry(certificateFileResourceKey).getName();
+        String certificateFilePath =
+                getSynapseConfiguration().getRegistry().getRegistryEntry(certificateFileResourceKey).getName();
         File certificateFile = new File(certificateFilePath);
         String certificateAlias = certificateFile.getName().split("\\.")[0];
         SslSenderTrustStoreHolder sslSenderTrustStoreHolder = SslSenderTrustStoreHolder.getInstance();
         if (sslSenderTrustStoreHolder.isValid()) {
-            try (FileInputStream certificateFileInputStream = FileUtils.openInputStream(new File(certificateFilePath))) {
+            try (FileInputStream certificateFileInputStream = FileUtils.openInputStream(
+                    new File(certificateFilePath))) {
                 KeyStore sslSenderTrustStore = sslSenderTrustStoreHolder.getKeyStore();
 
                 CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
                 Certificate certificate = certificateFactory.generateCertificate(certificateFileInputStream);
                 sslSenderTrustStore.setCertificateEntry(certificateAlias, certificate);
 
-                try (FileOutputStream fileOutputStream = new FileOutputStream(sslSenderTrustStoreHolder.getLocation())) {
+                try (FileOutputStream fileOutputStream = new FileOutputStream(
+                        sslSenderTrustStoreHolder.getLocation())) {
                     sslSenderTrustStore.store(fileOutputStream, sslSenderTrustStoreHolder.getPassword().toCharArray());
                 }
             } catch (CertificateException | IOException | KeyStoreException | NoSuchAlgorithmException e) {
@@ -192,18 +196,18 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
     }
 
     private void loadUpdatedSSL() throws DeploymentException {
+
         SslSenderTrustStoreHolder sslSenderTrustStoreHolder = SslSenderTrustStoreHolder.getInstance();
         KeyStore sslSenderTrustStore = sslSenderTrustStoreHolder.getKeyStore();
         if (sslSenderTrustStoreHolder.isValid()) {
-            try (
-                    FileInputStream fileInputStream = new FileInputStream(sslSenderTrustStoreHolder.getLocation());
-                    InputStream bufferedInputStream = IOUtils.toBufferedInputStream(fileInputStream)
-            ) {
+            try (FileInputStream fileInputStream = new FileInputStream(sslSenderTrustStoreHolder.getLocation());
+                 InputStream bufferedInputStream = IOUtils.toBufferedInputStream(fileInputStream)) {
                 sslSenderTrustStore.load(bufferedInputStream, sslSenderTrustStoreHolder.getPassword().toCharArray());
                 sslSenderTrustStoreHolder.setKeyStore(sslSenderTrustStore);
                 KeyStoreReloaderHolder.getInstance().reloadAllKeyStores();
             } catch (IOException | CertificateException | NoSuchAlgorithmException e) {
-                throw new DeploymentException("Failed to load updated SSL configuration from the trust store at: " + sslSenderTrustStoreHolder.getLocation(), e);
+                throw new DeploymentException("Failed to load updated SSL configuration from the trust store at: " +
+                        sslSenderTrustStoreHolder.getLocation(), e);
             }
         }
     }
@@ -215,9 +219,11 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
      * @return the transformed element value
      */
     private String getTransformedElementValue(String elementValue) {
+
         String transformedElementValue = elementValue.trim();
         if (transformedElementValue.startsWith(RESOURCES_IDENTIFIER)) {
-            transformedElementValue = transformedElementValue.replace(RESOURCES_IDENTIFIER, CONVERTED_RESOURCES_IDENTIFIER);
+            transformedElementValue =
+                    transformedElementValue.replace(RESOURCES_IDENTIFIER, CONVERTED_RESOURCES_IDENTIFIER);
         }
         return transformedElementValue;
     }
