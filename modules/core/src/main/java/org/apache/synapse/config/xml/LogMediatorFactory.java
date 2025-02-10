@@ -58,6 +58,7 @@ public class LogMediatorFactory extends AbstractMediatorFactory  {
     protected static final QName ELEMENT_MESSAGE_Q
             = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "message");
     private static final QName ATT_LOG_FULL_PAYLOAD = new QName("logFullPayload");
+    private static final QName ATT_LOG_MESSAGE_ID = new QName("logMessageID");
 
     public QName getTagQName() {
         return LOG_Q;
@@ -108,6 +109,11 @@ public class LogMediatorFactory extends AbstractMediatorFactory  {
             if (containMessageTemplate) {
                 logMediator.setLogLevel(LogMediator.MESSAGE_TEMPLATE);
             }
+        }
+
+        OMAttribute logMessageIDAttr = elem.getAttribute(ATT_LOG_MESSAGE_ID);
+        if (logMessageIDAttr != null && Boolean.parseBoolean(logMessageIDAttr.getAttributeValue())) {
+            logMediator.setLogMessageID(true);
         }
 
         // Set the log statement category (i.e. INFO, DEBUG, etc..)

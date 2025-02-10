@@ -84,6 +84,7 @@ public class LogMediator extends AbstractMediator {
 
     private String messageTemplate = "";
     private boolean isContentAware = false;
+    private boolean logMessageID = false;
     private final Map<String, SynapseExpression> inlineExpressionCache = new ConcurrentHashMap<>();
 
     /**
@@ -169,6 +170,18 @@ public class LogMediator extends AbstractMediator {
 
     private String getCustomLogMessage(MessageContext synCtx) {
         StringBuffer sb = new StringBuffer();
+        if (logMessageID) {
+            if (synCtx.getMessageID() != null) {
+                sb.append("MessageID: ").append(synCtx.getMessageID());
+            }
+            if (getCorrelationId(synCtx) != null) {
+                sb.append(separator).append("correlation_id: ").append(getCorrelationId(synCtx));
+            }
+            // append separator if message id is logged
+            if (sb.length() > 0) {
+                sb.append(separator);
+            }
+        }
         processMessageTemplate(sb, synCtx, messageTemplate);
         setCustomProperties(sb, synCtx);
         return trimLeadingSeparator(sb);
@@ -328,6 +341,16 @@ public class LogMediator extends AbstractMediator {
     public void setMessageTemplate(String messageTemplate) {
 
         this.messageTemplate = messageTemplate.replace("\\n", "\n").replace("\\t", "\t");
+    }
+
+    public boolean isLogMessageID() {
+
+        return logMessageID;
+    }
+
+    public void setLogMessageID(boolean logMessageID) {
+
+        this.logMessageID = logMessageID;
     }
 
     private String trimLeadingSeparator(StringBuffer sb) {

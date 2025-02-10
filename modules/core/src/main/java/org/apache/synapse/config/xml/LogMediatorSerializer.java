@@ -59,6 +59,8 @@ public class LogMediatorSerializer extends AbstractMediatorSerializer {
                 OMElement messageElement = fac.createOMElement("message", synNS);
                 messageElement.setText(mediator.getMessageTemplate());
                 log.addChild(messageElement);
+                log.addAttribute(fac.createOMAttribute("logMessageID", nullNS,
+                        Boolean.toString(mediator.isLogMessageID())));
                 break;
         }
         if (StringUtils.isNotBlank(logLevel)) {
