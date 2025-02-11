@@ -258,7 +258,8 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
             synLog.traceOrDebug("Foreach mediator : Mediating from ContinuationState");
         }
 
-        boolean result;
+        boolean result = false;
+        boolean readyToAggregate = false;
         SequenceMediator branchSequence = target.getSequence();
         boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         // If there are no children and the continuation was triggered from a mediator worker start aggregation
@@ -266,10 +267,14 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
         if (!continuationState.hasChild()) {
             if (Utils.isContinuationTriggeredFromMediatorWorker(synCtx)) {
                 synLog.traceOrDebug("Continuation is triggered from a mediator worker");
-                result = true;
+                synCtx.setProperty(SynapseConstants.CONTINUE_FLOW_TRIGGERED_FROM_MEDIATOR_WORKER, false);
+                readyToAggregate = true;
             } else {
                 synLog.traceOrDebug("Continuation is triggered from a callback, mediating through the sub branch sequence");
                 result = branchSequence.mediate(synCtx, continuationState.getPosition() + 1);
+                if (result) {
+                    readyToAggregate = true;
+                }
             }
         } else {
             synLog.traceOrDebug("Continuation is triggered from a callback, mediating through the child continuation state");
@@ -285,10 +290,10 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
         if (continueWithoutAggregation) {
             return false;
         }
-        if (result) {
+        if (readyToAggregate) {
             return aggregateMessages(synCtx, synLog);
         }
-        return false;
+        return result;
     }
 
     private boolean aggregateMessages(MessageContext synCtx, SynapseLog synLog) {
@@ -424,7 +429,7 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
             ContinuationStackManager.updateSeqContinuationState(originalMessageContext, getMediatorPosition());
 
             getLog(originalMessageContext).traceOrDebug("End : Foreach mediator");
-            boolean result = false;
+            boolean result;
 
             // Set CONTINUE_STATISTICS_FLOW to avoid mark event collection as finished before the aggregation is completed
             originalMessageContext.setProperty(StatisticsConstants.CONTINUE_STATISTICS_FLOW, true);
@@ -446,7 +451,7 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
                 }
             } while (result && !originalMessageContext.getContinuationStateStack().isEmpty());
             CloseEventCollector.closeEventsAfterScatterGather(originalMessageContext);
-            return result;
+            return false;
         } else {
             handleException(aggregate, "Error retrieving the original message context", null, aggregate.getLastMessage());
             return false;

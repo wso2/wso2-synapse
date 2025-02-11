@@ -267,7 +267,8 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
             synLog.traceOrDebug("Scatter Gather mediator : Mediating from ContinuationState");
         }
 
-        boolean result;
+        boolean result = false;
+        boolean readyToAggregate = false;
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
 
         SequenceMediator branchSequence = targets.get(subBranch).getSequence();
@@ -277,10 +278,14 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
         if (!continuationState.hasChild()) {
             if (Utils.isContinuationTriggeredFromMediatorWorker(synCtx)) {
                 synLog.traceOrDebug("Continuation is triggered from a mediator worker");
-                result = true;
+                synCtx.setProperty(SynapseConstants.CONTINUE_FLOW_TRIGGERED_FROM_MEDIATOR_WORKER, false);
+                readyToAggregate = true;
             } else {
                 synLog.traceOrDebug("Continuation is triggered from a callback, mediating through the sub branch sequence");
                 result = branchSequence.mediate(synCtx, continuationState.getPosition() + 1);
+                if (result) {
+                    readyToAggregate = true;
+                }
             }
         } else {
             synLog.traceOrDebug("Continuation is triggered from a callback, mediating through the child continuation state");
@@ -292,10 +297,10 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
                 ((Mediator) mediator).reportCloseStatistics(synCtx, null);
             }
         }
-        if (result) {
+        if (readyToAggregate) {
             return aggregateMessages(synCtx, synLog);
         }
-        return false;
+        return result;
     }
 
     private boolean aggregateMessages(MessageContext synCtx, SynapseLog synLog) {
@@ -480,10 +485,9 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
         if (Utils.isTargetBody(resultTarget)) {
             // Set content type to the aggregated message
             setContentType(messageContext);
-        } else {
-            // Update the continuation state to current mediator position as we are using the original message context
-            ContinuationStackManager.updateSeqContinuationState(messageContext, getMediatorPosition());
         }
+        // Update the continuation state to current mediator position
+        ContinuationStackManager.updateSeqContinuationState(messageContext, getMediatorPosition());
         messageContext.setProperty(StatisticsConstants.CONTINUE_STATISTICS_FLOW, true);
 
         if (RuntimeStatisticCollector.isStatisticsEnabled()) {
@@ -492,7 +496,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
         }
 
         getLog(messageContext).traceOrDebug("End : Scatter Gather mediator");
-        boolean result = false;
+        boolean result;
         do {
             SeqContinuationState seqContinuationState =
                     (SeqContinuationState) ContinuationStackManager.peakContinuationStateStack(messageContext);
@@ -507,7 +511,7 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
             }
         } while (result && !messageContext.getContinuationStateStack().isEmpty());
         CloseEventCollector.closeEventsAfterScatterGather(messageContext);
-        return result;
+        return false;
     }
 
     /**

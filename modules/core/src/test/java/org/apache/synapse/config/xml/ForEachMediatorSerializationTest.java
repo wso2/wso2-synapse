@@ -62,7 +62,7 @@ public class ForEachMediatorSerializationTest extends AbstractTestCase {
         String inputXML = "<foreach collection=\"${payload.array}\" parallel-execution=\"true\" " +
                 "continue-without-aggregation=\"true\" xmlns=\"http://ws.apache.org/ns/synapse\">" +
                 "<sequence>" +
-                "<log>" +
+                "<log logMessageID=\"false\">" +
                 "<message>Processing payload ${payload}</message>" +
                 "</log>" +
                 "</sequence>" +
