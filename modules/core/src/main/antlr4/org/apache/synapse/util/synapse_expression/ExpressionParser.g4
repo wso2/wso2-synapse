@@ -50,6 +50,10 @@ keywords
     | DOT CONFIG
     | DOT PARAMS
     | DOT PROPERTY
+    | DOT PARAM_ACCESS
+    | DOT PROPERTY_ACCESS
+    | DOT FUNCTIONS
+    | DOT SECONDARY_FUNCTIONS
     ;
 
 configAccess
@@ -61,11 +65,11 @@ headerAccess
     ;
 
 parameterAccess
-    : PARAMS (DOT ID  propertyName)
+    : PARAMS (DOT PARAM_ACCESS  propertyName)
     ;
 
 propertyAccess
-    : PROPERTY (DOT ID  propertyName)
+    : PROPERTY (DOT PROPERTY_ACCESS  propertyName)
     ;
 
 propertyName
@@ -156,10 +160,10 @@ stringOrOperator
 
 
 functionCall
-    : ID LPAREN (expression (COMMA expression)*)? RPAREN functionCallSuffix?
+    : FUNCTIONS LPAREN (expression (COMMA expression)*)? RPAREN functionCallSuffix?
     ;
 
 functionCallSuffix
-    : DOT ID LPAREN (expression (COMMA expression)*)? RPAREN   // Method chaining
+    : DOT SECONDARY_FUNCTIONS LPAREN (expression (COMMA expression)*)? RPAREN   // Method chaining
     | jsonPathExpression
     ;

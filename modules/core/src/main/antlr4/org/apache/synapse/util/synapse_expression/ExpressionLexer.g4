@@ -44,6 +44,16 @@ QUOTE: '"' | '\'';
 BOOLEAN_LITERAL: 'true' | 'false';
 NUMBER: '-'? [0-9]+ ('.' [0-9]+)?;
 
+PARAM_ACCESS: 'queryParams' | 'pathParams' | 'functionParams';
+PROPERTY_ACCESS: 'axis2' | 'synapse';
+FUNCTIONS: 'length' | 'toUpper' | 'toLower' | 'subString' | 'startsWith' | 'endsWith' | 'contains' | 'trim' | 'replace'
+    | 'split' | 'indexOf' | 'now' | 'formatDateTime' | 'charAt' | 'abs' | 'ceil' | 'floor' | 'sqrt' | 'log' | 'pow'
+    | 'base64encode' | 'base64decode' | 'urlEncode' | 'urlDecode' | 'isString' | 'isNumber' | 'isArray' | 'isObject'
+    | 'string' | 'float' | 'boolean' | 'integer' | 'round' | 'exists' | 'xpath' | 'wso2-vault' | 'hashicorp-vault'
+    | 'not' | 'registry' | 'object' | 'array' ;
+
+SECONDARY_FUNCTIONS: 'property';
+
 
 STRING_LITERAL : ('"' (ESC | ~["\\])* '"' | '\'' (ESC | ~['\\])* '\'');
 
