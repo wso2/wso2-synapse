@@ -166,8 +166,8 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
                 parameterList.addArgument(visit(expressionContext));
             }
         }
-        if (ctx.ID() != null) {
-            String functionName = ctx.ID().getText();
+        if (ctx.FUNCTIONS() != null) {
+            String functionName = ctx.FUNCTIONS().getText();
             switch (functionName) {
                 case ExpressionConstants.LENGTH:
                     return new PredefinedFunctionNode(parameterList, ExpressionConstants.LENGTH);
@@ -247,9 +247,9 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
                     return new PredefinedFunctionNode(parameterList, ExpressionConstants.NOT);
                 case ExpressionConstants.REGISTRY:
                     if (ctx.functionCallSuffix() != null) {
-                        if (ctx.functionCallSuffix().ID() != null &&
-                                ExpressionConstants.PROPERTY.equals(ctx.functionCallSuffix().ID().getText()) &&
-                                !ctx.functionCallSuffix().expression().isEmpty()) {
+                        if (ctx.functionCallSuffix().SECONDARY_FUNCTIONS() != null &&
+                                ExpressionConstants.PROPERTY.equals(ctx.functionCallSuffix().SECONDARY_FUNCTIONS()
+                                        .getText()) && !ctx.functionCallSuffix().expression().isEmpty()) {
                             parameterList.addArgument(visit(ctx.functionCallSuffix().expression(0)));
                             return new PredefinedFunctionNode(parameterList, ExpressionConstants.REGISTRY);
                         } else if (ctx.functionCallSuffix().jsonPathExpression() != null) {
@@ -531,8 +531,8 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
             log.debug("Visiting property access: " + ctx.getText());
         }
         if (ctx.propertyName() != null) {
-            if (ctx.ID() != null) {
-                String scope = ctx.ID().getText();
+            if (ctx.PROPERTY_ACCESS() != null) {
+                String scope = ctx.PROPERTY_ACCESS().getText();
                 switch (scope) {
                     case ExpressionConstants.AXIS2:
                         return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()), ExpressionConstants.AXIS2);
@@ -550,8 +550,8 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
             log.debug("Visiting parameter access: " + ctx.getText());
         }
         if (ctx.propertyName() != null) {
-            if (ctx.ID() != null) {
-                String scope = ctx.ID().getText();
+            if (ctx.PARAM_ACCESS() != null) {
+                String scope = ctx.PARAM_ACCESS().getText();
                 switch (scope) {
                     case ExpressionConstants.QUERY_PARAM:
                         return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()),
