@@ -286,12 +286,11 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
                 ((Mediator) mediator).reportCloseStatistics(synCtx, null);
             }
         }
-        // If this a continue without aggregation scenario, return false to end the mediation
-        if (continueWithoutAggregation) {
-            return false;
-        }
         if (readyToAggregate) {
-            return aggregateMessages(synCtx, synLog);
+            if (!continueWithoutAggregation) {
+                return aggregateMessages(synCtx, synLog);
+            }
+            return false;
         }
         return result;
     }
