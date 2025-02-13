@@ -446,4 +446,14 @@ public class PreDefinedFunctionsTest {
                 TestUtils.evaluateExpression("formatDateTime(\"11-22-33\",\"HH-mm-ss\", \"HH mm ss\")"));
         Assert.assertEquals("", TestUtils.evaluateExpression("formatDateTime(\"50-22-33\",\"HH-mm-ss\", \"HH mm ss\")"));
     }
+
+    @Test
+    public void testLog(){
+        Assert.assertEquals("1.0", TestUtils.evaluateExpression("log(10)"));
+        Assert.assertEquals("3", TestUtils.evaluateExpression("round(log(1001))"));
+        Assert.assertEquals("", TestUtils.evaluateExpression("log(\"asdf\")"));
+        Assert.assertEquals("10.0", TestUtils.evaluateExpression("log(1024,2)"));
+        Assert.assertEquals("NaN", TestUtils.evaluateExpressionWithPayloadAndVariables("log(vars.num1,vars.num3)", 0,1));
+        Assert.assertEquals("1.43", TestUtils.evaluateExpressionWithPayloadAndVariables("round(log(vars.num1,vars.num2),2)", 0,1));
+    }
 }

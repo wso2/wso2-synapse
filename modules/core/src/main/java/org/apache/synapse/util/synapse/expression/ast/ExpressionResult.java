@@ -157,6 +157,9 @@ public class ExpressionResult {
             return (JsonObject) value;
         } else if (value instanceof String) {
             return parseStringToJsonObject((String) value);
+        } else if (value instanceof JsonPrimitive) {
+            String valueString = ((JsonPrimitive) value).getAsString();
+            return parseStringToJsonObject(valueString);
         }
         throw new EvaluationException("Value is not a JsonObject");
     }
@@ -166,6 +169,9 @@ public class ExpressionResult {
             return (JsonArray) value;
         } else if (value instanceof String) {
             return parseStringToJsonArray((String) value);
+        } else if (value instanceof JsonPrimitive) {
+            String valueString = ((JsonPrimitive) value).getAsString();
+            return parseStringToJsonArray(valueString);
         }
         throw new EvaluationException("Value is not a JsonArray");
     }
@@ -212,6 +218,14 @@ public class ExpressionResult {
             } catch (EvaluationException e) {
                 return false;
             }
+        } else if (value instanceof JsonPrimitive) {
+            String valueString = ((JsonPrimitive) value).getAsString();
+            try {
+                parseStringToJsonObject(valueString);
+                return true;
+            } catch (EvaluationException e) {
+                return false;
+            }
         }
         return false;
     }
@@ -222,6 +236,14 @@ public class ExpressionResult {
         } else if (value instanceof String) {
             try {
                 parseStringToJsonArray((String) value);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        } else if (value instanceof JsonPrimitive) {
+            String valueString = ((JsonPrimitive) value).getAsString();
+            try {
+                parseStringToJsonArray(valueString);
                 return true;
             } catch (Exception e) {
                 return false;

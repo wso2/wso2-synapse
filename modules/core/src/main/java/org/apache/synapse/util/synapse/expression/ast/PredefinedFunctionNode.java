@@ -140,6 +140,8 @@ public class PredefinedFunctionNode implements ExpressionNode {
                 return fetchSecretValue(context, result.asString());
             case ExpressionConstants.NOT:
                 return new ExpressionResult(!result.asBoolean());
+            case ExpressionConstants.LOG:
+                return handleLogFunction(result);
             default:
                 throw new EvaluationException("Invalid function: " + functionName + " with one argument");
         }
@@ -181,6 +183,8 @@ public class PredefinedFunctionNode implements ExpressionNode {
                 return handleRoundFunction(source, argument1);
             case ExpressionConstants.HASHICORP_VAULT:
                 return fetchHashicorpSecretValue(context, source.asString(), argument1.asString());
+            case ExpressionConstants.LOG:
+                return handleLogFunction(source, argument1);
             default:
                 throw new EvaluationException("Invalid function: " + functionName + " with two arguments");
         }
@@ -301,6 +305,22 @@ public class PredefinedFunctionNode implements ExpressionNode {
             return new ExpressionResult(Math.sqrt(result.asDouble()));
         }
         throw new EvaluationException("Invalid argument provided for sqrt function");
+    }
+
+    private ExpressionResult handleLogFunction(ExpressionResult result) {
+        if (result.isInteger()) {
+            return new ExpressionResult(Math.log10(result.asInt()));
+        } else if (result.isDouble()) {
+            return new ExpressionResult(Math.log10(result.asDouble()));
+        }
+        throw new EvaluationException("Invalid argument provided for log function");
+    }
+
+    private ExpressionResult handleLogFunction(ExpressionResult result, ExpressionResult base) {
+        if ((result.isInteger() || result.isDouble()) && (base.isInteger() || base.isDouble())) {
+            return new ExpressionResult(Math.log(result.asDouble()) / Math.log(base.asDouble()));
+        }
+        throw new EvaluationException("Invalid argument provided for log function");
     }
 
     private ExpressionResult handleBase64EncodeFunction(ExpressionResult result) {
@@ -458,32 +478,37 @@ public class PredefinedFunctionNode implements ExpressionNode {
                                                            ExpressionResult newFormat) {
         if (source.isString() && oldFormat.isString() && newFormat.isString()) {
             DateTimeFormatter oldFormatObj = null;
+            DateTimeFormatter newFormatObj;
+            try {
+                newFormatObj = DateTimeFormatter.ofPattern(newFormat.asString());
+            } catch (IllegalArgumentException e) {
+                throw new EvaluationException("Invalid target format provided for formatDateTime function. Format: "
+                        + newFormat.asString());
+            }
             try {
                 oldFormatObj = DateTimeFormatter.ofPattern(oldFormat.asString());
                 LocalDateTime dateObj = LocalDateTime.parse(source.asString(), oldFormatObj);
-                DateTimeFormatter newFormatObj = DateTimeFormatter.ofPattern(newFormat.asString());
                 return new ExpressionResult(dateObj.format(newFormatObj));
             } catch (DateTimeException | IllegalArgumentException e) {
                 // try with date only
                 if (oldFormatObj != null) {
                     try {
                         LocalDate dateObj = LocalDate.parse(source.asString(), oldFormatObj);
-                        DateTimeFormatter newFormatObj = DateTimeFormatter.ofPattern(newFormat.asString());
                         return new ExpressionResult(dateObj.format(newFormatObj));
                     } catch (DateTimeException | IllegalArgumentException ex) {
                         // try with time only
                         try {
                             LocalTime dateObj = LocalTime.parse(source.asString(), oldFormatObj);
-                            DateTimeFormatter newFormatObj = DateTimeFormatter.ofPattern(newFormat.asString());
                             return new ExpressionResult(dateObj.format(newFormatObj));
                         } catch (DateTimeException | IllegalArgumentException exc) {
-                            throw new EvaluationException("Invalid date format provided for formatDateTime function. Format: "
+                            throw new EvaluationException("Invalid date/time or source format provided for " +
+                                    "formatDateTime function. Source: " + source.asString()+ " Format: "
                                     + oldFormat.asString());
                         }
                     }
                 }
-                throw new EvaluationException("Invalid date format provided for formatDateTime function. Format: "
-                        + oldFormat.asString());
+                throw new EvaluationException("Invalid date/time or source format provided for formatDateTime function. " +
+                        "Source: " + source.asString()+ " Format: " + oldFormat.asString());
             }
         }
         throw new EvaluationException("Invalid argument provided for formatDateTime function. source: " + source.asString()
