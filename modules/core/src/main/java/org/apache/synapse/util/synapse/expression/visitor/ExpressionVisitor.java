@@ -22,6 +22,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.util.synapse.expression.ast.*;
 import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
+import org.apache.synapse.util.synapse.expression.exception.EvaluationException;
 import org.apache.synapse.util.synapse_expression.ExpressionParser;
 import org.apache.synapse.util.synapse_expression.ExpressionParserBaseVisitor;
 import org.apache.synapse.util.synapse_expression.ExpressionParserVisitor;
@@ -49,7 +50,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
         } else if (ctx.conditionalExpression() != null) {
             return visitConditionalExpression(ctx.conditionalExpression());
         }
-        return null;
+        throw new EvaluationException("Invalid expression: " + ctx.getText());
     }
 
     @Override
@@ -69,7 +70,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
                 return left;
             }
         }
-        return null;
+        throw new EvaluationException("Invalid comparison expression: " + ctx.getText());
     }
 
     @Override
@@ -85,7 +86,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
             }
             return left;
         }
-        return null;
+        throw new EvaluationException("Invalid logical expression: " + ctx.getText());
     }
 
     @Override
@@ -105,7 +106,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
                 return left;
             }
         }
-        return null;
+        throw new EvaluationException("Invalid arithmetic expression: " + ctx.getText());
     }
 
     @Override
@@ -125,7 +126,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
                 return left;
             }
         }
-        return null;
+        throw new EvaluationException("Invalid term: " + ctx.getText());
     }
 
     @Override
@@ -152,7 +153,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
         } else if (ctx.parameterAccess() != null) {
             return visit(ctx.parameterAccess());
         }
-        return null;
+        throw new EvaluationException("Invalid factor: " + ctx.getText());
     }
 
     @Override
@@ -285,7 +286,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
                     }
             }
         }
-        return null;
+        throw new EvaluationException("Invalid function call: " + ctx.getText());
     }
 
     @Override
@@ -304,7 +305,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
         } else if (ctx.NULL_LITERAL() != null) {
             return new LiteralNode(ctx.NULL_LITERAL().getText(), LiteralNode.Type.NULL);
         }
-        return null;
+        throw new EvaluationException("Invalid literal: " + ctx.getText());
     }
 
     @Override
@@ -319,7 +320,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
             }
             return new LiteralNode(parameterList, LiteralNode.Type.ARRAY);
         }
-        return null;
+        throw new EvaluationException("Invalid array literal: " + ctx.getText());
     }
 
     @Override
@@ -383,9 +384,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
         } else if (ctx.STRING_LITERAL() != null) {
             return new LiteralNode(ctx.STRING_LITERAL().getText(), LiteralNode.Type.STRING);
         } else if (ctx.expression() != null) {
-            if (ctx.expression().size() == 1) {
-                return visit(ctx.expression(0));
-            }
+            return visit(ctx.expression());
         } else if (ctx.ASTERISK() != null) {
             return null;
         } else if (ctx.multipleArrayIndices() != null) {
@@ -410,7 +409,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
             }
             return new ArrayIndexNode(expressionNodes, ',');
         }
-        return null;
+        throw new EvaluationException("Invalid multiple array indices: " + ctx.getText());
     }
 
     @Override
@@ -431,7 +430,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
             }
             return new ArrayIndexNode(expressionNodes, ':');
         }
-        return null;
+        throw new EvaluationException("Invalid slice array index: " + ctx.getText());
     }
 
     @Override
@@ -446,7 +445,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
                 return visit(ctx.expression());
             }
         }
-        return null;
+        throw new EvaluationException("Invalid signed expressions: " + ctx.getText());
     }
 
     @Override
@@ -485,7 +484,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
         } else if (ctx.parameterAccess() != null) {
             return visit(ctx.parameterAccess());
         }
-        return null;
+        throw new EvaluationException("Invalid filter component: " + ctx.getText());
     }
 
     @Override
@@ -497,7 +496,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
             return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()),
                     HeadersAndPropertiesAccessNode.Type.HEADER);
         }
-        return null;
+        throw new EvaluationException("Invalid header access: " + ctx.getText());
     }
 
     @Override
@@ -510,7 +509,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
         } else if (ctx.STRING_LITERAL() != null) {
             return new LiteralNode(ctx.STRING_LITERAL().getText(), LiteralNode.Type.STRING);
         }
-        return null;
+        throw new EvaluationException("Invalid property name: " + ctx.getText());
     }
 
     @Override
@@ -522,7 +521,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
             return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()),
                     HeadersAndPropertiesAccessNode.Type.CONFIG);
         }
-        return null;
+        throw new EvaluationException("Invalid config access: " + ctx.getText());
     }
 
     @Override
@@ -541,7 +540,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
                 }
             }
         }
-        return null;
+        throw new EvaluationException("Invalid property access: " + ctx.getText());
     }
 
     @Override
@@ -564,7 +563,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
                 }
             }
         }
-        return null;
+        throw new EvaluationException("Invalid parameter access: " + ctx.getText());
     }
 
     @Override
@@ -580,7 +579,7 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
         if (condition != null && expList.size() == 2) {
             return new ConditionalExpressionNode(condition, visit(expList.get(0)), visit(expList.get(1)));
         }
-        return null;
+        throw new EvaluationException("Invalid conditional expression: " + ctx.getText());
     }
 
 

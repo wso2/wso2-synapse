@@ -121,9 +121,8 @@ arrayIndex
     | expression
     | multipleArrayIndices
     | sliceArrayIndex
-    | expression ( (PLUS | MINUS | ASTERISK | DIV ) expression)*
     | ASTERISK
-    | QUESTION? filterExpression
+    | QUESTION? LPAREN filterExpression RPAREN
     ;
 
 multipleArrayIndices
