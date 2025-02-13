@@ -60,6 +60,6 @@ public class FilterExpressionNode implements ExpressionNode {
         }
         //TODO: Need to stop adding "?" for expressions like $..book[(@.length-1)].title. But not handling this for
         // now since its not even working in json-path.
-        return new ExpressionResult("?" + expression);
+        return new ExpressionResult("?(" + expression + ")");
     }
 }
