@@ -36,6 +36,7 @@ import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.util.xpath.SynapseExpression;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
@@ -510,6 +511,17 @@ public class OAuthUtils {
     }
 
     /**
+     * Method to check whether parameter value is a Synapse expression.
+     *
+     * @param value String
+     * @return true if the value is a Synapse expression
+     */
+    private static boolean isSynapseExpression(String value) {
+
+        return value.startsWith("${") && value.endsWith("}");
+    }
+
+    /**
      * Method to evaluate the expression.
      *
      * @param expressionStr  expression String
@@ -523,6 +535,8 @@ public class OAuthUtils {
         try {
             if (isJSONPath(expressionStr)) {
                 expression = new Value(new SynapseJsonPath(expressionStr.substring(10, expressionStr.length() - 1)));
+            } else if (isSynapseExpression(expressionStr)) {
+                expression = new Value(new SynapseExpression(expressionStr.substring(2, expressionStr.length() - 1)));
             } else {
                 expression = new Value(new SynapseXPath(expressionStr));
             }
