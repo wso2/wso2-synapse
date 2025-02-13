@@ -2055,6 +2055,10 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         return libraryClassLoaders.get(libraryName);
     }
 
+    public static Map<String, ClassLoader> getLibraryClassLoaders() {
+        return libraryClassLoaders;
+    }
+
     public static Library getDeployedLib(String name) {
         Map.Entry<Library, Integer> libraryCountEntry = deployedLibs.get(name);
         if (libraryCountEntry == null) {
