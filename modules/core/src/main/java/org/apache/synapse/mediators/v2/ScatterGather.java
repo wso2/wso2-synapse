@@ -594,7 +594,12 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
 
         for (MessageContext synCtx : aggregate.getMessages()) {
             Object evaluatedResult = aggregationExpression.objectValueOf(synCtx);
-            variable.add((JsonElement) evaluatedResult);
+            if (evaluatedResult instanceof JsonElement) {
+                variable.add((JsonElement) evaluatedResult);
+            } else {
+                handleException(aggregate, "Aggregation expression " + aggregationExpression.toString() +
+                        " did not return a valid JSON element", null, synCtx);
+            }
         }
     }
 
