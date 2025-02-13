@@ -183,12 +183,12 @@ public class MessageHelper {
                 } else if (obj instanceof Stack
                            && strkey.equals(SynapseConstants.SYNAPSE__FUNCTION__STACK)) {
                     if (log.isDebugEnabled()) {
-                        log.debug("Deep clone for Template function stack");
+                        log.debug("Deep clone for Template function stack : " + strkey + ".");
                     }
                     obj = getClonedTemplateStack((Stack<TemplateContext>) obj);
                 } else if (obj instanceof OMElement) {
                     if (log.isDebugEnabled()) {
-                        log.debug("Deep clone for OMElement");
+                        log.debug("Deep clone for OMElement property : " + strkey + ".");
                     }
                     obj = (OMElement) ((OMElement) obj).cloneOMElement();
                 } else if (obj instanceof ResponseState) {
