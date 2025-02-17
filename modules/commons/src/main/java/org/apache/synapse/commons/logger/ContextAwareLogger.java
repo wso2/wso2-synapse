@@ -77,7 +77,7 @@ public class ContextAwareLogger {
         return log;
     }
 
-    protected static void setCorrelationLoggingEnabled(Boolean correlationLoggingEnabled) {
+    public static void setCorrelationLoggingEnabled(Boolean correlationLoggingEnabled) {
 
         ContextAwareLogger.correlationLoggingEnabled = correlationLoggingEnabled;
     }
