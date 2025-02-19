@@ -56,6 +56,7 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
+import org.apache.synapse.util.xpath.ext.XpathExtensionUtil;
 
 import java.io.IOException;
 import java.net.URI;
@@ -340,6 +341,7 @@ public class TestCasesMediator {
             }
             ConfigurationContext configurationContext = new ConfigurationContext(axisConfig);
             SynapseEnvironment env = new Axis2SynapseEnvironment(configurationContext, synapseConfig);
+            XpathExtensionUtil.initXpathExtensions(env);
 
             //Create custom Axis2MessageContext with required data and SOAP1.1 envelop
             synapseMessageContext = new Axis2MessageContext(messageContext, synapseConfig, env);
