@@ -105,7 +105,7 @@ public class HTTPEndpoint extends AbstractEndpoint {
         if (getParentEndpoint() == null && !readyToSend()) {
             // if the this leaf endpoint is too a root endpoint and is in inactive
             informFailure(synCtx, SynapseConstants.ENDPOINT_ADDRESS_NONE_READY,
-                    "Currently , HTTP endpoint : " + getContext());
+                    "Currently, HTTP endpoint : " + getContext());
         } else {
             super.send(synCtx);
         }
