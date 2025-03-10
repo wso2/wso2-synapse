@@ -24,8 +24,8 @@ import java.util.List;
 
 public class KeyStoreReloaderHolder {
 
-    private static KeyStoreReloaderHolder instance = new KeyStoreReloaderHolder();
-    private List<KeyStoreReloader> keyStoreLoaders;
+    private final static KeyStoreReloaderHolder instance = new KeyStoreReloaderHolder();
+    private final List<KeyStoreReloader> keyStoreLoaders;
 
     private KeyStoreReloaderHolder() {
         keyStoreLoaders = new ArrayList<>();
