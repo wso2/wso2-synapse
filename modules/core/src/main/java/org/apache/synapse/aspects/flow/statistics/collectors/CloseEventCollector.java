@@ -105,6 +105,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 			}
 			StatisticDataCollectionHelper
 					.collectData(messageContext, isContentAltering, isCollectingTracing, statisticDataUnit);
+			statisticDataUnit.setMessageContext(messageContext);
 
 			StatisticsCloseEvent closeEvent = new StatisticsCloseEvent(statisticDataUnit);
 			if (currentIndex == null) {
@@ -139,6 +140,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 			dataUnit.setSynapseEnvironment(messageContext.getEnvironment());
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
+			dataUnit.setMessageContext(messageContext);
 
             EndFlowEvent endFlowEvent = new EndFlowEvent(dataUnit);
             if (!error) {
