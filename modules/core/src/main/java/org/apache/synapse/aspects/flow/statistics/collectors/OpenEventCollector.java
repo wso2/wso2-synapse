@@ -54,21 +54,15 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 	 */
 	public static Integer reportEntryEvent(MessageContext messageContext, String componentName,
 	                                       AspectConfiguration aspectConfiguration, ComponentType componentType) {
-		boolean isCollectingStatistics = (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable());
-
 		// Enable statistics, if user enabled for all artifacts
-		if (!isCollectingStatistics) {
-			isCollectingStatistics = isCollectingStatistics || RuntimeStatisticCollector.isCollectingAllStatistics();
-		}
+		boolean isCollectingStatistics = (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable())
+				|| RuntimeStatisticCollector.isCollectingAllStatistics();
 
-		boolean isCollectingTracing = false;
-		if (isCollectingProperties() || isCollectingPayloads() || isCollectingVariables()) {
-			isCollectingTracing = (aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
-		}
+        boolean isCollectingTracing = (isCollectingProperties() || isCollectingPayloads() || isCollectingVariables())
+				&& aspectConfiguration != null && aspectConfiguration.isTracingEnabled();
 
 		Boolean isFlowStatisticEnabled =
 				(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);//todo try to use single object for "FLOW_TRACE_IS_COLLECTED"
-		Boolean isTracingEnabled;
 		if (isCollectingStatistics) {
 			messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
 			setStatisticsTraceId(messageContext);
@@ -80,7 +74,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, false);
 		}
 
-		isTracingEnabled = (Boolean) messageContext.getProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED);
+		Boolean isTracingEnabled = (Boolean) messageContext.getProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED);
 		if (shouldReportStatistic(messageContext)) {
 			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
 			statisticDataUnit.setComponentName(componentName);
@@ -103,6 +97,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 				statisticDataUnit.setIsIndividualStatisticCollected(isCollectingStatistics);
 			}
 			StatisticDataCollectionHelper.collectData(messageContext, true, isTracingEnabled, statisticDataUnit);
+			statisticDataUnit.setMessageContext(messageContext);
 
 			StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
             addEventAndIncrementCount(messageContext, openEvent);
@@ -263,6 +258,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			BasicStatisticDataUnit dataUnit = new BasicStatisticDataUnit();
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
+			dataUnit.setMessageContext(messageContext);
 			AsynchronousExecutionEvent asynchronousExecutionEvent = new AsynchronousExecutionEvent(dataUnit);
 
 			if (isOpenTelemetryEnabled()) {
@@ -291,6 +287,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 		statisticDataUnit.setParentIndex(parentIndex);
 		StatisticDataCollectionHelper
 				.collectData(messageContext, isContentAltering, isCollectingTracing, statisticDataUnit);
+		statisticDataUnit.setMessageContext(messageContext);
 
 		StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
         addEventAndIncrementCount(messageContext, openEvent);
@@ -308,6 +305,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 
             basicStatisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(synCtx, null));
             basicStatisticDataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(synCtx));
+			basicStatisticDataUnit.setMessageContext(synCtx);
 
             ParentReopenEvent parentReopenEvent = new ParentReopenEvent(basicStatisticDataUnit);
 			addEvent(synCtx, parentReopenEvent);
