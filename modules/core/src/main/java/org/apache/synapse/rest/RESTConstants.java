@@ -93,4 +93,8 @@ public class RESTConstants {
     public static final String PROCESSED_API = "PROCESSED_API";
     public static final String SELECTED_RESOURCE = "SELECTED_RESOURCE";
 
+    // Swagger validation related constants
+    public static final String RESOURCE_PATH = "RESOURCE_PATH";
+    public static final String RESOURCE_PATH_WITHOUT_QUERY_PARAMS = "RESOURCE_PATH_WITHOUT_QUERY_PARAMS";
+    public static final String OPENAPI_VALIDATED = "OPENAPI_VALIDATED";
 }

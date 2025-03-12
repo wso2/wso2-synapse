@@ -18,7 +18,9 @@
 
 package org.apache.synapse.api;
 
+import io.swagger.v3.oas.models.OpenAPI;
 import org.apache.axis2.Constants;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpStatus;
@@ -51,14 +53,13 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.logging.LoggingUtils;
+import org.apache.synapse.util.swagger.SchemaValidationUtils;
 
 import java.util.Arrays;
 import java.util.Map;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.Collection;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -99,6 +100,9 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
      * Comment Texts List associated with the API
      */
     private List<String> commentsList = new ArrayList<String>();
+    private boolean enableSwaggerValidation = false;
+    private OpenAPI openAPI;
+
 
     public API(String name, String context) {
         super(name);
@@ -417,6 +421,9 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
             if (resourceName != null) {
                 Resource resource = resources.get(resourceName);
                 if (resource != null) {
+                    if (enableSwaggerValidation && openAPI != null) {
+                        SchemaValidationUtils.validateAPIResponse(synCtx, openAPI);
+                    }
                     resource.process(synCtx);
                 }
             } else if (log.isDebugEnabled()) {
@@ -472,6 +479,9 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
                             ((Axis2MessageContext) synCtx).getAxis2MessageContext().setProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, wireLogHolder);
                         }
 
+                    }
+                    if (enableSwaggerValidation && openAPI != null) {
+                        SchemaValidationUtils.validateAPIRequest(synCtx, openAPI);
                     }
                     resource.process(synCtx);
                     return;
@@ -590,6 +600,10 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
                 ((ManagedLifecycle) handler).init(se);
             }
         }
+
+        if (enableSwaggerValidation && openAPI == null && !StringUtils.isEmpty(swaggerResourcePath)) {
+            SchemaValidationUtils.populateSchema(this, se);
+        }
     }
 
     private String getFormattedLog(String msg) {
@@ -691,5 +705,21 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
     @Override
     public String getDescription() {
         return description;
+    }
+
+    public void setEnableSwaggerValidation(boolean enableSwaggerValidation) {
+        this.enableSwaggerValidation = enableSwaggerValidation;
+    }
+
+    public boolean isSwaggerValidationEnabled() {
+        return enableSwaggerValidation;
+    }
+
+    public void setOpenAPI(OpenAPI openAPI) {
+        this.openAPI = openAPI;
+    }
+
+    public OpenAPI getOpenAPI() {
+        return openAPI;
     }
 }
