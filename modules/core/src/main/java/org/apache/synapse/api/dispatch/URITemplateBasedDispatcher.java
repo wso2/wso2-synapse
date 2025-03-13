@@ -42,6 +42,7 @@ public class URITemplateBasedDispatcher implements RESTDispatcher {
                                 entry.getValue());
                     }
                     synCtx.setProperty(RESTConstants.SELECTED_RESOURCE, r);
+                    synCtx.setProperty(RESTConstants.RESOURCE_PATH, url);
                     return r;
                 }
             }

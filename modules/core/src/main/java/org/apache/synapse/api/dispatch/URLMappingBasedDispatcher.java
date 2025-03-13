@@ -56,6 +56,7 @@ public class URLMappingBasedDispatcher implements RESTDispatcher {
                 if (log.isDebugEnabled()) {
                     log.debug("Found exact URL match for: " + url);
                 }
+                synCtx.setProperty(RESTConstants.RESOURCE_PATH, url);
                 synCtx.setProperty(RESTConstants.SELECTED_RESOURCE, filteredResources.get(i));
                 return filteredResources.get(i);
             }
@@ -74,6 +75,7 @@ public class URLMappingBasedDispatcher implements RESTDispatcher {
             if (log.isDebugEnabled()) {
                 log.debug("Found path match for: " + url + " with matching length: " + maxLength);
             }
+            synCtx.setProperty(RESTConstants.RESOURCE_PATH, url);
             synCtx.setProperty(RESTConstants.SELECTED_RESOURCE, matchedResource);
             return matchedResource;
         }
@@ -83,6 +85,7 @@ public class URLMappingBasedDispatcher implements RESTDispatcher {
                 if (log.isDebugEnabled()) {
                     log.debug("Found extension match for: " + url);
                 }
+                synCtx.setProperty(RESTConstants.RESOURCE_PATH, url);
                 synCtx.setProperty(RESTConstants.SELECTED_RESOURCE, filteredResources.get(i));
                 return filteredResources.get(i);
             }
