@@ -534,7 +534,8 @@ public class TargetHandler implements NHttpClientEventHandler {
             }
 
             WorkerPool workerPool = targetConfiguration.getWorkerPool();
-            ClientWorker clientWorker = new ClientWorker(targetConfiguration, requestMsgContext, targetResponse);
+            ClientWorker clientWorker = new ClientWorker(targetConfiguration, requestMsgContext, targetResponse,
+                    allowedResponseProperties);
             conn.getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_REFERENCE, clientWorker);
             workerPool.execute(clientWorker);
 
