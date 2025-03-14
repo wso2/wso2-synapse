@@ -95,23 +95,25 @@ public abstract class OAuthHandler implements AuthHandler {
         // Check if the token is already cached
         String token = tokenCacheProvider.getToken(getId(messageContext));
 
-        synchronized (getId(messageContext).intern()) {
-            if (StringUtils.isEmpty(token)) {
-                // If no token found, generate a new one
-                try {
-                    token = OAuthClient.generateToken(OAuthUtils.resolveExpression(tokenApiUrl, messageContext),
-                            buildTokenRequestPayload(messageContext), getEncodedCredentials(messageContext),
-                            messageContext, getResolvedCustomHeadersMap(customHeadersMap, messageContext),
-                            connectionTimeout, connectionRequestTimeout, socketTimeout, proxyConfigs);
+        if (StringUtils.isEmpty(token)) {
+            synchronized (getId(messageContext).intern()) {
+                token = tokenCacheProvider.getToken(getId(messageContext));
+                if (StringUtils.isEmpty(token)) {
+                    try {
+                        token = OAuthClient.generateToken(OAuthUtils.resolveExpression(tokenApiUrl, messageContext),
+                                buildTokenRequestPayload(messageContext), getEncodedCredentials(messageContext),
+                                messageContext, getResolvedCustomHeadersMap(customHeadersMap, messageContext),
+                                connectionTimeout, connectionRequestTimeout, socketTimeout, proxyConfigs);
 
-                    // Cache the newly generated token
-                    tokenCacheProvider.putToken(getId(messageContext), token);
-                } catch (IOException e) {
-                    throw new AuthException("Error generating token", e);
+                        // Cache the newly generated token
+                        tokenCacheProvider.putToken(getId(messageContext), token);
+                    } catch (IOException e) {
+                        throw new AuthException("Error generating token", e);
+                    }
                 }
             }
-            return token;
         }
+        return token;
     }
 
     /**
