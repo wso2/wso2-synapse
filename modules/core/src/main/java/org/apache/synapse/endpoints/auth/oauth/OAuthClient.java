@@ -39,6 +39,10 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.conn.ConnectionPoolTimeoutException;
+import org.apache.http.conn.HttpHostConnectException;
+import org.apache.http.conn.UnsupportedSchemeException;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -76,7 +80,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -145,6 +151,21 @@ public class OAuthClient {
 
             try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
                 return extractToken(response);
+            } catch (SocketTimeoutException e) {
+                throw new AuthException("Socket timeout: OAuth token endpoint did not respond within the expected " +
+                        "time frame.");
+            } catch (ConnectionPoolTimeoutException e) {
+                throw new AuthException("Connection request timeout: Unable to obtain a connection from the pool in " +
+                        "time while communicating with the OAuth token endpoint.");
+            } catch (ConnectTimeoutException e) {
+                throw new AuthException("Connection timeout: Failed to establish a connection to the OAuth token " +
+                        "endpoint.");
+            } catch (UnknownHostException e) {
+                throw new AuthException("Unable to resolve the hostname for the OAuth token endpoint connection.");
+            } catch (HttpHostConnectException e) {
+                throw new AuthException("Unable to connect to the OAuth token endpoint.");
+            } catch (UnsupportedSchemeException e) {
+                throw new AuthException("Unsupported protocol used for the OAuth token endpoint.");
             } finally {
                 httpPost.releaseConnection();
             }
@@ -259,7 +280,7 @@ public class OAuthClient {
         DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(host);
         RequestConfig config = RequestConfig.custom().setConnectTimeout(connectionTimeout)
                 .setConnectionRequestTimeout(connectionRequestTimeout).setSocketTimeout(socketTimeout).build();
-        clientBuilder = clientBuilder.setRoutePlanner(routePlanner);
+        clientBuilder = clientBuilder.setRoutePlanner(routePlanner).setDefaultRequestConfig(config);
 
         if (StringUtils.isNotBlank(proxyConfigs.getProxyUsername()) && StringUtils.isNotBlank(
                 proxyConfigs.getProxyPassword())) {
@@ -267,8 +288,7 @@ public class OAuthClient {
             credentialsProvider.setCredentials(
                     new AuthScope(proxyConfigs.getProxyHost(), Integer.parseInt(proxyConfigs.getProxyPort())),
                     new UsernamePasswordCredentials(proxyConfigs.getProxyUsername(), proxyConfigs.getProxyPassword()));
-            clientBuilder = clientBuilder.setDefaultRequestConfig(config)
-                    .setDefaultCredentialsProvider(credentialsProvider);
+            clientBuilder = clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
         }
 
         return clientBuilder.build();
