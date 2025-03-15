@@ -62,6 +62,14 @@ public class SharedDataHolder {
         isAggregationCompleted = true;
     }
 
+    /**
+     * Reset completion for aggregates.
+     */
+    public void resetAggregationCompletion() {
+
+        isAggregationCompleted = false;
+    }
+
     public MessageContext getSynCtx() {
 
         return synCtx;
