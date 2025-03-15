@@ -51,26 +51,30 @@ public abstract class OAuthHandler implements AuthHandler {
     private Map<String, String> requestParametersMap;
     private Map<String, String> customHeadersMap;
     private final String authMode;
+    private final boolean useGlobalConnectionTimeoutConfigs;
     protected final int connectionTimeout;
     protected final int connectionRequestTimeout;
     protected final int socketTimeout;
     private final TokenCacheProvider tokenCacheProvider;
-
+    private final boolean useGlobalProxyConfigs;
     private ProxyConfigs proxyConfigs;
 
     protected OAuthHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode,
-            int connectionTimeout, int connectionRequestTimeout, int socketTimeout,
-            TokenCacheProvider tokenCacheProvider, ProxyConfigs proxyConfigs) {
+                           boolean useGlobalConnectionTimeoutConfigs, int connectionTimeout,
+                           int connectionRequestTimeout, int socketTimeout, TokenCacheProvider tokenCacheProvider,
+                           boolean useGlobalProxyConfigs, ProxyConfigs proxyConfigs) {
 
         this.id = OAuthUtils.getRandomOAuthHandlerID();
         this.tokenApiUrl = tokenApiUrl;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
         this.authMode = authMode;
+        this.useGlobalConnectionTimeoutConfigs = useGlobalConnectionTimeoutConfigs;
         this.connectionTimeout = connectionTimeout;
         this.connectionRequestTimeout = connectionRequestTimeout;
         this.socketTimeout = socketTimeout;
         this.tokenCacheProvider = tokenCacheProvider;
+        this.useGlobalProxyConfigs = useGlobalProxyConfigs;
         this.proxyConfigs = proxyConfigs;
     }
 
@@ -216,6 +220,10 @@ public abstract class OAuthHandler implements AuthHandler {
                 clientSecret));
         oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.TOKEN_API_URL,
                 tokenApiUrl));
+        oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory,
+                AuthConstants.USE_GLOBAL_CONNECTION_TIMEOUT_CONFIGS, String.valueOf(useGlobalConnectionTimeoutConfigs)));
+        oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory,
+                AuthConstants.USE_GLOBAL_PROXY_CONFIGS, String.valueOf(useGlobalProxyConfigs)));
         if (proxyConfigs.isProxyEnabled()) {
             OMElement proxyElement = OAuthUtils.createOMProxyConfigs(omFactory, proxyConfigs);
             oauthCredentials.addChild(proxyElement);

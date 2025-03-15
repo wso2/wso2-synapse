@@ -28,6 +28,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.commons.resolvers.ResolverFactory;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
@@ -45,6 +46,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -121,24 +123,30 @@ public class OAuthUtils {
         String refreshToken = getChildValue(authCodeElement, AuthConstants.OAUTH_REFRESH_TOKEN);
         String tokenApiUrl = getChildValue(authCodeElement, AuthConstants.TOKEN_API_URL);
         String authMode = getChildValue(authCodeElement, AuthConstants.OAUTH_AUTHENTICATION_MODE);
+        boolean useGlobalConnectionTimeoutConfigs = Boolean.parseBoolean(getChildValue(authCodeElement,
+                AuthConstants.USE_GLOBAL_CONNECTION_TIMEOUT_CONFIGS));
+        boolean useGlobalProxyConfigs = Boolean.parseBoolean(getChildValue(authCodeElement,
+                AuthConstants.USE_GLOBAL_PROXY_CONFIGS));
 
         ProxyConfigs proxyConfigs = getProxyConfigs(authCodeElement);
         if (proxyConfigs == null) {
             return null;
         }
 
-        int connectionTimeout = getOauthTimeouts(authCodeElement, AuthConstants.OAUTH_CONNECTION_TIMEOUT);
-        int connectionRequestTimeout = getOauthTimeouts(authCodeElement,
-                AuthConstants.OAUTH_CONNECTION_REQUEST_TIMEOUT);
-        int socketTimeout = getOauthTimeouts(authCodeElement, AuthConstants.OAUTH_SOCKET_TIMEOUT);
+        int connectionTimeout = getOauthTimeouts(authCodeElement, AuthConstants.OAUTH_CONNECTION_TIMEOUT,
+                AuthConstants.OAUTH_GLOBAL_CONNECTION_TIMEOUT);
+        int connectionRequestTimeout = getOauthTimeouts(authCodeElement, AuthConstants.OAUTH_CONNECTION_REQUEST_TIMEOUT,
+                AuthConstants.OAUTH_GLOBAL_CONNECTION_REQUEST_TIMEOUT);
+        int socketTimeout = getOauthTimeouts(authCodeElement, AuthConstants.OAUTH_SOCKET_TIMEOUT,
+                AuthConstants.OAUTH_GLOBAL_SOCKET_TIMEOUT);
 
         if (clientId == null || clientSecret == null || refreshToken == null || tokenApiUrl == null) {
             log.error("Invalid AuthorizationCode configuration");
             return null;
         }
         AuthorizationCodeHandler handler = new AuthorizationCodeHandler(tokenApiUrl, clientId, clientSecret,
-                refreshToken, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout,
-                TokenCacheFactory.getTokenCache(), proxyConfigs);
+                refreshToken, authMode, useGlobalConnectionTimeoutConfigs, connectionTimeout, connectionRequestTimeout,
+                socketTimeout, TokenCacheFactory.getTokenCache(), useGlobalProxyConfigs, proxyConfigs);
         if (hasRequestParameters(authCodeElement)) {
             Map<String, String> requestParameters = getRequestParameters(authCodeElement);
             if (requestParameters == null) {
@@ -169,23 +177,30 @@ public class OAuthUtils {
         String clientSecret = getChildValue(clientCredentialsElement, AuthConstants.OAUTH_CLIENT_SECRET);
         String tokenApiUrl = getChildValue(clientCredentialsElement, AuthConstants.TOKEN_API_URL);
         String authMode = getChildValue(clientCredentialsElement, AuthConstants.OAUTH_AUTHENTICATION_MODE);
+        boolean useGlobalConnectionTimeoutConfigs = Boolean.parseBoolean(getChildValue(clientCredentialsElement,
+                AuthConstants.USE_GLOBAL_CONNECTION_TIMEOUT_CONFIGS));
+        boolean useGlobalProxyConfigs = Boolean.parseBoolean(getChildValue(clientCredentialsElement,
+                AuthConstants.USE_GLOBAL_PROXY_CONFIGS));
 
         ProxyConfigs proxyConfigs = getProxyConfigs(clientCredentialsElement);
         if (proxyConfigs == null) {
             return null;
         }
 
-        int connectionTimeout = getOauthTimeouts(clientCredentialsElement, AuthConstants.OAUTH_CONNECTION_TIMEOUT);
-        int connectionRequestTimeout = getOauthTimeouts(clientCredentialsElement,
-                AuthConstants.OAUTH_CONNECTION_REQUEST_TIMEOUT);
-        int socketTimeout = getOauthTimeouts(clientCredentialsElement, AuthConstants.OAUTH_SOCKET_TIMEOUT);
+        int connectionTimeout = getOauthTimeouts(clientCredentialsElement, AuthConstants.OAUTH_CONNECTION_TIMEOUT,
+                AuthConstants.OAUTH_GLOBAL_CONNECTION_TIMEOUT);
+        int connectionRequestTimeout = getOauthTimeouts(clientCredentialsElement, AuthConstants.OAUTH_CONNECTION_REQUEST_TIMEOUT,
+                AuthConstants.OAUTH_GLOBAL_CONNECTION_REQUEST_TIMEOUT);
+        int socketTimeout = getOauthTimeouts(clientCredentialsElement, AuthConstants.OAUTH_SOCKET_TIMEOUT,
+                AuthConstants.OAUTH_GLOBAL_SOCKET_TIMEOUT);
 
         if (clientId == null || clientSecret == null || tokenApiUrl == null) {
             log.error("Invalid ClientCredentials configuration");
             return null;
         }
         ClientCredentialsHandler handler = new ClientCredentialsHandler(tokenApiUrl, clientId, clientSecret, authMode,
-                connectionTimeout, connectionRequestTimeout, socketTimeout, TokenCacheFactory.getTokenCache(), proxyConfigs);
+                useGlobalConnectionTimeoutConfigs, connectionTimeout, connectionRequestTimeout, socketTimeout,
+                TokenCacheFactory.getTokenCache(), useGlobalProxyConfigs, proxyConfigs);
         if (hasRequestParameters(clientCredentialsElement)) {
             Map<String, String> requestParameters = getRequestParameters(clientCredentialsElement);
             if (requestParameters == null) {
@@ -218,24 +233,31 @@ public class OAuthUtils {
         String password = getChildValue(passwordCredentialsElement, AuthConstants.OAUTH_PASSWORD);
         String tokenApiUrl = getChildValue(passwordCredentialsElement, AuthConstants.TOKEN_API_URL);
         String authMode = getChildValue(passwordCredentialsElement, AuthConstants.OAUTH_AUTHENTICATION_MODE);
+        boolean useGlobalConnectionTimeoutConfigs = Boolean.parseBoolean(getChildValue(passwordCredentialsElement,
+                AuthConstants.USE_GLOBAL_CONNECTION_TIMEOUT_CONFIGS));
+        boolean useGlobalProxyConfigs = Boolean.parseBoolean(getChildValue(passwordCredentialsElement,
+                AuthConstants.USE_GLOBAL_PROXY_CONFIGS));
 
         ProxyConfigs proxyConfigs = getProxyConfigs(passwordCredentialsElement);
         if (proxyConfigs == null) {
             return null;
         }
 
-        int connectionTimeout = getOauthTimeouts(passwordCredentialsElement, AuthConstants.OAUTH_CONNECTION_TIMEOUT);
-        int connectionRequestTimeout = getOauthTimeouts(passwordCredentialsElement,
-                AuthConstants.OAUTH_CONNECTION_REQUEST_TIMEOUT);
-        int socketTimeout = getOauthTimeouts(passwordCredentialsElement, AuthConstants.OAUTH_SOCKET_TIMEOUT);
+        int connectionTimeout = getOauthTimeouts(passwordCredentialsElement, AuthConstants.OAUTH_CONNECTION_TIMEOUT,
+                AuthConstants.OAUTH_GLOBAL_CONNECTION_TIMEOUT);
+        int connectionRequestTimeout = getOauthTimeouts(passwordCredentialsElement, AuthConstants.OAUTH_CONNECTION_REQUEST_TIMEOUT,
+                AuthConstants.OAUTH_GLOBAL_CONNECTION_REQUEST_TIMEOUT);
+        int socketTimeout = getOauthTimeouts(passwordCredentialsElement, AuthConstants.OAUTH_SOCKET_TIMEOUT,
+                AuthConstants.OAUTH_GLOBAL_SOCKET_TIMEOUT);
 
         if (username == null || password == null || tokenApiUrl == null || clientId == null || clientSecret == null) {
             log.error("Invalid PasswordCredentials configuration");
             return null;
         }
         PasswordCredentialsHandler handler = new PasswordCredentialsHandler(tokenApiUrl, clientId, clientSecret,
-                username, password, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout,
-                TokenCacheFactory.getTokenCache(), proxyConfigs);
+                username, password, authMode, useGlobalConnectionTimeoutConfigs, connectionTimeout,
+                connectionRequestTimeout, socketTimeout, TokenCacheFactory.getTokenCache(), useGlobalProxyConfigs,
+                proxyConfigs);
         if (hasRequestParameters(passwordCredentialsElement)) {
             Map<String, String> requestParameters = getRequestParameters(passwordCredentialsElement);
             if (requestParameters == null) {
@@ -264,35 +286,48 @@ public class OAuthUtils {
         ProxyConfigs proxyConfigs = new ProxyConfigs();
         OMElement proxyConfigsOM = grantTypeOMElement.getFirstChildWithName(
                 new QName(SynapseConstants.SYNAPSE_NAMESPACE, AuthConstants.PROXY_CONFIGS));
-        if (proxyConfigsOM == null || proxyConfigsOM.getFirstElement() == null) {
-            //proxyConfigs Element is not available or it has no child elements
-            proxyConfigs.setProxyEnabled(false);
-        } else {
+        if (proxyConfigsOM != null && proxyConfigsOM.getFirstElement() != null) {
+            // If proxy is defined at the endpoint level
             proxyConfigs.setProxyEnabled(true);
             proxyConfigs.setProxyHost(getChildValue(proxyConfigsOM, AuthConstants.PROXY_HOST));
             proxyConfigs.setProxyPort(getChildValue(proxyConfigsOM, AuthConstants.PROXY_PORT));
             proxyConfigs.setProxyUsername(getChildValue(proxyConfigsOM, AuthConstants.PROXY_USERNAME));
             proxyConfigs.setProxyPassword(getChildValue(proxyConfigsOM, AuthConstants.PROXY_PASSWORD));
             proxyConfigs.setProxyProtocol(getChildValue(proxyConfigsOM, AuthConstants.OAUTH_PROXY_PROTOCOL));
-
-            if (StringUtils.isEmpty(proxyConfigs.getProxyHost())) {
-                log.error(
-                        "'proxyHost' is not set for the proxy configurations. So error occurred while getting the " +
-                                "related Oauth handler.");
-                return null;
+        } else {
+            Properties synapseProperties = SynapsePropertiesLoader.loadSynapseProperties();
+            if (Boolean.parseBoolean(getChildValue(grantTypeOMElement, AuthConstants.USE_GLOBAL_PROXY_CONFIGS))
+                    && Boolean.parseBoolean(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_ENABLED))) {
+                // If proxy is not defined at the endpoint level but is defined globally
+                proxyConfigs.setProxyEnabled(true);
+                proxyConfigs.setProxyHost(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_HOST));
+                proxyConfigs.setProxyPort(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_PORT));
+                proxyConfigs.setProxyUsername(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_USERNAME));
+                proxyConfigs.setProxyPassword(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_PASSWORD));
+                proxyConfigs.setProxyProtocol(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_PROTOCOL));
+            } else {
+                // If proxy is not defined at the endpoint level or globally
+                proxyConfigs.setProxyEnabled(false);
+                return proxyConfigs;
             }
-            if (StringUtils.isEmpty(proxyConfigs.getProxyPort())) {
-                log.error(
-                        "'proxyPort' is not set for the proxy configurations. So error occurred while getting the " +
-                                "related Oauth handler.");
-                return null;
-            }
-            if (StringUtils.isEmpty(proxyConfigs.getProxyProtocol())) {
-                log.error(
-                        "'proxyProtocol' is not set for the proxy configurations. So error occurred while getting the" +
-                                " related Oauth handler.");
-                return null;
-            }
+        }
+        if (StringUtils.isEmpty(proxyConfigs.getProxyHost())) {
+            log.error(
+                    "'proxyHost' is not set for the proxy configurations. So error occurred while getting the " +
+                            "related Oauth handler.");
+            return null;
+        }
+        if (StringUtils.isEmpty(proxyConfigs.getProxyPort())) {
+            log.error(
+                    "'proxyPort' is not set for the proxy configurations. So error occurred while getting the " +
+                            "related Oauth handler.");
+            return null;
+        }
+        if (StringUtils.isEmpty(proxyConfigs.getProxyProtocol())) {
+            log.error(
+                    "'proxyProtocol' is not set for the proxy configurations. So error occurred while getting the" +
+                            " related Oauth handler.");
+            return null;
         }
         return proxyConfigs;
     }
@@ -414,10 +449,16 @@ public class OAuthUtils {
         return null;
     }
 
-    public static int getOauthTimeouts(OMElement parentElement, String childName) {
+    public static int getOauthTimeouts(OMElement parentElement, String childName, String globalPropertyName) {
         String value = getChildValue(parentElement, childName);
+        if (value == null && Boolean.parseBoolean(getChildValue(parentElement,
+                AuthConstants.USE_GLOBAL_CONNECTION_TIMEOUT_CONFIGS))) {
+            // If the value is not defined at the endpoint level, check whether it is defined globally
+            value = SynapsePropertiesLoader.loadSynapseProperties().getProperty(globalPropertyName);
+        }
         try {
             if (value == null) {
+                // If the value is not defined at the endpoint level or globally, the default value is used
                 return -1;
             } else {
                 return Integer.parseInt(value);

@@ -38,11 +38,13 @@ public class PasswordCredentialsHandler extends OAuthHandler {
     private final String password;
 
     protected PasswordCredentialsHandler(String tokenApiUrl, String clientId, String clientSecret, String username,
-            String password, String authMode, int connectionTimeout, int connectionRequestTimeout, int socketTimeout,
-            TokenCacheProvider tokenCacheProvider, ProxyConfigs proxyConfigs) {
+                                         String password, String authMode, boolean useGlobalConnectionTimeoutConfigs,
+                                         int connectionTimeout, int connectionRequestTimeout, int socketTimeout,
+                                         TokenCacheProvider tokenCacheProvider, boolean useGlobalProxyConfigs,
+                                         ProxyConfigs proxyConfigs) {
 
-        super(tokenApiUrl, clientId, clientSecret, authMode, connectionTimeout, connectionRequestTimeout, socketTimeout,
-                tokenCacheProvider, proxyConfigs);
+        super(tokenApiUrl, clientId, clientSecret, authMode, useGlobalConnectionTimeoutConfigs, connectionTimeout,
+                connectionRequestTimeout, socketTimeout, tokenCacheProvider, useGlobalProxyConfigs, proxyConfigs);
         this.username = username;
         this.password = password;
     }
