@@ -421,9 +421,6 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
             if (resourceName != null) {
                 Resource resource = resources.get(resourceName);
                 if (resource != null) {
-                    if (enableSwaggerValidation && openAPI != null) {
-                        SchemaValidationUtils.validateAPIResponse(synCtx, openAPI);
-                    }
                     resource.process(synCtx);
                 }
             } else if (log.isDebugEnabled()) {
@@ -480,10 +477,11 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
                         }
 
                     }
-                    if (enableSwaggerValidation && openAPI != null) {
-                        SchemaValidationUtils.validateAPIRequest(synCtx, openAPI);
+                    if (enableSwaggerValidation) {
+                        resource.process(synCtx, openAPI);
+                    } else {
+                        resource.process(synCtx);
                     }
-                    resource.process(synCtx);
                     return;
                 }
             }

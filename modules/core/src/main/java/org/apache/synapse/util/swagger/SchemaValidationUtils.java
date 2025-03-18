@@ -37,6 +37,7 @@ import org.apache.synapse.registry.Registry;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
+import org.apache.synapse.util.logging.LoggingUtils;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.File;
@@ -206,7 +207,8 @@ public class SchemaValidationUtils {
             // Setting the state to already validated to avoid validating the response in case
             // we have a Respond mediator in fault sequence.
             messageContext.setProperty(RESTConstants.OPENAPI_VALIDATED, true);
-            throw new SynapseException(errMessage + finalMessage);
+            SynapseException ex = new SynapseException(finalMessage.toString());
+            handleException(errMessage, ex, messageContext);
         }
     }
 
@@ -219,8 +221,9 @@ public class SchemaValidationUtils {
             for (ValidationReport.Message message : validationReport.getMessages()) {
                 finalMessage.append(message.getMessage()).append(", ");
             }
-            String errMessage = "Schema validation failed in the Response: ";
-            throw new SynapseException(errMessage + finalMessage);
+            String errMessage = "Schema validation failed for the Response: ";
+            SynapseException ex = new SynapseException(finalMessage.toString());
+            handleException(errMessage, ex, messageContext);
         }
     }
 
@@ -268,5 +271,11 @@ public class SchemaValidationUtils {
             }
         }
         return httpStatus;
+    }
+
+    private static void handleException(String msg, Exception e, org.apache.synapse.MessageContext msgCtx) {
+        String formattedLog = LoggingUtils.getFormattedLog(msgCtx, msg);
+        logger.error(formattedLog, e);
+        throw new SynapseException(msg, e);
     }
 }

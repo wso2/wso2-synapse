@@ -73,7 +73,7 @@ public class OpenAPIRequest implements Request {
             String headerKey = header.getKey();
             String value =  header.getValue().iterator().next();
             headerKey = headerKey.equalsIgnoreCase(contentTypeHeader) ?
-                    "Content-Type" : headerKey.toLowerCase(Locale.ROOT);
+                    RESTConstants.CONTENT_TYPE : headerKey.toLowerCase(Locale.ROOT);
             headers.put(headerKey, value);
         }
         //Set Request path

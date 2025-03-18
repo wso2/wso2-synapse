@@ -118,11 +118,7 @@ public class Axis2Sender {
             }
             if (!responseValidated) {
                 smc.setProperty(RESTConstants.OPENAPI_VALIDATED, true);
-                try {
-                    SchemaValidationUtils.validateAPIResponse(smc, api.getOpenAPI());
-                } catch (SynapseException ex) {
-                    handleException("Schema validation failed for the response", ex, smc);
-                }
+                SchemaValidationUtils.validateAPIResponse(smc, api.getOpenAPI());
             }
         }
 
