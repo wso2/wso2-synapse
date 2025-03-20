@@ -70,6 +70,7 @@ import org.apache.synapse.transport.nhttp.util.SecureVaultValueReader;
 import org.apache.synapse.util.xpath.KeyStoreManager;
 import org.wso2.securevault.SecretResolver;
 import org.wso2.securevault.SecretResolverFactory;
+import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -228,12 +229,14 @@ public class OAuthClient {
             throws AuthException {
 
         if (proxyConfigs.isProxyEnabled()) {
-            return getSecureClientWithProxy(connectionTimeout, connectionRequestTimeout, socketTimeout, proxyConfigs);
+            return getSecureClientWithProxy(messageContext, connectionTimeout, connectionRequestTimeout, socketTimeout,
+                    proxyConfigs);
         } else {
             return getSecureClientWithoutProxy(tokenUrl, messageContext, connectionTimeout, connectionRequestTimeout,
                     socketTimeout);
         }
     }
+
     private static CloseableHttpClient getSecureClientWithoutProxy(String tokenUrl, MessageContext messageContext,
             int connectionTimeout, int connectionRequestTimeout, int socketTimeout) throws AuthException {
         SSLContext sslContext;
@@ -263,8 +266,9 @@ public class OAuthClient {
         return client;
     }
 
-    private static CloseableHttpClient getSecureClientWithProxy(int connectionTimeout, int connectionRequestTimeout,
-            int socketTimeout, ProxyConfigs proxyConfigs) throws AuthException {
+    private static CloseableHttpClient getSecureClientWithProxy(MessageContext messageContext, int connectionTimeout,
+                                                                int connectionRequestTimeout, int socketTimeout,
+                                                                ProxyConfigs proxyConfigs) throws AuthException {
 
         PoolingHttpClientConnectionManager pool = getPoolingHttpClientConnectionManager(
                 proxyConfigs.getProxyProtocol());
@@ -287,11 +291,24 @@ public class OAuthClient {
             CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
             credentialsProvider.setCredentials(
                     new AuthScope(proxyConfigs.getProxyHost(), Integer.parseInt(proxyConfigs.getProxyPort())),
-                    new UsernamePasswordCredentials(proxyConfigs.getProxyUsername(), proxyConfigs.getProxyPassword()));
+                    new UsernamePasswordCredentials(proxyConfigs.getProxyUsername(), resolveProxyPassword(proxyConfigs,
+                            messageContext)));
             clientBuilder = clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
         }
 
         return clientBuilder.build();
+    }
+
+    private static String resolveProxyPassword(ProxyConfigs proxyConfigs, MessageContext messageContext)
+            throws AuthException {
+        if (proxyConfigs.getProxyPasswordSecretResolver() != null) {
+            // Resolves the password when global proxy configurations are used
+            return MiscellaneousUtil.resolve(proxyConfigs.getProxyPassword(),
+                    proxyConfigs.getProxyPasswordSecretResolver());
+        } else {
+            // Resolves the password when endpoint specific proxy configurations are used
+            return OAuthUtils.resolveExpression(proxyConfigs.getProxyPassword(), messageContext);
+        }
     }
 
     private static PoolingHttpClientConnectionManager getPoolingHttpClientConnectionManager(String protocol)

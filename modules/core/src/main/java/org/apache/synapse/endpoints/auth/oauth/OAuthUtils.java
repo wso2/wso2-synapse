@@ -41,6 +41,7 @@ import org.apache.synapse.util.xpath.SynapseExpression;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
+import org.wso2.securevault.SecretResolverFactory;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -291,9 +292,9 @@ public class OAuthUtils {
             proxyConfigs.setProxyEnabled(true);
             proxyConfigs.setProxyHost(getChildValue(proxyConfigsOM, AuthConstants.PROXY_HOST));
             proxyConfigs.setProxyPort(getChildValue(proxyConfigsOM, AuthConstants.PROXY_PORT));
+            proxyConfigs.setProxyProtocol(getChildValue(proxyConfigsOM, AuthConstants.OAUTH_PROXY_PROTOCOL));
             proxyConfigs.setProxyUsername(getChildValue(proxyConfigsOM, AuthConstants.PROXY_USERNAME));
             proxyConfigs.setProxyPassword(getChildValue(proxyConfigsOM, AuthConstants.PROXY_PASSWORD));
-            proxyConfigs.setProxyProtocol(getChildValue(proxyConfigsOM, AuthConstants.OAUTH_PROXY_PROTOCOL));
         } else {
             Properties synapseProperties = SynapsePropertiesLoader.loadSynapseProperties();
             if (Boolean.parseBoolean(getChildValue(grantTypeOMElement, AuthConstants.USE_GLOBAL_PROXY_CONFIGS))
@@ -302,9 +303,16 @@ public class OAuthUtils {
                 proxyConfigs.setProxyEnabled(true);
                 proxyConfigs.setProxyHost(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_HOST));
                 proxyConfigs.setProxyPort(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_PORT));
-                proxyConfigs.setProxyUsername(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_USERNAME));
-                proxyConfigs.setProxyPassword(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_PASSWORD));
                 proxyConfigs.setProxyProtocol(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_PROTOCOL));
+                if (StringUtils.isNotBlank(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_USERNAME)) &&
+                        StringUtils.isNotBlank(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_PASSWORD))) {
+                    proxyConfigs.setProxyUsername(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_USERNAME));
+                    proxyConfigs.setProxyPassword(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_PASSWORD));
+                    proxyConfigs.setProxyPasswordSecretResolver(SecretResolverFactory.create(new Properties() {{
+                        setProperty(AuthConstants.PROXY_PASSWORD, synapseProperties.getProperty(AuthConstants
+                                .OAUTH_GLOBAL_PROXY_PASSWORD));
+                    }}));
+                }
             } else {
                 // If proxy is not defined at the endpoint level or globally
                 proxyConfigs.setProxyEnabled(false);
