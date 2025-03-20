@@ -506,6 +506,8 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
         }
         if (ctx.ID() != null) {
             return new LiteralNode(ctx.ID().getText(), LiteralNode.Type.STRING);
+        } else if (ctx.keywords() != null) {
+            return new LiteralNode(ctx.keywords().getText().substring(1), LiteralNode.Type.STRING);
         } else if (ctx.STRING_LITERAL() != null) {
             return new LiteralNode(ctx.STRING_LITERAL().getText(), LiteralNode.Type.STRING);
         }
@@ -556,7 +558,8 @@ public class ExpressionVisitor extends ExpressionParserBaseVisitor<ExpressionNod
                         return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()),
                                 ExpressionConstants.QUERY_PARAM);
                     case ExpressionConstants.PATH_PARAM:
-                        return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()), ExpressionConstants.PATH_PARAM);
+                        return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()),
+                                ExpressionConstants.PATH_PARAM);
                     case ExpressionConstants.FUNC_PARAM:
                         return new HeadersAndPropertiesAccessNode(visit(ctx.propertyName()),
                                 HeadersAndPropertiesAccessNode.Type.FUNCTION_PARAM);
