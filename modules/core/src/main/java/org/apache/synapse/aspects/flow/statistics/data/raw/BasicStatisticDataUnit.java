@@ -62,6 +62,11 @@ public class BasicStatisticDataUnit {
 	 */
 	private ElasticMetadata elasticMetadata;
 
+	/**
+	 * Message context of the message flow.
+	 */
+	private MessageContext messageContext;
+
 	public String getStatisticId() {
 		return statisticId;
 	}
@@ -116,5 +121,13 @@ public class BasicStatisticDataUnit {
 
 	public ElasticMetadata getElasticMetadata() {
 		return elasticMetadata;
+	}
+
+	public void setMessageContext(MessageContext messageContext) {
+		this.messageContext = messageContext;
+	}
+
+	public MessageContext getMessageContext() {
+		return messageContext;
 	}
 }

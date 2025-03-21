@@ -44,6 +44,15 @@ public class ElasticMetadata {
         this.contextProperties = ((Axis2MessageContext) msgCtx).getProperties();
     }
 
+    public ElasticMetadata(SynapseConfiguration synapseConfiguration, boolean faultResponse, String messageId,
+                           Map<String, Object> contextEntries, Map<String, Object> contextProperties) {
+        this.synapseConfiguration = synapseConfiguration;
+        this.faultResponse = faultResponse;
+        this.messageId = messageId;
+        this.contextEntries = contextEntries;
+        this.contextProperties = contextProperties;
+    }
+
     public SynapseConfiguration getSynapseConfiguration() {
         return synapseConfiguration;
     }
