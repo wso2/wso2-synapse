@@ -98,19 +98,80 @@ public class TemplateContext {
                         paramValue = defaultValue;
                     }
                 }
-            } else {
+            } else if (propertyValue instanceof InvokeParam) {
+                paramValue = getEvaluatedInvokeParam(synCtxt, parameterName, (InvokeParam) propertyValue);
+            } else if (propertyValue instanceof Value) {
                 try {
                     paramValue = getEvaluatedParamValue(synCtxt, parameterName, (Value) propertyValue);
                 } catch (IOException | XMLStreamException e) {
                     throw new SynapseException("Error while evaluating parameters"
                             + " passed to template " + fName, e);
                 }
+            } else {
+                paramValue = propertyValue;
             }
             if (paramValue != null) {
                 mappedValues.put(parameterName, paramValue);
             }
             //remove temp property from the context
             removeProperty(synCtxt, mapping);
+        }
+    }
+
+    private ResolvedInvokeParam getEvaluatedInvokeParam(MessageContext synCtx, String parameterName,
+                                                        InvokeParam propertyValue) {
+
+        ResolvedInvokeParam resolvedParam = new ResolvedInvokeParam();
+        resolvedParam.setParamName(parameterName);
+        resolveInlineValue(synCtx, parameterName, propertyValue, resolvedParam);
+        resolveAttributes(synCtx, parameterName, propertyValue, resolvedParam);
+        resolveNestedParams(synCtx, propertyValue, resolvedParam);
+        return resolvedParam;
+    }
+
+    private void resolveInlineValue(MessageContext synCtx, String parameterName, InvokeParam propertyValue,
+                                    ResolvedInvokeParam resolvedParam) {
+
+        if (propertyValue.getInlineValue() != null) {
+            try {
+                Object value = getEvaluatedParamValue(synCtx, parameterName, propertyValue.getInlineValue());
+                if (value != null) {
+                    resolvedParam.setInlineValue(value);
+                }
+            } catch (IOException | XMLStreamException e) {
+                throw new SynapseException("Error while evaluating parameters"
+                        + " passed to template " + fName, e);
+            }
+        }
+    }
+
+    private void resolveAttributes(MessageContext synCtx, String parameterName, InvokeParam propertyValue,
+                                   ResolvedInvokeParam resolvedParam) {
+
+        if (propertyValue.getAttributeName2ExpressionMap() == null) {
+            return;
+        }
+        for (Map.Entry<String, Value> attributeEntry : propertyValue.getAttributeName2ExpressionMap().entrySet()) {
+            String attributeName = attributeEntry.getKey();
+            Value expression = attributeEntry.getValue();
+            try {
+                Object value = getEvaluatedParamValue(synCtx, parameterName, expression);
+                if (value != null) {
+                    resolvedParam.addAttribute(attributeName, value);
+                }
+            } catch (IOException | XMLStreamException e) {
+                throw new SynapseException("Error while evaluating parameters"
+                        + " passed to template " + fName, e);
+            }
+        }
+    }
+
+    private void resolveNestedParams(MessageContext synCtx, InvokeParam propertyValue,
+                                     ResolvedInvokeParam resolvedParam) {
+
+        for (InvokeParam childParam : propertyValue.getChildParams()) {
+            ResolvedInvokeParam value = getEvaluatedInvokeParam(synCtx, childParam.getParamName(), childParam);
+            resolvedParam.addChildParam(value);
         }
     }
 

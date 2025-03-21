@@ -40,7 +40,6 @@ import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 
 import java.io.ByteArrayInputStream;
-import javax.xml.namespace.QName;
 
 public class Utils {
 

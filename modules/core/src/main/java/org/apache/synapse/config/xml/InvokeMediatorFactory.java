@@ -25,6 +25,7 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.template.InvokeMediator;
+import org.apache.synapse.mediators.template.InvokeParam;
 
 import java.util.Iterator;
 import java.util.Properties;
@@ -95,7 +96,7 @@ public class InvokeMediatorFactory extends AbstractMediatorFactory {
                 if (paramNameAttr != null) {
                     if (StringUtils.isNotEmpty(paramNameAttr.getAttributeValue())) {
                         //set parameter value
-                        invoker.addExpressionForParamName(paramNameAttr.getAttributeValue(), paramValue);
+                        invoker.addInvokeParam(paramNameAttr.getAttributeValue(), new InvokeParam(paramValue));
                     } else {
                         String msg = "Call template mediator parameters should have non empty name.";
                         log.error(msg);

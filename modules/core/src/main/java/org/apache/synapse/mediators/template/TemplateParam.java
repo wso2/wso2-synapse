@@ -28,10 +28,19 @@ public class TemplateParam {
 
     private Object defaultValue;
 
+    private String description;
+
     public TemplateParam(String parameterName, boolean isMandatory, Object defaultValue) {
-        this.name = parameterName;
+
+        this(parameterName, isMandatory, defaultValue, null);
+    }
+
+    public TemplateParam(String name, boolean isMandatory, Object defaultValue, String description) {
+
+        this.name = name;
         this.isMandatory = isMandatory;
         this.defaultValue = defaultValue;
+        this.description = description;
     }
 
     public String getName() {
@@ -56,5 +65,15 @@ public class TemplateParam {
 
     public void setDefaultValue(Object defaultValue) {
         this.defaultValue = defaultValue;
+    }
+
+    public String getDescription() {
+
+        return description;
+    }
+
+    public void setDescription(String description) {
+
+        this.description = description;
     }
 }
