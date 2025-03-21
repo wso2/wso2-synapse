@@ -18,6 +18,7 @@
 
 package org.apache.synapse.api;
 
+import io.swagger.v3.oas.models.OpenAPI;
 import org.apache.axiom.util.UIDGenerator;
 import org.apache.axis2.Constants;
 import org.apache.http.HttpHeaders;
@@ -44,6 +45,7 @@ import org.apache.synapse.api.cors.CORSHelper;
 import org.apache.synapse.api.dispatch.DispatcherHelper;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.util.swagger.SchemaValidationUtils;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -298,6 +300,10 @@ public class Resource extends AbstractRequestProcessor implements ManagedLifecyc
     }
 
     void process(MessageContext synCtx) {
+        process(synCtx, null);
+    }
+
+    void process(MessageContext synCtx, OpenAPI openAPI) {
         Integer statisticReportingIndex = null;
         boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         if (!synCtx.isResponse()) {
@@ -339,6 +345,13 @@ public class Resource extends AbstractRequestProcessor implements ManagedLifecyc
         SequenceMediator sequence = synCtx.isResponse() ? outSequence : inSequence;
         if (sequence != null) {
             registerFaultHandler(synCtx);
+            if (openAPI != null) {
+                if (synCtx.isResponse()) {
+                    SchemaValidationUtils.validateAPIResponse(synCtx, openAPI);
+                } else {
+                    SchemaValidationUtils.validateAPIRequest(synCtx, openAPI);
+                }
+            }
             sequence.mediate(synCtx);
             if (isStatisticsEnabled) {
                 CloseEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,

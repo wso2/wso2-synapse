@@ -36,18 +36,21 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
+import org.apache.synapse.api.API;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.inbound.InboundResponseSender;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.util.MediatorPropertyUtils;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.POXUtils;
 import org.apache.synapse.util.logging.LoggingUtils;
+import org.apache.synapse.util.swagger.SchemaValidationUtils;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -106,6 +109,19 @@ public class Axis2Sender {
      * @param smc the Synapse message context sent as the response
      */
     public static void sendBack(org.apache.synapse.MessageContext smc) {
+
+        API api = (API) smc.getProperty(RESTConstants.PROCESSED_API);
+        if (api != null && api.isSwaggerValidationEnabled()) {
+            boolean responseValidated = false;
+            if (smc.getProperty(RESTConstants.OPENAPI_VALIDATED) != null) {
+                responseValidated = (boolean) smc.getProperty(RESTConstants.OPENAPI_VALIDATED);
+            }
+            if (!responseValidated) {
+                smc.setProperty(RESTConstants.OPENAPI_VALIDATED, true);
+                SchemaValidationUtils.validateAPIResponse(smc, api.getOpenAPI());
+            }
+        }
+
         if (preventMultipleResponses(smc)) {
             return;
         }
