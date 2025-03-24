@@ -75,6 +75,7 @@ public class MediatorSerializerFinder {
             RespondMediatorSerializer.class,
             CommentMediatorSerializer.class,
             ForEachMediatorSerializer.class,
+            ForEachMediatorV2Serializer.class,
             JSONTransformMediatorSerializer.class,
             NTLMMediatorSerializer.class,
             VariableMediatorSerializer.class,
