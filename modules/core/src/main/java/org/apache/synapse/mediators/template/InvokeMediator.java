@@ -51,12 +51,7 @@ import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.util.MediatorEnrichUtil;
 import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Stack;
-import java.util.TreeMap;
+import java.util.*;
 
 import static org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS;
 import static org.apache.synapse.mediators.builtin.CallMediator.ORIGINAL_CONTENT_TYPE;
@@ -71,6 +66,12 @@ import static org.apache.synapse.mediators.builtin.CallMediator.ORIGINAL_TRANSPO
  */
 public class InvokeMediator extends AbstractMediator implements
                                                      ManagedLifecycle,FlowContinuableMediator {
+
+	/**
+	 * Unique identifier for the invoke mediator
+	 */
+	private String id;
+
 	/**
 	 * refers to the target template this is going to invoke this is a read only
 	 * attribute of the mediator
@@ -104,9 +105,12 @@ public class InvokeMediator extends AbstractMediator implements
 	 */
 	private SynapseEnvironment synapseEnv;
 
+	private static final Random RANDOM = new Random();
+
 	public InvokeMediator() {
 		// LinkedHashMap is used to preserve tag order
 		pName2ParamMap = new LinkedHashMap<>();
+		id = String.valueOf(RANDOM.nextLong());
 	}
 
     public boolean mediate(MessageContext synCtx) {
@@ -339,6 +343,7 @@ public class InvokeMediator extends AbstractMediator implements
 	 */
 	private void populateParameters(MessageContext synCtx, String templateQualifiedName) {
 
+		EIPUtils.createSynapseEIPTemplateProperty(synCtx, templateQualifiedName, SynapseConstants.INVOKE_MEDIATOR_ID, id);
 		for (Map.Entry<String, InvokeParam> paramEntry : pName2ParamMap.entrySet()) {
 			String parameter = paramEntry.getKey();
 			if (!"".equals(parameter)) {
