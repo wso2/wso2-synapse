@@ -240,43 +240,43 @@ public class InvokeMediator extends AbstractMediator implements
 		return false;
 	}
 
-	private boolean isContentAware(InvokeParam param) {
+    private boolean isContentAware(InvokeParam param) {
 
-		if (param == null) {
-			return false;
-		}
+        if (param == null) {
+            return false;
+        }
 
-		// Check whether the inline value is content aware
-		if (param.getInlineValue() != null) {
-			SynapsePath inlineValueExpression = param.getInlineValue().getExpression();
-			if (inlineValueExpression != null && inlineValueExpression.isContentAware()) {
-				return true;
-			}
-		}
+        // Check whether the inline value is content aware
+        if (param.getInlineValue() != null) {
+            SynapsePath inlineValueExpression = param.getInlineValue().getExpression();
+            if (inlineValueExpression != null && inlineValueExpression.isContentAware()) {
+                return true;
+            }
+        }
 
-		// Check whether the attribute values are content aware
-		if (param.getAttributeName2ExpressionMap() != null) {
-			for (String attributeName : param.getAttributeName2ExpressionMap().keySet()) {
-				if (!"".equals(attributeName)) {
-					Value attributeValue = param.getAttributeName2ExpressionMap().get(attributeName);
-					if (attributeValue != null && attributeValue.getExpression() != null &&
-							attributeValue.getExpression().isContentAware()) {
-						return true;
-					}
-				}
-			}
-		}
+        // Check whether the attribute values are content aware
+        if (param.getAttributeName2ExpressionMap() != null) {
+            for (String attributeName : param.getAttributeName2ExpressionMap().keySet()) {
+                if (!"".equals(attributeName)) {
+                    Value attributeValue = param.getAttributeName2ExpressionMap().get(attributeName);
+                    if (attributeValue != null && attributeValue.getExpression() != null &&
+                            attributeValue.getExpression().isContentAware()) {
+                        return true;
+                    }
+                }
+            }
+        }
 
-		// Check whether the child parameters are content aware
-		if (param.getChildParams() != null) {
-			for (InvokeParam childParam : param.getChildParams()) {
-				if (isContentAware(childParam)) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+        // Check whether the child parameters are content aware
+        if (param.getChildParams() != null) {
+            for (InvokeParam childParam : param.getChildParams()) {
+                if (isContentAware(childParam)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
     public boolean mediate(MessageContext synCtx, ContinuationState continuationState) {
         SynapseLog synLog = getLog(synCtx);
@@ -362,23 +362,23 @@ public class InvokeMediator extends AbstractMediator implements
 		}
 	}
 
-	/**
-	 * Check whether the invoke parameter has child parameters or attribute parameters
-	 *
-	 * @param invokeParam invoke parameter
-	 * @return true if the invoke parameter has child parameters or attribute parameters
-	 */
-	private boolean hasChildOrAttributeParam(InvokeParam invokeParam) {
+    /**
+     * Check whether the invoke parameter has child parameters or attribute parameters
+     *
+     * @param invokeParam invoke parameter
+     * @return true if the invoke parameter has child parameters or attribute parameters
+     */
+    private boolean hasChildOrAttributeParam(InvokeParam invokeParam) {
 
-		return (invokeParam.getChildParams() != null && !invokeParam.getChildParams().isEmpty()) ||
-				(invokeParam.getAttributeName2ExpressionMap() != null &&
-						!invokeParam.getAttributeName2ExpressionMap().isEmpty());
-	}
+        return (invokeParam.getChildParams() != null && !invokeParam.getChildParams().isEmpty()) ||
+                (invokeParam.getAttributeName2ExpressionMap() != null &&
+                        !invokeParam.getAttributeName2ExpressionMap().isEmpty());
+    }
 
     private boolean storeResponseInVariableEnabled(MessageContext synCtx) {
 
-		if (pName2ParamMap.containsKey(SynapseConstants.RESPONSE_VARIABLE)) {
-			Value responseVariable = pName2ParamMap.get(SynapseConstants.RESPONSE_VARIABLE).getInlineValue();
+        if (pName2ParamMap.containsKey(SynapseConstants.RESPONSE_VARIABLE)) {
+            Value responseVariable = pName2ParamMap.get(SynapseConstants.RESPONSE_VARIABLE).getInlineValue();
             if (responseVariable != null) {
                 String responseVariableValue = responseVariable.evaluateValue(synCtx);
                 if (log.isDebugEnabled()) {
@@ -404,7 +404,7 @@ public class InvokeMediator extends AbstractMediator implements
         if (!storeResponseInVariableEnabled(synCtx)) {
             return;
         }
-		boolean overwriteBody = isOverwriteBodyEnabled(synCtx);
+        boolean overwriteBody = isOverwriteBodyEnabled(synCtx);
         if (!overwriteBody) {
             org.apache.axis2.context.MessageContext axis2MessageContext =
                     ((Axis2MessageContext) synCtx).getAxis2MessageContext();
@@ -431,22 +431,22 @@ public class InvokeMediator extends AbstractMediator implements
         }
     }
 
-	private boolean isOverwriteBodyEnabled(MessageContext synCtx) {
+    private boolean isOverwriteBodyEnabled(MessageContext synCtx) {
 
-		InvokeParam overwriteBodyParam = pName2ParamMap.get(SynapseConstants.OVERWRITE_BODY);
-		boolean overwriteBody = false;
-		if (overwriteBodyParam != null && overwriteBodyParam.getInlineValue() != null) {
-			overwriteBody = Boolean.parseBoolean(overwriteBodyParam.getInlineValue().evaluateValue(synCtx));
-		}
-		return overwriteBody;
-	}
+        InvokeParam overwriteBodyParam = pName2ParamMap.get(SynapseConstants.OVERWRITE_BODY);
+        boolean overwriteBody = false;
+        if (overwriteBodyParam != null && overwriteBodyParam.getInlineValue() != null) {
+            overwriteBody = Boolean.parseBoolean(overwriteBodyParam.getInlineValue().evaluateValue(synCtx));
+        }
+        return overwriteBody;
+    }
 
     private void postMediate(MessageContext synCtx) {
 
         if (!storeResponseInVariableEnabled(synCtx)) {
             return;
         }
-		boolean overwriteBody = isOverwriteBodyEnabled(synCtx);
+        boolean overwriteBody = isOverwriteBodyEnabled(synCtx);
         processConnectorResponse(synCtx, overwriteBody);
         if (!overwriteBody) {
             Map originalTransportHeaders =
@@ -500,15 +500,15 @@ public class InvokeMediator extends AbstractMediator implements
 		return errorHandler;
 	}
 
-	public Map<String, InvokeParam> getpName2ParamMap() {
+    public Map<String, InvokeParam> getpName2ParamMap() {
 
-		return pName2ParamMap;
-	}
+        return pName2ParamMap;
+    }
 
-	public void addInvokeParam(String pName, InvokeParam param) {
+    public void addInvokeParam(String pName, InvokeParam param) {
 
-		pName2ParamMap.put(pName, param);
-	}
+        pName2ParamMap.put(pName, param);
+    }
 
 	public boolean isDynamicMediator() {
 		return dynamicMediator;
@@ -560,15 +560,15 @@ public class InvokeMediator extends AbstractMediator implements
 
     private void processConnectorResponse(MessageContext synCtx, boolean overwriteBody) {
 
-		Value responseVariable = pName2ParamMap.get(SynapseConstants.RESPONSE_VARIABLE).getInlineValue();
-		String responseVariableName = responseVariable.evaluateValue(synCtx);
+        Value responseVariable = pName2ParamMap.get(SynapseConstants.RESPONSE_VARIABLE).getInlineValue();
+        String responseVariableName = responseVariable.evaluateValue(synCtx);
         ConnectorResponse connectorResponse = (ConnectorResponse) synCtx.getVariable(responseVariableName);
         Map<String, Object> responseMap = new HashMap<>();
         if (connectorResponse == null) {
             Source sourceForResponsePayload = MediatorEnrichUtil.createSourceWithBody();
             Target targetForResponsePayload = new Target();
             targetForResponsePayload.setTargetType(EnrichMediator.VARIABLE);
-			targetForResponsePayload.setVariable(responseVariable);
+            targetForResponsePayload.setVariable(responseVariable);
             doEnrich(synCtx, sourceForResponsePayload, targetForResponsePayload);
             if (overwriteBody) {
                 // If overwrite body is enabled, no need to store the payload in the variable
