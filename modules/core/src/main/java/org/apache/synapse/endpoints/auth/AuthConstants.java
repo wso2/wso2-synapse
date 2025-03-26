@@ -33,6 +33,7 @@ public class AuthConstants {
     public static final String OAUTH_CLIENT_ID = "clientId";
     public static final String OAUTH_CLIENT_SECRET = "clientSecret";
     public static final String OAUTH_AUTHENTICATION_MODE = "authMode";
+    public static final String USE_GLOBAL_PROXY_CONFIGS = "useGlobalProxyConfigs";
     public static final String OAUTH_USERNAME = "username";
     public static final String OAUTH_PASSWORD = "password";
     public static final String OAUTH_REFRESH_TOKEN = "refreshToken";
@@ -42,11 +43,13 @@ public class AuthConstants {
     public static final String CUSTOM_HEADER = "header";
     public static final String NAME = "name";
 
+    public static final String USE_GLOBAL_CONNECTION_TIMEOUT_CONFIGS = "useGlobalConnectionTimeoutConfigs";
     public static final String OAUTH_CONNECTION_TIMEOUT = "connectionTimeout";
-
     public static final String OAUTH_CONNECTION_REQUEST_TIMEOUT = "connectionRequestTimeout";
-
     public static final String OAUTH_SOCKET_TIMEOUT = "socketTimeout";
+    public static final String OAUTH_GLOBAL_CONNECTION_TIMEOUT = "synapse.endpoint.http.oauth.token.endpoint.global.connection.timeout";
+    public static final String OAUTH_GLOBAL_CONNECTION_REQUEST_TIMEOUT = "synapse.endpoint.http.oauth.token.endpoint.global.connection.request.timeout";
+    public static final String OAUTH_GLOBAL_SOCKET_TIMEOUT = "synapse.endpoint.http.oauth.token.endpoint.global.socket.timeout";
 
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String BEARER = "Bearer ";
@@ -93,6 +96,12 @@ public class AuthConstants {
     public static final String PROXY_USERNAME = "proxyUsername";
     public static final String PROXY_PASSWORD = "proxyPassword";
     public static final String OAUTH_PROXY_PROTOCOL = "proxyProtocol";
+    public static final String OAUTH_GLOBAL_PROXY_ENABLED = "synapse.endpoint.http.oauth.token.endpoint.global.proxy.enabled";
+    public static final String OAUTH_GLOBAL_PROXY_HOST = "synapse.endpoint.http.oauth.token.endpoint.global.proxy.host";
+    public static final String OAUTH_GLOBAL_PROXY_PORT = "synapse.endpoint.http.oauth.token.endpoint.global.proxy.port";
+    public static final String OAUTH_GLOBAL_PROXY_USERNAME = "synapse.endpoint.http.oauth.token.endpoint.global.proxy.username";
+    public static final String OAUTH_GLOBAL_PROXY_PASSWORD = "synapse.endpoint.http.oauth.token.endpoint.global.proxy.password";
+    public static final String OAUTH_GLOBAL_PROXY_PROTOCOL = "synapse.endpoint.http.oauth.token.endpoint.global.proxy.protocol";
 
     public static final String HTTPS_PROTOCOL = "https";
 }

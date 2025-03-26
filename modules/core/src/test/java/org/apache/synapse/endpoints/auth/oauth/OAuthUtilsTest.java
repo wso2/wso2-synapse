@@ -304,8 +304,9 @@ public class OAuthUtilsTest {
 
             OAuthHandler oAuthHandler =
                     new AuthorizationCodeHandler("oauth_server_url", "client_id", "client_secret",
-                            "refresh_token", "header", -1, -1,
-                            -1, TokenCache.getInstance(), new ProxyConfigs());
+                            "refresh_token", "header", false,
+                            -1, -1, -1, TokenCache.getInstance(),
+                            false, new ProxyConfigs());
 
             OAuthConfiguredHTTPEndpoint httpEndpoint = new OAuthConfiguredHTTPEndpoint(oAuthHandler);
 

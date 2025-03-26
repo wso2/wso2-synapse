@@ -39,6 +39,10 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.conn.ConnectionPoolTimeoutException;
+import org.apache.http.conn.HttpHostConnectException;
+import org.apache.http.conn.UnsupportedSchemeException;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -66,6 +70,7 @@ import org.apache.synapse.transport.nhttp.util.SecureVaultValueReader;
 import org.apache.synapse.util.xpath.KeyStoreManager;
 import org.wso2.securevault.SecretResolver;
 import org.wso2.securevault.SecretResolverFactory;
+import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -76,7 +81,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -145,6 +152,21 @@ public class OAuthClient {
 
             try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
                 return extractToken(response);
+            } catch (SocketTimeoutException e) {
+                throw new AuthException("Socket timeout: OAuth token endpoint did not respond within the expected " +
+                        "time frame.");
+            } catch (ConnectionPoolTimeoutException e) {
+                throw new AuthException("Connection request timeout: Unable to obtain a connection from the pool in " +
+                        "time while communicating with the OAuth token endpoint.");
+            } catch (ConnectTimeoutException e) {
+                throw new AuthException("Connection timeout: Failed to establish a connection to the OAuth token " +
+                        "endpoint.");
+            } catch (UnknownHostException e) {
+                throw new AuthException("Unable to resolve the hostname for the OAuth token endpoint connection.");
+            } catch (HttpHostConnectException e) {
+                throw new AuthException("Unable to connect to the OAuth token endpoint.");
+            } catch (UnsupportedSchemeException e) {
+                throw new AuthException("Unsupported protocol used for the OAuth token endpoint.");
             } finally {
                 httpPost.releaseConnection();
             }
@@ -207,12 +229,14 @@ public class OAuthClient {
             throws AuthException {
 
         if (proxyConfigs.isProxyEnabled()) {
-            return getSecureClientWithProxy(connectionTimeout, connectionRequestTimeout, socketTimeout, proxyConfigs);
+            return getSecureClientWithProxy(messageContext, connectionTimeout, connectionRequestTimeout, socketTimeout,
+                    proxyConfigs);
         } else {
             return getSecureClientWithoutProxy(tokenUrl, messageContext, connectionTimeout, connectionRequestTimeout,
                     socketTimeout);
         }
     }
+
     private static CloseableHttpClient getSecureClientWithoutProxy(String tokenUrl, MessageContext messageContext,
             int connectionTimeout, int connectionRequestTimeout, int socketTimeout) throws AuthException {
         SSLContext sslContext;
@@ -242,8 +266,9 @@ public class OAuthClient {
         return client;
     }
 
-    private static CloseableHttpClient getSecureClientWithProxy(int connectionTimeout, int connectionRequestTimeout,
-            int socketTimeout, ProxyConfigs proxyConfigs) throws AuthException {
+    private static CloseableHttpClient getSecureClientWithProxy(MessageContext messageContext, int connectionTimeout,
+                                                                int connectionRequestTimeout, int socketTimeout,
+                                                                ProxyConfigs proxyConfigs) throws AuthException {
 
         PoolingHttpClientConnectionManager pool = getPoolingHttpClientConnectionManager(
                 proxyConfigs.getProxyProtocol());
@@ -259,19 +284,31 @@ public class OAuthClient {
         DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(host);
         RequestConfig config = RequestConfig.custom().setConnectTimeout(connectionTimeout)
                 .setConnectionRequestTimeout(connectionRequestTimeout).setSocketTimeout(socketTimeout).build();
-        clientBuilder = clientBuilder.setRoutePlanner(routePlanner);
+        clientBuilder = clientBuilder.setRoutePlanner(routePlanner).setDefaultRequestConfig(config);
 
         if (StringUtils.isNotBlank(proxyConfigs.getProxyUsername()) && StringUtils.isNotBlank(
                 proxyConfigs.getProxyPassword())) {
             CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
             credentialsProvider.setCredentials(
                     new AuthScope(proxyConfigs.getProxyHost(), Integer.parseInt(proxyConfigs.getProxyPort())),
-                    new UsernamePasswordCredentials(proxyConfigs.getProxyUsername(), proxyConfigs.getProxyPassword()));
-            clientBuilder = clientBuilder.setDefaultRequestConfig(config)
-                    .setDefaultCredentialsProvider(credentialsProvider);
+                    new UsernamePasswordCredentials(proxyConfigs.getProxyUsername(), resolveProxyPassword(proxyConfigs,
+                            messageContext)));
+            clientBuilder = clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
         }
 
         return clientBuilder.build();
+    }
+
+    private static String resolveProxyPassword(ProxyConfigs proxyConfigs, MessageContext messageContext)
+            throws AuthException {
+        if (proxyConfigs.getProxyPasswordSecretResolver() != null) {
+            // Resolves the password when global proxy configurations are used
+            return MiscellaneousUtil.resolve(proxyConfigs.getProxyPassword(),
+                    proxyConfigs.getProxyPasswordSecretResolver());
+        } else {
+            // Resolves the password when endpoint specific proxy configurations are used
+            return OAuthUtils.resolveExpression(proxyConfigs.getProxyPassword(), messageContext);
+        }
     }
 
     private static PoolingHttpClientConnectionManager getPoolingHttpClientConnectionManager(String protocol)
