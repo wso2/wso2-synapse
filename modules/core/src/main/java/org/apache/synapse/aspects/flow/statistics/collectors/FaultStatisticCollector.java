@@ -45,6 +45,7 @@ public class FaultStatisticCollector extends RuntimeStatisticCollector {
 				BasicStatisticDataUnit dataUnit = new BasicStatisticDataUnit();
 				dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
 				dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
+				dataUnit.setMessageContext(messageContext);
 
 				FaultEvent faultEvent = new FaultEvent(dataUnit);
 				faultEvent.getDataUnit().generateElasticMetadata(messageContext);
