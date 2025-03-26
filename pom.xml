@@ -26,7 +26,7 @@
    </parent>
    <groupId>org.apache.synapse</groupId>
    <artifactId>Apache-Synapse</artifactId>
-   <version>4.0.0-wso2v222-SNAPSHOT</version>
+   <version>4.0.0-wso2v228-SNAPSHOT</version>
    <name>Apache Synapse</name>
    <description>Apache Synapse</description>
    <packaging>pom</packaging>
@@ -1431,6 +1431,16 @@
               <artifactId>antlr4-runtime</artifactId>
               <version>${org.antlr4.version}</version>
           </dependency>
+          <dependency>
+              <groupId>org.wso2.orbit.com.atlassian.oai</groupId>
+              <artifactId>swagger-request-validator-core-v3</artifactId>
+              <version>${org.wso2.orbit.atlassian.oai.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.wso2.orbit.io.swagger.v3</groupId>
+              <artifactId>swagger-parser</artifactId>
+              <version>${swagger.parser.v3.version}</version>
+          </dependency>
       </dependencies>
    </dependencyManagement>
     <reporting>
@@ -1633,7 +1643,7 @@
        <rabbitmq.version>5.20.0</rabbitmq.version>
        <opentelemetry.all.version>1.11.0.wso2v6</opentelemetry.all.version>
        <okhttp.wso2.version>4.12.0.wso2v2</okhttp.wso2.version>
-       <okio.wso2.version>3.9.0.wso2v1</okio.wso2.version>
+       <okio.wso2.version>3.9.0.wso2v2</okio.wso2.version>
        <zipkin.sender.okhttp3.version>2.17.2.wso2v2</zipkin.sender.okhttp3.version>
        <zipkin.version>2.27.1</zipkin.version>
        <zipkin-reporter.version>2.17.2</zipkin-reporter.version>
@@ -1655,6 +1665,8 @@
        <graalvm.version>22.3.4</graalvm.version>
        <icu.version>72.1</icu.version>
        <xmlbeans.imp.pkg.version>[3.1.0,4.0.0)</xmlbeans.imp.pkg.version>
+       <org.wso2.orbit.atlassian.oai.version>2.44.1.wso2v1</org.wso2.orbit.atlassian.oai.version>
+       <swagger.parser.v3.version>2.1.22.wso2v2</swagger.parser.v3.version>
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->

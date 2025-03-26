@@ -46,6 +46,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			dataUnit.setCallbackId(callbackId);
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
+			dataUnit.setMessageContext(messageContext);
 
 			CallbackSentEvent callbackSentEvent = new CallbackSentEvent(dataUnit);
             addEventAndIncrementCallbackCount(messageContext, callbackSentEvent);
@@ -73,6 +74,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(oldMessageContext));
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(oldMessageContext, null));
 			dataUnit.setIsOutOnlyFlow(StatisticDataCollectionHelper.isOutOnlyFlow(oldMessageContext));
+			dataUnit.setMessageContext(oldMessageContext);
 
 			CallbackCompletionEvent callbackCompletionEvent = new CallbackCompletionEvent(dataUnit);
             addEventAndDecrementCallbackCount(oldMessageContext, callbackCompletionEvent);
@@ -99,6 +101,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(oldMessageContext));
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(oldMessageContext, null));
 			dataUnit.setIsOutOnlyFlow(StatisticDataCollectionHelper.isOutOnlyFlow(oldMessageContext));
+			dataUnit.setMessageContext(oldMessageContext);
 
 			CallbackReceivedEvent callbackReceivedEvent = new CallbackReceivedEvent(dataUnit);
             addEvent(oldMessageContext, callbackReceivedEvent);
@@ -125,6 +128,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			dataUnit.setSynapseEnvironment(synapseOutMsgCtx.getEnvironment());
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(synapseOutMsgCtx));
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(synapseOutMsgCtx, null));
+			dataUnit.setMessageContext(synapseOutMsgCtx);
 
 			CallbackHandledEvent callbackHandledEvent = new CallbackHandledEvent(dataUnit);
             addEventAndDecrementCallbackCount(synapseOutMsgCtx, callbackHandledEvent);

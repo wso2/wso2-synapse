@@ -20,7 +20,7 @@
     <parent>
         <artifactId>synapse-features</artifactId>
         <groupId>org.apache.synapse</groupId>
-        <version>4.0.0-wso2v222-SNAPSHOT</version>
+        <version>4.0.0-wso2v228-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -167,6 +167,7 @@
                                 </bundleDef>
                                 <bundleDef>io.zipkin.zipkin2:zipkin:${zipkin.version}</bundleDef>
                                 <bundleDef>javax.annotation:javax.annotation-api</bundleDef>
+                                <bundleDef>org.wso2.orbit.com.atlassian.oai:swagger-request-validator-core-v3:${org.wso2.orbit.atlassian.oai.version}</bundleDef>
                             </bundles>
                             <importBundles>
                                 <importBundleDef>org.wso2.orbit.org.apache.tomcat:tomcat</importBundleDef>

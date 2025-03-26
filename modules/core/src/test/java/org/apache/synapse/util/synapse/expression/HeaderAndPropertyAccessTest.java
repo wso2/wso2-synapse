@@ -69,12 +69,14 @@ public class HeaderAndPropertyAccessTest {
         headersMap.put("te st", "HELLO");
         headersMap.put("numerical", "400");
         headersMap.put("price", "10");
+        headersMap.put("payload", "Hello World");
         synCtx.getAxis2MessageContext().setProperty(
                 org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, headersMap);
         synCtx.getAxis2MessageContext().setProperty("test", "Sic Mundus");
         synCtx.getAxis2MessageContext().setProperty("test2", "Creatus Est");
         synCtx.getAxis2MessageContext().setProperty("empty", "Thus the world was created");
         synCtx.getAxis2MessageContext().setProperty("category", "biography");
+        synCtx.getAxis2MessageContext().setProperty("payload", "Hello");
         synCtx.setProperty("phrase", "Now I Am Become Death, the Destroyer of Worlds");
         synCtx.setProperty("selected book", "Animal Farm");
         synCtx.setProperty("null", null);
@@ -217,5 +219,17 @@ public class HeaderAndPropertyAccessTest {
         Assert.assertEquals("", testPath.stringValueOf(synCtx));
         testPath = new SynapseExpression("props.synapse[\"empty\"]");
         Assert.assertEquals("", testPath.stringValueOf(synCtx));
+    }
+
+    @Test
+    public void testHeaderWithKeyword() throws Exception {
+        SynapseExpression testPath = new SynapseExpression("headers.payload");
+        Assert.assertEquals("Hello World", testPath.stringValueOf(synCtx));
+    }
+
+    @Test
+    public void testAxis2PropertyWithKeyword() throws Exception {
+        SynapseExpression testPath = new SynapseExpression("props.axis2.payload");
+        Assert.assertEquals("Hello", testPath.stringValueOf(synCtx));
     }
 }

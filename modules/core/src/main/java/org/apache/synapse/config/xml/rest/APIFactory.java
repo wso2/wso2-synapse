@@ -86,6 +86,10 @@ public class APIFactory {
         OMAttribute publishSwagger = apiElt.getAttribute(new QName("publishSwagger"));
         if (publishSwagger != null) {
             api.setSwaggerResourcePath(publishSwagger.getAttributeValue());
+            OMAttribute enableValidation = apiElt.getAttribute(new QName("validateSchema"));
+            if (enableValidation != null) {
+                api.setEnableSwaggerValidation(Boolean.parseBoolean(enableValidation.getAttributeValue()));
+            }
         }
 
         InboundApiUtils.addBindsTo(api, apiElt);
