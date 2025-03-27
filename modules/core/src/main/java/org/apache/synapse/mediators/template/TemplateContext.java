@@ -65,6 +65,7 @@ public class TemplateContext {
     public TemplateContext(String name, Collection<TemplateParam> parameters) {
         this.fName = name;
         this.parameters = parameters;
+        addInvokeMediatorIDParam();
         mappedValues = new HashMap();
     }
 
@@ -116,6 +117,11 @@ public class TemplateContext {
             //remove temp property from the context
             removeProperty(synCtxt, mapping);
         }
+    }
+
+    private void addInvokeMediatorIDParam() {
+
+        parameters.add(new TemplateParam(SynapseConstants.INVOKE_MEDIATOR_ID, false, null));
     }
 
     private ResolvedInvokeParam getEvaluatedInvokeParam(MessageContext synCtx, String parameterName,
