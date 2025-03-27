@@ -84,6 +84,7 @@ public class TemplateMediatorFactory extends AbstractListMediatorFactory {
                 String paramName = null;
                 boolean isParamMandatory = false;
                 Object defaultValue = null;
+                String description = null;
                 OMAttribute paramNameAttr = child.getAttribute(ATT_NAME);
                 if (paramNameAttr != null) {
                     paramName = paramNameAttr.getAttributeValue();
@@ -96,7 +97,11 @@ public class TemplateMediatorFactory extends AbstractListMediatorFactory {
                 if (paramDefaultValueAttr != null) {
                     defaultValue = paramDefaultValueAttr.getAttributeValue();
                 }
-                templateParams.add(new TemplateParam(paramName, isParamMandatory, defaultValue));
+                OMAttribute descriptionAttr = child.getAttribute(ATT_DESCRIPTION);
+                if (descriptionAttr != null) {
+                    description = descriptionAttr.getAttributeValue();
+                }
+                templateParams.add(new TemplateParam(paramName, isParamMandatory, defaultValue, description));
 //                child.detach();
             }
         }

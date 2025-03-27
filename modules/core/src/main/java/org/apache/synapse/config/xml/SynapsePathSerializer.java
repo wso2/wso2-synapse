@@ -107,6 +107,8 @@ public class SynapsePathSerializer {
                 }
             } else if(path.getPathType() == SynapsePath.X_PATH) {
                 elem.setText(expression);
+            } else if (path.getPathType() == SynapsePath.SYNAPSE_EXPRESSIONS_PATH) {
+                elem.setText("${" + expression + "}");
             }
 
 			serializeNamespaces(elem, path);

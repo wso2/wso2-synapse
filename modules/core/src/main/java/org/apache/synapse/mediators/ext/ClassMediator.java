@@ -20,6 +20,7 @@
 package org.apache.synapse.mediators.ext;
 
 import org.apache.axis2.AxisFault;
+import org.apache.synapse.ContinuationState;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
@@ -29,6 +30,7 @@ import org.apache.synapse.config.xml.PropertyHelper;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.mediators.v2.Utils;
 import org.apache.synapse.mediators.v2.ext.AbstractClassMediator;
@@ -51,7 +53,7 @@ import java.util.Map;
  * 
  * @see Mediator
  */
-public class ClassMediator extends AbstractMediator implements ManagedLifecycle {
+public class ClassMediator extends AbstractMediator implements FlowContinuableMediator, ManagedLifecycle {
 
     /** The reference to the actual class that implments the Mediator interface */
     private Mediator mediator = null;
@@ -99,6 +101,8 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
 
         boolean result;
 
+        // Since this is a wrapper mediator, the actual mediator implementation should handle adding a new reliant
+        // continuation state if necessary.
         try {
             if (mediator instanceof AbstractClassMediator) {
                 result = invokeClassMediatorV2(synCtx);
@@ -120,6 +124,15 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
         synLog.traceOrDebug("End : Class mediator");
         
         return result;
+    }
+
+    @Override
+    public boolean mediate(MessageContext synCtx, ContinuationState continuationState) {
+
+        // This point is reached only if the actual mediator is a FlowContinuableMediator.
+        // Since the class mediator acts as a wrapper, we must pass the continuation state to the underlying mediator
+        // implementation to ensure proper handling of the continuation state.
+        return ((FlowContinuableMediator) mediator).mediate(synCtx, continuationState);
     }
 
     private boolean invokeClassMediatorV2(MessageContext synCtx) {
@@ -284,5 +297,16 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
     public String getVariableName() {
 
         return variableName;
+    }
+
+    @Override
+    public void setMediatorPosition(int position) {
+
+        super.setMediatorPosition(position);
+        if (mediator instanceof AbstractMediator) {
+            // The mediator position of the mediator will be needed if actual mediator is an FlowContinuableMediator.
+            // So,we need to set the mediator position of the class mediator as the position of the actual mediator.
+            mediator.setMediatorPosition(position);
+        }
     }
 }

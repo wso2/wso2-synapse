@@ -229,7 +229,7 @@ public class ValueFactory {
         return synapseJsonPath;
     }
 
-    private SynapseExpression createSynapseExpression(String key) {
+    public SynapseExpression createSynapseExpression(String key) {
         String expression = key.trim().substring(2, key.length() - 1);
         SynapseExpression synapseExpression = null;
         try {
