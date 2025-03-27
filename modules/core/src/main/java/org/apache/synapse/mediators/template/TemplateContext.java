@@ -65,7 +65,6 @@ public class TemplateContext {
     public TemplateContext(String name, Collection<TemplateParam> parameters) {
         this.fName = name;
         this.parameters = parameters;
-        addInvokeMediatorIDParam();
         mappedValues = new HashMap();
     }
 
@@ -78,6 +77,7 @@ public class TemplateContext {
         if (SynapseConstants.INIT_EIP_PATTERN.equals(fName) && getLocalEntryKey() != null) {
             mappedValues.put(INIT_CONFIG_KEY, getLocalEntryKey());
         }
+        addInvokeMediatorIDParam(synCtxt);
         Iterator<TemplateParam> paramNames = parameters.iterator();
         while (paramNames.hasNext()) {
             TemplateParam parameter = paramNames.next();
@@ -119,9 +119,11 @@ public class TemplateContext {
         }
     }
 
-    private void addInvokeMediatorIDParam() {
+    private void addInvokeMediatorIDParam(MessageContext synCtxt) {
 
-        parameters.add(new TemplateParam(SynapseConstants.INVOKE_MEDIATOR_ID, false, null));
+        String mapping = EIPUtils.getTemplatePropertyMapping(fName, SynapseConstants.INVOKE_MEDIATOR_ID);
+        Object propertyValue = synCtxt.getProperty(mapping);
+        mappedValues.put(SynapseConstants.INVOKE_MEDIATOR_ID, propertyValue);
     }
 
     private ResolvedInvokeParam getEvaluatedInvokeParam(MessageContext synCtx, String parameterName,
