@@ -18,6 +18,7 @@
 
 package org.apache.synapse.endpoints;
 
+import org.wso2.securevault.SecretResolver;
 /**
  * This class represents a model for proxy configurations which is used for the OAuth authentication of endpoints
  */
@@ -28,6 +29,7 @@ public class ProxyConfigs {
     private String proxyPassword;
     private String proxyProtocol;
     private boolean proxyEnabled;
+    private SecretResolver proxyPasswordSecretResolver;
 
     public void setProxyEnabled(boolean proxyEnabled) {
         this.proxyEnabled = proxyEnabled;
@@ -75,6 +77,14 @@ public class ProxyConfigs {
 
     public String getProxyProtocol() {
         return proxyProtocol;
+    }
+
+    public void setProxyPasswordSecretResolver(SecretResolver proxyPasswordSecretResolver) {
+        this.proxyPasswordSecretResolver = proxyPasswordSecretResolver;
+    }
+
+    public SecretResolver getProxyPasswordSecretResolver() {
+        return proxyPasswordSecretResolver;
     }
 }
 
