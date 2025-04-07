@@ -1,0 +1,5 @@
+<Sequence>
+    <log category="DEBUG">
+        <message>Debug message</message>
+    </log>
+</Sequence>
