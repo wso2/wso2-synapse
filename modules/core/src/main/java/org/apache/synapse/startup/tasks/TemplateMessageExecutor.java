@@ -29,6 +29,7 @@ import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.template.InvokeMediator;
+import org.apache.synapse.mediators.template.InvokeParam;
 import org.apache.synapse.task.Task;
 
 import java.util.Iterator;
@@ -90,7 +91,7 @@ public class TemplateMessageExecutor implements Task, ManagedLifecycle {
         while (subElements.hasNext()) {
             OMElement child = (OMElement) subElements.next();
             Value paramValue = new ValueFactory().createTextValue(child);
-            invoker.addExpressionForParamName(child.getLocalName(), paramValue);
+            invoker.addInvokeParam(child.getLocalName(), new InvokeParam(paramValue));
         }
     }
 }

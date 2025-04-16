@@ -22,11 +22,10 @@ import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.template.InvokeMediator;
+import org.apache.synapse.mediators.template.InvokeParam;
 
 import java.util.Iterator;
 import java.util.Map;
-
-import javax.xml.namespace.QName;
 
 /**
  * Serialize a Invoke mediator to a configuration given below
@@ -83,30 +82,55 @@ public class InvokeMediatorSerializer extends AbstractMediatorSerializer{
     }
 
     private void serializeParams(OMElement invokeElem, InvokeMediator mediator) {
-        Map<String, Value> paramsMap = mediator.getpName2ExpressionMap();
+
+        Map<String, InvokeParam> paramsMap = mediator.getpName2ParamMap();
         Iterator<String> paramIterator = paramsMap.keySet().iterator();
         while (paramIterator.hasNext()) {
-			String paramName = paramIterator.next();
-			if (paramName != null) {
-				if (mediator.isDynamicMediator()) {
-					OMElement paramEl = fac.createOMElement(paramName, synNS);
-					Value value = paramsMap.get(paramName);
-					new ValueSerializer().serializeTextValue(value, "value", paramEl);
-					invokeElem.addChild(paramEl);
-				} else {
-					String prefix = mediator.isDynamicMediator()
-							? InvokeMediatorFactory.WITH_PARAM_DYNAMIC_Q.getLocalPart()
-							: InvokeMediatorFactory.WITH_PARAM_Q.getLocalPart();
-					OMElement paramEl = fac.createOMElement(prefix, synNS);
-					paramEl.addAttribute(fac.createOMAttribute("name", nullNS, paramName));
-					// serialize value attribute
-					Value value = paramsMap.get(paramName);
-					new ValueSerializer().serializeValue(value, "value", paramEl);
-					invokeElem.addChild(paramEl);
-				}
-			}
+            String paramName = paramIterator.next();
+            if (paramName != null) {
+                if (mediator.isDynamicMediator()) {
+                    OMElement paramEl = fac.createOMElement(paramName, synNS);
+                    InvokeParam value = paramsMap.get(paramName);
+                    serializeInvokeParam(value, paramEl);
+                    invokeElem.addChild(paramEl);
+                } else {
+                    String prefix = mediator.isDynamicMediator()
+                            ? InvokeMediatorFactory.WITH_PARAM_DYNAMIC_Q.getLocalPart()
+                            : InvokeMediatorFactory.WITH_PARAM_Q.getLocalPart();
+                    OMElement paramEl = fac.createOMElement(prefix, synNS);
+                    paramEl.addAttribute(fac.createOMAttribute("name", nullNS, paramName));
+                    // serialize value attribute
+                    Value value = paramsMap.get(paramName).getInlineValue();
+                    new ValueSerializer().serializeValue(value, "value", paramEl);
+                    invokeElem.addChild(paramEl);
+                }
+            }
         }
 
+    }
+
+    private void serializeInvokeParam(InvokeParam value, OMElement paramEl) {
+
+        if (value.getInlineValue() != null) {
+            new ValueSerializer().serializeTextValue(value.getInlineValue(), "value", paramEl);
+        }
+        if (value.getAttributeName2ExpressionMap() != null) {
+            Iterator<String> attrIterator = value.getAttributeName2ExpressionMap().keySet().iterator();
+            while (attrIterator.hasNext()) {
+                String attrName = attrIterator.next();
+                Value attrValue = value.getAttributeName2ExpressionMap().get(attrName);
+                new ValueSerializer().serializeValue(attrValue, attrName, paramEl);
+            }
+        }
+        if (value.getChildParams() != null) {
+            Iterator<InvokeParam> childIterator = value.getChildParams().iterator();
+            while (childIterator.hasNext()) {
+                InvokeParam childParam = childIterator.next();
+                OMElement childEl = fac.createOMElement(childParam.getParamName(), synNS);
+                serializeInvokeParam(childParam, childEl);
+                paramEl.addChild(childEl);
+            }
+        }
     }
 
     public String getMediatorClassName() {

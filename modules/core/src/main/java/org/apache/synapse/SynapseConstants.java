@@ -140,6 +140,7 @@ public final class SynapseConstants {
      */
     public static final String AXIS2_PROPERTY_CONTENT_TYPE = "ContentType";
     public static final String SET_JMS_SVC_PARAMS_AS_MSG_CTX_PARAM = "SET_JMS_SVC_PARAMS_AS_MSG_CTX";
+    public static final String INVOKE_MEDIATOR_ID = "INVOKE_MEDIATOR_ID";
 
     /** Parameter names in the axis2.xml that can be used to configure the synapse */
     public static final class Axis2Param {
