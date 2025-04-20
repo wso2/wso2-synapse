@@ -90,7 +90,9 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
 	private static final String MP_STATE = "MESSAGE_PROCESSOR_STATE";
 
-    private static final String TASK_PREFIX = "MSMP_";
+	private static final String MP_STATE_PREFIX = "MESSAGE_PROCESSOR_STATE_";
+
+	private static final String TASK_PREFIX = "MSMP_";
 
 	private static final String SYMBOL_UNDERSCORE = "_";
 
@@ -563,12 +565,24 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     }
 
 	private ProcessorState getProcessorState() {
+
+		Object dbState = taskManager.getProperty(MP_STATE_PREFIX + getName());
+
+		if (dbState != null) {
+			String mpStateInDB = dbState.toString();
+
+			if (ProcessorState.RUNNING.name().equalsIgnoreCase(mpStateInDB)) {
+				return ProcessorState.RUNNING;
+			} else if (ProcessorState.PAUSED.name().equalsIgnoreCase(mpStateInDB)) {
+				return ProcessorState.PAUSED;
+			}
+		}
+
 		Properties resourceProperties = registry.getResourceProperties(REG_PROCESSOR_BASE_PATH + getName());
 
 		if (resourceProperties == null) {
 			return ProcessorState.INITIAL;
 		}
-
 		String state = resourceProperties.getProperty(MP_STATE);
 		if (ProcessorState.RUNNING.toString().equalsIgnoreCase(state)) {
 			return ProcessorState.RUNNING;
@@ -581,13 +595,16 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	}
 
 	private void setMessageProcessorState(ProcessorState state) {
-		registry.newNonEmptyResource(REG_PROCESSOR_BASE_PATH + getName(), false, "text/plain", state.toString(),
-				MP_STATE);
+		String key = MP_STATE_PREFIX + getName();
+		registry.newNonEmptyResource(REG_PROCESSOR_BASE_PATH + getName(), false, "text/plain",
+				state.toString(), MP_STATE);
+		taskManager.setProperty(key, state.toString());
 	}
 
     private void deleteMessageProcessorState() {
         if (registry.getResourceProperties(REG_PROCESSOR_BASE_PATH + getName()) != null) {
             registry.delete(REG_PROCESSOR_BASE_PATH + getName());
+			taskManager.setProperty(MP_STATE_PREFIX + getName(), "CLEAR");
         }
     }
 
