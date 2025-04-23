@@ -132,7 +132,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                                                scheme.isSSL(), strNamePostfix, enableAdvancedForLatencyView);
             this.s2sLatencyView = new LatencyView(PassThroughConstants.PASSTHROUGH_S2SLATENCY_VIEW, scheme.isSSL(),
                                                   strNamePostfix, enableAdvancedForS2SView);
-            this.threadingView = new ThreadingView(PassThroughConstants.PASSTHOUGH_HTTP_SERVER_WORKER, true, 50);
+            this.threadingView = new ThreadingView(PassThroughConstants.PASSTHROUGH_MESSAGE_PROCESSOR, true, 50);
         }
 
         Properties props = MiscellaneousUtil.loadProperties(PROPERTY_FILE);
