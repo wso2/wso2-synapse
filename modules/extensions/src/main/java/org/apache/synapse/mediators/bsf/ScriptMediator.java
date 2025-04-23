@@ -679,9 +679,10 @@ public class ScriptMediator extends AbstractMediator {
         engineManager = new ScriptEngineManager();
         if (language.equals(JAVA_SCRIPT)) {
             engineManager.registerEngineExtension("jsEngine", new GraalJSEngineFactory());
-        }
-        if (language.equals(RHINO_JAVA_SCRIPT)) {
-            engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
+        } else {
+            if (!language.equals(NASHORN_JAVA_SCRIPT)) {
+                engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
+            }
         }
         engineManager.registerEngineExtension("groovy", new GroovyScriptEngineFactory());
         engineManager.registerEngineExtension("rb", new JRubyScriptEngineFactory());
