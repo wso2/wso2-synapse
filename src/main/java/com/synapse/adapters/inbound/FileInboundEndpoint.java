@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2025, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ * WSO2 Inc. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package com.synapse.adapters.inbound;
 
 import com.synapse.core.domain.InboundConfig;
@@ -6,10 +24,10 @@ import com.synapse.core.ports.InboundMessageMediator;
 import com.synapse.core.synctx.Message;
 import com.synapse.core.synctx.MsgContext;
 import org.apache.commons.vfs2.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.InputStream;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -18,10 +36,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class FileInboundEndpoint implements InboundEndpoint {
+
+    private static final Logger logger = LogManager.getLogger(FileInboundEndpoint.class);
+
     private final InboundConfig config;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    private final ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
+//    private final ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
     private final Set<String> processingFiles = ConcurrentHashMap.newKeySet();
     private final FileSystemManager fsManager;
     private InboundMessageMediator mediator;
@@ -42,53 +63,24 @@ public class FileInboundEndpoint implements InboundEndpoint {
             throw new Exception("Invalid polling interval.");
         }
 
-        System.out.println("Polling files every " + interval + " milliseconds");
-
-//        scheduler.scheduleAtFixedRate(() -> {
-//            if (!isRunning.get()) {
-//                return;
-//            }
-//
-//            System.out.println("outside polling thread");
-////            try {
-////                virtualExecutor.submit(() -> {
-////                    try {
-////                        System.out.println("Polling files");
-////                        pollFiles();
-////                    } catch (FileSystemException e) {
-////                        throw new RuntimeException(e);
-////                    }
-////                });
-////            } catch (Exception e) {
-////                e.printStackTrace();
-////            }
-//
-////            Thread.ofVirtual().start(() -> {
-////                try {
-////                    pollFiles();
-////                    System.out.println("polling files");
-////                } catch (Exception e) {
-////                    e.printStackTrace();
-////                }
-////            });
-//
-//        }, 0, interval, TimeUnit.MILLISECONDS);
-
         scheduler.scheduleAtFixedRate(() -> {
             if (!isRunning.get()) {
                 System.out.println("isRunning is false");
                 return;
             }
 
-            System.out.println("outside polling thread");
-
             try {
                 Thread.ofVirtual().start(() -> {
                     try {
-                        pollFiles();
-                        System.out.println(">>> Submitting pollFiles at " + System.currentTimeMillis());
+
+                        String fileUri = config.getParameters().get("transport.vfs.FileURI");
+                        FileObject folder = fsManager.resolveFile(fileUri);
+                        logger.debug("Submitting pollfiles");
+                        pollFiles(folder);
+                        logger.debug("Finishing pollfiles");
+
                     } catch (Exception e) {
-                        System.err.println("Error in pollFiles: " + e.getMessage());
+                        logger.error("Error in pollFiles: {}", e.getMessage());
                         e.printStackTrace();
                     }
                 });
@@ -98,35 +90,34 @@ public class FileInboundEndpoint implements InboundEndpoint {
             }
         }, 0, interval, TimeUnit.MILLISECONDS);
 
-
-
-        System.out.println("outside scheduler");
     }
 
     @Override
     public void stop() throws Exception {
         isRunning.set(false);
-        scheduler.shutdown();
-        System.out.println("Stopping file inbound endpoint...");
+        logger.info("Stopping file inbound endpoint...");
+        System.out.println("hi");
+        scheduler.awaitTermination(30, TimeUnit.SECONDS);
+        logger.info("Stopped file inbound endpoint.");
     }
 
-    private void pollFiles() throws FileSystemException {
-//        System.out.println("poll");
-        String fileUri = config.getParameters().get("transport.vfs.FileURI");
-
-        FileObject folder = fsManager.resolveFile(fileUri);
-
+    private void pollFiles(FileObject folder) throws FileSystemException {
         if (!folder.exists()) {
-            System.err.println("Invalid folder URI: " + fileUri);
+            logger.error("Invalid folder URI: {}", folder.getPublicURIString());
             return;
         }
 
         String patternStr = config.getParameters().getOrDefault("transport.vfs.FileNamePattern", ".*.");
         Pattern filePattern = Pattern.compile(patternStr);
 
-        FileObject[] children = folder.getChildren();
-        if (children == null || children.length == 0) {
-            return;
+        FileObject[] children = null;
+
+        if (folder.getType() == FileType.FOLDER) {
+            children = folder.getChildren();
+            if (children == null || children.length == 0) {
+                return;
+            }
+
         }
 
         boolean isSequential = isSequentialProcessing();
@@ -146,24 +137,23 @@ public class FileInboundEndpoint implements InboundEndpoint {
 
     private void handleFile(FileObject file) {
 
-        System.out.println("inside handleFile " + file.getName());
         String filePath = file.getName().getURI();
         if (!processingFiles.add(filePath)) {
-            System.out.println("Skipping already-processing file: " + filePath);
+            logger.debug("Skipping already-processing file: {}", filePath);
             return;
         }
         try {
             if (!tryLockFile(file)) {
-                System.out.println("File locked, skipping: " + filePath);
+                logger.debug("File locked, skipping: {}", filePath);
                 return;
             }
 
             processSingleFile(file);
 
-            System.out.println("File processed: " + filePath);
+            logger.debug("File processed: {}", filePath);
             handleFileAction(file, "Process");
         } catch (Exception e) {
-            System.err.println("Error processing file [" + filePath + "]: " + e.getMessage());
+            logger.error("Error processing file [{}]: {}", filePath, e.getMessage());
             handleFileAction(file, "Failure");
         } finally {
             releaseLockFile(file);
@@ -172,7 +162,7 @@ public class FileInboundEndpoint implements InboundEndpoint {
     }
 
     private void processSingleFile(FileObject file) throws Exception {
-        System.out.println("Processing file: " + file.getName().getURI());
+        logger.debug("Processing file: {}", file.getName().getBaseName());
         byte[] content;
         try (InputStream inputStream = file.getContent().getInputStream()) {
             content = inputStream.readAllBytes();
@@ -182,6 +172,8 @@ public class FileInboundEndpoint implements InboundEndpoint {
         String contentType = config.getParameters().getOrDefault("transport.vfs.ContentType", "text/plain");
         Message msg = new Message(content, contentType);
         context.setMessage(msg);
+
+//        Thread.sleep(100);
 
         Map<String, String> headers = Map.of(
                 "FILE_LENGTH", String.valueOf(file.getContent().getSize()),
@@ -202,9 +194,7 @@ public class FileInboundEndpoint implements InboundEndpoint {
         context.setProperties(properties);
 
         mediator.mediateInboundMessage(config.getSequenceName(), context);
-//        System.out.println(context.toString());
 
-//        throw new Exception();
     }
 
     private void handleFileAction(FileObject file, String actionType) {
@@ -215,7 +205,7 @@ public class FileInboundEndpoint implements InboundEndpoint {
             String moveKey = "transport.vfs.MoveAfter" + actionType;
             String movePath = config.getParameters().get(moveKey);
             if (movePath == null || movePath.isEmpty()) {
-                System.err.println("No move path specified for " + actionType);
+                logger.error("No move path specified for {}", actionType);
                 return;
             }
             moveFile(file, movePath);
@@ -235,16 +225,15 @@ public class FileInboundEndpoint implements InboundEndpoint {
 
             if (!destFolder.exists()) {
                 destFolder.createFolder();
-                System.out.println("Created destination folder: " + destFolder.getName().getURI());
+                logger.debug("Created destination folder: {}", destFolder.getName().getURI());
             }
 
             FileObject destFile = destFolder.resolveFile(file.getName().getBaseName());
-            System.out.println("before move: " + destFile.getName().getBaseName());
 
             file.moveTo(destFile);
 //            destFile.copyFrom(file, Selectors.SELECT_SELF);
 //            file.delete();
-            System.out.println("Moved file [" + file.getName().getURI() + "] to [" + destFile.getName().getURI() + "]");
+            logger.debug("Moved file [{}] to [{}]", file.getName().getURI(), destFile.getName().getURI());
 
         } catch (Exception e) {
             System.err.println("File move failed: " + e.getMessage());
@@ -255,9 +244,9 @@ public class FileInboundEndpoint implements InboundEndpoint {
     private void deleteFile(FileObject file) {
         try {
             file.delete();
-            System.out.println("Deleted file: " + file.getName().getURI());
+            logger.debug("Deleted file: {}", file.getName().getURI());
         } catch (Exception e) {
-            System.err.println("File delete failed: " + e.getMessage());
+            logger.error("File delete failed: {}", e.getMessage());
         }
     }
 
@@ -272,7 +261,7 @@ public class FileInboundEndpoint implements InboundEndpoint {
             lockFile.createFile();
             return true;
         } catch (Exception e) {
-            System.err.println("Could not create lock for file [" + file.getName().getURI() + "]: " + e.getMessage());
+            logger.error("Could not create lock for file [{}]: {}", file.getName().getURI(), e.getMessage());
             return false;
         }
     }
@@ -285,13 +274,13 @@ public class FileInboundEndpoint implements InboundEndpoint {
                 lockFile.delete();
             }
         } catch (Exception e) {
-            System.err.println("Could not release lock: " + e.getMessage());
+            logger.error("Could not release lock for file [{}]: {}", file.getName().getURI(), e.getMessage());
         }
     }
 
     private boolean isSequentialProcessing() {
         String seq = config.getParameters().get("sequential");
-        return seq != null && Boolean.parseBoolean(seq);
+        return Boolean.parseBoolean(seq);
     }
 
     int getIntervalParameterValue() {
@@ -319,8 +308,6 @@ public class FileInboundEndpoint implements InboundEndpoint {
 }
 
 //
-
-//
 //package com.synapse.adapters.inbound;
 //
 //import com.synapse.core.domain.InboundConfig;
@@ -329,6 +316,8 @@ public class FileInboundEndpoint implements InboundEndpoint {
 //import com.synapse.core.synctx.Message;
 //import com.synapse.core.synctx.MsgContext;
 //import org.apache.commons.vfs2.*;
+//import org.apache.logging.log4j.LogManager;
+//import org.apache.logging.log4j.Logger;
 //
 //import java.io.InputStream;
 //import java.util.Map;
@@ -339,10 +328,13 @@ public class FileInboundEndpoint implements InboundEndpoint {
 //import java.util.regex.Pattern;
 //
 //public class FileInboundEndpoint implements InboundEndpoint {
+//
+//    private static final Logger logger = LogManager.getLogger(FileInboundEndpoint.class);
+//
 //    private final InboundConfig config;
 //    private final AtomicBoolean isRunning = new AtomicBoolean(false);
 //    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-//    private final ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
+////    private final ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
 //    private final Set<String> processingFiles = ConcurrentHashMap.newKeySet();
 //    private final FileSystemManager fsManager;
 //    private InboundMessageMediator mediator;
@@ -357,6 +349,9 @@ public class FileInboundEndpoint implements InboundEndpoint {
 //        this.mediator = mediator;
 //        isRunning.set(true);
 //
+//        String fileUri = config.getParameters().get("transport.vfs.FileURI");
+//        FileObject folder = fsManager.resolveFile(fileUri);
+//
 //        validateConfig();
 //        int interval = getIntervalParameterValue();
 //        if (interval <= 0) {
@@ -365,50 +360,100 @@ public class FileInboundEndpoint implements InboundEndpoint {
 //
 //        System.out.println("Polling files every " + interval + " milliseconds");
 //
+////        scheduler.scheduleAtFixedRate(() -> {
+////            if (!isRunning.get()) {
+////                return;
+////            }
+////
+////            System.out.println("outside polling thread");
+//////            try {
+//////                virtualExecutor.submit(() -> {
+//////                    try {
+//////                        System.out.println("Polling files");
+//////                        pollFiles();
+//////                    } catch (FileSystemException e) {
+//////                        throw new RuntimeException(e);
+//////                    }
+//////                });
+//////            } catch (Exception e) {
+//////                e.printStackTrace();
+//////            }
+////
+//////            Thread.ofVirtual().start(() -> {
+//////                try {
+//////                    pollFiles();
+//////                    System.out.println("polling files");
+//////                } catch (Exception e) {
+//////                    e.printStackTrace();
+//////                }
+//////            });
+////
+////        }, 0, interval, TimeUnit.MILLISECONDS);
+//
 //        scheduler.scheduleAtFixedRate(() -> {
 //            if (!isRunning.get()) {
+//                System.out.println("isRunning is false");
 //                return;
 //            }
+//
+////            System.out.println("outside polling thread");
+//
 //            try {
-//                virtualExecutor.submit(() -> {
+//                Thread.ofVirtual().start(() -> {
 //                    try {
-//                        System.out.println("Polling files");
-//                        pollFiles();
-//                    } catch (FileSystemException e) {
-//                        throw new RuntimeException(e);
+//
+////                        System.out.println(">>> Submitting pollFiles at " + System.currentTimeMillis());
+//                        logger.info("Submitting pollfiles");
+//                        pollFiles(folder);
+////                        System.out.println(">>> Finished pollFiles at " + System.currentTimeMillis());
+//                        logger.info("Finishing pollfiles");
+//
+//                    } catch (Exception e) {
+////                        System.err.println("Error in pollFiles: " + e.getMessage());
+//                        logger.error("Error in pollFiles: " + e.getMessage());
+//                        e.printStackTrace();
 //                    }
 //                });
 //            } catch (Exception e) {
+//                System.err.println("Error launching virtual thread: " + e.getMessage());
 //                e.printStackTrace();
 //            }
 //        }, 0, interval, TimeUnit.MILLISECONDS);
+//
+//        System.out.println("outside scheduler");
 //    }
 //
 //    @Override
 //    public void stop() throws Exception {
 //        isRunning.set(false);
 //        scheduler.shutdown();
-//        System.out.println("Stopping file inbound endpoint...");
+////        System.out.println("Stopping file inbound endpoint...");
+//        logger.info("Stopping file inbound endpoint...");
 //    }
 //
-//    private void pollFiles() throws FileSystemException {
-//        String fileUri = config.getParameters().get("transport.vfs.FileURI");
-//        FileObject folder = fsManager.resolveFile(fileUri);
-//
+//    private void pollFiles(FileObject folder) throws FileSystemException {
+////        System.out.println("poll");
 //        if (!folder.exists()) {
-//            System.err.println("Invalid folder URI: " + fileUri);
+////            System.err.println("Invalid folder URI: " + fileUri);
+//            logger.error("Invalid folder URI: {}", folder.getPublicURIString());
 //            return;
 //        }
 //
 //        String patternStr = config.getParameters().getOrDefault("transport.vfs.FileNamePattern", ".*.");
 //        Pattern filePattern = Pattern.compile(patternStr);
 //
-//        FileObject[] children = folder.getChildren();
-//        if (children == null || children.length == 0) {
-//            return;
+//        FileObject[] children = null;
+//
+//        if (folder.getType() == FileType.FOLDER) {
+//            children = folder.getChildren();
+//            if (children == null || children.length == 0) {
+//                return;
+//            }
+//
 //        }
 //
 //        boolean isSequential = isSequentialProcessing();
+////        assert children != null;
 //        for (FileObject file : children) {
 //            if (file.getType() == FileType.FILE) {
 //                Matcher matcher = filePattern.matcher(file.getName().getBaseName());
@@ -416,47 +461,47 @@ public class FileInboundEndpoint implements InboundEndpoint {
 //                    if (isSequential) {
 //                        handleFile(file);
 //                    } else {
-//                        virtualExecutor.submit(() -> {
-//                            try {
-//                                handleFile(file);
-//                            } catch (Exception e) {
-//                                System.err.println("Error in virtual thread: " + e.getMessage());
-//                            }
-//                        });
+//                        Thread.ofVirtual().start(() -> handleFile(file));
 //                    }
 //                }
 //            }
 //        }
 //    }
 //
-//
 //    private void handleFile(FileObject file) {
+//
+////        System.out.println("inside handleFile " + file.getName());
 //        String filePath = file.getName().getURI();
 //        if (!processingFiles.add(filePath)) {
-//            System.out.println("Skipping already-processing file: " + filePath);
+////            System.out.println("Skipping already-processing file: " + filePath);
+//            logger.debug("Skipping already-processing file: {}", filePath);
 //            return;
 //        }
-//
 //        try {
 //            if (!tryLockFile(file)) {
-//                System.out.println("File locked, skipping: " + filePath);
+////                System.out.println("File locked, skipping: " + filePath);
+//                logger.debug("File locked, skipping: {}", filePath);
 //                return;
 //            }
 //
 //            processSingleFile(file);
+//
+////            System.out.println("File processed: " + filePath);
+//            logger.debug("File processed: {}", filePath);
 //            handleFileAction(file, "Process");
 //        } catch (Exception e) {
-//            System.err.println("Error processing file [" + filePath + "]: " + e.getMessage());
+////            System.err.println("Error processing file [" + filePath + "]: " + e.getMessage());
+//            logger.error("Error processing file [{}]: {}", filePath, e.getMessage());
 //            handleFileAction(file, "Failure");
 //        } finally {
 //            releaseLockFile(file);
-//            processingFiles.remove(filePath); // Ensuring cleanup
+//            processingFiles.remove(filePath);
 //        }
 //    }
 //
-//
 //    private void processSingleFile(FileObject file) throws Exception {
-//        System.out.println("Processing file: " + file.getName().getURI());
+////        System.out.println("Processing file: " + file.getName().getURI());
+//        logger.debug("Processing file: {}", file.getName().getBaseName());
 //        byte[] content;
 //        try (InputStream inputStream = file.getContent().getInputStream()) {
 //            content = inputStream.readAllBytes();
@@ -466,6 +511,8 @@ public class FileInboundEndpoint implements InboundEndpoint {
 //        String contentType = config.getParameters().getOrDefault("transport.vfs.ContentType", "text/plain");
 //        Message msg = new Message(content, contentType);
 //        context.setMessage(msg);
+//
+////        Thread.sleep(100);
 //
 //        Map<String, String> headers = Map.of(
 //                "FILE_LENGTH", String.valueOf(file.getContent().getSize()),
@@ -499,10 +546,10 @@ public class FileInboundEndpoint implements InboundEndpoint {
 //            String moveKey = "transport.vfs.MoveAfter" + actionType;
 //            String movePath = config.getParameters().get(moveKey);
 //            if (movePath == null || movePath.isEmpty()) {
-//                System.err.println("No move path specified for " + actionType);
+////                System.err.println("No move path specified for " + actionType);
+//                logger.error("No move path specified for {}", actionType);
 //                return;
 //            }
-//            System.out.println("hi");
 //            moveFile(file, movePath);
 //        } else {
 //            deleteFile(file);
@@ -520,13 +567,18 @@ public class FileInboundEndpoint implements InboundEndpoint {
 //
 //            if (!destFolder.exists()) {
 //                destFolder.createFolder();
-//                System.out.println("Created destination folder: " + destFolder.getName().getURI());
+////                System.out.println("Created destination folder: " + destFolder.getName().getURI());
+//                logger.debug("Created destination folder: {}", destFolder.getName().getURI());
 //            }
 //
 //            FileObject destFile = destFolder.resolveFile(file.getName().getBaseName());
+////            System.out.println("before move: " + destFile.getName().getBaseName());
+//
 //            file.moveTo(destFile);
-//            System.out.println("Moved file [" + file.getName().getURI() + "] to [" + destFile.getName().getURI() + "]");
-////            Thread.sleep(10000);
+////            destFile.copyFrom(file, Selectors.SELECT_SELF);
+////            file.delete();
+////            System.out.println("Moved file [" + file.getName().getURI() + "] to [" + destFile.getName().getURI() + "]");
+//            logger.debug("Moved file [{}] to [{}]", file.getName().getURI(), destFile.getName().getURI());
 //
 //        } catch (Exception e) {
 //            System.err.println("File move failed: " + e.getMessage());
@@ -536,9 +588,11 @@ public class FileInboundEndpoint implements InboundEndpoint {
 //    private void deleteFile(FileObject file) {
 //        try {
 //            file.delete();
-//            System.out.println("Deleted file: " + file.getName().getURI());
+////            System.out.println("Deleted file: " + file.getName().getURI());
+//            logger.debug("Deleted file: {}", file.getName().getURI());
 //        } catch (Exception e) {
-//            System.err.println("File delete failed: " + e.getMessage());
+////            System.err.println("File delete failed: " + e.getMessage());
+//            logger.error("File delete failed: {}", e.getMessage());
 //        }
 //    }
 //
@@ -553,7 +607,8 @@ public class FileInboundEndpoint implements InboundEndpoint {
 //            lockFile.createFile();
 //            return true;
 //        } catch (Exception e) {
-//            System.err.println("Could not create lock for file [" + file.getName().getURI() + "]: " + e.getMessage());
+////            System.err.println("Could not create lock for file [" + file.getName().getURI() + "]: " + e.getMessage());
+//            logger.error("Could not create lock for file [{}]: {}", file.getName().getURI(), e.getMessage());
 //            return false;
 //        }
 //    }
@@ -566,13 +621,14 @@ public class FileInboundEndpoint implements InboundEndpoint {
 //                lockFile.delete();
 //            }
 //        } catch (Exception e) {
-//            System.err.println("Could not release lock: " + e.getMessage());
+////            System.err.println("Could not release lock: " + e.getMessage());
+//            logger.error("Could not release lock for file [{}]: {}", file.getName().getURI(), e.getMessage());
 //        }
 //    }
 //
 //    private boolean isSequentialProcessing() {
 //        String seq = config.getParameters().get("sequential");
-//        return seq != null && Boolean.parseBoolean(seq);
+//        return Boolean.parseBoolean(seq);
 //    }
 //
 //    int getIntervalParameterValue() {
@@ -598,4 +654,3 @@ public class FileInboundEndpoint implements InboundEndpoint {
 //        }
 //    }
 //}
-//

@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) 2025, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ * WSO2 Inc. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+
 package com.synapse.core.deployers;
 
 import com.synapse.adapters.inbound.InboundFactory;
@@ -11,6 +30,8 @@ import com.synapse.core.domain.InboundConfig;
 import com.synapse.core.ports.InboundEndpoint;
 import com.synapse.core.ports.InboundMessageMediator;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.IOException;
@@ -23,6 +44,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Deployer {
+
+    private static final Logger log = LogManager.getLogger(Deployer.class);
 
     private final ConfigContext ctx;
     private final Path basePath;
@@ -38,7 +61,7 @@ public class Deployer {
 
         File baseDir = basePath.toFile();
         if (!baseDir.exists() || !baseDir.isDirectory()) {
-            System.err.println("Base path does not exist or is not a directory: " + basePath);
+            log.error("Base path does not exist or is not a directory: {}", basePath);
             return;
         }
 
@@ -54,7 +77,7 @@ public class Deployer {
 
             File[] files = folder.listFiles((dir, name) -> name.endsWith(".xml"));
             if (files == null || files.length == 0) {
-                System.out.println("No XML files found in: " + folder);
+                log.info("No XML files found in: {}", folder);
                 continue;
             }
 
@@ -73,9 +96,9 @@ public class Deployer {
                             break;
                     }
                 } catch (IOException e) {
-                    System.err.println("Error reading file: " + file.getAbsolutePath() + " - " + e.getMessage());
+                    log.error("Error reading file: {} - {}", file.getAbsolutePath(), e.getMessage());
                 } catch (Exception e) {
-                    System.err.println("XML error while processing file: " + file.getAbsolutePath() + " - " + e.getMessage());
+                    log.error("XML error while processing file: {} - {}", file.getAbsolutePath(), e.getMessage());
                 }
             }
         }
@@ -88,7 +111,7 @@ public class Deployer {
         InboundDeployer inboundDeployer = new InboundDeployer();
         Inbound newInbound = inboundDeployer.unmarshal(xmlData, position);
         ctx.addInbound(newInbound);
-        System.out.println("Inbound deployed: " + newInbound.getName());
+        log.info("Inbound deployed: {}", newInbound.getName());
 
         Map<String, String> parametersMap = new HashMap<>();
             for (Parameter param : newInbound.getParameters()) {
@@ -127,7 +150,7 @@ public class Deployer {
         try {
             inboundEndpoint.start(inboundMediator);
         } catch (Exception e) {
-            System.err.println("Error starting inbound endpoint: " + e.getMessage());
+            log.error("Error starting inbound endpoint: {}", e.getMessage());
         }
 
     }
@@ -139,7 +162,7 @@ public class Deployer {
         SequenceDeployer sequenceDeployer = new SequenceDeployer();
         Sequence newSequence = sequenceDeployer.unmarshal(xmlData, position);
         ctx.addSequence(newSequence);
-        System.out.println("Sequence deployed: " + newSequence.getName());
+        log.info("Sequence deployed: {}", newSequence.getName());
     }
 
     public void deployAPIs(String fileName, String xmlData) throws XMLStreamException {
@@ -149,7 +172,6 @@ public class Deployer {
         APIDeployer apiDeployer = new APIDeployer();
         API newApi = apiDeployer.unmarshal(xmlData, position);
         ctx.addAPI(newApi);
-        System.out.println("API deployed: " + newApi.getName());
+        log.info("API deployed: {}", newApi.getName());
     }
 }
-

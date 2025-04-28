@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <inboundEndpoint xmlns="http://ws.apache.org/ns/synapse"
                  name="file" sequence="inboundSeq"
                  onError="fault"
                  protocol="file"
                  suspend="false">
     <parameters>
-        <parameter name="interval">5000</parameter>
+        <parameter name="interval">10000</parameter>
         <parameter name="sequential">false</parameter>
         <parameter name="coordination">true</parameter>
         <parameter name="transport.vfs.ActionAfterProcess">MOVE</parameter>
-        <parameter name="transport.vfs.MoveAfterProcess">sftp://sftpuser:1234Hello@127.0.0.1:22/remote/path/out</parameter>
-        <parameter name="transport.vfs.FileURI">sftp://sftpuser:1234Hello@127.0.0.1:22/remote/path/in</parameter>
-        <parameter name="transport.vfs.MoveAfterFailure">sftp://sftpuser:1234Hello@127.0.0.1:22/remote/path/failed</parameter>
-            <parameter name="transport.vfs.FileNamePattern">.*\.xml</parameter>
+        <parameter name="transport.vfs.MoveAfterProcess">file:///home/aathif/test/out</parameter>
+        <parameter name="transport.vfs.FileURI">file:///home/aathif/test/in/</parameter>
+        <parameter name="transport.vfs.MoveAfterFailure">file:///home/aathif/test/failed</parameter>
+        <parameter name="transport.vfs.FileNamePattern">.*\.xml</parameter>
         <parameter name="transport.vfs.ContentType">text/xml</parameter>
         <parameter name="transport.vfs.ActionAfterFailure">MOVE</parameter>
     </parameters>
@@ -28,15 +29,14 @@
 <!--        <parameter name="sequential">false</parameter>-->
 <!--        <parameter name="coordination">true</parameter>-->
 <!--        <parameter name="transport.vfs.ActionAfterProcess">MOVE</parameter>-->
-<!--        <parameter name="transport.vfs.MoveAfterProcess">ftp://ftpuser:1234Hello@127.0.0.1:21/remote/path/out</parameter>-->
-<!--        <parameter name="transport.vfs.FileURI">ftp://ftpuser:1234Hello@127.0.0.1:21/remote/path/in</parameter>-->
-<!--        <parameter name="transport.vfs.MoveAfterFailure">ftp://ftpuser:1234Hello@127.0.0.1:21/remote/path/failed</parameter>-->
-<!--        <parameter name="transport.vfs.FileNamePattern">.*\.xml</parameter>-->
+<!--        <parameter name="transport.vfs.MoveAfterProcess">sftp://sftpuser:1234Hello@127.0.0.1:22/remote/path/out</parameter>-->
+<!--        <parameter name="transport.vfs.FileURI">sftp://sftpuser:1234Hello@127.0.0.1:22/remote/path/in</parameter>-->
+<!--        <parameter name="transport.vfs.MoveAfterFailure">sftp://sftpuser:1234Hello@127.0.0.1:22/remote/path/failed</parameter>-->
+<!--            <parameter name="transport.vfs.FileNamePattern">.*\.xml</parameter>-->
 <!--        <parameter name="transport.vfs.ContentType">text/xml</parameter>-->
 <!--        <parameter name="transport.vfs.ActionAfterFailure">MOVE</parameter>-->
 <!--    </parameters>-->
 <!--</inboundEndpoint>-->
-
 
 <!--<inboundEndpoint xmlns="http://ws.apache.org/ns/synapse"-->
 <!--                 name="file" sequence="inboundSeq"-->
@@ -48,9 +48,9 @@
 <!--        <parameter name="sequential">false</parameter>-->
 <!--        <parameter name="coordination">true</parameter>-->
 <!--        <parameter name="transport.vfs.ActionAfterProcess">MOVE</parameter>-->
-<!--        <parameter name="transport.vfs.MoveAfterProcess">file:///home/aathif/test/out</parameter>-->
-<!--        <parameter name="transport.vfs.FileURI">file:///home/aathif/test/in/</parameter>-->
-<!--        <parameter name="transport.vfs.MoveAfterFailure">file:///home/aathif/test/failed</parameter>-->
+<!--        <parameter name="transport.vfs.MoveAfterProcess">ftp://ftpuser:1234Hello@127.0.0.1:21/remote/path/out</parameter>-->
+<!--        <parameter name="transport.vfs.FileURI">ftp://ftpuser:1234Hello@127.0.0.1:21/remote/path/in/</parameter>-->
+<!--        <parameter name="transport.vfs.MoveAfterFailure">ftp://ftpuser:1234Hello@127.0.0.1:21/remote/path/failed</parameter>-->
 <!--        <parameter name="transport.vfs.FileNamePattern">.*\.xml</parameter>-->
 <!--        <parameter name="transport.vfs.ContentType">text/xml</parameter>-->
 <!--        <parameter name="transport.vfs.ActionAfterFailure">MOVE</parameter>-->

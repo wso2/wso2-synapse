@@ -11,6 +11,8 @@ public class InboundFactory {
         switch (config.getProtocol()) {
             case "file":
                 return new FileInboundEndpoint(config);
+            case "http":
+                return new HttpInboundEndpoint(config);
             default:
                 throw new Exception(ERR_INBOUND_TYPE_NOT_FOUND);
         }

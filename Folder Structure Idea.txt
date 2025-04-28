@@ -1,0 +1,53 @@
+.synapse-java/
+│── **bin/** (Generated binaries after build)
+│── **config/** (XML configuration files)
+│   ├── inbounds/
+│   │   ├── fileInbound.xml
+│   ├── sequences/
+│   │   ├── inboundSeq.xml
+│── **src/**
+│   ├── **main/**
+│   │   ├── **java/**
+│   │   │   ├── **com.synapse.adapter.inbound/**  → Adapters for inbound processing
+│   │   │   │   ├── FileInbound.java
+│   │   │   │   ├── InboundFactory.java
+│   │   │   ├── **com.synapse.adapter.mediation/**  → Mediation adapters
+│   │   │   │   ├── MediationEngine.java
+│   │   │   ├── **com.synapse.core.domain/**  → Domain layer (core business models)
+│   │   │   │   ├── InboundConfig.java
+│   │   │   ├── **com.synapse.core.ports/**  → Ports (Interfaces)
+│   │   │   │   ├── InboundPort.java
+│   │   │   │   ├── MediationPort.java
+│   │   │   ├── **com.synapse.core.services/**  → Business logic
+│   │   │   │   ├── InboundService.java
+│   │   │   │   ├── MediationService.java
+│   │   │   ├── **com.synapse.core.artifacts/**  → Artifact-related models
+│   │   │   │   ├── API.java
+│   │   │   │   ├── Endpoint.java
+│   │   │   │   ├── Inbound.java
+│   │   │   │   ├── LogMediator.java
+│   │   │   │   ├── Mediator.java
+│   │   │   │   ├── Sequence.java
+│   │   │   ├── **com.synapse.core.deployers/**  → Deployment logic
+│   │   │   │   ├── Deployer.java
+│   │   │   │   ├── ApiDeployer.java
+│   │   │   │   ├── InboundDeployer.java
+│   │   │   │   ├── SequenceDeployer.java
+│   │   │   ├── **com.synapse.context/**  → Message context handling
+│   │   │   │   ├── MessageContext.java
+│   │   │   │   ├── Message.java
+│   │   │   ├── **com.synapse.synapse/**  → Main entry point
+│   │   │   │   ├── SynapseApplication.java
+│   │   │   │   ├── SynapseRunner.java
+│   │   │   ├── **com.synapse.util/**  → Utilities
+│   │   │   │   ├── XMLParser.java
+│   │   ├── **resources/**
+│   │   │   ├── log4j.properties (For logging)
+│   ├── **test/** (JUnit tests)
+│   │   ├── **java/com/synapse/core/**
+│   │   │   ├── InboundServiceTest.java
+│   │   │   ├── MediationServiceTest.java
+│   │   │   ├── LogMediatorTest.java
+│── **pom.xml** (Maven dependencies)
+│── **README.md** (Project documentation)
+│── **LICENSE.md**
