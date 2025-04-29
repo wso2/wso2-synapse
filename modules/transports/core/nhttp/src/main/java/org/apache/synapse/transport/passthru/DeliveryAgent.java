@@ -26,7 +26,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHost;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.nio.NHttpClientConnection;
-import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.transport.http.conn.LoggingNHttpServerConnection;
@@ -151,6 +150,9 @@ public class DeliveryAgent {
                 route = new HttpRoute(target, null, secure);
             }
 
+            String requestID = (String) msgContext.getProperty("request.identifier");
+            RouteRequestMapping routeRequestMapping = new RouteRequestMapping(route, requestID);
+
             // first we queue the message
             Queue<MessageContext> queue = null;
             NHttpClientConnection conn = null;
@@ -174,7 +176,7 @@ public class DeliveryAgent {
                 }
 
                 queue.add(msgContext);
-                conn = targetConnections.getConnection(route, msgContext, targetErrorHandler, queue);
+                conn = targetConnections.getConnection(routeRequestMapping, msgContext, targetErrorHandler, queue);
                 if (conn == null && msgContext != null && "true".equalsIgnoreCase(
                         (String) msgContext.getProperty(PassThroughConstants.CONNECTION_LIMIT_EXCEEDS))) {
                     msgContext.removeProperty(PassThroughConstants.CONNECTION_LIMIT_EXCEEDS);
@@ -239,11 +241,12 @@ public class DeliveryAgent {
      * @param host name of the remote host
      * @param port remote port number
      */
-    public void connected(HttpRoute route, NHttpClientConnection conn) {
+    public void connected(RouteRequestMapping routeRequestMapping, NHttpClientConnection conn) {
         if (log.isDebugEnabled()) {
             log.debug("Connection established conn: " + conn.toString());
         }
         Queue<MessageContext> queue = null;
+        HttpRoute route = routeRequestMapping.getRoute();
         lock.lock();
         try {
             queue = waitingMessages.get(route);
@@ -253,7 +256,7 @@ public class DeliveryAgent {
 
         while (queue.size() > 0) {
             if(conn == null) {
-                conn = targetConnections.getExistingConnection(route);
+                conn = targetConnections.getExistingConnection(routeRequestMapping);
             }
             if (conn != null) {
                 MessageContext messageContext = queue.poll();

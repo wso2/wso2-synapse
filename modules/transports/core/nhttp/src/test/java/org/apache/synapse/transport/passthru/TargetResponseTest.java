@@ -134,7 +134,7 @@ public class TargetResponseTest extends TestCase {
         WorkerPool workerPool = new NativeWorkerPool(3, 4, 5, 5, "name", "id");
         PassThroughTransportMetricsCollector metrics = new PassThroughTransportMetricsCollector(true, "testScheme");
 
-        HostConnections pool = new HostConnections(new HttpRoute(new HttpHost("localhost")), 1024);
+        HostConnections pool = new HostConnections(new RouteRequestMapping(new HttpRoute(new HttpHost("localhost")), ""), 1024);
         HttpContext context = PowerMockito.mock(HttpContext.class);
         context.setAttribute("CONNECTION_POOL", pool);
 

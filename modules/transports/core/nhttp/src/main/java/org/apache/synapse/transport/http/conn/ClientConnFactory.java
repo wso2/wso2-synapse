@@ -58,26 +58,26 @@ public class ClientConnFactory {
     private final HttpResponseFactory responseFactory;
     private final ByteBufferAllocator allocator;
     private final SSLContextDetails ssl;
-    private final ConcurrentMap<String, SSLContext> sslByHostMap;
+    private final ConcurrentMap<RequestDescriptor, SSLContext> sslByHostMap;
     private final HttpParams params;
     private static final String ALL_HOSTS = "*";
     public ClientConnFactory(
             final HttpResponseFactory responseFactory,
             final ByteBufferAllocator allocator,
             final SSLContextDetails ssl,
-            final Map<String, SSLContext> sslByHostMap,
+            final Map<RequestDescriptor, SSLContext> sslByHostMap,
             final HttpParams params) {
         super();
         this.responseFactory = responseFactory != null ? responseFactory : new DefaultHttpResponseFactory();
         this.allocator = allocator != null ? allocator : new HeapByteBufferAllocator();
         this.ssl = ssl;
-        this.sslByHostMap = sslByHostMap != null ? new ConcurrentHashMap<String, SSLContext>(sslByHostMap) : null;
+        this.sslByHostMap = sslByHostMap != null ? new ConcurrentHashMap<RequestDescriptor, SSLContext>(sslByHostMap) : null;
         this.params = params != null ? params : new BasicHttpParams();
     }
 
     public ClientConnFactory(
             final SSLContextDetails ssl,
-            final Map<String, SSLContext> sslByHostMap,
+            final Map<RequestDescriptor, SSLContext> sslByHostMap,
             final HttpParams params) {
         this(null, null, ssl, sslByHostMap, params);
     }
@@ -87,7 +87,7 @@ public class ClientConnFactory {
         this(null, null, null, null, params);
     }
     
-    private SSLContext getSSLContext(final IOSession iosession) {
+    private SSLContext getSSLContext(final IOSession iosession, String requestID) {
         InetSocketAddress address = (InetSocketAddress) iosession.getRemoteAddress();
         SSLContext customContext = null;
         if (sslByHostMap != null) {
@@ -128,10 +128,10 @@ public class ClientConnFactory {
 
 
     public DefaultNHttpClientConnection createConnection(
-               final IOSession iosession, final HttpRoute route) {
+               final IOSession iosession, final HttpRoute route, String requestID) {
         IOSession customSession;
         if (ssl != null && route.isSecure() && !route.isTunnelled()) {
-            SSLContext customContext = getSSLContext(iosession);
+            SSLContext customContext = getSSLContext(iosession, requestID);
             SSLIOSession ssliosession = createClientModeSSLsession(iosession, customContext);
             iosession.setAttribute(SSLIOSession.SESSION_KEY, ssliosession);
             customSession = ssliosession;
@@ -149,7 +149,7 @@ public class ClientConnFactory {
         if (ssl != null) {
             IOSession iosession = conn.getIOSession();
             if (!(iosession instanceof SSLIOSession)) {
-                SSLContext customContext = getSSLContext(iosession);
+                SSLContext customContext = getSSLContext(iosession, "");
                 SSLIOSession ssliosession = createClientModeSSLsession(iosession, customContext);
                 iosession.setAttribute(SSLIOSession.SESSION_KEY, ssliosession);
                 conn.bind(ssliosession);
@@ -175,7 +175,7 @@ public class ClientConnFactory {
      *
      * @return String Set
      */
-    public Set<String> getHostList() {
+    public Set<RequestDescriptor> getHostList() {
         return sslByHostMap.keySet();
 
     }

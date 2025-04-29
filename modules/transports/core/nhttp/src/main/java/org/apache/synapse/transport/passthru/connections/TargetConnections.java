@@ -23,8 +23,8 @@ import org.apache.http.HttpHost;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.nio.reactor.ConnectingIOReactor;
-import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.commons.logger.ContextAwareLogger;
+import org.apache.synapse.transport.http.conn.RequestDescriptor;
 import org.apache.synapse.transport.passthru.ConnectCallback;
 import org.apache.synapse.transport.passthru.ErrorCodes;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
@@ -34,6 +34,7 @@ import org.apache.synapse.transport.passthru.TargetErrorHandler;
 import org.apache.synapse.transport.passthru.config.ConnectionTimeoutConfiguration;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
+import org.apache.synapse.transport.passthru.RouteRequestMapping;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -51,8 +52,8 @@ public class TargetConnections {
     private static final Log transportLatencyLog = LogFactory.getLog(PassThroughConstants.TRANSPORT_LATENCY_LOGGER);
 
     /** map to hold the ConnectionPools. The key is host:port */
-    private final Map<HttpRoute, HostConnections> poolMap =
-            new ConcurrentHashMap<HttpRoute, HostConnections>();
+    private final Map<RouteRequestMapping, HostConnections> poolMap =
+            new ConcurrentHashMap<RouteRequestMapping, HostConnections>();
 
     private final String sslSchemaName = "https";
 
@@ -94,17 +95,19 @@ public class TargetConnections {
      * this method will try to connect asynchronously. If the connection is successful it will
      * be notified in a separate thread.
      *
-     * @param route Http route
+     * @param routeRequestMapping Http Request route
      * @return Either returns a connection if already available or returns null and notifies
      *         the delivery agent when the connection is available
      */
-    public NHttpClientConnection getConnection(HttpRoute route, MessageContext msgContext,
+    public NHttpClientConnection getConnection(RouteRequestMapping routeRequestMapping, MessageContext msgContext,
                                                TargetErrorHandler targetErrorHandler, Queue<MessageContext> queue) {
+
+        HttpRoute route = routeRequestMapping.getRoute();
         if (log.isDebugEnabled()) {
             log.debug("Trying to get a connection " + route);
         }
 
-        HostConnections pool = getConnectionPool(route);
+        HostConnections pool = getConnectionPool(routeRequestMapping);
 
         // trying to get an existing connection
         NHttpClientConnection connection = pool.getConnection();
@@ -143,12 +146,12 @@ public class TargetConnections {
         return null;
     }
 
-    public NHttpClientConnection getExistingConnection(HttpRoute route) {
+    public NHttpClientConnection getExistingConnection(RouteRequestMapping routeRequestMapping) {
         if (log.isDebugEnabled()) {
-            log.debug("Trying to get a existing connection connection " + route);
+            log.debug("Trying to get a existing connection connection " + routeRequestMapping);
         }
 
-        HostConnections pool = getConnectionPool(route);
+        HostConnections pool = getConnectionPool(routeRequestMapping);
         return pool.getConnection();
 
     }
@@ -258,14 +261,14 @@ public class TargetConnections {
         }
     }
 
-    private HostConnections getConnectionPool(HttpRoute route) {
+    private HostConnections getConnectionPool(RouteRequestMapping routeRequestMapping) {
         // see weather a pool already exists for this host:port
         synchronized (poolMap) {
-            HostConnections pool = poolMap.get(route);
+            HostConnections pool = poolMap.get(routeRequestMapping);
 
             if (pool == null) {
-                pool = new HostConnections(route, maxConnections, connectionTimeoutConfiguration);
-                poolMap.put(route, pool);
+                pool = new HostConnections(routeRequestMapping, maxConnections, connectionTimeoutConfiguration);
+                poolMap.put(routeRequestMapping, pool);
             }
             return pool;
 
@@ -278,13 +281,15 @@ public class TargetConnections {
      *
      * @param hostList Set of String which contains entries in hots:port format
      */
-    public void resetConnectionPool(Set<String> hostList) {
+    public void resetConnectionPool(Set<RequestDescriptor> hostList) {
 
-        for (String host : hostList) {
+        for (RequestDescriptor request : hostList) {
+            String host = request.getUrl();
             String[] params = host.split(":");
 
-            for (Map.Entry<HttpRoute, HostConnections> connectionsEntry : poolMap.entrySet()) {
-                HttpRoute httpRoute = connectionsEntry.getKey();
+            for (Map.Entry<RouteRequestMapping, HostConnections> connectionsEntry : poolMap.entrySet()) {
+                RouteRequestMapping routeRequestMapping = connectionsEntry.getKey();
+                HttpRoute httpRoute = routeRequestMapping.getRoute();
 
                 if (params.length > 1 && params[0].equalsIgnoreCase(httpRoute.getTargetHost().getHostName())
                     && (Integer.valueOf(params[1]) == (httpRoute.getTargetHost().getPort())) &&

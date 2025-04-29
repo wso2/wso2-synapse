@@ -54,7 +54,7 @@ class ClientIODispatch extends AbstractIODispatch<DefaultNHttpClientConnection> 
     protected DefaultNHttpClientConnection createConnection(final IOSession session) {
         Axis2HttpRequest axis2Req = (Axis2HttpRequest) session.getAttribute(IOSession.ATTACHMENT_KEY);
         HttpRoute route = axis2Req.getRoute();
-        return this.connFactory.createConnection(session, route);
+        return this.connFactory.createConnection(session, route, "");
     }
 
     @Override

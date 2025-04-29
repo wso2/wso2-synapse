@@ -35,6 +35,7 @@ import org.apache.synapse.transport.certificatevalidation.CertificateVerificatio
 import org.apache.synapse.transport.exceptions.InvalidConfigurationException;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ClientSSLSetupHandler;
+import org.apache.synapse.transport.http.conn.RequestDescriptor;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.nhttp.NoValidateCertTrustManager;
@@ -70,7 +71,7 @@ public class ClientConnFactoryBuilder {
     private final String name;
 
     private SSLContextDetails ssl = null;
-    private Map<String, SSLContext> sslByHostMap = null;
+    private Map<RequestDescriptor, SSLContext> sslByHostMap = null;
     private  ConfigurationContext configurationContext;
 
     public ClientConnFactoryBuilder(final TransportOutDescription transportOut, ConfigurationContext configurationContext) {
@@ -221,7 +222,7 @@ public class ClientConnFactoryBuilder {
      * @return a map of server addresses and SSL contexts
      * @throws AxisFault if at least on SSL profile is not properly configured
      */
-    private Map<String, SSLContext> getCustomSSLContexts(TransportOutDescription transportOut)
+    private Map<RequestDescriptor, SSLContext> getCustomSSLContexts(TransportOutDescription transportOut)
             throws AxisFault {
 
         TransportOutDescription customSSLProfileTransport = loadDynamicSSLConfig(transportOut);
@@ -239,7 +240,7 @@ public class ClientConnFactoryBuilder {
         Utils.resolveOMElementChildValues(customProfilesElt);
         SecretResolver secretResolver = SecretResolverFactory.create(customProfilesElt, true);
         Iterator<?> profiles = customProfilesElt.getChildrenWithName(new QName("profile"));
-        Map<String, SSLContext> contextMap = new HashMap<String, SSLContext>();
+        Map<RequestDescriptor, SSLContext> contextMap = new HashMap<RequestDescriptor, SSLContext>();
 
         while (profiles.hasNext()) {
             OMElement profile = (OMElement) profiles.next();
@@ -255,30 +256,69 @@ public class ClientConnFactoryBuilder {
             if (log.isDebugEnabled()) {
                 log.debug("Servers list of the custom SSL profile : " + Arrays.toString(servers));
             }
-            OMElement ksElt = profile.getFirstChildWithName(new QName("KeyStore"));
-            OMElement trElt = profile.getFirstChildWithName(new QName("TrustStore"));
-            String noValCert = profile.getAttributeValue(new QName("novalidatecert"));
-            boolean novalidatecert = "true".equals(noValCert);
-
-            SSLContext sslContext = null;
-            try {
-                sslContext = createSSLContext(ksElt, trElt, novalidatecert, secretResolver);
-            } catch (AxisFault axisFault) {
-                String err = "Error occurred while creating SSL context for the servers " + serversElt.getText();
-                // This runtime exception stop the server startup But it will not affect for dynamic change
-                throw new InvalidConfigurationException(err, axisFault);
-            }
-            for (String server : servers) {
-                server = server.trim();
-                if (!contextMap.containsKey(server)) {
-                    contextMap.put(server, sslContext);
-                    if (log.isDebugEnabled()) {
-                        log.debug("Update the SSL context map for the server: " + server);
+            Iterator<?> requests = profile.getChildrenWithName(new QName("request"));
+            if (requests.hasNext()) {
+                while (requests.hasNext()) {
+                    OMElement request = (OMElement) requests.next();
+                    OMElement ksElt = request.getFirstChildWithName(new QName("KeyStore"));
+                    OMElement trElt = request.getFirstChildWithName(new QName("TrustStore"));
+                    String noValCert = request.getAttributeValue(new QName("novalidatecert"));
+                    String requestID = "";
+                    if (request.getFirstChildWithName(new QName("requestID")) != null) {
+                        requestID = request.getFirstChildWithName(new QName("requestID")).getText();
                     }
-                } else {
-                    if (log.isWarnEnabled()) {
-                        log.warn(name + " Multiple SSL profiles were found for the server : " +
-                                server + ". Ignoring the excessive profiles.");
+                    boolean novalidatecert = "true".equals(noValCert);
+
+                    SSLContext sslContext = null;
+                    try {
+                        sslContext = createSSLContext(ksElt, trElt, novalidatecert, secretResolver);
+                    } catch (AxisFault axisFault) {
+                        String err = "Error occurred while creating SSL context for the servers " + serversElt.getText();
+                        // This runtime exception stop the server startup But it will not affect for dynamic change
+                        throw new InvalidConfigurationException(err, axisFault);
+                    }
+                    for (String server : servers) {
+                        server = server.trim();
+                        if (!contextMap.containsKey(server)) {
+                            contextMap.put(new RequestDescriptor(server, requestID), sslContext);
+                            if (log.isDebugEnabled()) {
+                                log.debug("Update the SSL context map for the server: " + server);
+                            }
+                        } else {
+                            if (log.isWarnEnabled()) {
+                                log.warn(name + " Multiple SSL profiles were found for the server : " +
+                                        server + ". Ignoring the excessive profiles.");
+                            }
+                        }
+                    }
+
+                }
+            } else {
+                OMElement ksElt = profile.getFirstChildWithName(new QName("KeyStore"));
+                OMElement trElt = profile.getFirstChildWithName(new QName("TrustStore"));
+                String noValCert = profile.getAttributeValue(new QName("novalidatecert"));
+                boolean novalidatecert = "true".equals(noValCert);
+
+                SSLContext sslContext = null;
+                try {
+                    sslContext = createSSLContext(ksElt, trElt, novalidatecert, secretResolver);
+                } catch (AxisFault axisFault) {
+                    String err = "Error occurred while creating SSL context for the servers " + serversElt.getText();
+                    // This runtime exception stop the server startup But it will not affect for dynamic change
+                    throw new InvalidConfigurationException(err, axisFault);
+                }
+                for (String server : servers) {
+                    server = server.trim();
+                    if (!contextMap.containsKey(server)) {
+                        contextMap.put(new RequestDescriptor(server, ""), sslContext);
+                        if (log.isDebugEnabled()) {
+                            log.debug("Update the SSL context map for the server: " + server);
+                        }
+                    } else {
+                        if (log.isWarnEnabled()) {
+                            log.warn(name + " Multiple SSL profiles were found for the server : " +
+                                    server + ". Ignoring the excessive profiles.");
+                        }
                     }
                 }
             }
@@ -562,7 +602,7 @@ public class ClientConnFactoryBuilder {
         return null;
     }
 
-    public Map<String, SSLContext> getSslByHostMap() {
+    public Map<RequestDescriptor, SSLContext> getSslByHostMap() {
         return sslByHostMap;
     }
 

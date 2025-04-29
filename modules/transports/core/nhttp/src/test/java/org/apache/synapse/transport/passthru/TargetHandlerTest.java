@@ -16,7 +16,6 @@
 
 package org.apache.synapse.transport.passthru;
 
-import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.MessageContext;
@@ -83,7 +82,7 @@ public class TargetHandlerTest extends TestCase {
     @Test
     public void testOutputReady() throws Exception {
         DeliveryAgent deliveryAgent = mock(DeliveryAgent.class);
-        HostConnections pool = new HostConnections(new HttpRoute(new HttpHost("localhost")), 1024);
+        HostConnections pool = new HostConnections(new RouteRequestMapping(new HttpRoute(new HttpHost("localhost")), ""), 1024);
         HttpContext context = mock(HttpContext.class);
         context.setAttribute("CONNECTION_POOL", pool);
         ClientConnFactory connFactory = mock(ClientConnFactory.class);
@@ -120,7 +119,7 @@ public class TargetHandlerTest extends TestCase {
     public void testInputReady() throws Exception {
         DeliveryAgent deliveryAgent = mock(DeliveryAgent.class);
         ClientConnFactory connFactory = mock(ClientConnFactory.class);
-        HostConnections pool = new HostConnections(new HttpRoute(new HttpHost("localhost")), 1024);
+        HostConnections pool = new HostConnections(new RouteRequestMapping(new HttpRoute(new HttpHost("localhost")), ""), 1024);
         HttpContext context = mock(HttpContext.class);
         context.setAttribute("CONNECTION_POOL", pool);
         ConfigurationContext configurationContext = new ConfigurationContext(new AxisConfiguration());

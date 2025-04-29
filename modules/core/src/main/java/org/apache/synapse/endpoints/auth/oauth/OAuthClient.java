@@ -64,6 +64,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.ProxyConfigs;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
+import org.apache.synapse.transport.http.conn.RequestDescriptor;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.nhttp.config.ClientConnFactoryBuilder;
 import org.apache.synapse.transport.nhttp.util.SecureVaultValueReader;
@@ -450,15 +451,16 @@ public class OAuthClient {
         return builder.build();
     }
 
-    private static SSLContext getSSLContextWithUrl(String urlPath, Map<String, SSLContext> sslByHostMap,
+    private static SSLContext getSSLContextWithUrl(String urlPath, Map<RequestDescriptor, SSLContext> sslByHostMap,
                                                    SSLContextDetails ssl) throws AuthException {
         try {
             URL url = new URL(urlPath);
             SSLContext customContext = null;
             if (sslByHostMap != null) {
                 String host = url.getHost() + ":" + url.getPort();
+                RequestDescriptor request = new RequestDescriptor(host, "");
                 // See if there's a custom SSL profile configured for this server
-                customContext = sslByHostMap.get(host);
+                customContext = sslByHostMap.get(request);
                 if (customContext == null) {
                     customContext = sslByHostMap.get(ALL_HOSTS);
                 }

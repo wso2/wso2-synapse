@@ -54,8 +54,10 @@ class ClientIODispatch extends AbstractIODispatch<DefaultNHttpClientConnection> 
     @Override
     protected DefaultNHttpClientConnection createConnection(final IOSession session) {
         HostConnections hostConnections = (HostConnections) session.getAttribute(IOSession.ATTACHMENT_KEY);
-        HttpRoute route = hostConnections.getRoute();
-        return this.connFactory.createConnection(session, route);
+        RouteRequestMapping routeRequestMapping = hostConnections.getRouteRequestMapping();
+        HttpRoute route = routeRequestMapping.getRoute();
+        String requestId = routeRequestMapping.getIdentifier();
+        return this.connFactory.createConnection(session, route, requestId);
     }
 
     @Override

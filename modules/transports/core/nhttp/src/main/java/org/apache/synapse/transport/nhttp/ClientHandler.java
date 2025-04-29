@@ -79,6 +79,7 @@ import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ProxyAuthenticator;
 import org.apache.synapse.transport.http.conn.ProxyTunnelHandler;
+import org.apache.synapse.transport.http.conn.RequestDescriptor;
 import org.apache.synapse.transport.nhttp.debug.ClientConnectionDebug;
 import org.apache.synapse.transport.nhttp.util.NhttpMetricsCollector;
 
@@ -1445,7 +1446,7 @@ public class ClientHandler implements NHttpClientEventHandler {
      *
      * @param hostList Set of String which contains entries in hots:port format
      */
-    public void resetConnectionPool(Set<String> hostList) {
+    public void resetConnectionPool(Set<RequestDescriptor> hostList) {
         List<NHttpClientConnection> clientConnections = connpool.getSslConnectionsList(hostList);
         for (NHttpClientConnection conn : clientConnections) {
             shutdownConnection(conn, false, " Connection closed to re-loading of Dynamic SSL Configurations ");
