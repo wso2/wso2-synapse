@@ -256,7 +256,7 @@ public class ClientConnFactoryBuilder {
             if (log.isDebugEnabled()) {
                 log.debug("Servers list of the custom SSL profile : " + Arrays.toString(servers));
             }
-            Iterator<?> clients = profile.getChildrenWithName(new QName("clients"));
+            Iterator<?> clients = profile.getChildrenWithName(new QName("client"));
             if (clients.hasNext()) {
                 while (clients.hasNext()) {
                     OMElement client = (OMElement) clients.next();
