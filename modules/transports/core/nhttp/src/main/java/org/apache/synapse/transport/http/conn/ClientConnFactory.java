@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.transport.passthru.RouteRequestMapping;
 
 import javax.net.ssl.SSLContext;
 
@@ -93,9 +94,9 @@ public class ClientConnFactory {
         if (sslByHostMap != null) {
             String host = address.getHostName() + ":" + address.getPort();
             // See if there's a custom SSL profile configured for this server
-            customContext = sslByHostMap.get(host);
+            customContext = sslByHostMap.get(new RequestDescriptor(host, requestID));
             if (customContext == null) {
-                customContext = sslByHostMap.get(ALL_HOSTS);
+                customContext = sslByHostMap.get(new RequestDescriptor(ALL_HOSTS, ""));
             }
         }
         if (customContext != null) {
@@ -105,15 +106,15 @@ public class ClientConnFactory {
         }
     }
 
-    private SSLContext getSSLContext(final org.apache.http.HttpHost httpHost) {
+    private SSLContext getSSLContext(final org.apache.http.HttpHost httpHost, String requestID) {
         String host = httpHost.getHostName() + ":" + httpHost.getPort();
-        return getSSLContextForHost(host);
+        return getSSLContextForHost(host, requestID);
     }
 
-    private SSLContext getSSLContextForHost(String host) {
+    private SSLContext getSSLContextForHost(String host, String requestID) {
         SSLContext customContext = null;
         if (sslByHostMap != null) {
-            customContext = sslByHostMap.get(host);
+            customContext = sslByHostMap.get(new RequestDescriptor(host, requestID));
         }
         if (customContext != null) {
             return customContext;
@@ -157,12 +158,14 @@ public class ClientConnFactory {
         }
     }
 
-    public void upgrade(final UpgradableNHttpConnection conn, HttpRoute route) {
+    public void upgrade(final UpgradableNHttpConnection conn, RouteRequestMapping routeRequestMapping) {
+        HttpRoute route = routeRequestMapping.getRoute();
+        String requestID = routeRequestMapping.getIdentifier();
         org.apache.http.HttpHost targetHost = route.getTargetHost();
         if (ssl != null) {
             IOSession iosession = conn.getIOSession();
             if (!(iosession instanceof SSLIOSession)) {
-                SSLContext customContext = getSSLContext(targetHost);
+                SSLContext customContext = getSSLContext(targetHost, requestID);
                 SSLIOSession ssliosession = createClientModeSSLsession(iosession, customContext);
                 iosession.setAttribute(SSLIOSession.SESSION_KEY, ssliosession);
                 conn.bind(ssliosession);

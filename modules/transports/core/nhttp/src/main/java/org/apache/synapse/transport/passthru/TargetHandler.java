@@ -169,7 +169,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         
         if (route.isTunnelled()) {
             // Requires a proxy tunnel
-            ProxyTunnelHandler tunnelHandler = new ProxyTunnelHandler(route, connFactory);
+            ProxyTunnelHandler tunnelHandler = new ProxyTunnelHandler(routeRequestMapping, connFactory);
             context.setAttribute(PassThroughConstants.TUNNEL_HANDLER, tunnelHandler);
         }
         if (transportLatencyLog.isDebugEnabled()) {

@@ -34,10 +34,11 @@ import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpProcessor;
 import org.apache.http.protocol.ImmutableHttpProcessor;
+import org.apache.synapse.transport.passthru.RouteRequestMapping;
 
 public class ProxyTunnelHandler {
 
-    private final HttpRoute route;
+    private final RouteRequestMapping routeRequestMapping;
     private final ClientConnFactory connFactory;
     private final HttpProcessor httpProcessor;
     
@@ -46,10 +47,10 @@ public class ProxyTunnelHandler {
     private volatile boolean successful;
     
     public ProxyTunnelHandler(
-            final HttpRoute route,
+            final RouteRequestMapping routeRequestMapping,
             final ClientConnFactory connFactory) {
         super();
-        this.route = route;
+        this.routeRequestMapping = routeRequestMapping;
         this.connFactory = connFactory;
         this.httpProcessor = new ImmutableHttpProcessor(new HttpRequestInterceptor[] {
             new RequestClientConnControl()
@@ -57,7 +58,7 @@ public class ProxyTunnelHandler {
     }
 
     public HttpRequest generateRequest(final HttpContext context) throws IOException, HttpException {
-        HttpHost target = this.route.getTargetHost();
+        HttpHost target = this.routeRequestMapping.getRoute().getTargetHost();
         HttpRequest connect = new BasicHttpRequest("CONNECT", target.toHostString(), HttpVersion.HTTP_1_1);
         connect.setHeader(HttpHeaders.HOST, target.toHostString());
         this.httpProcessor.process(connect, context);
@@ -78,8 +79,9 @@ public class ProxyTunnelHandler {
         int code = response.getStatusLine().getStatusCode();
         if (code >= 200 && code < 300) {
             this.successful = true;
-            if (this.route.isLayered() && conn instanceof UpgradableNHttpConnection) {
-                this.connFactory.upgrade((UpgradableNHttpConnection) conn, route);
+            HttpRoute route = routeRequestMapping.getRoute();
+            if (route.isLayered() && conn instanceof UpgradableNHttpConnection) {
+                this.connFactory.upgrade((UpgradableNHttpConnection) conn, routeRequestMapping);
             }
         } else {
             this.successful = false;
@@ -95,7 +97,7 @@ public class ProxyTunnelHandler {
     }
     
     public HttpHost getProxy() {
-        return this.route.getProxyHost();
+        return this.routeRequestMapping.getRoute().getProxyHost();
     }
     
 }

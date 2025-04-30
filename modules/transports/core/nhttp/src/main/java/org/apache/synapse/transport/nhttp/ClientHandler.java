@@ -82,6 +82,7 @@ import org.apache.synapse.transport.http.conn.ProxyTunnelHandler;
 import org.apache.synapse.transport.http.conn.RequestDescriptor;
 import org.apache.synapse.transport.nhttp.debug.ClientConnectionDebug;
 import org.apache.synapse.transport.nhttp.util.NhttpMetricsCollector;
+import org.apache.synapse.transport.passthru.RouteRequestMapping;
 
 import java.io.IOException;
 import java.net.URI;
@@ -308,7 +309,8 @@ public class ClientHandler implements NHttpClientEventHandler {
         HttpRoute route = axis2Req.getRoute();
         if (route.isTunnelled()) {
             // Requires a proxy tunnel
-            ProxyTunnelHandler tunnelHandler = new ProxyTunnelHandler(route, connFactory);
+            ProxyTunnelHandler tunnelHandler = new ProxyTunnelHandler(new RouteRequestMapping(route, ""),
+                    connFactory);
             context.setAttribute(TUNNEL_HANDLER, tunnelHandler);
         }
         context.setAttribute(ATTACHMENT_KEY, axis2Req);

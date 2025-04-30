@@ -62,6 +62,8 @@ public class DeliveryAgent {
     private static final String SSE_TARGET_CONNECTION = "SSE_TARGET_CONNECTION";
     private static final String SSE_TARGET_CONNECTIONS = "SSE_TARGET_CONNECTIONS";
 
+    private static final String SSL_CUSTOM_PROFILE_CLIENT_ID_PROP_NAME = "ssl.profile.client.identifier";
+
     /**
      * This Map holds the messages that need to be delivered. But at the moment maximum
      * number of connections to the host:pair is being used. So these messages has to wait
@@ -150,7 +152,7 @@ public class DeliveryAgent {
                 route = new HttpRoute(target, null, secure);
             }
 
-            String requestID = (String) msgContext.getProperty("request.identifier");
+            String requestID = (String) msgContext.getProperty(SSL_CUSTOM_PROFILE_CLIENT_ID_PROP_NAME);
             RouteRequestMapping routeRequestMapping = new RouteRequestMapping(route, requestID);
 
             // first we queue the message

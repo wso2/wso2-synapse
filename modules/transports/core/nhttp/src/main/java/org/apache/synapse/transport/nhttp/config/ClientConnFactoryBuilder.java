@@ -256,16 +256,16 @@ public class ClientConnFactoryBuilder {
             if (log.isDebugEnabled()) {
                 log.debug("Servers list of the custom SSL profile : " + Arrays.toString(servers));
             }
-            Iterator<?> requests = profile.getChildrenWithName(new QName("request"));
-            if (requests.hasNext()) {
-                while (requests.hasNext()) {
-                    OMElement request = (OMElement) requests.next();
-                    OMElement ksElt = request.getFirstChildWithName(new QName("KeyStore"));
-                    OMElement trElt = request.getFirstChildWithName(new QName("TrustStore"));
-                    String noValCert = request.getAttributeValue(new QName("novalidatecert"));
-                    String requestID = "";
-                    if (request.getFirstChildWithName(new QName("requestID")) != null) {
-                        requestID = request.getFirstChildWithName(new QName("requestID")).getText();
+            Iterator<?> clients = profile.getChildrenWithName(new QName("clients"));
+            if (clients.hasNext()) {
+                while (clients.hasNext()) {
+                    OMElement client = (OMElement) clients.next();
+                    OMElement ksElt = client.getFirstChildWithName(new QName("KeyStore"));
+                    OMElement trElt = client.getFirstChildWithName(new QName("TrustStore"));
+                    String noValCert = client.getAttributeValue(new QName("novalidatecert"));
+                    String clientID = "";
+                    if (client.getFirstChildWithName(new QName("clientID")) != null) {
+                        clientID = client.getFirstChildWithName(new QName("clientID")).getText();
                     }
                     boolean novalidatecert = "true".equals(noValCert);
 
@@ -280,7 +280,7 @@ public class ClientConnFactoryBuilder {
                     for (String server : servers) {
                         server = server.trim();
                         if (!contextMap.containsKey(server)) {
-                            contextMap.put(new RequestDescriptor(server, requestID), sslContext);
+                            contextMap.put(new RequestDescriptor(server, clientID), sslContext);
                             if (log.isDebugEnabled()) {
                                 log.debug("Update the SSL context map for the server: " + server);
                             }
@@ -327,7 +327,7 @@ public class ClientConnFactoryBuilder {
         if (contextMap.size() > 0) {
             if (log.isInfoEnabled()) {
                 log.info(name + " Custom SSL profiles initialized for " + contextMap.size() +
-                        " servers");
+                        " mappings");
             }
             return contextMap;
         }
