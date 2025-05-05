@@ -51,7 +51,7 @@ public class ConnectCallback implements SessionRequestCallback {
         HostConnections pool = (HostConnections) request.getAttachment();
         pool.pendingConnectionFailed();
 
-        deliveryAgent.errorConnecting(pool.getRoute(),
+        deliveryAgent.errorConnecting(pool.getRouteRequestMapping().getRoute(),
                 ErrorCodes.CONNECTION_FAILED, "Connection Failed", request.getException());
 
         handleError("Connection refused or failed for : " + request.getRemoteAddress());
@@ -61,7 +61,7 @@ public class ConnectCallback implements SessionRequestCallback {
         HostConnections pool = (HostConnections) request.getAttachment();
         pool.pendingConnectionFailed();
 
-        deliveryAgent.errorConnecting(pool.getRoute(),
+        deliveryAgent.errorConnecting(pool.getRouteRequestMapping().getRoute(),
                 ErrorCodes.CONNECT_TIMEOUT, "Connection Timeout");
 
         handleError("Timeout connecting to : " + request.getRemoteAddress());
@@ -72,7 +72,7 @@ public class ConnectCallback implements SessionRequestCallback {
         HostConnections pool = (HostConnections) request.getAttachment();
         pool.pendingConnectionFailed();
 
-        deliveryAgent.errorConnecting(pool.getRoute(),
+        deliveryAgent.errorConnecting(pool.getRouteRequestMapping().getRoute(),
                 ErrorCodes.CONNECT_CANCEL, "Connection Cancel");
 
         handleError("Connection cancelled for : " + request.getRemoteAddress());

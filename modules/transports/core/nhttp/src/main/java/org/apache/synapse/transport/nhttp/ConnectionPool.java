@@ -33,6 +33,7 @@ import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
+import org.apache.synapse.transport.http.conn.RequestDescriptor;
 import org.apache.synapse.transport.http.conn.SynapseHTTPRequestFactory;
 
 public class ConnectionPool {
@@ -163,10 +164,11 @@ public class ConnectionPool {
      * @param hostList String List in Host:Port format
      * @return List of NHttpClientConnection
      */
-    public List<NHttpClientConnection> getSslConnectionsList(Set<String> hostList) {
+    public List<NHttpClientConnection> getSslConnectionsList(Set<RequestDescriptor> hostList) {
         List<NHttpClientConnection> selectedConnections = new ArrayList<NHttpClientConnection>();
 
-        for (String host : hostList) {
+        for (RequestDescriptor request : hostList) {
+            String host = request.getUrl();
             try {
                 String[] params = host.split(":");
 

@@ -18,13 +18,13 @@ package org.apache.synapse.transport.passthru.connections;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.transport.http.conn.SynapseHTTPRequestFactory;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.config.ConnectionTimeoutConfiguration;
+import org.apache.synapse.transport.passthru.RouteRequestMapping;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,7 +40,7 @@ public class HostConnections {
     /**
      * route
      */
-    private final HttpRoute route;
+    private final RouteRequestMapping routeRequestMapping;
     /**
      * maximum number of connections allowed for this host + port
      */
@@ -74,21 +74,21 @@ public class HostConnections {
 
     private Lock lock = new ReentrantLock();
 
-    public HostConnections(HttpRoute route, int maxSize) {
+    public HostConnections(RouteRequestMapping route, int maxSize) {
         if (log.isDebugEnabled()) {
             log.debug("Creating new connection pool: " + route);
         }
-        this.route = route;
+        this.routeRequestMapping = route;
         this.maxSize = maxSize;
     }
 
-    public HostConnections(HttpRoute route, int maxSize, ConnectionTimeoutConfiguration
+    public HostConnections(RouteRequestMapping route, int maxSize, ConnectionTimeoutConfiguration
             connectionTimeoutConfiguration) {
 
         if (log.isDebugEnabled()) {
             log.debug("Creating new connection pool: " + route);
         }
-        this.route = route;
+        this.routeRequestMapping = route;
         this.maxSize = maxSize;
 
         this.connectionIdleTime = connectionTimeoutConfiguration.getConnectionIdleTime();
@@ -106,7 +106,7 @@ public class HostConnections {
         try {
             while (!freeConnections.isEmpty()) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Returning an existing free connection " + route);
+                    log.debug("Returning an existing free connection " + routeRequestMapping);
                 }
                 NHttpClientConnection conn = freeConnections.get(0);
                 long currentTime = System.currentTimeMillis();
@@ -198,7 +198,7 @@ public class HostConnections {
 
     public void addConnection(NHttpClientConnection conn) {
         if (log.isDebugEnabled()) {
-            log.debug("New connection " + route + " is added to the free list");
+            log.debug("New connection " + routeRequestMapping + " is added to the free list");
         }
         lock.lock();
         try {
@@ -236,8 +236,8 @@ public class HostConnections {
         }
     }
 
-    public HttpRoute getRoute() {
-        return route;
+    public RouteRequestMapping getRouteRequestMapping() {
+        return routeRequestMapping;
     }
 
     public boolean checkAndIncrementPendingConnections() {

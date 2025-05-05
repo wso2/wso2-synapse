@@ -52,7 +52,6 @@ import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.HostConnections;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -152,7 +151,8 @@ public class TargetHandler implements NHttpClientEventHandler {
         assert o instanceof HostConnections : "Attachment should be a HostConnections";
         HostConnections pool = (HostConnections) o;
         conn.getContext().setAttribute(PassThroughConstants.CONNECTION_POOL, pool);
-        HttpRoute route = pool.getRoute();
+        RouteRequestMapping routeRequestMapping = pool.getRouteRequestMapping();
+        HttpRoute route = routeRequestMapping.getRoute();
           
         // create the connection information and set it to request ready
         TargetContext.create(conn, ProtocolState.REQUEST_READY, targetConfiguration);
@@ -161,7 +161,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         targetConfiguration.getConnections().addConnection(conn);
 
         // notify about the new connection
-        deliveryAgent.connected(pool.getRoute(), conn);
+        deliveryAgent.connected(pool.getRouteRequestMapping(), conn);
         
         HttpContext context = conn.getContext();
         context.setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
@@ -169,7 +169,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         
         if (route.isTunnelled()) {
             // Requires a proxy tunnel
-            ProxyTunnelHandler tunnelHandler = new ProxyTunnelHandler(route, connFactory);
+            ProxyTunnelHandler tunnelHandler = new ProxyTunnelHandler(routeRequestMapping, connFactory);
             context.setAttribute(PassThroughConstants.TUNNEL_HANDLER, tunnelHandler);
         }
         if (transportLatencyLog.isDebugEnabled()) {
@@ -267,7 +267,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         if (transportLatencyLog.isTraceEnabled()) {
             HttpContext context = conn.getContext();
             HostConnections pool = (HostConnections) context.getAttribute(CONNECTION_POOL);
-            String route = pool == null ? "null" : pool.getRoute().toString();
+            String route = pool == null ? "null" : pool.getRouteRequestMapping().toString();
             transportLatencyLog.trace(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
                     "Writing request chunk to Backend at time stamp: " + System.currentTimeMillis() +
                     " and route: " + route);
@@ -371,7 +371,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         HttpContext context = conn.getContext();
         if (transportLatencyLog.isDebugEnabled()) {
             HostConnections pool = (HostConnections) context.getAttribute(CONNECTION_POOL);
-            String route = pool == null ? "null" : pool.getRoute().toString();
+            String route = pool == null ? "null" : pool.getRouteRequestMapping().toString();
             transportLatencyLog.debug(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
                     "Received Response headers from Backend at time stamp: " + System.currentTimeMillis() +
                     " and route: " + route);
@@ -599,7 +599,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         if (transportLatencyLog.isTraceEnabled()) {
             HttpContext context = conn.getContext();
             HostConnections pool = (HostConnections) context.getAttribute(CONNECTION_POOL);
-            String route = pool == null ? "null" : pool.getRoute().toString();
+            String route = pool == null ? "null" : pool.getRouteRequestMapping().toString();
             transportLatencyLog.trace(context.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
                     "Response chunk received from Backend at time stamp: " + System.currentTimeMillis() +
                     " and route: " + route);

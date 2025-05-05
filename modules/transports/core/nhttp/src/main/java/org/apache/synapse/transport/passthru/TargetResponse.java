@@ -200,7 +200,7 @@ public class TargetResponse {
             long responseReadEndTime = System.currentTimeMillis();
             if (transportLatencyLog.isDebugEnabled()) {
                 HostConnections pool = (HostConnections) httpContext.getAttribute("CONNECTION_POOL");
-                String route = pool == null ? "null" : pool.getRoute().toString();
+                String route = pool == null ? "null" : pool.getRouteRequestMapping().toString();
                 transportLatencyLog.debug(httpContext.getAttribute(CorrelationConstants.CORRELATION_ID) + "|" +
                         "Completed Reading Response from Backend at time stamp: " + responseReadEndTime +
                         " and route: " + route);
