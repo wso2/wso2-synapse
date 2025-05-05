@@ -24,6 +24,8 @@ import com.synapse.core.artifacts.utils.Position;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.AXIOMUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
@@ -34,6 +36,7 @@ import java.util.List;
 public class InboundDeployer {
 
     private static final String SYNAPSE_NAMESPACE = "http://ws.apache.org/ns/synapse";
+    private static final Logger log = LogManager.getLogger(InboundDeployer.class);
 
     public Inbound unmarshal(String xmlData, Position position) throws XMLStreamException {
         OMElement inboundElement = AXIOMUtil.stringToOM(xmlData);
@@ -72,14 +75,13 @@ public class InboundDeployer {
                     String paramName = paramNameAttr.getAttributeValue();
                     String paramValue = paramElement.getText().trim();
                     parameters.add(new Parameter(paramName, paramValue));
-//                    System.out.println("Added parameter: " + paramName + " = " + paramValue);
+                    log.debug("Added parameter {} to {}", paramName, newInbound.getName());
                 }
             }
             newInbound.setParameters(parameters);
         } else {
-//            System.out.println("No <parameters> found in XML.");
+            log.debug("No inbound parameters found in XML");
         }
-
         return newInbound;
     }
 }

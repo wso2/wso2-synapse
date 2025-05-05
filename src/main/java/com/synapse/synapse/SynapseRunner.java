@@ -51,36 +51,27 @@ public class SynapseRunner {
         deployer.deploy();
     }
 
-//    public static void stop() {
-//        try {
-//            // Retrieve all inbound endpoints from the ConfigContext
-//            ConfigContext configContext = ConfigContext.getInstance();
-//            Map<String, Inbound> inboundMap = configContext.getInboundMap();
-//
-//            // Stop each inbound endpoint
-//            for (Map.Entry<String, Inbound> entry : inboundMap.entrySet()) {
-//                String inboundName = entry.getKey();
-//                InboundEndpoint inbound = (InboundEndpoint) entry.getValue();
-//
-//                try {
-//                    if (inbound instanceof InboundEndpoint) {
-//                        inbound.stop();
-//                        log.info("Successfully stopped inbound endpoint: {}");
-//                    } else {
-//                        log.warn("Inbound '{}' is not an instance of InboundEndpoint, skipping.");
-//                    }
-//                } catch (Exception e) {
-//                    log.error("Error stopping inbound endpoint '{}': {}");
-//                }
-//            }
-//
-//            log.info("All inbound endpoints have been stopped successfully.");
-//        } catch (Exception e) {
-//            log.error("Error during shutdown: ", e);
-//        } finally {
-//            log.info("Shutdown process completed.");
-//        }
-//    }
+    public static void stop() {
+        try {
+            Map<String, Inbound> inboundMap = configContext.getInboundMap();
 
+            for (Map.Entry<String, Inbound> entry : inboundMap.entrySet()) {
+                String inboundName = entry.getKey();
+                InboundEndpoint inbound = entry.getValue().getInboundEndpoint();
 
+                try {
+                    inbound.stop();
+                    log.info("Successfully stopped" + inboundName + "inbound endpoint");
+                } catch (Exception e) {
+                    log.error("Error stopping " + inboundName + " inbound endpoint");
+                }
+            }
+
+            log.info("All inbound endpoints have been stopped successfully.");
+        } catch (Exception e) {
+            log.error("Error during shutdown: ", e);
+        } finally {
+            log.info("Shutdown process completed.");
+        }
+    }
 }

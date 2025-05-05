@@ -16,7 +16,6 @@
  * under the License.
  */
 
-
 package com.synapse.core.deployers;
 
 import com.synapse.adapters.inbound.InboundFactory;
@@ -40,8 +39,6 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class Deployer {
 
@@ -50,6 +47,9 @@ public class Deployer {
     private final ConfigContext ctx;
     private final Path basePath;
     private final InboundMessageMediator inboundMediator;
+    private final APIDeployer apiDeployer = new APIDeployer();
+    private final SequenceDeployer sequenceDeployer = new SequenceDeployer();
+    private final InboundDeployer inboundDeployer = new InboundDeployer();
 
     public Deployer(ConfigContext ctx, Path basePath, InboundMessageMediator inboundMediator) {
         this.ctx = ctx;
@@ -70,10 +70,10 @@ public class Deployer {
         for (String artifactType : artifactTypes) {
 
             File folder = new File(baseDir, artifactType);
-//            if (!folder.exists() || !folder.isDirectory()) {
-//                System.err.println("Directory does not exist or is not a directory: " + folder);
-//                continue;
-//            }
+            if (!folder.exists() || !folder.isDirectory()) {
+                log.error("Directory does not exist or is not a directory: {}", folder);
+                continue;
+            }
 
             File[] files = folder.listFiles((dir, name) -> name.endsWith(".xml"));
             if (files == null || files.length == 0) {
@@ -108,9 +108,7 @@ public class Deployer {
         Position position = new Position();
         position.setFileName(fileName);
 
-        InboundDeployer inboundDeployer = new InboundDeployer();
         Inbound newInbound = inboundDeployer.unmarshal(xmlData, position);
-        ctx.addInbound(newInbound);
         log.info("Inbound deployed: {}", newInbound.getName());
 
         Map<String, String> parametersMap = new HashMap<>();
@@ -127,39 +125,20 @@ public class Deployer {
             );
 
         InboundEndpoint inboundEndpoint = InboundFactory.newInbound(inboundConfig);
-//        inboundEndpoint.start(inboundMediator);
+        newInbound.setInboundEndpoint(inboundEndpoint);
+        ctx.addInbound(newInbound);
 
-//        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-//        executor.submit(() -> {
-//            try {
-//                    inboundEndpoint.start(inboundMediator);
-//            } catch (Exception e) {
-//                System.err.println("Error starting inbound endpoint: " + e.getMessage());
-//            }
-//        });
-
-//        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
-//            executor.submit(() -> {
-//                try {
-//                    inboundEndpoint.start(inboundMediator);
-//                } catch (Exception e) {
-//                    System.err.println("Error starting inbound endpoint: " + e.getMessage());
-//                }
-//            });
-//        }
         try {
             inboundEndpoint.start(inboundMediator);
         } catch (Exception e) {
             log.error("Error starting inbound endpoint: {}", e.getMessage());
         }
-
     }
 
     public void deploySequences(String fileName, String xmlData) throws IOException, XMLStreamException {
         Position position = new Position();
         position.setFileName(fileName);
 
-        SequenceDeployer sequenceDeployer = new SequenceDeployer();
         Sequence newSequence = sequenceDeployer.unmarshal(xmlData, position);
         ctx.addSequence(newSequence);
         log.info("Sequence deployed: {}", newSequence.getName());
@@ -169,7 +148,6 @@ public class Deployer {
         Position position = new Position();
         position.setFileName(fileName);
 
-        APIDeployer apiDeployer = new APIDeployer();
         API newApi = apiDeployer.unmarshal(xmlData, position);
         ctx.addAPI(newApi);
         log.info("API deployed: {}", newApi.getName());

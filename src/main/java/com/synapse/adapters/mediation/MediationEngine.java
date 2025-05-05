@@ -21,6 +21,8 @@ package com.synapse.adapters.mediation;
 import com.synapse.core.artifacts.ConfigContext;
 import com.synapse.core.ports.InboundMessageMediator;
 import com.synapse.core.synctx.MsgContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,6 +30,8 @@ import java.util.concurrent.Executors;
 public class MediationEngine implements InboundMessageMediator {
     private final ConfigContext configContext;
     private final ExecutorService executorService;
+
+    private static final Logger log = LogManager.getLogger(MediationEngine.class);
 
     public MediationEngine(ConfigContext configContext) {
         this.configContext = configContext;
@@ -41,13 +45,13 @@ public class MediationEngine implements InboundMessageMediator {
 
                 var sequence = configContext.getSequenceMap().get(seqName);
                 if (sequence == null) {
-                    System.out.println("Sequence " + seqName + " not found");
+                    log.error("Sequence {} not found", seqName);
                     return;
                 }
 
                 sequence.execute(msgContext);
             } catch (Exception e) {
-                System.out.println("Error during message mediation: " + e.getMessage());
+                log.error("Error executing sequence {}", seqName, e);
             }
         });
     }

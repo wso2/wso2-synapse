@@ -6,8 +6,8 @@
                  protocol="file"
                  suspend="false">
     <parameters>
-        <parameter name="interval">10000</parameter>
-        <parameter name="sequential">false</parameter>
+        <parameter name="interval">2000</parameter>
+        <parameter name="sequential">true</parameter>
         <parameter name="coordination">true</parameter>
         <parameter name="transport.vfs.ActionAfterProcess">MOVE</parameter>
         <parameter name="transport.vfs.MoveAfterProcess">file:///home/aathif/test/out</parameter>

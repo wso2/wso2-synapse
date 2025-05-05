@@ -124,6 +124,7 @@ public class HttpInboundEndpoint implements InboundEndpoint {
 
                 mediator.mediateInboundMessage(config.getSequenceName(), context);
 
+                // hardcoded response for now
                 String response = "Message received";
                 exchange.sendResponseHeaders(200, response.length());
 

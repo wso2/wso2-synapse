@@ -19,6 +19,8 @@
 package com.synapse.core.artifacts.inbound;
 
 import com.synapse.core.artifacts.utils.Position;
+import com.synapse.core.ports.InboundEndpoint;
+
 import java.util.List;
 
 public class Inbound {
@@ -29,6 +31,7 @@ public class Inbound {
     private String onError;
     private List<Parameter> parameters;
     private Position position;
+    private InboundEndpoint inboundEndpoint;
 
     public Inbound() {
     }
@@ -98,6 +101,12 @@ public class Inbound {
     public void setPosition(Position position) {
         this.position = position;
     }
+
+    public InboundEndpoint getInboundEndpoint() {
+        return inboundEndpoint;
+    }
+
+    public void setInboundEndpoint(InboundEndpoint inboundEndpoint) {}
 
     @Override
     public String toString() {

@@ -30,7 +30,7 @@ public class SynapseApplication {
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             logger.info("Shutting down SynapeApplication...");
-//            SynapseRunner.stop();
+            SynapseRunner.stop();
             logger.info("Shutdown complete");
         }));
 

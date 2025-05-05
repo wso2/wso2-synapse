@@ -26,6 +26,8 @@ import com.synapse.core.artifacts.utils.Position;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.AXIOMUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
@@ -34,6 +36,8 @@ import java.util.Iterator;
 import java.util.List;
 
 public class APIDeployer {
+
+    private static final Logger log = LogManager.getLogger(APIDeployer.class);
 
     public API unmarshal(String xmlData, Position position) throws XMLStreamException {
         OMElement apiElement = AXIOMUtil.stringToOM(xmlData);
@@ -64,7 +68,7 @@ public class APIDeployer {
             }
 
             if (resourceList.isEmpty()) {
-                System.out.println("Warning: No <resource> elements found in API: " + apiName);
+                log.debug("Warning: No <resource> elements found in API: {}", apiName);
                 return null; // Prevent returning an API without resources
             }
 
@@ -131,7 +135,7 @@ public class APIDeployer {
         }
 
         if (mediatorList.isEmpty()) {
-            System.out.println("Warning: No mediators found in sequence: " + sequenceType);
+            log.debug("Warning: No mediators found in sequence: {}", sequenceElement.getLocalName());
         }
 
         return new Sequence(mediatorList, sequencePosition, "inline");

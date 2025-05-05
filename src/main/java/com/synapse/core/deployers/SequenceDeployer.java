@@ -61,7 +61,6 @@ public class SequenceDeployer {
             try {
                 mediatorList.add(logMediatorDeployer.unmarshal(mediatorElement, position));
             } catch (Exception e) {
-                // Handle error appropriately
                 e.printStackTrace();
             }
         }
