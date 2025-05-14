@@ -285,6 +285,14 @@
             <artifactId>org.wso2.transport.http.netty</artifactId>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.hierynomus.wso2</groupId>
+            <artifactId>smbj</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.org.apache.commons</groupId>
+            <artifactId>commons-vfs2-sandbox</artifactId>
+        </dependency>
     </dependencies>
     <properties />
 </project>

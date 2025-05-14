@@ -717,6 +717,11 @@
              <artifactId>commons-vfs2</artifactId>
              <version>${commons.vfs.version}</version>
          </dependency>
+          <dependency>
+              <groupId>org.wso2.org.apache.commons</groupId>
+              <artifactId>commons-vfs2-sandbox</artifactId>
+              <version>${commons.vfs.version}</version>
+          </dependency>
          <dependency>
              <groupId>org.apache.commons.wso2</groupId>
              <artifactId>commons-vfs2</artifactId>

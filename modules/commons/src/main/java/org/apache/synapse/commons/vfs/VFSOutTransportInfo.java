@@ -276,7 +276,11 @@ public class VFSOutTransportInfo implements OutTransportInfo {
             }
         }
 
+        if (VFSConstants.SCHEME_SMB2.equals(fso.get(VFSConstants.SCHEME))) {
+            options.putAll(fso);
+        }
         this.fso = options;
+
     }
 
     /**
