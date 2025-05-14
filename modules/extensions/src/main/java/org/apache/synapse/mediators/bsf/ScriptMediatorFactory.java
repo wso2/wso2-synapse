@@ -103,7 +103,12 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
         }
 
         Map<Value, Object> includeKeysMap = getIncludeKeysMap(elem);
-
+        String language = langAtt.getAttributeValue();
+        if (language.equals(JAVA_SCRIPT) &&
+                (RHINO_JAVA_SCRIPT.equals(SynapsePropertiesLoader.getPropertyValue(
+                        DEFAULT_SCRIPT_ENGINE, GRAAL_JAVA_SCRIPT)))) {
+            language = RHINO_JAVA_SCRIPT;
+        }
         if (keyAtt != null) {
 
             // ValueFactory for creating dynamic or static Key
@@ -112,8 +117,7 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
             Value generatedKey = keyFac.createValue(XMLConfigConstants.KEY, elem);
 
             String functionName = (functionAtt == null ? null : functionAtt.getAttributeValue());
-            mediator = new ScriptMediator(langAtt.getAttributeValue(),
-                    includeKeysMap, generatedKey, functionName,classLoader);
+            mediator = new ScriptMediator(language, includeKeysMap, generatedKey, functionName, classLoader);
             String targetAtt = elem.getAttributeValue(ATT_TARGET);
             if (StringUtils.isNotBlank(targetAtt)) {
                 // This is V2 script mediator
@@ -144,12 +148,6 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
                 }
             }
         } else {
-            String language = langAtt.getAttributeValue();
-            if (language.equals(JAVA_SCRIPT) &&
-                    (RHINO_JAVA_SCRIPT.equals(SynapsePropertiesLoader.getPropertyValue(
-                            DEFAULT_SCRIPT_ENGINE, GRAAL_JAVA_SCRIPT)))) {
-                language = RHINO_JAVA_SCRIPT;
-            }
             mediator = new ScriptMediator(language, elem.getText(),classLoader);
         }
 
