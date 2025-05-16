@@ -94,10 +94,12 @@ public class FileInboundEndpoint implements InboundEndpoint {
 
     @Override
     public void stop() throws Exception {
+
+        logger.info("Stopping file inbound endpoint: {}", config.getName());
         isRunning.set(false);
-        logger.info("Stopping file inbound endpoint...");
-        scheduler.awaitTermination(30, TimeUnit.SECONDS);
-        logger.info("Stopped file inbound endpoint.");
+//        boolean finished = scheduler.awaitTermination(60, TimeUnit.SECONDS);
+        scheduler.shutdown();
+        logger.info("Stopped file inbound endpoint: {}", config.getName());
     }
 
     private void pollFiles(FileObject folder) throws FileSystemException {

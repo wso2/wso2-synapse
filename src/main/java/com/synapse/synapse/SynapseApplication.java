@@ -29,12 +29,52 @@ public class SynapseApplication {
     public static void main(String[] args) throws IOException {
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            logger.info("Shutting down SynapeApplication...");
+            logger.info("Shutting down SynapseApplication...");
             SynapseRunner.stop();
             logger.info("Shutdown complete");
+            LogManager.shutdown();
+//            System.out.println("after shutdown");
         }));
 
         logger.info("SynapseApplication started");
         SynapseRunner.run();
     }
 }
+
+//package com.synapse.synapse;
+//
+//import java.io.IOException;
+//import java.util.concurrent.CountDownLatch;
+//import org.apache.logging.log4j.LogManager;
+//import org.apache.logging.log4j.Logger;
+//
+//public class SynapseApplication {
+//
+//    private static final Logger logger = LogManager.getLogger(SynapseApplication.class);
+//
+//    private static final CountDownLatch shutdownLatch = new CountDownLatch(1);
+//
+//    public static void main(String[] args) throws IOException {
+//        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+//            logger.info("Shutting down SynapseApplication...");
+//            try {
+//                SynapseRunner.stop();
+//            } catch (Exception e) {
+//                logger.error("Error during shutdown: ", e);
+//            } finally {
+//                logger.info("Shutdown complete");
+//                shutdownLatch.countDown();  // release main thread
+//            }
+//        }));
+//
+//        logger.info("SynapseApplication started");
+//        SynapseRunner.run();
+//
+//        try {
+//            shutdownLatch.await();
+//        } catch (InterruptedException e) {
+//            Thread.currentThread().interrupt();
+//            logger.warn("Main thread interrupted while waiting for shutdown.");
+//        }
+//    }
+//}

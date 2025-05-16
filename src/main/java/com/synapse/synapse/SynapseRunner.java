@@ -18,6 +18,7 @@
 
 package com.synapse.synapse;
 
+import com.synapse.adapters.inbound.FileInboundEndpoint;
 import com.synapse.adapters.mediation.MediationEngine;
 import com.synapse.core.artifacts.ConfigContext;
 import com.synapse.core.artifacts.inbound.Inbound;
@@ -25,8 +26,8 @@ import com.synapse.core.deployers.Deployer;
 import com.synapse.core.ports.InboundEndpoint;
 import com.synapse.core.ports.InboundMessageMediator;
 
-import org.apache.commons.logging.LogFactory;
-import org.apache.commons.logging.Log;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -35,18 +36,19 @@ import java.util.Map;
 
 public class SynapseRunner {
 
-    public static final Log log = LogFactory.getLog(SynapseRunner.class);
+    private static final Logger logger = LogManager.getLogger(SynapseRunner.class);
     private static final ConfigContext configContext = ConfigContext.getInstance();
 
     public static void run() throws IOException {
-        log.info("Synapse is running");
+        logger.info("Synapse is running");
 
         Path resourcesPath = Path.of(Paths.get("").toAbsolutePath().toString()).resolve("artifacts");
-        log.info("Resolved resources path: " + resourcesPath);
-
-//        Axis2Server.start();
+        logger.info("Resolved resources path: " + resourcesPath);
 
         InboundMessageMediator mediator = new MediationEngine(configContext);
+
+        Axis2Server.start(mediator);
+
         Deployer deployer = new Deployer(configContext, resourcesPath,mediator);
         deployer.deploy();
     }
@@ -61,17 +63,17 @@ public class SynapseRunner {
 
                 try {
                     inbound.stop();
-                    log.info("Successfully stopped" + inboundName + "inbound endpoint");
+                    logger.info("Successfully stopped inbound endpoint: {}", inboundName);
                 } catch (Exception e) {
-                    log.error("Error stopping " + inboundName + " inbound endpoint");
+                    System.out.println(e.getMessage());
+                    logger.error("Error stopping inbound endpoint: {}", inboundName);
                 }
             }
 
-            log.info("All inbound endpoints have been stopped successfully.");
         } catch (Exception e) {
-            log.error("Error during shutdown: ", e);
+            logger.error("Error during shutdown: ", e);
         } finally {
-            log.info("Shutdown process completed.");
+            logger.info("All inbound endpoints have been stopped successfully.");
         }
     }
 }

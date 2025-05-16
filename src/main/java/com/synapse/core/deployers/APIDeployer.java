@@ -19,6 +19,7 @@
 package com.synapse.core.deployers;
 
 import com.synapse.core.artifacts.api.API;
+import com.synapse.core.artifacts.api.CORSConfig;
 import com.synapse.core.artifacts.api.Resource;
 import com.synapse.core.artifacts.Sequence;
 import com.synapse.core.artifacts.Mediator;
@@ -72,7 +73,16 @@ public class APIDeployer {
                 return null; // Prevent returning an API without resources
             }
 
-            return new API(apiContext, apiName, resourceList, newPosition);
+            API newApi = new API(apiContext, apiName, resourceList, newPosition);
+
+            CORSConfig corsConfig = unmarshalCORSConfig(apiElement);
+            
+            if (corsConfig != null) {
+                newApi.setCorsConfig(corsConfig);
+            }
+            
+            return newApi;
+            
         }
         return null;
     }
@@ -141,5 +151,81 @@ public class APIDeployer {
         return new Sequence(mediatorList, sequencePosition, "inline");
     }
 
+    private CORSConfig unmarshalCORSConfig(OMElement apiElement) {
+        
+        OMElement corsElement = apiElement.getFirstChildWithName(new QName("cors"));
+        if (corsElement == null) {
+            return null;
+        }
+
+        CORSConfig corsConfig = new CORSConfig();
+        
+        OMAttribute enabledAttr = corsElement.getAttribute(new QName("enabled"));
+        
+        if (enabledAttr != null) {
+            corsConfig.setEnabled(Boolean.parseBoolean(enabledAttr.getAttributeValue()));
+        }
+        
+        OMAttribute allowOriginsAttr = corsElement.getAttribute(new QName("allow-origins"));
+        
+        if (allowOriginsAttr != null) {
+
+            String origins = allowOriginsAttr.getAttributeValue();
+
+            if (origins != null && !origins.trim().isEmpty()) {
+                String[] originsArray = origins.split("\\s*,\\s*");
+                corsConfig.setAllowOrigins(originsArray);
+            }
+        }
+        
+        OMAttribute allowMethodsAttr = corsElement.getAttribute(new QName("allow-methods"));
+        
+        if (allowMethodsAttr != null) {
+
+            String methods = allowMethodsAttr.getAttributeValue();
+            
+            if (methods != null && !methods.trim().isEmpty()) {
+                String[] methodsArray = methods.split("\\s*,\\s*");
+                corsConfig.setAllowMethods(methodsArray);
+            }
+        }
+        
+        OMAttribute allowHeadersAttr = corsElement.getAttribute(new QName("allow-headers"));
+        
+        if (allowHeadersAttr != null) {
+
+            String headers = allowHeadersAttr.getAttributeValue();
+            
+            if (headers != null && !headers.trim().isEmpty()) {
+                String[] headersArray = headers.split("\\s*,\\s*");
+                corsConfig.setAllowHeaders(headersArray);
+            }
+        }
+        
+        OMAttribute exposeHeadersAttr = corsElement.getAttribute(new QName("expose-headers"));
+        
+        if (exposeHeadersAttr != null) {
+
+            String exposeHeaders = exposeHeadersAttr.getAttributeValue();
+            if (exposeHeaders != null && !exposeHeaders.trim().isEmpty()) {
+                String[] exposeHeadersArray = exposeHeaders.split("\\s*,\\s*");
+                corsConfig.setExposeHeaders(exposeHeadersArray);
+            }
+        }
+        
+        OMAttribute allowCredentialsAttr = corsElement.getAttribute(new QName("allow-credentials"));
+        
+        if (allowCredentialsAttr != null) {
+            corsConfig.setAllowCredentials(Boolean.parseBoolean(allowCredentialsAttr.getAttributeValue()));
+        }
+        
+        OMAttribute maxAgeAttr = corsElement.getAttribute(new QName("max-age"));
+        
+        if (maxAgeAttr != null) {
+            corsConfig.setMaxAge(Integer.parseInt(maxAgeAttr.getAttributeValue()));
+        }
+        
+        return corsConfig;
+    }
 
 }

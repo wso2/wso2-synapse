@@ -151,5 +151,7 @@ public class Deployer {
         API newApi = apiDeployer.unmarshal(xmlData, position);
         ctx.addAPI(newApi);
         log.info("API deployed: {}", newApi.getName());
+
+        com.synapse.synapse.Axis2Server.deployAPI(newApi);
     }
 }

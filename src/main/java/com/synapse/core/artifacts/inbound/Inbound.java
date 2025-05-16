@@ -106,7 +106,9 @@ public class Inbound {
         return inboundEndpoint;
     }
 
-    public void setInboundEndpoint(InboundEndpoint inboundEndpoint) {}
+    public void setInboundEndpoint(InboundEndpoint inboundEndpoint) {
+        this.inboundEndpoint = inboundEndpoint;
+    }
 
     @Override
     public String toString() {

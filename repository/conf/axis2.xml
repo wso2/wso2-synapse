@@ -1,37 +1,77 @@
-<axisconfig xmlns="http://ws.apache.org/ns/axis2">
-    <parameter name="log4j.configurationFile">conf/log4j2.xml</parameter>
+<axisconfig name="AxisJava2.0">
 
+    <!-- ================================================= -->
+    <!-- Transport Ins -->
+    <!-- ================================================= -->
     <transportReceiver name="http" class="org.apache.axis2.transport.http.SimpleHTTPServer">
         <parameter name="port">8290</parameter>
     </transportReceiver>
 
-    <phases>
-        <globalPhases>
-            <phase name="OperationDispatch"/>
-            <phase name="Transport"/>
-            <phase name="PreDispatch"/>
-            <phase name="Dispatch"/>
-            <phase name="Security"/>
-            <phase name="PolicyDetermination"/>
-            <phase name="RMPhase"/>
-            <phase name="Addressing"/>
-        </globalPhases>
+    <!-- ================================================= -->
+    <!-- Phases  -->
+    <!-- ================================================= -->
+    <phaseOrder type="InFlow">
+        <phase name="Transport"/>
+        <phase name="PreDispatch"/>
+        <phase name="Dispatch" class="org.apache.axis2.engine.DispatchPhase"/>
+        <phase name="PostDispatch"/>
+    </phaseOrder>
 
-        <phaseOrder type="InFlow">
-            <phase name="Transport"/>
-            <phase name="PreDispatch"/>
-            <phase name="Dispatch"/> </phaseOrder>
+    <phaseOrder type="OutFlow">
+        <phase name="MessageOut"/>
+    </phaseOrder>
 
-        <phaseOrder type="OutFlow">
-            <phase name="MessageOut"/>
-        </phaseOrder>
+    <phaseOrder type="InFaultFlow">
+        <phase name="Transport"/>
+        <phase name="PreDispatch"/>
+        <phase name="Dispatch" class="org.apache.axis2.engine.DispatchPhase"/>
+        <phase name="PostDispatch"/>
+    </phaseOrder>
 
-        <phaseOrder type="InFaultFlow">
-            <phase name="InFaultPhase"/>
-        </phaseOrder>
+    <phaseOrder type="OutFaultFlow">
+        <phase name="MessageOut"/>
+    </phaseOrder>
 
-        <phaseOrder type="OutFaultFlow">
-            <phase name="OutFaultPhase"/>
-        </phaseOrder>
-    </phases>
+    <!-- ================================================= -->
+    <!-- Message Formatters -->
+    <!-- ================================================= -->
+    <messageFormatters>
+        <messageFormatter contentType="application/x-www-form-urlencoded"
+                          class="org.apache.axis2.transport.http.XFormURLEncodedFormatter"/>
+        <messageFormatter contentType="multipart/form-data"
+                          class="org.apache.axis2.transport.http.MultipartFormDataFormatter"/>
+        <messageFormatter contentType="application/xml"
+                          class="org.apache.axis2.transport.http.ApplicationXMLFormatter"/>
+        <messageFormatter contentType="text/xml"
+                          class="org.apache.axis2.transport.http.SOAPMessageFormatter"/>
+        <messageFormatter contentType="application/soap+xml"
+                          class="org.apache.axis2.transport.http.SOAPMessageFormatter"/>
+        <messageFormatter contentType="text/plain"
+                          class="org.apache.axis2.format.PlainTextFormatter"/>
+        <!-- Removed JSON formatter -->
+    </messageFormatters>
+
+    <!-- ================================================= -->
+    <!-- Message Builders -->
+    <!-- ================================================= -->
+    <messageBuilders>
+        <messageBuilder contentType="application/xml"
+                        class="org.apache.axis2.builder.ApplicationXMLBuilder"/>
+        <messageBuilder contentType="application/x-www-form-urlencoded"
+                        class="org.apache.axis2.builder.XFormURLEncodedBuilder"/>
+        <messageBuilder contentType="multipart/form-data"
+                        class="org.apache.axis2.builder.MultipartFormDataBuilder"/>
+        <messageBuilder contentType="text/plain"
+                        class="org.apache.axis2.format.PlainTextBuilder"/>
+        <!-- Removed JSON builder -->
+    </messageBuilders>
+
+    <!-- ================================================= -->
+    <!-- Parameters -->
+    <!-- ================================================= -->
+    <parameter name="hotdeployment">true</parameter>
+    <parameter name="hotupdate">true</parameter>
+    <parameter name="enableMTOM">false</parameter>
+    <parameter name="enableSwA">false</parameter>
+
 </axisconfig>

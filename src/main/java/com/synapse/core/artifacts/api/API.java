@@ -27,7 +27,8 @@ public class API {
     private String name;
     private List<Resource> resources;
     private Position position;
-
+    private CORSConfig corsConfig;
+    
     public API(String context, String name, List<Resource> resources, Position position) {
         this.context = context;
         this.name = name;
@@ -69,5 +70,13 @@ public class API {
 
     public void setPosition(Position position) {
         this.position = position;
+    }
+
+    public CORSConfig getCorsConfig() {
+        return corsConfig;
+    }
+
+    public void setCorsConfig(CORSConfig corsConfig) {
+        this.corsConfig = corsConfig;
     }
 }

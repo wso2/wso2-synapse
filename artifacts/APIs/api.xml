@@ -1,0 +1,31 @@
+<api context="/api" name="SampleAPIWithCORS">
+    <!-- Configure CORS for this API -->
+    <cors enabled="true"
+          allow-origins="https://example.com,https://app.example.com"
+          allow-methods="GET,POST,PUT,DELETE,PATCH,OPTIONS"
+          allow-headers="Content-Type,Authorization,X-Requested-With,Accept"
+          expose-headers="X-Request-ID,X-Response-Time"
+          allow-credentials="true"
+          max-age="3600" />
+          
+    <!-- API Resources -->
+    <resource methods="GET" uri-template="/hello">
+        <inSequence>
+            <log level="full"/>
+            <!-- Other mediators would go here -->
+        </inSequence>
+        <faultSequence>
+            <!-- Error handling mediators would go here -->
+        </faultSequence>
+    </resource>
+    
+    <resource methods="POST" uri-template="/data">
+        <inSequence>
+            <log level="full"/>
+            <!-- Other mediators would go here -->
+        </inSequence>
+        <faultSequence>
+            <!-- Error handling mediators would go here -->
+        </faultSequence>
+    </resource>
+</api> 
