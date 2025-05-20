@@ -169,7 +169,7 @@ public class FileInboundEndpoint implements InboundEndpoint {
             content = inputStream.readAllBytes();
         }
 
-//        Thread.sleep(10000);
+        Thread.sleep(10000);
 
         MsgContext context = new MsgContext();
         String contentType = config.getParameters().getOrDefault("transport.vfs.ContentType", "text/plain");

@@ -1,0 +1,48 @@
+site_name: Synapse Java Documentation
+theme: 
+  name: material
+  palette:
+    primary: indigo
+    accent: indigo
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - footnotes
+
+nav:
+  - Home: index.md
+  - Architecture:
+    - Overview: architecture/overview.md
+    - Hexagonal Architecture: architecture/hexagonal.md
+    - Component Interaction: architecture/component-interaction.md
+  - Core Components:
+    - Inbound Endpoints: components/inbound-endpoints.md
+    - ConfigContext: components/config-context.md
+    - Sequences: components/sequences.md
+    - Mediators: components/mediators.md
+    - APIs: components/apis.md
+    - Mediation Engine: components/mediation-engine.md
+  - Implementation Details:
+    - File Inbound Endpoint: implementation/file-inbound.md
+    - HTTP Inbound Endpoint: implementation/http-inbound.md
+    - API Deployment: implementation/api-deployment.md
+    - Sequence Execution: implementation/sequence-execution.md
+    - Message Context: implementation/message-context.md
+  - Configuration:
+    - Logging: configuration/logging.md
+    # - XML Artifacts: configuration/xml-artifacts.md
+    # - Deployers: configuration/deployers.md
+    # - Axis2 Configuration: configuration/axis2-config.md
+

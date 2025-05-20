@@ -6,7 +6,7 @@
                  protocol="file"
                  suspend="false">
     <parameters>
-        <parameter name="interval">10000</parameter>
+        <parameter name="interval">5000</parameter>
         <parameter name="sequential">false</parameter>
         <parameter name="coordination">true</parameter>
         <parameter name="transport.vfs.ActionAfterProcess">MOVE</parameter>
