@@ -6,6 +6,17 @@ The Synapse Java project is a lightweight integration engine designed to process
 
 This project is built using Java 21 and Maven, leveraging modern Java features such as virtual threads for concurrency and modular design principles.
 
+For setup instructions, please see the [Building and Running](#building-and-running) section below. 
+
+After cloning the repository, you can access detailed documentation by installing MkDocs and running:
+
+```bash
+mkdocs serve
+```
+
+This will provide you with a local instance of the full documentation website.
+
+
 ---
 
 ## Table of Contents
