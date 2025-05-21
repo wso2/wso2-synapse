@@ -293,7 +293,7 @@
                                 </echo>
                                 <zip destfile="${project.basedir}/synapse/synapse-package.zip">
                                     <fileset file="${project.build.directory}/synapse-java-1.0-SNAPSHOT.jar" />
-                                    <zipfileset file="${project.build.directory}/run-synapse.sh" />
+                                    <zipfileset file="${project.build.directory}/synapse.sh" />
                                     <zipfileset dir="${project.basedir}/artifacts" prefix="artifacts" />
                                     <zipfileset dir="${project.basedir}/repository" prefix="repository" />
                                 </zip>
