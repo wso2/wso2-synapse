@@ -21,6 +21,7 @@ package com.synapse.core.artifacts;
 import com.synapse.core.artifacts.utils.Position;
 import com.synapse.core.synctx.MsgContext;
 
+import java.io.IOException;
 import java.util.List;
 
 public class Sequence implements Mediator {
@@ -46,8 +47,8 @@ public class Sequence implements Mediator {
                 if (!result) {
                     return false;
                 }
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
+            } catch (IOException e) {
+                System.err.println(e.getMessage());
             }
         }
         return true;

@@ -57,7 +57,7 @@ public class Deployer {
         this.inboundMediator = inboundMediator;
     }
 
-    public void deploy() throws IOException {
+    public void deploy(){
 
         File baseDir = basePath.toFile();
         if (!baseDir.exists() || !baseDir.isDirectory()) {
@@ -130,8 +130,10 @@ public class Deployer {
 
         try {
             inboundEndpoint.start(inboundMediator);
-        } catch (Exception e) {
+        } catch (IOException e) {
             log.error("Error starting inbound endpoint: {}", e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

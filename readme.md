@@ -18,7 +18,7 @@ This project is built using Java 21 and Maven, leveraging modern Java features s
 6. [APIs](#apis)
 7. [Configuration](#configuration)
 8. [Logging](#logging)
-<!-- 9. [Building and Running](#building-and-running)
+9. [Building and Running](#building-and-running)
 10. [Testing](#testing)
 11. [Future Enhancements](#future-enhancements) -->
 
@@ -162,3 +162,29 @@ rootLogger.level = debug
 rootLogger.appenderRefs = stdout
 rootLogger.appenderRef.stdout.ref = STDOUT
 ```
+
+## Building and Running
+
+To build and run the Synapse Java project, follow these steps:
+
+### Building the Project
+
+1. Run the Maven build command to compile and package the application:
+   ```bash
+   mvn clean install
+   ```
+2. After successful build, navigate to the synapse directory and unzip the **synapse-package.zip** file created
+
+### Running the Application
+
+1. Before running the application, ensure you have added the necessary XML configuration files in the artifacts folder:
+   - Add inbound endpoint definitions in `artifacts/Inbounds/`
+   - Add sequence definitions in `artifacts/Sequences/`
+   - Add API definitions in `artifacts/APIs/`
+
+2. Start the Synapse engine using the provided shell script:
+   ```bash
+   sh ./synapse.sh
+   ```
+
+3. The application will load all artifacts from the specified directories and start the applcation.

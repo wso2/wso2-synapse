@@ -1,5 +1,6 @@
 package com.synapse.adapters.inbound;
 
+import com.synapse.adapters.inbound.utils.InboundException;
 import com.synapse.core.domain.InboundConfig;
 import com.synapse.core.ports.InboundEndpoint;
 
@@ -14,7 +15,7 @@ public class InboundFactory {
             case "http":
                 return new HttpInboundEndpoint(config);
             default:
-                throw new Exception(ERR_INBOUND_TYPE_NOT_FOUND);
+                throw new InboundException(ERR_INBOUND_TYPE_NOT_FOUND);
         }
     }
 }

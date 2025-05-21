@@ -18,6 +18,8 @@
 
 package com.synapse.adapters.inbound;
 
+import com.synapse.adapters.inbound.utils.HTTPInboundConfigurationException;
+import com.synapse.adapters.inbound.utils.InboundException;
 import com.synapse.core.domain.InboundConfig;
 import com.synapse.core.ports.InboundEndpoint;
 import com.synapse.core.ports.InboundMessageMediator;
@@ -72,7 +74,7 @@ public class HttpInboundEndpoint implements InboundEndpoint {
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop(){
 
         isRunning.set(false);
         virtualExecutor.shutdown();
@@ -82,12 +84,12 @@ public class HttpInboundEndpoint implements InboundEndpoint {
         }
     }
 
-    private void validateConfig() throws Exception {
+    private void validateConfig() throws InboundException {
         if (!"http".equalsIgnoreCase(config.getProtocol())) {
-            throw new Exception("Unsupported protocol, should be 'http'");
+            throw new HTTPInboundConfigurationException("Unsupported protocol, should be 'http'");
         }
         if (!config.getParameters().containsKey("inbound.http.port")) {
-            throw new Exception("Missing 'port' parameter");
+            throw new HTTPInboundConfigurationException("Missing 'port' parameter");
         }
     }
 

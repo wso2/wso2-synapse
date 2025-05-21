@@ -18,6 +18,8 @@
 
 package com.synapse.adapters.inbound;
 
+import com.synapse.adapters.inbound.utils.FileInboundConfigurationException;
+import com.synapse.adapters.inbound.utils.InboundException;
 import com.synapse.core.domain.InboundConfig;
 import com.synapse.core.ports.InboundEndpoint;
 import com.synapse.core.ports.InboundMessageMediator;
@@ -27,8 +29,11 @@ import org.apache.commons.vfs2.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -60,7 +65,7 @@ public class FileInboundEndpoint implements InboundEndpoint {
         validateConfig();
         int interval = getIntervalParameterValue();
         if (interval <= 0) {
-            throw new Exception("Invalid polling interval.");
+            throw new FileInboundConfigurationException("Invalid polling interval.");
         }
 
         scheduler.scheduleAtFixedRate(() -> {
@@ -79,21 +84,25 @@ public class FileInboundEndpoint implements InboundEndpoint {
                         pollFiles(folder);
                         logger.debug("Finishing pollfiles");
 
-                    } catch (Exception e) {
+                    } catch (FileSystemException e) {
                         logger.error("Error in pollFiles: {}", e.getMessage());
                         e.printStackTrace();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
                     }
                 });
-            } catch (Exception e) {
+            } catch (RejectedExecutionException e) {
                 System.err.println("Error launching virtual thread: " + e.getMessage());
                 e.printStackTrace();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         }, 0, interval, TimeUnit.MILLISECONDS);
 
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() throws SecurityException {
 
         logger.info("Stopping file inbound endpoint: {}", config.getName());
         isRunning.set(false);
@@ -152,31 +161,34 @@ public class FileInboundEndpoint implements InboundEndpoint {
             processSingleFile(file);
 
             logger.debug("File processed: {}", filePath);
-            handleFileAction(file, "Process");
-        } catch (Exception e) {
+            handleFileActionAfterProcess(file);
+        } catch (IOException e) {
             logger.error("Error processing file [{}]: {}", filePath, e.getMessage());
-            handleFileAction(file, "Failure");
-        } finally {
+            handleFileActionAfterFailure(file);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        finally {
             releaseLockFile(file);
             processingFiles.remove(filePath);
         }
     }
 
-    private void processSingleFile(FileObject file) throws Exception {
+    private void processSingleFile(FileObject file) throws IOException {
         logger.debug("Processing file: {}", file.getName().getBaseName());
         byte[] content;
         try (InputStream inputStream = file.getContent().getInputStream()) {
             content = inputStream.readAllBytes();
         }
 
-        Thread.sleep(10000);
+//        if(Objects.equals(file.getName().getBaseName(), "request.xml")){
+//            Thread.sleep(7000);
+//        }
 
         MsgContext context = new MsgContext();
         String contentType = config.getParameters().getOrDefault("transport.vfs.ContentType", "text/plain");
         Message msg = new Message(content, contentType);
         context.setMessage(msg);
-
-//        Thread.sleep(100);
 
         Map<String, String> headers = Map.of(
                 "FILE_LENGTH", String.valueOf(file.getContent().getSize()),
@@ -200,26 +212,38 @@ public class FileInboundEndpoint implements InboundEndpoint {
 
     }
 
-    private void handleFileAction(FileObject file, String actionType) {
-        String actionKey = "transport.vfs.ActionAfter" + actionType;
+    private void handleFileActionAfterProcess(FileObject file) {
+        String actionKey = "transport.vfs.ActionAfterProcess";
         String action = config.getParameters().get(actionKey);
 
         if ("MOVE".equalsIgnoreCase(action)) {
-            String moveKey = "transport.vfs.MoveAfter" + actionType;
+            String moveKey = "transport.vfs.MoveAfterProcess";
             String movePath = config.getParameters().get(moveKey);
             if (movePath == null || movePath.isEmpty()) {
-                logger.error("No move path specified for {}", actionType);
+                logger.error("No move path specified for {}", actionKey);
                 return;
             }
             moveFile(file, movePath);
         } else {
             deleteFile(file);
         }
-//        try {
-//            Thread.sleep(10000);
-//        } catch (InterruptedException e) {
-//            throw new RuntimeException(e);
-//        }
+    }
+
+    private void handleFileActionAfterFailure(FileObject file) {
+        String actionKey = "transport.vfs.ActionAfterFailure";
+        String action = config.getParameters().get(actionKey);
+
+        if ("MOVE".equalsIgnoreCase(action)) {
+            String moveKey = "transport.vfs.MoveAfterFailure";
+            String movePath = config.getParameters().get(moveKey);
+            if (movePath == null || movePath.isEmpty()) {
+                logger.error("No move path specified for {}", actionKey);
+                return;
+            }
+            moveFile(file, movePath);
+        } else {
+            deleteFile(file);
+        }
     }
 
     private void moveFile(FileObject file, String destinationUri) {
@@ -237,8 +261,10 @@ public class FileInboundEndpoint implements InboundEndpoint {
 
             logger.debug("Moved file [{}] to [{}]", file.getName().getURI(), destFile.getName().getURI());
 
-        } catch (Exception e) {
+        } catch (FileSystemException e) {
             System.err.println("File move failed: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -246,8 +272,10 @@ public class FileInboundEndpoint implements InboundEndpoint {
         try {
             file.delete();
             logger.debug("Deleted file: {}", file.getName().getURI());
-        } catch (Exception e) {
+        } catch (FileSystemException e) {
             logger.error("File delete failed: {}", e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -261,9 +289,12 @@ public class FileInboundEndpoint implements InboundEndpoint {
             }
             lockFile.createFile();
             return true;
-        } catch (Exception e) {
+
+        } catch (FileSystemException e) {
             logger.error("Could not create lock for file [{}]: {}", file.getName().getURI(), e.getMessage());
             return false;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -274,8 +305,10 @@ public class FileInboundEndpoint implements InboundEndpoint {
             if (lockFile.exists()) {
                 lockFile.delete();
             }
-        } catch (Exception e) {
+        } catch (FileSystemException e) {
             logger.error("Could not release lock for file [{}]: {}", file.getName().getURI(), e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -294,16 +327,16 @@ public class FileInboundEndpoint implements InboundEndpoint {
         return 0;
     }
 
-    private void validateConfig() throws Exception {
+    private void validateConfig() throws InboundException {
         if (!"file".equalsIgnoreCase(config.getProtocol())) {
-            throw new Exception("Unsupported protocol, should be 'file'");
+            throw new FileInboundConfigurationException("Unsupported protocol, should be 'file'");
         }
         if (!config.getParameters().containsKey("interval")) {
-            throw new Exception("Missing 'interval' parameter");
+            throw new FileInboundConfigurationException("Missing 'interval' parameter");
         }
         String uri = config.getParameters().get("transport.vfs.FileURI");
         if (uri == null || uri.isEmpty()) {
-            throw new Exception("Missing 'transport.vfs.FileURI' parameter");
+            throw new FileInboundConfigurationException("Missing 'transport.vfs.FileURI' parameter");
         }
     }
 }

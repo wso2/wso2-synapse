@@ -20,6 +20,8 @@ package com.synapse.core.ports;
 
 import com.synapse.core.synctx.MsgContext;
 
+import java.io.IOException;
+
 public interface InboundMessageMediator {
-    void mediateInboundMessage(String seqName, MsgContext msg) throws Exception;
+    void mediateInboundMessage(String seqName, MsgContext msg) throws IOException;
 }

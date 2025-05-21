@@ -24,8 +24,10 @@ import com.synapse.core.synctx.MsgContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 
 public class MediationEngine implements InboundMessageMediator {
     private final ConfigContext configContext;
@@ -48,10 +50,11 @@ public class MediationEngine implements InboundMessageMediator {
                     log.error("Sequence {} not found", seqName);
                     return;
                 }
-
                 sequence.execute(msgContext);
-            } catch (Exception e) {
+            } catch (RejectedExecutionException e) {
                 log.error("Error executing sequence {}", seqName, e);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         });
     }

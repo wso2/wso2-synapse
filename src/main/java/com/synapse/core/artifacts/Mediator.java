@@ -20,6 +20,8 @@ package com.synapse.core.artifacts;
 
 import com.synapse.core.synctx.MsgContext;
 
+import java.io.IOException;
+
 public interface Mediator {
-    boolean execute(MsgContext context) throws Exception;
+    boolean execute(MsgContext context) throws IOException;
 }

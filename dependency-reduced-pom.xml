@@ -15,11 +15,21 @@
         </configuration>
       </plugin>
       <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>3.4.0</version>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>${project.basedir}/synapse</directory>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
+      <plugin>
         <artifactId>maven-shade-plugin</artifactId>
         <version>3.4.1</version>
         <executions>
           <execution>
-            <phase>package</phase>
             <goals>
               <goal>shade</goal>
             </goals>
@@ -29,6 +39,32 @@
                   <mainClass>com.synapse.synapse.SynapseApplication</mainClass>
                 </transformer>
               </transformers>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>zip-artifacts</id>
+            <phase>package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <mkdir />
+                <echo>#!/bin/bash
+                                    java -jar "$(dirname "$0")/synapse-java-1.0-SNAPSHOT.jar"</echo>
+                <zip>
+                  <fileset />
+                  <zipfileset />
+                  <zipfileset />
+                  <zipfileset />
+                </zip>
+              </target>
             </configuration>
           </execution>
         </executions>
