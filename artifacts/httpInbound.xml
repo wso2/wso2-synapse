@@ -1,0 +1,15 @@
+<inboundEndpoint xmlns="http://ws.apache.org/ns/synapse"
+                 name="http_inbound"
+                 sequence="inboundSeq"
+                 onError="fault"
+                 protocol="http"
+                 suspend="false">
+    <parameters>
+                <parameter name="inbound.http.port">8280</parameter>
+        <parameter name="inbound.http.context">/inbound</parameter>
+        <parameter name="inbound.http.request.dispatcher.disable">true</parameter>
+        <parameter name="inbound.http.response.dispatcher.disable">true</parameter>
+        <parameter name="sequential">false</parameter>
+        <parameter name="coordination">true</parameter>
+    </parameters>
+</inboundEndpoint>
