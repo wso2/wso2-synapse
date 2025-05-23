@@ -202,6 +202,11 @@ public final class VFSConstants {
     public static final String SCHEME_SFTP = "sftp";
     public static final String SCHEME_FTP = "ftp";
     public static final String SCHEME_FTPS = "ftps";
+
+    // smb scheme
+    public static final String SCHEME_SMB2 = "smb2";
+
+
     // sftp scheme file option list
     public static enum SFTP_FILE_OPTION {Identities, UserDirIsRoot, IdentityPassPhrase};
     
