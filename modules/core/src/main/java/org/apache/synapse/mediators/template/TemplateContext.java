@@ -124,6 +124,7 @@ public class TemplateContext {
         String mapping = EIPUtils.getTemplatePropertyMapping(fName, SynapseConstants.INVOKE_MEDIATOR_ID);
         Object propertyValue = synCtxt.getProperty(mapping);
         mappedValues.put(SynapseConstants.INVOKE_MEDIATOR_ID, propertyValue);
+        removeProperty(synCtxt, mapping);
     }
 
     private ResolvedInvokeParam getEvaluatedInvokeParam(MessageContext synCtx, String parameterName,
