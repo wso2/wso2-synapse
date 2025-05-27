@@ -68,7 +68,9 @@ public class ExpressionConstants {
     public static final String BOOLEAN = "boolean";
 
     public static final String PAYLOAD = "payload";
+    public static final String PAYLOAD_ACCESS = "payload.";
     public static final String PAYLOAD_$ = "$";
+    public static final String PAYLOAD_$_ACCESS = "$.";
     public static final String SYNAPSE_EXPRESSION_IDENTIFIER_START = "${";
     public static final String SYNAPSE_EXPRESSION_IDENTIFIER_END = "}";
     public static final String AXIS2 = "axis2";
