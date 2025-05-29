@@ -18,6 +18,7 @@
 */
 package org.apache.synapse.commons.vfs;
 
+import com.hierynomus.msdtyp.AccessMask;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.Parameter;
@@ -37,6 +38,7 @@ import org.apache.commons.vfs2.provider.UriParser;
 import org.apache.commons.vfs2.provider.ftps.FtpsDataChannelProtectionLevel;
 import org.apache.commons.vfs2.provider.ftps.FtpsFileSystemConfigBuilder;
 import org.apache.commons.vfs2.provider.ftps.FtpsMode;
+import org.apache.commons.vfs2.provider.smb2.Smb2FileSystemConfigBuilder;
 import org.apache.commons.vfs2.util.DelegatingFileSystemOptionsBuilder;
 
 import java.io.IOException;
@@ -45,12 +47,7 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Random;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -112,6 +109,12 @@ public class VFSUtils {
     public static final String IMPLICIT_MODE = "vfs.implicit";
 
     public static final String PROTECTION_MODE = "vfs.protection";
+
+    private static final String ENCRYPTION_ENABLED = "vfs.EncryptionEnabled";
+
+    public static final String DISK_SHARE_ACCESS_MASK = "vfs.diskShareAccessMask";
+
+    public static final String DISK_SHARE_ACCESS_MASK_MAX_ALLOWED = "MAXIMUM_ALLOWED";
 
     private VFSUtils() {
     }
@@ -680,7 +683,53 @@ public class VFSUtils {
                     options.get(VFSConstants.FILE_TYPE));
         }
 
+        Smb2FileSystemConfigBuilder smb2FileSystemConfigBuilder = Smb2FileSystemConfigBuilder.getInstance();
+
+        boolean encryptionEnabled = Boolean.parseBoolean(options.get(ENCRYPTION_ENABLED));
+        if (options.get(ENCRYPTION_ENABLED) != null) {
+            smb2FileSystemConfigBuilder.setEncryptionEnabled(opts, encryptionEnabled);
+        }
+
+        String diskfileshare = options.get(DISK_SHARE_ACCESS_MASK);
+        if (diskfileshare != null) {
+            smb2FileSystemConfigBuilder.setDiskShareAccessMask(opts, validateAndGetDiskShareAccessMask(diskfileshare));
+        }
+
         return opts;
+    }
+
+    public static ArrayList<String> validateAndGetDiskShareAccessMask(String diskShareAccessMask) {
+        // Prepare the set of allowed access mask values
+        Set<String> allowedValues = new HashSet<String>();
+        for (AccessMask mask : AccessMask.values()) {
+            allowedValues.add(mask.name());
+        }
+
+        // Assign the validated value
+        ArrayList<String> outDiskShareAccessMasks = new ArrayList<String>();
+
+        // Validate and collect allowed values
+        if (diskShareAccessMask != null) {
+            String[] masks = diskShareAccessMask.split(",");
+            for (String mask : masks) {
+                String accessMask = mask.trim();
+                if (allowedValues.contains(accessMask)) {
+                    outDiskShareAccessMasks.add(accessMask);
+                } else {
+                    log.warn("Access mask is not valid and was ignored: " + mask);
+                }
+            }
+        }
+
+        // Fallback to default if nothing is valid or input was null
+        if (outDiskShareAccessMasks.isEmpty()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Set the access mask to default MAXIMUM_ALLOWED since the access mask is not defined or the defined values are not valid.");
+            }
+            outDiskShareAccessMasks.add(DISK_SHARE_ACCESS_MASK_MAX_ALLOWED);
+        }
+
+        return outDiskShareAccessMasks;
     }
 
     /**

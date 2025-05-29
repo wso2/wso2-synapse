@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.synapse</groupId>
         <artifactId>Apache-Synapse</artifactId>
-        <version>4.0.0-wso2v235-SNAPSHOT</version>
+        <version>4.0.0-wso2v237-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -284,6 +284,14 @@
             <groupId>org.wso2.transport.http</groupId>
             <artifactId>org.wso2.transport.http.netty</artifactId>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.hierynomus.wso2</groupId>
+            <artifactId>smbj</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.org.apache.commons</groupId>
+            <artifactId>commons-vfs2-sandbox</artifactId>
         </dependency>
     </dependencies>
     <properties />
