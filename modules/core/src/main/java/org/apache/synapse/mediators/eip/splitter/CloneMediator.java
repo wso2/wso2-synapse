@@ -46,8 +46,10 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.eip.SharedDataHolder;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.Target;
+import org.apache.synapse.util.MediatorPropertyUtils;
 import org.apache.synapse.util.MessageHelper;
 
+import javax.xml.stream.XMLStreamException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -266,7 +268,11 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         } catch (AxisFault axisFault) {
             handleException("Error cloning the message context", axisFault, synCtx);
         }
-
+        try {
+            MediatorPropertyUtils.serializeOMElement(synCtx);
+        } catch (XMLStreamException e) {
+            handleException("Error while serializing the  message", e, synCtx);
+        }
         return newCtx;
     }
 
