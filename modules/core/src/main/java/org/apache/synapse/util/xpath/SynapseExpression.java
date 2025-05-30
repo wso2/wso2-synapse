@@ -23,11 +23,15 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.SynapsePath;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
 import org.apache.synapse.util.synapse.expression.exception.SyntaxError;
 import org.apache.synapse.util.synapse_expression.ExpressionLexer;
 import org.apache.synapse.util.synapse_expression.ExpressionParser;
@@ -87,11 +91,8 @@ public class SynapseExpression extends SynapsePath {
         if (log.isDebugEnabled()) {
             log.debug("Evaluating expression (stringValueOf): " + expression);
         }
-        EvaluationContext context = new EvaluationContext();
-        context.setNamespaceMap(namespaceMap);
-        context.setSynCtx(synCtx);
-        ExpressionResult result = evaluateExpression(context, false);
-        return result != null ? result.asString() : "";
+        Object result = evaluateExpressionForPayload(synCtx, false);
+        return result != null ? result.toString() : "";
     }
 
     @Override
@@ -99,11 +100,43 @@ public class SynapseExpression extends SynapsePath {
         if (log.isDebugEnabled()) {
             log.debug("Evaluating expression (objectValueOf): " + expression);
         }
+        return evaluateExpressionForPayload(synCtx, true);
+    }
+
+    private Object evaluateExpressionForPayload(MessageContext synCtx, boolean isObjectValue) {
         EvaluationContext context = new EvaluationContext();
         context.setNamespaceMap(namespaceMap);
         context.setSynCtx(synCtx);
-        ExpressionResult result = evaluateExpression(context, true);
-        return result != null ? result.getValue() : "";
+        String mediaType = (String) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                .getProperty(SynapseConstants.AXIS2_PROPERTY_CONTENT_TYPE);
+        boolean isXMLPayload = !StringUtils.isEmpty(mediaType) && mediaType.contains(SynapseConstants.XML_CONTENT_TYPE);
+
+        if (isXMLPayload) {
+            expression = expression.trim();
+            if (expression.equals(ExpressionConstants.PAYLOAD) || expression.equals(ExpressionConstants.PAYLOAD_$)) {
+                try {
+                    SynapseExpression newExp = new SynapseExpression("xpath('$body')");
+                    ExpressionResult result = newExp.evaluateExpression(context, isObjectValue);
+                    return result != null ? (isObjectValue ? result.getValue() : result.asString()) : "";
+                } catch (JaxenException e) {
+                    log.error("Error converting the synapse expression to a xpath expression: " + e.getMessage());
+                    return "";
+                }
+            } else {
+                if (((expression.contains(ExpressionConstants.PAYLOAD_ACCESS) && expression.length()
+                        > ExpressionConstants.PAYLOAD_ACCESS.length())
+                        || (expression.contains(ExpressionConstants.PAYLOAD_$_ACCESS)
+                        && expression.length() > ExpressionConstants.PAYLOAD_$_ACCESS.length()))
+                        && log.isDebugEnabled()) {
+                    log.debug("Evaluating synapse expression " + expression + " against a XML payload, " +
+                            "using xpath() function is recommended.");
+                }
+                ExpressionResult result = evaluateExpression(context, isObjectValue);
+                return result != null ? (isObjectValue ? result.getValue() : result.asString()) : "";
+            }
+        }
+        ExpressionResult result = evaluateExpression(context, isObjectValue);
+        return result != null ? (isObjectValue ? result.getValue() : result.asString()) : "";
     }
 
     private ExpressionResult evaluateExpression(EvaluationContext context, boolean isObjectValue) {

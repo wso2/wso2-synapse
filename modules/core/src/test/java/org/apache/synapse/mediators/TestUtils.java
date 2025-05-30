@@ -41,11 +41,20 @@ import javax.xml.namespace.QName;
 
 public class TestUtils {
 
-    public static MessageContext getTestContext(String bodyText, Map<String,Entry> props) throws Exception {
+    public static MessageContext getTestContext(String bodyText, Map<String, Entry> props) throws Exception {
+        return buildTestContext(bodyText, props, false);
+    }
+
+    public static MessageContext getTestContextWithAxis2(String bodyText, Map<String, Entry> props) throws Exception {
+        return buildTestContext(bodyText, props, true);
+    }
+
+    private static MessageContext buildTestContext(String bodyText, Map<String, Entry> props, boolean requireAxis2) throws Exception {
         TestMessageContextBuilder builder = new TestMessageContextBuilder();
         builder.setBodyFromString(bodyText);
+        builder.setRequireAxis2MessageContext(requireAxis2);
         if (props != null) {
-            for (Map.Entry<String,Entry> mapEntry : props.entrySet()) {
+            for (Map.Entry<String, Entry> mapEntry : props.entrySet()) {
                 builder.addEntry(mapEntry.getKey(), mapEntry.getValue());
             }
         }
@@ -79,6 +88,10 @@ public class TestUtils {
 
     public static MessageContext getTestContext(String bodyText) throws Exception {
         return getTestContext(bodyText, null);
+    }
+
+    public static MessageContext getTestContextWithAxis2(String bodyText) throws Exception {
+        return getTestContextWithAxis2(bodyText, null);
     }
 
     public static MessageContext createLightweightSynapseMessageContext(

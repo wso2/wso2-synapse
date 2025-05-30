@@ -62,7 +62,7 @@ public class RegexTemplateProcessorTest extends TestCase {
             if (payloadContentType.equals("application/json"))
                 this.messageContext = TestUtils.getTestContextJson(payload, null);
             else
-                this.messageContext = TestUtils.getTestContext(payload, null);
+                this.messageContext = TestUtils.getTestContextWithAxis2(payload, null);
         }
 
         @Parameterized.Parameters

@@ -242,7 +242,7 @@ public class InlineExpressionUtilTest {
                 "        <publish_date>1925-04-10</publish_date>\n" +
                 "    </book>";
 
-        MessageContext mc = TestUtils.getTestContext(xmlPayload);
+        MessageContext mc = TestUtils.getTestContextWithAxis2(xmlPayload);
         mc.setVariable("endpoint", "https://test.wso2.com/");
         String inlineExpression = "Using endpoint : ${vars.endpoint} to process book : ${xpath('//catalog/book[1]')}";
 
