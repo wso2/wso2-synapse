@@ -29,21 +29,22 @@ import org.apache.synapse.message.store.Constants;
 import org.apache.synapse.message.store.impl.commons.MessageConverter;
 import org.apache.synapse.message.store.impl.commons.StorableMessage;
 
-import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.ObjectMessage;
-import javax.jms.Session;
 
 public class JmsConsumer implements MessageConsumer {
 
     private static final Log logger = LogFactory.getLog(JmsConsumer.class.getName());
 
-    private Connection connection;
+    private javax.jms.Connection javaxConnection;
+    private jakarta.jms.Connection jakartaConnection;
 
-    private Session session;
+    private javax.jms.Session javaxSession;
+    private jakarta.jms.Session jakartaSession;
 
-    private javax.jms.MessageConsumer consumer;
+    private javax.jms.MessageConsumer javaxConsumer;
+    private jakarta.jms.MessageConsumer jakartaConsumer;
 
     private JmsStore store;
 
@@ -62,17 +63,20 @@ public class JmsConsumer implements MessageConsumer {
      */
     private boolean isAlive;
 
+    private boolean isVersion31;
+
     /**
      * Constructor for JMS consumer
      *
      * @param store JMSStore associated to this JMS consumer
      */
-    public JmsConsumer(JmsStore store) {
+    public JmsConsumer(JmsStore store, boolean isVersion31) {
         if (store == null) {
             logger.error("Cannot initialize.");
             return;
         }
         this.store = store;
+        this.isVersion31 = isVersion31;
         cachedMessage = new CachedMessage();
         isReceiveError = false;
         isInitialized = true;
@@ -82,54 +86,10 @@ public class JmsConsumer implements MessageConsumer {
     public MessageContext receive() {
 
         if (isAlive) {
-            boolean connectionSuccess = checkAndTryConnect();
-
-            if (!connectionSuccess) {
-                throw new SynapseException(idString + "Error while connecting to JMS provider. "
-                        + MessageProcessorConstants.STORE_CONNECTION_ERROR);
-            }
-
-            try {
-                Message message = consumer.receive(1000);
-                if (message == null) {
-                    return null;
-                }
-                if (!(message instanceof ObjectMessage)) {
-                    logger.warn("JMS Consumer " + getId() + " did not receive a javax.jms.ObjectMessage");
-                    //we just discard this message as we only store Object messages via JMS Message store
-                    message.acknowledge();
-                    return null;
-                }
-                ObjectMessage msg = (ObjectMessage) message;
-                String messageId = msg.getStringProperty(Constants.OriginalMessageID);
-                if (!(msg.getObject() instanceof StorableMessage)) {
-                    logger.warn("JMS Consumer " + getId() + " did not receive a valid message.");
-                    message.acknowledge();
-                    return null;
-                }
-
-                //create a ,essage context back from the stored message
-                StorableMessage storableMessage = (StorableMessage) msg.getObject();
-                org.apache.axis2.context.MessageContext axis2Mc = store.newAxis2Mc();
-                MessageContext synapseMc = store.newSynapseMc(axis2Mc);
-                synapseMc = MessageConverter.toMessageContext(storableMessage, axis2Mc, synapseMc);
-
-                //cache the message
-                updateCache(message, synapseMc, messageId, false);
-
-                if (logger.isDebugEnabled()) {
-                    logger.debug(getId() + " Received MessageId:" + messageId + " priority:" + message.getJMSPriority());
-                }
-
-                return synapseMc;
-
-            } catch (JMSException e) {
-                logger.error("Cannot fetch messages from Store " + store.getName());
-                updateCache(null, null, "", true);
-                cleanup();
-            /* try connecting and receiving again. Try to connect will happen configured number of times
-            and give up with a SynapseException */
-                return receive();
+            if (isVersion31) {
+                return getMessageContextForJakartaMessage();
+            } else {
+                return getMessageContextForJavaxMessage();
             }
         } else {
             if (logger.isDebugEnabled()) {
@@ -137,6 +97,108 @@ public class JmsConsumer implements MessageConsumer {
                         + ", store: " + store.getName());
             }
             return null;
+        }
+    }
+
+    private MessageContext getMessageContextForJavaxMessage() {
+        boolean connectionSuccess = checkAndTryConnectForJavax();
+
+        if (!connectionSuccess) {
+            throw new SynapseException(idString + "Error while connecting to JMS provider. "
+                    + MessageProcessorConstants.STORE_CONNECTION_ERROR);
+        }
+
+        try {
+            Message message = javaxConsumer.receive(1000);
+            if (message == null) {
+                return null;
+            }
+            if (!(message instanceof ObjectMessage)) {
+                logger.warn("JMS Consumer " + getId() + " did not receive a javax.jms.ObjectMessage");
+                //we just discard this message as we only store Object messages via JMS Message store
+                message.acknowledge();
+                return null;
+            }
+            ObjectMessage msg = (ObjectMessage) message;
+            String messageId = msg.getStringProperty(Constants.OriginalMessageID);
+            if (!(msg.getObject() instanceof StorableMessage)) {
+                logger.warn("JMS Consumer " + getId() + " did not receive a valid message.");
+                message.acknowledge();
+                return null;
+            }
+
+            //create a message context back from the stored message
+            StorableMessage storableMessage = (StorableMessage) msg.getObject();
+            org.apache.axis2.context.MessageContext axis2Mc = store.newAxis2Mc();
+            MessageContext synapseMc = store.newSynapseMc(axis2Mc);
+            synapseMc = MessageConverter.toMessageContext(storableMessage, axis2Mc, synapseMc);
+
+            //cache the message
+            updateJavaxCache(message, synapseMc, messageId, false);
+
+            if (logger.isDebugEnabled()) {
+                logger.debug(getId() + " Received MessageId:" + messageId + " priority:" + message.getJMSPriority());
+            }
+
+            return synapseMc;
+        } catch (JMSException e) {
+            logger.error("Cannot fetch messages from Store " + store.getName());
+            updateJavaxCache(null, null, "", true);
+            cleanup();
+            /* try connecting and receiving again. Try to connect will happen configured number of times
+            and give up with a SynapseException */
+            return receive();
+        }
+    }
+
+    private MessageContext getMessageContextForJakartaMessage() {
+        boolean connectionSuccess = checkAndTryConnectForJakarta();
+
+        if (!connectionSuccess) {
+            throw new SynapseException(idString + "Error while connecting to JMS provider. "
+                    + MessageProcessorConstants.STORE_CONNECTION_ERROR);
+        }
+
+        try {
+            jakarta.jms.Message message = jakartaConsumer.receive(1000);
+            if (message == null) {
+                return null;
+            }
+            if (!(message instanceof jakarta.jms.ObjectMessage)) {
+                logger.warn("JMS Consumer " + getId() + " did not receive a javax.jms.ObjectMessage");
+                //we just discard this message as we only store Object messages via JMS Message store
+                message.acknowledge();
+                return null;
+            }
+            jakarta.jms.ObjectMessage msg = (jakarta.jms.ObjectMessage) message;
+            String messageId = msg.getStringProperty(Constants.OriginalMessageID);
+            if (!(msg.getObject() instanceof StorableMessage)) {
+                logger.warn("JMS Consumer " + getId() + " did not receive a valid message.");
+                message.acknowledge();
+                return null;
+            }
+
+            //create a message context back from the stored message
+            StorableMessage storableMessage = (StorableMessage) msg.getObject();
+            org.apache.axis2.context.MessageContext axis2Mc = store.newAxis2Mc();
+            MessageContext synapseMc = store.newSynapseMc(axis2Mc);
+            synapseMc = MessageConverter.toMessageContext(storableMessage, axis2Mc, synapseMc);
+
+            //cache the message
+            updateJakartaCache(message, synapseMc, messageId, false);
+
+            if (logger.isDebugEnabled()) {
+                logger.debug(getId() + " Received MessageId:" + messageId + " priority:" + message.getJMSPriority());
+            }
+
+            return synapseMc;
+        } catch (jakarta.jms.JMSException e) {
+            logger.error("Cannot fetch messages from Store " + store.getName());
+            updateJavaxCache(null, null, "", true);
+            cleanup();
+            /* try connecting and receiving again. Try to connect will happen configured number of times
+            and give up with a SynapseException */
+            return receive();
         }
     }
 
@@ -152,27 +214,50 @@ public class JmsConsumer implements MessageConsumer {
         if (logger.isDebugEnabled()) {
             logger.debug(getId() + " cleaning up...");
         }
-        try {
-            store.cleanup(connection, session);
-            return true;
-        } catch (JMSException e) {
-            throw new SynapseException("Error while connecting to store to close created connections. JMS provider "
-                    + "might not be accessible " + store.getName() + " "
-                    + MessageProcessorConstants.STORE_CONNECTION_ERROR, e);
-        } finally {
-            connection = null;
-            session = null;
-            consumer = null;
+        if (isVersion31) {
+            try {
+                store.cleanupJakarta(jakartaConnection, jakartaSession);
+                return true;
+            } catch (jakarta.jms.JMSException e) {
+                throw new SynapseException("Error while connecting to store to close created connections. JMS provider "
+                        + "might not be accessible " + store.getName() + " "
+                        + MessageProcessorConstants.STORE_CONNECTION_ERROR, e);
+            } finally {
+                jakartaConnection = null;
+                jakartaSession = null;
+                jakartaConsumer = null;
+            }
+        } else {
+            try {
+                store.cleanupJavax(javaxConnection, javaxSession);
+                return true;
+            } catch (javax.jms.JMSException e) {
+                throw new SynapseException("Error while connecting to store to close created connections. JMS provider "
+                        + "might not be accessible " + store.getName() + " "
+                        + MessageProcessorConstants.STORE_CONNECTION_ERROR, e);
+            } finally {
+                javaxConnection = null;
+                javaxSession = null;
+                javaxConsumer = null;
+            }
         }
     }
 
     public boolean isAlive() {
 
         if (isAlive) {
-            try {
-                session.getAcknowledgeMode(); /** No straight forward way to check session availability */
-            } catch (JMSException e) {
-                return false;
+            if (isVersion31) {
+                try {
+                    jakartaSession.getAcknowledgeMode(); /** No straight forward way to check session availability */
+                } catch(jakarta.jms.JMSException e){
+                    return false;
+                }
+            } else {
+                try {
+                    javaxSession.getAcknowledgeMode(); /** No straight forward way to check session availability */
+                } catch(javax.jms.JMSException e){
+                    return false;
+                }
             }
         } else {
             return false;
@@ -184,30 +269,57 @@ public class JmsConsumer implements MessageConsumer {
         this.isAlive = isAlive;
     }
 
-    public Connection getConnection() {
-        return connection;
+    public javax.jms.Connection getJavaxConnection() {
+        return javaxConnection;
     }
 
-    public JmsConsumer setConnection(Connection connection) {
-        this.connection = connection;
+    public JmsConsumer setJavaxConnection(javax.jms.Connection connection) {
+        this.javaxConnection = connection;
         return this;
     }
 
-    public Session getSession() {
-        return session;
+    public jakarta.jms.Connection getJakartaConnection() {
+        return jakartaConnection;
     }
 
-    public JmsConsumer setSession(Session session) {
-        this.session = session;
+    public JmsConsumer setJakartaConnection(jakarta.jms.Connection connection) {
+        this.jakartaConnection = connection;
         return this;
     }
 
-    public javax.jms.MessageConsumer getConsumer() {
-        return consumer;
+    public javax.jms.Session getJavaxSession() {
+        return javaxSession;
     }
 
-    public JmsConsumer setConsumer(javax.jms.MessageConsumer consumer) {
-        this.consumer = consumer;
+    public JmsConsumer setJavaxSession(javax.jms.Session session) {
+        this.javaxSession = session;
+        return this;
+    }
+
+    public jakarta.jms.Session getJakartaSession() {
+        return jakartaSession;
+    }
+
+    public JmsConsumer setJakartaSession(jakarta.jms.Session session) {
+        this.jakartaSession = session;
+        return this;
+    }
+
+    public javax.jms.MessageConsumer getJavaxConsumer() {
+        return javaxConsumer;
+    }
+
+    public JmsConsumer setJavaxConsumer(javax.jms.MessageConsumer consumer) {
+        this.javaxConsumer = consumer;
+        return this;
+    }
+
+    public jakarta.jms.MessageConsumer getJakartaConsumer() {
+        return jakartaConsumer;
+    }
+
+    public JmsConsumer setJakartaConsumer(jakarta.jms.MessageConsumer consumer) {
+        this.jakartaConsumer = consumer;
         return this;
     }
 
@@ -239,11 +351,33 @@ public class JmsConsumer implements MessageConsumer {
      *
      * @return true if connection to JMS provider is successfully made
      */
-    private boolean checkAndTryConnect() {
+    private boolean checkAndTryConnectForJavax() {
 
         boolean connectionSuccess = false;
 
-        if (consumer != null && session != null && connection != null) {
+        if (javaxConsumer != null && javaxSession != null && javaxConnection != null) {
+            connectionSuccess = true;
+        } else {
+            try {
+                reconnect();
+                connectionSuccess = true;
+            } catch (StoreForwardException | SynapseException e) {
+                logger.error("Error while connecting to JMS store and initializing consumer", e);
+            }
+        }
+        return connectionSuccess;
+    }
+
+    /**
+     * Check if connection, session and consumer is created successfully, if not try to connect
+     *
+     * @return true if connection to JMS provider is successfully made
+     */
+    private boolean checkAndTryConnectForJakarta() {
+
+        boolean connectionSuccess = false;
+
+        if (jakartaConsumer != null && jakartaSession != null && jakartaConnection != null) {
             connectionSuccess = true;
         } else {
             try {
@@ -259,9 +393,16 @@ public class JmsConsumer implements MessageConsumer {
     private void writeToFileSystem() {
     }
 
-    private void updateCache(Message message, MessageContext synCtx, String messageId, boolean receiveError) {
+    private void updateJavaxCache(javax.jms.Message message, MessageContext synCtx, String messageId, boolean receiveError) {
         isReceiveError = receiveError;
         cachedMessage.setMessage(message);
+        cachedMessage.setMc(synCtx);
+        cachedMessage.setId(messageId);
+    }
+
+    private void updateJakartaCache(jakarta.jms.Message message, MessageContext synCtx, String messageId, boolean receiveError) {
+        isReceiveError = receiveError;
+        cachedMessage.setJakartaMessage(message);
         cachedMessage.setMc(synCtx);
         cachedMessage.setId(messageId);
     }
@@ -270,14 +411,20 @@ public class JmsConsumer implements MessageConsumer {
         logger.info("Trying to reconnect to JMS store " + store.getName());
         JmsConsumer consumer = (JmsConsumer) store.getConsumer();
         logger.info("Successfully connected to JMS store " + store.getName());
-        if (consumer.getConsumer() == null) {
+        if (consumer.getJavaxConsumer() == null && consumer.getJakartaConsumer() == null) {
             if (logger.isDebugEnabled()) {
                 logger.debug(getId() + " could not reconnect to the broker.");
             }
         }
-        connection = consumer.getConnection();
-        session = consumer.getSession();
-        this.consumer = consumer.getConsumer();
+        if (isVersion31) {
+            jakartaConnection = consumer.getJakartaConnection();
+            jakartaSession = consumer.getJakartaSession();
+            this.jakartaConsumer = consumer.getJakartaConsumer();
+        } else {
+            javaxConnection = consumer.getJavaxConnection();
+            javaxSession = consumer.getJavaxSession();
+            this.javaxConsumer = consumer.getJavaxConsumer();
+        }
         if (logger.isDebugEnabled()) {
             logger.debug(getId() + " ===> " + consumer.getId());
         }
@@ -289,12 +436,18 @@ public class JmsConsumer implements MessageConsumer {
     }
 
     private final class CachedMessage {
-        private Message message = null;
+        private javax.jms.Message javaxMessage = null;
+        private jakarta.jms.Message jakartaMessage = null;
         private MessageContext mc = null;
         private String id = "";
 
         public CachedMessage setMessage(Message message) {
-            this.message = message;
+            this.javaxMessage = message;
+            return this;
+        }
+
+        public CachedMessage setJakartaMessage(jakarta.jms.Message message) {
+            this.jakartaMessage = message;
             return this;
         }
 
@@ -305,15 +458,21 @@ public class JmsConsumer implements MessageConsumer {
          * we call recover on session will return false
          */
         public boolean ack() {
+            if (jakartaMessage != null) {
+                return ackJakartaMessage();
+            } else {
+                return ackJavaxMessage();
+            }
+        }
+
+        private boolean ackJavaxMessage() {
             try {
-                if (message != null) {
-                    message.acknowledge();
-                }
+               javaxMessage.acknowledge();
             } catch (javax.jms.IllegalStateException e) {
                 logger.warn("JMS Session is in an illegal state. Recovering session.");
 
                 try {
-                    getSession().recover();
+                    getJavaxSession().recover();
                     logger.warn("JMS Session recovered.");
                 } catch (JMSException e1) {
                     logger.error("Error occurred while recovering session: "
@@ -329,8 +488,35 @@ public class JmsConsumer implements MessageConsumer {
             return true;
         }
 
+        private boolean ackJakartaMessage() {
+            try {
+                jakartaMessage.acknowledge();
+            } catch (jakarta.jms.IllegalStateException e) {
+                logger.warn("JMS Session is in an illegal state. Recovering session.");
+
+                try {
+                    getJakartaSession().recover();
+                    logger.warn("JMS Session recovered.");
+                } catch (jakarta.jms.JMSException e1) {
+                    logger.error("Error occurred while recovering session: "
+                            + e.getLocalizedMessage(), e);
+                    return false;
+                }
+                return false;
+            } catch (jakarta.jms.JMSException e) {
+                logger.error(getId() + " cannot ack last read message. Error:"
+                        + e.getLocalizedMessage(), e);
+                return false;
+            }
+            return true;
+        }
+
         public Message getMessage() {
-            return message;
+            return javaxMessage;
+        }
+
+        public jakarta.jms.Message getJakartaMessage() {
+            return jakartaMessage;
         }
 
         public CachedMessage setMc(MessageContext mc) {

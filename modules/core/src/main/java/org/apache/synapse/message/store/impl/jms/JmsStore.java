@@ -96,18 +96,26 @@ public class JmsStore extends AbstractMessageStore {
     private int cacheLevel = 0;
     /** */
     public static final String JMS_SPEC_11 = "1.1";
+    /** */
+    public static final String JMS_SPEC_31 = "3.1";
     /** Is JMS Version 1.1? */
     private boolean isVersion11 = true;
+    private boolean isVersion31 = false;
     /** Look up context */
     private Context context;
     /** JMS cachedConnection factory */
-    private javax.jms.ConnectionFactory connectionFactory;
+    private javax.jms.ConnectionFactory javaxConnectionFactory;
+    private jakarta.jms.ConnectionFactory jakartaConnectionFactory;
     /** JMS destination */
-    private Destination queue;
+    private javax.jms.Destination javaxQueue;
+    /** JMS destination */
+    private jakarta.jms.Destination jakartaQueue;
     /** */
     private final Object queueLock = new Object();
     /** JMS Connection used to send messages to the queue */
-    private Connection producerConnection;
+    private javax.jms.Connection producerJavaxConnection;
+    /** JMS Connection used to send messages to the queue */
+    private jakarta.jms.Connection producerJakartaConnection;
     /** lock protecting the producer connection */
     private final Object producerLock = new Object();
     /** records the last retried time between the broker and ESB */
@@ -132,30 +140,39 @@ public class JmsStore extends AbstractMessageStore {
         }
 
         if (this.producer == null) {
-            this.producer = new JmsProducer(this);
+            this.producer = new JmsProducer(this, isVersion31);
             this.producer.setId(nextProducerId());
         } else {
             return producer;
         }
+        if (isVersion31) {
+            getJakartaProducer();
+        } else {
+            getJavaxProducer();
+        }
 
-        Session session = null;
+        return this.producer;
+    }
+
+    private void getJavaxProducer() {
+        javax.jms.Session session = null;
         javax.jms.MessageProducer messageProducer;
         try {
             synchronized (producerLock) {
-                if (producerConnection == null) {
-                    newWriteConnection();
+                if (producerJavaxConnection == null) {
+                    newWriteJavaxConnection();
                 }
             }
-            if (((JmsProducer) this.producer).getSession() == null) {
+            if (((JmsProducer) this.producer).getJavaxSession() == null) {
                 try {
-                    session = newSession(producerConnection(), Session.AUTO_ACKNOWLEDGE, true);
-                } catch (JMSException e) {
-                    newWriteConnection();
-                    session = newSession(producerConnection(), Session.AUTO_ACKNOWLEDGE, true);
+                    session = newJavaxSession(producerJavaxConnection(), Session.AUTO_ACKNOWLEDGE, true);
+                } catch (javax.jms.JMSException e) {
+                    newWriteJavaxConnection();
+                    session = newJavaxSession(producerJavaxConnection(), Session.AUTO_ACKNOWLEDGE, true);
                 }
-                messageProducer = newProducer(session);
-                ((JmsProducer) this.producer).setConnection(producerConnection()).setSession(session).
-                        setProducer(messageProducer);
+                messageProducer = newJavaxProducer(session);
+                ((JmsProducer) this.producer).setJavaxConnection(producerJavaxConnection()).setJavaxSession(session).
+                        setJavaxProducer(messageProducer);
                 if (logger.isDebugEnabled()) {
                     logger.debug(nameString() + " created message producer " + this.producer.getId());
                 }
@@ -169,32 +186,96 @@ public class JmsStore extends AbstractMessageStore {
             logger.error(errorMsg, t);
             synchronized (producerLock) {
                 try {
-                    cleanup(producerConnection, session);
-                } catch (JMSException e) {
+                    cleanupJavax(producerJavaxConnection, session);
+                } catch (javax.jms.JMSException e) {
                     throw new SynapseException("Error while cleaning up connection for message store "
                             + nameString(), e);
                 }
-                producerConnection = null;
+                producerJavaxConnection = null;
             }
         }
-        return this.producer;
+    }
+
+    private void getJakartaProducer() {
+        jakarta.jms.Session session = null;
+        jakarta.jms.MessageProducer messageProducer;
+        try {
+            synchronized (producerLock) {
+                if (producerJakartaConnection == null) {
+                    newWriteJakartaConnection();
+                }
+            }
+            if (((JmsProducer) this.producer).getJakartaSession() == null) {
+                try {
+                    session = newJakartaSession(producerJakartaConnection(), Session.AUTO_ACKNOWLEDGE, true);
+                } catch (jakarta.jms.JMSException e) {
+                    newWriteJakartaConnection();
+                    session = newJakartaSession(producerJakartaConnection(), Session.AUTO_ACKNOWLEDGE, true);
+                }
+                messageProducer = newJakartaProducer(session);
+                ((JmsProducer) this.producer).setJakartaConnection(producerJakartaConnection()).setJakartaSession(session).
+                        setJakartaProducer(messageProducer);
+                if (logger.isDebugEnabled()) {
+                    logger.debug(nameString() + " created message producer " + this.producer.getId());
+                }
+                if (cacheLevel == 1) {
+                    cachedProducer = producer;
+                }
+
+            }
+        } catch (Throwable t) {
+            String errorMsg = "Could not create a Message Producer for " + nameString();
+            logger.error(errorMsg, t);
+            synchronized (producerLock) {
+                try {
+                    cleanupJakarta(producerJakartaConnection, session);
+                } catch (jakarta.jms.JMSException e) {
+                    throw new SynapseException("Error while cleaning up connection for message store "
+                            + nameString(), e);
+                }
+                producerJakartaConnection = null;
+            }
+        }
     }
 
     public MessageConsumer getConsumer() throws SynapseException {
-        JmsConsumer consumer = new JmsConsumer(this);
+        JmsConsumer consumer = new JmsConsumer(this, isVersion31);
         consumer.setId(nextConsumerId());
-        try {
-            Connection connection = newConnection();
-            Session session = newSession(connection, Session.CLIENT_ACKNOWLEDGE, false);
-            javax.jms.MessageConsumer jmsConsumer = newConsumer(session);
-            consumer.setConnection(connection)
-                    .setSession(session)
-                    .setConsumer(jmsConsumer);
+        if (isVersion31) {
+            consumer = getJakartaConsumer(consumer);
+        } else {
+            consumer = getJavaxConsumer(consumer);
+        }
 
-            if (logger.isDebugEnabled()) {
-                logger.debug(nameString() + " created message consumer " + consumer.getId());
-            }
+        if (logger.isDebugEnabled()) {
+            logger.debug(nameString() + " created message consumer " + consumer.getId());
+        }
+        return consumer;
+    }
+
+    private JmsConsumer getJavaxConsumer(JmsConsumer consumer) {
+        try {
+            Connection connection = newJavaxConnection();
+            Session session = newJavaxSession(connection, Session.CLIENT_ACKNOWLEDGE, false);
+            javax.jms.MessageConsumer jmsConsumer = newJavaxConsumer(session);
+            consumer.setJavaxConnection(connection)
+                    .setJavaxSession(session)
+                    .setJavaxConsumer(jmsConsumer);
         } catch (JMSException | StoreForwardException e) {
+            throw new SynapseException("Could not create a Message Consumer for " + nameString(), e);
+        }
+        return consumer;
+    }
+
+    private JmsConsumer getJakartaConsumer(JmsConsumer consumer) {
+        try {
+            jakarta.jms.Connection connection = newJakartaConnection();
+            jakarta.jms.Session session = newJakartaSession(connection, Session.CLIENT_ACKNOWLEDGE, false);
+            jakarta.jms.MessageConsumer jmsConsumer = newJakartaConsumer(session);
+            consumer.setJakartaConnection(connection)
+                    .setJakartaSession(session)
+                    .setJakartaConsumer(jmsConsumer);
+        } catch (jakarta.jms.JMSException | StoreForwardException e) {
             throw new SynapseException("Could not create a Message Consumer for " + nameString(), e);
         }
         return consumer;
@@ -236,7 +317,7 @@ public class JmsStore extends AbstractMessageStore {
         }
         try {
             initme();
-        } catch (StoreForwardException | JMSException e) {
+        } catch (StoreForwardException | javax.jms.JMSException | jakarta.jms.JMSException e) {
             logger.error(nameString() + ". Initialization failed...", e);
         }
         super.init(se);
@@ -247,10 +328,18 @@ public class JmsStore extends AbstractMessageStore {
         if (logger.isDebugEnabled()) {
             logger.debug("Destroying " + nameString() + "...");
         }
-        try {
-            closeWriteConnection();
-        } catch (JMSException e) {
-            throw new SynapseException("Error while closing JMS connection at " + nameString(), e);
+        if (isVersion31) {
+            try {
+                closeJakartaWriteConnection();
+            } catch (jakarta.jms.JMSException e) {
+                throw new SynapseException("Error while closing JMS connection at " + nameString(), e);
+            }
+        } else {
+            try {
+                closeJavaxWriteConnection();
+            } catch (javax.jms.JMSException e) {
+                throw new SynapseException("Error while closing JMS connection at " + nameString(), e);
+            }
         }
         super.destroy();
     }
@@ -262,26 +351,51 @@ public class JmsStore extends AbstractMessageStore {
      * @throws JMSException on a JMS issue
      * @throws StoreForwardException on a non JMS issue
      */
-    public Connection newConnection() throws JMSException, StoreForwardException {
+    public Connection newJavaxConnection() throws JMSException, StoreForwardException {
         Connection connection;
-        if (connectionFactory == null) {
+        if (javaxConnectionFactory == null) {
             throw new StoreForwardException("Cannot create a connection to JMS provider as connectionFactory == null");
         }
         if (isVersion11) {
             if (userName != null && password != null) {
-                connection = connectionFactory.createConnection(userName, password);
+                connection = javaxConnectionFactory.createConnection(userName, password);
             } else {
-                connection = connectionFactory.createConnection();
+                connection = javaxConnectionFactory.createConnection();
             }
         } else {
             QueueConnectionFactory connectionFactory;
-            connectionFactory = (QueueConnectionFactory) this.connectionFactory;
+            connectionFactory = (QueueConnectionFactory) this.javaxConnectionFactory;
             if (userName != null && password != null) {
                 connection = connectionFactory.createQueueConnection(userName, password);
             } else {
                 connection = connectionFactory.createQueueConnection();
             }
         }
+        connection.start();
+        if (logger.isDebugEnabled()) {
+            logger.debug(nameString() + ". Created JMS Connection.");
+        }
+        return connection;
+    }
+
+    /**
+     * Creates a new Jakarta JMS Connection.
+     *
+     * @return A connection to the JMS Queue used as the store of this message store.
+     * @throws JMSException on a JMS issue
+     * @throws StoreForwardException on a non JMS issue
+     */
+    public jakarta.jms.Connection newJakartaConnection() throws jakarta.jms.JMSException, StoreForwardException {
+        jakarta.jms.Connection connection;
+        if (jakartaConnectionFactory == null) {
+            throw new StoreForwardException("Cannot create a connection to JMS provider as connectionFactory == null");
+        }
+        if (userName != null && password != null) {
+            connection = jakartaConnectionFactory.createConnection(userName, password);
+        } else {
+            connection = jakartaConnectionFactory.createConnection();
+        }
+
         connection.start();
         if (logger.isDebugEnabled()) {
             logger.debug(nameString() + ". Created JMS Connection.");
@@ -299,7 +413,7 @@ public class JmsStore extends AbstractMessageStore {
      * @throws JMSException on a JMS related issue
      * @throws StoreForwardException on a non JMS related issue
      */
-    public Session newSession(Connection connection, int mode, boolean isProducerSession)
+    public Session newJavaxSession(Connection connection, int mode, boolean isProducerSession)
             throws JMSException, StoreForwardException {
 
         Session session;
@@ -328,6 +442,27 @@ public class JmsStore extends AbstractMessageStore {
         return session;
     }
 
+    public jakarta.jms.Session newJakartaSession(jakarta.jms.Connection connection, int mode, boolean isProducerSession)
+            throws jakarta.jms.JMSException, StoreForwardException {
+
+        jakarta.jms.Session session;
+
+        if(connection == null) {
+            throw new StoreForwardException("Cannot Create JMS session on null connection ");
+        }
+
+        if (isGuaranteedDeliveryEnable && isProducerSession) {
+            session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        } else {
+            session = connection.createSession(false, mode);
+        }
+
+        if (logger.isDebugEnabled()) {
+            logger.debug(nameString() + ". Created JMS Session.");
+        }
+        return session;
+    }
+
     /**
      * Creates a new JMS Message Producer.
      *
@@ -335,24 +470,47 @@ public class JmsStore extends AbstractMessageStore {
      * @return A JMS Message Producer.
      * @throws JMSException
      */
-    public javax.jms.MessageProducer newProducer(Session session) throws JMSException, StoreForwardException {
+    public javax.jms.MessageProducer newJavaxProducer(javax.jms.Session session) throws JMSException, StoreForwardException {
         if (session == null) {
             throw new StoreForwardException("Cannot create a JMS consumer on null session");
         }
 
         //create destination before creating the consumer if it is not yet created
-        createDestIfAbsent(session);
+        createJavaxDestIfAbsent(session);
 
         javax.jms.MessageProducer producer;
 
         if (isVersion11) {
-            producer = session.createProducer(queue);
+            producer = session.createProducer(javaxQueue);
         } else {
-            producer = ((QueueSession) session).createSender((javax.jms.Queue) queue);
+            producer = ((QueueSession) session).createSender((javax.jms.Queue) javaxQueue);
         }
         if (logger.isDebugEnabled()) {
             logger.debug(nameString() + " created JMS Message Producer to destination ["
-                         + queue.toString() + "].");
+                         + javaxQueue.toString() + "].");
+        }
+        return producer;
+    }
+
+    /**
+     * Creates a new JMS Message Producer.
+     *
+     * @param session  A JMS Session.
+     * @return A JMS Message Producer.
+     * @throws JMSException
+     */
+    public jakarta.jms.MessageProducer newJakartaProducer(jakarta.jms.Session session) throws jakarta.jms.JMSException, StoreForwardException {
+        if (session == null) {
+            throw new StoreForwardException("Cannot create a JMS consumer on null session");
+        }
+        //create destination before creating the consumer if it is not yet created
+        createJakartaDestIfAbsent(session);
+        jakarta.jms.MessageProducer producer;
+        producer = session.createProducer(jakartaQueue);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug(nameString() + " created JMS Message Producer to destination ["
+                    + javaxQueue.toString() + "].");
         }
         return producer;
     }
@@ -363,23 +521,46 @@ public class JmsStore extends AbstractMessageStore {
      * @return JMS Message Consumer
      * @throws JMSException on JMS issue when creating consumer with JMS provider
      */
-    public javax.jms.MessageConsumer newConsumer(Session session) throws JMSException, StoreForwardException {
+    public javax.jms.MessageConsumer newJavaxConsumer(Session session) throws JMSException, StoreForwardException {
         if (session == null) {
             throw new StoreForwardException("Cannot create a JMS consumer on null session");
         }
 
         //create destination before creating the consumer if it is not yet created
-        createDestIfAbsent(session);
+        createJavaxDestIfAbsent(session);
 
         javax.jms.MessageConsumer consumer;
         if(isVersion11) {
-            consumer = session.createConsumer(queue);
+            consumer = session.createConsumer(javaxQueue);
         } else {
-            consumer = ((QueueSession) session).createReceiver((Queue) queue);
+            consumer = ((QueueSession) session).createReceiver((Queue) javaxQueue);
         }
         if (logger.isDebugEnabled()) {
             logger.debug(nameString() + " created JMS Message Consumer to destination ["
-                         + queue.toString() + "].");
+                         + javaxQueue.toString() + "].");
+        }
+        return consumer;
+    }
+
+    /**
+     * Returns a new JMS Message Consumer.
+     * @param session JMS Session to create consumer form
+     * @return JMS Message Consumer
+     * @throws JMSException on JMS issue when creating consumer with JMS provider
+     */
+    public jakarta.jms.MessageConsumer newJakartaConsumer(jakarta.jms.Session session) throws jakarta.jms.JMSException,
+            StoreForwardException {
+        if (session == null) {
+            throw new StoreForwardException("Cannot create a JMS consumer on null session");
+        }
+
+        //create destination before creating the consumer if it is not yet created
+        createJakartaDestIfAbsent(session);
+
+        jakarta.jms.MessageConsumer consumer = session.createConsumer(jakartaQueue);
+        if (logger.isDebugEnabled()) {
+            logger.debug(nameString() + " created JMS Message Consumer to destination ["
+                    + javaxQueue.toString() + "].");
         }
         return consumer;
     }
@@ -392,12 +573,21 @@ public class JmsStore extends AbstractMessageStore {
      * @throws StoreForwardException on a non JMS related issue
      * @throws JMSException          on a JMS issue
      */
-    public void newWriteConnection() throws StoreForwardException, JMSException {
+    public void newWriteJavaxConnection() throws StoreForwardException, JMSException {
         synchronized (producerLock) {
-            if (producerConnection != null) {
-                closeConnection(producerConnection);
+            if (producerJavaxConnection != null) {
+                closeJavaxConnection(producerJavaxConnection);
             }
-            producerConnection = newConnection();
+            producerJavaxConnection = newJavaxConnection();
+        }
+    }
+
+    public void newWriteJakartaConnection() throws StoreForwardException, jakarta.jms.JMSException {
+        synchronized (producerLock) {
+            if (producerJakartaConnection != null) {
+                closeJakartaConnection(producerJakartaConnection);
+            }
+            producerJakartaConnection = newJakartaConnection();
         }
     }
 
@@ -408,10 +598,25 @@ public class JmsStore extends AbstractMessageStore {
      * false otherwise.
      * @throws JMSException on a JMS level issue
      */
-    public void closeWriteConnection() throws JMSException {
+    public void closeJavaxWriteConnection() throws JMSException {
         synchronized (producerLock) {
-            if (producerConnection != null) {
-                closeConnection(producerConnection);
+            if (producerJavaxConnection != null) {
+                closeJavaxConnection(producerJavaxConnection);
+            }
+        }
+    }
+
+    /**
+     * Closes the existing JMS message producer connection.
+     *
+     * @return true if the producer connection was closed without any error, <br/>
+     * false otherwise.
+     * @throws JMSException on a JMS level issue
+     */
+    public void closeJakartaWriteConnection() throws jakarta.jms.JMSException {
+        synchronized (producerLock) {
+            if (producerJakartaConnection != null) {
+                closeJakartaConnection(producerJakartaConnection);
             }
         }
     }
@@ -421,8 +626,17 @@ public class JmsStore extends AbstractMessageStore {
      *
      * @return The current JMS Connection used to create message producers.
      */
-    public Connection producerConnection() {
-        return producerConnection;
+    public javax.jms.Connection producerJavaxConnection() {
+        return producerJavaxConnection;
+    }
+
+    /**
+     * Returns the existing JMS message producer connection.
+     *
+     * @return The current JMS Connection used to create message producers.
+     */
+    public jakarta.jms.Connection producerJakartaConnection() {
+        return producerJakartaConnection;
     }
 
     /**
@@ -432,7 +646,21 @@ public class JmsStore extends AbstractMessageStore {
      * @return true if the connection was successfully closed. false otherwise.
      * @throws JMSException on a JMS level issue
      */
-    public void closeConnection(Connection connection) throws JMSException {
+    public void closeJavaxConnection(Connection connection) throws JMSException {
+        connection.close();
+        if (logger.isDebugEnabled()) {
+            logger.debug(nameString() + " closed connection to JMS broker.");
+        }
+    }
+
+    /**
+     * Closes the given Jakarta JMS Connection.
+     *
+     * @param connection The JMS Connection to be closed.
+     * @return true if the connection was successfully closed. false otherwise.
+     * @throws JMSException on a JMS level issue
+     */
+    public void closeJakartaConnection(jakarta.jms.Connection connection) throws jakarta.jms.JMSException {
         connection.close();
         if (logger.isDebugEnabled()) {
             logger.debug(nameString() + " closed connection to JMS broker.");
@@ -446,7 +674,7 @@ public class JmsStore extends AbstractMessageStore {
      * @param session     JMS Session associated with the given connection
      */
     public void reset(Connection connection, Session session) throws JMSException {
-        cleanup(connection, session);
+        cleanupJavax(connection, session);
     }
 
     /**
@@ -455,7 +683,23 @@ public class JmsStore extends AbstractMessageStore {
      * @param connection  JMS Connection
      * @param session JMS Session associated with the given connection
      */
-    public void cleanup(Connection connection, Session session) throws JMSException {
+    public void cleanupJavax(Connection connection, Session session) throws JMSException {
+        cachedProducer = null;
+        if (session != null) {
+            session.close();
+        }
+        if (connection != null) {
+            connection.close();
+        }
+    }
+
+    /**
+     * Cleans up the JMS Connection and Session associated with a JMS client.
+     *
+     * @param connection  JMS Connection
+     * @param session JMS Session associated with the given connection
+     */
+    public void cleanupJakarta(jakarta.jms.Connection connection, jakarta.jms.Session session) throws jakarta.jms.JMSException {
         cachedProducer = null;
         if (session != null) {
             session.close();
@@ -488,7 +732,7 @@ public class JmsStore extends AbstractMessageStore {
         this.cachedProducer = cachedProducer;
     }
 
-    private boolean initme() throws StoreForwardException, JMSException {
+    private boolean initme() throws StoreForwardException, javax.jms.JMSException, jakarta.jms.JMSException {
         Set<Map.Entry<String, Object>> mapSet = parameters.entrySet();
         for (Map.Entry<String, Object> e : mapSet) {
             Object value = e.getValue();
@@ -527,7 +771,10 @@ public class JmsStore extends AbstractMessageStore {
         destinationType = "queue";
         String version = (String) parameters.get(JMS_VERSION);
         if (version != null) {
-            if (!JMS_SPEC_11.equals(version)) {
+            if (JMS_SPEC_31.equals(version)) {
+                isVersion31 = true;
+                isVersion11 = false;
+            } else if (!JMS_SPEC_11.equals(version)) {
                 isVersion11 = false;
             }
         }
@@ -549,6 +796,15 @@ public class JmsStore extends AbstractMessageStore {
             //logger.warn(nameString() + ". Consumer Receiving time out not passed in. " +
             //            "Set to 60s.");
         //}
+        if (isVersion31) {
+            processJakartaConnection();
+        } else {
+            processJavaxConnection();
+        }
+        return true;
+    }
+
+    private void processJavaxConnection() throws StoreForwardException, javax.jms.JMSException {
         String connectionFac = null;
         try {
             context = new InitialContext(connectionProperties);
@@ -556,13 +812,13 @@ public class JmsStore extends AbstractMessageStore {
             if (connectionFac == null) {
                 connectionFac = "QueueConnectionFactory";
             }
-            connectionFactory = lookup(context, javax.jms.ConnectionFactory.class, connectionFac);
-            if (connectionFactory == null) {
+            javaxConnectionFactory = lookup(context, javax.jms.ConnectionFactory.class, connectionFac);
+            if (javaxConnectionFactory == null) {
                 throw new StoreForwardException(nameString() + " could not initialize JMS Connection Factory. "
                         + "Connection factory not found : " + connectionFac);
             }
-            createDestIfAbsent(null);
-            if (queue == null) {
+            createJavaxDestIfAbsent(null);
+            if (javaxQueue == null) {
                 logger.warn(nameString() + ". JMS Destination [" + destination + "] does not exist.");
             }
         } catch (NamingException e) {
@@ -572,12 +828,42 @@ public class JmsStore extends AbstractMessageStore {
                     + "].", e);
         } catch (Throwable t) {
             logger.error(nameString() + ". Could not initialize JMS Message Store. Error:"
-                         + t.getMessage() + ". Initial Context Factory:[" + parameters.get(NAMING_FACTORY_INITIAL)
+                    + t.getMessage() + ". Initial Context Factory:[" + parameters.get(NAMING_FACTORY_INITIAL)
                     + "]; Provider URL:[" + parameters.get(PROVIDER_URL) + "]; Connection Factory:[" + connectionFac
                     + "].",t);
         }
-        newWriteConnection();
-        return true;
+        newWriteJavaxConnection();
+    }
+
+    private void processJakartaConnection() throws StoreForwardException, jakarta.jms.JMSException {
+        String connectionFac = null;
+        try {
+            context = new InitialContext(connectionProperties);
+            connectionFac = (String) parameters.get(CONN_FACTORY);
+            if (connectionFac == null) {
+                connectionFac = "QueueConnectionFactory";
+            }
+            jakartaConnectionFactory = lookup(context, jakarta.jms.ConnectionFactory.class, connectionFac);
+            if (jakartaConnectionFactory == null) {
+                throw new StoreForwardException(nameString() + " could not initialize JMS Connection Factory. "
+                        + "Connection factory not found : " + connectionFac);
+            }
+            createJakartaDestIfAbsent(null);
+            if (jakartaQueue == null) {
+                logger.warn(nameString() + ". JMS Destination [" + destination + "] does not exist.");
+            }
+        } catch (NamingException e) {
+            logger.error(nameString() + ". Could not initialize JMS Message Store. Error:"
+                    + e.getLocalizedMessage() + ". Initial Context Factory:[" + parameters.get(NAMING_FACTORY_INITIAL)
+                    + "]; Provider URL:[" + parameters.get(PROVIDER_URL) + "]; Connection Factory:[" + connectionFac
+                    + "].", e);
+        } catch (Throwable t) {
+            logger.error(nameString() + ". Could not initialize JMS Message Store. Error:"
+                    + t.getMessage() + ". Initial Context Factory:[" + parameters.get(NAMING_FACTORY_INITIAL)
+                    + "]; Provider URL:[" + parameters.get(PROVIDER_URL) + "]; Connection Factory:[" + connectionFac
+                    + "].",t);
+        }
+        newWriteJakartaConnection();
     }
 
     /**
@@ -589,8 +875,8 @@ public class JmsStore extends AbstractMessageStore {
      * @throws JMSException on a JMS exception when creating Destination using session
      * @throws StoreForwardException on other issue
      */
-    private Destination getDestination(Session session) throws JMSException, StoreForwardException {
-        Destination dest = queue;
+    private Destination getJavaxDestination(Session session) throws JMSException, StoreForwardException {
+        Destination dest = javaxQueue;
         if (dest != null) {
             return dest;
         }
@@ -638,7 +924,61 @@ public class JmsStore extends AbstractMessageStore {
             }
         }
         synchronized (queueLock) {
-            queue = dest;
+            javaxQueue = dest;
+        }
+        return dest;
+    }
+
+    private jakarta.jms.Destination getJakartaDestination(jakarta.jms.Session session) throws StoreForwardException {
+        jakarta.jms.Destination dest = jakartaQueue;
+        if (dest != null) {
+            return dest;
+        }
+        //try creating a destination by looking up context
+        InitialContext newContext;
+        String destinationLookupFailureReason = "";
+        try {
+            dest = lookup(context, jakarta.jms.Destination.class, destination);
+        } catch (NamingException e) {
+            if (logger.isDebugEnabled()) {
+                logger.debug(nameString() + ". Could not lookup destination [" + destination
+                        + "]. Message: " + e.getLocalizedMessage());
+            }
+            //try to re-init the context
+            newContext = newContext();
+            try {
+                dest = lookup(newContext, jakarta.jms.Destination.class, destination);
+            } catch (Throwable t) {
+                destinationLookupFailureReason = nameString() + ". Destination [" + destination
+                        + "] not defined in JNDI context. Message:" + t.getLocalizedMessage();
+            }
+        }
+        //try creating destination by session as lookup failed (dest == null)
+        if (dest == null) {
+
+            if (session == null) {
+                throw new StoreForwardException(nameString() + "cannot create Destination" + destination
+                        +". JMS Session " + "cannot be null");
+            }
+
+            try {
+                dest = session.createQueue(destination);
+                if (logger.isDebugEnabled()) {
+                    logger.debug(nameString() + " created destination ["
+                            + destination + "] from session object.");
+                }
+            } catch (jakarta.jms.JMSException e) {
+                String error = nameString() + " could not create destination ["
+                        + destination + "]. from session or by JNDI context lookup. ";
+                error.concat("create by session error: " + e);
+                if (!destinationLookupFailureReason.isEmpty()) {
+                    error.concat(" create by lookup error: " + destinationLookupFailureReason);
+                }
+                throw new StoreForwardException(error, e);
+            }
+        }
+        synchronized (queueLock) {
+            jakartaQueue = dest;
         }
         return dest;
     }
@@ -706,15 +1046,22 @@ public class JmsStore extends AbstractMessageStore {
 
     private boolean destinationNonNull() {
         synchronized (queueLock) {
-            return queue != null;
+            return javaxQueue != null;
         }
     }
 
-    private boolean createDestIfAbsent(Session session) throws JMSException, StoreForwardException {
+    private boolean createJavaxDestIfAbsent(Session session) throws JMSException, StoreForwardException {
         synchronized (queueLock) {
-            return getDestination(session) != null;
+            return getJavaxDestination(session) != null;
         }
     }
+
+    private boolean createJakartaDestIfAbsent(jakarta.jms.Session session) throws StoreForwardException {
+        synchronized (queueLock) {
+            return getJakartaDestination(session) != null;
+        }
+    }
+
 
     private String nameString() {
         return "Store [" + getName() + "]";
