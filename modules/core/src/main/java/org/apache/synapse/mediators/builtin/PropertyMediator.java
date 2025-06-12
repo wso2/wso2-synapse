@@ -152,6 +152,7 @@ public class PropertyMediator extends AbstractMediator {
 				}
 				
                 synCtx.setProperty(name, resultValue);
+                MediatorPropertyUtils.handleSpecialProperties(name, resultValue, synCtx);
 
             } else if (XMLConfigConstants.SCOPE_TRACE.equals(scope)) {
                 //Setting property value into the propertyValue variable for tracing purposes
