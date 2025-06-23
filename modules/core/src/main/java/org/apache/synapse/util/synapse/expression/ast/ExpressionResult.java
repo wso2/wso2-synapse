@@ -18,7 +18,6 @@
 
 package org.apache.synapse.util.synapse.expression.ast;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
@@ -101,11 +100,6 @@ public class ExpressionResult {
             return (String) value;
         } else if (value instanceof JsonPrimitive && ((JsonPrimitive) value).isString()) {
             return ((JsonPrimitive) value).getAsString();
-        } else if (value instanceof JsonObject || value instanceof JsonArray) {
-            Gson gson = new Gson();
-            String originalJson = gson.toJson(value);
-            String escapedJson = gson.toJson(originalJson);
-            return escapedJson;
         }
         return value.toString(); // Fallback to toString() for other types
     }
