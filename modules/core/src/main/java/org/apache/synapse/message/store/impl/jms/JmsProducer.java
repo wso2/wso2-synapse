@@ -64,15 +64,15 @@ public class JmsProducer implements MessageProducer {
 
     private boolean isInitialized = false;
 
-    private boolean isVersion30 = false;
+    private boolean isVersion31 = false;
 
-    public JmsProducer(JmsStore store, boolean isVersion30) {
+    public JmsProducer(JmsStore store, boolean isVersion31) {
         if (store == null) {
             logger.error("Cannot initialize.");
             return;
         }
         this.store = store;
-        this.isVersion30 = isVersion30;
+        this.isVersion31 = isVersion31;
         isInitialized = true;
     }
 
@@ -86,7 +86,7 @@ public class JmsProducer implements MessageProducer {
             store.setProducer(null);
             return false;
         }
-        if (isVersion30) {
+        if (isVersion31) {
            return storeJakartaMessage(synCtx);
         } else {
             return storeJavaxMessage(synCtx);
@@ -234,7 +234,7 @@ public class JmsProducer implements MessageProducer {
     }
 
     public boolean cleanup() {
-        if (isVersion30) {
+        if (isVersion31) {
             try {
                 store.cleanupJavax(null, javaxSession);
                 return true;
@@ -301,7 +301,7 @@ public class JmsProducer implements MessageProducer {
     }
 
     private boolean checkConnection() {
-        if (isVersion30) {
+        if (isVersion31) {
             return checkJakartaConnection();
         } else {
             return checkJavaxConnection();
