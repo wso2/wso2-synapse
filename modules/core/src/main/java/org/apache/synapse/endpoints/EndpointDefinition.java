@@ -204,6 +204,7 @@ public class EndpointDefinition implements AspectConfigurable {
 
     public void setDynamicTimeoutExpression(SynapsePath expression) {
         this.dynamicTimeout = expression;
+        this.endpointTimeoutType = SynapseConstants.ENDPOINT_TIMEOUT_TYPE.ENDPOINT_TIMEOUT;
     }
 
     public SynapsePath getDynamicTimeoutExpression() {
