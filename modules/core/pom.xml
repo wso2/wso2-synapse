@@ -557,5 +557,9 @@
 			<groupId>org.wso2.orbit.io.swagger.v3</groupId>
 			<artifactId>swagger-parser</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>jakarta.jms</groupId>
+			<artifactId>jakarta.jms-api</artifactId>
+		</dependency>
 	</dependencies>
 </project>
