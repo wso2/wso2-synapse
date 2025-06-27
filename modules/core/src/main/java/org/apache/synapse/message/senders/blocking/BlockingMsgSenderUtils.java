@@ -18,6 +18,7 @@ package org.apache.synapse.message.senders.blocking;
 
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
+import org.apache.axis2.Constants.Configuration;
 import org.apache.axis2.addressing.AddressingConstants;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.client.Options;
@@ -337,6 +338,7 @@ public class BlockingMsgSenderUtils {
                                                  "FOLLOW_REDIRECT",
                                                  "DISABLE_COOKIE",
                                                  "setCharacterEncoding",
+                                                 Constants.Configuration.CHARACTER_SET_ENCODING,
                                                  NhttpConstants.DISTRIBUTED_TRANSACTION,
                                                  NhttpConstants.DISTRIBUTED_TRANSACTION_MANAGER,
                                                  Constants.Configuration.ENABLE_REST,
