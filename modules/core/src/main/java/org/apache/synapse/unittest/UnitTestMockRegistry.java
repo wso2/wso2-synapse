@@ -62,6 +62,7 @@ public class UnitTestMockRegistry extends AbstractRegistry {
     private static final String LOCAL_REGISTRY_PATH = "/_system/local";
     private static final String CONFIGURATION_REGISTRY_PATH = "/_system/config";
     private static final String GOVERNANCE_REGISTRY_PATH = "/_system/governance";
+    private static final String RESOURCES_REGISTRY_PATH = "/_system/governance/mi-resources";
     private static final String FILE = "http://wso2.org/projects/esb/registry/types/file";
 
     private static UnitTestMockRegistry initializeRegistry = new UnitTestMockRegistry();
@@ -164,8 +165,10 @@ public class UnitTestMockRegistry extends AbstractRegistry {
             resourcePath = LOCAL_REGISTRY_PATH + entryPath;
         } else if (entryType.equals(Constants.CONFIGURATION_REGISTRY_TYPE)) {
             resourcePath = CONFIGURATION_REGISTRY_PATH + entryPath;
-        } else if (entryType.equals(Constants.GOVERNANCE_REGISTRY_TYPE)) {
+        } else if (entryType.equals(Constants.GOVERNANCE_REGISTRY_TYPE )) {
             resourcePath = GOVERNANCE_REGISTRY_PATH + entryPath;
+        } else if (entryType.equals(Constants.RESOURCES_REGISTRY_TYPE )) {
+            resourcePath = RESOURCES_REGISTRY_PATH + entryPath;
         } else {
             return null;
         }
