@@ -165,9 +165,9 @@ public class UnitTestMockRegistry extends AbstractRegistry {
             resourcePath = LOCAL_REGISTRY_PATH + entryPath;
         } else if (entryType.equals(Constants.CONFIGURATION_REGISTRY_TYPE)) {
             resourcePath = CONFIGURATION_REGISTRY_PATH + entryPath;
-        } else if (entryType.equals(Constants.GOVERNANCE_REGISTRY_TYPE )) {
+        } else if (entryType.equals(Constants.GOVERNANCE_REGISTRY_TYPE)) {
             resourcePath = GOVERNANCE_REGISTRY_PATH + entryPath;
-        } else if (entryType.equals(Constants.RESOURCES_REGISTRY_TYPE )) {
+        } else if (entryType.equals(Constants.RESOURCES_REGISTRY_TYPE)) {
             resourcePath = RESOURCES_REGISTRY_PATH + entryPath;
         } else {
             return null;
