@@ -153,6 +153,7 @@ public class DeliveryAgent {
             }
 
             String requestID = (String) msgContext.getProperty(SSL_CUSTOM_PROFILE_CLIENT_ID_PROP_NAME);
+            requestID = requestID != null ? requestID : "";
             RouteRequestMapping routeRequestMapping = new RouteRequestMapping(route, requestID);
 
             // first we queue the message
