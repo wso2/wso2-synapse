@@ -126,10 +126,16 @@ public class RabbitMQStore extends AbstractMessageStore {
                 declareExchange(channel, exchangeName, queueName, routingKey);
                 log.info(nameString() + ". Initialized... ");
             } catch (TimeoutException | IOException e) {
-                log.error(nameString() + ". Initialization failed...", e);
+                log.warn(nameString() + " - Producer channel initialization failed. Will retry connecting  during "
+                        + "message publishing. Cause: " + e.getMessage());
+                if (log.isDebugEnabled()) {
+                    log.debug(nameString() + " - Initialization failed...:", e);
+                }
             }
         } else {
-            log.error(nameString() + ". Initialization failed...");
+            log.warn(nameString() + " - Producer connection not available at startup. " +
+                    "Will retry connecting during message publishing.");
+
         }
         channel = createChannel(producerConnection);
     }
