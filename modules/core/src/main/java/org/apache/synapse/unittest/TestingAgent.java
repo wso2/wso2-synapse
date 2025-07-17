@@ -41,6 +41,7 @@ import org.apache.synapse.unittest.testcase.data.classes.SynapseTestCase;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 import org.apache.synapse.unittest.testcase.data.classes.TestCaseSummary;
 import org.apache.synapse.unittest.testcase.data.classes.TestSuiteSummary;
+import org.jaxen.JaxenException;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -344,7 +345,7 @@ class TestingAgent {
      * @param testSummary            data storing object for test summary
      */
     private void checkAssertionWithSequenceMediation(boolean mediationResult, MessageContext resultedMessageContext,
-                                                     TestCase currentTestCase, TestCaseSummary testSummary) {
+                                                     TestCase currentTestCase, TestCaseSummary testSummary) throws JaxenException {
         if (mediationResult) {
             testSummary.setMediationStatus(Constants.PASSED_KEY);
             Assertor.doAssertionSequence(currentTestCase, resultedMessageContext, testSummary);

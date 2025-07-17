@@ -28,6 +28,7 @@ import org.apache.http.util.EntityUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.emulator.RequestProcessor;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -36,6 +37,8 @@ import org.apache.synapse.unittest.testcase.data.classes.AssertNotNull;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 import org.apache.synapse.unittest.testcase.data.classes.TestCaseAssertionSummary;
 import org.apache.synapse.unittest.testcase.data.classes.TestCaseSummary;
+import org.apache.synapse.util.xpath.SynapseExpression;
+import org.jaxen.JaxenException;
 
 import java.io.IOException;
 import java.util.List;
@@ -70,7 +73,7 @@ class Assertor {
      * @param testCaseSummary testSummary object for this test case
      */
     static void doAssertionSequence(
-            TestCase currentTestCase, MessageContext mediateMsgCtxt, TestCaseSummary testCaseSummary) {
+            TestCase currentTestCase, MessageContext mediateMsgCtxt, TestCaseSummary testCaseSummary) throws JaxenException {
 
         List<AssertEqual> assertEquals = currentTestCase.getAssertEquals();
         List<AssertNotNull> assertNotNulls = currentTestCase.getAssertNotNull();
@@ -135,7 +138,7 @@ class Assertor {
      * @param testCaseSummary  testSummary object for this test case
      */
     private static void startAssertEqualsForSequence(
-            List<AssertEqual> assertEquals, MessageContext messageContext, TestCaseSummary testCaseSummary) {
+        List<AssertEqual> assertEquals, MessageContext messageContext, TestCaseSummary testCaseSummary) throws JaxenException {
 
         log.info("AssertEquals - assert property for sequences started");
 
@@ -211,10 +214,19 @@ class Assertor {
                     break;
 
                 default:
-                    mediatedResult = "Received assert expression: "
-                            + Assertor.AssertionPrerequisite.getAssertExpression()
-                            + " is not a valid operation type for sequences";
-                    log.error(mediatedResult);
+                    String actualExpression = Assertor.AssertionPrerequisite.getAssertExpression();
+                    if (actualExpression.startsWith("${") && actualExpression.endsWith("}")) {
+                        String filteredActualExpression = actualExpression.replaceAll("^\\$\\{(.*)}$", "$1");
+                        SynapseExpression filteredSynapseExpression = new SynapseExpression(filteredActualExpression);
+                        mediatedResult = filteredSynapseExpression.stringValueOf(messageContext);
+                        isAssert = Assertor.AssertionPrerequisite.getExpected().equals(mediatedResult);
+                    } else {
+                        mediatedResult = "Received assert expression: "
+                                + Assertor.AssertionPrerequisite.getAssertExpression()
+                                + " is not a valid operation type for sequences";
+                        log.error(mediatedResult);
+                    }
+
             }
 
             log.info("Sequence Assert Expression - " + Assertor.AssertionPrerequisite.getAssertExpression());
@@ -244,7 +256,7 @@ class Assertor {
      * @param testCaseSummary testSummary object for this test case
      */
     private static void startAssertNotNullsForSequence(
-            List<AssertNotNull> assertNotNull, MessageContext messageContext, TestCaseSummary testCaseSummary) {
+            List<AssertNotNull> assertNotNull, MessageContext messageContext, TestCaseSummary testCaseSummary) throws JaxenException {
 
         log.info("Assert Not Null - assert property for sequences started");
 
@@ -284,10 +296,19 @@ class Assertor {
                     break;
 
                 default:
-                    mediatedResult = "Received assert expression: "
-                            + Assertor.AssertionPrerequisite.getAssertExpression()
-                            + " is not a valid operation type for sequences";
-                    log.error(mediatedResult);
+                    String actualExpression = Assertor.AssertionPrerequisite.getAssertExpression();
+                    if (actualExpression.startsWith("${") && actualExpression.endsWith("}")) {
+                        String filteredActualExpression = actualExpression.replaceAll("^\\$\\{(.*)}$", "$1");
+                        SynapseExpression filteredSynapseExpression = new SynapseExpression(filteredActualExpression);
+                        mediatedResult = filteredSynapseExpression.stringValueOf(messageContext);
+                        isAssertNull = mediatedResult == null;
+                    } else {
+                        mediatedResult = "Received assert expression: "
+                                + Assertor.AssertionPrerequisite.getAssertExpression()
+                                + " is not a valid operation type for sequences";
+                        log.error(mediatedResult);
+                    }
+
             }
 
             log.info("Sequence Assertion Expression - " + Assertor.AssertionPrerequisite.getAssertExpression());
