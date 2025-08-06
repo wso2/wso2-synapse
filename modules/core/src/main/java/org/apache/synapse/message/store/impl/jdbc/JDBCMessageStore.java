@@ -88,6 +88,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
             logger.debug("Initializing Datasource and Properties");
         }
         jdbcConfiguration = new JDBCConfiguration();
+        jdbcConfiguration.setSynapseEnvironment(synapseEnvironment);
         jdbcConfiguration.buildDataSource(parameters);
 
 //        JDBCMessageConverter.setSynapseEnvironment(synapseEnvironment);

@@ -19,15 +19,20 @@ package org.apache.synapse.message.store.impl.jdbc.util;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.mediators.Value;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.datasource.DataSourceFinder;
 import org.apache.synapse.commons.datasource.DataSourceInformation;
 import org.apache.synapse.commons.datasource.DataSourceRepositoryHolder;
 import org.apache.synapse.commons.datasource.RepositoryBasedDataSourceFinder;
 import org.apache.synapse.commons.datasource.factory.DataSourceFactory;
+import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.message.store.impl.jdbc.JDBCMessageStoreConstants;
+import org.apache.synapse.util.xpath.SynapseXPath;
+import org.jaxen.JaxenException;
 import org.wso2.securevault.secret.SecretInformation;
 import org.wso2.securevault.secret.SecretManager;
+
 
 import javax.naming.Context;
 import javax.sql.DataSource;
@@ -49,6 +54,12 @@ public class JDBCConfiguration {
     private static final Log log = LogFactory.getLog(JDBCConfiguration.class);
 
     private static Pattern h2InitPattern = Pattern.compile("\\s*;\\s*init\\s*=\\s*", Pattern.CASE_INSENSITIVE);
+
+    /** regex for any vault expression */
+    private static final String secureVaultRegex = "\\{(.*?):vault-lookup\\('(.*?)'\\)\\}";
+
+    /** Synapse Environment */
+    private SynapseEnvironment synapseEnvironment;
 
     /**
      * Information about datasource
@@ -128,8 +139,10 @@ public class JDBCConfiguration {
             Properties props = new Properties();
             props.put(Context.INITIAL_CONTEXT_FACTORY, parameters.get(JDBCMessageStoreConstants.JDBC_ICCLASS));
             props.put(Context.PROVIDER_URL, parameters.get(JDBCMessageStoreConstants.JDBC_CONNECTION_URL));
-            props.put(Context.SECURITY_PRINCIPAL, parameters.get(JDBCMessageStoreConstants.JDBC_USERNAME));
-            props.put(Context.SECURITY_CREDENTIALS, parameters.get(JDBCMessageStoreConstants.JDBC_PASSWORD));
+            props.put(Context.SECURITY_PRINCIPAL,
+                    resolveVaultExpressions((String) parameters.get(JDBCMessageStoreConstants.JDBC_USERNAME)));
+            props.put(Context.SECURITY_CREDENTIALS,
+                    resolveVaultExpressions((String) parameters.get(JDBCMessageStoreConstants.JDBC_PASSWORD)));
 
             this.setJndiProperties(props);
         }
@@ -146,8 +159,8 @@ public class JDBCConfiguration {
         dataSourceInformation.setUrl((String) parameters.get(JDBCMessageStoreConstants.JDBC_CONNECTION_URL));
 
         SecretInformation secretInformation = new SecretInformation();
-        secretInformation.setUser((String) parameters.get(JDBCMessageStoreConstants.JDBC_USERNAME));
-        secretInformation.setAliasSecret((String) parameters.get(JDBCMessageStoreConstants.JDBC_PASSWORD));
+        secretInformation.setUser(resolveVaultExpressions((String) parameters.get(JDBCMessageStoreConstants.JDBC_USERNAME)));
+        secretInformation.setAliasSecret(resolveVaultExpressions((String) parameters.get(JDBCMessageStoreConstants.JDBC_PASSWORD)));
         dataSourceInformation.setSecretInformation(secretInformation);
 
         this.setDataSourceInformation(dataSourceInformation);
@@ -300,5 +313,42 @@ public class JDBCConfiguration {
      */
     private void handleException(Object o) {
         log.error(o);
+    }
+
+    /**
+     * Set Synapse Environment
+     * @param synapseEnvironment - Synapse Environment
+     */
+    public void setSynapseEnvironment(SynapseEnvironment synapseEnvironment) {
+        this.synapseEnvironment = synapseEnvironment;
+    }
+    /**
+     * Resolve secure-vault property values
+     *
+     * @param propertyValue value to be resolved
+     * @return a resolved value
+     */
+    private String resolveVaultExpressions(String propertyValue) {
+        Pattern vaultLookupPattern = Pattern.compile(secureVaultRegex);
+        Matcher lookupMatcher = vaultLookupPattern.matcher(propertyValue);
+        if (lookupMatcher.matches()) {
+            Value expression = null;
+            //getting the expression with out curly brackets
+            String expressionStr = lookupMatcher.group(0).substring(1, lookupMatcher.group(0).length() - 1);
+            try {
+                expression = new Value(new SynapseXPath(expressionStr));
+            } catch (JaxenException e) {
+                log.error("Error while building the expression : " + expressionStr);
+            }
+            if (expression != null) {
+                String resolvedValue = expression.evaluateValue(synapseEnvironment.createMessageContext());
+                if (resolvedValue == null || resolvedValue.isEmpty()) {
+                    log.warn("Found Empty value for expression : " + expression.getExpression());
+                } else {
+                    return resolvedValue;
+                }
+            }
+        }
+        return propertyValue;
     }
 }
