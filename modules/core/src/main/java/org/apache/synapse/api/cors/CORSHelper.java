@@ -127,6 +127,16 @@ public class CORSHelper {
                     transportHeaders.put(RESTConstants.CORS_HEADER_ORIGIN,
                             (String) synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ORIGIN));
                 }
+
+                if (synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_CREDENTIALS) != null) {
+                    transportHeaders.put(RESTConstants.CORS_HEADER_ACCESS_CTL_ALLOW_CREDENTIALS,
+                            (String) synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_CREDENTIALS));
+                }
+
+                if (synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_MAX_AGE) != null) {
+                    transportHeaders.put(RESTConstants.CORS_HEADER_ACCESS_CTL_MAX_AGE,
+                            (String) synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_MAX_AGE));
+                }
             }
         }
     }

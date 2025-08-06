@@ -59,6 +59,8 @@ public class RESTConstants {
     public static final String CORS_HEADER_ACCESS_CTL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
     public static final String CORS_HEADER_ACCESS_CTL_ALLOW_METHODS = "Access-Control-Allow-Methods";
     public static final String CORS_HEADER_ACCESS_CTL_ALLOW_HEADERS = "Access-Control-Allow-Headers";
+    public static final String CORS_HEADER_ACCESS_CTL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
+    public static final String CORS_HEADER_ACCESS_CTL_MAX_AGE = "Access-Control-Max-Age";
     public static final String CORS_HEADER_ORIGIN = "Origin";
 
     /**
@@ -84,6 +86,10 @@ public class RESTConstants {
                                                                     _SYNAPSE_INTERNAL_+ "Access-Control-Allow-Methods";
     public static final String INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_HEADERS =
                                                                     _SYNAPSE_INTERNAL_+ "Access-Control-Allow-Headers";
+    public static final String INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_CREDENTIALS = _SYNAPSE_INTERNAL_+
+                                                                    CORS_HEADER_ACCESS_CTL_ALLOW_CREDENTIALS;
+    public static final String INTERNAL_CORS_HEADER_ACCESS_CTL_MAX_AGE =
+                                                                    _SYNAPSE_INTERNAL_+ "Access-Control-Max-Age";
     public static final String INTERNAL_CORS_HEADER_ORIGIN = _SYNAPSE_INTERNAL_+ "Origin";
 
     /**
