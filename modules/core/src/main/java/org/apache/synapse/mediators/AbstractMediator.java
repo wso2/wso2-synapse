@@ -86,6 +86,11 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      */
     private List<String> commentsList = new ArrayList<String>();
 
+    private boolean versionedDeployment = false;
+    private String groupId = null;
+    private String artifactId = null;
+    private String version = null;
+
     /**
      * This method is invoked when mediation happens in debug mode, branches execution to
      * the Debug Manager, further behavior is governed by the Debug Manager.
@@ -566,5 +571,45 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean isVersionedDeployment() {
+
+        return versionedDeployment;
+    }
+
+    @Override
+    public void setVersionedDeployment(boolean versionedDeployment) {
+
+        this.versionedDeployment = versionedDeployment;
+    }
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
+
+    public String getArtifactId() {
+        return artifactId;
+    }
+
+    public void setArtifactId(String artifactId) {
+        this.artifactId = artifactId;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public String getArtifactIdentifier() {
+        return groupId + "/" + artifactId + "/" + version;
     }
 }

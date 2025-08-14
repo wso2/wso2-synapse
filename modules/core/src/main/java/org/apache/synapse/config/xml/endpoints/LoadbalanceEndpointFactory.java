@@ -25,6 +25,7 @@ import org.apache.axis2.clustering.Member;
 import org.apache.axis2.util.JavaUtils;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.endpoints.utils.LoadbalanceAlgorithmFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.commons.resolvers.ResolverFactory;
@@ -77,7 +78,7 @@ public final class LoadbalanceEndpointFactory extends EndpointFactory {
                     org.apache.synapse.config.xml.XMLConfigConstants.NULL_NAMESPACE, "name"));
 
             if (name != null) {
-                loadbalanceEndpoint.setName(name.getAttributeValue());
+                loadbalanceEndpoint.setName(FactoryUtils.getFullyQualifiedName(properties, name.getAttributeValue()));
             }
 
             LoadbalanceAlgorithm algorithm = null;

@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMText;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.transform.Argument;
 import org.apache.synapse.mediators.transform.PayloadFactoryMediator;
@@ -110,6 +111,12 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
             } else {
                 ValueFactory keyFac = new ValueFactory();
                 Value generatedKey = keyFac.createValue(XMLConfigConstants.KEY, formatElem);
+
+                if (!generatedKey.hasExprTypeKey()){
+                    generatedKey = new Value(FactoryUtils.prependArtifactIdentifierToFileName(
+                            generatedKey.getKeyValue(), properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER)));
+                }
+
                 payloadFactoryMediator.setFormatKey(generatedKey);
                 payloadFactoryMediator.setFormatDynamic(true);
 

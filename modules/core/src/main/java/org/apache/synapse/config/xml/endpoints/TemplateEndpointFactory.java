@@ -39,6 +39,7 @@ public class TemplateEndpointFactory extends EndpointFactory {
         OMAttribute endpointNameAttribute = endpointElement.getAttribute(
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "name"));
         if (endpointNameAttribute != null) {
+            // TODO Check fully qualified name
             String endpointName = endpointNameAttribute.getAttributeValue();
             endpointName = ResolverFactory.getInstance().getResolver(endpointName).resolve();
             templateEndpoint.addParameter("name", endpointName);

@@ -220,8 +220,9 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
             if (synapseLibraryMap != null
                     && !synapseLibraryMap.isEmpty()) {
                 for (Map.Entry<String, Library> entry : synapseLibraryMap.entrySet()) {
+                    // TODO check usages of this
                     if (entry.getValue().getLibArtifactDetails().containsKey(localName)) {
-                        return getDynamicInvokeMediator(element, entry.getValue().getPackage());
+                        return getDynamicInvokeMediator(element, entry.getValue().getPackage(), properties);
                     }
                 }
             }
@@ -231,16 +232,22 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
             if (configuration != null) {
                 if (configuration.getSynapseImports() != null && !configuration.getSynapseImports().isEmpty()) {
                     for (Map.Entry<String, SynapseImport> entry : configuration.getSynapseImports().entrySet()) {
-                        if (localName.startsWith(entry.getValue().getLibName())) {
-                            return getDynamicInvokeMediator(element, entry.getValue().getLibPackage());
+                        boolean isVersionedDeploy = FactoryUtils.isVersionedDeployment(properties);
+                        if (localName.startsWith(entry.getValue().getLibName()) &&
+                                (!isVersionedDeploy || properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER)
+                                        .equals(getArtifactIdentifierFromLibraryName(entry.getValue().getLibPackage())))) {
+                            return getDynamicInvokeMediator(element, entry.getValue().getLibPackage(), properties);
                         }
                     }
                 }
             } else {
                 if (synapseImportMap != null && !synapseImportMap.isEmpty()) {
                     for (Map.Entry<String, SynapseImport> entry : synapseImportMap.entrySet()) {
-                        if (localName.startsWith(entry.getValue().getLibName())) {
-                            return getDynamicInvokeMediator(element, entry.getValue().getLibPackage());
+                        boolean isVersionedDeploy = FactoryUtils.isVersionedDeployment(properties);
+                        if (localName.startsWith(entry.getValue().getLibName()) &&
+                                (!isVersionedDeploy || properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER)
+                                        .equals(getArtifactIdentifierFromLibraryName(entry.getValue().getLibPackage())))) {
+                            return getDynamicInvokeMediator(element, entry.getValue().getLibPackage(), properties);
                         }
                     }
                 }
@@ -346,30 +353,38 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
     }
 
     public InvokeMediator getDynamicInvokeMediator(OMElement connectorElem, String libraryName) {
+
+        return getDynamicInvokeMediator(connectorElem, libraryName, new Properties());
+    }
+
+    public InvokeMediator getDynamicInvokeMediator(OMElement connectorElem, String libraryName, Properties properties) {
+
         InvokeMediator invokeMediator = new InvokeMediator();
         if (connectorElem.getLocalName() != null
                 && libraryName != null
                 && !libraryName.equals("")) {
             invokeMediator.setTargetTemplate(libraryName + "." + connectorElem.getLocalName());
         }
-        
-		// load configuration based references for the given connector
-		OMAttribute config_key = connectorElem.getAttribute(new QName(XMLConfigConstants.CONFIG_REF));
-		if (config_key != null) {
-			// ValueFactory for creating dynamic or static Value
-			ValueFactory keyFac = new ValueFactory();
-			// create dynamic or static key based on OMElement
-			Value generatedKey = keyFac.createValue(XMLConfigConstants.CONFIG_REF, connectorElem);
-			// setKey
-			invokeMediator.setKey(generatedKey);
-		}
+
+        // load configuration based references for the given connector
+        OMAttribute config_key = connectorElem.getAttribute(new QName(XMLConfigConstants.CONFIG_REF));
+        if (config_key != null) {
+            // ValueFactory for creating dynamic or static Value
+            ValueFactory keyFac = new ValueFactory();
+            // create dynamic or static key based on OMElement
+            Value generatedKey = keyFac.createValue(XMLConfigConstants.CONFIG_REF, connectorElem);
+            // setKey
+            if (!generatedKey.hasExprTypeKey()) {
+                generatedKey = new Value(FactoryUtils.getFullyQualifiedName(properties, config_key.getAttributeValue()));
+            }
+            invokeMediator.setKey(generatedKey);
+        }
 
         buildParamteres(connectorElem, invokeMediator);
 
         invokeMediator.setPackageName(libraryName);
         invokeMediator.setDynamicMediator(true);
         return invokeMediator;
-
     }
 
     private void buildParamteres(OMElement connectorElem, InvokeMediator invokeMediator) {
@@ -428,5 +443,12 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
             }
         }
         return connectorParam;
+    }
+
+    private String getArtifactIdentifierFromLibraryName(String libraryName) {
+        if (StringUtils.countMatches(libraryName, "__") < 3) {
+            return libraryName;
+        }
+        return libraryName.substring(0, libraryName.lastIndexOf("__"));
     }
 }

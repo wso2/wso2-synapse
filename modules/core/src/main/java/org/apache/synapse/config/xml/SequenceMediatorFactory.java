@@ -79,9 +79,11 @@ public class SequenceMediatorFactory extends AbstractListMediatorFactory {
         OMAttribute n = elem.getAttribute(ATT_NAME);
         OMAttribute e = elem.getAttribute(ATT_ONERROR);
         if (n != null) {
-            seqMediator.setName(n.getAttributeValue());
+            String name = FactoryUtils.getFullyQualifiedName(properties, n.getAttributeValue());
+            seqMediator.setName(name);
             if (e != null) {
-                seqMediator.setErrorHandler(e.getAttributeValue());
+                String errorSeq = FactoryUtils.getFullyQualifiedName(properties, e.getAttributeValue());
+                seqMediator.setErrorHandler(errorSeq);
             }
             processAuditStatus(seqMediator, elem);
             addChildren(elem, seqMediator, properties);
@@ -94,6 +96,9 @@ public class SequenceMediatorFactory extends AbstractListMediatorFactory {
                 // create dynamic or static key based on OMElement
                 Value generatedKey = keyFac.createValue(XMLConfigConstants.KEY, elem);
                 // setKey
+                if (!generatedKey.hasExprTypeKey()){
+                    generatedKey = new Value(FactoryUtils.getFullyQualifiedName(properties, n.getAttributeValue()));
+                }
                 seqMediator.setKey(generatedKey);
                 if (e != null) {
                     String msg = "A sequence mediator with a reference to another " +

@@ -19,6 +19,7 @@
 
 package org.apache.synapse.endpoints;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.ComponentType;
@@ -39,6 +40,7 @@ import org.json.JSONObject;
 public class ResolvingEndpoint extends AbstractEndpoint {
 
     private SynapseXPath keyExpression = null;
+    private String artifactIdentifier = null;
 
     public void send(MessageContext synCtx) {
         if (RuntimeStatisticCollector.isStatisticsEnabled()) {
@@ -75,6 +77,11 @@ public class ResolvingEndpoint extends AbstractEndpoint {
     public void sendMessage(MessageContext synCtx) {
 
         String key = keyExpression.stringValueOf(synCtx);
+        if (synCtx.getProperty("APPEND_ARTIFACT_IDENTIFIER") != null &&
+                (Boolean) synCtx.getProperty("APPEND_ARTIFACT_IDENTIFIER") &&
+                StringUtils.isNotBlank(artifactIdentifier)) {
+            key = artifactIdentifier + "__" + key;
+        }
         Endpoint ep = loadAndInitEndpoint(((Axis2MessageContext) synCtx).
                 getAxis2MessageContext().getConfigurationContext(), key);
 
@@ -121,5 +128,10 @@ public class ResolvingEndpoint extends AbstractEndpoint {
 
     public void setKeyExpression(SynapseXPath keyExpression) {
         this.keyExpression = keyExpression;
+    }
+
+    public void setArtifactIdentifier(String artifactIdentifier) {
+
+        this.artifactIdentifier = artifactIdentifier;
     }
 }

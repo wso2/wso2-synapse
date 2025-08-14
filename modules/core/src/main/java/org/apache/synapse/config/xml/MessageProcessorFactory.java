@@ -33,7 +33,7 @@ import javax.xml.namespace.QName;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
+import java.util.Properties;
 
 /**
  * Create an instance of the given Message processor, and sets properties on it.
@@ -70,6 +70,11 @@ public class MessageProcessorFactory {
      * @return  created message processor instance
      */
     public static MessageProcessor createMessageProcessor(OMElement elem) {
+        return createMessageProcessor(elem, new Properties());
+    }
+
+    public static MessageProcessor createMessageProcessor(OMElement elem, Properties properties) {
+
         MessageProcessor processor = null;
         OMAttribute clssAtt = elem.getAttribute(CLASS_Q);
 
@@ -96,7 +101,7 @@ public class MessageProcessorFactory {
         OMAttribute nameAtt = elem.getAttribute(NAME_Q);
         if (nameAtt != null) {
             assert processor != null;
-            processor.setName(nameAtt.getAttributeValue());
+            processor.setName(FactoryUtils.getFullyQualifiedName(properties, nameAtt.getAttributeValue()));
         } else {
             handleException("Can't create Message processor without a name ");
         }
@@ -106,7 +111,7 @@ public class MessageProcessorFactory {
 
             if (targetSequenceAtt != null) {
                 assert processor != null;
-                processor.setTargetEndpoint(targetSequenceAtt.getAttributeValue());
+                processor.setTargetEndpoint(FactoryUtils.getFullyQualifiedName(properties, targetSequenceAtt.getAttributeValue()));
             } else {
                 // This validation is commented due to backward compatibility
                 // handleException("Can't create Message processor without a target endpoint ");
@@ -117,7 +122,7 @@ public class MessageProcessorFactory {
 
         if(storeAtt != null) {
             assert processor != null;
-            processor.setMessageStoreName(storeAtt.getAttributeValue());
+            processor.setMessageStoreName(FactoryUtils.getFullyQualifiedName(properties, storeAtt.getAttributeValue()));
         } else {
             handleException("Can't create a message processor with out a message Store");
         }
@@ -129,12 +134,12 @@ public class MessageProcessorFactory {
         }
 
         assert processor != null;
-        processor.setParameters(getParameters(elem));
+        processor.setParameters(getParameters(elem, properties));
 
         return processor;
     }
 
-    private static Map<String, Object> getParameters(OMElement elem) {
+    private static Map<String, Object> getParameters(OMElement elem, Properties properties) {
         Iterator params = elem.getChildrenWithName(PARAMETER_Q);
         Map<String, Object> parameters = new HashMap<String, Object>();
 
@@ -146,7 +151,11 @@ public class MessageProcessorFactory {
                 String paramValue = prop.getText();
                 if (paramName != null) {
                     if (paramValue != null) {
-                        parameters.put(paramName.getAttributeValue(), paramValue);
+                        if ("sequence".equals(paramName.getAttributeValue())){
+                            parameters.put(paramName.getAttributeValue(), FactoryUtils.getFullyQualifiedName(properties, paramValue));
+                        } else {
+                            parameters.put(paramName.getAttributeValue(), paramValue);
+                        }
                     }
                 } else {
                     handleException("Invalid MessageStore parameter - Parameter must have a name ");

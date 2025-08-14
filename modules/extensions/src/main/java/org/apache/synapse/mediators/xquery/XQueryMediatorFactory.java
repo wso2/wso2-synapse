@@ -122,7 +122,7 @@ public class XQueryMediatorFactory extends AbstractMediatorFactory {
                         variable = new MediatorCustomVariable(
                                 new QName(name.trim()));
                         if (key != null) {
-                            ((MediatorCustomVariable) variable).setRegKey(key.trim());
+                            ((MediatorCustomVariable) variable).setRegKey(FactoryUtils.getFullyQualifiedName(properties, key.trim()));
                         }
                         if (expr != null && !"".equals(expr)) {
                             try {

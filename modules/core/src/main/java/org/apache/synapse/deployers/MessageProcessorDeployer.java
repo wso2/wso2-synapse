@@ -42,7 +42,7 @@ public class    MessageProcessorDeployer extends AbstractSynapseArtifactDeployer
 
         try{
 
-            MessageProcessor mp = MessageProcessorFactory.createMessageProcessor(artifactConfig);
+            MessageProcessor mp = MessageProcessorFactory.createMessageProcessor(artifactConfig, properties);
             if(mp != null) {
                 mp.setFileName((new File(fileName)).getName());
 
@@ -88,7 +88,7 @@ public class    MessageProcessorDeployer extends AbstractSynapseArtifactDeployer
         }
 
         try {
-            MessageProcessor mp = MessageProcessorFactory.createMessageProcessor(artifactConfig);
+            MessageProcessor mp = MessageProcessorFactory.createMessageProcessor(artifactConfig, properties);
             if (mp == null) {
                 handleSynapseArtifactDeploymentError("Message Processor update failed. The artifact " +
                         "defined in the file: " + fileName + " is not valid");

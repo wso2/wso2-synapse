@@ -22,6 +22,7 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axis2.deployment.DeploymentException;
+import org.apache.axis2.deployment.repository.util.DeploymentFileData;
 import org.apache.axis2.deployment.util.Utils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
@@ -61,12 +62,18 @@ public class LibDeployerUtils {
     private static final Log log = LogFactory.getLog(LibDeployerUtils.class);
 
     public static Library createSynapseLibrary(String libPath) throws DeploymentException {
+
+        return createSynapseLibrary(libPath, null);
+    }
+
+    public static Library createSynapseLibrary(String libPath, DeploymentFileData deploymentFileData) {
+
         File libFile = new File(libPath);
         //extract
         String extractPath = LibDeployerUtils.extractSynapseLib(libFile);
         //create synapse lib metadata
         SynapseLibrary synapseLib = LibDeployerUtils.populateDependencies(extractPath +
-                                                                          LibDeployerConstants.ARTIFACTS_XML);
+                LibDeployerConstants.ARTIFACTS_XML, deploymentFileData);
 
         String libArtifactName = synapseLib.getQName().toString();
         ClassLoader deployedLibClassLoader = SynapseConfiguration.getClassLoader(libArtifactName);
@@ -74,7 +81,7 @@ public class LibDeployerUtils {
             //create a ClassLoader for loading this synapse lib classes/resources
             try {
                 ClassLoader libLoader = Utils.getClassLoader(LibDeployerUtils.class.getClassLoader(),
-                            extractPath, false);
+                        extractPath, false);
                 SynapseConfiguration.addLibraryClassLoader(libArtifactName, libLoader);
                 synapseLib.setLibClassLoader(libLoader);
             } catch (DeploymentException e) {
@@ -94,7 +101,7 @@ public class LibDeployerUtils {
         }
         //resolve synapse lib artifacts
         LibDeployerUtils.searchAndResolveDependencies(extractPath, synapseLib);
-        
+
         //TODO:reslove local-entry references
         LibDeployerUtils.populateLocalEnties(synapseLib,extractPath+LibDeployerConstants.LOCAL_ENTRIES);
 
@@ -161,7 +168,7 @@ public class LibDeployerUtils {
      * @param libXmlPath
      * @return
      */
-    private static SynapseLibrary populateDependencies(String libXmlPath) {
+    private static SynapseLibrary populateDependencies(String libXmlPath, DeploymentFileData deploymentFileData) {
         File f = new File(libXmlPath);
         if (!f.exists()) {
             throw new SynapseException("artifacts.xml file not found at : " + libXmlPath);
@@ -177,7 +184,7 @@ public class LibDeployerUtils {
             }
             Iterator artifactItr = documentElement.getChildrenWithLocalName(LibDeployerConstants.ARTIFACT);
             SynapseLibrary mainSynLibArtifact = null;
-            mainSynLibArtifact = createSynapseLibraryWithDeps(((OMElement) artifactItr.next()));
+            mainSynLibArtifact = createSynapseLibraryWithDeps(((OMElement) artifactItr.next()), deploymentFileData);
             if (mainSynLibArtifact == null) {
                 throw new SynapseArtifactDeploymentException("artifacts.xml is invalid. <artifact> element" +
                                                              " Not Found ");
@@ -205,12 +212,19 @@ public class LibDeployerUtils {
      * @param artifactEle - artifact OMElement
      * @return created Artifact object
      */
-    private static SynapseLibrary createSynapseLibraryWithDeps(OMElement artifactEle) {
+    private static SynapseLibrary createSynapseLibraryWithDeps(OMElement artifactEle, DeploymentFileData deploymentFileData) {
         if (artifactEle == null) {
             return null;
         }
-        SynapseLibrary synLib = new SynapseLibrary(readAttribute(artifactEle, LibDeployerConstants.NAME),
-                                                   readAttribute(artifactEle, LibDeployerConstants.PACKAGE_ATTR));
+        String packageName = readAttribute(artifactEle, LibDeployerConstants.PACKAGE_ATTR);
+        SynapseLibrary synLib;
+        if (deploymentFileData.isVersionedDeployment()) {
+            synLib = new SynapseLibrary(deploymentFileData.getArtifactIdentifier(), readAttribute(artifactEle, LibDeployerConstants.NAME),
+                    packageName);
+        } else {
+            synLib = new SynapseLibrary(readAttribute(artifactEle, LibDeployerConstants.NAME),
+                    packageName);
+        }
         synLib.setDescription(readChildText(artifactEle,LibDeployerConstants.DESCRIPTION_ELEMENT));
         // read the dependencies
         Iterator itr = artifactEle.getChildrenWithLocalName(LibDeployerConstants.DEPENDENCY);

@@ -20,6 +20,7 @@
 package org.apache.synapse.commons.util;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.collections.FactoryUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.SynapseCommonsException;
@@ -128,6 +129,9 @@ public class PropertyHelper {
             // try to set String value first
             if (property.getAttributeValue(new QName("value")) != null) {
                 String value = property.getAttributeValue(new QName("value"));
+//                if ("proxyName".equals(propertyName) || "sequenceName".equals(propertyName)) {
+//                    value = FactoryUtils
+//                }
                 setInstanceProperty(propertyName, value, o);
             } else {
                 // now try XML child

@@ -27,6 +27,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.AbstractMediatorFactory;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.SynapsePathFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.mediators.Value;
@@ -115,6 +116,11 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
             ValueFactory keyFac = new ValueFactory();
             // create dynamic or static key based on OMElement
             Value generatedKey = keyFac.createValue(XMLConfigConstants.KEY, elem);
+
+            if (!generatedKey.hasExprTypeKey()){
+                generatedKey = new Value(FactoryUtils.prependArtifactIdentifierToFileName(
+                        generatedKey.getKeyValue(), properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER)));
+            }
 
             String functionName = (functionAtt == null ? null : functionAtt.getAttributeValue());
             mediator = new ScriptMediator(language, includeKeysMap, generatedKey, functionName, classLoader);

@@ -21,7 +21,9 @@ package org.apache.synapse.mediators.throttle;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.AbstractMediatorFactory;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.SequenceMediatorFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 
@@ -59,7 +61,7 @@ public class ThrottleMediatorFactory extends AbstractMediatorFactory {
             if (key != null) {
                 String keyValue = key.getAttributeValue();
                 if (keyValue != null && !"".equals(keyValue)) {
-                    throttleMediator.setPolicyKey(keyValue);
+                    throttleMediator.setPolicyKey(FactoryUtils.getFullyQualifiedName(properties, keyValue));
                 } else {
                     handleException("key attribute should have a value ");
                 }
@@ -87,7 +89,7 @@ public class ThrottleMediatorFactory extends AbstractMediatorFactory {
         if (onReject != null) {
             String onRejectValue = onReject.getAttributeValue();
             if (onRejectValue != null) {
-                throttleMediator.setOnRejectSeqKey(onRejectValue.trim());
+                throttleMediator.setOnRejectSeqKey(FactoryUtils.getFullyQualifiedName(properties, onRejectValue.trim()));
             }
         } else {
             OMElement onRejectMediatorElement = elem.getFirstChildWithName(
@@ -102,7 +104,7 @@ public class ThrottleMediatorFactory extends AbstractMediatorFactory {
         if (onAccept != null) {
             String onAcceptValue = onAccept.getAttributeValue();
             if (onAcceptValue != null) {
-                throttleMediator.setOnAcceptSeqKey(onAcceptValue);
+                throttleMediator.setOnAcceptSeqKey(FactoryUtils.getFullyQualifiedName(properties, onAcceptValue));
             }
         } else {
             OMElement onAcceptMediatorElement = elem.getFirstChildWithName(

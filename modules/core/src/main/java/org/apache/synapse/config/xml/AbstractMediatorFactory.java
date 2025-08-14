@@ -114,6 +114,11 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
         if (attDescription != null) {
             mediator.setShortDescription(attDescription.getAttributeValue());
         }
+        // TODO Add check here ---
+//        mediator.setVersionedDeployment(true);
+//        mediator.setGroupId(properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_GROUP_ID));
+//        mediator.setArtifactId(properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_ARTIFACT_ID));
+//        mediator.setVersion(properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_VERSION));
         return mediator;
     }
 

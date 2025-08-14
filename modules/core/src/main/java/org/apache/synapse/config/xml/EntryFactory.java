@@ -75,7 +75,7 @@ public class EntryFactory implements XMLToObjectMapper {
 
         } else {
 
-            Entry entry = new Entry(key.getAttributeValue());
+            Entry entry = new Entry(FactoryUtils.getFullyQualifiedName(properties, key.getAttributeValue()));
 
             OMElement descriptionElem = elem.getFirstChildWithName(DESCRIPTION_Q);
             if (descriptionElem != null) {

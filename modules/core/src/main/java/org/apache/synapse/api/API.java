@@ -36,6 +36,7 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -60,6 +61,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.ArrayList;
+import java.util.Properties;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -109,13 +111,29 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
         setContext(context);
     }
 
-    public void setContext(String context) {
+    public API(String name, String context, Properties properties) {
+
+        super(FactoryUtils.getFullyQualifiedName(properties, name));
+        setContext(context, properties);
+    }
+
+    private void setContext(String context, Properties properties) {
         if (!context.startsWith("/")) {
             handleException("API context must begin with '/' character");
         }
-        this.context = ApiUtils.trimTrailingSlashes(context);
+        // TODO add check
+        String artifactIdentifier = properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER);
+        if (StringUtils.isNotBlank(artifactIdentifier)) {
+            String contextPrefix = artifactIdentifier.replaceAll("__", "/");
+            this.context = "/" + contextPrefix + ApiUtils.trimTrailingSlashes(context);
+        } else {
+            this.context = ApiUtils.trimTrailingSlashes(context);
+        }
         apiLog = LogFactory.getLog(SynapseConstants.API_LOGGER_PREFIX + name);
+    }
 
+    public void setContext(String context) {
+        setContext(context, new Properties());
     }
 
     public void setArtifactContainerName (String name) {
