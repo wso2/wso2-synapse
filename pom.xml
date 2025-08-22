@@ -1598,7 +1598,7 @@
       <jcifs.wso2.version>1.3.17.wso2v1</jcifs.wso2.version>
       <net.minidev.accessors-smart.version>2.6.0</net.minidev.accessors-smart.version>
       <org.ow2.asm.asm.version>9.2</org.ow2.asm.asm.version>
-      <json.smart.version>2.5.2</json.smart.version>
+      <json.smart.version>2.6.0</json.smart.version>
        <org.wso2.json.version>3.0.0.wso2v4</org.wso2.json.version>
        <log4j2.version>2.17.1</log4j2.version>
       <xmlunit.version>1.1</xmlunit.version>
