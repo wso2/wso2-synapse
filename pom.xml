@@ -1452,6 +1452,11 @@
               <artifactId>swagger-parser</artifactId>
               <version>${swagger.parser.v3.version}</version>
           </dependency>
+          <dependency>
+              <groupId>jakarta.jms</groupId>
+              <artifactId>jakarta.jms-api</artifactId>
+              <version>${jakarta.jms-api.version}</version>
+          </dependency>
       </dependencies>
    </dependencyManagement>
     <reporting>
@@ -1528,6 +1533,7 @@
       <com.damnhandy.version>2.1.6</com.damnhandy.version>
       <damnhandy.version>${com.damnhandy.version}.wso2v2</damnhandy.version>
       <javax.jms.version>1.1</javax.jms.version>
+      <jakarta.jms-api.version>3.1.0</jakarta.jms-api.version>
       <org.antlr.version>3.4</org.antlr.version>
       <org.antlr4.version>4.7.1</org.antlr4.version>
       <antlr.wso2.version>3.2.0.wso2v1</antlr.wso2.version>
