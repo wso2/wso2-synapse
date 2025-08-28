@@ -33,6 +33,7 @@ import org.apache.axis2.description.AxisService;
 import org.apache.axis2.engine.AxisEngine;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.FaultHandler;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
@@ -40,10 +41,12 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
+import org.apache.synapse.debug.SynapseDebugManager;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.task.Task;
 import org.apache.synapse.util.PayloadHelper;
+import org.apache.synapse.util.logging.LoggingUtils;
 
 import javax.xml.stream.XMLStreamException;
 import java.util.ArrayList;
@@ -63,6 +66,7 @@ public class MessageInjector implements Task, ManagedLifecycle {
      * Holds the logger for logging purposes
      */
     private Log log = LogFactory.getLog(MessageInjector.class);
+    private static final Log trace = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
 
     /**
      * Holds the Message to be injected
@@ -110,6 +114,7 @@ public class MessageInjector implements Task, ManagedLifecycle {
      * Name of the sequence which message should be injected
      */
     private String sequenceName = null;
+    private boolean isSequential = false;
 
     /**
      * Name of the proxy service which message should be injected
@@ -210,6 +215,10 @@ public class MessageInjector implements Task, ManagedLifecycle {
      */
     public void setSequenceName(String sequenceName) {
         this.sequenceName = sequenceName;
+    }
+
+    public void setSequential(boolean isSequential) {
+        this.isSequential = isSequential;
     }
 
     /**
@@ -449,7 +458,11 @@ public class MessageInjector implements Task, ManagedLifecycle {
                         }
                     }
                     mc.pushFaultHandler(new MediatorFaultHandler(mc.getFaultSequence()));
-                    synapseEnvironment.injectAsync(mc, seq);
+                    if (isSequential) {
+                        mediateMessageSequentially(mc, seq);
+                    } else {
+                        synapseEnvironment.injectAsync(mc, seq);
+                    }
                 } else {
                     handleError("Sequence: " + sequenceName + " not found");
                 }
@@ -471,6 +484,53 @@ public class MessageInjector implements Task, ManagedLifecycle {
             }
         }
 
+    }
+
+    private void mediateMessageSequentially(MessageContext mc, SequenceMediator seq) {
+
+        try {
+            if (mc.getEnvironment().isDebuggerEnabled()) {
+                SynapseDebugManager debugManager = mc.getEnvironment().getSynapseDebugManager();
+                debugManager.acquireMediationFlowLock();
+                debugManager.advertiseMediationFlowStartPoint(mc);
+            }
+            seq.mediate(mc);
+        } catch (SynapseException syne) {
+            if (!mc.getFaultStack().isEmpty()) {
+                warn(false, "Executing fault handler due to exception encountered", mc);
+                ((FaultHandler) mc.getFaultStack().pop()).handleFault(mc, syne);
+
+            } else {
+                warn(false, "Exception encountered but no fault handler found - " +
+                        "message dropped", mc);
+            }
+        } catch (Exception e) {
+            String msg = "Unexpected error executing task/sequential inject";
+            log.error(LoggingUtils.getFormattedLog(mc, msg), e);
+            if (mc.getServiceLog() != null) {
+                mc.getServiceLog().error(msg, e);
+            }
+            if (!mc.getFaultStack().isEmpty()) {
+                warn(false, "Executing fault handler due to exception encountered", mc);
+                ((FaultHandler) mc.getFaultStack().pop()).handleFault(mc, e);
+
+            } else {
+                warn(false, "Exception encountered but no fault handler found - " +
+                        "message dropped", mc);
+            }
+        } catch (Throwable e) {
+            String msg = "Unexpected error executing task/sequential inject, message dropped";
+            log.error(LoggingUtils.getFormattedLog(mc, msg), e);
+            if (mc.getServiceLog() != null) {
+                mc.getServiceLog().error(msg, e);
+            }
+        } finally {
+            if (mc.getEnvironment().isDebuggerEnabled()) {
+                SynapseDebugManager debugManager = mc.getEnvironment().getSynapseDebugManager();
+                debugManager.advertiseMediationFlowTerminatePoint(mc);
+                debugManager.releaseMediationFlowLock();
+            }
+        }
     }
 
     /**
@@ -520,4 +580,17 @@ public class MessageInjector implements Task, ManagedLifecycle {
         }
     }
 
+    private void warn(boolean traceOn, String msg, MessageContext msgContext) {
+
+        String formattedLog = LoggingUtils.getFormattedLog(msgContext, msg);
+        if (traceOn) {
+            trace.warn(formattedLog);
+        }
+        if (log.isDebugEnabled()) {
+            log.warn(formattedLog);
+        }
+        if (msgContext.getServiceLog() != null) {
+            msgContext.getServiceLog().warn(msg);
+        }
+    }
 }
