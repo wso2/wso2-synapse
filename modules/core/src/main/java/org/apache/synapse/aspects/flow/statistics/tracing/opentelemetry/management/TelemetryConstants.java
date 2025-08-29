@@ -81,4 +81,7 @@ public class TelemetryConstants {
     public static final String STATUS_DESCRIPTION_ATTRIBUTE_KEY = "Status description";
     public static final String ENDPOINT_ATTRIBUTE_KEY = "Endpoint";
     public static final String CORRELATION_ID_ATTRIBUTE_KEY = "CorrelationId";
+
+    public static final String OTEL_RESOURCE_ATTRIBUTE_KEY = "opentelemetry.properties.resource_attributes";
+    public static final String OTEL_RESOURCE_ATTRIBUTES_ENVIRONMENT_VARIABLE_NAME = "OTEL_RESOURCE_ATTRIBUTES";
 }
