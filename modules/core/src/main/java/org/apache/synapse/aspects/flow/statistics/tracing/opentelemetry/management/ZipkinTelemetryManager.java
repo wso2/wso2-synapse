@@ -70,12 +70,9 @@ public class ZipkinTelemetryManager implements OpenTelemetryManager {
             logger.debug("Zipkin exporter: " + zipkinExporter + " is configured");
         }
 
-        Resource serviceNameResource = Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME,
-                TelemetryConstants.SERVICE_NAME));
-
         sdkTracerProvider = SdkTracerProvider.builder()
                 .addSpanProcessor(BatchSpanProcessor.builder(zipkinExporter).build())
-                .setResource(Resource.getDefault().merge(serviceNameResource))
+                .setResource(Resource.getDefault().merge(TelemetryUtil.getTracerProviderResource(TelemetryConstants.SERVICE_NAME)))
                 .build();
 
         openTelemetry = OpenTelemetrySdk.builder()
