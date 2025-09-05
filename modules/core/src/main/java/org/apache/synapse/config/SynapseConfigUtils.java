@@ -53,12 +53,10 @@ import org.wso2.securevault.definition.TrustKeyStoreInformation;
 import org.xml.sax.InputSource;
 
 import javax.activation.DataHandler;
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.xml.stream.XMLInputFactory;
@@ -81,6 +79,7 @@ import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -93,9 +92,11 @@ public class SynapseConfigUtils {
 
     private static final Log log = LogFactory.getLog(SynapseConfigUtils.class);
 
-
-    private static ConcurrentHashMap<String, SynapseConfiguration> lastRegisteredSynapseConfigurationMap =
+    private static final ConcurrentHashMap<String, SynapseConfiguration> lastRegisteredSynapseConfigurationMap =
                                                                  new ConcurrentHashMap<String, SynapseConfiguration>();
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     /**
      * Return a StreamSource for the given Object
@@ -459,9 +460,14 @@ public class SynapseConfigUtils {
                 connection = (HttpsURLConnection) url.openConnection();
             }
             //Create a SSLContext
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(keyManagers,
-                    trustManagers, null);
+            String provider = getPreferredJceProvider();
+            SSLContext sslContext;
+            if (provider != null) {
+                sslContext = SSLContext.getInstance("TLS", "BCJSSE");
+            } else {
+                sslContext = SSLContext.getInstance("TLS");
+            }
+            sslContext.init(keyManagers, trustManagers, null);
             connection.setSSLSocketFactory(sslContext.getSocketFactory());
 
             if (trustInformation != null) {
@@ -505,6 +511,8 @@ public class SynapseConfigUtils {
             handleException("Error initiation SSLContext with KeyManagers", e);
         } catch (IOException e) {
             handleException("Error opening a https connection from URL : " + url, e);
+        } catch (NoSuchProviderException e) {
+            handleException("Specified security provider is not available in this environment", e);
         }
         return null;
     }
@@ -902,6 +910,21 @@ public class SynapseConfigUtils {
 
     public static void addSynapseConfiguration(String tenantDomain , SynapseConfiguration synapseConfiguration){
         lastRegisteredSynapseConfigurationMap.put(tenantDomain,synapseConfiguration);
+    }
+
+    /**
+     * Get the preferred JCE provider.
+     *
+     * @return the preferred JCE provider
+     */
+    private static String getPreferredJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER)) {
+            return BOUNCY_CASTLE_FIPS_PROVIDER;
+        } else if (provider != null && provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER)) {
+            return BOUNCY_CASTLE_PROVIDER;
+        }
+        return null;
     }
 }
 

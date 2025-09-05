@@ -74,15 +74,15 @@ public class CertificatePathValidator {
      */
     public void validatePath() throws Exception {
         String jceProvider = getPreferredJceProvider();
-        String providerClass;
-        if (jceProvider.equals(Constants.BOUNCY_CASTLE_PROVIDER)) {
-            providerClass = "org.bouncycastle.jce.provider.BouncyCastleProvider";
-        } else if (jceProvider.equals(Constants.BOUNCY_CASTLE_FIPS_PROVIDER)) {
-            providerClass = "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider";
-        } else {
-            throw new NoSuchProviderException("Configured JCE provider " + jceProvider + " is not supported");
-        }
-        Security.addProvider((Provider) Class.forName(providerClass).getDeclaredConstructor().newInstance());
+//        String providerClass;
+//        if (jceProvider.equals(Constants.BOUNCY_CASTLE_PROVIDER)) {
+//            providerClass = "org.bouncycastle.jce.provider.BouncyCastleProvider";
+//        } else if (jceProvider.equals(Constants.BOUNCY_CASTLE_FIPS_PROVIDER)) {
+//            providerClass = "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider";
+//        } else {
+//            throw new NoSuchProviderException("Configured JCE provider " + jceProvider + " is not supported");
+//        }
+//        Security.addProvider((Provider) Class.forName(providerClass).getDeclaredConstructor().newInstance());
         CollectionCertStoreParameters params = new CollectionCertStoreParameters(fullCertChain);
         try {
             CertStore store = CertStore.getInstance("Collection", params, jceProvider);

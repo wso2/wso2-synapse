@@ -18,6 +18,7 @@ package org.apache.synapse.util.xpath;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.util.xpath.ext.XpathExtensionUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,6 +27,7 @@ import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
@@ -52,13 +54,21 @@ public class KeyStoreManager {
 
         String file = new File(keyStoreFilePath).getAbsolutePath();
         try (FileInputStream keyStoreFileInputStream =  new FileInputStream(file)) {
-            KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+            String provider = XpathExtensionUtil.getPreferredJceProvider();
+            KeyStore keyStore;
+            if (provider != null) {
+                keyStore = KeyStore.getInstance(keyStoreType, provider);
+            } else {
+                keyStore = KeyStore.getInstance(keyStoreType);
+            }
             keyStore.load(keyStoreFileInputStream, keyStorePassword.toCharArray());
             return keyStore;
         } catch (IOException | NoSuchAlgorithmException | CertificateException e) {
             String errorMessage = String.format("Keystore file does not exist in the path as configured " +
                     "in '%s' property.", keyStoreFilePath);
             throw new KeyStoreException(errorMessage);
+        } catch (NoSuchProviderException e) {
+            throw new KeyStoreException("Specified security provider is not available in this environment", e);
         }
     }
 

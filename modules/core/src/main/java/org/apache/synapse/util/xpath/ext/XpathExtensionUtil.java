@@ -51,6 +51,10 @@ public class XpathExtensionUtil {
 
     private static final Log log = LogFactory.getLog(XpathExtensionUtil.class);
 
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
+
     /**
      * This method initializes Xpath Extensions available through synapse.properties file.
      * Xpath Extensions can be defined in Variable Context Extensions + Function Context Extensions
@@ -293,5 +297,20 @@ public class XpathExtensionUtil {
 
     private static void handleExceptionWarning(String msg, Exception e) {
         log.warn(msg, e);
+    }
+
+    /**
+     * Get the preferred JCE provider.
+     *
+     * @return the preferred JCE provider
+     */
+    public static String getPreferredJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER)) {
+            return BOUNCY_CASTLE_FIPS_PROVIDER;
+        } else if (provider != null && provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER)) {
+            return BOUNCY_CASTLE_PROVIDER;
+        }
+        return null;
     }
 }

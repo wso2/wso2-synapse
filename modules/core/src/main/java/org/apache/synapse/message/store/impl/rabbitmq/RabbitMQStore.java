@@ -46,6 +46,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.util.HashMap;
 import java.util.NoSuchElementException;
@@ -84,6 +86,9 @@ public class RabbitMQStore extends AbstractMessageStore {
     public static final String SSL_TRUSTSTORE_TYPE = "rabbitmq.connection.ssl.truststore.type";
     public static final String SSL_TRUSTSTORE_PASSWORD = "rabbitmq.connection.ssl.truststore.password";
     public static final String SSL_VERSION = "rabbitmq.connection.ssl.version";
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     public static final String AMQ_PREFIX = "amq.";
 
@@ -211,21 +216,44 @@ public class RabbitMQStore extends AbstractMessageStore {
                     }
                 } else {
                     char[] keyPassphrase = keyStorePassword.toCharArray();
-                    KeyStore ks = KeyStore.getInstance(keyStoreType);
-                    ks.load(new FileInputStream(keyStoreLocation), keyPassphrase);
+                    String provider = getPreferredJceProvider();
+                    KeyStore ks;
+                    if (provider != null) {
+                        ks = KeyStore.getInstance(keyStoreType, getPreferredJceProvider());
+                    } else {
+                        ks = KeyStore.getInstance(keyStoreType);
+                    }
+                    ks.load(Files.newInputStream(Paths.get(keyStoreLocation)), keyPassphrase);
 
-                    KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                    KeyManagerFactory kmf;
+                    if (provider != null) {
+                        kmf = KeyManagerFactory.getInstance("PKIX", "BCJSSE");
+                    } else {
+                        kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                    }
                     kmf.init(ks, keyPassphrase);
 
                     char[] trustPassphrase = trustStorePassword.toCharArray();
-                    KeyStore tks = KeyStore.getInstance(trustStoreType);
-                    tks.load(new FileInputStream(trustStoreLocation), trustPassphrase);
-
-                    TrustManagerFactory tmf = TrustManagerFactory
-                            .getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                    KeyStore tks;
+                    if (provider != null) {
+                        tks = KeyStore.getInstance(trustStoreType, getPreferredJceProvider());
+                    } else {
+                        tks = KeyStore.getInstance(trustStoreType);
+                    }
+                    tks.load(Files.newInputStream(Paths.get(trustStoreLocation)), trustPassphrase);
+                    TrustManagerFactory tmf;
+                    if (provider != null) {
+                        tmf = TrustManagerFactory.getInstance("PKIX", "BCJSSE");
+                    } else {
+                        tmf = TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                    }
                     tmf.init(tks);
-
-                    SSLContext c = SSLContext.getInstance(sslVersion);
+                    SSLContext c;
+                    if (provider != null) {
+                        c = SSLContext.getInstance(sslVersion, "BCJSSE");
+                    } else {
+                        c =  SSLContext.getInstance(sslVersion);
+                    }
                     c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
                     connectionFactory.useSslProtocol(c);
@@ -476,5 +504,19 @@ public class RabbitMQStore extends AbstractMessageStore {
 
     private String nameString() {
         return "Store [" + getName() + "]";
+    }
+
+    /**
+     * Get the preferred JCE provider.
+     *
+     * @return the preferred JCE provider
+     */
+    private static String getPreferredJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 }

@@ -116,6 +116,9 @@ public class OAuthClient {
     public static final String DEFAULT_AND_LOCALHOST = "DefaultAndLocalhost";
     public static final int MAX_TOTAL_POOL_SIZE = 100;
     public static final int DEFAULT_MAX_PER_ROUTE = 50;
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     /**
      * Method to generate the access token from an OAuth server
@@ -435,7 +438,7 @@ public class OAuthClient {
         String type = typeElement.getText();
 
         try (FileInputStream fis = new FileInputStream(storeLocation)) {
-            KeyStore trustStore = KeyStore.getInstance(type);
+            KeyStore trustStore = KeyStore.getInstance(type, getPreferredJceProvider());
             trustStore.load(fis, storePassword.toCharArray());
             return trustStore;
         } catch (GeneralSecurityException gse) {
@@ -473,5 +476,20 @@ public class OAuthClient {
         } catch (MalformedURLException e) {
             throw new AuthException("OAuth token URL is invalid", e);
         }
+    }
+
+    /**
+     * Get the preferred JCE provider.
+     *
+     * @return the preferred JCE provider
+     */
+    private static String getPreferredJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER)) {
+            return BOUNCY_CASTLE_FIPS_PROVIDER;
+        } else if (provider != null && provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER)) {
+            return BOUNCY_CASTLE_PROVIDER;
+        }
+        return null;
     }
 }

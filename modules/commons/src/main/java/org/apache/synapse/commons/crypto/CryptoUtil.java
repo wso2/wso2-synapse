@@ -115,7 +115,7 @@ public class CryptoUtil {
                 throw new AxisFault("Unsupported JCE Provider: " + provider);
             }
             try {
-                Security.addProvider((Provider) Class.forName(providerClass).getDeclaredConstructor().newInstance());
+                Security.insertProviderAt((Provider) Class.forName(providerClass).getDeclaredConstructor().newInstance(), 1);
             } catch (Exception e) {
                 throw new AxisFault("Error while initializing the JCE Provider: " + provider, e);
             }

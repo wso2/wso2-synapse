@@ -74,6 +74,9 @@ public class ServerConnFactoryBuilder {
     private Map<InetSocketAddress, SSLContextDetails> sslByIPMap = null;
     private ConfigurationContext configurationContext;
     CertificateVerificationManager certificateVerifier = null;
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     public ServerConnFactoryBuilder(final TransportInDescription transportIn, final HttpHost host,
                                     ConfigurationContext configurationContext) {
@@ -120,6 +123,7 @@ public class ServerConnFactoryBuilder {
 
         KeyManager[] keymanagers  = null;
         TrustManager[] trustManagers = null;
+        String jceProvider = getPreferredJceProvider();
 
         if (keyStoreEl != null) {
             String location      = getValueOfElementWithLocalName(keyStoreEl,"Location");
@@ -136,17 +140,25 @@ public class ServerConnFactoryBuilder {
             String keyPassword   = SecureVaultValueReader.getSecureVaultValue(secretResolver, keyPasswordEl);
 
             FileInputStream fis = null;
+            KeyStore keyStore;
             try {
-                KeyStore keyStore = KeyStore.getInstance(type);
+                if (jceProvider != null) {
+                    keyStore = KeyStore.getInstance(type, jceProvider);
+                } else {
+                    keyStore = KeyStore.getInstance(type);
+                }
                 fis = new FileInputStream(location);
                 if (log.isDebugEnabled()) {
                     log.debug(name + " Loading Identity Keystore from : " + location);
                 }
 
                 keyStore.load(fis, storePassword.toCharArray());
-
-                KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(
-                        KeyManagerFactory.getDefaultAlgorithm());
+                KeyManagerFactory kmfactory;
+                if (jceProvider != null) {
+                    kmfactory = KeyManagerFactory.getInstance("PKIX", "BCJSSE");
+                } else {
+                    kmfactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                }
                 kmfactory.init(keyStore, keyPassword.toCharArray());
                 keymanagers = kmfactory.getKeyManagers();
                 if (log.isInfoEnabled() && keymanagers != null) {
@@ -193,16 +205,25 @@ public class ServerConnFactoryBuilder {
             String storePassword = SecureVaultValueReader.getSecureVaultValue(secretResolver, storePasswordEl);
 
             FileInputStream fis = null;
+            KeyStore trustStore;
             try {
-                KeyStore trustStore = KeyStore.getInstance(type);
+                if (jceProvider != null) {
+                    trustStore = KeyStore.getInstance(type, jceProvider);
+                } else {
+                    trustStore = KeyStore.getInstance(type);
+                }
                 fis = new FileInputStream(location);
                 if (log.isDebugEnabled()) {
                     log.debug(name + " Loading Trust Keystore from : " + location);
                 }
 
                 trustStore.load(fis, storePassword.toCharArray());
-                TrustManagerFactory trustManagerfactory = TrustManagerFactory.getInstance(
-                           TrustManagerFactory.getDefaultAlgorithm());
+                TrustManagerFactory trustManagerfactory;
+                if (jceProvider != null) {
+                    trustManagerfactory = TrustManagerFactory.getInstance("PKIX", "BCJSSE");
+                } else {
+                    trustManagerfactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+                }
                 trustManagerfactory.init(trustStore);
                 trustManagers = trustManagerfactory.getTrustManagers();
                 TrustStoreHolder.getInstance().setClientTrustStore(trustStore);
@@ -264,7 +285,12 @@ public class ServerConnFactoryBuilder {
 
         try {
             final String sslProtocolValue = sslProtocol != null ? sslProtocol : "TLS";
-            SSLContext sslContext = SSLContext.getInstance(sslProtocolValue);
+            SSLContext sslContext;
+            if (jceProvider != null) {
+                sslContext = SSLContext.getInstance(sslProtocolValue, "BCJSSE");
+            } else {
+                sslContext = SSLContext.getInstance(sslProtocolValue);
+            }
             sslContext.init(keymanagers, trustManagers, null);
 
             ServerSSLSetupHandler sslSetupHandler = (clientAuth != null || httpsProtocols != null
@@ -491,6 +517,20 @@ public class ServerConnFactoryBuilder {
             value = ((OMElement) obj).getText();
         }
         return value;
+    }
+
+    /**
+     * Get the preferred JCE provider.
+     *
+     * @return the preferred JCE provider
+     */
+    public static String getPreferredJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 
 }

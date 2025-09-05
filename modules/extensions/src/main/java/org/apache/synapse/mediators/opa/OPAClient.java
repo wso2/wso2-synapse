@@ -47,6 +47,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -67,6 +68,9 @@ public class OPAClient {
     private int maxOpenConnections = 500;
     private int maxPerRoute = 200;
     private int connectionTimeout = 30;
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     private CloseableHttpClient httpClient = null;
 
@@ -190,7 +194,7 @@ public class OPAClient {
                     System.getProperty(OPAConstants.TRUST_STORE_PASSWORD_SYSTEM_PROPERTY).toCharArray();
             String trustStoreLocation = System.getProperty(OPAConstants.TRUST_STORE_LOCATION_SYSTEM_PROPERTY);
             File trustStoreFile = new File(trustStoreLocation);
-            try (InputStream localTrustStoreStream = new FileInputStream(trustStoreFile)) {
+            try (InputStream localTrustStoreStream = Files.newInputStream(trustStoreFile.toPath())) {
                 KeyStore trustStore = KeyStore.getInstance("JKS");
                 trustStore.load(localTrustStoreStream, trustStorePassword);
                 SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(trustStore).build();
@@ -250,5 +254,19 @@ public class OPAClient {
                 .setSocketTimeout((connectionTimeout + 10) * 10000).build();
 
         return HttpClients.custom().setConnectionManager(pool).setDefaultRequestConfig(params).build();
+    }
+
+    /**
+     * Get the preferred JCE provider.
+     *
+     * @return the preferred JCE provider
+     */
+    public static String getPreferredJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 }
