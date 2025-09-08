@@ -485,10 +485,9 @@ public class OAuthClient {
      */
     private static String getPreferredJceProvider() {
         String provider = System.getProperty(SECURITY_JCE_PROVIDER);
-        if (provider != null && provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER)) {
-            return BOUNCY_CASTLE_FIPS_PROVIDER;
-        } else if (provider != null && provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER)) {
-            return BOUNCY_CASTLE_PROVIDER;
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
         }
         return null;
     }
