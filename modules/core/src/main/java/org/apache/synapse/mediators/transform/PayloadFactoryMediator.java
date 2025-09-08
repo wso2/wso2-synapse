@@ -37,6 +37,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -84,16 +85,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private static final Log log = LogFactory.getLog(PayloadFactoryMediator.class);
 
     public PayloadFactoryMediator() {
-        //ignore DTDs for XML Input
-        inputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
-        inputFactory.setProperty(XMLInputFactory.IS_COALESCING, true);
-        Map props = StAXUtils.loadFactoryProperties("XMLInputFactory.properties");
-        if (props != null) {
-            for (Object o : props.entrySet()) {
-                Map.Entry entry = (Map.Entry) o;
-                inputFactory.setProperty((String) entry.getKey(), entry.getValue());
-            }
-        }
+        TemplateProcessor.readInputFactoryProperties(inputFactory);
     }
 
     /**
