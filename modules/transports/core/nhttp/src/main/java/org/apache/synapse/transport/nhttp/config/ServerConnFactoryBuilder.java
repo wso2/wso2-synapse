@@ -77,6 +77,9 @@ public class ServerConnFactoryBuilder {
     private static final String BOUNCY_CASTLE_PROVIDER = "BC";
     private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
     private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
+    private static final String PKIX = "PKIX";
+    private static final String BCJSSE = "BCJSSE";
+    private static final String TLS = "TLS";
 
     public ServerConnFactoryBuilder(final TransportInDescription transportIn, final HttpHost host,
                                     ConfigurationContext configurationContext) {
@@ -155,7 +158,7 @@ public class ServerConnFactoryBuilder {
                 keyStore.load(fis, storePassword.toCharArray());
                 KeyManagerFactory kmfactory;
                 if (jceProvider != null) {
-                    kmfactory = KeyManagerFactory.getInstance("PKIX", "BCJSSE");
+                    kmfactory = KeyManagerFactory.getInstance(PKIX, BCJSSE);
                 } else {
                     kmfactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
                 }
@@ -220,7 +223,7 @@ public class ServerConnFactoryBuilder {
                 trustStore.load(fis, storePassword.toCharArray());
                 TrustManagerFactory trustManagerfactory;
                 if (jceProvider != null) {
-                    trustManagerfactory = TrustManagerFactory.getInstance("PKIX", "BCJSSE");
+                    trustManagerfactory = TrustManagerFactory.getInstance(PKIX, BCJSSE);
                 } else {
                     trustManagerfactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
                 }
@@ -284,10 +287,10 @@ public class ServerConnFactoryBuilder {
 
 
         try {
-            final String sslProtocolValue = sslProtocol != null ? sslProtocol : "TLS";
+            final String sslProtocolValue = sslProtocol != null ? sslProtocol : TLS;
             SSLContext sslContext;
             if (jceProvider != null) {
-                sslContext = SSLContext.getInstance(sslProtocolValue, "BCJSSE");
+                sslContext = SSLContext.getInstance(sslProtocolValue, BCJSSE);
             } else {
                 sslContext = SSLContext.getInstance(sslProtocolValue);
             }

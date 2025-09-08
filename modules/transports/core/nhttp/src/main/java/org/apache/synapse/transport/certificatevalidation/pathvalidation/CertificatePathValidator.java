@@ -74,28 +74,29 @@ public class CertificatePathValidator {
      */
     public void validatePath() throws Exception {
         String jceProvider = getPreferredJceProvider();
-//        String providerClass;
-//        if (jceProvider.equals(Constants.BOUNCY_CASTLE_PROVIDER)) {
-//            providerClass = "org.bouncycastle.jce.provider.BouncyCastleProvider";
-//        } else if (jceProvider.equals(Constants.BOUNCY_CASTLE_FIPS_PROVIDER)) {
-//            providerClass = "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider";
-//        } else {
-//            throw new NoSuchProviderException("Configured JCE provider " + jceProvider + " is not supported");
-//        }
-//        Security.addProvider((Provider) Class.forName(providerClass).getDeclaredConstructor().newInstance());
         CollectionCertStoreParameters params = new CollectionCertStoreParameters(fullCertChain);
         try {
-            CertStore store = CertStore.getInstance("Collection", params, jceProvider);
-
-            // create certificate path
-            CertificateFactory fact = CertificateFactory.getInstance("X.509", jceProvider);
+            CertStore store;
+            CertificateFactory fact;
+            if (jceProvider != null) {
+                store = CertStore.getInstance("Collection", params, jceProvider);
+                fact = CertificateFactory.getInstance("X.509", jceProvider);
+            } else {
+                store = CertStore.getInstance("Collection", params);
+                fact = CertificateFactory.getInstance("X.509");
+            }
 
             CertPath certPath = fact.generateCertPath(certChain);
             TrustAnchor trustAnchor = new TrustAnchor(fullCertChain.get(fullCertChain.size() - 1), null);
             Set<TrustAnchor> trust = Collections.singleton(trustAnchor);
 
             // perform validation
-            CertPathValidator validator = CertPathValidator.getInstance("PKIX", jceProvider);
+            CertPathValidator validator;
+            if (jceProvider != null) {
+                validator = CertPathValidator.getInstance("PKIX", jceProvider);
+            } else {
+                validator = CertPathValidator.getInstance("PKIX");
+            }
             PKIXParameters param = new PKIXParameters(trust);
 
             param.addCertPathChecker(pathChecker);
@@ -121,9 +122,10 @@ public class CertificatePathValidator {
      */
     private static String getPreferredJceProvider() {
         String provider = System.getProperty("security.jce.provider");
-        if (provider != null && provider.equalsIgnoreCase(Constants.BOUNCY_CASTLE_FIPS_PROVIDER)) {
-            return Constants.BOUNCY_CASTLE_FIPS_PROVIDER;
+        if (provider != null && (provider.equalsIgnoreCase(Constants.BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(Constants.BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
         }
-        return Constants.BOUNCY_CASTLE_PROVIDER;
+        return null;
     }
 }

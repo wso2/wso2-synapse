@@ -18,6 +18,7 @@
 package org.apache.synapse.commons.crypto;
 
 import org.apache.axis2.AxisFault;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.securevault.CipherFactory;
@@ -43,6 +44,9 @@ public class CryptoUtil {
     private EncodeDecodeTypes inType = null;
     private EncodeDecodeTypes outType = null;
     private String algorithm = null;
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     /**
      * Public constructor
@@ -84,8 +88,7 @@ public class CryptoUtil {
         algorithm = MiscellaneousUtil.getProperty(secureVaultProperties,
                                                          CryptoConstants.CIPHER_ALGORITHM,
                                                          CryptoConstants.CIPHER_ALGORITHM_DEFAULT);
-        String provider = MiscellaneousUtil.getProperty(secureVaultProperties,
-                                                        CryptoConstants.SECURITY_PROVIDER, null);
+        String provider = getPreferredProvider(secureVaultProperties);
         String cipherType = MiscellaneousUtil.getProperty(secureVaultProperties,
                                                           CryptoConstants.CIPHER_TYPE, null);
 
@@ -105,20 +108,8 @@ public class CryptoUtil {
         cipherInformation.setType(cipherType);
         cipherInformation.setInType(null); //skipping decoding encoding in securevault
         cipherInformation.setOutType(null); //skipping decoding encoding in securevault
-        if (provider != null && !provider.isEmpty()) {
-            String providerClass;
-            if (CryptoConstants.BOUNCY_CASTLE_PROVIDER.equals(provider)) {
-                providerClass = "org.bouncycastle.jce.provider.BouncyCastleProvider";
-            } else if (CryptoConstants.BOUNCY_CASTLE_FIPS_PROVIDER.equals(provider)) {
-                providerClass = "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider";
-            } else {
-                throw new AxisFault("Unsupported JCE Provider: " + provider);
-            }
-            try {
-                Security.insertProviderAt((Provider) Class.forName(providerClass).getDeclaredConstructor().newInstance(), 1);
-            } catch (Exception e) {
-                throw new AxisFault("Error while initializing the JCE Provider: " + provider, e);
-            }
+
+        if (StringUtils.isNotEmpty(provider)) {
             cipherInformation.setProvider(provider);
             //todo need to add other providers if there are any.
         }
@@ -148,4 +139,31 @@ public class CryptoUtil {
         return isInitialized;
     }
 
+    /**
+     * Get the preferred JCE provider.
+     *
+     * @return the preferred JCE provider
+     */
+    private static String getPreferredProvider(Properties secureVaultProperties) throws AxisFault  {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+
+        if (provider != null && provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER)) {
+            insertProvider("org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider", provider);
+            return provider;
+        } else if (provider != null &&  provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER)) {
+            insertProvider("org.bouncycastle.jce.provider.BouncyCastleProvider", provider);
+            return provider;
+        }
+        return MiscellaneousUtil.getProperty(secureVaultProperties, CryptoConstants.SECURITY_PROVIDER,
+                null);
+    }
+
+    private static void insertProvider(String providerClass, String provider) throws AxisFault {
+        try {
+            Security.insertProviderAt((Provider) Class.forName(providerClass).getDeclaredConstructor().newInstance(),
+                    1);
+        } catch (Exception e) {
+            throw new AxisFault("Error while initializing the JCE Provider: " + provider, e);
+        }
+    }
 }

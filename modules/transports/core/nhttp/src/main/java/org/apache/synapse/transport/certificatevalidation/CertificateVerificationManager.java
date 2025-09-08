@@ -55,6 +55,9 @@ public class CertificateVerificationManager {
     private boolean isFullCertChainValidationEnabled = true;
     private boolean isCertExpiryValidationEnabled = false;
     private static final Log log = LogFactory.getLog(CertificateVerificationManager.class);
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
 
     public CertificateVerificationManager(Integer cacheAllocatedSize, Integer cacheDelayMins) {
 
@@ -163,16 +166,24 @@ public class CertificateVerificationManager {
             throws CertificateVerificationException {
         X509Certificate[] certChain = new X509Certificate[certs.length];
         Throwable exceptionThrown;
+        String provider = getPreferredJceProvider();
         for (int i = 0; i < certs.length; i++) {
             try {
                 byte[] encoded = certs[i].getEncoded();
                 ByteArrayInputStream bis = new ByteArrayInputStream(encoded);
-                java.security.cert.CertificateFactory cf
-                        = java.security.cert.CertificateFactory.getInstance("X.509");
+                java.security.cert.CertificateFactory cf;
+                if (provider != null) {
+                    cf = java.security.cert.CertificateFactory.getInstance("X.509", provider);
+                } else {
+                    cf = java.security.cert.CertificateFactory.getInstance("X.509");
+                }
                 certChain[i]=((X509Certificate)cf.generateCertificate(bis));
                 continue;
             } catch (CertificateException e) {
                 exceptionThrown = e;
+            } catch (NoSuchProviderException e) {
+                throw new CertificateVerificationException("Specified security provider is not available in " +
+                        "this environment: ", e);
             }
             throw new CertificateVerificationException("Cant Convert certificates from javax to java", exceptionThrown);
         }
@@ -284,5 +295,19 @@ public class CertificateVerificationManager {
                  | SignatureException e) {
             return false;
         }
+    }
+
+    /**
+     * Get the preferred JCE provider.
+     *
+     * @return the preferred JCE provider
+     */
+    public static String getPreferredJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 }

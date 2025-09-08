@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.NoSuchProviderException;
 import java.security.cert.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,10 @@ public class CRLVerifier implements RevocationVerifier {
 
     private CRLCache cache;
     private static final Log log = LogFactory.getLog(CRLVerifier.class);
+
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
 
     public CRLVerifier(CRLCache cache) {
         this.cache = cache;
@@ -116,7 +121,13 @@ public class CRLVerifier implements RevocationVerifier {
         try {
             URL url = new URL(crlURL);
             crlStream = url.openStream();
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            String provider = getPreferredJceProvider();
+            CertificateFactory cf;
+            if (provider != null) {
+                cf = CertificateFactory.getInstance("X.509", provider);
+            } else {
+                cf = CertificateFactory.getInstance("X.509");
+            }
             return (X509CRL) cf.generateCRL(crlStream);
         } catch (MalformedURLException e) {
             throw new CertificateVerificationException("CRL Url is malformed", e);
@@ -126,6 +137,9 @@ public class CRLVerifier implements RevocationVerifier {
             throw new CertificateVerificationException(e);
         } catch (CRLException e) {
             throw new CertificateVerificationException("Cannot generate X509CRL from the stream data", e);
+        } catch (NoSuchProviderException e) {
+            throw new CertificateVerificationException("Specified security provider is not available in " +
+                    "this environment: ", e);
         } finally {
             if (crlStream != null)
                 crlStream.close();
@@ -184,5 +198,19 @@ public class CRLVerifier implements RevocationVerifier {
             throw new CertificateVerificationException("Cant get CRL urls from certificate");
 
         return crlUrls;
+    }
+
+    /**
+     * Get the preferred JCE provider.
+     *
+     * @return the preferred JCE provider
+     */
+    public static String getPreferredJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 }

@@ -76,6 +76,9 @@ public class ClientConnFactoryBuilder {
     private static final String BOUNCY_CASTLE_PROVIDER = "BC";
     private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
     private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
+    private static final String PKIX = "PKIX";
+    private static final String BCJSSE = "BCJSSE";
+    private static final String TLS = "TLS";
 
     public ClientConnFactoryBuilder(final TransportOutDescription transportOut, ConfigurationContext configurationContext) {
         this(transportOut);
@@ -379,7 +382,7 @@ public class ClientConnFactoryBuilder {
                 keyStore.load(fis, storePassword.toCharArray());
                 KeyManagerFactory kmfactory;
                 if (jceProvider != null) {
-                    kmfactory = KeyManagerFactory.getInstance("PKIX", "BCJSSE");
+                    kmfactory = KeyManagerFactory.getInstance(PKIX, BCJSSE);
                 } else {
                     kmfactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
                 }
@@ -430,7 +433,7 @@ public class ClientConnFactoryBuilder {
                 trustStore.load(fis, storePassword.toCharArray());
                 TrustManagerFactory trustManagerfactory;
                 if (jceProvider != null) {
-                    trustManagerfactory = TrustManagerFactory.getInstance("PKIX", "BCJSSE");
+                    trustManagerfactory = TrustManagerFactory.getInstance(PKIX, BCJSSE);
                 } else {
                     trustManagerfactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
                 }
@@ -466,10 +469,10 @@ public class ClientConnFactoryBuilder {
 
         try {
             final Parameter sslpParameter = transportOut.getParameter("SSLProtocol");
-            final String sslProtocol = sslpParameter != null ? sslpParameter.getValue().toString() : "TLS";
+            final String sslProtocol = sslpParameter != null ? sslpParameter.getValue().toString() : TLS;
             SSLContext sslcontext;
             if (jceProvider != null) {
-                sslcontext = SSLContext.getInstance(sslProtocol, "BCJSSE");
+                sslcontext = SSLContext.getInstance(sslProtocol, BCJSSE);
             } else {
                 sslcontext = SSLContext.getInstance(sslProtocol);
             }
@@ -511,7 +514,7 @@ public class ClientConnFactoryBuilder {
                 keyStore.load(fis, storePassword.toCharArray());
                 KeyManagerFactory kmfactory;
                 if (jceProvider != null) {
-                    kmfactory = KeyManagerFactory.getInstance("PKIX", "BCJSSE");
+                    kmfactory = KeyManagerFactory.getInstance(PKIX, BCJSSE);
                 } else {
                     kmfactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
                 }
@@ -551,7 +554,7 @@ public class ClientConnFactoryBuilder {
                 trustStore.load(fis, storePassword.toCharArray());
                 TrustManagerFactory trustManagerfactory;
                 if (jceProvider != null) {
-                    trustManagerfactory = TrustManagerFactory.getInstance("PKIX", "BCJSSE");
+                    trustManagerfactory = TrustManagerFactory.getInstance(PKIX, BCJSSE);
                 } else {
                     trustManagerfactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
                 }
@@ -562,6 +565,7 @@ public class ClientConnFactoryBuilder {
                 sslSenderTrustStoreHolder.setKeyStore(trustStore);
                 sslSenderTrustStoreHolder.setLocation(location);
                 sslSenderTrustStoreHolder.setPassword(storePassword);
+
 
             } catch (GeneralSecurityException gse) {
                 log.error(name + " Error loading Key store : " + location, gse);
@@ -580,10 +584,10 @@ public class ClientConnFactoryBuilder {
 
         try {
             final Parameter sslpParameter = transportOut.getParameter("SSLProtocol");
-            final String sslProtocol = sslpParameter != null ? sslpParameter.getValue().toString() : "TLS";
+            final String sslProtocol = sslpParameter != null ? sslpParameter.getValue().toString() : TLS;
             SSLContext sslcontext;
             if (jceProvider != null) {
-                sslcontext = SSLContext.getInstance(sslProtocol,  "BCJSSE");
+                sslcontext = SSLContext.getInstance(sslProtocol,  BCJSSE);
             } else {
                 sslcontext = SSLContext.getInstance(sslProtocol);
             }

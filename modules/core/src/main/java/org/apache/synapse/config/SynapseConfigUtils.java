@@ -97,6 +97,8 @@ public class SynapseConfigUtils {
     private static final String BOUNCY_CASTLE_PROVIDER = "BC";
     private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
     private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
+    private static final String TLS = "TLS";
+    private static final String BCJSSE = "BCJSSE";
 
     /**
      * Return a StreamSource for the given Object
@@ -463,9 +465,9 @@ public class SynapseConfigUtils {
             String provider = getPreferredJceProvider();
             SSLContext sslContext;
             if (provider != null) {
-                sslContext = SSLContext.getInstance("TLS", "BCJSSE");
+                sslContext = SSLContext.getInstance(TLS, BCJSSE);
             } else {
-                sslContext = SSLContext.getInstance("TLS");
+                sslContext = SSLContext.getInstance(TLS);
             }
             sslContext.init(keyManagers, trustManagers, null);
             connection.setSSLSocketFactory(sslContext.getSocketFactory());
