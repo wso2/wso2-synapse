@@ -293,10 +293,11 @@ public class OCSPVerifier implements RevocationVerifier {
      * @return
      */
     private static String getPreferredJceProvider() {
-        String provider = System.getProperty("security.jce.provider");
-        if (provider != null && provider.equalsIgnoreCase(Constants.BOUNCY_CASTLE_FIPS_PROVIDER)) {
-            return Constants.BOUNCY_CASTLE_FIPS_PROVIDER;
+        String provider = System.getProperty(Constants.SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(Constants.BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(Constants.BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
         }
-        return Constants.BOUNCY_CASTLE_PROVIDER;
+        return null;
     }
 }

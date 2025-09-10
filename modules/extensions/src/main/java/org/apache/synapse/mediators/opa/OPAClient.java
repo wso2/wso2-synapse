@@ -19,6 +19,7 @@
 package org.apache.synapse.mediators.opa;
 
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
@@ -39,7 +40,6 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -47,14 +47,20 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.util.Map;
 
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 
 /**
  * This class represents the client used to request and retrieve OPA response for a given policy
@@ -67,6 +73,10 @@ public class OPAClient {
     private int maxOpenConnections = 500;
     private int maxPerRoute = 200;
     private int connectionTimeout = 30;
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
+    public static final String BCJSSE = "BCJSSE";
 
     private CloseableHttpClient httpClient = null;
 
@@ -190,10 +200,29 @@ public class OPAClient {
                     System.getProperty(OPAConstants.TRUST_STORE_PASSWORD_SYSTEM_PROPERTY).toCharArray();
             String trustStoreLocation = System.getProperty(OPAConstants.TRUST_STORE_LOCATION_SYSTEM_PROPERTY);
             File trustStoreFile = new File(trustStoreLocation);
-            try (InputStream localTrustStoreStream = new FileInputStream(trustStoreFile)) {
-                KeyStore trustStore = KeyStore.getInstance("JKS");
+            try (InputStream localTrustStoreStream = Files.newInputStream(trustStoreFile.toPath())) {
+                String jceProvider = getPreferredJceProvider();
+                KeyStore trustStore;
+                String type = System.getProperty(OPAConstants.TRUST_STORE_TYPE_SYSTEM_PROPERTY);
+                if (jceProvider != null) {
+                    type = StringUtils.isNotBlank(type)  ? type : OPAConstants.BCFKS;
+                    trustStore = KeyStore.getInstance(type, jceProvider);
+                } else {
+                    type = StringUtils.isNotBlank(type) ? type : OPAConstants.JKS;
+                    trustStore = KeyStore.getInstance(type);
+                }
+                TrustManagerFactory tmf = (jceProvider != null)
+                        ? TrustManagerFactory.getInstance(OPAConstants.PKIX, BCJSSE)
+                        : TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+                tmf.init(trustStore);
                 trustStore.load(localTrustStoreStream, trustStorePassword);
-                SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(trustStore).build();
+                SSLContext sslContext;
+                if (jceProvider != null) {
+                    sslContext = SSLContext.getInstance(OPAConstants.TLS, jceProvider);
+                } else {
+                    sslContext = SSLContext.getInstance(OPAConstants.TLS);
+                }
+                sslContext.init(null, tmf.getTrustManagers(), null);
 
                 X509HostnameVerifier hostnameVerifier;
                 String hostnameVerifierOption = System.getProperty(OPAConstants.HOST_NAME_VERIFIER);
@@ -207,14 +236,16 @@ public class OPAClient {
                 }
 
                 SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext, hostnameVerifier);
-                Registry<ConnectionSocketFactory> socketFactoryRegistry =
-                        RegistryBuilder.<ConnectionSocketFactory>create()
-                                .register(OPAConstants.HTTPS, sslsf).build();
+                Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create().
+                        register(OPAConstants.HTTPS, sslsf).build();
                 poolManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
-            } catch (IOException | KeyStoreException | CertificateException | NoSuchAlgorithmException | KeyManagementException e) {
+            } catch (IOException | KeyStoreException | CertificateException | NoSuchAlgorithmException |
+                     KeyManagementException e) {
                 log.error("Error while reading and setting truststore", e);
                 throw new OPASecurityException(OPASecurityException.INTERNAL_ERROR,
                         "Error while reading and setting truststore", e);
+            } catch (NoSuchProviderException e) {
+                throw new OPASecurityException("Specified security provider is not available in this environment", e);
             }
         } else {
             poolManager = new PoolingHttpClientConnectionManager();
@@ -250,5 +281,19 @@ public class OPAClient {
                 .setSocketTimeout((connectionTimeout + 10) * 10000).build();
 
         return HttpClients.custom().setConnectionManager(pool).setDefaultRequestConfig(params).build();
+    }
+
+    /**
+     * Get the preferred JCE provider.
+     *
+     * @return the preferred JCE provider
+     */
+    public static String getPreferredJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 }

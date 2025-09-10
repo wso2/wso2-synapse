@@ -17,6 +17,7 @@ package org.apache.synapse.util.xpath;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.util.xpath.ext.XpathExtensionUtil;
 import org.jaxen.Context;
 import org.jaxen.Function;
 import org.jaxen.FunctionCallException;
@@ -30,6 +31,7 @@ import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.util.Base64;
@@ -44,7 +46,7 @@ public class DecryptFunction implements Function {
     private static final Log log = LogFactory.getLog(DecryptFunction.class);
     private static final String DEFAULT_ALGORITHM = "RSA";
     private static final String DEFAULT_KEYSTORE_TYPE = "JKS";
-    private static Map<String, Cipher> cipherInstancesMap = new ConcurrentHashMap<>();
+    private static final Map<String, Cipher> cipherInstancesMap = new ConcurrentHashMap<>();
 
     @Override
     public Object call(Context context, List args) throws FunctionCallException {
@@ -119,17 +121,26 @@ public class DecryptFunction implements Function {
             }
             return new String(cipherText);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | KeyStoreException | InvalidKeyException
-                | IllegalBlockSizeException | BadPaddingException | UnrecoverableKeyException e) {
+                | IllegalBlockSizeException | BadPaddingException | UnrecoverableKeyException |
+                 NoSuchProviderException  e) {
             throw new FunctionCallException("An error occurred while encrypting data.", e);
         }
     }
 
-    private Cipher getCipherInstance(String algorithm) throws NoSuchPaddingException, NoSuchAlgorithmException {
+    private Cipher getCipherInstance(String algorithm) throws NoSuchPaddingException, NoSuchAlgorithmException,
+            NoSuchProviderException {
         Cipher cipherInstance = cipherInstancesMap.get(algorithm);
+        String provider = XpathExtensionUtil.getPreferredJceProvider();
         if (cipherInstance == null) {
-            cipherInstance = Cipher.getInstance(algorithm);
+            if (provider != null) {
+                cipherInstance = Cipher.getInstance(algorithm, provider);
+            } else {
+                cipherInstance = Cipher.getInstance(algorithm);
+            }
             cipherInstancesMap.put(algorithm, cipherInstance);
         }
         return cipherInstance;
     }
+
+
 }

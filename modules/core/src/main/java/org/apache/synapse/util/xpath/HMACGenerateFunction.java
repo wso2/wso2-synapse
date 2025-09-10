@@ -18,6 +18,7 @@ package org.apache.synapse.util.xpath;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.util.xpath.ext.XpathExtensionUtil;
 import org.jaxen.Context;
 import org.jaxen.Function;
 import org.jaxen.FunctionCallException;
@@ -26,7 +27,9 @@ import org.jaxen.function.StringFunction;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.Formatter;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +42,7 @@ public class HMACGenerateFunction implements Function {
 
     private static final Log log = LogFactory.getLog(HMACGenerateFunction.class);
     private static final String DEFAULT_HMAC_SIGNATURE = "HmacSHA1";
-    private static Map<String, Mac> macInstancesMap = new ConcurrentHashMap<>();
+    private static final Map<String, Mac> macInstancesMap = new ConcurrentHashMap<>();
 
     @Override
     public Object call(Context context, List args) throws FunctionCallException {
@@ -85,7 +88,7 @@ public class HMACGenerateFunction implements Function {
             final SecretKeySpec signingKey = new SecretKeySpec(secret.getBytes(), algorithm);
             mac.init(signingKey);
             return toHexString(mac.doFinal(payload.getBytes()));
-        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+        } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchProviderException e) {
             String msg = "Error while generating HMAC signature";
             log.error(msg, e);
             throw new FunctionCallException(msg, e);
@@ -100,10 +103,15 @@ public class HMACGenerateFunction implements Function {
         return formatter.toString();
     }
 
-    private Mac getMacInstance(String algorithm) throws NoSuchAlgorithmException {
+    private Mac getMacInstance(String algorithm) throws NoSuchAlgorithmException, NoSuchProviderException {
         Mac macInstance = macInstancesMap.get(algorithm);
         if (macInstance == null) {
-            macInstance = Mac.getInstance(algorithm);
+            String providerName = XpathExtensionUtil.getPreferredJceProvider();
+            if (providerName != null) {
+                macInstance = Mac.getInstance(algorithm, providerName);
+            } else {
+                macInstance = Mac.getInstance(algorithm);
+            }
             macInstancesMap.put(algorithm, macInstance);
         }
         return macInstance;
