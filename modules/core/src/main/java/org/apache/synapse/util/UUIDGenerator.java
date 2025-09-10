@@ -22,6 +22,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.Random;
 
 /**
@@ -42,6 +43,9 @@ public class UUIDGenerator {
 
     private static Random myRand = null;
     private static boolean useNano = false;
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     /**
      * MD5 a random string with localhost/date etc will return 128 bits construct a string of 18
@@ -93,10 +97,17 @@ public class UUIDGenerator {
         sb.append(Long.toString(rand));
         MessageDigest md5;
         try {
-            md5 = MessageDigest.getInstance("MD5");
+            String provider = getJceProvider();
+            if (provider != null) {
+                md5 = MessageDigest.getInstance("MD5", provider);
+            } else {
+                md5 = MessageDigest.getInstance("MD5");
+            }
         } catch (NoSuchAlgorithmException e) {
             //System.out.println("Error: " + e);
             //todo have to be properly handled
+            return null;
+        } catch (NoSuchProviderException e) {
             return null;
         }
         md5.update(sb.toString().getBytes());
@@ -110,5 +121,19 @@ public class UUIDGenerator {
         if (begin < 0) begin = begin * -1;
         begin = begin % 8;
         return sb2.toString().substring(begin, begin + 18).toUpperCase();
+    }
+
+    /**
+     * Get the JCE provider to be used for encryption/decryption
+     *
+     * @return
+     */
+    private static String getJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 }
