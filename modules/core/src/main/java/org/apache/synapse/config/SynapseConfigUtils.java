@@ -99,6 +99,7 @@ public class SynapseConfigUtils {
     private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
     private static final String TLS = "TLS";
     private static final String BCJSSE = "BCJSSE";
+    private static final String ENABLE_HOST_NAME_VERIFIER = "enableHostnameVerifier";
 
     /**
      * Return a StreamSource for the given Object
@@ -475,9 +476,7 @@ public class SynapseConfigUtils {
             if (trustInformation != null) {
                 // Determine is it need to overwrite default Host Name verifier
                 boolean enableHostnameVerifier = true;
-                String value =
-                        trustInformation.getParameter(
-                                KeyStoreInformation.ENABLE_HOST_NAME_VERIFIER);
+                String value = trustInformation.getParameter(ENABLE_HOST_NAME_VERIFIER);
                 if (value != null) {
                     enableHostnameVerifier = Boolean.parseBoolean(value);
                 }
