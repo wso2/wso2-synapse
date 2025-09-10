@@ -1600,7 +1600,7 @@
       <org.ow2.asm.asm.version>9.2</org.ow2.asm.asm.version>
       <json.smart.version>2.6.0</json.smart.version>
        <org.wso2.json.version>3.0.0.wso2v4</org.wso2.json.version>
-       <log4j2.version>2.17.1</log4j2.version>
+      <log4j2.version>2.24.3</log4j2.version>
       <xmlunit.version>1.1</xmlunit.version>
       <derby.version>10.4.2.0</derby.version>
       <wrapper.version>3.2.3</wrapper.version>
@@ -1648,8 +1648,8 @@
        <activemq.broker.version>5.9.1</activemq.broker.version>
        <slf4j.log4j.version>1.5.2</slf4j.log4j.version>
        <system.rules.version>1.17.0</system.rules.version>
-       <io.netty.version>4.1.118.Final</io.netty.version>
-       <transport.http.netty.version>6.3.53</transport.http.netty.version>
+       <io.netty.version>4.1.126.Final</io.netty.version>
+       <transport.http.netty.version>6.3.55</transport.http.netty.version>
        <version.org.wso2.orbit.javax.activation>1.1.1.wso2v3</version.org.wso2.orbit.javax.activation>
        <rabbitmq.version>5.20.0</rabbitmq.version>
        <opentelemetry.all.version>1.11.0.wso2v6</opentelemetry.all.version>
