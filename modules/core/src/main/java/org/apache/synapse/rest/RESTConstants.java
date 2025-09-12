@@ -92,6 +92,8 @@ public class RESTConstants {
                                                                     _SYNAPSE_INTERNAL_+ "Access-Control-Max-Age";
     public static final String INTERNAL_CORS_HEADER_ORIGIN = _SYNAPSE_INTERNAL_+ "Origin";
 
+    public static final String INTERNAL_CORS_PER_API_ENABLED = _SYNAPSE_INTERNAL_ + "CORS_PER_API_ENABLED";
+
     /**
      * Constant related to identifying API when Prometheus Observability Handler is present
      */
