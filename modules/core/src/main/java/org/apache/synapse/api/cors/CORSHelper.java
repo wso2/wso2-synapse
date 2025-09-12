@@ -64,7 +64,8 @@ public class CORSHelper {
      */
     public static void handleCORSHeaders(CORSConfiguration corsConfiguration, MessageContext synCtx, String supportedMethods, boolean updateHeaders) {
 
-        if (corsConfiguration.isEnabled()) {
+        if (corsConfiguration.isEnabled() &&
+                !Boolean.TRUE.equals(synCtx.getProperty(RESTConstants.INTERNAL_CORS_PER_API_ENABLED))) {
             org.apache.axis2.context.MessageContext msgCtx = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
             Map<String, String> transportHeaders = (Map<String, String>) msgCtx.getProperty(
                     org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
