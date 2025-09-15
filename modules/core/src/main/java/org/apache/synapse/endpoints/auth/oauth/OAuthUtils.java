@@ -31,6 +31,7 @@ import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.endpoints.ExternalTrustStoreConfigs;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
 import org.apache.synapse.endpoints.ProxyConfigs;
 import org.apache.synapse.endpoints.auth.AuthConstants;
@@ -147,7 +148,8 @@ public class OAuthUtils {
         }
         AuthorizationCodeHandler handler = new AuthorizationCodeHandler(tokenApiUrl, clientId, clientSecret,
                 refreshToken, authMode, useGlobalConnectionTimeoutConfigs, connectionTimeout, connectionRequestTimeout,
-                socketTimeout, TokenCacheFactory.getTokenCache(), useGlobalProxyConfigs, proxyConfigs);
+                socketTimeout, TokenCacheFactory.getTokenCache(), useGlobalProxyConfigs, proxyConfigs,
+                getExternalTrustStoreConfigs());
         if (hasRequestParameters(authCodeElement)) {
             Map<String, String> requestParameters = getRequestParameters(authCodeElement);
             if (requestParameters == null) {
@@ -201,7 +203,7 @@ public class OAuthUtils {
         }
         ClientCredentialsHandler handler = new ClientCredentialsHandler(tokenApiUrl, clientId, clientSecret, authMode,
                 useGlobalConnectionTimeoutConfigs, connectionTimeout, connectionRequestTimeout, socketTimeout,
-                TokenCacheFactory.getTokenCache(), useGlobalProxyConfigs, proxyConfigs);
+                TokenCacheFactory.getTokenCache(), useGlobalProxyConfigs, proxyConfigs, getExternalTrustStoreConfigs());
         if (hasRequestParameters(clientCredentialsElement)) {
             Map<String, String> requestParameters = getRequestParameters(clientCredentialsElement);
             if (requestParameters == null) {
@@ -258,7 +260,7 @@ public class OAuthUtils {
         PasswordCredentialsHandler handler = new PasswordCredentialsHandler(tokenApiUrl, clientId, clientSecret,
                 username, password, authMode, useGlobalConnectionTimeoutConfigs, connectionTimeout,
                 connectionRequestTimeout, socketTimeout, TokenCacheFactory.getTokenCache(), useGlobalProxyConfigs,
-                proxyConfigs);
+                proxyConfigs, getExternalTrustStoreConfigs());
         if (hasRequestParameters(passwordCredentialsElement)) {
             Map<String, String> requestParameters = getRequestParameters(passwordCredentialsElement);
             if (requestParameters == null) {
@@ -338,6 +340,47 @@ public class OAuthUtils {
             return null;
         }
         return proxyConfigs;
+    }
+
+    /**
+     * Creates ExternalTrustStoreConfigs from synapse.properties file.
+     * If external trust store properties are not configured in synapse.properties, returns a disabled configuration.
+     *
+     * @return ExternalTrustStoreConfigs object with configurations from synapse.properties
+     */
+    private static ExternalTrustStoreConfigs getExternalTrustStoreConfigs() {
+
+        ExternalTrustStoreConfigs externalTrustStoreConfigs = new ExternalTrustStoreConfigs();
+
+        Properties synapseProperties = SynapsePropertiesLoader.loadSynapseProperties();
+        String trustStoreLocation = synapseProperties.getProperty(AuthConstants.OAUTH_TRUST_STORE_LOCATION_PROPERTY);
+        String trustStoreType = synapseProperties.getProperty(AuthConstants.OAUTH_TRUST_STORE_TYPE_PROPERTY);
+        String trustStorePassword = synapseProperties.getProperty(AuthConstants.OAUTH_TRUST_STORE_PASSWORD_PROPERTY);
+
+        if (trustStoreLocation != null && trustStorePassword != null) {
+            externalTrustStoreConfigs.setTrustStoreEnabled(true);
+            externalTrustStoreConfigs.setTrustStoreLocation(trustStoreLocation);
+            externalTrustStoreConfigs.setTrustStoreType(trustStoreType != null ? trustStoreType : "JKS"); // Default to JKS
+            externalTrustStoreConfigs.setTrustStorePassword(trustStorePassword);
+
+            // Set up the secret resolver for trust store password
+            externalTrustStoreConfigs.setTrustStorePasswordSecretResolver(SecretResolverFactory.create(new Properties() {{
+                setProperty(AuthConstants.OAUTH_TRUST_STORE_PASSWORD_PROPERTY, trustStorePassword);
+            }}));
+
+            if (log.isDebugEnabled()) {
+                log.debug("Loaded external trust store configurations from synapse.properties: location="
+                        + trustStoreLocation + ", type=" + externalTrustStoreConfigs.getTrustStoreType());
+            }
+        } else {
+            externalTrustStoreConfigs.setTrustStoreEnabled(false);
+
+            if (log.isDebugEnabled()) {
+                log.debug("External trust store is not configured in synapse.properties. External trust store will " +
+                        "be disabled.");
+            }
+        }
+        return externalTrustStoreConfigs;
     }
 
     /**
@@ -707,5 +750,31 @@ public class OAuthUtils {
         proxyConfigsOM.addChild(proxyProtocolOM);
 
         return proxyConfigsOM;
+    }
+
+    /**
+     * Create an OMElement for external trust store configurations.
+     *
+     * @param omFactory                 OMFactory instance used to create OMElements.
+     * @param externalTrustStoreConfigs ExternalTrustStoreConfigs containing trust store configuration details.
+     * @return OMElement of external trust store configurations.
+     */
+    public static OMElement createOMExternalTrustStore(OMFactory omFactory, ExternalTrustStoreConfigs externalTrustStoreConfigs) {
+        OMElement externalTrustStoreConfigsOM = omFactory.createOMElement(AuthConstants.EXTERNAL_TRUST_STORE_CONFIGS,
+                SynapseConstants.SYNAPSE_OMNAMESPACE);
+
+        OMElement trustStoreLocationOM = OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.TRUST_STORE_LOCATION,
+                externalTrustStoreConfigs.getTrustStoreLocation());
+        externalTrustStoreConfigsOM.addChild(trustStoreLocationOM);
+
+        OMElement trustStoreTypeOM = OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.TRUST_STORE_TYPE,
+                externalTrustStoreConfigs.getTrustStoreType());
+        externalTrustStoreConfigsOM.addChild(trustStoreTypeOM);
+
+        OMElement trustStorePasswordOM = OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.TRUST_STORE_PASSWORD,
+                externalTrustStoreConfigs.getTrustStorePassword());
+        externalTrustStoreConfigsOM.addChild(trustStorePasswordOM);
+
+        return externalTrustStoreConfigsOM;
     }
 }

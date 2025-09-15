@@ -38,6 +38,7 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
+import org.apache.synapse.endpoints.ExternalTrustStoreConfigs;
 import org.apache.synapse.endpoints.ProxyConfigs;
 import org.apache.synapse.mediators.TestUtils;
 import org.apache.synapse.transport.passthru.PassThroughHttpSender;
@@ -112,7 +113,7 @@ public class OAuthClientTest extends TestCase {
         SynapseEnvironment synapseEnvironment = new Axis2SynapseEnvironment(synapseConfiguration);
         String token = OAuthClient.generateToken("https://localhost:8280/token1/1.0.0", "body", "credentials",
                 new Axis2MessageContext(messageContext, new SynapseConfiguration(), synapseEnvironment), null, -1, -1,
-                -1, new ProxyConfigs());
+                -1, new ProxyConfigs(), new ExternalTrustStoreConfigs());
 
         assertEquals("abc123", token);
     }
