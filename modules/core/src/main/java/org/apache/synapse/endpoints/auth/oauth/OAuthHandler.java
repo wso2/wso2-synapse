@@ -25,6 +25,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.endpoints.ExternalTrustStoreConfigs;
 import org.apache.synapse.endpoints.ProxyConfigs;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
@@ -58,11 +59,13 @@ public abstract class OAuthHandler implements AuthHandler {
     private final TokenCacheProvider tokenCacheProvider;
     private final boolean useGlobalProxyConfigs;
     private ProxyConfigs proxyConfigs;
+    private ExternalTrustStoreConfigs externalTrustStoreConfigs;
 
     protected OAuthHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode,
                            boolean useGlobalConnectionTimeoutConfigs, int connectionTimeout,
                            int connectionRequestTimeout, int socketTimeout, TokenCacheProvider tokenCacheProvider,
-                           boolean useGlobalProxyConfigs, ProxyConfigs proxyConfigs) {
+                           boolean useGlobalProxyConfigs, ProxyConfigs proxyConfigs,
+                           ExternalTrustStoreConfigs externalTrustStoreConfigs) {
 
         this.id = OAuthUtils.getRandomOAuthHandlerID();
         this.tokenApiUrl = tokenApiUrl;
@@ -76,6 +79,7 @@ public abstract class OAuthHandler implements AuthHandler {
         this.tokenCacheProvider = tokenCacheProvider;
         this.useGlobalProxyConfigs = useGlobalProxyConfigs;
         this.proxyConfigs = proxyConfigs;
+        this.externalTrustStoreConfigs = externalTrustStoreConfigs;
     }
 
     @Override
@@ -107,7 +111,8 @@ public abstract class OAuthHandler implements AuthHandler {
                         token = OAuthClient.generateToken(OAuthUtils.resolveExpression(tokenApiUrl, messageContext),
                                 buildTokenRequestPayload(messageContext), getEncodedCredentials(messageContext),
                                 messageContext, getResolvedCustomHeadersMap(customHeadersMap, messageContext),
-                                connectionTimeout, connectionRequestTimeout, socketTimeout, proxyConfigs);
+                                connectionTimeout, connectionRequestTimeout, socketTimeout, proxyConfigs,
+                                externalTrustStoreConfigs);
 
                         // Cache the newly generated token
                         tokenCacheProvider.putToken(getId(messageContext), token);
@@ -224,6 +229,11 @@ public abstract class OAuthHandler implements AuthHandler {
                 AuthConstants.USE_GLOBAL_CONNECTION_TIMEOUT_CONFIGS, String.valueOf(useGlobalConnectionTimeoutConfigs)));
         oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory,
                 AuthConstants.USE_GLOBAL_PROXY_CONFIGS, String.valueOf(useGlobalProxyConfigs)));
+        if (externalTrustStoreConfigs.isTrustStoreEnabled()) {
+            OMElement externalTrustStoreElement = OAuthUtils.createOMExternalTrustStore(omFactory,
+                    externalTrustStoreConfigs);
+            oauthCredentials.addChild(externalTrustStoreElement);
+        }
         if (proxyConfigs.isProxyEnabled()) {
             OMElement proxyElement = OAuthUtils.createOMProxyConfigs(omFactory, proxyConfigs);
             oauthCredentials.addChild(proxyElement);
