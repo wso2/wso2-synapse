@@ -751,30 +751,4 @@ public class OAuthUtils {
 
         return proxyConfigsOM;
     }
-
-    /**
-     * Create an OMElement for external trust store configurations.
-     *
-     * @param omFactory                 OMFactory instance used to create OMElements.
-     * @param externalTrustStoreConfigs ExternalTrustStoreConfigs containing trust store configuration details.
-     * @return OMElement of external trust store configurations.
-     */
-    public static OMElement createOMExternalTrustStore(OMFactory omFactory, ExternalTrustStoreConfigs externalTrustStoreConfigs) {
-        OMElement externalTrustStoreConfigsOM = omFactory.createOMElement(AuthConstants.EXTERNAL_TRUST_STORE_CONFIGS,
-                SynapseConstants.SYNAPSE_OMNAMESPACE);
-
-        OMElement trustStoreLocationOM = OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.TRUST_STORE_LOCATION,
-                externalTrustStoreConfigs.getTrustStoreLocation());
-        externalTrustStoreConfigsOM.addChild(trustStoreLocationOM);
-
-        OMElement trustStoreTypeOM = OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.TRUST_STORE_TYPE,
-                externalTrustStoreConfigs.getTrustStoreType());
-        externalTrustStoreConfigsOM.addChild(trustStoreTypeOM);
-
-        OMElement trustStorePasswordOM = OAuthUtils.createOMElementWithValue(omFactory, AuthConstants.TRUST_STORE_PASSWORD,
-                externalTrustStoreConfigs.getTrustStorePassword());
-        externalTrustStoreConfigsOM.addChild(trustStorePasswordOM);
-
-        return externalTrustStoreConfigsOM;
-    }
 }
