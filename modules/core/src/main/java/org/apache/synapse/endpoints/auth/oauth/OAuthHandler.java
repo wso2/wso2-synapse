@@ -229,11 +229,6 @@ public abstract class OAuthHandler implements AuthHandler {
                 AuthConstants.USE_GLOBAL_CONNECTION_TIMEOUT_CONFIGS, String.valueOf(useGlobalConnectionTimeoutConfigs)));
         oauthCredentials.addChild(OAuthUtils.createOMElementWithValue(omFactory,
                 AuthConstants.USE_GLOBAL_PROXY_CONFIGS, String.valueOf(useGlobalProxyConfigs)));
-        if (externalTrustStoreConfigs.isTrustStoreEnabled()) {
-            OMElement externalTrustStoreElement = OAuthUtils.createOMExternalTrustStore(omFactory,
-                    externalTrustStoreConfigs);
-            oauthCredentials.addChild(externalTrustStoreElement);
-        }
         if (proxyConfigs.isProxyEnabled()) {
             OMElement proxyElement = OAuthUtils.createOMProxyConfigs(omFactory, proxyConfigs);
             oauthCredentials.addChild(proxyElement);
