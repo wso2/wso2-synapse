@@ -247,7 +247,7 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
      * to {@link InboundEndpointState#ACTIVE}
      * </p>
      */
-    public synchronized DynamicControllOperationResult activate() {
+    public synchronized DynamicControlOperationResult activate() {
         String errormessage = "";
         boolean isSuccess = false;
 
@@ -257,7 +257,6 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
             log.error(errormessage);
         } else {
             log.info("Activating the Inbound Endpoint: " + getName());
-            errormessage = "Failed to activate the Inbound Endpoint: " + getName();
 
             try {
                 if (this.inboundRequestProcessor.activate()) {
@@ -265,16 +264,18 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
                     setInboundEndpointStateInRegistry(InboundEndpointState.ACTIVE);
                     isSuccess = true;
                 } else {
+                    errormessage = "Failed to activate the Inbound Endpoint: " + getName();
                     log.error(errormessage);
                 }
             } catch (UnsupportedOperationException e) {
                 errormessage = "Activate operation is not supported for the Inbound Endpoint: " + getName();
                 log.warn(errormessage, e);
             } catch (Exception e) {
+                errormessage = "Failed to activate the Inbound Endpoint: " + getName();
                 log.error(errormessage, e);
             }
         }
-        return new DynamicControllOperationResult(isSuccess, errormessage);
+        return new DynamicControlOperationResult(isSuccess, errormessage);
     }
 
     /**
@@ -286,7 +287,7 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
      * registry to {@link InboundEndpointState#INACTIVE}.
      * </p>
      */
-    public synchronized DynamicControllOperationResult deactivate() {
+    public synchronized DynamicControlOperationResult deactivate() {
         String errorMessage = "";
         boolean isSuccess = false;
 
@@ -296,7 +297,6 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
             log.error(errorMessage);
         } else {
             log.info("Deactivating the Inbound Endpoint: " + getName());
-            errorMessage = "Failed to deactivate the Inbound Endpoint: " + getName();
 
             try {
                 if (this.inboundRequestProcessor.deactivate()) {
@@ -304,16 +304,18 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
                     setInboundEndpointStateInRegistry(InboundEndpointState.INACTIVE);
                     isSuccess = true;
                 } else {
+                    errorMessage = "Failed to deactivate the Inbound Endpoint: " + getName();
                     log.error(errorMessage);
                 }
             } catch (UnsupportedOperationException e) {
                 errorMessage = "Deactivate operation is not supported for the Inbound Endpoint: " + getName();
                 log.warn(errorMessage, e);
             } catch (Exception e) {
+                errorMessage = "Failed to deactivate the Inbound Endpoint: " + getName();
                 log.error(errorMessage, e);
             }
         }
-        return new DynamicControllOperationResult(isSuccess, errorMessage);
+        return new DynamicControlOperationResult(isSuccess, errorMessage);
     }
 
     /**
