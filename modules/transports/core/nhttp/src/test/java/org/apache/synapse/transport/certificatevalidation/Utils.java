@@ -45,6 +45,11 @@ import java.util.Date;
  */
 public class Utils {
 
+    public static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    public static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    public static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
+    public static final String X_509 = "X.509";
+    public static final String RSA = "RSA";
 
     public X509Certificate generateFakeRootCert(KeyPair pair) throws Exception {
 
@@ -69,8 +74,13 @@ public class Utils {
 
 
     public KeyPair generateRSAKeyPair() throws Exception {
-
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", "BC");
+        KeyPairGenerator kpGen;
+        String provider = getJceProvider();
+        if (provider != null) {
+            kpGen = KeyPairGenerator.getInstance("RSA", provider);
+        } else {
+            kpGen = KeyPairGenerator.getInstance("RSA");
+        }
         kpGen.initialize(1024, new SecureRandom());
         return kpGen.generateKeyPair();
     }
@@ -144,11 +154,30 @@ public class Utils {
     }
 
     private X509Certificate createCertificateFromResourceFile(String resourcePath) throws Exception{
-
-        CertificateFactory certFactory = CertificateFactory.getInstance("X.509", "BC");
+        CertificateFactory certFactory;
+        String provider = getJceProvider();
+        if (provider != null) {
+            certFactory = CertificateFactory.getInstance(X_509, provider);
+        } else {
+            certFactory = CertificateFactory.getInstance(X_509);
+        }
         File faceBookCertificateFile = new File(this.getClass().getResource(resourcePath).toURI());
         InputStream in = new FileInputStream(faceBookCertificateFile);
         X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(in);
         return certificate;
+    }
+
+    /**
+     * Get the JCE provider to be used for encryption/decryption
+     *
+     * @return
+     */
+    public static String getJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 }

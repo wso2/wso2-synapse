@@ -155,6 +155,9 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
     private volatile int removeTaskState = STATE_STOPPED;
 
     private boolean isFileSystemClosed = false;
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     /**
      * By default file locking in VFS transport is turned on at a global level
@@ -1349,7 +1352,13 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
      */
     private byte[] createChecksum(InputStream fis) throws Exception {
         byte[] buffer = new byte[1024];
-        MessageDigest complete = MessageDigest.getInstance("MD5");
+        String provider = getJceProvider();
+        MessageDigest complete;
+        if (provider != null) {
+            complete = MessageDigest.getInstance("MD5", provider);
+        } else {
+            complete = MessageDigest.getInstance("MD5");
+        }
         int numRead;
         do {
             numRead = fis.read(buffer);
@@ -1390,5 +1399,19 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 }
             }
         }
+    }
+
+    /**
+     * Get the JCE provider to be used for encryption/decryption
+     *
+     * @return
+     */
+    private static String getJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 }

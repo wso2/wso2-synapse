@@ -89,6 +89,7 @@ public class RevocationVerificationTest extends TestCase {
      */
     public void testOCSPPathValidation() throws Exception {
         //Add BouncyCastle as Security Provider.
+        System.setProperty("security.jce.provider", "BC");
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
         Utils utils = new Utils();
         X509Certificate[] certificates = utils.getRealCertificateChain();
