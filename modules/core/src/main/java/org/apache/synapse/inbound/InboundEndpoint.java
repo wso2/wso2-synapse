@@ -247,27 +247,35 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
      * to {@link InboundEndpointState#ACTIVE}
      * </p>
      */
-    public synchronized boolean activate() {
+    public synchronized DynamicControlOperationResult activate() {
+        String errormessage = "";
+        boolean isSuccess = false;
 
         if (Objects.isNull(this.inboundRequestProcessor)) {
-            log.error("Unable to activate the Inbound Endpoint [" + getName() + "] because "
-                    + "no associated inbound request processor was found!");
-        }
+            errormessage = "Unable to activate the Inbound Endpoint [" + getName() + "] because "
+                    + "no associated inbound request processor was found!";
+            log.error(errormessage);
+        } else {
+            log.info("Activating the Inbound Endpoint: " + getName());
 
-        log.info("Activating the Inbound Endpoint: " + getName());
-        String errorMessage = "Failed to activate the Inbound Endpoint: " + getName();
-        try {
-            if (this.inboundRequestProcessor.activate()) {
-                log.info("Inbound Endpoint [" + getName() + "] is successfully activated.");
-                setInboundEndpointStateInRegistry(InboundEndpointState.ACTIVE);
-                return true;
-            } else {
-                log.error(errorMessage);
+            try {
+                if (this.inboundRequestProcessor.activate()) {
+                    log.info("Inbound Endpoint [" + getName() + "] is successfully activated.");
+                    setInboundEndpointStateInRegistry(InboundEndpointState.ACTIVE);
+                    isSuccess = true;
+                } else {
+                    errormessage = "Failed to activate the Inbound Endpoint: " + getName();
+                    log.error(errormessage);
+                }
+            } catch (UnsupportedOperationException e) {
+                errormessage = "Activate operation is not supported for the Inbound Endpoint: " + getName();
+                log.warn(errormessage, e);
+            } catch (Exception e) {
+                errormessage = "Failed to activate the Inbound Endpoint: " + getName();
+                log.error(errormessage, e);
             }
-        } catch (Exception e) {
-            log.error(errorMessage, e);
         }
-        return false;
+        return new DynamicControlOperationResult(isSuccess, errormessage);
     }
 
     /**
@@ -279,27 +287,35 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
      * registry to {@link InboundEndpointState#INACTIVE}.
      * </p>
      */
-    public synchronized boolean deactivate() {
+    public synchronized DynamicControlOperationResult deactivate() {
+        String errorMessage = "";
+        boolean isSuccess = false;
 
         if (Objects.isNull(this.inboundRequestProcessor)) {
-            log.error("Unable to deactivate the Inbound Endpoint [" + getName() + "] because "
-                    + "no associated inbound request processor was found!");
-        }
+            errorMessage = "Unable to deactivate the Inbound Endpoint [" + getName() + "] because "
+                    + "no associated inbound request processor was found!";
+            log.error(errorMessage);
+        } else {
+            log.info("Deactivating the Inbound Endpoint: " + getName());
 
-        log.info("Deactivating the Inbound Endpoint: " + getName());
-        String errorMessage = "Failed to deactivate the Inbound Endpoint: " + getName();
-        try {
-            if (this.inboundRequestProcessor.deactivate()) {
-                log.info("Inbound Endpoint [" + getName() + "] is successfully deactivated.");
-                setInboundEndpointStateInRegistry(InboundEndpointState.INACTIVE);
-                return true;
-            } else {
-                log.error(errorMessage);
+            try {
+                if (this.inboundRequestProcessor.deactivate()) {
+                    log.info("Inbound Endpoint [" + getName() + "] is successfully deactivated.");
+                    setInboundEndpointStateInRegistry(InboundEndpointState.INACTIVE);
+                    isSuccess = true;
+                } else {
+                    errorMessage = "Failed to deactivate the Inbound Endpoint: " + getName();
+                    log.error(errorMessage);
+                }
+            } catch (UnsupportedOperationException e) {
+                errorMessage = "Deactivate operation is not supported for the Inbound Endpoint: " + getName();
+                log.warn(errorMessage, e);
+            } catch (Exception e) {
+                errorMessage = "Failed to deactivate the Inbound Endpoint: " + getName();
+                log.error(errorMessage, e);
             }
-        } catch (Exception e) {
-            log.error(errorMessage, e);
         }
-        return false;
+        return new DynamicControlOperationResult(isSuccess, errorMessage);
     }
 
     /**
