@@ -62,6 +62,12 @@ public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArt
     boolean isDeactivated();
 
     /**
+     * This method is used to see if the server is shutting down.
+     * @return {@code true} if shutting down, {@code false} otherwise
+     */
+    boolean isServerShuttingDown();
+
+    /**
      * This method is used to set the associated message store of the message processor. Every message processor
      * has to be bound to a message store
      * @param messageStoreName Name of this message store.

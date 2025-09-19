@@ -248,7 +248,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			resetService();
 			MessageContext messageContext = null;
 			try {
-				if (!this.messageProcessor.isDeactivated()) {
+				if (!this.messageProcessor.isDeactivated() && !this.messageProcessor.isServerShuttingDown()) {
 					messageContext = fetch();
 					if (messageContext != null) {
 
@@ -981,10 +981,23 @@ public class ForwardingService implements Task, ManagedLifecycle {
 					storeMessageToBackupStoreAndContinue(msgCtx, failMessageStore);
 				} else {
 					terminate();
-					deactivateMessageProcessor(msgCtx);
-					log.warn("Message processor [" + messageProcessor.getName()
-							+ "] failed to forward message " + maxDeliverAttempts + " times. Deactivating message "
-							+ "processor.");
+					if (messageProcessor.isServerShuttingDown()) {
+						if (log.isDebugEnabled()) {
+							log.debug("Skipping deactivation of the Message processor [" + messageProcessor.getName()
+									+ "] since the server is currently shutting down");
+						}
+					} else {
+						// During server shutdown, transports like the HTTP listener may stop before
+						// message processing is completed. This can result in message delivery failures,
+						// especially when the target endpoint resides in the same runtime.
+						// To support graceful shutdown, we should avoid deactivating the message processor in such
+						// cases. Hence, we only deactivate the processor if the server is not in the shutdown state.
+						deactivateMessageProcessor(msgCtx);
+						if (log.isDebugEnabled()) {
+							log.debug("Message processor [" + messageProcessor.getName() +
+									"] stopped due to reach of max attempts");
+						}
+					}
 				}
 
 			}
