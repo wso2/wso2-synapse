@@ -251,4 +251,8 @@ public class ConfigurationFactoryAndSerializerFinder implements XMLToObjectMappe
         }
         return null;
     }
+
+    public Object getObjectFromOMNode(OMNode om, Properties properties, String artifactIdentifier) {
+        return null;
+    }
 }

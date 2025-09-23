@@ -119,7 +119,7 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
 
             if (!generatedKey.hasExprTypeKey()){
                 generatedKey = new Value(FactoryUtils.prependArtifactIdentifierToFileName(
-                        generatedKey.getKeyValue(), properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER)));
+                        generatedKey.getKeyValue(), properties));
             }
 
             String functionName = (functionAtt == null ? null : functionAtt.getAttributeValue());

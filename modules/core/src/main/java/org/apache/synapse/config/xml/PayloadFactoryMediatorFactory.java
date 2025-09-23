@@ -114,7 +114,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
 
                 if (!generatedKey.hasExprTypeKey()){
                     generatedKey = new Value(FactoryUtils.prependArtifactIdentifierToFileName(
-                            generatedKey.getKeyValue(), properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER)));
+                            generatedKey.getKeyValue(), properties));
                 }
 
                 payloadFactoryMediator.setFormatKey(generatedKey);

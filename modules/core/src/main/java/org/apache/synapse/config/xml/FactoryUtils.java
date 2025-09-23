@@ -77,18 +77,50 @@ public class FactoryUtils {
         }
     }
 
-    public static String prependArtifactIdentifierToFileName(String resourcePath, String artifactIdentifier) {
+    public static String prependArtifactIdentifierToFileName(String resourcePath, Properties properties) {
 
-        int lastSlash = resourcePath.lastIndexOf('/');
-        if (lastSlash == -1) {
-            // No directory structure, just prepend to filename
-            return artifactIdentifier + "__" + resourcePath;
+        if (isVersionedDeployment(properties)) {
+            // IF the path contains '__', the artifact is from a dependency
+            // resources:/js/test/org.sample__projectA__script.js
+            if (resourcePath.contains("__")) {
+                int lastSlash = resourcePath.lastIndexOf('/');
+//                if (lastSlash == -1) {
+                    // No directory structure, just prepend to filename
+//                    return artifactIdentifier + "__" + resourcePath;
+//                }
+                // resources:/js/test/
+                String dirPath = resourcePath.substring(0, lastSlash + 1);
+                // org.sample__projectA__script.js
+                String resourceName = resourcePath.substring(lastSlash + 1);
+
+                String[] nameParts = resourceName.split("__");
+                if (nameParts.length < 3) {
+                    throw new SynapseException("Invalid resource reference name : " + resourcePath);
+                }
+                String artifactId = nameParts[0] + "__" + nameParts[1];
+                HashMap<String, String> cAppDependencies = (HashMap<String, String>) properties.get(SynapseConstants.SYNAPSE_ARTIFACT_DEPENDENCIES);
+                String version = cAppDependencies.get(artifactId);
+                if (StringUtils.isNotBlank(version)) {
+                    return dirPath + artifactId + "__" + version + "__" + nameParts[2];
+                } else {
+                    throw new SynapseException("Cannot find the resource version for : " + artifactId);
+                }
+            } else {
+                // If the path does not contain '__', the artifact is from the current CApp
+                String artifactIdentifier = (String) properties.get(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER);
+                int lastSlash = resourcePath.lastIndexOf('/');
+//                if (lastSlash == -1) {
+//                    // No directory structure, just prepend to filename
+//                    return artifactIdentifier + "__" + resourcePath;
+//                }
+
+                String path = resourcePath.substring(0, lastSlash + 1);   // directory part
+                String fileName = resourcePath.substring(lastSlash + 1);  // file name part
+
+                return path + artifactIdentifier + "__" + fileName;
+            }
         }
-
-        String path = resourcePath.substring(0, lastSlash + 1);   // directory part
-        String fileName = resourcePath.substring(lastSlash + 1);  // file name part
-
-        return path + artifactIdentifier + "__" + fileName;
+        return resourcePath;
     }
 
     public static boolean isVersionedDeployment(Properties properties) {

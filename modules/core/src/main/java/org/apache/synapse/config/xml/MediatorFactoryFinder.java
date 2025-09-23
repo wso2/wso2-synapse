@@ -185,15 +185,31 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
     }
 
     /**
-	 * This method returns a Processor given an OMElement. This will be used
-	 * recursively by the elements which contain processor elements themselves
-	 * (e.g. rules)
-	 *
-	 * @param element XML representation of a mediator
+     * This method returns a Processor given an OMElement. This will be used
+     * recursively by the elements which contain processor elements themselves
+     * (e.g. rules)
+     *
+     * @param element XML representation of a mediator
      * @param properties bag of properties to pass in any information to the factory
+     * @param configuration SynapseConfiguration to which the mediator is being added
      * @return Processor
-	 */
-	public Mediator getMediator(OMElement element, Properties properties, SynapseConfiguration configuration) {
+     */
+    public Mediator getMediator(OMElement element, Properties properties, SynapseConfiguration configuration) {
+        return this.getMediator(element, properties, configuration, null);
+    }
+
+    /**
+     * This method returns a Processor given an OMElement. This will be used
+     * recursively by the elements which contain processor elements themselves
+     * (e.g. rules)
+     *
+     * @param element            XML representation of a mediator
+     * @param properties         bag of properties to pass in any information to the factory
+     * @param configuration      SynapseConfiguration to which the mediator is being added
+     * @param artifactIdentifier Artifact identifier of the artifact being deployed
+     * @return Processor
+     */
+    public Mediator getMediator(OMElement element, Properties properties, SynapseConfiguration configuration, String artifactIdentifier) {
 
         String localName = element.getLocalName();
         QName qName;
@@ -232,10 +248,13 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
             if (configuration != null) {
                 if (configuration.getSynapseImports() != null && !configuration.getSynapseImports().isEmpty()) {
                     for (Map.Entry<String, SynapseImport> entry : configuration.getSynapseImports().entrySet()) {
-                        boolean isVersionedDeploy = FactoryUtils.isVersionedDeployment(properties);
+                        boolean isVersionedDeploy = FactoryUtils.isVersionedDeployment(properties) || artifactIdentifier != null;
+                        if (isVersionedDeploy && artifactIdentifier == null) {
+                            artifactIdentifier = properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER);
+                        }
+
                         if (localName.startsWith(entry.getValue().getLibName()) &&
-                                (!isVersionedDeploy || properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER)
-                                        .equals(getArtifactIdentifierFromLibraryName(entry.getValue().getLibPackage())))) {
+                                (!isVersionedDeploy || StringUtils.equals(artifactIdentifier, getArtifactIdentifierFromLibraryName(entry.getValue().getLibPackage())))) {
                             return getDynamicInvokeMediator(element, entry.getValue().getLibPackage(), properties);
                         }
                     }
@@ -243,10 +262,12 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
             } else {
                 if (synapseImportMap != null && !synapseImportMap.isEmpty()) {
                     for (Map.Entry<String, SynapseImport> entry : synapseImportMap.entrySet()) {
-                        boolean isVersionedDeploy = FactoryUtils.isVersionedDeployment(properties);
+                        boolean isVersionedDeploy = FactoryUtils.isVersionedDeployment(properties) || artifactIdentifier != null;
+                        if (isVersionedDeploy && artifactIdentifier == null) {
+                            artifactIdentifier = properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER);
+                        }
                         if (localName.startsWith(entry.getValue().getLibName()) &&
-                                (!isVersionedDeploy || properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER)
-                                        .equals(getArtifactIdentifierFromLibraryName(entry.getValue().getLibPackage())))) {
+                                (!isVersionedDeploy || StringUtils.equals(artifactIdentifier, getArtifactIdentifierFromLibraryName(entry.getValue().getLibPackage())))) {
                             return getDynamicInvokeMediator(element, entry.getValue().getLibPackage(), properties);
                         }
                     }
@@ -293,6 +314,17 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
             SynapseConfiguration configuration = properties.get(SynapseConstants.SYNAPSE_CONFIGURATION) != null ?
                     (SynapseConfiguration) properties.get(SynapseConstants.SYNAPSE_CONFIGURATION) : null;
             return getMediator((OMElement) om, properties, configuration);
+        } else {
+            handleException("Invalid mediator configuration XML : " + om);
+        }
+        return null;
+    }
+
+    public Object getObjectFromOMNode(OMNode om, Properties properties, String artifactIdentifier) {
+        if (om instanceof OMElement) {
+            SynapseConfiguration configuration = properties.get(SynapseConstants.SYNAPSE_CONFIGURATION) != null ?
+                    (SynapseConfiguration) properties.get(SynapseConstants.SYNAPSE_CONFIGURATION) : null;
+            return getMediator((OMElement) om, properties, configuration, artifactIdentifier);
         } else {
             handleException("Invalid mediator configuration XML : " + om);
         }

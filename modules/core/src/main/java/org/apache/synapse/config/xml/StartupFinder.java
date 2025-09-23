@@ -245,4 +245,7 @@ public class StartupFinder implements XMLToObjectMapper {
 		return null;
 	}
 
+    public Object getObjectFromOMNode(OMNode om, Properties properties, String artifactIdentifier) {
+        return null;
+    }
 }

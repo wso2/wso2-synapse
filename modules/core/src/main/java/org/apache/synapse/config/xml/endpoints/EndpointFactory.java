@@ -115,6 +115,10 @@ public abstract class EndpointFactory implements XMLToObjectMapper {
         return null;
     }
 
+    public Object getObjectFromOMNode(OMNode om, Properties properties, String artifactIdentifier) {
+        return getObjectFromOMNode(om, properties);
+    }
+
     /**
      * Creates the Endpoint implementation for the given XML endpoint configuration. If the endpoint
      * configuration is an inline one, it should be an anonymous endpoint. If it is defined as an
