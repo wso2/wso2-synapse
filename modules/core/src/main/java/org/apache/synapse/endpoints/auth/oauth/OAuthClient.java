@@ -49,6 +49,7 @@ import org.apache.http.conn.ssl.SSLContexts;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -116,6 +117,30 @@ public class OAuthClient {
      * @param payload       The payload of the request
      * @param credentials   The encoded credentials
      * @param proxyConfigs  The proxy configurations
+     * @return accessToken String
+     * @throws AuthException In the event of an unexpected HTTP status code return from the server or access_token key
+     *                       missing in the response payload
+     * @throws IOException   In the event of a problem parsing the response from the server
+     * @deprecated Use method with TrustStoreConfigs parameter for enhanced SSL configuration support
+     */
+    @Deprecated
+    public static String generateToken(String tokenApiUrl, String payload, String credentials,
+                                       MessageContext messageContext, Map<String, String> customHeaders,
+                                       int connectionTimeout, int connectionRequestTimeout, int socketTimeout,
+                                       ProxyConfigs proxyConfigs) throws AuthException, IOException {
+        // Use null TrustStoreConfigs to maintain backward compatibility
+        return generateToken(tokenApiUrl, payload, credentials, messageContext, customHeaders,
+                connectionTimeout, connectionRequestTimeout, socketTimeout, proxyConfigs, null);
+    }
+
+    /**
+     * Method to generate the access token from an OAuth server
+     *
+     * @param tokenApiUrl   The token url of the server
+     * @param payload       The payload of the request
+     * @param credentials   The encoded credentials
+     * @param proxyConfigs  The proxy configurations
+     * @param trustStoreConfigs The trust store configurations
      * @return accessToken String
      * @throws AuthException In the event of an unexpected HTTP status code return from the server or access_token key
      *                       missing in the response payload
@@ -411,6 +436,12 @@ public class OAuthClient {
         } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
             throw new AuthException("Error while creating SSL context from trust store configurations", e);
         }
+    }
+
+    public CloseableHttpClient getDefaultHttpClient() {
+        HttpClientBuilder builder = HttpClientBuilder.create();
+        builder.setConnectionReuseStrategy(new NoConnectionReuseStrategy());
+        return builder.build();
     }
 
     private static SSLContext getSSLContextWithUrl(String urlPath, Map<RequestDescriptor, SSLContext> sslByHostMap,

@@ -59,7 +59,21 @@ public abstract class OAuthHandler implements AuthHandler {
     private final TokenCacheProvider tokenCacheProvider;
     private final boolean useGlobalProxyConfigs;
     private ProxyConfigs proxyConfigs;
-    private TrustStoreConfigs trustStoreConfigs;
+    private final TrustStoreConfigs trustStoreConfigs;
+
+    /**
+     * Backward compatibility constructor without TrustStoreConfigs
+     * @deprecated Use constructor with TrustStoreConfigs parameter for enhanced SSL configuration support
+     */
+    @Deprecated
+    protected OAuthHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode,
+                           boolean useGlobalConnectionTimeoutConfigs, int connectionTimeout,
+                           int connectionRequestTimeout, int socketTimeout, TokenCacheProvider tokenCacheProvider,
+                           boolean useGlobalProxyConfigs, ProxyConfigs proxyConfigs) {
+        this(tokenApiUrl, clientId, clientSecret, authMode, useGlobalConnectionTimeoutConfigs,
+                connectionTimeout, connectionRequestTimeout, socketTimeout, tokenCacheProvider,
+                useGlobalProxyConfigs, proxyConfigs, null);
+    }
 
     protected OAuthHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode,
                            boolean useGlobalConnectionTimeoutConfigs, int connectionTimeout,

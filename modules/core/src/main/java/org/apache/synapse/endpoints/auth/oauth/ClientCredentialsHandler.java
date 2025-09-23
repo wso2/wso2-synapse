@@ -35,6 +35,21 @@ import java.util.Objects;
  */
 public class ClientCredentialsHandler extends OAuthHandler {
 
+    /**
+     * Backward compatibility constructor without TrustStoreConfigs
+     * @deprecated Use constructor with TrustStoreConfigs parameter for enhanced SSL configuration support
+     */
+    @Deprecated
+    public ClientCredentialsHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode,
+                                    boolean useGlobalConnectionTimeoutConfigs, int connectionTimeout,
+                                    int connectionRequestTimeout, int socketTimeout,
+                                    TokenCacheProvider tokenCacheProvider, boolean useGlobalProxyConfigs,
+                                    ProxyConfigs proxyConfigs) {
+        this(tokenApiUrl, clientId, clientSecret, authMode, useGlobalConnectionTimeoutConfigs,
+                connectionTimeout, connectionRequestTimeout, socketTimeout, tokenCacheProvider,
+                useGlobalProxyConfigs, proxyConfigs, null);
+    }
+
     public ClientCredentialsHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode,
                                     boolean useGlobalConnectionTimeoutConfigs, int connectionTimeout,
                                     int connectionRequestTimeout, int socketTimeout,
