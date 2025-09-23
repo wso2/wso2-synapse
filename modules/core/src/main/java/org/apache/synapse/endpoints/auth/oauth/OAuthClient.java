@@ -386,7 +386,7 @@ public class OAuthClient {
     private static SSLContext getSSLContextFromTrustStore(TrustStoreConfigs trustStoreConfigs)
             throws AuthException {
         String trustStoreLocation = trustStoreConfigs.getTrustStoreLocation();
-        String trustStorePassword = trustStoreConfigs.getTrustStorePassword();
+        char[] trustStorePassword = trustStoreConfigs.getTrustStorePassword();
 
         if (trustStoreLocation == null || trustStorePassword == null) {
             throw new AuthException("Trust store configuration is incomplete");
@@ -401,8 +401,7 @@ public class OAuthClient {
         try (FileInputStream fis = new FileInputStream(trustStoreFile)) {
             trustStore = KeyStore.getInstance(trustStoreConfigs.getTrustStoreType());
             // Resolve trust store password from the secret resolver
-            trustStore.load(fis, MiscellaneousUtil.resolve(trustStorePassword,
-                    trustStoreConfigs.getTrustStorePasswordSecretResolver()).toCharArray());
+            trustStore.load(fis, trustStorePassword);
         } catch (IOException | KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
             throw new AuthException("Error loading trust store from location: " + trustStoreLocation, e);
         }
