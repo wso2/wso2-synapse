@@ -52,6 +52,9 @@ public class SimpleQuartzFactory implements StartupFactory {
     public final static QName TASK
         = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "task");
 
+    private final static QName NAME = new QName("name");
+    private final static QName VALUE = new QName("value");
+
     private final static Log log = LogFactory.getLog(SimpleQuartzFactory.class);
 
     public Startup createStartup(OMElement el) {
@@ -81,7 +84,7 @@ public class SimpleQuartzFactory implements StartupFactory {
                 handleException("Invalid task - Task description can not be created  from :" + el);
                 return null;
             }
-            if (properties != null && FactoryUtils.isVersionedDeployment(properties)) {
+            if (FactoryUtils.isVersionedDeployment(properties)) {
                 updateTaskForVersioning(taskDescription, properties);
             }
             startUpController.setName(taskDescription.getName());
@@ -123,17 +126,23 @@ public class SimpleQuartzFactory implements StartupFactory {
         }
     }
 
+    /**
+     * This method will update the sequence name or proxy name in the task description for versioned deployment.
+     *
+     * @param taskDescription The task description of the Task
+     * @param properties      Properties containing the artifact identifier and dependencies
+     */
     private void updateTaskForVersioning(TaskDescription taskDescription, Properties properties) {
 
         taskDescription.setName(FactoryUtils.getFullyQualifiedName(properties, taskDescription.getName()));
         taskDescription.getXmlProperties().forEach(prop -> {
-            if (prop.getAttributeValue(new QName("name")).equals("sequenceName")
-                    || prop.getAttributeValue(new QName("name")).equals("proxyName")) {
+            if (prop.getAttributeValue(NAME).equals("sequenceName")
+                    || prop.getAttributeValue(NAME).equals("proxyName")) {
                 prop.setText(FactoryUtils.getFullyQualifiedName(properties, prop.getText()));
-                String value = prop.getAttributeValue(new QName("value"));
+                String value = prop.getAttributeValue(VALUE);
                 if (value != null) {
                     String updatedValue = FactoryUtils.getFullyQualifiedName(properties, value);
-                    prop.getAttribute(new QName("value")).setAttributeValue(updatedValue);
+                    prop.getAttribute(VALUE).setAttributeValue(updatedValue);
                 }
             }
         });

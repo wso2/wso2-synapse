@@ -50,8 +50,8 @@ public class JSONTransformMediatorFactory extends AbstractMediatorFactory {
             ValueFactory keyFac = new ValueFactory();
             // create dynamic or static key based on OMElement
             Value generatedKey = keyFac.createValue("schema", elem);
-            if (!generatedKey.hasExprTypeKey()){
-                generatedKey = new Value(FactoryUtils.getFullyQualifiedName(properties, schema.getAttributeValue()));
+            if (generatedKey.getKeyValue() != null && !generatedKey.hasExprTypeKey()){
+                generatedKey = new Value(FactoryUtils.prependArtifactIdentifierToFileName(schema.getAttributeValue(), properties));
             }
             JSONTransformMediator.setSchemaKey(generatedKey);
         }

@@ -197,9 +197,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
         } else {
             String sequenceKey = key.evaluateValue(synCtx);
-//            if (isVersionedDeployment()) {
-//                sequenceKey = getArtifactIdentifier() + "/" + sequenceKey;
-//            }
             //Mediator m = synCtx.getSequence(key);
             Mediator m = synCtx.getSequence(sequenceKey);
             if (m == null) {
@@ -355,9 +352,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
      * @return the name of the sequence
      */
     public String getName() {
-//        if (isVersionedDeployment()) {
-//            return getArtifactIdentifier() + "/" + name;
-//        }
         return name;
     }
 

@@ -18,6 +18,8 @@
  */
 package org.apache.synapse.libraries.model;
 
+import org.apache.synapse.config.xml.FactoryUtils;
+
 import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -68,7 +70,7 @@ public class SynapseLibrary implements Library {
 
     public SynapseLibrary(String artifactIdentifier, String name, String packageName) {
         this.artifactIdentifier = artifactIdentifier;
-        this.packageN = artifactIdentifier + "__" + packageName;
+        this.packageN = artifactIdentifier + FactoryUtils.DOUBLE_UNDERSCORE + packageName;
         if (packageName != null && !"".equals(packageName)) {
             qualifiedName = new QName(this.packageN, name);
         } else {

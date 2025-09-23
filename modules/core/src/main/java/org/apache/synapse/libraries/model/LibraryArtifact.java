@@ -141,7 +141,7 @@ public class LibraryArtifact implements SynapseArtifact{
             classLoadingProperties.put(SynapseConstants.SYNAPSE_CONFIGURATION,
                     library.getArtifact(SynapseConstants.SYNAPSE_CONFIGURATION));
         }
-        classLoadingProperties.put("CONNECTOR_ARTIFACT", true);
+        classLoadingProperties.put(SynapseConstants.CONNECTOR_ARTIFACT, true);
         if (StringUtils.isNotEmpty(library.getArtifactIdentifier())) {
             classLoadingProperties.put(SynapseConstants.SYNAPSE_ARTIFACT_VERSIONED_DEPLOYMENT, true);
             classLoadingProperties.put(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER, library.getArtifactIdentifier());

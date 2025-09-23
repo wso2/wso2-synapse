@@ -121,10 +121,9 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
         if (!context.startsWith("/")) {
             handleException("API context must begin with '/' character");
         }
-        // TODO add check
         String artifactIdentifier = properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER);
         if (StringUtils.isNotBlank(artifactIdentifier)) {
-            String contextPrefix = artifactIdentifier.replaceAll("__", "/");
+            String contextPrefix = artifactIdentifier.replaceAll(FactoryUtils.DOUBLE_UNDERSCORE, "/");
             this.context = "/" + contextPrefix + ApiUtils.trimTrailingSlashes(context);
         } else {
             this.context = ApiUtils.trimTrailingSlashes(context);

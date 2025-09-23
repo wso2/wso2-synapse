@@ -112,7 +112,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                 ValueFactory keyFac = new ValueFactory();
                 Value generatedKey = keyFac.createValue(XMLConfigConstants.KEY, formatElem);
 
-                if (!generatedKey.hasExprTypeKey()){
+                if (generatedKey.getKeyValue() != null && !generatedKey.hasExprTypeKey()){
                     generatedKey = new Value(FactoryUtils.prependArtifactIdentifierToFileName(
                             generatedKey.getKeyValue(), properties));
                 }

@@ -21,7 +21,6 @@ package org.apache.synapse.mediators.throttle;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.AbstractMediatorFactory;
 import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.SequenceMediatorFactory;

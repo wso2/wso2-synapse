@@ -26,6 +26,7 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -77,10 +78,10 @@ public class ResolvingEndpoint extends AbstractEndpoint {
     public void sendMessage(MessageContext synCtx) {
 
         String key = keyExpression.stringValueOf(synCtx);
-        if (synCtx.getProperty("APPEND_ARTIFACT_IDENTIFIER") != null &&
-                (Boolean) synCtx.getProperty("APPEND_ARTIFACT_IDENTIFIER") &&
+        if (synCtx.getProperty(SynapseConstants.APPEND_ARTIFACT_IDENTIFIER) != null &&
+                (Boolean) synCtx.getProperty(SynapseConstants.APPEND_ARTIFACT_IDENTIFIER) &&
                 StringUtils.isNotBlank(artifactIdentifier)) {
-            key = artifactIdentifier + "__" + key;
+            key = artifactIdentifier + FactoryUtils.DOUBLE_UNDERSCORE + key;
         }
         Endpoint ep = loadAndInitEndpoint(((Axis2MessageContext) synCtx).
                 getAxis2MessageContext().getConfigurationContext(), key);

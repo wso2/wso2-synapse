@@ -122,22 +122,4 @@ public interface Mediator extends SynapseArtifact {
     public void reportCloseStatisticsWithError(MessageContext synCtx, Integer currentIndex);
 
     public void setComponentStatisticsId(ArtifactHolder holder);
-
-    public boolean isVersionedDeployment();
-
-    public void setVersionedDeployment(boolean versionedDeployment);
-
-    public String getGroupId();
-
-    public void setGroupId(String groupId);
-
-    public String getArtifactId();
-
-    public void setArtifactId(String artifactId);
-
-    public String getVersion();
-
-    public void setVersion(String version);
-
-    public String getArtifactIdentifier();
 }

@@ -46,7 +46,6 @@ public class EventPublisherMediatorFactory extends AbstractMediatorFactory {
     }
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
-        // TODO check for name
         EventPublisherMediator eventPublisherMediator = new EventPublisherMediator();
         processAuditStatus(eventPublisherMediator, elem);
         OMAttribute attEventSource = elem.getAttribute(PROP_NAME);

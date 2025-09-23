@@ -96,7 +96,7 @@ public class SequenceMediatorFactory extends AbstractListMediatorFactory {
                 // create dynamic or static key based on OMElement
                 Value generatedKey = keyFac.createValue(XMLConfigConstants.KEY, elem);
                 // setKey
-                if (!generatedKey.hasExprTypeKey()){
+                if (generatedKey.getKeyValue() != null && !generatedKey.hasExprTypeKey()){
                     generatedKey = new Value(FactoryUtils.getFullyQualifiedName(properties, n.getAttributeValue()));
                 }
                 seqMediator.setKey(generatedKey);

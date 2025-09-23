@@ -117,7 +117,7 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
             // create dynamic or static key based on OMElement
             Value generatedKey = keyFac.createValue(XMLConfigConstants.KEY, elem);
 
-            if (!generatedKey.hasExprTypeKey()){
+            if (generatedKey.getKeyValue() != null && !generatedKey.hasExprTypeKey()){
                 generatedKey = new Value(FactoryUtils.prependArtifactIdentifierToFileName(
                         generatedKey.getKeyValue(), properties));
             }

@@ -75,7 +75,6 @@ public class EventSourceFactory {
 
         SynapseEventSource eventSource = null;
 
-        // TODO check for name
         OMAttribute name = elem.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, "name"));
         if (name == null) {
             handleException("The 'name' attribute is required for a event source de");
