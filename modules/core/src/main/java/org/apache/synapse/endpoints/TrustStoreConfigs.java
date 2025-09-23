@@ -18,8 +18,6 @@
 
 package org.apache.synapse.endpoints;
 
-import org.wso2.securevault.SecretResolver;
-
 /**
  * This class represents a model for trust store configurations which is used for the token endpoint connection
  * in OAuth protected endpoints.
@@ -27,9 +25,8 @@ import org.wso2.securevault.SecretResolver;
 public class TrustStoreConfigs {
     private String trustStoreLocation;
     private String trustStoreType;
-    private String trustStorePassword;
+    private char[] trustStorePassword;
     private boolean trustStoreEnabled;
-    private SecretResolver trustStorePasswordSecretResolver;
 
     public void setTrustStoreEnabled(boolean trustStoreEnabled) {
         this.trustStoreEnabled = trustStoreEnabled;
@@ -43,7 +40,7 @@ public class TrustStoreConfigs {
         this.trustStoreType = trustStoreType;
     }
 
-    public void setTrustStorePassword(String trustStorePassword) {
+    public void setTrustStorePassword(char[] trustStorePassword) {
         this.trustStorePassword = trustStorePassword;
     }
 
@@ -59,15 +56,7 @@ public class TrustStoreConfigs {
         return trustStoreType;
     }
 
-    public String getTrustStorePassword() {
+    public char[] getTrustStorePassword() {
         return trustStorePassword;
-    }
-
-    public void setTrustStorePasswordSecretResolver(SecretResolver trustStorePasswordSecretResolver) {
-        this.trustStorePasswordSecretResolver = trustStorePasswordSecretResolver;
-    }
-
-    public SecretResolver getTrustStorePasswordSecretResolver() {
-        return trustStorePasswordSecretResolver;
     }
 }
