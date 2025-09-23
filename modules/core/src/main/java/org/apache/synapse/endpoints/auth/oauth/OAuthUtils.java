@@ -43,6 +43,7 @@ import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 import org.wso2.securevault.SecretResolverFactory;
+import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -361,12 +362,10 @@ public class OAuthUtils {
             trustStoreConfigs.setTrustStoreEnabled(true);
             trustStoreConfigs.setTrustStoreLocation(trustStoreLocation);
             trustStoreConfigs.setTrustStoreType(trustStoreType != null ? trustStoreType : "JKS"); // Default to JKS
-            trustStoreConfigs.setTrustStorePassword(trustStorePassword);
-
-            // Set up the secret resolver for trust store password
-            trustStoreConfigs.setTrustStorePasswordSecretResolver(SecretResolverFactory.create(new Properties() {{
-                setProperty(AuthConstants.OAUTH_TOKEN_ENDPOINT_TRUST_STORE_PASSWORD, trustStorePassword);
-            }}));
+            trustStoreConfigs.setTrustStorePassword(MiscellaneousUtil.resolve(trustStorePassword,
+                    SecretResolverFactory.create(new Properties() {{
+                        setProperty(AuthConstants.OAUTH_TOKEN_ENDPOINT_TRUST_STORE_PASSWORD, trustStorePassword);
+                    }})).toCharArray());
 
             if (log.isDebugEnabled()) {
                 log.debug("Loaded trust store configurations from synapse.properties: location="
