@@ -36,7 +36,7 @@ import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
-import org.apache.synapse.endpoints.ExternalTrustStoreConfigs;
+import org.apache.synapse.endpoints.TrustStoreConfigs;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
 import org.apache.synapse.endpoints.ProxyConfigs;
 import org.apache.synapse.endpoints.auth.AuthConstants;
@@ -307,7 +307,7 @@ public class OAuthUtilsTest {
                     new AuthorizationCodeHandler("oauth_server_url", "client_id", "client_secret",
                             "refresh_token", "header", false,
                             -1, -1, -1, TokenCache.getInstance(),
-                            false, new ProxyConfigs(), new ExternalTrustStoreConfigs());
+                            false, new ProxyConfigs(), new TrustStoreConfigs());
 
             OAuthConfiguredHTTPEndpoint httpEndpoint = new OAuthConfiguredHTTPEndpoint(oAuthHandler);
 

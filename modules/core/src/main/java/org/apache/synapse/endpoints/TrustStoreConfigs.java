@@ -21,10 +21,10 @@ package org.apache.synapse.endpoints;
 import org.wso2.securevault.SecretResolver;
 
 /**
- * This class represents a model for external trust store configurations which is used for the token endpoint connection
+ * This class represents a model for trust store configurations which is used for the token endpoint connection
  * in OAuth protected endpoints.
  */
-public class ExternalTrustStoreConfigs {
+public class TrustStoreConfigs {
     private String trustStoreLocation;
     private String trustStoreType;
     private String trustStorePassword;

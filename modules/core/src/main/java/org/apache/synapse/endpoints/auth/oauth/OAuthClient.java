@@ -58,7 +58,7 @@ import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.endpoints.ExternalTrustStoreConfigs;
+import org.apache.synapse.endpoints.TrustStoreConfigs;
 import org.apache.synapse.endpoints.ProxyConfigs;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
@@ -124,7 +124,7 @@ public class OAuthClient {
     public static String generateToken(String tokenApiUrl, String payload, String credentials,
                                        MessageContext messageContext, Map<String, String> customHeaders,
                                        int connectionTimeout, int connectionRequestTimeout, int socketTimeout,
-                                       ProxyConfigs proxyConfigs, ExternalTrustStoreConfigs externalTrustStoreConfigs)
+                                       ProxyConfigs proxyConfigs, TrustStoreConfigs trustStoreConfigs)
             throws AuthException, IOException {
 
         if (log.isDebugEnabled()) {
@@ -132,7 +132,7 @@ public class OAuthClient {
         }
 
         try (CloseableHttpClient httpClient = getSecureClient(tokenApiUrl, messageContext, connectionTimeout,
-                connectionRequestTimeout, socketTimeout, proxyConfigs, externalTrustStoreConfigs)) {
+                connectionRequestTimeout, socketTimeout, proxyConfigs, trustStoreConfigs)) {
             HttpPost httpPost = new HttpPost(tokenApiUrl);
             httpPost.setHeader(AuthConstants.CONTENT_TYPE_HEADER, AuthConstants.APPLICATION_X_WWW_FORM_URLENCODED);
             if (!(customHeaders == null || customHeaders.isEmpty())) {
@@ -224,10 +224,10 @@ public class OAuthClient {
     private static CloseableHttpClient getSecureClient(String tokenUrl, MessageContext messageContext,
                                                        int connectionTimeout, int connectionRequestTimeout,
                                                        int socketTimeout, ProxyConfigs proxyConfigs,
-                                                       ExternalTrustStoreConfigs externalTrustStoreConfigs)
+                                                       TrustStoreConfigs trustStoreConfigs)
             throws AuthException {
 
-        SSLContext sslContext = getSSLContext(messageContext, tokenUrl, externalTrustStoreConfigs);
+        SSLContext sslContext = getSSLContext(messageContext, tokenUrl, trustStoreConfigs);
         RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(connectionTimeout)
                 .setConnectionRequestTimeout(connectionRequestTimeout).setSocketTimeout(socketTimeout).build();
         if (proxyConfigs.isProxyEnabled()) {
@@ -341,22 +341,22 @@ public class OAuthClient {
     /**
      * Creates an SSLContext for secure connections when invoking the given token endpoint.
      *
-     * The method first checks if an external trust store is enabled and configured through ExternalTrustStoreConfigs.
-     * If enabled, the SSL context will be created using the external trust store configuration. Otherwise, it falls
+     * The method first checks if a trust store is enabled and configured through TrustStoreConfigs.
+     * If enabled, the SSL context will be created using the trust store configuration. Otherwise, it falls
      * back to the Axis2 transport configuration (from the provided MessageContext) to build an SSL context with
      * host-specific or default SSL settings.
      *
      * @param messageContext the Synapse MessageContext used to retrieve the underlying Axis2 configuration for SSL if
-     *                       external trust store is not enabled.
+     *                       trust store is not enabled.
      * @param tokenUrl       the token endpoint URL. Used to determine the correct SSL context when multiple SSL
      *                       configurations are available.
      * @return an initialized SSLContext.
      * @throws AuthException if SSL configuration cannot be loaded or if trust store settings are incomplete.
      */
     private static SSLContext getSSLContext(MessageContext messageContext, String tokenUrl,
-                                            ExternalTrustStoreConfigs externalTrustStoreConfigs) throws AuthException {
-        if (externalTrustStoreConfigs != null && externalTrustStoreConfigs.isTrustStoreEnabled()) {
-            return getSSLContextFromExternalTrustStore(externalTrustStoreConfigs);
+                                            TrustStoreConfigs trustStoreConfigs) throws AuthException {
+        if (trustStoreConfigs != null && trustStoreConfigs.isTrustStoreEnabled()) {
+            return getSSLContextFromTrustStore(trustStoreConfigs);
         } else {
             ConfigurationContext configurationContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext()
                     .getConfigurationContext();
@@ -373,20 +373,20 @@ public class OAuthClient {
     }
 
     /**
-     * Creates and returns an SSLContext using the given external trust store configurations.
+     * Creates and returns an SSLContext using the given trust store configurations.
      *
      * This method loads the trust store from the provided location, initializes it with the specified type and
      * password, and builds an SSLContext that trusts the certificates contained in it.
      *
-     * @param externalTrustStoreConfigs the trust store configurations containing location, type, and password
+     * @param trustStoreConfigs the trust store configurations containing location, type, and password
      * @return an initialized SSLContext based on the provided trust store
      * @throws AuthException if the trust store configuration is incomplete, the trust store cannot be loaded, or the
      *                       SSLContext cannot be created
      */
-    private static SSLContext getSSLContextFromExternalTrustStore(ExternalTrustStoreConfigs externalTrustStoreConfigs)
+    private static SSLContext getSSLContextFromTrustStore(TrustStoreConfigs trustStoreConfigs)
             throws AuthException {
-        String trustStoreLocation = externalTrustStoreConfigs.getTrustStoreLocation();
-        String trustStorePassword = externalTrustStoreConfigs.getTrustStorePassword();
+        String trustStoreLocation = trustStoreConfigs.getTrustStoreLocation();
+        String trustStorePassword = trustStoreConfigs.getTrustStorePassword();
 
         if (trustStoreLocation == null || trustStorePassword == null) {
             throw new AuthException("Trust store configuration is incomplete");
@@ -399,10 +399,10 @@ public class OAuthClient {
 
         final KeyStore trustStore;
         try (FileInputStream fis = new FileInputStream(trustStoreFile)) {
-            trustStore = KeyStore.getInstance(externalTrustStoreConfigs.getTrustStoreType());
+            trustStore = KeyStore.getInstance(trustStoreConfigs.getTrustStoreType());
             // Resolve trust store password from the secret resolver
             trustStore.load(fis, MiscellaneousUtil.resolve(trustStorePassword,
-                    externalTrustStoreConfigs.getTrustStorePasswordSecretResolver()).toCharArray());
+                    trustStoreConfigs.getTrustStorePasswordSecretResolver()).toCharArray());
         } catch (IOException | KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
             throw new AuthException("Error loading trust store from location: " + trustStoreLocation, e);
         }
