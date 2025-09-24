@@ -63,12 +63,9 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
                 .setCompression("gzip")
                 .addHeader(headerKey, headerValue);
 
-        Resource serviceNameResource = Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME,
-                TelemetryConstants.SERVICE_NAME));
-
         sdkTracerProvider = SdkTracerProvider.builder()
                 .addSpanProcessor(BatchSpanProcessor.builder(otlpGrpcSpanExporterBuilder.build()).build())
-                .setResource(Resource.getDefault().merge(serviceNameResource))
+                .setResource(Resource.getDefault().merge(TelemetryUtil.getTracerProviderResource(TelemetryConstants.SERVICE_NAME)))
                 .build();
 
         openTelemetry = OpenTelemetrySdk.builder()

@@ -31,6 +31,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.xml.SynapsePath;
@@ -532,9 +533,16 @@ public abstract class TemplateProcessor {
      * Read XMLInputFactory properties from XMLInputFactory.properties file.
      */
     public void readInputFactoryProperties() {
+        readInputFactoryProperties(inputFactory);
+    }
+
+    /**
+     * Read XMLInputFactory properties from XMLInputFactory.properties file and set properties
+     * related to DTDs and External Entities to avoid XXE vulnerabilities.
+     * @param inputFactory XMLInputFactory instance
+     */
+    public static void readInputFactoryProperties(XMLInputFactory inputFactory) {
         //ignore DTDs for XML Input
-        inputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
-        inputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
         inputFactory.setProperty(XMLInputFactory.IS_COALESCING, true);
         Map props = StAXUtils.loadFactoryProperties("XMLInputFactory.properties");
         if (props != null) {
@@ -542,6 +550,19 @@ public abstract class TemplateProcessor {
                 Map.Entry entry = (Map.Entry) o;
                 inputFactory.setProperty((String) entry.getKey(), entry.getValue());
             }
+        }
+        inputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
+        inputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
+        if (Boolean.parseBoolean(System.getProperty(SynapseConstants.ENABLE_DTD_FORCEFULLY))) {
+            inputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.TRUE);
+            log.warn("Support for DTDs is enabled forcefully. "
+                + "This may lead to XXE vulnerabilities. Use with caution!");
+        }
+        if (Boolean.parseBoolean(
+            System.getProperty(SynapseConstants.ENABLE_EXTERNAL_ENTITY_FORCEFULLY))) {
+            inputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.TRUE);
+            log.warn("Support for External Entities is enabled forcefully."
+                + " This may lead to XXE vulnerabilities. Use with caution!");
         }
     }
 }

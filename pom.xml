@@ -26,7 +26,7 @@
    </parent>
    <groupId>org.apache.synapse</groupId>
    <artifactId>Apache-Synapse</artifactId>
-   <version>4.0.0-wso2v243-SNAPSHOT</version>
+   <version>4.0.0-wso2v249-SNAPSHOT</version>
    <name>Apache Synapse</name>
    <description>Apache Synapse</description>
    <packaging>pom</packaging>
@@ -1534,7 +1534,7 @@
       <com.jayway.jsonpath.version>2.9.0.wso2v1</com.jayway.jsonpath.version>
       <qfj.version>1.5.3</qfj.version>
        <quickfixj.version>2.3.1</quickfixj.version>
-      <org.bouncycastle.version>1.78.1.wso2v1</org.bouncycastle.version>
+      <org.bouncycastle.version>1.81.0.wso2v1</org.bouncycastle.version>
       <imp.pkg.version.wso2.bouncycastle>[1.52.0,2.0.0)</imp.pkg.version.wso2.bouncycastle>
        <httpcore.version>4.4.16</httpcore.version>
       <httpcore.wso2.version>${httpcore.version}.wso2v1</httpcore.wso2.version>
@@ -1564,9 +1564,9 @@
       <mina.version>2.1.6</mina.version>
       <jms-1.1-spec.version>1.1</jms-1.1-spec.version>
       <!-- Axis2 and its dependencies -->
-      <axis2.version>1.6.1-wso2v104</axis2.version>
-      <axis2.transport.version>2.0.0-wso2v72</axis2.transport.version>
-      <axiom.version>1.2.11-wso2v21</axiom.version>
+      <axis2.version>1.6.1-wso2v106</axis2.version>
+      <axis2.transport.version>2.0.0-wso2v74</axis2.transport.version>
+      <axiom.version>1.2.11-wso2v29</axiom.version>
       <xml_schema.version>1.4.7</xml_schema.version>
       <xml_apis.version>1.3.04</xml_apis.version>
       <wsdl4j.version>1.6.2</wsdl4j.version>
@@ -1596,11 +1596,11 @@
       <junit.version>4.12</junit.version>
       <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>
       <jcifs.wso2.version>1.3.17.wso2v1</jcifs.wso2.version>
-      <net.minidev.accessors-smart.version>2.5.2</net.minidev.accessors-smart.version>
+      <net.minidev.accessors-smart.version>2.6.0</net.minidev.accessors-smart.version>
       <org.ow2.asm.asm.version>9.2</org.ow2.asm.asm.version>
-      <json.smart.version>2.5.2</json.smart.version>
+      <json.smart.version>2.6.0</json.smart.version>
        <org.wso2.json.version>3.0.0.wso2v4</org.wso2.json.version>
-       <log4j2.version>2.17.1</log4j2.version>
+      <log4j2.version>2.24.3</log4j2.version>
       <xmlunit.version>1.1</xmlunit.version>
       <derby.version>10.4.2.0</derby.version>
       <wrapper.version>3.2.3</wrapper.version>
@@ -1648,13 +1648,13 @@
        <activemq.broker.version>5.9.1</activemq.broker.version>
        <slf4j.log4j.version>1.5.2</slf4j.log4j.version>
        <system.rules.version>1.17.0</system.rules.version>
-       <io.netty.version>4.1.118.Final</io.netty.version>
-       <transport.http.netty.version>6.3.53</transport.http.netty.version>
+       <io.netty.version>4.1.126.Final</io.netty.version>
+       <transport.http.netty.version>6.3.55</transport.http.netty.version>
        <version.org.wso2.orbit.javax.activation>1.1.1.wso2v3</version.org.wso2.orbit.javax.activation>
        <rabbitmq.version>5.20.0</rabbitmq.version>
        <opentelemetry.all.version>1.11.0.wso2v6</opentelemetry.all.version>
-       <okhttp.wso2.version>4.12.0.wso2v2</okhttp.wso2.version>
-       <okio.wso2.version>3.9.0.wso2v2</okio.wso2.version>
+       <okhttp.wso2.version>4.12.0.wso2v4</okhttp.wso2.version>
+       <okio.wso2.version>3.16.0.wso2v1</okio.wso2.version>
        <zipkin.sender.okhttp3.version>2.17.2.wso2v2</zipkin.sender.okhttp3.version>
        <zipkin.version>2.27.1</zipkin.version>
        <zipkin-reporter.version>2.17.2</zipkin-reporter.version>
