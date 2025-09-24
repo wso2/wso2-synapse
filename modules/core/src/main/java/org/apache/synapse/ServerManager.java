@@ -18,8 +18,14 @@
  */
 package org.apache.synapse;
 
+import java.util.Arrays;
+import java.util.Properties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.api.AccessControlConfig;
+import org.apache.synapse.api.AccessControlConstants;
+import org.apache.synapse.api.AccessControlListType;
+import org.apache.synapse.api.ScriptAccessControl;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTelemetryManagerHolder;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
@@ -31,6 +37,7 @@ import org.wso2.securevault.SecurityConstants;
 
 import java.util.Date;
 import javax.management.NotCompliantMBeanException;
+import static org.apache.synapse.api.AccessControlConstants.ENABLE;
 
 /**
  * This is the core class that starts up a Synapse instance.
@@ -407,8 +414,10 @@ public class ServerManager {
             registerMBean();
 
             // initialize global PasswordManager instance used in synapse
-            PasswordManager.getInstance().init(
-                    SynapsePropertiesLoader.loadSynapseProperties(), SynapseConstants.SYNAPSE);
+            Properties properties = SynapsePropertiesLoader.loadSynapseProperties();
+            PasswordManager.getInstance().init(properties, SynapseConstants.SYNAPSE);
+
+            readAndSetScriptAccessControl(properties);
 
             // initializes the SynapseController
             this.synapseController.init(serverConfigurationInformation, serverContextInformation);
@@ -420,6 +429,49 @@ public class ServerManager {
             changeState(serverState);
         }
     }
+
+    /**
+     * Reads and sets access control configurations.
+     *
+     * @param properties Synapse properties.
+     */
+    private void readAndSetScriptAccessControl(Properties properties) {
+        String limitClassAccessEnabled = properties.getProperty(
+                AccessControlConstants.LIMIT_CLASS_ACCESS_PREFIX + AccessControlConstants.ENABLE);
+        if (Boolean.parseBoolean(limitClassAccessEnabled)) {
+            String limitClassAccessListType =
+                    properties.getProperty(
+                            AccessControlConstants.LIMIT_CLASS_ACCESS_PREFIX + AccessControlConstants.LIST_TYPE);
+            String limitClassAccessClassPrefixes = properties.getProperty(
+                    AccessControlConstants.LIMIT_CLASS_ACCESS_PREFIX + AccessControlConstants.CLASS_PREFIXES);
+            ScriptAccessControl.getInstance().setClassAccessControlConfig(
+                    new AccessControlConfig(true, AccessControlListType.valueOf(limitClassAccessListType),
+                            Arrays.asList(limitClassAccessClassPrefixes.split(","))));
+        }
+
+        String limitNativeObjectAccessEnabled = properties.getProperty(
+                AccessControlConstants.LIMIT_NATIVE_OBJECT_ACCESS_PREFIX + ENABLE);
+        if (Boolean.parseBoolean(limitNativeObjectAccessEnabled)) {
+            String limitNativeObjectAccessListType =
+                    properties.getProperty(AccessControlConstants.LIMIT_NATIVE_OBJECT_ACCESS_PREFIX +
+                            AccessControlConstants.LIST_TYPE);
+            String limitNativeObjectAccessClassPrefixes =
+                    properties.getProperty(AccessControlConstants.LIMIT_NATIVE_OBJECT_ACCESS_PREFIX +
+                            AccessControlConstants.OBJECT_NAMES);
+            ScriptAccessControl.getInstance().setNativeObjectAccessControlConfig(
+                    new AccessControlConfig(true, AccessControlListType.valueOf(limitNativeObjectAccessListType),
+                            Arrays.asList(limitNativeObjectAccessClassPrefixes.split(","))));
+        }
+        if (!Boolean.parseBoolean(limitClassAccessEnabled) && !Boolean.parseBoolean(limitNativeObjectAccessEnabled)) {
+            log.warn("\n##################################  ALERT  ##################################\n" +
+                    "[WARNING]: Default configuration is used for the script mediator which might expose the " +
+                    "environment to potential security risks. Please ensure that the required configuration changes " +
+                    "are applied in accordance with the \"Configuring Script Mediator\" section of the \"Security " +
+                    "Guidelines for Production Deployment\"\n" +
+                    "#############################################################################");
+        }
+    }
+
 
     /**
      * Helper method to shutdown the the ServerManager

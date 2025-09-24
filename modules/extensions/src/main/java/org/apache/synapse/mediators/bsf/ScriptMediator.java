@@ -35,6 +35,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.api.AccessControlConfig;
+import org.apache.synapse.api.ScriptAccessControl;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.config.Entry;
@@ -43,8 +45,6 @@ import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.bsf.access.control.AccessControlUtils;
 import org.apache.synapse.mediators.bsf.access.control.SandboxContextFactory;
-import org.apache.synapse.mediators.bsf.access.control.config.AccessControlConfig;
-import org.apache.synapse.mediators.bsf.access.control.config.AccessControlListType;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.mediators.v2.Utils;
 import org.apache.synapse.mediators.v2.ext.InputArgument;
@@ -58,7 +58,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -76,12 +75,6 @@ import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.NASHORN_J
 import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.ORACLE_NASHORN_NAME;
 import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.POOL_SIZE_PROPERTY;
 import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.RHINO_JAVA_SCRIPT;
-import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.CLASS_PREFIXES;
-import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.ENABLE;
-import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.LIMIT_CLASS_ACCESS_PREFIX;
-import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.LIMIT_NATIVE_OBJECT_ACCESS_PREFIX;
-import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.LIST_TYPE;
-import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.OBJECT_NAMES;
 
 /**
  * A Synapse mediator that calls a function in any scripting language supported by the BSF.
@@ -202,6 +195,8 @@ public class ScriptMediator extends AbstractMediator {
         this.scriptSourceCode = scriptSourceCode;
         this.setLoader(classLoader);
         this.includes = new TreeMap<Value, Object>();
+        this.classAccessControlConfig = ScriptAccessControl.getInstance().getClassAccessControlConfig();
+        this.nativeObjectAccessControlConfig = ScriptAccessControl.getInstance().getNativeObjectAccessControlConfig();
         initInlineScript();
     }
 
@@ -222,7 +217,8 @@ public class ScriptMediator extends AbstractMediator {
         if (function != null) {
             this.function = function;
         }
-
+        this.classAccessControlConfig = ScriptAccessControl.getInstance().getClassAccessControlConfig();
+        this.nativeObjectAccessControlConfig = ScriptAccessControl.getInstance().getNativeObjectAccessControlConfig();
         Properties properties = MiscellaneousUtil.loadProperties("synapse.properties");
         poolSize = Integer.parseInt(properties.getProperty(POOL_SIZE_PROPERTY, String.valueOf(DEFAULT_POOL_SIZE)));
 
@@ -744,7 +740,6 @@ public class ScriptMediator extends AbstractMediator {
                 " supports multithreading? : " + multiThreadedEngine);
 
         if (language.equals(RHINO_JAVA_SCRIPT)) {
-            readAccessControlConfigurations(MiscellaneousUtil.loadProperties("synapse.properties"));
             if (nativeObjectAccessControlConfig != null && nativeObjectAccessControlConfig.isAccessControlEnabled() &&
                     !ContextFactory.hasExplicitGlobal()) {
                 ContextFactory.initGlobal(new SandboxContextFactory(nativeObjectAccessControlConfig));
@@ -853,32 +848,6 @@ public class ScriptMediator extends AbstractMediator {
                 return AccessControlUtils.isAccessAllowed(className, classAccessControlConfig, startsWithComparator);
             }
         };
-    }
-
-    /**
-     * Reads and sets access control configurations.
-     * @param properties    Synapse properties.
-     */
-    private void readAccessControlConfigurations(Properties properties) {
-        String limitClassAccessEnabled = properties.getProperty(LIMIT_CLASS_ACCESS_PREFIX + ENABLE);
-        if (Boolean.parseBoolean(limitClassAccessEnabled)) {
-            String limitClassAccessListType = properties.getProperty(LIMIT_CLASS_ACCESS_PREFIX + LIST_TYPE);
-            String limitClassAccessClassPrefixes = properties.getProperty(LIMIT_CLASS_ACCESS_PREFIX + CLASS_PREFIXES);
-            this.classAccessControlConfig = new AccessControlConfig(true,
-                    AccessControlListType.valueOf(limitClassAccessListType),
-                    Arrays.asList(limitClassAccessClassPrefixes.split(",")));
-        }
-
-        String limitNativeObjectAccessEnabled = properties.getProperty(LIMIT_NATIVE_OBJECT_ACCESS_PREFIX + ENABLE);
-        if (Boolean.parseBoolean(limitNativeObjectAccessEnabled)) {
-            String limitNativeObjectAccessListType =
-                    properties.getProperty(LIMIT_NATIVE_OBJECT_ACCESS_PREFIX + LIST_TYPE);
-            String limitNativeObjectAccessClassPrefixes =
-                    properties.getProperty(LIMIT_NATIVE_OBJECT_ACCESS_PREFIX + OBJECT_NAMES);
-            this.nativeObjectAccessControlConfig = new AccessControlConfig(true,
-                    AccessControlListType.valueOf(limitNativeObjectAccessListType),
-                    Arrays.asList(limitNativeObjectAccessClassPrefixes.split(",")));
-        }
     }
 
     public void setInputArgumentMap(Map<String, InputArgument> inputArgumentMap) {

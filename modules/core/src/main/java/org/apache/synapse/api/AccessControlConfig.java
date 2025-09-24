@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.apache.synapse.mediators.bsf.access.control.config;
+package org.apache.synapse.api;
 
 import java.util.List;
 

@@ -18,7 +18,7 @@
 
 package org.apache.synapse.mediators.bsf.access.control;
 
-import org.apache.synapse.mediators.bsf.access.control.config.AccessControlConfig;
+import org.apache.synapse.api.AccessControlConfig;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.WrapFactory;

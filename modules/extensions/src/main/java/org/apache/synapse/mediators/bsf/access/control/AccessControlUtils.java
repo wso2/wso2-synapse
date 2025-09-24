@@ -18,11 +18,11 @@
 
 package org.apache.synapse.mediators.bsf.access.control;
 
-import org.apache.synapse.mediators.bsf.access.control.config.AccessControlConfig;
-import org.apache.synapse.mediators.bsf.access.control.config.AccessControlListType;
 
 import java.util.Comparator;
 import java.util.List;
+import org.apache.synapse.api.AccessControlConfig;
+import org.apache.synapse.api.AccessControlListType;
 
 /**
  * Utility methods related to Script Mediator access control.
