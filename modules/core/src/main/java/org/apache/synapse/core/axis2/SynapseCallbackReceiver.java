@@ -34,6 +34,7 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.nio.NHttpServerConnection;
+import org.apache.synapse.CallbackAckConfigUtil;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.FaultHandler;
 import org.apache.synapse.ServerContextInformation;
@@ -83,6 +84,8 @@ import java.util.Timer;
 public class SynapseCallbackReceiver extends CallbackReceiver {
 
     private static final Log log = LogFactory.getLog(SynapseCallbackReceiver.class);
+    private final boolean isCallbackControlledAckEnabled;
+    private final boolean isClientApiNonBlockingModeEnabled;
 
     /**
      * Create the *single* instance of this class that would be used by all anonymous services
@@ -95,6 +98,8 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
         // create the Timer object and a TimeoutHandler task
         TimeoutHandler timeoutHandler = new TimeoutHandler(callbackStore, contextInformation);
+        isCallbackControlledAckEnabled = CallbackAckConfigUtil.isCallbackControlledAckEnabled();
+        isClientApiNonBlockingModeEnabled = CallbackAckConfigUtil.isClientApiNonBlockingModeEnabled();
         Timer timeOutTimer = synCfg.getSynapseTimer();
         long timeoutHandlerInterval = SynapseConfigUtils.getTimeoutHandlerInterval();
 
@@ -114,6 +119,22 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         org.apache.synapse.MessageContext synCtx = ((AsyncCallback) callback).getSynapseOutMsgCtx();
         if (RuntimeStatisticCollector.isStatisticsEnabled()) {
             CallbackStatisticCollector.addCallback(synCtx, MsgID);
+        }
+    }
+
+    /**
+     * Set the CLIENT_API_NON_BLOCKING property to the outgoing message context if
+     * Callback Controlled Ack and Client API Non Blocking Mode are enabled and
+     * the transport is RabbitMQ.
+     *
+     * @param outMsgContext the outgoing message context
+     */
+    public void setClientApiNonBlockingEnabled(MessageContext outMsgContext) {
+        if (outMsgContext != null) {
+            if (isCallbackControlledAckEnabled && isClientApiNonBlockingModeEnabled
+                    && CallbackAckConfigUtil.isRabbitMQTransport(outMsgContext)) {
+                outMsgContext.setProperty(SynapseConstants.CLIENT_API_NON_BLOCKING, Boolean.TRUE);
+            }
         }
     }
 
@@ -261,6 +282,11 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         if (configurator != null) {
             configurator.applyTenantInfo(synapseOutMsgCtx);
         }
+
+        // set the ACK/NACK decision to the response message context
+        MessageContext synOutMessageCtx = ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext();
+        response.setProperty(SynapseConstants.ACKNOWLEDGEMENT_DECISION, synOutMessageCtx
+                .getProperty(SynapseConstants.ACKNOWLEDGEMENT_DECISION));
 
         Boolean isConcurrencyThrottleEnabled = (Boolean) synapseOutMsgCtx
                 .getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE);
