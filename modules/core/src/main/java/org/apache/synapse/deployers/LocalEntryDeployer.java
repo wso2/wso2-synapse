@@ -44,6 +44,7 @@ import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -64,6 +65,9 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
     private static final String CONVERTED_RESOURCES_IDENTIFIER = "gov:mi-resources" + File.separator;
     private static final String HTTP_CONNECTION_IDENTIFIER = "http.init";
     private static final String CERTIFICATE_EXTENSION = ".crt";
+    public static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    public static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    public static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     @Override
     public String deploySynapseArtifact(OMElement artifactConfig, String fileName,
@@ -164,7 +168,7 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
 
     private void loadCertificateFileToSSLSenderTrustStore(String certificateFileResourceKey)
             throws DeploymentException {
-
+        String provider = getJceProvider();
         String certificateFilePath =
                 getSynapseConfiguration().getRegistry().getRegistryEntry(certificateFileResourceKey).getName();
         File certificateFile = new File(certificateFilePath);
@@ -174,8 +178,12 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
             try (FileInputStream certificateFileInputStream = FileUtils.openInputStream(
                     new File(certificateFilePath))) {
                 KeyStore sslSenderTrustStore = sslSenderTrustStoreHolder.getKeyStore();
-
-                CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+                CertificateFactory certificateFactory;
+                if (provider != null) {
+                    certificateFactory = CertificateFactory.getInstance("X.509", provider);
+                } else {
+                    certificateFactory = CertificateFactory.getInstance("X.509");
+                }
                 Certificate certificate = certificateFactory.generateCertificate(certificateFileInputStream);
                 sslSenderTrustStore.setCertificateEntry(certificateAlias, certificate);
 
@@ -185,6 +193,8 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
                 }
             } catch (CertificateException | IOException | KeyStoreException | NoSuchAlgorithmException e) {
                 throw new DeploymentException("Failed to load certificate file to store: " + certificateFilePath, e);
+            } catch (NoSuchProviderException e) {
+                throw new DeploymentException("Specified security provider is not available in this environment: ", e);
             }
         }
     }
@@ -271,7 +281,7 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
             log.debug("LocalEntry Undeployment of the entry named : "
                     + artifactName + " : Started");
         }
-        
+
         try {
             Entry e = getSynapseConfiguration().getDefinedEntries().get(artifactName);
             if (e != null && e.getType() != Entry.REMOTE_ENTRY) {
@@ -317,5 +327,19 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
             handleSynapseArtifactDeploymentError(
                     "Restoring of the LocalEntry named '" + artifactName + "' has failed", e);
         }
+    }
+
+    /**
+     * Get the JCE provider to be used for encryption/decryption
+     *
+     * @return
+     */
+    private static String getJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 }
