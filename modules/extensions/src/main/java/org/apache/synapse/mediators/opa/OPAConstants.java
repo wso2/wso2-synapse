@@ -36,7 +36,7 @@ public final class OPAConstants {
     public static final String BCFKS = "BCFKS";
     public static final String JKS = "JKS";
     public static final String PKIX = "PKIX";
-    public static final String TLS = "TLS";
+    public static final String TLS = "TLSv1.2";
     public static final String HTTP_METHOD_STRING = "HTTP_METHOD";
     public static final String API_BASEPATH_STRING = "TransportInURL";
     public static final String HTTP_RESPONSE_STATUS_CODE = "HTTP_RESPONSE_STATUS_CODE";

@@ -31,12 +31,14 @@ import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.Provider;
 import java.security.Security;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 public class RevocationVerificationTest extends TestCase {
+    private static final String BC = "BC";
 
     /**
      * Tests CRL Path Validation with the use of a real certificate chain. The verification process will make
@@ -68,6 +70,7 @@ public class RevocationVerificationTest extends TestCase {
      * @throws Exception
      */
     public void testCRLPathValidationWithFakeCerts() throws Exception {
+        System.setProperty("security.jce.provider", BC);
         //Add BouncyCastle as Security Provider.
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
         Utils utils = new Utils();

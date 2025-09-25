@@ -115,7 +115,7 @@
                         <Import-Package>
                             !javax.xml.namespace,
                             javax.xml.namespace; version=0.0.0,
-                            org.bouncycastle.*;version="${imp.pkg.version.wso2.bouncycastle}",
+<!--                            org.bouncycastle.*;version="${imp.pkg.version.wso2.bouncycastle}",-->
                             *;resolution:=optional,
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>

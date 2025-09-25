@@ -47,7 +47,6 @@ import org.apache.synapse.util.SynapseBinaryDataSource;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 import org.wso2.securevault.definition.IdentityKeyStoreInformation;
-import org.wso2.securevault.definition.KeyStoreInformation;
 import org.wso2.securevault.definition.KeyStoreInformationFactory;
 import org.wso2.securevault.definition.TrustKeyStoreInformation;
 import org.xml.sax.InputSource;
@@ -97,7 +96,7 @@ public class SynapseConfigUtils {
     private static final String BOUNCY_CASTLE_PROVIDER = "BC";
     private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
     private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
-    private static final String TLS = "TLS";
+    private static final String TLS = "TLSv1.2";
     private static final String BCJSSE = "BCJSSE";
     private static final String ENABLE_HOST_NAME_VERIFIER = "enableHostnameVerifier";
 

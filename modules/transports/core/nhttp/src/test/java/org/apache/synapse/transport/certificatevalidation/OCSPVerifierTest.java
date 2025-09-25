@@ -59,7 +59,6 @@ import java.security.KeyPair;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 
@@ -77,10 +76,8 @@ public class OCSPVerifierTest extends TestCase {
      * @throws Exception
      */
     public void testOCSPVerifier() throws Exception{
-
         //Add BouncyCastle as Security Provider.
-        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
-
+        System.setProperty("security.jce.provider", BC);
         Utils utils = new Utils();
         //Create fake CA certificate.
         KeyPair caKeyPair = utils.generateRSAKeyPair();

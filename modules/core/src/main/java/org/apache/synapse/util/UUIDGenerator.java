@@ -99,7 +99,7 @@ public class UUIDGenerator {
         try {
             String provider = getJceProvider();
             if (provider != null) {
-                md5 = MessageDigest.getInstance("MD5", provider);
+                md5 = MessageDigest.getInstance("SHA-256", provider);
             } else {
                 md5 = MessageDigest.getInstance("MD5");
             }

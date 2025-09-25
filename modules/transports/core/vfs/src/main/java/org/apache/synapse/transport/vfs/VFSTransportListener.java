@@ -1355,7 +1355,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         String provider = getJceProvider();
         MessageDigest complete;
         if (provider != null) {
-            complete = MessageDigest.getInstance("MD5", provider);
+            complete = MessageDigest.getInstance("SHA-256", provider);
         } else {
             complete = MessageDigest.getInstance("MD5");
         }
