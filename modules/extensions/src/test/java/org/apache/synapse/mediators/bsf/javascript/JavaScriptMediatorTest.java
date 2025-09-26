@@ -24,6 +24,16 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.TestUtils;
 import org.apache.synapse.mediators.bsf.ScriptMediator;
+import org.apache.synapse.script.access.AccessControlConfig;
+import org.apache.synapse.script.access.AccessControlConstants;
+import org.apache.synapse.script.access.AccessControlListType;
+import org.apache.synapse.script.access.ScriptAccessControl;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Properties;
+
+import static org.apache.synapse.script.access.AccessControlConstants.ENABLE;
 
 public class JavaScriptMediatorTest extends TestCase {
 
@@ -69,6 +79,10 @@ public class JavaScriptMediatorTest extends TestCase {
      * @throws Exception
      */
     public void testJavaClassAccessControl() throws Exception {
+        ScriptAccessControl.getInstance().setClassAccessControlConfig(
+                new AccessControlConfig(true, AccessControlListType.valueOf("BLOCK_LIST"),
+                        Collections.singletonList("java.util.ArrayList")));
+
         String scriptSourceCode =  "var s = new java.util.ArrayList();\n";
 
         MessageContext mc = TestUtils.getTestContext("<foo/>", null);
@@ -93,6 +107,10 @@ public class JavaScriptMediatorTest extends TestCase {
      * @throws Exception
      */
     public void testJavaMethodAccessControl() throws Exception {
+        ScriptAccessControl.getInstance().setNativeObjectAccessControlConfig(
+                new AccessControlConfig(true, AccessControlListType.valueOf("BLOCK_LIST"),
+                        Arrays.asList("getClassLoader", "loadClass")));
+
         String scriptSourceCode =  "var c = this.context.getClass();\n" +
                 "var hashmapConstructors = c.getClassLoader().loadClass(\"java.util.HashMap\").getDeclaredConstructors();\n";
 
