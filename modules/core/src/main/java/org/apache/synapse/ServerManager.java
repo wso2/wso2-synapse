@@ -22,10 +22,10 @@ import java.util.Arrays;
 import java.util.Properties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.api.AccessControlConfig;
-import org.apache.synapse.api.AccessControlConstants;
-import org.apache.synapse.api.AccessControlListType;
-import org.apache.synapse.api.ScriptAccessControl;
+import org.apache.synapse.script.access.AccessControlConfig;
+import org.apache.synapse.script.access.AccessControlConstants;
+import org.apache.synapse.script.access.AccessControlListType;
+import org.apache.synapse.script.access.ScriptAccessControl;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTelemetryManagerHolder;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
@@ -37,7 +37,7 @@ import org.wso2.securevault.SecurityConstants;
 
 import java.util.Date;
 import javax.management.NotCompliantMBeanException;
-import static org.apache.synapse.api.AccessControlConstants.ENABLE;
+import static org.apache.synapse.script.access.AccessControlConstants.ENABLE;
 
 /**
  * This is the core class that starts up a Synapse instance.

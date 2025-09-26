@@ -21,8 +21,11 @@ package org.apache.synapse.mediators.bsf.access.control;
 
 import java.util.Comparator;
 import java.util.List;
-import org.apache.synapse.api.AccessControlConfig;
-import org.apache.synapse.api.AccessControlListType;
+
+import org.apache.synapse.script.access.AccessControlConfig;
+import org.apache.synapse.script.access.AccessControlListType;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.HostAccess;
 
 /**
  * Utility methods related to Script Mediator access control.
@@ -62,5 +65,21 @@ public class AccessControlUtils {
         }
         return true; // Ideally we won't reach here
     }
-}
 
+    public static Context.Builder createSecureGraalContext(AccessControlConfig classAccessControlConfig) {
+
+        Context.Builder builder = Context.newBuilder("js")
+                .allowExperimentalOptions(true)
+                .allowHostAccess(HostAccess.ALL)
+                .allowHostClassLookup(s -> isAccessAllowed(s, classAccessControlConfig, new Comparator<String>() {
+                    @Override
+                    public int compare(String o1, String o2) {
+                        if (o1 != null && o1.startsWith(o2)) {
+                            return 0;
+                        }
+                        return -1;
+                    }
+                }));
+        return builder;
+    }
+}

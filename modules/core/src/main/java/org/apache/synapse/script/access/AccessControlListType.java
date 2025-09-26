@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.synapse.api;
+package org.apache.synapse.script.access;
 
 /**
  * Represents the type of access control list for the Script Mediator.

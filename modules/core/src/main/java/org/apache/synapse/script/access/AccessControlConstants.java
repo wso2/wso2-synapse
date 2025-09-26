@@ -1,4 +1,4 @@
-package org.apache.synapse.api;
+package org.apache.synapse.script.access;
 
 public class AccessControlConstants {
     public static String LIMIT_CLASS_ACCESS_PREFIX = "limit_java_class_access_in_scripts.";

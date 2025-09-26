@@ -21,7 +21,7 @@ package org.apache.synapse.mediators.bsf;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import com.oracle.truffle.js.scriptengine.GraalJSEngineFactory;
+import com.oracle.truffle.js.scriptengine.GraalJSScriptEngine;
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import com.sun.script.groovy.GroovyScriptEngineFactory;
 import com.sun.script.jruby.JRubyScriptEngineFactory;
@@ -35,8 +35,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.api.AccessControlConfig;
-import org.apache.synapse.api.ScriptAccessControl;
+import org.apache.synapse.script.access.AccessControlConfig;
+import org.apache.synapse.script.access.ScriptAccessControl;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.config.Entry;
@@ -49,6 +49,7 @@ import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.mediators.v2.Utils;
 import org.apache.synapse.mediators.v2.ext.InputArgument;
 import org.graalvm.polyglot.Context;
+import org.jetbrains.annotations.NotNull;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.ContextFactory;
 
@@ -66,6 +67,7 @@ import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.Supplier;
 
 import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.GRAAL_JAVA_SCRIPT;
 import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.JAVA_SCRIPT;
@@ -294,7 +296,7 @@ public class ScriptMediator extends AbstractMediator {
                 cx.setApplicationClassLoader(this.loader);
             }
             if (language.equals(JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT)) {
-                context = Context.newBuilder("js").allowExperimentalOptions(true).build();
+                context = AccessControlUtils.createSecureGraalContext(classAccessControlConfig).build();
                 context.enter();
             }
 
@@ -674,13 +676,6 @@ public class ScriptMediator extends AbstractMediator {
         System.setProperty("polyglot.engine.WarnInterpreterOnly", "false");
         System.setProperty("polyglot.js.nashorn-compat", "true");
         engineManager = new ScriptEngineManager();
-        if (language.equals(JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT)) {
-            engineManager.registerEngineExtension("jsEngine", new GraalJSEngineFactory());
-        } else {
-            if (!language.equals(NASHORN_JAVA_SCRIPT)) {
-                engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
-            }
-        }
         engineManager.registerEngineExtension("groovy", new GroovyScriptEngineFactory());
         engineManager.registerEngineExtension("rb", new JRubyScriptEngineFactory());
         engineManager.registerEngineExtension("py", new JythonScriptEngineFactory());
@@ -694,29 +689,26 @@ public class ScriptMediator extends AbstractMediator {
         }
         if (language.equals(NASHORN_JAVA_SCRIPT)) {
             this.scriptEngine = engineManager.getEngineByName(NASHORN);
-        } else if (language.equals(RHINO_JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT)) {
-            this.scriptEngine = engineManager.getEngineByExtension("jsEngine");
-        } else {
-            this.scriptEngine = engineManager.getEngineByExtension(language);
-        }
-
-        pool = new LinkedBlockingQueue<ScriptEngineWrapper>(poolSize);
-
-        for (int i = 0; i< poolSize; i++) {
-            ScriptEngineWrapper sew;
-            if (language.equals(NASHORN_JAVA_SCRIPT)) {
-                sew = new ScriptEngineWrapper(engineManager.getEngineByName(NASHORN));
-            } else if (language.equals(RHINO_JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT)) {
-                sew = new ScriptEngineWrapper(engineManager.getEngineByExtension("jsEngine"));
-            } else {
-                sew = new ScriptEngineWrapper(engineManager.getEngineByExtension(language));
-            }
-            pool.add(sew);
-        }
-        if (language.equals(NASHORN_JAVA_SCRIPT)) {
             this.jsEngine = engineManager.getEngineByName(NASHORN);
-        } else {
+        } else if (language.equals(GRAAL_JAVA_SCRIPT) || language.equals(JAVA_SCRIPT)) {
+            this.scriptEngine = GraalJSScriptEngine.create(null, AccessControlUtils.createSecureGraalContext(classAccessControlConfig));
+            this.jsEngine = GraalJSScriptEngine.create(null, AccessControlUtils.createSecureGraalContext(classAccessControlConfig));
+        } else if (language.equals(RHINO_JAVA_SCRIPT)) {
+            engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
+            this.scriptEngine = engineManager.getEngineByExtension("jsEngine");
             this.jsEngine = engineManager.getEngineByExtension("jsEngine");
+        } else {
+            engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
+            this.scriptEngine = engineManager.getEngineByExtension(language);
+            this.jsEngine = engineManager.getEngineByExtension("jsEngine");
+        }
+
+        pool = new LinkedBlockingQueue<>(poolSize);
+
+        final Supplier<ScriptEngine> engineSupplier = getScriptEngineSupplier();
+
+        for (int i = 0; i < poolSize; i++) {
+            pool.add(new ScriptEngineWrapper(engineSupplier.get()));
         }
         if (scriptEngine == null) {
             handleException("No script engine found for language: " + language);
@@ -745,6 +737,24 @@ public class ScriptMediator extends AbstractMediator {
                 ContextFactory.initGlobal(new SandboxContextFactory(nativeObjectAccessControlConfig));
             }
         }
+    }
+
+    @NotNull
+    private Supplier<ScriptEngine> getScriptEngineSupplier() {
+
+        final Supplier<ScriptEngine> engineSupplier;
+        if (language.equals(GRAAL_JAVA_SCRIPT) || language.equals(JAVA_SCRIPT)) {
+            engineSupplier = () -> GraalJSScriptEngine.create(
+                    null, AccessControlUtils.createSecureGraalContext(classAccessControlConfig)
+            );
+        } else if (language.equals(NASHORN_JAVA_SCRIPT)) {
+            engineSupplier = () -> engineManager.getEngineByName(NASHORN);
+        } else if (language.equals(RHINO_JAVA_SCRIPT)) {
+            engineSupplier = () -> engineManager.getEngineByExtension("jsEngine");
+        } else {
+            engineSupplier = () -> engineManager.getEngineByExtension(language);
+        }
+        return engineSupplier;
     }
 
     public String getLanguage() {
@@ -784,9 +794,13 @@ public class ScriptMediator extends AbstractMediator {
 
         ScriptEngineWrapper scriptEngineWrapper = pool.poll();
         if (scriptEngineWrapper == null) {
-            if (language.equals(NASHORN_JAVA_SCRIPT)) {
+            if (language.equals(GRAAL_JAVA_SCRIPT) || language.equals(JAVA_SCRIPT)) {
+                scriptEngineWrapper = new ScriptEngineWrapper(
+                        GraalJSScriptEngine.create(null, AccessControlUtils.createSecureGraalContext(classAccessControlConfig))
+                );
+            } else if (language.equals(NASHORN_JAVA_SCRIPT)) {
                 scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByName(NASHORN));
-            } else if (language.equals(RHINO_JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT)) {
+            } else if (language.equals(RHINO_JAVA_SCRIPT)) {
                 scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByExtension("jsEngine"));
             } else {
                 scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByExtension(language));

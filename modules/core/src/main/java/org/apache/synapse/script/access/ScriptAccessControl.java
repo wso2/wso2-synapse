@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.apache.synapse.api;
+package org.apache.synapse.script.access;
 
 /**
  * Singleton class to hold the access control configurations of the Script Mediator.
