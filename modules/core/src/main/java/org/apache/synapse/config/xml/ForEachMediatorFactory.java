@@ -113,7 +113,7 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
         OMElement sequence;
 
         if (sequenceAttr != null && sequenceAttr.getAttributeValue() != null) {
-            mediator.setSequenceRef(sequenceAttr.getAttributeValue());
+            mediator.setSequenceRef(FactoryUtils.getFullyQualifiedName(properties, sequenceAttr.getAttributeValue()));
         } else if ((sequence = elem.getFirstChildWithName(
                 new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "sequence"))) != null) {
             SequenceMediatorFactory fac = new SequenceMediatorFactory();

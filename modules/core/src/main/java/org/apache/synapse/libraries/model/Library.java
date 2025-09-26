@@ -122,4 +122,6 @@ public interface Library extends SynapseArtifact {
      */
     public void setLibStatus(boolean status);
 
+    public String getArtifactIdentifier();
+
 }

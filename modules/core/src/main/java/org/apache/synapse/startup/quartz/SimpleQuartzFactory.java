@@ -27,12 +27,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.config.xml.StartupFactory;
 import org.apache.synapse.Startup;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskDescriptionFactory;
+
+import java.util.Properties;
 
 /**
  * &lt;task class="org.my.synapse.Task" name="string"&gt;
@@ -49,10 +52,24 @@ public class SimpleQuartzFactory implements StartupFactory {
     public final static QName TASK
         = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "task");
 
+    private final static QName NAME = new QName("name");
+    private final static QName VALUE = new QName("value");
+
     private final static Log log = LogFactory.getLog(SimpleQuartzFactory.class);
 
     public Startup createStartup(OMElement el) {
         
+        return createSimpleQuartzStartup(el, null);
+    }
+
+    @Override
+    public Startup createStartup(OMElement elem, Properties properties) {
+
+        return createSimpleQuartzStartup(elem, properties);
+    }
+
+    private Startup createSimpleQuartzStartup(OMElement el, Properties properties) {
+
         if (log.isDebugEnabled()) {
             log.debug("Creating StartUpController Task");
         }
@@ -66,7 +83,10 @@ public class SimpleQuartzFactory implements StartupFactory {
             if (taskDescription == null) {
                 handleException("Invalid task - Task description can not be created  from :" + el);
                 return null;
-            }          
+            }
+            if (FactoryUtils.isVersionedDeployment(properties)) {
+                updateTaskForVersioning(taskDescription, properties);
+            }
             startUpController.setName(taskDescription.getName());
             startUpController.setTaskDescription(taskDescription);
             startUpController.setDescription(taskDescription.getTaskDescription());
@@ -104,6 +124,28 @@ public class SimpleQuartzFactory implements StartupFactory {
             handleException("Syntax error in the task : wrong QName for the task");
             return null;
         }
+    }
+
+    /**
+     * This method will update the sequence name or proxy name in the task description for versioned deployment.
+     *
+     * @param taskDescription The task description of the Task
+     * @param properties      Properties containing the artifact identifier and dependencies
+     */
+    private void updateTaskForVersioning(TaskDescription taskDescription, Properties properties) {
+
+        taskDescription.setName(FactoryUtils.getFullyQualifiedName(properties, taskDescription.getName()));
+        taskDescription.getXmlProperties().forEach(prop -> {
+            if (prop.getAttributeValue(NAME).equals("sequenceName")
+                    || prop.getAttributeValue(NAME).equals("proxyName")) {
+                prop.setText(FactoryUtils.getFullyQualifiedName(properties, prop.getText()));
+                String value = prop.getAttributeValue(VALUE);
+                if (value != null) {
+                    String updatedValue = FactoryUtils.getFullyQualifiedName(properties, value);
+                    prop.getAttribute(VALUE).setAttributeValue(updatedValue);
+                }
+            }
+        });
     }
 
     public Class<SimpleQuartzSerializer> getSerializerClass() {
