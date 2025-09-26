@@ -42,10 +42,12 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.commons.json.Constants;
 import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -579,14 +581,25 @@ public class Target {
                 if (path.equals("$") || path.equals("$.")) {
                     result = "";
                 } else {
-                    JsonElement list = JsonPath.parse(result).read(path);
-                    if (!(list instanceof JsonArray) || !((JsonArray) list).isEmpty()) {
-                        DocumentContext doc = JsonPath.parse(result);
-                        doc.delete(path);
-                        result = doc.jsonString();
-                    } else {
-                        log.info("No matching elements were found for the given JSONPath: " + path + ". Therefore, " +
-                                "no elements were removed.");
+                    try {
+                        JsonElement list = JsonPath.parse(result).read(path);
+                        if (!(list instanceof JsonArray) || !((JsonArray) list).isEmpty()) {
+                            DocumentContext doc = JsonPath.parse(result);
+                            doc.delete(path);
+                            result = doc.jsonString();
+                        } else {
+                            log.info("No matching elements were found for the given JSONPath: " + path +
+                                    ". Therefore, no elements were removed.");
+                        }
+                    } catch (PathNotFoundException exception) {
+                        boolean ignore = SynapsePropertiesLoader.
+                                getBooleanProperty(SynapseConstants.JSONPATH_IGNORE_NOT_FOUND_ERROR, false);
+                        if (ignore) {
+                            log.info("No matching elements were found for the given JSONPath: " + path +
+                                    ". Therefore, no elements were removed.");
+                        } else {
+                            throw exception;
+                        }
                     }
                 }
             }
