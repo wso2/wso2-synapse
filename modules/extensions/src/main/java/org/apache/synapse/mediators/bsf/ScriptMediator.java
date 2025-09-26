@@ -680,16 +680,10 @@ public class ScriptMediator extends AbstractMediator {
         engineManager.registerEngineExtension("rb", new JRubyScriptEngineFactory());
         engineManager.registerEngineExtension("py", new JythonScriptEngineFactory());
         oracleNashornFactory = getOracleNashornFactory();
+
         if (language.equals(NASHORN_JAVA_SCRIPT)) {
-            if (isJDKContainNashorn()) {
-                engineManager.registerEngineName(NASHORN, oracleNashornFactory);
-            } else {
-                engineManager.registerEngineName(NASHORN, OpenJDKNashornFactoryWrapper.getOpenJDKNashornFactory());
-            }
-        }
-        if (language.equals(NASHORN_JAVA_SCRIPT)) {
-            this.scriptEngine = engineManager.getEngineByName(NASHORN);
-            this.jsEngine = engineManager.getEngineByName(NASHORN);
+            this.scriptEngine = createNashornEnginePortable();
+            this.jsEngine = createNashornEnginePortable();
         } else if (language.equals(GRAAL_JAVA_SCRIPT) || language.equals(JAVA_SCRIPT)) {
             this.scriptEngine = GraalJSScriptEngine.create(null, AccessControlUtils.createSecureGraalContext(classAccessControlConfig));
             this.jsEngine = GraalJSScriptEngine.create(null, AccessControlUtils.createSecureGraalContext(classAccessControlConfig));
@@ -739,6 +733,62 @@ public class ScriptMediator extends AbstractMediator {
         }
     }
 
+    private ScriptEngine createNashornEnginePortable() {
+        ClassLoader classLoader = effectiveLoader();
+        String[] nashornPackages = { "jdk.nashorn.api.scripting", "org.openjdk.nashorn.api.scripting" };
+        for (String pkg : nashornPackages) {
+            try {
+                Class<?> factoryClz = Class.forName(pkg + ".NashornScriptEngineFactory", false, classLoader);
+                Object factory = factoryClz.getConstructor().newInstance();
+
+                Class<?> classFilterClz = Class.forName(pkg + ".ClassFilter", false, classLoader);
+                Object classFilterProxy = java.lang.reflect.Proxy.newProxyInstance(
+                        classLoader, new Class<?>[]{ classFilterClz },
+                        (proxy, m, args) -> {
+                            if ("exposeToScripts".equals(m.getName())) {
+                                String className = (String) args[0];
+                                return AccessControlUtils.isAccessAllowed(className, classAccessControlConfig, new Comparator<String>() {
+                                    @Override
+                                    public int compare(String o1, String o2) {
+                                        if (o1 != null && o1.startsWith(o2)) {
+                                            return 0;
+                                        }
+                                        return -1;
+                                    }
+                                });
+                            }
+                            throw new UnsupportedOperationException(m.getName());
+                        });
+
+                // Prefer 3-arg overload: getScriptEngine(String[] args, ClassLoader, ClassFilter)
+                java.lang.reflect.Method get = factoryClz.getMethod(
+                        "getScriptEngine", String[].class, ClassLoader.class, classFilterClz);
+                String[] args = new String[] {};
+                return (ScriptEngine) get.invoke(factory, args, classLoader, classFilterProxy);
+            } catch (ClassNotFoundException e) {
+                // try next package
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException("Failed to build Nashorn engine for package " + pkg, e);
+            }
+        }
+        throw new IllegalStateException("No Nashorn API found (JDK 8–11 or standalone nashorn-core required).");
+    }
+
+    private ClassLoader effectiveLoader() {
+        if (this.loader != null) {
+            return this.loader;
+        }
+        ClassLoader currentThreadLoader = Thread.currentThread().getContextClassLoader();
+        if (currentThreadLoader != null) {
+            return currentThreadLoader;
+        }
+        ClassLoader scriptClassLoader = ScriptMediator.class.getClassLoader();
+        if (scriptClassLoader != null) {
+            return scriptClassLoader;
+        }
+        return ClassLoader.getSystemClassLoader();
+    }
+
     @NotNull
     private Supplier<ScriptEngine> getScriptEngineSupplier() {
 
@@ -748,7 +798,7 @@ public class ScriptMediator extends AbstractMediator {
                     null, AccessControlUtils.createSecureGraalContext(classAccessControlConfig)
             );
         } else if (language.equals(NASHORN_JAVA_SCRIPT)) {
-            engineSupplier = () -> engineManager.getEngineByName(NASHORN);
+            engineSupplier = () -> createNashornEnginePortable();
         } else if (language.equals(RHINO_JAVA_SCRIPT)) {
             engineSupplier = () -> engineManager.getEngineByExtension("jsEngine");
         } else {
@@ -799,7 +849,7 @@ public class ScriptMediator extends AbstractMediator {
                         GraalJSScriptEngine.create(null, AccessControlUtils.createSecureGraalContext(classAccessControlConfig))
                 );
             } else if (language.equals(NASHORN_JAVA_SCRIPT)) {
-                scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByName(NASHORN));
+                scriptEngineWrapper = new ScriptEngineWrapper(createNashornEnginePortable());
             } else if (language.equals(RHINO_JAVA_SCRIPT)) {
                 scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByExtension("jsEngine"));
             } else {
