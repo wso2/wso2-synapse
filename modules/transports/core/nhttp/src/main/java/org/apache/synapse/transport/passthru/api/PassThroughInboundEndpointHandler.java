@@ -23,6 +23,7 @@ import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.core.PassThroughListeningIOReactorManager;
 import org.apache.synapse.transport.passthru.core.ssl.SSLConfiguration;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 
 /**
@@ -52,6 +53,10 @@ public class PassThroughInboundEndpointHandler {
      */
     public static boolean closeEndpoint(int port) {
         return PassThroughListeningIOReactorManager.getInstance().closeDynamicPTTEndpoint(port);
+    }
+
+    public static boolean pauseAllEndpoints() {
+        return PassThroughListeningIOReactorManager.getInstance().pauseSharedIOReactor();
     }
 
     /**
