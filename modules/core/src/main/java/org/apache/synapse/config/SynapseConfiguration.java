@@ -645,7 +645,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             if (value instanceof OMNode) {
                 properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, this);
                 Object object = entry.getMapper().getObjectFromOMNode(
-                        (OMNode) value, getProperties());
+                        (OMNode) value, getProperties(), entry.getArtifactIdentifier());
                 if (object instanceof TemplateMediator) {
                     entry.setValue(object);
                     return (TemplateMediator) object;
@@ -722,7 +722,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 } else if (o instanceof OMNode) {
                     properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, this);
                     Mediator m = (Mediator) MediatorFactoryFinder.getInstance().
-                            getObjectFromOMNode((OMNode) o, properties);
+                            getObjectFromOMNode((OMNode) o, properties, entry.getArtifactIdentifier());
                     if (m != null) {
                         entry.setValue(m);
                         return m;
@@ -734,7 +734,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             if (value instanceof OMNode) {
                 properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, this);
                 Object object = entry.getMapper().getObjectFromOMNode(
-                        (OMNode) value, getProperties());
+                        (OMNode) value, getProperties(), entry.getArtifactIdentifier());
                 if (object instanceof Mediator) {
                     entry.setValue(object);
                     return (Mediator) object;
@@ -1192,7 +1192,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 } else if (o instanceof OMNode) {
                     properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, this);
                     Endpoint e = (Endpoint) XMLToEndpointMapper.getInstance().
-                            getObjectFromOMNode((OMNode) o, properties);
+                            getObjectFromOMNode((OMNode) o, properties, entry.getArtifactIdentifier());
                     if (e != null) {
                         entry.setValue(e);
                         return e;
@@ -1204,7 +1204,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             if (value instanceof OMNode) {
                 properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, this);
                 Object object = entry.getMapper().getObjectFromOMNode(
-                        (OMNode) value, getProperties());
+                        (OMNode) value, getProperties(), entry.getArtifactIdentifier());
                 if (object instanceof Endpoint) {
                     entry.setValue(object);
                     return (Endpoint) object;
@@ -2280,7 +2280,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             Object value = entry.getValue();
             if (value instanceof OMNode) {
                 Object object = entry.getMapper().getObjectFromOMNode(
-                        (OMNode) value, getProperties());
+                        (OMNode) value, getProperties(), entry.getArtifactIdentifier());
                 if (object instanceof Template) {
                     entry.setValue(object);
                     return (Template) object;
@@ -2329,7 +2329,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 } else if (o instanceof OMNode) {
                     properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, this);
                     Mediator m = (Mediator) MediatorFactoryFinder.getInstance().
-                            getObjectFromOMNode((OMNode) o, properties);
+                            getObjectFromOMNode((OMNode) o, properties, entry.getArtifactIdentifier());
                     if (m != null) {
                         entry.setValue(m);
                         return m;
@@ -2341,7 +2341,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             if (value instanceof OMNode) {
                 properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, this);
                 Object object = entry.getMapper().getObjectFromOMNode(
-                        (OMNode) value, getProperties());
+                        (OMNode) value, getProperties(), entry.getArtifactIdentifier());
                 if (object instanceof Mediator) {
                     return (Mediator) object;
                 }

@@ -19,6 +19,7 @@
 package org.apache.synapse.libraries.model;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.SynapseArtifact;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapseConfiguration;
@@ -139,6 +140,11 @@ public class LibraryArtifact implements SynapseArtifact{
         if (library.getArtifact(SynapseConstants.SYNAPSE_CONFIGURATION) != null) {
             classLoadingProperties.put(SynapseConstants.SYNAPSE_CONFIGURATION,
                     library.getArtifact(SynapseConstants.SYNAPSE_CONFIGURATION));
+        }
+        classLoadingProperties.put(SynapseConstants.CONNECTOR_ARTIFACT, true);
+        if (StringUtils.isNotEmpty(library.getArtifactIdentifier())) {
+            classLoadingProperties.put(SynapseConstants.SYNAPSE_ARTIFACT_VERSIONED_DEPLOYMENT, true);
+            classLoadingProperties.put(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER, library.getArtifactIdentifier());
         }
         artifact.file.setProperties(classLoadingProperties);
     }

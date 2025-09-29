@@ -75,7 +75,10 @@ public class EntryFactory implements XMLToObjectMapper {
 
         } else {
 
-            Entry entry = new Entry(key.getAttributeValue());
+            Entry entry = new Entry(FactoryUtils.getFullyQualifiedName(properties, key.getAttributeValue()));
+            if (FactoryUtils.isVersionedDeployment(properties)) {
+                entry.setArtifactIdentifier(properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER));
+            }
 
             OMElement descriptionElem = elem.getFirstChildWithName(DESCRIPTION_Q);
             if (descriptionElem != null) {
@@ -132,5 +135,11 @@ public class EntryFactory implements XMLToObjectMapper {
             handleException("Invalid XML configuration for an Entry. OMElement expected");
         }
         return null;
+    }
+
+    @Override
+    public Object getObjectFromOMNode(OMNode om, Properties properties, String artifactIdentifier) {
+
+        return getObjectFromOMNode(om, properties);
     }
 }

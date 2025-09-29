@@ -73,6 +73,10 @@ public class XQueryMediatorFactory extends AbstractMediatorFactory {
             Value generatedKey = keyFac.createValue(XMLConfigConstants.KEY, elem);
 
             if (generatedKey != null) {
+                if (generatedKey.getKeyValue() != null && !generatedKey.hasExprTypeKey()){
+                    generatedKey = new Value(
+                            FactoryUtils.prependArtifactIdentifierToFileName(xqueryKey.getAttributeValue(), properties));
+                }
                 // set generated key as the Key
                 xQueryMediator.setQueryKey(generatedKey);
             } else {
@@ -122,7 +126,8 @@ public class XQueryMediatorFactory extends AbstractMediatorFactory {
                         variable = new MediatorCustomVariable(
                                 new QName(name.trim()));
                         if (key != null) {
-                            ((MediatorCustomVariable) variable).setRegKey(key.trim());
+                            ((MediatorCustomVariable) variable).setRegKey(
+                                    FactoryUtils.prependArtifactIdentifierToFileName(key.trim(), properties));
                         }
                         if (expr != null && !"".equals(expr)) {
                             try {

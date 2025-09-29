@@ -103,5 +103,10 @@ public class AuthConstants {
     public static final String OAUTH_GLOBAL_PROXY_PASSWORD = "synapse.endpoint.http.oauth.token.endpoint.global.proxy.password";
     public static final String OAUTH_GLOBAL_PROXY_PROTOCOL = "synapse.endpoint.http.oauth.token.endpoint.global.proxy.protocol";
 
+    // OAuth token endpoint truststore property names for synapse.properties
+    public static final String OAUTH_TOKEN_ENDPOINT_TRUST_STORE_LOCATION = "synapse.endpoint.http.oauth.token.endpoint.trust.store.location";
+    public static final String OAUTH_TOKEN_ENDPOINT_TRUST_STORE_TYPE = "synapse.endpoint.http.oauth.token.endpoint.trust.store.type";
+    public static final String OAUTH_TOKEN_ENDPOINT_TRUST_STORE_PASSWORD = "synapse.endpoint.http.oauth.token.endpoint.trust.store.password";
+
     public static final String HTTPS_PROTOCOL = "https";
 }

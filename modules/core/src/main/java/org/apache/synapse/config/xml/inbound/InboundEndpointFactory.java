@@ -31,6 +31,7 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.commons.handlers.MessagingHandler;
 import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.config.xml.rest.APIFactory;
 import org.apache.synapse.inbound.InboundEndpoint;
@@ -39,6 +40,7 @@ import org.apache.synapse.inbound.InboundEndpointConstants;
 import javax.xml.namespace.QName;
 import java.util.Iterator;
 import java.util.Objects;
+import java.util.Properties;
 
 public class InboundEndpointFactory {
 
@@ -55,11 +57,14 @@ public class InboundEndpointFactory {
             = new QName(InboundEndpointConstants.INBOUND_ENDPOINT_SEQUENCE);
     private static final QName ATT_ERROR_SEQUENCE
             = new QName(InboundEndpointConstants.INBOUND_ENDPOINT_ERROR_SEQUENCE);
-    
-    public static InboundEndpoint createInboundEndpoint(OMElement inboundEndpointElem, SynapseConfiguration config) {
+
+    public static InboundEndpoint createInboundEndpoint(OMElement inboundEndpointElem, SynapseConfiguration config,
+                                                        Properties properties) {
+
         InboundEndpoint inboundEndpoint = new InboundEndpoint();
         if (inboundEndpointElem.getAttributeValue(ATT_NAME) != null) {
-            inboundEndpoint.setName(inboundEndpointElem.getAttributeValue(ATT_NAME));
+            inboundEndpoint.setName(FactoryUtils.getFullyQualifiedName(properties,
+                    inboundEndpointElem.getAttributeValue(ATT_NAME)));
         } else {
             String msg = "Inbound Endpoint name cannot be null";
             log.error(msg);
@@ -78,10 +83,12 @@ public class InboundEndpointFactory {
             inboundEndpoint.setSuspend(false);
         }
         if (inboundEndpointElem.getAttributeValue(ATT_SEQUENCE) != null) {
-            inboundEndpoint.setInjectingSeq(inboundEndpointElem.getAttributeValue(ATT_SEQUENCE));
+            inboundEndpoint.setInjectingSeq(FactoryUtils.getFullyQualifiedName(properties,
+                    inboundEndpointElem.getAttributeValue(ATT_SEQUENCE)));
         }
         if (inboundEndpointElem.getAttributeValue(ATT_ERROR_SEQUENCE) != null) {
-            inboundEndpoint.setOnErrorSeq(inboundEndpointElem.getAttributeValue(ATT_ERROR_SEQUENCE));
+            inboundEndpoint.setOnErrorSeq(FactoryUtils.getFullyQualifiedName(properties,
+                    inboundEndpointElem.getAttributeValue(ATT_ERROR_SEQUENCE)));
         }
         String nameString = inboundEndpoint.getName();
         if (nameString == null || "".equals(nameString)) {
@@ -198,5 +205,8 @@ public class InboundEndpointFactory {
         return inboundEndpoint;
     }
 
+    public static InboundEndpoint createInboundEndpoint(OMElement inboundEndpointElem, SynapseConfiguration config) {
 
+        return createInboundEndpoint(inboundEndpointElem, config, new Properties());
+    }
 }

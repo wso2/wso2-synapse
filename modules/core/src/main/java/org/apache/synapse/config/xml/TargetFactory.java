@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.endpoints.EndpointFactory;
 import org.apache.synapse.mediators.eip.Target;
@@ -80,13 +81,13 @@ public class TargetFactory {
         OMAttribute sequenceAttr = elem.getAttribute(
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "sequence"));
         if (sequenceAttr != null && sequenceAttr.getAttributeValue() != null) {
-            target.setSequenceRef(sequenceAttr.getAttributeValue());
+            target.setSequenceRef(FactoryUtils.getFullyQualifiedName(properties, sequenceAttr.getAttributeValue()));
         }
 
         OMAttribute endpointAttr = elem.getAttribute(
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "endpoint"));
         if (endpointAttr != null && endpointAttr.getAttributeValue() != null) {
-            target.setEndpointRef(endpointAttr.getAttributeValue());
+            target.setEndpointRef(FactoryUtils.getFullyQualifiedName(properties, endpointAttr.getAttributeValue()));
         }
 
         OMElement sequence = elem.getFirstChildWithName(

@@ -22,6 +22,7 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.builtin.DropMediator;
 import org.apache.synapse.mediators.eip.aggregator.AggregateMediator;
@@ -147,7 +148,7 @@ public class AggregateMediatorFactory extends AbstractMediatorFactory {
 
             OMAttribute onCompleteSequence = onComplete.getAttribute(SEQUENCE_Q);
             if (onCompleteSequence != null) {
-                mediator.setOnCompleteSequenceRef(onCompleteSequence.getAttributeValue());
+                mediator.setOnCompleteSequenceRef(FactoryUtils.getFullyQualifiedName(properties, onCompleteSequence.getAttributeValue()));
             } else if (onComplete.getFirstElement() != null) {
                 mediator.setOnCompleteSequence((new SequenceMediatorFactory())
                         .createAnonymousSequence(onComplete, properties));

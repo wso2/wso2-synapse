@@ -65,6 +65,10 @@ public class XMLToTemplateMapper implements XMLToObjectMapper {
         return null;
     }
 
+    public Object getObjectFromOMNode(OMNode om, Properties properties, String artifactIdentifier) {
+        return getObjectFromOMNode(om, properties);
+    }
+
     /**
      * Getter method to obtain Synapse configuration
      *

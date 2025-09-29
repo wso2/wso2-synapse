@@ -21,7 +21,9 @@ package org.apache.synapse.config.xml.endpoints;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.endpoints.Endpoint;
@@ -40,7 +42,8 @@ public class TemplateEndpointFactory extends EndpointFactory {
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "name"));
         if (endpointNameAttribute != null) {
             String endpointName = endpointNameAttribute.getAttributeValue();
-            endpointName = ResolverFactory.getInstance().getResolver(endpointName).resolve();
+            String resolvedEndpointName = ResolverFactory.getInstance().getResolver(endpointName).resolve();
+            endpointName = getFullyQualifiedTemplateEndpointName(endpointName, resolvedEndpointName, properties);
             templateEndpoint.addParameter("name", endpointName);
             templateEndpoint.setName(endpointName);
         } /*else {
@@ -94,5 +97,21 @@ public class TemplateEndpointFactory extends EndpointFactory {
         }
         CommentListUtil.populateComments(endpointElement, templateEndpoint.getCommentsList());
         return templateEndpoint;
+    }
+
+    /**
+     * If the endpoint name is not resolved using any variable resolver, this method will return the fully qualified name.
+     *
+     * @param endpointName The endpoint name defined in the template endpoint configuration
+     * @param resolvedName The endpoint name after resolving any variable references
+     * @param properties   The properties of the synapse configuration
+     * @return The fully qualified name of the endpoint
+     */
+    private String getFullyQualifiedTemplateEndpointName(String endpointName, String resolvedName, Properties properties) {
+
+        if (StringUtils.equals(endpointName, resolvedName)) {
+            return FactoryUtils.getFullyQualifiedName(properties, endpointName);
+        }
+        return resolvedName;
     }
 }

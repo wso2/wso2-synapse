@@ -156,6 +156,11 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
                         .getServerContextInformation()
                         .getServerConfigurationInformation().getResolveRoot());
                 properties.put(SynapseConstants.SYNAPSE_CONFIGURATION, getSynapseConfiguration());
+                properties.put(SynapseConstants.SYNAPSE_ARTIFACT_VERSIONED_DEPLOYMENT, deploymentFileData.isVersionedDeployment());
+                if (deploymentFileData.isVersionedDeployment()) {
+                    properties.put(SynapseConstants.SYNAPSE_ARTIFACT_DEPENDENCIES, deploymentFileData.getCAppDependencies());
+                    properties.put(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER, deploymentFileData.getArtifactIdentifier());
+                }
                 String artifactName = null;
                 if (deploymentStore.isUpdatingArtifact(filename)) {
 

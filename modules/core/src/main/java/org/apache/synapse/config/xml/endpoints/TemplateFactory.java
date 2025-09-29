@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.endpoints.Template;
 import org.apache.synapse.util.CommentListUtil;
@@ -44,7 +45,7 @@ public class TemplateFactory {
 
 
         if (nameAttribute != null) {
-            template.setName(nameAttribute.getAttributeValue());
+            template.setName(FactoryUtils.getFullyQualifiedName(properties, nameAttribute.getAttributeValue()));
         } else {
             handleException("Error loading the configuration from endpointTemplate, '" +
                     "name' attribute missing");
