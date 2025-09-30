@@ -130,7 +130,7 @@ public class FilterMediatorFactory extends AbstractListMediatorFactory {
 
             if (sequenceAttr != null && sequenceAttr.getAttributeValue() != null) {
 
-                filter.setThenKey(sequenceAttr.getAttributeValue());
+                filter.setThenKey(FactoryUtils.getFullyQualifiedName(properties, sequenceAttr.getAttributeValue()));
 
             } else {
                 addChildren(thenElem, filter, properties);
@@ -144,7 +144,7 @@ public class FilterMediatorFactory extends AbstractListMediatorFactory {
 
                 if (sequenceAttr != null && sequenceAttr.getAttributeValue() != null) {
 
-                    filter.setElseKey(sequenceAttr.getAttributeValue());
+                    filter.setElseKey(FactoryUtils.getFullyQualifiedName(properties, sequenceAttr.getAttributeValue()));
 
                 } else {
 

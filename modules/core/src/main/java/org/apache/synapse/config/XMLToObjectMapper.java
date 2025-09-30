@@ -36,4 +36,6 @@ public interface XMLToObjectMapper {
      * @return a suitable application object
      */
     public Object getObjectFromOMNode(OMNode om, Properties properties);
+
+    public Object getObjectFromOMNode(OMNode om, Properties properties, String artifactIdentifier);
 }

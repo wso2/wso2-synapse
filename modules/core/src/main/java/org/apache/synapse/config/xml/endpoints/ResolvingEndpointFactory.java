@@ -19,6 +19,8 @@
 
 package org.apache.synapse.config.xml.endpoints;
 
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.ResolvingEndpoint;
 import org.apache.synapse.config.xml.SynapseXPathFactory;
@@ -49,7 +51,7 @@ public class ResolvingEndpointFactory extends EndpointFactory {
         ResolvingEndpoint resolvingEndpoint = new ResolvingEndpoint();       
         String name = epConfig.getAttributeValue(new QName("name"));
         if (name != null) {
-            resolvingEndpoint.setName(name);
+            resolvingEndpoint.setName(FactoryUtils.getFullyQualifiedName(properties, name));
         }
         try {
             resolvingEndpoint.setKeyExpression(
@@ -58,7 +60,7 @@ public class ResolvingEndpointFactory extends EndpointFactory {
             handleException("Couldn't build the ResolvingEndpoint, unable to set " +
                     "the key-expression XPath", e);
         }
-
+        resolvingEndpoint.setArtifactIdentifier(properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER));
         // process the parameters
         processProperties(resolvingEndpoint, epConfig);
 

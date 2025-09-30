@@ -160,6 +160,9 @@ public class StartupFinder implements XMLToObjectMapper {
 
         try {
             StartupFactory sf = cls.newInstance();
+            if (FactoryUtils.isVersionedDeployment(properties)) {
+                return sf.createStartup(element, properties);
+            }
             return sf.createStartup(element);
 
         } catch (InstantiationException e) {
@@ -242,4 +245,7 @@ public class StartupFinder implements XMLToObjectMapper {
 		return null;
 	}
 
+    public Object getObjectFromOMNode(OMNode om, Properties properties, String artifactIdentifier) {
+        return getObjectFromOMNode(om, properties);
+    }
 }

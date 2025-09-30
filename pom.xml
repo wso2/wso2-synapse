@@ -26,7 +26,7 @@
    </parent>
    <groupId>org.apache.synapse</groupId>
    <artifactId>Apache-Synapse</artifactId>
-   <version>4.0.0-wso2v250-SNAPSHOT</version>
+   <version>4.0.0-wso2v253-SNAPSHOT</version>
    <name>Apache Synapse</name>
    <description>Apache Synapse</description>
    <packaging>pom</packaging>
@@ -1534,7 +1534,7 @@
       <com.jayway.jsonpath.version>2.9.0.wso2v1</com.jayway.jsonpath.version>
       <qfj.version>1.5.3</qfj.version>
        <quickfixj.version>2.3.1</quickfixj.version>
-      <org.bouncycastle.version>1.81.0.wso2v1</org.bouncycastle.version>
+      <org.bouncycastle.version>1.78.1.wso2v1</org.bouncycastle.version>
       <imp.pkg.version.wso2.bouncycastle>[1.52.0,2.0.0)</imp.pkg.version.wso2.bouncycastle>
        <httpcore.version>4.4.16</httpcore.version>
       <httpcore.wso2.version>${httpcore.version}.wso2v1</httpcore.wso2.version>
@@ -1564,8 +1564,8 @@
       <mina.version>2.1.6</mina.version>
       <jms-1.1-spec.version>1.1</jms-1.1-spec.version>
       <!-- Axis2 and its dependencies -->
-      <axis2.version>1.6.1-wso2v106</axis2.version>
-      <axis2.transport.version>2.0.0-wso2v74</axis2.transport.version>
+      <axis2.version>1.6.1-wso2v108</axis2.version>
+      <axis2.transport.version>2.0.0-wso2v75</axis2.transport.version>
       <axiom.version>1.2.11-wso2v29</axiom.version>
       <xml_schema.version>1.4.7</xml_schema.version>
       <xml_apis.version>1.3.04</xml_apis.version>

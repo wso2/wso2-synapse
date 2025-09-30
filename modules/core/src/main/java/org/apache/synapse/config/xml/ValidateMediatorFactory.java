@@ -70,6 +70,9 @@ public class ValidateMediatorFactory extends AbstractListMediatorFactory {
                     ValueFactory keyFac = new ValueFactory();
                     // create dynamic or static key based on OMElement
                     Value generatedKey = keyFac.createValue(XMLConfigConstants.KEY, omElem);
+                    if (generatedKey.getKeyValue() != null && !generatedKey.hasExprTypeKey()){
+                        generatedKey = new Value(FactoryUtils.prependArtifactIdentifierToFileName(keyAtt.getAttributeValue(), properties));
+                    }
                     schemaKeys.add(generatedKey);
                 } else {
                     handleException("A 'schema' definition must contain a local property 'key'");

@@ -18,6 +18,8 @@
  */
 package org.apache.synapse.libraries.model;
 
+import org.apache.synapse.config.xml.FactoryUtils;
+
 import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,11 +56,23 @@ public class SynapseLibrary implements Library {
     private String fileName;
 
     private boolean libStatus = false;
+    private String artifactIdentifier;
 
     public SynapseLibrary(String name, String packageName) {
         this.packageN = packageName;
         if (packageName != null && !"".equals(packageName)) {
             qualifiedName = new QName(packageName, name);
+        } else {
+            qualifiedName = new QName(name);
+        }
+        dependencies = new ArrayList<LibraryArtifact.Dependency>();
+    }
+
+    public SynapseLibrary(String artifactIdentifier, String name, String packageName) {
+        this.artifactIdentifier = artifactIdentifier;
+        this.packageN = artifactIdentifier + FactoryUtils.DOUBLE_UNDERSCORE + packageName;
+        if (packageName != null && !"".equals(packageName)) {
+            qualifiedName = new QName(this.packageN, name);
         } else {
             qualifiedName = new QName(name);
         }
@@ -234,4 +248,7 @@ public class SynapseLibrary implements Library {
         this.libStatus = status;
     }
 
+    public String getArtifactIdentifier() {
+        return artifactIdentifier;
+    }
 }

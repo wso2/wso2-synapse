@@ -24,6 +24,7 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.Constants;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.endpoints.BasicAuthConfiguredHTTPEndpoint;
@@ -75,7 +76,7 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
         String name = null;
 
         if (nameAttr != null) {
-            name = nameAttr.getAttributeValue();
+            name = FactoryUtils.getFullyQualifiedName(properties, nameAttr.getAttributeValue());
         }
 
         OMElement httpElement = epConfig.getFirstChildWithName(

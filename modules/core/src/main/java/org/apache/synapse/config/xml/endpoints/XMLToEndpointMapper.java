@@ -57,4 +57,8 @@ public class XMLToEndpointMapper implements XMLToObjectMapper {
             throw new SynapseException("Configuration is not in proper format.");
         }
     }
+
+    public Object getObjectFromOMNode(OMNode om, Properties properties, String artifactIdentifier) {
+        return getObjectFromOMNode(om, properties);
+    }
 }

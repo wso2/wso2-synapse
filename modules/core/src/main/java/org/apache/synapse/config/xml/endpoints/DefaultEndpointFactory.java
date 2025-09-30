@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.DefaultEndpoint;
@@ -78,7 +79,7 @@ public class DefaultEndpointFactory extends EndpointFactory {
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "name"));
 
         if (name != null) {
-            defaultEndpoint.setName(name.getAttributeValue());
+            defaultEndpoint.setName(FactoryUtils.getFullyQualifiedName(properties, name.getAttributeValue()));
         }
 
         OMElement defaultElement = epConfig.getFirstChildWithName(

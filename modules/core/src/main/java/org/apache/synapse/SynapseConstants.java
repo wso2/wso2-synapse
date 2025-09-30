@@ -727,10 +727,17 @@ public final class SynapseConstants {
 
     public static final String DEFAULT_ERROR_TYPE = "ANY";
     public static final String ERROR_STATS_REPORTED = "ERROR_STATS_REPORTED";
+
     public static final String ENABLE_DTD_FORCEFULLY = "payloadFactory.forcefully.enable.DTD";
     public static final String ENABLE_EXTERNAL_ENTITY_FORCEFULLY
         = "payloadFactory.forcefully.enable.external.entity";
 
     public static final String JSONPATH_IGNORE_NOT_FOUND_ERROR
         = "synapse.jsonpath.ignore.not.found.error";
+  
+    public static final String SYNAPSE_ARTIFACT_DEPENDENCIES = "synapse.artifact.dependencies";
+    public static final String SYNAPSE_ARTIFACT_IDENTIFIER = "synapse.artifact.identifier";
+    public static final String SYNAPSE_ARTIFACT_VERSIONED_DEPLOYMENT = "synapse.artifact.versioned.deployment";
+    public static final String CONNECTOR_ARTIFACT = "CONNECTOR_ARTIFACT";
+    public static final String APPEND_ARTIFACT_IDENTIFIER = "APPEND_ARTIFACT_IDENTIFIER";
 }

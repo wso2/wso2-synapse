@@ -21,6 +21,7 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.mediators.template.TemplateParam;
@@ -56,7 +57,15 @@ public class TemplateMediatorFactory extends AbstractListMediatorFactory {
         TemplateMediator templateTemplateMediator = new TemplateMediator();
         OMAttribute nameAttr = elem.getAttribute(ATT_NAME);
         if (nameAttr != null) {
-            templateTemplateMediator.setName(nameAttr.getAttributeValue());
+            Boolean isConnectorTemplate = properties != null &&
+                    Boolean.parseBoolean(properties.getProperty(SynapseConstants.CONNECTOR_ARTIFACT));
+            if (Boolean.TRUE.equals(isConnectorTemplate)) {
+                // Since we use a fully qualified connector package name as a prefix, we need to skip adding
+                // the prefix again.
+                templateTemplateMediator.setName(nameAttr.getAttributeValue());
+            } else {
+                templateTemplateMediator.setName(FactoryUtils.getFullyQualifiedName(properties, nameAttr.getAttributeValue()));
+            }
             processAuditStatus(templateTemplateMediator, elem);
             initParameters(elem, templateTemplateMediator);
             OMElement templateBodyElem = elem.getFirstChildWithName(TEMPLATE_BODY_Q);

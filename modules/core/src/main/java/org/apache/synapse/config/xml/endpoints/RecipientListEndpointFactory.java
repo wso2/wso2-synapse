@@ -31,6 +31,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.clustering.Member;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.ValueFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.commons.resolvers.ResolverFactory;
@@ -81,7 +82,7 @@ public class RecipientListEndpointFactory extends EndpointFactory {
                     org.apache.synapse.config.xml.XMLConfigConstants.NULL_NAMESPACE, "name"));
 
             if (name != null) {
-            	recipientListEndpoint.setName(name.getAttributeValue());
+            	recipientListEndpoint.setName(FactoryUtils.getFullyQualifiedName(properties, name.getAttributeValue()));
             }
             
 			// set endpoints or members

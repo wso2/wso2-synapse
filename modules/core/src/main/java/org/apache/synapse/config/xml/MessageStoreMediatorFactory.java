@@ -20,6 +20,7 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.store.MessageStoreMediator;
 import org.jaxen.JaxenException;
@@ -64,7 +65,7 @@ public class MessageStoreMediatorFactory extends AbstractMediatorFactory{
                     throw new SynapseException(msg, e);
                 }
             } else {
-                messageStoreMediator.setMessageStoreName(messageStoreNameAtt.getAttributeValue());
+                messageStoreMediator.setMessageStoreName(FactoryUtils.getFullyQualifiedName(properties, messageStoreNameAtt.getAttributeValue()));
             }
         } else {
             throw new SynapseException("Message Store mediator must have a Message store defined");
@@ -73,7 +74,7 @@ public class MessageStoreMediatorFactory extends AbstractMediatorFactory{
         OMAttribute sequenceAtt = elem.getAttribute(ATT_SEQUENCE);
 
         if(sequenceAtt != null) {
-            messageStoreMediator.setOnStoreSequence(sequenceAtt.getAttributeValue());
+            messageStoreMediator.setOnStoreSequence(FactoryUtils.getFullyQualifiedName(properties, sequenceAtt.getAttributeValue()));
         }
 
         addAllCommentChildrenToList(elem, messageStoreMediator.getCommentsList());

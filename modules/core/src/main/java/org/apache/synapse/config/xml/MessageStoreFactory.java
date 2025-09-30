@@ -102,7 +102,7 @@ public class MessageStoreFactory {
         OMAttribute nameAtt = elem.getAttribute(NAME_Q);
 
         if (nameAtt != null) {
-            messageStore.setName(nameAtt.getAttributeValue());
+            messageStore.setName(FactoryUtils.getFullyQualifiedName(properties, nameAtt.getAttributeValue()));
         } else {
             handleException("Message Store name not specified");
         }
