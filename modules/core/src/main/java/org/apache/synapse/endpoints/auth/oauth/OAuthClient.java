@@ -66,7 +66,6 @@ import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.transport.http.conn.RequestDescriptor;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.nhttp.config.ClientConnFactoryBuilder;
-import org.apache.synapse.util.xpath.KeyStoreManager;
 import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import javax.net.ssl.HostnameVerifier;
@@ -268,7 +267,8 @@ public class OAuthClient {
         SSLContext sslContext;
 
         if (trustStoreConfigs != null && trustStoreConfigs.isTrustStoreEnabled()) {
-            sslContext = getSSLContextFromTrustStore(trustStoreConfigs);
+            sslContext = getSSLContextFromTrustStore(trustStoreConfigs.getTrustStoreLocation(),
+                    trustStoreConfigs.getTrustStorePassword(), trustStoreConfigs.getTrustStoreType());
         } else {
             ConfigurationContext configurationContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext()
                     .getConfigurationContext();
@@ -343,17 +343,12 @@ public class OAuthClient {
         if (AuthConstants.HTTPS_PROTOCOL.equals(protocol)) {
             SSLContext sslContext;
             if (trustStoreConfigs != null && trustStoreConfigs.isTrustStoreEnabled()) {
-                sslContext = getSSLContextFromTrustStore(trustStoreConfigs);
+                sslContext = getSSLContextFromTrustStore(trustStoreConfigs.getTrustStoreLocation(),
+                        trustStoreConfigs.getTrustStorePassword(), trustStoreConfigs.getTrustStoreType());
             } else {
                 char[] trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword").toCharArray();
                 String trustStoreLocation = System.getProperty("javax.net.ssl.trustStore");
-                try {
-                    KeyStore trustStore = KeyStoreManager.getKeyStore(trustStoreLocation, Arrays.toString(trustStorePassword),
-                            "JKS");
-                    sslContext = SSLContexts.custom().loadTrustMaterial(trustStore).build();
-                } catch (NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
-                    throw new AuthException(e);
-                }
+                sslContext = getSSLContextFromTrustStore(trustStoreLocation, trustStorePassword, "JKS");
             }
             SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext, getHostnameVerifier());
             org.apache.http.config.Registry<ConnectionSocketFactory> socketFactoryRegistry =
@@ -403,15 +398,15 @@ public class OAuthClient {
      * This method loads the trust store from the provided location, initializes it with the specified type and
      * password, and builds an SSLContext that trusts the certificates contained in it.
      *
-     * @param trustStoreConfigs the trust store configurations containing location, type, and password
+     * @param trustStoreLocation the file system path to the trust store
+     * @param trustStorePassword the password to access the trust store
+     * @param trustStoreType     the type of the trust store
      * @return an initialized SSLContext based on the provided trust store
      * @throws AuthException if the trust store configuration is incomplete, the trust store cannot be loaded, or the
      *                       SSLContext cannot be created
      */
-    private static SSLContext getSSLContextFromTrustStore(TrustStoreConfigs trustStoreConfigs)
-            throws AuthException {
-        String trustStoreLocation = trustStoreConfigs.getTrustStoreLocation();
-        char[] trustStorePassword = trustStoreConfigs.getTrustStorePassword();
+    private static SSLContext getSSLContextFromTrustStore(String trustStoreLocation, char[] trustStorePassword,
+                                                          String trustStoreType) throws AuthException {
 
         if (trustStoreLocation == null || trustStorePassword == null) {
             throw new AuthException("Trust store configuration is incomplete");
@@ -424,8 +419,7 @@ public class OAuthClient {
 
         final KeyStore trustStore;
         try (FileInputStream fis = new FileInputStream(trustStoreFile)) {
-            trustStore = KeyStore.getInstance(trustStoreConfigs.getTrustStoreType());
-            // Resolve trust store password from the secret resolver
+            trustStore = KeyStore.getInstance(trustStoreType);
             trustStore.load(fis, trustStorePassword);
         } catch (IOException | KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
             throw new AuthException("Error loading trust store from location: " + trustStoreLocation, e);
