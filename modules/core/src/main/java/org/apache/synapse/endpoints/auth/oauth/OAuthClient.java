@@ -66,6 +66,7 @@ import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.transport.http.conn.RequestDescriptor;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.nhttp.config.ClientConnFactoryBuilder;
+import org.apache.synapse.util.xpath.KeyStoreManager;
 import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import javax.net.ssl.HostnameVerifier;
@@ -252,17 +253,36 @@ public class OAuthClient {
                                                        TrustStoreConfigs trustStoreConfigs)
             throws AuthException {
 
-        SSLContext sslContext = getSSLContext(messageContext, tokenUrl, trustStoreConfigs);
         RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(connectionTimeout)
                 .setConnectionRequestTimeout(connectionRequestTimeout).setSocketTimeout(socketTimeout).build();
         if (proxyConfigs.isProxyEnabled()) {
-            return getSecureClientWithProxy(messageContext, proxyConfigs, sslContext, requestConfig);
+            return getSecureClientWithProxy(messageContext, proxyConfigs, trustStoreConfigs, requestConfig);
         } else {
-            return getSecureClientWithoutProxy(sslContext, requestConfig);
+            return getSecureClientWithoutProxy(trustStoreConfigs, requestConfig, tokenUrl, messageContext);
         }
     }
 
-    private static CloseableHttpClient getSecureClientWithoutProxy(SSLContext sslContext, RequestConfig requestConfig) {
+    private static CloseableHttpClient getSecureClientWithoutProxy(TrustStoreConfigs trustStoreConfigs, RequestConfig requestConfig,
+                                                                   String tokenUrl, MessageContext messageContext)
+            throws AuthException {
+        SSLContext sslContext;
+
+        if (trustStoreConfigs != null && trustStoreConfigs.isTrustStoreEnabled()) {
+            sslContext = getSSLContextFromTrustStore(trustStoreConfigs);
+        } else {
+            ConfigurationContext configurationContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext()
+                    .getConfigurationContext();
+            TransportOutDescription transportOut = configurationContext.getAxisConfiguration().getTransportOut("https");
+            try {
+                ClientConnFactoryBuilder clientConnFactoryBuilder = new ClientConnFactoryBuilder(transportOut,
+                        configurationContext).parseSSL();
+                sslContext = getSSLContextWithUrl(tokenUrl, clientConnFactoryBuilder.getSslByHostMap(),
+                        clientConnFactoryBuilder.getSSLContextDetails());
+            } catch (AxisFault e) {
+                throw new AuthException("Error while reading SSL configs. Using default Keystore and Truststore", e);
+            }
+        }
+
         SSLConnectionSocketFactory sslConnectionFactory = new SSLConnectionSocketFactory(sslContext,
                 NoopHostnameVerifier.INSTANCE);
         Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
@@ -275,11 +295,11 @@ public class OAuthClient {
     }
 
     private static CloseableHttpClient getSecureClientWithProxy(MessageContext messageContext, ProxyConfigs proxyConfigs,
-                                                                SSLContext sslContext, RequestConfig requestConfig)
+                                                                TrustStoreConfigs trustStoreConfigs, RequestConfig requestConfig)
             throws AuthException {
 
         PoolingHttpClientConnectionManager pool = getPoolingHttpClientConnectionManager(proxyConfigs.getProxyProtocol(),
-                sslContext);
+                trustStoreConfigs);
         pool.setMaxTotal(MAX_TOTAL_POOL_SIZE);
         pool.setDefaultMaxPerRoute(DEFAULT_MAX_PER_ROUTE);
 
@@ -316,11 +336,25 @@ public class OAuthClient {
     }
 
     private static PoolingHttpClientConnectionManager getPoolingHttpClientConnectionManager(String protocol,
-                                                                                            SSLContext sslContext)
+                                                                                            TrustStoreConfigs trustStoreConfigs)
             throws AuthException {
 
         PoolingHttpClientConnectionManager poolManager;
         if (AuthConstants.HTTPS_PROTOCOL.equals(protocol)) {
+            SSLContext sslContext;
+            if (trustStoreConfigs != null && trustStoreConfigs.isTrustStoreEnabled()) {
+                sslContext = getSSLContextFromTrustStore(trustStoreConfigs);
+            } else {
+                char[] trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword").toCharArray();
+                String trustStoreLocation = System.getProperty("javax.net.ssl.trustStore");
+                try {
+                    KeyStore trustStore = KeyStoreManager.getKeyStore(trustStoreLocation, Arrays.toString(trustStorePassword),
+                            "JKS");
+                    sslContext = SSLContexts.custom().loadTrustMaterial(trustStore).build();
+                } catch (NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
+                    throw new AuthException(e);
+                }
+            }
             SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext, getHostnameVerifier());
             org.apache.http.config.Registry<ConnectionSocketFactory> socketFactoryRegistry =
                     RegistryBuilder.<ConnectionSocketFactory>create()
@@ -361,40 +395,6 @@ public class OAuthClient {
             hostnameVerifier = SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER;
         }
         return hostnameVerifier;
-    }
-
-    /**
-     * Creates an SSLContext for secure connections when invoking the given token endpoint.
-     *
-     * The method first checks if a trust store is enabled and configured through TrustStoreConfigs.
-     * If enabled, the SSL context will be created using the trust store configuration. Otherwise, it falls
-     * back to the Axis2 transport configuration (from the provided MessageContext) to build an SSL context with
-     * host-specific or default SSL settings.
-     *
-     * @param messageContext the Synapse MessageContext used to retrieve the underlying Axis2 configuration for SSL if
-     *                       trust store is not enabled.
-     * @param tokenUrl       the token endpoint URL. Used to determine the correct SSL context when multiple SSL
-     *                       configurations are available.
-     * @return an initialized SSLContext.
-     * @throws AuthException if SSL configuration cannot be loaded or if trust store settings are incomplete.
-     */
-    private static SSLContext getSSLContext(MessageContext messageContext, String tokenUrl,
-                                            TrustStoreConfigs trustStoreConfigs) throws AuthException {
-        if (trustStoreConfigs != null && trustStoreConfigs.isTrustStoreEnabled()) {
-            return getSSLContextFromTrustStore(trustStoreConfigs);
-        } else {
-            ConfigurationContext configurationContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext()
-                    .getConfigurationContext();
-            TransportOutDescription transportOut = configurationContext.getAxisConfiguration().getTransportOut("https");
-            try {
-                ClientConnFactoryBuilder clientConnFactoryBuilder = new ClientConnFactoryBuilder(transportOut,
-                        configurationContext).parseSSL();
-                return getSSLContextWithUrl(tokenUrl, clientConnFactoryBuilder.getSslByHostMap(),
-                        clientConnFactoryBuilder.getSSLContextDetails());
-            } catch (AxisFault e) {
-                throw new AuthException("Error while reading SSL configs. Using default Keystore and Truststore", e);
-            }
-        }
     }
 
     /**
