@@ -15,18 +15,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-package org.apache.synapse.mediators.bsf.access.control.config;
+package org.apache.synapse.script.access;
 
 /**
-
  * Represents the type of access control list for the Script Mediator.
-
  */
 
 public enum AccessControlListType {
-    ALLOW_LIST,
-    BLOCK_LIST
+    ALLOW_LIST, BLOCK_LIST
 
 }
 
