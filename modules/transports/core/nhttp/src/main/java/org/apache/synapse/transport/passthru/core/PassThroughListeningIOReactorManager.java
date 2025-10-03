@@ -173,6 +173,7 @@ public class PassThroughListeningIOReactorManager {
         }
     }
 
+
     /**
      * Start SSL endpoint in IO reactor which is external to PTT Axis Listeners started at server startup
      * @param inetSocketAddress InetSocketAddress
@@ -529,6 +530,30 @@ public class PassThroughListeningIOReactorManager {
         } else {
             log.error("Cannot find Pass Through Listener for port " + port);
         }
+    }
+
+    /**
+     * Pauses the shared IO Reactor.
+     * <p>
+     * <strong>Important:</strong> Invoking this method will pause <em>all non-Axis2 listeners</em>
+     * that are using this shared IO Reactor. This method is intended to be called only during
+     * server shutdown to safely stop incoming connections and message processing for those listeners.
+     * </p>
+     *
+     * @return {@code true} if the shared IO Reactor was successfully paused or was not initialized,
+     *         {@code false} if an error occurred while attempting to pause it.
+     */
+    public boolean pauseSharedIOReactor() {
+        if (isSharedIOReactorInitiated.get() && sharedListeningIOReactor != null) {
+            log.info("Pausing shared IO Reactor will cause pausing non axis2 Listeners ");
+            try {
+                sharedListeningIOReactor.pause();
+            } catch (IOException e) {
+                log.error("Error occurred while pausing shared IOReactor", e);
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

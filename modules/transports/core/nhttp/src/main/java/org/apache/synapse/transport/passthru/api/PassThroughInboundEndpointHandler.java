@@ -23,6 +23,7 @@ import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.core.PassThroughListeningIOReactorManager;
 import org.apache.synapse.transport.passthru.core.ssl.SSLConfiguration;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 
 /**

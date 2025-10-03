@@ -169,6 +169,17 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
         }
     }
 
+    public void suspend() {
+        log.info("Suspending Inbound Endpoint: " + getName());
+        if (inboundRequestProcessor != null) {
+            try {
+                inboundRequestProcessor.suspend();
+            } catch (Exception e) {
+                log.error("Error occurred while suspending the Inbound endpoint: " + getName(), e);
+            }
+        }
+    }
+
     /**
      * Remove inbound endpoints.
      * <p>

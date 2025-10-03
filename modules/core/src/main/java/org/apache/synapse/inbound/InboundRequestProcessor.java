@@ -24,6 +24,8 @@ public interface InboundRequestProcessor {
 
     public void destroy();
 
+    public void suspend();
+
     public boolean activate();
 
     public boolean deactivate();

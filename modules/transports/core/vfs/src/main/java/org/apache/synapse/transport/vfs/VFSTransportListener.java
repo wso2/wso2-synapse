@@ -37,6 +37,7 @@ import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.base.BaseUtils;
 import org.apache.axis2.transport.base.ManagementSupport;
 import org.apache.axis2.transport.base.threads.WorkerPool;
+import org.apache.axis2.util.GracefulShutdownTimer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.AutoCloseInputStream;
 import org.apache.commons.lang3.StringUtils;
@@ -75,6 +76,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
 
@@ -164,6 +168,10 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
      */
     private boolean globalFileLockingFlag = true;
 
+    private volatile boolean isShuttingDown = false;
+    private final AtomicInteger inFlightMessages = new AtomicInteger(0);
+    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+
     @Override
     protected void doInit() throws AxisFault {
         super.doInit();
@@ -236,6 +244,10 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 
         while (wasError) {
             try {
+                if (isShuttingDown) {
+                    // If the transport is shutting down, do not proceed with the scan
+                    return;
+                }
                 retryCount++;
                 fileObject = getFsManager().resolveFile(fileURI, fso);
 
@@ -272,6 +284,10 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 
             if (wasError) {
                 try {
+                    if (isShuttingDown) {
+                        // If the transport is shutting down, do not wait for reconnection
+                        return;
+                    }
                     Thread.sleep(reconnectionTimeout);
                 } catch (InterruptedException e2) {
                     Thread.currentThread().interrupt();
@@ -279,6 +295,17 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             "Thread was interrupted while waiting to reconnect.", serviceName, e2);
                 }
             }
+        }
+
+        readWriteLock.readLock().lock();
+        try {
+            if (isShuttingDown) {
+                // If the entry is cancelled, do not proceed with the scan
+                return;
+            }
+            inFlightMessages.incrementAndGet();
+        } finally {
+            readWriteLock.readLock().unlock();
         }
 
         try {
@@ -432,7 +459,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     for (FileObject child : children) {
                         // Stop processing any further when put to maintenance mode (shutting down or restarting)
                         // Stop processing when service get undeployed
-                        if (state != BaseConstants.STARTED || !entry.getService().isActive()) {
+                        if (isShuttingDown || !entry.getService().isActive()) {
                             return;
                         }
                         /**
@@ -581,6 +608,13 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                         }
                         close(child);
 
+                        if (isShuttingDown) {
+                            // in a server shutting down scenario, it is unnecessary to continue the below logic,
+                            // such as waiting for file processing interval, checking file processing count, and
+                            // setting the poll table entries as the file polling will be stopped soon.
+                            return;
+                        }
+
                         if(iFileProcessingInterval != null && iFileProcessingInterval > 0){
                         	try{
                                 if (log.isDebugEnabled()) {
@@ -641,12 +675,22 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         } catch (Exception ex) {
             closeFileSystem(fileObject);
             processFailure("Un-handled exception thrown when processing the file : ", ex, entry);
+        } finally {
+            inFlightMessages.decrementAndGet();
         }
     }
 
     @Override
     public void destroy() {
         super.destroy();
+        if (isShuttingDown) {
+            GracefulShutdownTimer gracefulShutdownTimer = GracefulShutdownTimer.getInstance();
+            while (inFlightMessages.get() > 0 && !gracefulShutdownTimer.isExpired()) {
+                try {
+                    Thread.sleep(100); // wait until all in-flight messages are done
+                } catch (InterruptedException e) {}
+            }
+        }
         getFsManager().close();
     }
 
@@ -985,6 +1029,14 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 
     @Override
     protected void stopEndpoint(PollTableEntry endpoint) {
+        readWriteLock.writeLock().lock();
+        try {
+            if (state != BaseConstants.STARTED) {
+                isShuttingDown = true; // Stop future work
+            }
+        } finally {
+            readWriteLock.writeLock().unlock();
+        }
         synchronized (endpoint) {
             endpoint.setCanceled(true);
         }
