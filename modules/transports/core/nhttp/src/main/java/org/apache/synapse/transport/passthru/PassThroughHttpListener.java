@@ -54,6 +54,7 @@ import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.axis2.transport.base.tracker.AxisServiceFilter;
 import org.apache.axis2.transport.base.tracker.AxisServiceTracker;
 import org.apache.axis2.transport.base.tracker.AxisServiceTrackerListener;
+import org.apache.axis2.util.GracefulShutdownTimer;
 import org.apache.axis2.util.JavaUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -433,13 +434,11 @@ public class PassThroughHttpListener implements TransportListener {
                 Thread.sleep(wait);
                 passThroughListeningIOReactorManager.shutdownIOReactor(operatingPort, wait);
             } else {
-                boolean isGracefulShutdownEnabled = Boolean.parseBoolean(
-                        System.getProperty("gracefulShutdown", "true"));
-                if (isGracefulShutdownEnabled) {
-                    long so_timeout = PassThroughConfiguration.getInstance()
-                            .getIntProperty(HttpConnectionParams.SO_TIMEOUT, Pipe.DEFAULT_TIME_OUT_VALUE);
+                GracefulShutdownTimer gracefulShutdownTimer = GracefulShutdownTimer.getInstance();
+                if (gracefulShutdownTimer.isStarted()) {
+                    long shutdownTime = gracefulShutdownTimer.getRemainingTimeMillis();
                     passThroughListeningIOReactorManager.shutdownIOReactor(
-                            operatingPort, sourceConfiguration, so_timeout);
+                            operatingPort, sourceConfiguration, shutdownTime);
                 } else {
                     passThroughListeningIOReactorManager.shutdownIOReactor(operatingPort);
                 }

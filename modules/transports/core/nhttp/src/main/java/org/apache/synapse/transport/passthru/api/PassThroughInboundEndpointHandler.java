@@ -55,10 +55,6 @@ public class PassThroughInboundEndpointHandler {
         return PassThroughListeningIOReactorManager.getInstance().closeDynamicPTTEndpoint(port);
     }
 
-    public static boolean pauseAllEndpoints() {
-        return PassThroughListeningIOReactorManager.getInstance().pauseSharedIOReactor();
-    }
-
     /**
      * @return Pass Through SourceConfiguration registered by shared IO Reactor of  PTT Listener
      */
