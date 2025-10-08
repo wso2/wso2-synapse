@@ -57,9 +57,9 @@ public class TemplateMediatorFactory extends AbstractListMediatorFactory {
         TemplateMediator templateTemplateMediator = new TemplateMediator();
         OMAttribute nameAttr = elem.getAttribute(ATT_NAME);
         if (nameAttr != null) {
-            Boolean isConnectorTemplate = properties != null &&
-                    Boolean.parseBoolean(properties.getProperty(SynapseConstants.CONNECTOR_ARTIFACT));
-            if (Boolean.TRUE.equals(isConnectorTemplate)) {
+            boolean isConnectorTemplate = properties != null
+                    && Boolean.TRUE.equals(properties.get(SynapseConstants.CONNECTOR_ARTIFACT));
+            if (isConnectorTemplate) {
                 // Since we use a fully qualified connector package name as a prefix, we need to skip adding
                 // the prefix again.
                 templateTemplateMediator.setName(nameAttr.getAttributeValue());
