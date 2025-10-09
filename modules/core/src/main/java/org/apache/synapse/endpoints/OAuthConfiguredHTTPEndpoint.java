@@ -23,12 +23,15 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.auth.AuthHandler;
 import org.apache.synapse.endpoints.auth.oauth.MessageCache;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.endpoints.auth.oauth.OAuthHandler;
 import org.apache.synapse.endpoints.auth.oauth.OAuthUtils;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.MessageHelper;
 
 /**
@@ -56,19 +59,42 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
                 OAuthUtils.append401HTTPSC(synCtx);
             }
 
-            // Clone the original MessageContext and save it to do a retry after a token refresh
-            MessageContext clonedMessageContext = MessageHelper.cloneMessageContext(synCtx);
-            MessageCache.getInstance().addMessageContext(synCtx.getMessageID(), clonedMessageContext);
+            boolean isMessageBuildingDisabled = Boolean.parseBoolean(synCtx.getEnvironment().getSynapseConfiguration().
+                    getProperty(AuthConstants.OAUTH_RETRY_MESSAGE_BUILDING_DISABLED));
+            if (!isMessageBuildingDisabled) {
+                // Clone the original MessageContext and save it to do a retry after a token refresh
+                MessageContext cloneMessageContext = MessageHelper.cloneMessageContext(synCtx);
+                MessageCache.getInstance().addMessageContext(synCtx.getMessageID(), cloneMessageContext);
+            }
 
             super.send(synCtx);
 
         } catch (AuthException e) {
+            consumeInputOnException(synCtx);
             handleError(synCtx,
                     "Could not generate access token for oauth configured http endpoint " + this.getName() + ".", e);
         } catch (AxisFault axisFault) {
+            consumeInputOnException(synCtx);
             handleError(synCtx,
                     "Error cloning the message context for oauth configured http endpoint " + this.getName() + ".",
                     axisFault);
+        }
+    }
+
+    /**
+     * This method will consume the input stream in case of an exception
+     *
+     * @param synCtx Synapse message context.
+     */
+    private void consumeInputOnException(MessageContext synCtx) {
+        org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) synCtx).
+                getAxis2MessageContext();
+        axis2MessageContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
+
+        try {
+            RelayUtils.discardRequestMessage(axis2MessageContext);
+        } catch (AxisFault axisFault) {
+            log.error("Exception while consuming the input stream on Om Exception", axisFault);
         }
     }
 
