@@ -36,6 +36,7 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -113,7 +114,7 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
 
     public API(String name, String context, Properties properties) {
 
-        super(FactoryUtils.getFullyQualifiedName(properties, name));
+        super(FactoryUtils.getFullyQualifiedNameForServices(properties, name, FactoryUtils.TYPE_API));
         setContext(context, properties);
     }
 
@@ -121,10 +122,14 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
         if (!context.startsWith("/")) {
             handleException("API context must begin with '/' character");
         }
-        String artifactIdentifier = properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER);
-        if (StringUtils.isNotBlank(artifactIdentifier)) {
-            String contextPrefix = artifactIdentifier.replaceAll(FactoryUtils.DOUBLE_UNDERSCORE, "/");
-            this.context = "/" + contextPrefix + ApiUtils.trimTrailingSlashes(context);
+        if (!properties.isEmpty() && SynapsePropertiesLoader.getBooleanProperty(SynapseConstants.EXPOSE_VERSIONED_SERVICES, false)) {
+            String artifactIdentifier = properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER);
+            if (StringUtils.isNotBlank(artifactIdentifier)) {
+                String contextPrefix = artifactIdentifier.replaceAll(FactoryUtils.DOUBLE_UNDERSCORE, "/");
+                this.context = "/" + contextPrefix + ApiUtils.trimTrailingSlashes(context);
+            } else {
+                this.context = ApiUtils.trimTrailingSlashes(context);
+            }
         } else {
             this.context = ApiUtils.trimTrailingSlashes(context);
         }

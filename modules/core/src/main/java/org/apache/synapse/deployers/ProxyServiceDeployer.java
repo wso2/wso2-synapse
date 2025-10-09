@@ -26,6 +26,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.config.xml.ProxyServiceFactory;
 import org.apache.synapse.config.xml.ProxyServiceSerializer;
@@ -64,7 +65,12 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
             proxy.setArtifactContainerName(customLogContent);
             if (proxy != null) {
                 if (getSynapseConfiguration().getProxyService(proxy.getName()) != null) {
-                    handleSynapseArtifactDeploymentError("ProxyService named : " + proxy.getName() + " already exists");
+                    String error = "ProxyService named : " + proxy.getName() + " already exists";
+                    if (FactoryUtils.isVersionedDeployment(properties)) {
+                        error = "ProxyService named : " + proxy.getName() + " already exists. To deploy " +
+                                "multiple versions of a ProxyService, please enable service versioning.";
+                    }
+                    handleSynapseArtifactDeploymentError(error);
                 }
                 File proxyFile = new File(filePath);
                 proxy.setFileName(proxyFile.getName());

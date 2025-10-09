@@ -749,4 +749,5 @@ public final class SynapseConstants {
     public static final String SYNAPSE_ARTIFACT_VERSIONED_DEPLOYMENT = "synapse.artifact.versioned.deployment";
     public static final String CONNECTOR_ARTIFACT = "CONNECTOR_ARTIFACT";
     public static final String APPEND_ARTIFACT_IDENTIFIER = "APPEND_ARTIFACT_IDENTIFIER";
+    public static final String EXPOSE_VERSIONED_SERVICES = "expose.versioned.services";
 }
