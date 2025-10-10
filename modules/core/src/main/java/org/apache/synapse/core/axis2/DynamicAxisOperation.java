@@ -160,7 +160,6 @@ public class DynamicAxisOperation extends OutInAxisOperation {
                         axisCallback).getSynapseOutMsgCtx()).getAxis2MessageContext().setProperty(
                         NhttpConstants.IGNORE_SC_ACCEPTED, Constants.VALUE_TRUE);
                 callbackReceiver.addCallback(outMsgCtx.getMessageID(), axisCallback);
-                callbackReceiver.setClientApiNonBlockingEnabled(outMsgCtx);
 
                 EndpointReference replyToFromTransport = outMsgCtx.getConfigurationContext()
                         .getListenerManager().getEPRforService(sc.getAxisService().getName(),
@@ -186,7 +185,6 @@ public class DynamicAxisOperation extends OutInAxisOperation {
                 SynapseCallbackReceiver callbackReceiver =
                         (SynapseCallbackReceiver) axisOp.getMessageReceiver();
                 callbackReceiver.addCallback(outMsgCtx.getMessageID(), axisCallback);
-                callbackReceiver.setClientApiNonBlockingEnabled(outMsgCtx);
                 send(outMsgCtx);
             }
         }
