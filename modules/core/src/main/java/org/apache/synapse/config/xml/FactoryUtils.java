@@ -19,17 +19,22 @@
 package org.apache.synapse.config.xml;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 
 import java.util.HashMap;
 import java.util.Properties;
 
 public class FactoryUtils {
 
+    private static final Log log = LogFactory.getLog(FactoryUtils.class);
     public static final String DOUBLE_UNDERSCORE = "__";
-    public static final String TYPE_DATA_SERVICE = "DATA_SERVICE";
-    public static final String TYPE_PROXY_SERVICE = "PROXY_SERVICE";
+    public static final String TYPE_DATA_SERVICE = "DataService";
+    public static final String TYPE_PROXY_SERVICE = "ProxyService";
+    public static final String TYPE_API = "API";
 
     /**
      * Constructs a fully qualified name for the artifact.
@@ -54,9 +59,6 @@ public class FactoryUtils {
     public static String getFullyQualifiedName(Properties properties, String name, String type) {
 
         if (isVersionedDeployment(properties)) {
-            if (TYPE_DATA_SERVICE.equals(type) || TYPE_PROXY_SERVICE.equals(type)) {
-                return getFullyQualifiedNameForServices(properties, name);
-            }
             // IF the name contains '__', the artifact is from a dependency
             if (name.contains(DOUBLE_UNDERSCORE)) {
                 String[] nameParts = name.split(DOUBLE_UNDERSCORE);
@@ -75,6 +77,23 @@ public class FactoryUtils {
                 // If the name does not contain '__', the artifact is from the current CApp
                 String artifactIdentifier = (String) properties.get(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER);
                 return StringUtils.isNotBlank(artifactIdentifier) ? artifactIdentifier + DOUBLE_UNDERSCORE + name : name;
+            }
+        }
+        return name;
+    }
+
+    public static String getFullyQualifiedNameForServices(Properties properties, String name, String type) {
+        if (SynapsePropertiesLoader.getBooleanProperty(SynapseConstants.EXPOSE_VERSIONED_SERVICES, false)) {
+            if (FactoryUtils.isVersionedDeployment(properties)) {
+                if (TYPE_API.equals(type)) {
+                    return getFullyQualifiedName(properties, name);
+                }
+                return getFullyQualifiedNameForServices(properties, name);
+            } else {
+                String warnMessage = "The " + type + " '" + name + "' is not included in a versioned CApp. " +
+                        "Versioned service exposure is skipped; deploying as a regular " + type + ".";
+                log.warn(warnMessage);
+                return name;
             }
         }
         return name;
