@@ -144,6 +144,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 
     public static final String EMPTY_MD5 = "d41d8cd98f00b204e9800998ecf8427e";
 
+    public static final long GRACEFUL_SHUTDOWN_POLL_INTERVAL_MS = 100;
+
     /** The VFS file system manager */
     private DefaultFileSystemManager fsManager = null;
 
@@ -697,7 +699,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         // or the graceful shutdown timer expires (whichever comes first)
         while (inFlightMessages.get() > 0 && !gracefulShutdownTimer.isExpired()) {
             try {
-                Thread.sleep(100); // wait until all in-flight messages are done
+                Thread.sleep(GRACEFUL_SHUTDOWN_POLL_INTERVAL_MS); // wait until all in-flight messages are done
             } catch (InterruptedException e) {}
 
             // Safety check: Ensure the loop doesn't run indefinitely due to unexpected conditions.
