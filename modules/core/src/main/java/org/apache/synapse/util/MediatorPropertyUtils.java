@@ -55,6 +55,9 @@ public class MediatorPropertyUtils {
                 headers.put(HTTP.CONTENT_TYPE, resultValue);
             }
         }
+        if (SynapseConstants.SET_ROLLBACK_ONLY.equals(propertyName)) {
+            axis2MessageCtx.getOperationContext().setProperty(propertyName, resultValue);
+        }
     }
 
     /**
