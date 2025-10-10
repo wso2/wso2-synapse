@@ -170,6 +170,27 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
     }
 
     /**
+     * Pauses the intake of new messages. Already consumed messages will continue processing.
+     * This method does not wait for in-flight messages to complete.
+     *
+     * <p>
+     * This method disables the inbound endpoint by invoking the {@link InboundRequestProcessor#pause()} method
+     * on the associated request processor. If the processor is present, it attempts to pause it and logs any
+     * errors encountered during the process.
+     * </p>
+     */
+    public void pause() {
+        log.info("Pausing Inbound Endpoint: " + getName());
+        if (inboundRequestProcessor != null) {
+            try {
+                inboundRequestProcessor.pause();
+            } catch (Exception e) {
+                log.error("Error occurred while pausing the Inbound endpoint: " + getName(), e);
+            }
+        }
+    }
+
+    /**
      * Remove inbound endpoints.
      * <p>
      * This was introduced as a fix for product-ei#1206.

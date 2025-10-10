@@ -24,7 +24,6 @@ import org.apache.axis2.Constants;
 import org.apache.axis2.builder.Builder;
 import org.apache.axis2.builder.BuilderUtil;
 import org.apache.axis2.builder.SOAPBuilder;
-import org.apache.axis2.clustering.ClusteringAgent;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportInDescription;
@@ -37,6 +36,7 @@ import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.base.BaseUtils;
 import org.apache.axis2.transport.base.ManagementSupport;
 import org.apache.axis2.transport.base.threads.WorkerPool;
+import org.apache.axis2.util.GracefulShutdownTimer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.AutoCloseInputStream;
 import org.apache.commons.lang3.StringUtils;
@@ -75,6 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
 
@@ -143,6 +144,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 
     public static final String EMPTY_MD5 = "d41d8cd98f00b204e9800998ecf8427e";
 
+    public static final long GRACEFUL_SHUTDOWN_POLL_INTERVAL_MS = 100;
+
     /** The VFS file system manager */
     private DefaultFileSystemManager fsManager = null;
 
@@ -163,6 +166,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
      * FILE LOCKING IS ENABLED
      */
     private boolean globalFileLockingFlag = true;
+
+    private final AtomicInteger inFlightMessages = new AtomicInteger(0);
 
     @Override
     protected void doInit() throws AxisFault {
@@ -235,6 +240,9 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         long reconnectionTimeout = entry.getReconnectTimeout();
 
         while (wasError) {
+            if (shouldStopScanning(entry)) {
+                return;
+            }
             try {
                 retryCount++;
                 fileObject = getFsManager().resolveFile(fileURI, fso);
@@ -272,6 +280,9 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 
             if (wasError) {
                 try {
+                    if (shouldStopScanning(entry)) {
+                        return;
+                    }
                     Thread.sleep(reconnectionTimeout);
                 } catch (InterruptedException e2) {
                     Thread.currentThread().interrupt();
@@ -280,6 +291,11 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 }
             }
         }
+
+        if (shouldStopScanning(entry)) {
+            return;
+        }
+        inFlightMessages.incrementAndGet();
 
         try {
             if (fileObject.exists() && fileObject.isReadable()) {
@@ -430,16 +446,10 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                         log.debug("End Sorting the files.");
                     }                 
                     for (FileObject child : children) {
-                        // Stop processing any further when put to maintenance mode (shutting down or restarting)
-                        // Stop processing when service get undeployed
-                        if (state != BaseConstants.STARTED || !entry.getService().isActive()) {
+                        // Stop processing any further when put to maintenance mode (shutting down or restarting),
+                        // when service get undeployed, or the proxy is stopped
+                        if (shouldStopScanning(entry)) {
                             return;
-                        }
-                        /**
-                         * Before starting to process another file, see whether the proxy is stopped or not.
-                         */
-                        if (entry.isCanceled()) {
-                            break;
                         }
                         //skipping *.lock file
                         if(child.getName().getBaseName().endsWith(".lock")){
@@ -581,6 +591,14 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                         }
                         close(child);
 
+                        if (shouldStopScanning(entry)) {
+                            // in a server shutting down scenario or in a service undeployment, it is unnecessary
+                            // to continue the below logic, such as waiting for file processing interval,
+                            // checking file processing count, and setting the poll table entries as the file
+                            // polling will be stopped soon.
+                            return;
+                        }
+
                         if(iFileProcessingInterval != null && iFileProcessingInterval > 0){
                         	try{
                                 if (log.isDebugEnabled()) {
@@ -641,13 +659,58 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         } catch (Exception ex) {
             closeFileSystem(fileObject);
             processFailure("Un-handled exception thrown when processing the file : ", ex, entry);
+        } finally {
+            inFlightMessages.decrementAndGet();
         }
     }
 
     @Override
     public void destroy() {
+        log.info("Shutting down the VFS transport listener...");
         super.destroy();
+
+        if (state != BaseConstants.STARTED) {
+            GracefulShutdownTimer gracefulShutdownTimer = GracefulShutdownTimer.getInstance();
+            if (gracefulShutdownTimer.isStarted()) {
+                log.info("Awaiting completion of file processing during graceful shutdown.");
+                // If the VFS transport is shutting down and the server graceful shutdown is enabled,
+                // wait until all in-flight messages are processed.
+                waitForGracefulTaskCompletion(gracefulShutdownTimer);
+            }
+        }
         getFsManager().close();
+    }
+
+    /**
+     * Waits for the completion of all in-flight VFS tasks during a graceful shutdown.
+     * The method blocks until either all in-flight messages are processed or the graceful
+     * shutdown timer expires, whichever comes first. This ensures that message processing
+     * is completed as much as possible before shutting down the consumer. Also, to ensure
+     * the waiting loop doesn't run indefinitely due to unexpected conditions, a fallback
+     * check is also introduced.
+     *
+     * @param gracefulShutdownTimer the {@link GracefulShutdownTimer} instance controlling the shutdown timeout
+     */
+    private void waitForGracefulTaskCompletion(GracefulShutdownTimer gracefulShutdownTimer) {
+        long startTimeMillis = System.currentTimeMillis();
+        long timeoutMillis = gracefulShutdownTimer.getShutdownTimeoutMillis();
+
+        // If the server is shutting down, we wait until either all in-flight messages are done
+        // or the graceful shutdown timer expires (whichever comes first)
+        while (inFlightMessages.get() > 0 && !gracefulShutdownTimer.isExpired()) {
+            try {
+                Thread.sleep(GRACEFUL_SHUTDOWN_POLL_INTERVAL_MS); // wait until all in-flight messages are done
+            } catch (InterruptedException e) {}
+
+            // Safety check: Ensure the loop doesn't run indefinitely due to unexpected conditions.
+            // This fallback check ensures that if the timer somehow fails to expire as expected,
+            // the loop can still exit gracefully once the configured timeout period has elapsed.
+            if ((System.currentTimeMillis() - startTimeMillis) >= timeoutMillis) {
+                log.warn("Graceful shutdown timer elapsed. Exiting waiting loop to prevent "
+                        + "indefinite blocking.");
+                break;
+            }
+        }
     }
 
     private void close(FileObject fileObject) {
@@ -985,10 +1048,28 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 
     @Override
     protected void stopEndpoint(PollTableEntry endpoint) {
+        log.info("Stopping VFS listener for : " + VFSUtils.maskURLPassword(endpoint.getFileURI()));
         synchronized (endpoint) {
             endpoint.setCanceled(true);
         }
         super.stopEndpoint(endpoint);
+    }
+
+    /**
+     * Determines whether scanning for the given polling table entry should be stopped.
+     *
+     * <p>The scanning is considered to be stopped if any of the following conditions are true:
+     * <ul>
+     *   <li>If the VFS transport is shutting down.</li>
+     *   <li>The service associated with the entry is not active.</li>
+     *   <li>The entry has been canceled.</li>
+     * </ul>
+     *
+     * @param entry the polling table entry to check
+     * @return {@code true} if scanning should be stopped for this entry, {@code false} otherwise
+     */
+    private boolean shouldStopScanning(PollTableEntry entry) {
+        return state != BaseConstants.STARTED || !entry.getService().isActive() || entry.isCanceled();
     }
 
     /**
