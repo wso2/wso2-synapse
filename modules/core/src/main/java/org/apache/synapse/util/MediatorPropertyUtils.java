@@ -21,6 +21,7 @@ import org.apache.http.protocol.HTTP;
 import org.apache.synapse.AckDecisionSetter;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.unittest.ConfigModifier;
 
@@ -54,6 +55,33 @@ public class MediatorPropertyUtils {
                 headers.remove(HTTP.CONTENT_TYPE);
                 headers.put(HTTP.CONTENT_TYPE, resultValue);
             }
+        }
+        if (SynapseConstants.SET_ROLLBACK_ONLY.equals(propertyName)) {
+            axis2MessageCtx.getOperationContext().setProperty(propertyName, resultValue);
+        }
+    }
+
+    /**
+     * Handles specific message context properties that require special treatment during mediation.
+     * <p>
+     * In particular, this method checks if the provided property is {@code SET_ROLLBACK_ONLY},
+     * which is used to indicate that the current transaction should be rolled back. If so,
+     * the property is explicitly set in the Axis2 {@link org.apache.axis2.context.OperationContext},
+     * ensuring that the rollback state is preserved across cloned message contexts and
+     * is accessible from the original inbound message context.
+     *
+     * @param propertyName      the name of the property to handle (e.g., {@code SET_ROLLBACK_ONLY})
+     * @param resultValue       the value to associate with the property
+     * @param synapseMessageCtx the Synapse message context, from which the Axis2 message context is derived
+     */
+    public static void handleSpecialProperties(String propertyName, Object resultValue,
+                                               MessageContext synapseMessageCtx) {
+
+        Axis2MessageContext axis2smc = (Axis2MessageContext) synapseMessageCtx;
+        org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+
+        if (SynapseConstants.SET_ROLLBACK_ONLY.equals(propertyName)) {
+            axis2MessageCtx.getOperationContext().setProperty(propertyName, resultValue);
         }
     }
 

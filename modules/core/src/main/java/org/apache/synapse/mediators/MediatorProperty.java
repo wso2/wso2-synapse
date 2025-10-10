@@ -69,6 +69,7 @@ public class MediatorProperty {
 
         if (scope == null || XMLConfigConstants.SCOPE_DEFAULT.equals(scope)) {
             synCtx.setProperty(name, result);
+            MediatorPropertyUtils.handleSpecialProperties(name, result, synCtx);
         } else if (XMLConfigConstants.SCOPE_AXIS2.equals(scope)) {
             //Setting property into the  Axis2 Message Context
             Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
