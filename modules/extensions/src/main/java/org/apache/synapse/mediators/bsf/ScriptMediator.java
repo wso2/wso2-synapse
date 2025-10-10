@@ -21,7 +21,7 @@ package org.apache.synapse.mediators.bsf;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import com.oracle.truffle.js.scriptengine.GraalJSEngineFactory;
+import com.oracle.truffle.js.scriptengine.GraalJSScriptEngine;
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import com.sun.script.groovy.GroovyScriptEngineFactory;
 import com.sun.script.jruby.JRubyScriptEngineFactory;
@@ -35,6 +35,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.script.access.AccessControlConfig;
+import org.apache.synapse.script.access.ScriptAccessControl;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.config.Entry;
@@ -43,12 +45,11 @@ import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.bsf.access.control.AccessControlUtils;
 import org.apache.synapse.mediators.bsf.access.control.SandboxContextFactory;
-import org.apache.synapse.mediators.bsf.access.control.config.AccessControlConfig;
-import org.apache.synapse.mediators.bsf.access.control.config.AccessControlListType;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.mediators.v2.Utils;
 import org.apache.synapse.mediators.v2.ext.InputArgument;
 import org.graalvm.polyglot.Context;
+import org.jetbrains.annotations.NotNull;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.ContextFactory;
 
@@ -58,7 +59,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -67,7 +67,9 @@ import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.Supplier;
 
+import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.GRAAL_JAVA_SCRIPT;
 import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.JAVA_SCRIPT;
 import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.MC_VAR_NAME;
 import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.NASHORN;
@@ -75,12 +77,6 @@ import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.NASHORN_J
 import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.ORACLE_NASHORN_NAME;
 import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.POOL_SIZE_PROPERTY;
 import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.RHINO_JAVA_SCRIPT;
-import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.CLASS_PREFIXES;
-import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.ENABLE;
-import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.LIMIT_CLASS_ACCESS_PREFIX;
-import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.LIMIT_NATIVE_OBJECT_ACCESS_PREFIX;
-import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.LIST_TYPE;
-import static org.apache.synapse.mediators.bsf.access.control.AccessControlConstants.OBJECT_NAMES;
 
 /**
  * A Synapse mediator that calls a function in any scripting language supported by the BSF.
@@ -201,6 +197,8 @@ public class ScriptMediator extends AbstractMediator {
         this.scriptSourceCode = scriptSourceCode;
         this.setLoader(classLoader);
         this.includes = new TreeMap<Value, Object>();
+        this.classAccessControlConfig = ScriptAccessControl.getInstance().getClassAccessControlConfig();
+        this.nativeObjectAccessControlConfig = ScriptAccessControl.getInstance().getNativeObjectAccessControlConfig();
         initInlineScript();
     }
 
@@ -221,7 +219,8 @@ public class ScriptMediator extends AbstractMediator {
         if (function != null) {
             this.function = function;
         }
-
+        this.classAccessControlConfig = ScriptAccessControl.getInstance().getClassAccessControlConfig();
+        this.nativeObjectAccessControlConfig = ScriptAccessControl.getInstance().getNativeObjectAccessControlConfig();
         Properties properties = MiscellaneousUtil.loadProperties("synapse.properties");
         poolSize = Integer.parseInt(properties.getProperty(POOL_SIZE_PROPERTY, String.valueOf(DEFAULT_POOL_SIZE)));
 
@@ -296,8 +295,8 @@ public class ScriptMediator extends AbstractMediator {
                 }
                 cx.setApplicationClassLoader(this.loader);
             }
-            if (language.equals(JAVA_SCRIPT)) {
-                context = Context.newBuilder("js").allowExperimentalOptions(true).build();
+            if (language.equals(JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT)) {
+                context = AccessControlUtils.createSecureGraalContext(classAccessControlConfig).build();
                 context.enter();
             }
 
@@ -306,7 +305,7 @@ public class ScriptMediator extends AbstractMediator {
                 returnObject = mediateWithExternalScript(synCtx, context);
                 // If result target is set, this is V2 script mediator
                 // Set the result to the target and returnValue to true
-                if (StringUtils.isNotBlank(resultTarget) && language.equals(JAVA_SCRIPT)) {
+                if (StringUtils.isNotBlank(resultTarget) && (language.equals(JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT))) {
                     returnObject = processJSONOutput(returnObject);
                     returnValue = Utils.setResultTarget(synCtx, resultTarget, variableName, returnObject);
                 } else {
@@ -336,7 +335,7 @@ public class ScriptMediator extends AbstractMediator {
             if (language.equals(RHINO_JAVA_SCRIPT)) {
                 org.mozilla.javascript.Context.exit();
             }
-            if (language.equals("js")) {
+            if (language.equals("js") || language.equals(GRAAL_JAVA_SCRIPT)) {
                 if (context != null) {
                     context.leave();
                 }
@@ -363,7 +362,7 @@ public class ScriptMediator extends AbstractMediator {
             sew = prepareExternalScript(synCtx);
             XMLHelper helper;
             if (language.equalsIgnoreCase(JAVA_SCRIPT) || language.equals(NASHORN_JAVA_SCRIPT) ||
-                    language.equals(RHINO_JAVA_SCRIPT)) {
+                    language.equals(RHINO_JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT)) {
                 helper = xmlHelper;
             } else {
                 helper = XMLHelper.getArgHelper(sew.getEngine());
@@ -376,7 +375,7 @@ public class ScriptMediator extends AbstractMediator {
             List<Object> scriptArgs = new ArrayList<>();
             // First argument is always the ScriptMessageContext
             scriptArgs.add(scriptMC);
-            if (language.equals(JAVA_SCRIPT)) {
+            if (language.equals(JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT)) {
                 for (InputArgument inputArgument : inputArgumentMap.values()) {
                     Object resolvedInputArgument = inputArgument.getResolvedArgument(synCtx);
                     if (resolvedInputArgument instanceof JsonElement) {
@@ -445,7 +444,7 @@ public class ScriptMediator extends AbstractMediator {
                 throw new SynapseException("Error occurred while evaluating empty json object", e);
             }
 
-        } else if (language.equals(JAVA_SCRIPT)) {
+        } else if (language.equals(JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT)) {
             try {
                 scriptMC = new GraalVMJavaScriptMessageContext(synCtx, helper, context);
             } catch (ScriptException e) {
@@ -497,7 +496,7 @@ public class ScriptMediator extends AbstractMediator {
                     } else {
                         jsonObject = ((OpenJDKNashornJavaScriptMessageContext) scriptMC).jsonSerializerCallMember("parse", jsonPayload);
                     }
-                } else if (JAVA_SCRIPT.equals(language)) {
+                } else if (JAVA_SCRIPT.equals(language) || GRAAL_JAVA_SCRIPT.equals(language)) {
                     jsonObject = ((GraalVMJavaScriptMessageContext) scriptMC).jsonSerializerCallMember("parse", jsonPayload);
                 } else {
                     String scriptWithJsonParser = "JSON.parse(JSON.stringify(" + jsonPayload + "))";
@@ -677,54 +676,39 @@ public class ScriptMediator extends AbstractMediator {
         System.setProperty("polyglot.engine.WarnInterpreterOnly", "false");
         System.setProperty("polyglot.js.nashorn-compat", "true");
         engineManager = new ScriptEngineManager();
-        if (language.equals(JAVA_SCRIPT)) {
-            engineManager.registerEngineExtension("jsEngine", new GraalJSEngineFactory());
-        } else {
-            if (!language.equals(NASHORN_JAVA_SCRIPT)) {
-                engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
-            }
-        }
         engineManager.registerEngineExtension("groovy", new GroovyScriptEngineFactory());
         engineManager.registerEngineExtension("rb", new JRubyScriptEngineFactory());
         engineManager.registerEngineExtension("py", new JythonScriptEngineFactory());
         oracleNashornFactory = getOracleNashornFactory();
+
         if (language.equals(NASHORN_JAVA_SCRIPT)) {
-            if (isJDKContainNashorn()) {
-                engineManager.registerEngineName(NASHORN, oracleNashornFactory);
-            } else {
-                engineManager.registerEngineName(NASHORN, OpenJDKNashornFactoryWrapper.getOpenJDKNashornFactory());
-            }
-        }
-        if (language.equals(NASHORN_JAVA_SCRIPT)) {
-            this.scriptEngine = engineManager.getEngineByName(NASHORN);
+            this.scriptEngine = createNashornEnginePortable();
+            this.jsEngine = createNashornEnginePortable();
+        } else if (language.equals(GRAAL_JAVA_SCRIPT) || language.equals(JAVA_SCRIPT)) {
+            this.scriptEngine = GraalJSScriptEngine.create(null, AccessControlUtils.createSecureGraalContext(classAccessControlConfig));
+            this.jsEngine = GraalJSScriptEngine.create(null, AccessControlUtils.createSecureGraalContext(classAccessControlConfig));
         } else if (language.equals(RHINO_JAVA_SCRIPT)) {
+            engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
             this.scriptEngine = engineManager.getEngineByExtension("jsEngine");
-        } else {
-            this.scriptEngine = engineManager.getEngineByExtension(language);
-        }
-
-        pool = new LinkedBlockingQueue<ScriptEngineWrapper>(poolSize);
-
-        for (int i = 0; i< poolSize; i++) {
-            ScriptEngineWrapper sew;
-            if (language.equals(NASHORN_JAVA_SCRIPT)) {
-                sew = new ScriptEngineWrapper(engineManager.getEngineByName(NASHORN));
-            } else if (language.equals(RHINO_JAVA_SCRIPT)) {
-                sew = new ScriptEngineWrapper(engineManager.getEngineByExtension("jsEngine"));
-            } else {
-                sew = new ScriptEngineWrapper(engineManager.getEngineByExtension(language));
-            }
-            pool.add(sew);
-        }
-        if (language.equals(NASHORN_JAVA_SCRIPT)) {
-            this.jsEngine = engineManager.getEngineByName(NASHORN);
-        } else {
             this.jsEngine = engineManager.getEngineByExtension("jsEngine");
+        } else {
+            engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
+            this.scriptEngine = engineManager.getEngineByExtension(language);
+            this.jsEngine = engineManager.getEngineByExtension("jsEngine");
+        }
+
+        pool = new LinkedBlockingQueue<>(poolSize);
+
+        final Supplier<ScriptEngine> engineSupplier = getScriptEngineSupplier();
+
+        for (int i = 0; i < poolSize; i++) {
+            pool.add(new ScriptEngineWrapper(engineSupplier.get()));
         }
         if (scriptEngine == null) {
             handleException("No script engine found for language: " + language);
         }
-        if (language.equalsIgnoreCase(JAVA_SCRIPT) || language.equals(NASHORN_JAVA_SCRIPT)) {
+        if (language.equalsIgnoreCase(JAVA_SCRIPT) || language.equals(NASHORN_JAVA_SCRIPT) ||
+                language.equals(GRAAL_JAVA_SCRIPT)) {
             xmlHelper = new ExtendedJavaScriptXmlHelper();
         } else if (language.equals(RHINO_JAVA_SCRIPT)) {
             // this will be removed in the future in favor of graal.js
@@ -735,19 +719,92 @@ public class ScriptMediator extends AbstractMediator {
 
 
         this.multiThreadedEngine = scriptEngine.getFactory().getParameter("THREADING") != null;
-        if (language.equals(JAVA_SCRIPT)) {
+        if (language.equals(JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT)) {
             this.multiThreadedEngine = true;
         }
         log.debug("Script mediator for language : " + language +
                 " supports multithreading? : " + multiThreadedEngine);
 
         if (language.equals(RHINO_JAVA_SCRIPT)) {
-            readAccessControlConfigurations(MiscellaneousUtil.loadProperties("synapse.properties"));
             if (nativeObjectAccessControlConfig != null && nativeObjectAccessControlConfig.isAccessControlEnabled() &&
                     !ContextFactory.hasExplicitGlobal()) {
                 ContextFactory.initGlobal(new SandboxContextFactory(nativeObjectAccessControlConfig));
             }
         }
+    }
+
+    private ScriptEngine createNashornEnginePortable() {
+        ClassLoader classLoader = effectiveLoader();
+        String[] nashornPackages = { "jdk.nashorn.api.scripting", "org.openjdk.nashorn.api.scripting" };
+        for (String pkg : nashornPackages) {
+            try {
+                Class<?> factoryClz = Class.forName(pkg + ".NashornScriptEngineFactory", false, classLoader);
+                Object factory = factoryClz.getConstructor().newInstance();
+
+                Class<?> classFilterClz = Class.forName(pkg + ".ClassFilter", false, classLoader);
+                Object classFilterProxy = java.lang.reflect.Proxy.newProxyInstance(
+                        classLoader, new Class<?>[]{ classFilterClz },
+                        (proxy, m, args) -> {
+                            if ("exposeToScripts".equals(m.getName())) {
+                                String className = (String) args[0];
+                                return AccessControlUtils.isAccessAllowed(className, classAccessControlConfig, new Comparator<String>() {
+                                    @Override
+                                    public int compare(String o1, String o2) {
+                                        if (o1 != null && o1.startsWith(o2)) {
+                                            return 0;
+                                        }
+                                        return -1;
+                                    }
+                                });
+                            }
+                            throw new UnsupportedOperationException(m.getName());
+                        });
+
+                // Prefer 3-arg overload: getScriptEngine(String[] args, ClassLoader, ClassFilter)
+                java.lang.reflect.Method get = factoryClz.getMethod(
+                        "getScriptEngine", String[].class, ClassLoader.class, classFilterClz);
+                String[] args = new String[] {};
+                return (ScriptEngine) get.invoke(factory, args, classLoader, classFilterProxy);
+            } catch (ClassNotFoundException e) {
+                // try next package
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException("Failed to build Nashorn engine for package " + pkg, e);
+            }
+        }
+        throw new IllegalStateException("No Nashorn API found (JDK 8–11 or standalone nashorn-core required).");
+    }
+
+    private ClassLoader effectiveLoader() {
+        if (this.loader != null) {
+            return this.loader;
+        }
+        ClassLoader currentThreadLoader = Thread.currentThread().getContextClassLoader();
+        if (currentThreadLoader != null) {
+            return currentThreadLoader;
+        }
+        ClassLoader scriptClassLoader = ScriptMediator.class.getClassLoader();
+        if (scriptClassLoader != null) {
+            return scriptClassLoader;
+        }
+        return ClassLoader.getSystemClassLoader();
+    }
+
+    @NotNull
+    private Supplier<ScriptEngine> getScriptEngineSupplier() {
+
+        final Supplier<ScriptEngine> engineSupplier;
+        if (language.equals(GRAAL_JAVA_SCRIPT) || language.equals(JAVA_SCRIPT)) {
+            engineSupplier = () -> GraalJSScriptEngine.create(
+                    null, AccessControlUtils.createSecureGraalContext(classAccessControlConfig)
+            );
+        } else if (language.equals(NASHORN_JAVA_SCRIPT)) {
+            engineSupplier = () -> createNashornEnginePortable();
+        } else if (language.equals(RHINO_JAVA_SCRIPT)) {
+            engineSupplier = () -> engineManager.getEngineByExtension("jsEngine");
+        } else {
+            engineSupplier = () -> engineManager.getEngineByExtension(language);
+        }
+        return engineSupplier;
     }
 
     public String getLanguage() {
@@ -787,8 +844,12 @@ public class ScriptMediator extends AbstractMediator {
 
         ScriptEngineWrapper scriptEngineWrapper = pool.poll();
         if (scriptEngineWrapper == null) {
-            if (language.equals(NASHORN_JAVA_SCRIPT)) {
-                scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByName(NASHORN));
+            if (language.equals(GRAAL_JAVA_SCRIPT) || language.equals(JAVA_SCRIPT)) {
+                scriptEngineWrapper = new ScriptEngineWrapper(
+                        GraalJSScriptEngine.create(null, AccessControlUtils.createSecureGraalContext(classAccessControlConfig))
+                );
+            } else if (language.equals(NASHORN_JAVA_SCRIPT)) {
+                scriptEngineWrapper = new ScriptEngineWrapper(createNashornEnginePortable());
             } else if (language.equals(RHINO_JAVA_SCRIPT)) {
                 scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByExtension("jsEngine"));
             } else {
@@ -851,32 +912,6 @@ public class ScriptMediator extends AbstractMediator {
                 return AccessControlUtils.isAccessAllowed(className, classAccessControlConfig, startsWithComparator);
             }
         };
-    }
-
-    /**
-     * Reads and sets access control configurations.
-     * @param properties    Synapse properties.
-     */
-    private void readAccessControlConfigurations(Properties properties) {
-        String limitClassAccessEnabled = properties.getProperty(LIMIT_CLASS_ACCESS_PREFIX + ENABLE);
-        if (Boolean.parseBoolean(limitClassAccessEnabled)) {
-            String limitClassAccessListType = properties.getProperty(LIMIT_CLASS_ACCESS_PREFIX + LIST_TYPE);
-            String limitClassAccessClassPrefixes = properties.getProperty(LIMIT_CLASS_ACCESS_PREFIX + CLASS_PREFIXES);
-            this.classAccessControlConfig = new AccessControlConfig(true,
-                    AccessControlListType.valueOf(limitClassAccessListType),
-                    Arrays.asList(limitClassAccessClassPrefixes.split(",")));
-        }
-
-        String limitNativeObjectAccessEnabled = properties.getProperty(LIMIT_NATIVE_OBJECT_ACCESS_PREFIX + ENABLE);
-        if (Boolean.parseBoolean(limitNativeObjectAccessEnabled)) {
-            String limitNativeObjectAccessListType =
-                    properties.getProperty(LIMIT_NATIVE_OBJECT_ACCESS_PREFIX + LIST_TYPE);
-            String limitNativeObjectAccessClassPrefixes =
-                    properties.getProperty(LIMIT_NATIVE_OBJECT_ACCESS_PREFIX + OBJECT_NAMES);
-            this.nativeObjectAccessControlConfig = new AccessControlConfig(true,
-                    AccessControlListType.valueOf(limitNativeObjectAccessListType),
-                    Arrays.asList(limitNativeObjectAccessClassPrefixes.split(",")));
-        }
     }
 
     public void setInputArgumentMap(Map<String, InputArgument> inputArgumentMap) {

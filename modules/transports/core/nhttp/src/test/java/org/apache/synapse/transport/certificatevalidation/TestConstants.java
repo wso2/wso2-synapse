@@ -34,7 +34,7 @@ public interface TestConstants {
      * CAUTION: Replace the certificates if they expire or are marked as revoked by their issuers. At the moment they are
      * valid. The expiry dates of the certificates are as follows:
      *
-     * digicert.com                  : 31/07/2025
+     * digicert.com                  : 30/06/2026
      * DigiCertHighAssuranceEVCA-1   : 02/07/2030
      * DigiCertHighAssuranceEVRootCA : 15/01/2038
      */

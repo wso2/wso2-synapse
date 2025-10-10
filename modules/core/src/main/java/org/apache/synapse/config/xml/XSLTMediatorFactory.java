@@ -69,7 +69,9 @@ public class XSLTMediatorFactory extends AbstractMediatorFactory {
             ValueFactory keyFac = new ValueFactory();
             // create dynamic or static key based on OMElement
             Value generatedKey = keyFac.createValue(XMLConfigConstants.KEY, elem);
-
+            if (generatedKey.getKeyValue() != null && !generatedKey.hasExprTypeKey()){
+                generatedKey = new Value(FactoryUtils.prependArtifactIdentifierToFileName(attXslt.getAttributeValue(), properties));
+            }
             // set generated key as the Value
             transformMediator.setXsltKey(generatedKey);
         } else {

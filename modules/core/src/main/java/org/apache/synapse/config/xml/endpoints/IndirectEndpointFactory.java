@@ -20,6 +20,8 @@
 package org.apache.synapse.config.xml.endpoints;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.IndirectEndpoint;
 
@@ -52,7 +54,7 @@ public class IndirectEndpointFactory extends EndpointFactory {
         if (name != null) {
             indirectEndpoint.setName(name);
         }
-        indirectEndpoint.setKey(ref);
+        indirectEndpoint.setKey(FactoryUtils.getFullyQualifiedName(properties, ref));
 
         // process the parameters
         processProperties(indirectEndpoint, epConfig);

@@ -64,7 +64,8 @@ public class CORSHelper {
      */
     public static void handleCORSHeaders(CORSConfiguration corsConfiguration, MessageContext synCtx, String supportedMethods, boolean updateHeaders) {
 
-        if (corsConfiguration.isEnabled()) {
+        if (corsConfiguration.isEnabled() &&
+                !Boolean.TRUE.equals(synCtx.getProperty(RESTConstants.INTERNAL_CORS_PER_API_ENABLED))) {
             org.apache.axis2.context.MessageContext msgCtx = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
             Map<String, String> transportHeaders = (Map<String, String>) msgCtx.getProperty(
                     org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
@@ -103,30 +104,38 @@ public class CORSHelper {
      */
     public static void handleCORSHeadersForResponse(CORSConfiguration corsConfiguration, MessageContext synCtx) {
 
-        if (corsConfiguration.isEnabled()) {
-            org.apache.axis2.context.MessageContext msgCtx = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-            Map<String, String> transportHeaders = (Map<String, String>) msgCtx.getProperty(
-                    org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-            if (transportHeaders != null) {
-                if (synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_METHODS) != null) {
-                    transportHeaders.put(RESTConstants.CORS_HEADER_ACCESS_CTL_ALLOW_METHODS,
-                            (String) synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_METHODS));
-                }
+        org.apache.axis2.context.MessageContext msgCtx = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        Map<String, String> transportHeaders = (Map<String, String>) msgCtx.getProperty(
+                org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        if (transportHeaders != null) {
+            if (synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_METHODS) != null) {
+                transportHeaders.put(RESTConstants.CORS_HEADER_ACCESS_CTL_ALLOW_METHODS,
+                        (String) synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_METHODS));
+            }
 
-                if (synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_ORIGIN) != null) {
-                    transportHeaders.put(RESTConstants.CORS_HEADER_ACCESS_CTL_ALLOW_ORIGIN,
-                            (String) synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_ORIGIN));
-                }
+            if (synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_ORIGIN) != null) {
+                transportHeaders.put(RESTConstants.CORS_HEADER_ACCESS_CTL_ALLOW_ORIGIN,
+                        (String) synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_ORIGIN));
+            }
 
-                if (synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_HEADERS) != null) {
-                    transportHeaders.put(RESTConstants.CORS_HEADER_ACCESS_CTL_ALLOW_HEADERS,
-                            (String) synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_HEADERS));
-                }
+            if (synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_HEADERS) != null) {
+                transportHeaders.put(RESTConstants.CORS_HEADER_ACCESS_CTL_ALLOW_HEADERS,
+                        (String) synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_HEADERS));
+            }
 
-                if (synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ORIGIN) != null) {
-                    transportHeaders.put(RESTConstants.CORS_HEADER_ORIGIN,
-                            (String) synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ORIGIN));
-                }
+            if (synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ORIGIN) != null) {
+                transportHeaders.put(RESTConstants.CORS_HEADER_ORIGIN,
+                        (String) synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ORIGIN));
+            }
+
+            if (synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_CREDENTIALS) != null) {
+                transportHeaders.put(RESTConstants.CORS_HEADER_ACCESS_CTL_ALLOW_CREDENTIALS,
+                        (String) synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_CREDENTIALS));
+            }
+
+            if (synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_MAX_AGE) != null) {
+                transportHeaders.put(RESTConstants.CORS_HEADER_ACCESS_CTL_MAX_AGE,
+                        (String) synCtx.getProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_MAX_AGE));
             }
         }
     }

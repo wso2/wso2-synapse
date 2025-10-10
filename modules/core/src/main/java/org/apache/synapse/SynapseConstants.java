@@ -256,6 +256,8 @@ public final class SynapseConstants {
     //- Axis2 Message Context Properties used by Synapse -
     /** an axis2 message context property set to hold the relates to for POX responses */
     public static final String RELATES_TO_FOR_POX = "synapse.RelatesToForPox";
+    public static final String CLIENT_API_NON_BLOCKING = "ClientApiNonBlocking";
+    public static final String ENABLE_CLIENT_API_NON_BLOCKING_MODE = "enable_client_api_nonblocking_mode";
 
     /** an axis2 message context property set to indicate this is a response message for Synapse */
     public static final String ISRESPONSE_PROPERTY = "synapse.isresponse";
@@ -389,6 +391,13 @@ public final class SynapseConstants {
     // - Blocking Message Sender Constants
     public static final String BLOCKING_SENDER_ERROR = "blocking.sender.error";
     public static final String SET_ROLLBACK_ONLY = "SET_ROLLBACK_ONLY";
+    public static final String SET_REQUEUE_ON_ROLLBACK = "SET_REQUEUE_ON_ROLLBACK";
+    public static final String ACK_ON_SUCCESS = "ACKNOWLEDGE";
+    public static final String MESSAGING_CALLBACK_CONFIGS = "messaging_callback";
+    public static final String CALLBACK_CONTROLLED_ACK = "callback_controlled_ack_enabled";
+    public static final String PRESERVE_PAYLOAD_ON_TIMEOUT = "preserve_payload_on_timeout";
+    public static final String ACKNOWLEDGEMENT_DECISION = "ACK_DECISION";
+
     public static final String HTTP_SC = "HTTP_SC";
     public static final String HTTP_SENDER_STATUSCODE = "transport.http.statusCode";
     public static final String BLOCKING_SENDER_PRESERVE_REQ_HEADERS =
@@ -727,4 +736,18 @@ public final class SynapseConstants {
 
     public static final String DEFAULT_ERROR_TYPE = "ANY";
     public static final String ERROR_STATS_REPORTED = "ERROR_STATS_REPORTED";
+
+    public static final String ENABLE_DTD_FORCEFULLY = "payloadFactory.forcefully.enable.DTD";
+    public static final String ENABLE_EXTERNAL_ENTITY_FORCEFULLY
+        = "payloadFactory.forcefully.enable.external.entity";
+
+    public static final String JSONPATH_IGNORE_NOT_FOUND_ERROR
+        = "synapse.jsonpath.ignore.not.found.error";
+  
+    public static final String SYNAPSE_ARTIFACT_DEPENDENCIES = "synapse.artifact.dependencies";
+    public static final String SYNAPSE_ARTIFACT_IDENTIFIER = "synapse.artifact.identifier";
+    public static final String SYNAPSE_ARTIFACT_VERSIONED_DEPLOYMENT = "synapse.artifact.versioned.deployment";
+    public static final String CONNECTOR_ARTIFACT = "CONNECTOR_ARTIFACT";
+    public static final String APPEND_ARTIFACT_IDENTIFIER = "APPEND_ARTIFACT_IDENTIFIER";
+    public static final String EXPOSE_VERSIONED_SERVICES = "expose.versioned.services";
 }

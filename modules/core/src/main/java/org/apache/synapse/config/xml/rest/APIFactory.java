@@ -67,7 +67,7 @@ public class APIFactory {
             handleException("Attribute 'context' is required for an API definition");
         }
 
-        API api = new API(nameAtt.getAttributeValue(), contextAtt.getAttributeValue());
+        API api = new API(nameAtt.getAttributeValue(), contextAtt.getAttributeValue(), properties);
 
         OMAttribute hostAtt = apiElt.getAttribute(new QName("hostname"));
         if (hostAtt != null && !"".equals(hostAtt.getAttributeValue())) {

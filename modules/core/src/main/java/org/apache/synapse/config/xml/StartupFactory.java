@@ -24,6 +24,8 @@ import javax.xml.namespace.QName;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Startup;
 
+import java.util.Properties;
+
 /**
  * Defines the factories which builds startups
  */
@@ -37,7 +39,7 @@ public interface StartupFactory {
      * @return Startup build from the given element
      */
     public Startup createStartup(OMElement elem);
-
+    public Startup createStartup(OMElement elem, Properties properties);
     /**
      * Get the tag QName of the element
      *

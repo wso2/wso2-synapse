@@ -63,6 +63,7 @@ public class Entry implements SynapseArtifact {
      * Registry resource properties
     */
     private Properties entryProperties;
+    private String artifactIdentifier = null;
 
 
     public Entry() {}
@@ -237,4 +238,14 @@ public class Entry implements SynapseArtifact {
     public static final int INLINE_XML = 1;
     public static final int URL_SRC = 2;
     public static final int REMOTE_ENTRY = 3;
+
+    public String getArtifactIdentifier() {
+
+        return artifactIdentifier;
+    }
+
+    public void setArtifactIdentifier(String artifactIdentifier) {
+
+        this.artifactIdentifier = artifactIdentifier;
+    }
 }

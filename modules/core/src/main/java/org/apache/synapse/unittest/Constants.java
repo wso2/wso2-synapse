@@ -52,6 +52,7 @@ public class Constants {
     static final String LOCAL_REGISTRY_TYPE = "local";
     static final String GOVERNANCE_REGISTRY_TYPE = "gov";
     static final String CONFIGURATION_REGISTRY_TYPE = "conf";
+    static final String RESOURCES_REGISTRY_TYPE = "resources";
 
     //connector resource key word constants
     static final String CONNECTOR_RESOURCES = "connector-resources";

@@ -24,8 +24,10 @@ import org.apache.axis2.Constants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SequenceType;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.api.inbound.InboundApiUtils;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.SequenceMediatorFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -103,7 +105,7 @@ public class ResourceFactory {
         OMElement inSequenceElt = resourceElt.getFirstChildWithName(new QName(
                 XMLConfigConstants.SYNAPSE_NAMESPACE, "inSequence"));
         if (inSequenceKeyAtt != null && !"".equals(inSequenceKeyAtt.getAttributeValue())) {
-            resource.setInSequenceKey(inSequenceKeyAtt.getAttributeValue());
+            resource.setInSequenceKey(FactoryUtils.getFullyQualifiedName(properties, inSequenceKeyAtt.getAttributeValue()));
         } else if (inSequenceElt != null) {
             SequenceMediatorFactory fac = new SequenceMediatorFactory();
             SequenceMediator sequence = fac.createAnonymousSequence(inSequenceElt, properties);
@@ -115,7 +117,7 @@ public class ResourceFactory {
         OMElement outSequenceElt = resourceElt.getFirstChildWithName(new QName(
                 XMLConfigConstants.SYNAPSE_NAMESPACE, "outSequence"));
         if (outSequenceKeyAtt != null && !"".equals(outSequenceKeyAtt.getAttributeValue())) {
-            resource.setOutSequenceKey(outSequenceKeyAtt.getAttributeValue());
+            resource.setOutSequenceKey(FactoryUtils.getFullyQualifiedName(properties, outSequenceKeyAtt.getAttributeValue()));
         } else if (outSequenceElt != null) {
             SequenceMediatorFactory fac = new SequenceMediatorFactory();
             SequenceMediator sequence = fac.createAnonymousSequence(outSequenceElt, properties);
@@ -127,7 +129,7 @@ public class ResourceFactory {
         OMElement faultSequenceElt = resourceElt.getFirstChildWithName(new QName(
                 XMLConfigConstants.SYNAPSE_NAMESPACE, "faultSequence"));
         if (faultSequenceKeyAtt != null && !"".equals(faultSequenceKeyAtt.getAttributeValue())) {
-            resource.setFaultSequenceKey(faultSequenceKeyAtt.getAttributeValue());
+            resource.setFaultSequenceKey(FactoryUtils.getFullyQualifiedName(properties, faultSequenceKeyAtt.getAttributeValue()));
         } else if (faultSequenceElt != null) {
             SequenceMediatorFactory fac = new SequenceMediatorFactory();
             SequenceMediator sequence = fac.createAnonymousSequence(faultSequenceElt, properties);

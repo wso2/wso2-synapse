@@ -22,6 +22,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.processor.MessageProcessorCleanupService;
 import org.apache.synapse.message.processor.MessageProcessorConstants;
@@ -97,6 +98,10 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	private static final String SYMBOL_UNDERSCORE = "_";
 
     private static final String DEFAULT_TASK_SUFFIX = "0";
+
+	private static final String STATUS_SHUTTING_DOWN = "SHUTTING_DOWN";
+
+	private static final String CURRENT_SERVER_STATUS = "local_current.server.status";
 
     @Override
     public void init(SynapseEnvironment se) {
@@ -215,6 +220,11 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     public boolean isDeactivated() {
 		return taskManager.isTaskDeactivated(TASK_PREFIX + name + SYMBOL_UNDERSCORE +
 		                                                           DEFAULT_TASK_SUFFIX);
+	}
+
+	public boolean isServerShuttingDown() {
+		return ((Axis2SynapseEnvironment)synapseEnvironment).getAxis2ConfigurationContext()
+				.getProperty(CURRENT_SERVER_STATUS) == STATUS_SHUTTING_DOWN;
 	}
 
     @Override

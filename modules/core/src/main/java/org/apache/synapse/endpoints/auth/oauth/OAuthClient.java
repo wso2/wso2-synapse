@@ -20,10 +20,8 @@ package org.apache.synapse.endpoints.auth.oauth;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.ConfigurationContext;
-import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.StringUtils;
@@ -61,23 +59,21 @@ import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.endpoints.TrustStoreConfigs;
 import org.apache.synapse.endpoints.ProxyConfigs;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.transport.http.conn.RequestDescriptor;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.nhttp.config.ClientConnFactoryBuilder;
-import org.apache.synapse.transport.nhttp.util.SecureVaultValueReader;
-import org.apache.synapse.util.xpath.KeyStoreManager;
-import org.wso2.securevault.SecretResolver;
-import org.wso2.securevault.SecretResolverFactory;
 import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSession;
-import javax.xml.namespace.QName;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -87,11 +83,11 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.KeyStoreException;
+import java.security.cert.CertificateException;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -104,9 +100,6 @@ public class OAuthClient {
     private static final Log log = LogFactory.getLog(OAuthClient.class);
 
     // Elements defined in key/trust store configuration
-    private static final String STORE_TYPE = "Type";
-    private static final String STORE_LOCATION = "Location";
-    private static final String STORE_PASSWORD = "Password";
     private static final String HTTP_CONNECTION = "http";
     private static final String HTTPS_CONNECTION = "https";
     private static final String ALL_HOSTS = "*";
@@ -120,10 +113,34 @@ public class OAuthClient {
     /**
      * Method to generate the access token from an OAuth server
      *
-     * @param tokenApiUrl   The token url of the server
-     * @param payload       The payload of the request
-     * @param credentials   The encoded credentials
-     * @param proxyConfigs  The proxy configurations
+     * @param tokenApiUrl  The token url of the server
+     * @param payload      The payload of the request
+     * @param credentials  The encoded credentials
+     * @param proxyConfigs The proxy configurations
+     * @return accessToken String
+     * @throws AuthException In the event of an unexpected HTTP status code return from the server or access_token key
+     *                       missing in the response payload
+     * @throws IOException   In the event of a problem parsing the response from the server
+     * @deprecated Use method with TrustStoreConfigs parameter for enhanced SSL configuration support
+     */
+    @Deprecated
+    public static String generateToken(String tokenApiUrl, String payload, String credentials,
+                                       MessageContext messageContext, Map<String, String> customHeaders,
+                                       int connectionTimeout, int connectionRequestTimeout, int socketTimeout,
+                                       ProxyConfigs proxyConfigs) throws AuthException, IOException {
+        // Use null TrustStoreConfigs to maintain backward compatibility
+        return generateToken(tokenApiUrl, payload, credentials, messageContext, customHeaders,
+                connectionTimeout, connectionRequestTimeout, socketTimeout, proxyConfigs, null);
+    }
+
+    /**
+     * Method to generate the access token from an OAuth server
+     *
+     * @param tokenApiUrl       The token url of the server
+     * @param payload           The payload of the request
+     * @param credentials       The encoded credentials
+     * @param proxyConfigs      The proxy configurations
+     * @param trustStoreConfigs The trust store configurations
      * @return accessToken String
      * @throws AuthException In the event of an unexpected HTTP status code return from the server or access_token key
      *                       missing in the response payload
@@ -131,14 +148,16 @@ public class OAuthClient {
      */
     public static String generateToken(String tokenApiUrl, String payload, String credentials,
                                        MessageContext messageContext, Map<String, String> customHeaders,
-                                       int connectionTimeout, int connectionRequestTimeout, int socketTimeout,  ProxyConfigs proxyConfigs) throws AuthException, IOException {
+                                       int connectionTimeout, int connectionRequestTimeout, int socketTimeout,
+                                       ProxyConfigs proxyConfigs, TrustStoreConfigs trustStoreConfigs)
+            throws AuthException, IOException {
 
         if (log.isDebugEnabled()) {
             log.debug("Initializing token generation request: [token-endpoint] " + tokenApiUrl);
         }
 
         try (CloseableHttpClient httpClient = getSecureClient(tokenApiUrl, messageContext, connectionTimeout,
-                connectionRequestTimeout, socketTimeout, proxyConfigs)) {
+                connectionRequestTimeout, socketTimeout, proxyConfigs, trustStoreConfigs)) {
             HttpPost httpPost = new HttpPost(tokenApiUrl);
             httpPost.setHeader(AuthConstants.CONTENT_TYPE_HEADER, AuthConstants.APPLICATION_X_WWW_FORM_URLENCODED);
             if (!(customHeaders == null || customHeaders.isEmpty())) {
@@ -168,6 +187,8 @@ public class OAuthClient {
                 throw new AuthException("Unable to connect to the OAuth token endpoint.");
             } catch (UnsupportedSchemeException e) {
                 throw new AuthException("Unsupported protocol used for the OAuth token endpoint.");
+            } catch (SSLHandshakeException e) {
+                throw new AuthException("SSL handshake failed while connecting to the OAuth token endpoint.");
             } finally {
                 httpPost.releaseConnection();
             }
@@ -226,66 +247,68 @@ public class OAuthClient {
      * @throws AuthException
      */
     private static CloseableHttpClient getSecureClient(String tokenUrl, MessageContext messageContext,
-            int connectionTimeout, int connectionRequestTimeout, int socketTimeout, ProxyConfigs proxyConfigs)
+                                                       int connectionTimeout, int connectionRequestTimeout,
+                                                       int socketTimeout, ProxyConfigs proxyConfigs,
+                                                       TrustStoreConfigs trustStoreConfigs)
             throws AuthException {
 
+        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(connectionTimeout)
+                .setConnectionRequestTimeout(connectionRequestTimeout).setSocketTimeout(socketTimeout).build();
         if (proxyConfigs.isProxyEnabled()) {
-            return getSecureClientWithProxy(messageContext, connectionTimeout, connectionRequestTimeout, socketTimeout,
-                    proxyConfigs);
+            return getSecureClientWithProxy(messageContext, proxyConfigs, trustStoreConfigs, requestConfig);
         } else {
-            return getSecureClientWithoutProxy(tokenUrl, messageContext, connectionTimeout, connectionRequestTimeout,
-                    socketTimeout);
+            return getSecureClientWithoutProxy(trustStoreConfigs, requestConfig, tokenUrl, messageContext);
         }
     }
 
-    private static CloseableHttpClient getSecureClientWithoutProxy(String tokenUrl, MessageContext messageContext,
-            int connectionTimeout, int connectionRequestTimeout, int socketTimeout) throws AuthException {
+    private static CloseableHttpClient getSecureClientWithoutProxy(TrustStoreConfigs trustStoreConfigs, RequestConfig requestConfig,
+                                                                   String tokenUrl, MessageContext messageContext)
+            throws AuthException {
         SSLContext sslContext;
-        ConfigurationContext configurationContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext()
-                .getConfigurationContext();
-        TransportOutDescription transportOut = configurationContext.getAxisConfiguration().getTransportOut("https");
-        try {
-            ClientConnFactoryBuilder clientConnFactoryBuilder = new ClientConnFactoryBuilder(transportOut,
-                    configurationContext).parseSSL();
-            sslContext = getSSLContextWithUrl(tokenUrl, clientConnFactoryBuilder.getSslByHostMap(),
-                    clientConnFactoryBuilder.getSSLContextDetails());
-        } catch (AxisFault e) {
-            throw new AuthException("Error while reading SSL configs. Using default Keystore and Truststore", e);
+
+        if (trustStoreConfigs != null && trustStoreConfigs.isTrustStoreEnabled()) {
+            sslContext = getSSLContextFromTrustStore(trustStoreConfigs.getTrustStoreLocation(),
+                    trustStoreConfigs.getTrustStorePassword(), trustStoreConfigs.getTrustStoreType());
+        } else {
+            ConfigurationContext configurationContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext()
+                    .getConfigurationContext();
+            TransportOutDescription transportOut = configurationContext.getAxisConfiguration().getTransportOut("https");
+            try {
+                ClientConnFactoryBuilder clientConnFactoryBuilder = new ClientConnFactoryBuilder(transportOut,
+                        configurationContext).parseSSL();
+                sslContext = getSSLContextWithUrl(tokenUrl, clientConnFactoryBuilder.getSslByHostMap(),
+                        clientConnFactoryBuilder.getSSLContextDetails());
+            } catch (AxisFault e) {
+                throw new AuthException("Error while reading SSL configs. Using default Keystore and Truststore", e);
+            }
         }
+
         SSLConnectionSocketFactory sslConnectionFactory = new SSLConnectionSocketFactory(sslContext,
                 NoopHostnameVerifier.INSTANCE);
-        RequestConfig config = RequestConfig.custom().setConnectTimeout(connectionTimeout)
-                .setConnectionRequestTimeout(connectionRequestTimeout).setSocketTimeout(socketTimeout).build();
-        Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory> create()
+        Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
                 .register(HTTPS_CONNECTION, sslConnectionFactory)
                 .register(HTTP_CONNECTION, new PlainConnectionSocketFactory()).build();
 
         BasicHttpClientConnectionManager connManager = new BasicHttpClientConnectionManager(registry);
-        CloseableHttpClient client = HttpClientBuilder.create().setDefaultRequestConfig(config)
+        return HttpClientBuilder.create().setDefaultRequestConfig(requestConfig)
                 .setConnectionManager(connManager).setSSLSocketFactory(sslConnectionFactory).build();
-
-        return client;
     }
 
-    private static CloseableHttpClient getSecureClientWithProxy(MessageContext messageContext, int connectionTimeout,
-                                                                int connectionRequestTimeout, int socketTimeout,
-                                                                ProxyConfigs proxyConfigs) throws AuthException {
+    private static CloseableHttpClient getSecureClientWithProxy(MessageContext messageContext, ProxyConfigs proxyConfigs,
+                                                                TrustStoreConfigs trustStoreConfigs, RequestConfig requestConfig)
+            throws AuthException {
 
-        PoolingHttpClientConnectionManager pool = getPoolingHttpClientConnectionManager(
-                proxyConfigs.getProxyProtocol());
+        PoolingHttpClientConnectionManager pool = getPoolingHttpClientConnectionManager(proxyConfigs.getProxyProtocol(),
+                trustStoreConfigs);
         pool.setMaxTotal(MAX_TOTAL_POOL_SIZE);
         pool.setDefaultMaxPerRoute(DEFAULT_MAX_PER_ROUTE);
 
-        RequestConfig params = RequestConfig.custom().build();
-        HttpClientBuilder clientBuilder = HttpClients.custom().setConnectionManager(pool)
-                .setDefaultRequestConfig(params);
+        HttpClientBuilder clientBuilder = HttpClients.custom().setConnectionManager(pool);
 
         HttpHost host = new HttpHost(proxyConfigs.getProxyHost(), Integer.parseInt(proxyConfigs.getProxyPort()),
                 proxyConfigs.getProxyProtocol());
         DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(host);
-        RequestConfig config = RequestConfig.custom().setConnectTimeout(connectionTimeout)
-                .setConnectionRequestTimeout(connectionRequestTimeout).setSocketTimeout(socketTimeout).build();
-        clientBuilder = clientBuilder.setRoutePlanner(routePlanner).setDefaultRequestConfig(config);
+        clientBuilder = clientBuilder.setRoutePlanner(routePlanner).setDefaultRequestConfig(requestConfig);
 
         if (StringUtils.isNotBlank(proxyConfigs.getProxyUsername()) && StringUtils.isNotBlank(
                 proxyConfigs.getProxyPassword())) {
@@ -312,15 +335,25 @@ public class OAuthClient {
         }
     }
 
-    private static PoolingHttpClientConnectionManager getPoolingHttpClientConnectionManager(String protocol)
+    private static PoolingHttpClientConnectionManager getPoolingHttpClientConnectionManager(String protocol,
+                                                                                            TrustStoreConfigs trustStoreConfigs)
             throws AuthException {
 
         PoolingHttpClientConnectionManager poolManager;
         if (AuthConstants.HTTPS_PROTOCOL.equals(protocol)) {
-            SSLConnectionSocketFactory socketFactory = createSocketFactory();
+            SSLContext sslContext;
+            if (trustStoreConfigs != null && trustStoreConfigs.isTrustStoreEnabled()) {
+                sslContext = getSSLContextFromTrustStore(trustStoreConfigs.getTrustStoreLocation(),
+                        trustStoreConfigs.getTrustStorePassword(), trustStoreConfigs.getTrustStoreType());
+            } else {
+                char[] trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword").toCharArray();
+                String trustStoreLocation = System.getProperty("javax.net.ssl.trustStore");
+                sslContext = getSSLContextFromTrustStore(trustStoreLocation, trustStorePassword, "JKS");
+            }
+            SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext, getHostnameVerifier());
             org.apache.http.config.Registry<ConnectionSocketFactory> socketFactoryRegistry =
-                    RegistryBuilder.<ConnectionSocketFactory> create()
-                    .register(AuthConstants.HTTPS_PROTOCOL, socketFactory).build();
+                    RegistryBuilder.<ConnectionSocketFactory>create()
+                            .register(AuthConstants.HTTPS_PROTOCOL, socketFactory).build();
             poolManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
         } else {
             poolManager = new PoolingHttpClientConnectionManager();
@@ -328,120 +361,74 @@ public class OAuthClient {
         return poolManager;
     }
 
-    private static SSLConnectionSocketFactory createSocketFactory() throws AuthException {
-        SSLContext sslContext;
+    /**
+     * Returns a HostnameVerifier instance based on the configured system property HOST_NAME_VERIFIER. The verifier
+     * determines how hostnames are validated during SSL/TLS handshake when establishing secure connections.
+     *
+     * @return the configured HostnameVerifier implementation
+     * @throws AuthException if an error occurs while creating the hostname verifier
+     */
+    private static HostnameVerifier getHostnameVerifier() throws AuthException {
+        HostnameVerifier hostnameVerifier;
+        String hostnameVerifierOption = System.getProperty(HOST_NAME_VERIFIER);
 
-        char[] trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword").toCharArray();
-        String trustStoreLocation = System.getProperty("javax.net.ssl.trustStore");
-        try {
-            KeyStore trustStore = KeyStoreManager.getKeyStore(trustStoreLocation, Arrays.toString(trustStorePassword),
-                    "JKS");
-            sslContext = SSLContexts.custom().loadTrustMaterial(trustStore).build();
+        if (ALLOW_ALL.equalsIgnoreCase(hostnameVerifierOption)) {
+            hostnameVerifier = SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
+        } else if (STRICT.equalsIgnoreCase(hostnameVerifierOption)) {
+            hostnameVerifier = SSLSocketFactory.STRICT_HOSTNAME_VERIFIER;
+        } else if (DEFAULT_AND_LOCALHOST.equalsIgnoreCase(hostnameVerifierOption)) {
+            hostnameVerifier = new HostnameVerifier() {
+                final String[] localhosts = {"::1", "127.0.0.1", "localhost", "localhost.localdomain"};
 
-            HostnameVerifier hostnameVerifier;
-            String hostnameVerifierOption = System.getProperty(HOST_NAME_VERIFIER);
-
-            if (ALLOW_ALL.equalsIgnoreCase(hostnameVerifierOption)) {
-                hostnameVerifier = SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
-            } else if (STRICT.equalsIgnoreCase(hostnameVerifierOption)) {
-                hostnameVerifier = SSLSocketFactory.STRICT_HOSTNAME_VERIFIER;
-            } else if (DEFAULT_AND_LOCALHOST.equalsIgnoreCase(hostnameVerifierOption)) {
-                hostnameVerifier = new HostnameVerifier() {
-                    final String[] localhosts = { "::1", "127.0.0.1", "localhost", "localhost.localdomain" };
-
-                    @Override
-                    public boolean verify(String urlHostName, SSLSession session) {
-                        return SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER.verify(urlHostName,
-                                session) || Arrays.asList(localhosts).contains(urlHostName);
-                    }
-                };
-            } else {
-                hostnameVerifier = SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER;
-            }
-
-            return new SSLConnectionSocketFactory(sslContext, hostnameVerifier);
-        } catch (NoSuchAlgorithmException e) {
-            throw new AuthException(e);
-        } catch (KeyStoreException e) {
-            throw new AuthException(e);
-        } catch (KeyManagementException e) {
-            throw new AuthException(e);
+                @Override
+                public boolean verify(String urlHostName, SSLSession session) {
+                    return SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER.verify(urlHostName,
+                            session) || Arrays.asList(localhosts).contains(urlHostName);
+                }
+            };
+        } else {
+            hostnameVerifier = SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER;
         }
+        return hostnameVerifier;
     }
 
     /**
-     * Returns SSL Context for the token endpoint.
+     * Creates and returns an SSLContext using the given trust store configurations.
      *
-     * @return SSLContext
-     * @throws AuthException
+     * This method loads the trust store from the provided location, initializes it with the specified type and
+     * password, and builds an SSLContext that trusts the certificates contained in it.
+     *
+     * @param trustStoreLocation the file system path to the trust store
+     * @param trustStorePassword the password to access the trust store
+     * @param trustStoreType     the type of the trust store
+     * @return an initialized SSLContext based on the provided trust store
+     * @throws AuthException if the trust store configuration is incomplete, the trust store cannot be loaded, or the
+     *                       SSLContext cannot be created
      */
-    private SSLContext getSSLContext(MessageContext messageContext) throws AuthException {
-        ConfigurationContext configurationContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext().
-                getConfigurationContext();
+    private static SSLContext getSSLContextFromTrustStore(String trustStoreLocation, char[] trustStorePassword,
+                                                          String trustStoreType) throws AuthException {
 
-        Parameter keystoreParameter = configurationContext.getAxisConfiguration().getTransportOut("https").
-                getParameter("keystore");
-
-        Parameter truststoreParameter = configurationContext.getAxisConfiguration().getTransportOut("https").
-                getParameter("truststore");
-
-        OMElement keystoreElem, truststoreElem;
-        if (keystoreParameter != null && truststoreParameter != null) {
-            keystoreElem = keystoreParameter.getParameterElement().getFirstElement();
-            truststoreElem = truststoreParameter.getParameterElement().getFirstElement();
-        } else {
-            throw new AuthException("Key Store and/or Trust Store parameters missing in Axis2 configuration");
+        if (trustStoreLocation == null || trustStorePassword == null) {
+            throw new AuthException("Trust store configuration is incomplete");
         }
 
-        SecretResolver resolver;
-        if (configurationContext != null && configurationContext.getAxisConfiguration() != null) {
-            resolver = configurationContext.getAxisConfiguration().getSecretResolver();
-        } else {
-            resolver = SecretResolverFactory.create(keystoreElem, false);
+        File trustStoreFile = new File(trustStoreLocation);
+        if (!trustStoreFile.exists() || !trustStoreFile.canRead()) {
+            throw new AuthException("Trust store file not found or not readable");
         }
 
-        String keystorePassword = SecureVaultValueReader.getSecureVaultValue(resolver,
-                keystoreElem.getFirstChildWithName(new QName(STORE_PASSWORD)));
+        final KeyStore trustStore;
+        try (FileInputStream fis = new FileInputStream(trustStoreFile)) {
+            trustStore = KeyStore.getInstance(trustStoreType);
+            trustStore.load(fis, trustStorePassword);
+        } catch (IOException | KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
+            throw new AuthException("Error loading trust store from location: " + trustStoreLocation, e);
+        }
 
-        KeyStore keyStore = getStore(keystoreElem, resolver);
-        KeyStore truststore = getStore(truststoreElem, resolver);
         try {
-            return SSLContexts.custom().loadKeyMaterial(keyStore, keystorePassword.toCharArray()).
-                    loadTrustMaterial(truststore).build();
-        } catch (GeneralSecurityException e) {
-            throw new AuthException(e);
-        }
-    }
-
-    /**
-     * Returns Trust Store for the provided Axis2 Configuration.
-     *
-     * @param storeElem OMElement
-     * @param resolver Secret Resolver
-     * @return Trust tStore
-     * @throws AuthException
-     */
-    private KeyStore getStore(OMElement storeElem, SecretResolver resolver) throws AuthException {
-        OMElement storeLocationElement = storeElem.getFirstChildWithName(new QName(STORE_LOCATION));
-        OMElement typeElement = storeElem.getFirstChildWithName(new QName(STORE_TYPE));
-        String storePassword = SecureVaultValueReader.getSecureVaultValue(resolver,
-                storeElem.getFirstChildWithName(new QName(STORE_PASSWORD)));
-
-        if (storeLocationElement == null || typeElement == null || storePassword == null) {
-            throw new AuthException("Missing parameters in the store");
-        }
-
-        String storeLocation = storeLocationElement.getText();
-        String type = typeElement.getText();
-
-        try (FileInputStream fis = new FileInputStream(storeLocation)) {
-            KeyStore trustStore = KeyStore.getInstance(type);
-            trustStore.load(fis, storePassword.toCharArray());
-            return trustStore;
-        } catch (GeneralSecurityException gse) {
-            throw new AuthException("Error loading Trust/Key store : " + storeLocation);
-        } catch (IOException ioe) {
-            throw new AuthException("Error opening Trust/Key store : " + storeLocation);
+            return SSLContexts.custom().loadTrustMaterial(trustStore).build();
+        } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
+            throw new AuthException("Error while creating SSL context from trust store configurations", e);
         }
     }
 

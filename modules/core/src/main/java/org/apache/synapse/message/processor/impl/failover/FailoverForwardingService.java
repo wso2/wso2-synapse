@@ -166,7 +166,7 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
             resetService();
             MessageContext messageContext = null;
             try {
-                if (!this.messageProcessor.isDeactivated()) {
+                if (!this.messageProcessor.isDeactivated() && !this.messageProcessor.isServerShuttingDown()) {
                     messageContext = fetch(messageConsumer);
                     if (messageContext != null) {
                         // Now it is NOT terminated anymore.
@@ -496,10 +496,22 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
                     }
                 } else {
                     terminate();
-                    deactivateMessageProcessor(msgCtx);
-                    if (log.isDebugEnabled()) {
-                        log.debug("Message processor [" + messageProcessor.getName() +
-                                  "] stopped due to reach of max attempts");
+                    if (messageProcessor.isServerShuttingDown()) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Skipping deactivation of the Message processor [" + messageProcessor.getName()
+                                    + "] since the server is currently shutting down");
+                        }
+                    } else {
+                        // During server shutdown, transports like the HTTP listener may stop before
+                        // message processing is completed. This can result in message delivery failures,
+                        // especially when the target endpoint resides in the same runtime.
+                        // To support graceful shutdown, we should avoid deactivating the message processor in such
+                        // cases. Hence, we only deactivate the processor if the server is not in the shutdown state.
+                        deactivateMessageProcessor(msgCtx);
+                        if (log.isDebugEnabled()) {
+                            log.debug("Message processor [" + messageProcessor.getName() +
+                                    "] stopped due to reach of max attempts");
+                        }
                     }
                 }
             }

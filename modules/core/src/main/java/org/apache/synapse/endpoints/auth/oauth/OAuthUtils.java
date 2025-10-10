@@ -31,6 +31,7 @@ import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.endpoints.TrustStoreConfigs;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
 import org.apache.synapse.endpoints.ProxyConfigs;
 import org.apache.synapse.endpoints.auth.AuthConstants;
@@ -42,6 +43,7 @@ import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 import org.wso2.securevault.SecretResolverFactory;
+import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -147,7 +149,8 @@ public class OAuthUtils {
         }
         AuthorizationCodeHandler handler = new AuthorizationCodeHandler(tokenApiUrl, clientId, clientSecret,
                 refreshToken, authMode, useGlobalConnectionTimeoutConfigs, connectionTimeout, connectionRequestTimeout,
-                socketTimeout, TokenCacheFactory.getTokenCache(), useGlobalProxyConfigs, proxyConfigs);
+                socketTimeout, TokenCacheFactory.getTokenCache(), useGlobalProxyConfigs, proxyConfigs,
+                getTrustStoreConfigs());
         if (hasRequestParameters(authCodeElement)) {
             Map<String, String> requestParameters = getRequestParameters(authCodeElement);
             if (requestParameters == null) {
@@ -201,7 +204,7 @@ public class OAuthUtils {
         }
         ClientCredentialsHandler handler = new ClientCredentialsHandler(tokenApiUrl, clientId, clientSecret, authMode,
                 useGlobalConnectionTimeoutConfigs, connectionTimeout, connectionRequestTimeout, socketTimeout,
-                TokenCacheFactory.getTokenCache(), useGlobalProxyConfigs, proxyConfigs);
+                TokenCacheFactory.getTokenCache(), useGlobalProxyConfigs, proxyConfigs, getTrustStoreConfigs());
         if (hasRequestParameters(clientCredentialsElement)) {
             Map<String, String> requestParameters = getRequestParameters(clientCredentialsElement);
             if (requestParameters == null) {
@@ -258,7 +261,7 @@ public class OAuthUtils {
         PasswordCredentialsHandler handler = new PasswordCredentialsHandler(tokenApiUrl, clientId, clientSecret,
                 username, password, authMode, useGlobalConnectionTimeoutConfigs, connectionTimeout,
                 connectionRequestTimeout, socketTimeout, TokenCacheFactory.getTokenCache(), useGlobalProxyConfigs,
-                proxyConfigs);
+                proxyConfigs, getTrustStoreConfigs());
         if (hasRequestParameters(passwordCredentialsElement)) {
             Map<String, String> requestParameters = getRequestParameters(passwordCredentialsElement);
             if (requestParameters == null) {
@@ -338,6 +341,45 @@ public class OAuthUtils {
             return null;
         }
         return proxyConfigs;
+    }
+
+    /**
+     * Creates TrustStoreConfigs from synapse.properties for OAuth token endpoint.
+     * If trust store properties are not configured in synapse.properties, returns a disabled configuration.
+     *
+     * @return TrustStoreConfigs object with configurations from synapse.properties
+     */
+    private static TrustStoreConfigs getTrustStoreConfigs() {
+
+        TrustStoreConfigs trustStoreConfigs = new TrustStoreConfigs();
+
+        Properties synapseProperties = SynapsePropertiesLoader.loadSynapseProperties();
+        String trustStoreLocation = synapseProperties.getProperty(AuthConstants.OAUTH_TOKEN_ENDPOINT_TRUST_STORE_LOCATION);
+        String trustStoreType = synapseProperties.getProperty(AuthConstants.OAUTH_TOKEN_ENDPOINT_TRUST_STORE_TYPE);
+        String trustStorePassword = synapseProperties.getProperty(AuthConstants.OAUTH_TOKEN_ENDPOINT_TRUST_STORE_PASSWORD);
+
+        if (trustStoreLocation != null && trustStorePassword != null) {
+            trustStoreConfigs.setTrustStoreEnabled(true);
+            trustStoreConfigs.setTrustStoreLocation(trustStoreLocation);
+            trustStoreConfigs.setTrustStoreType(trustStoreType != null ? trustStoreType : "JKS"); // Default to JKS
+            trustStoreConfigs.setTrustStorePassword(MiscellaneousUtil.resolve(trustStorePassword,
+                    SecretResolverFactory.create(new Properties() {{
+                        setProperty(AuthConstants.OAUTH_TOKEN_ENDPOINT_TRUST_STORE_PASSWORD, trustStorePassword);
+                    }})).toCharArray());
+
+            if (log.isDebugEnabled()) {
+                log.debug("Loaded trust store configurations from synapse.properties: location="
+                        + trustStoreLocation + ", type=" + trustStoreConfigs.getTrustStoreType());
+            }
+        } else {
+            trustStoreConfigs.setTrustStoreEnabled(false);
+
+            if (log.isDebugEnabled()) {
+                log.debug("Trust store is not configured in synapse.properties. Trust store will be disabled for OAuth" +
+                        "token endpoint.");
+            }
+        }
+        return trustStoreConfigs;
     }
 
     /**

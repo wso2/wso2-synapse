@@ -30,6 +30,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.commons.resolvers.ResolverFactory;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.endpoints.EndpointFactory;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -85,7 +86,8 @@ public class ProxyServiceFactory {
         if (name == null || "".equals(name.getAttributeValue())) {
             handleException("The 'name' attribute is required for a Proxy service definition");
         } else {
-            proxy = new ProxyService(name.getAttributeValue());
+            proxy = new ProxyService(FactoryUtils.getFullyQualifiedNameForServices(properties, name.getAttributeValue(),
+                    FactoryUtils.TYPE_PROXY_SERVICE));
         }
 
         OMAttribute trans = elem.getAttribute(
@@ -160,7 +162,7 @@ public class ProxyServiceFactory {
             OMAttribute inSequence = target.getAttribute(
                     new QName(XMLConfigConstants.NULL_NAMESPACE, "inSequence"));
             if (inSequence != null) {
-                proxy.setTargetInSequence(inSequence.getAttributeValue());
+                proxy.setTargetInSequence(FactoryUtils.getFullyQualifiedName(properties, inSequence.getAttributeValue()));
                 isTargetOk = true;
             } else {
                 OMElement inSequenceElement = target.getFirstChildWithName(
@@ -176,7 +178,7 @@ public class ProxyServiceFactory {
             OMAttribute outSequence = target.getAttribute(
                     new QName(XMLConfigConstants.NULL_NAMESPACE, "outSequence"));
             if (outSequence != null) {
-                proxy.setTargetOutSequence(outSequence.getAttributeValue());
+                proxy.setTargetOutSequence(FactoryUtils.getFullyQualifiedName(properties, outSequence.getAttributeValue()));
             } else {
                 OMElement outSequenceElement = target.getFirstChildWithName(
                         new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "outSequence"));
@@ -190,7 +192,7 @@ public class ProxyServiceFactory {
             OMAttribute faultSequence = target.getAttribute(
                     new QName(XMLConfigConstants.NULL_NAMESPACE, "faultSequence"));
             if (faultSequence != null) {
-                proxy.setTargetFaultSequence(faultSequence.getAttributeValue());
+                proxy.setTargetFaultSequence(FactoryUtils.getFullyQualifiedName(properties, faultSequence.getAttributeValue()));
             } else {
                 OMElement faultSequenceElement = target.getFirstChildWithName(
                         new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "faultSequence"));
@@ -204,7 +206,7 @@ public class ProxyServiceFactory {
             OMAttribute tgtEndpt = target.getAttribute(
                     new QName(XMLConfigConstants.NULL_NAMESPACE, "endpoint"));
             if (tgtEndpt != null) {
-                proxy.setTargetEndpoint(tgtEndpt.getAttributeValue());
+                proxy.setTargetEndpoint(FactoryUtils.getFullyQualifiedName(properties, tgtEndpt.getAttributeValue()));
                 isTargetOk = true;
             } else {
                 OMElement endpointElement = target.getFirstChildWithName(

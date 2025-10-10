@@ -532,9 +532,16 @@ public abstract class TemplateProcessor {
      * Read XMLInputFactory properties from XMLInputFactory.properties file.
      */
     public void readInputFactoryProperties() {
+        readInputFactoryProperties(inputFactory);
+    }
+
+    /**
+     * Read XMLInputFactory properties from XMLInputFactory.properties file and set properties
+     * related to DTDs and External Entities to avoid XXE vulnerabilities.
+     * @param inputFactory XMLInputFactory instance
+     */
+    public static void readInputFactoryProperties(XMLInputFactory inputFactory) {
         //ignore DTDs for XML Input
-        inputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
-        inputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
         inputFactory.setProperty(XMLInputFactory.IS_COALESCING, true);
         Map props = StAXUtils.loadFactoryProperties("XMLInputFactory.properties");
         if (props != null) {
@@ -543,5 +550,7 @@ public abstract class TemplateProcessor {
                 inputFactory.setProperty((String) entry.getKey(), entry.getValue());
             }
         }
+        inputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
+        inputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
     }
 }

@@ -20,6 +20,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.conn.routing.HttpRoute;
 
+import java.util.Objects;
+
 public class RouteRequestMapping {
 
     private static final Log log = LogFactory.getLog(RouteRequestMapping.class);
@@ -42,5 +44,24 @@ public class RouteRequestMapping {
 
     public String getIdentifier() {
         return identifier;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        RouteRequestMapping that = (RouteRequestMapping) o;
+
+        return Objects.equals(route, that.route) &&
+                Objects.equals(identifier, that.identifier);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(route, identifier);
     }
 }

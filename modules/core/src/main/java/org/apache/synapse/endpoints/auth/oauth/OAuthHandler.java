@@ -25,6 +25,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.endpoints.TrustStoreConfigs;
 import org.apache.synapse.endpoints.ProxyConfigs;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
@@ -58,11 +59,26 @@ public abstract class OAuthHandler implements AuthHandler {
     private final TokenCacheProvider tokenCacheProvider;
     private final boolean useGlobalProxyConfigs;
     private ProxyConfigs proxyConfigs;
+    private final TrustStoreConfigs trustStoreConfigs;
 
+    /**
+     * Backward compatibility constructor without TrustStoreConfigs
+     * @deprecated Use constructor with TrustStoreConfigs parameter for enhanced SSL configuration support
+     */
+    @Deprecated
     protected OAuthHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode,
                            boolean useGlobalConnectionTimeoutConfigs, int connectionTimeout,
                            int connectionRequestTimeout, int socketTimeout, TokenCacheProvider tokenCacheProvider,
                            boolean useGlobalProxyConfigs, ProxyConfigs proxyConfigs) {
+        this(tokenApiUrl, clientId, clientSecret, authMode, useGlobalConnectionTimeoutConfigs,
+                connectionTimeout, connectionRequestTimeout, socketTimeout, tokenCacheProvider,
+                useGlobalProxyConfigs, proxyConfigs, null);
+    }
+
+    protected OAuthHandler(String tokenApiUrl, String clientId, String clientSecret, String authMode,
+                           boolean useGlobalConnectionTimeoutConfigs, int connectionTimeout,
+                           int connectionRequestTimeout, int socketTimeout, TokenCacheProvider tokenCacheProvider,
+                           boolean useGlobalProxyConfigs, ProxyConfigs proxyConfigs, TrustStoreConfigs trustStoreConfigs) {
 
         this.id = OAuthUtils.getRandomOAuthHandlerID();
         this.tokenApiUrl = tokenApiUrl;
@@ -76,6 +92,7 @@ public abstract class OAuthHandler implements AuthHandler {
         this.tokenCacheProvider = tokenCacheProvider;
         this.useGlobalProxyConfigs = useGlobalProxyConfigs;
         this.proxyConfigs = proxyConfigs;
+        this.trustStoreConfigs = trustStoreConfigs;
     }
 
     @Override
@@ -107,7 +124,8 @@ public abstract class OAuthHandler implements AuthHandler {
                         token = OAuthClient.generateToken(OAuthUtils.resolveExpression(tokenApiUrl, messageContext),
                                 buildTokenRequestPayload(messageContext), getEncodedCredentials(messageContext),
                                 messageContext, getResolvedCustomHeadersMap(customHeadersMap, messageContext),
-                                connectionTimeout, connectionRequestTimeout, socketTimeout, proxyConfigs);
+                                connectionTimeout, connectionRequestTimeout, socketTimeout, proxyConfigs,
+                                trustStoreConfigs);
 
                         // Cache the newly generated token
                         tokenCacheProvider.putToken(getId(messageContext), token);

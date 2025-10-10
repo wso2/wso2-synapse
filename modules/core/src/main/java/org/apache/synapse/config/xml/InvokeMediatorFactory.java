@@ -22,6 +22,7 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.template.InvokeMediator;
@@ -62,7 +63,7 @@ public class InvokeMediatorFactory extends AbstractMediatorFactory {
         OMAttribute targetTemplateAttr = elem.getAttribute(ATT_TARGET);
         if (targetTemplateAttr != null) {
             if (StringUtils.isNotEmpty(targetTemplateAttr.getAttributeValue())) {
-                invoker.setTargetTemplate(targetTemplateAttr.getAttributeValue());
+                invoker.setTargetTemplate(FactoryUtils.getFullyQualifiedName(properties, targetTemplateAttr.getAttributeValue()));
                 buildParameters(elem);
             } else {
                 String msg = "EIP Invoke mediator should have a non empty target name specified.";

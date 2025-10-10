@@ -24,6 +24,12 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.TestUtils;
 import org.apache.synapse.mediators.bsf.ScriptMediator;
+import org.apache.synapse.script.access.AccessControlConfig;
+import org.apache.synapse.script.access.AccessControlListType;
+import org.apache.synapse.script.access.ScriptAccessControl;
+
+import java.util.Arrays;
+import java.util.Collections;
 
 public class JavaScriptMediatorTest extends TestCase {
 
@@ -66,9 +72,67 @@ public class JavaScriptMediatorTest extends TestCase {
 
     /**
      * Test controlling access to java classes through JS
+     *
+     * @throws Exception
+     */
+    public void testJavaClassAccessControlInGraalJSBlocked() throws Exception {
+
+        ScriptAccessControl.getInstance().setClassAccessControlConfig(
+                new AccessControlConfig(true, AccessControlListType.valueOf("BLOCK_LIST"),
+                        Collections.singletonList("java.util.ArrayList")));
+
+        String scriptSourceCode = "var s = new java.util.ArrayList();\n";
+
+        MessageContext mc = TestUtils.getTestContext("<foo/>", null);
+        ScriptMediator mediator = new ScriptMediator("js", scriptSourceCode, null);
+
+        System.setProperty("properties.file.path", System.getProperty("user.dir") + "/src/test/resources/file.properties");
+
+        boolean synapseExceptionThrown = false;
+        try {
+            mediator.mediate(mc);
+        } catch (SynapseException e) {
+            synapseExceptionThrown = true;
+        }
+
+        assertTrue("As Java class access control is configured " +
+                "SynapseException should be thrown during mediation", synapseExceptionThrown);
+    }
+
+
+    /**
+     * Test controlling access to java classes through JS
+     *
+     * @throws Exception
+     */
+    public void testJavaClassAccessControlInGraalJSAllowed() throws Exception {
+
+        ScriptAccessControl.getInstance().setClassAccessControlConfig(
+                new AccessControlConfig(true, AccessControlListType.valueOf("BLOCK_LIST"),
+                        Collections.singletonList("java.io.ArrayList")));
+
+        String scriptSourceCodeAllowed = "var File = Java.type(\"java.io.File\");\n" +
+                "var s = new File(\"test.txt\");\n";
+
+        MessageContext mc = TestUtils.getTestContext("<foo/>", null);
+        ScriptMediator mediator = new ScriptMediator("js", scriptSourceCodeAllowed, null);
+
+        System.setProperty("properties.file.path", System.getProperty("user.dir") + "/src/test/resources/file.properties");
+
+        boolean status = mediator.mediate(mc);
+
+        assertTrue("Java class access should be allowed", status);
+    }
+
+    /**
+     * Test controlling access to java classes through JS
      * @throws Exception
      */
     public void testJavaClassAccessControl() throws Exception {
+        ScriptAccessControl.getInstance().setClassAccessControlConfig(
+                new AccessControlConfig(true, AccessControlListType.valueOf("BLOCK_LIST"),
+                        Collections.singletonList("java.util.ArrayList")));
+
         String scriptSourceCode =  "var s = new java.util.ArrayList();\n";
 
         MessageContext mc = TestUtils.getTestContext("<foo/>", null);
@@ -93,6 +157,10 @@ public class JavaScriptMediatorTest extends TestCase {
      * @throws Exception
      */
     public void testJavaMethodAccessControl() throws Exception {
+        ScriptAccessControl.getInstance().setNativeObjectAccessControlConfig(
+                new AccessControlConfig(true, AccessControlListType.valueOf("BLOCK_LIST"),
+                        Arrays.asList("getClassLoader", "loadClass")));
+
         String scriptSourceCode =  "var c = this.context.getClass();\n" +
                 "var hashmapConstructors = c.getClassLoader().loadClass(\"java.util.HashMap\").getDeclaredConstructors();\n";
 
@@ -109,6 +177,34 @@ public class JavaScriptMediatorTest extends TestCase {
         }
 
         assertTrue("As Java method access control is configured " +
+                "SynapseException should be thrown during mediation", synapseExceptionThrown);
+
+    }
+
+    /**
+     * Test controlling access to java classes through Nashorn JS
+     * @throws Exception
+     */
+    public void testJavaClassAccessControlForNashornJs() throws Exception {
+        ScriptAccessControl.getInstance().setClassAccessControlConfig(
+                new AccessControlConfig(true, AccessControlListType.valueOf("BLOCK_LIST"),
+                        Collections.singletonList("java.util.ArrayList")));
+
+        String scriptSourceCode =  "var s = new java.util.ArrayList();\n";
+
+        MessageContext mc = TestUtils.getTestContext("<foo/>", null);
+        ScriptMediator mediator = new ScriptMediator("nashornJs", scriptSourceCode, null);
+
+        System.setProperty("properties.file.path", System.getProperty("user.dir") + "/src/test/resources/file.properties");
+
+        boolean synapseExceptionThrown = false;
+        try {
+            mediator.mediate(mc);
+        } catch(SynapseException e) {
+            synapseExceptionThrown = true;
+        }
+
+        assertTrue("As Java class access control is configured " +
                 "SynapseException should be thrown during mediation", synapseExceptionThrown);
 
     }
