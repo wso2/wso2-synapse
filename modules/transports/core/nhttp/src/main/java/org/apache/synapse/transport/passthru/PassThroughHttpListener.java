@@ -390,14 +390,37 @@ public class PassThroughHttpListener implements TransportListener {
      */
     public EndpointReference[] getEPRsForService(String serviceName, String ip) throws AxisFault {
         String trailer = "";
+        boolean versionedService = isVersionedBasedService(serviceName);
         boolean isServiceWithCustomURI = isServiceWithCustomURI(serviceName);
-        //Strip out the operation name
-        if (serviceName.indexOf('/') != -1) {
-            trailer += serviceName.substring(serviceName.indexOf("/"));
-            serviceName = serviceName.substring(0, serviceName.indexOf('/'));
+        if (versionedService) {
+            String strippedServiceName = "";
+            String[] temp = serviceName.split("/");
+            if (temp.length > 2) {
+                String artifactIdentifier = temp[0];
+                if (temp[1].contains(".")) {
+                    strippedServiceName = artifactIdentifier + "/" + temp[1].split("\\.")[0];
+                } else {
+                    strippedServiceName = artifactIdentifier + "/" + temp[1];
+                }
+                trailer = serviceName.substring(strippedServiceName.length());
+            } else if (temp.length == 2) {
+                if (temp[1].contains(".")) {
+                    String artifactIdentifier = temp[0];
+                    strippedServiceName = artifactIdentifier + "/" + temp[1].split("\\.")[0];
+                } else {
+                    strippedServiceName = serviceName;
+                }
+                trailer = serviceName.substring(strippedServiceName.length());
+            }
+            serviceName = strippedServiceName;
+        } else {
+            if (serviceName.indexOf('/') != -1) {
+                trailer += serviceName.substring(serviceName.indexOf("/"));
+                serviceName = serviceName.substring(0, serviceName.indexOf('/'));
+            }
         }
         // strip out the endpoint name if present
-        if (serviceName.indexOf('.') != -1 && !isServiceWithCustomURI) {
+        if (serviceName.indexOf('.') != -1 && !isServiceWithCustomURI && !versionedService) {
             trailer += serviceName.substring(serviceName.indexOf("."));
             serviceName = serviceName.substring(0, serviceName.indexOf('.'));
         }else if(isServiceWithCustomURI){
@@ -415,6 +438,12 @@ public class PassThroughHttpListener implements TransportListener {
                     serviceName + trailer);
         }
         return endpointReferences;
+    }
+
+    private static boolean isVersionedBasedService(String serviceName) {
+
+        String[] nameParts = serviceName.split("__");
+        return nameParts.length >= 3;
     }
 
     public SessionContext getSessionContext(MessageContext messageContext) {
