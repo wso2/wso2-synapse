@@ -42,6 +42,7 @@ import org.apache.synapse.commons.datasource.DataSourceRepositoryHolder;
 import org.apache.synapse.commons.executors.PriorityExecutor;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiatorProvider;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.MediatorFactoryFinder;
 import org.apache.synapse.config.xml.TemplateMediatorFactory;
 import org.apache.synapse.config.xml.XMLToTemplateMapper;
@@ -483,10 +484,20 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      */
     public synchronized void addSwaggerDefinition(String apiName, String swaggerDefinition) {
 
+        addSwaggerDefinition(apiName, swaggerDefinition, false);
+    }
+
+    public synchronized void addSwaggerDefinition(String apiName, String swaggerDefinition, boolean isVersionedDeployment) {
+
         if (!swaggerTable.containsKey(apiName)) {
             swaggerTable.put(apiName, swaggerDefinition);
         } else {
-            handleException("Duplicate swagger definition by the name: " + apiName);
+            String error = "Duplicate swagger definition by the name: " + apiName;
+            if (isVersionedDeployment) {
+                error = "Duplicate swagger definition by the name: " + apiName + ". To deploy " +
+                        "multiple versions of an API, please enable service versioning.";
+            }
+            handleException(error);
         }
     }
 
