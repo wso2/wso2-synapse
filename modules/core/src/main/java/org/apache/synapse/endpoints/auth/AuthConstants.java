@@ -108,5 +108,8 @@ public class AuthConstants {
     public static final String OAUTH_TOKEN_ENDPOINT_TRUST_STORE_TYPE = "synapse.endpoint.http.oauth.token.endpoint.trust.store.type";
     public static final String OAUTH_TOKEN_ENDPOINT_TRUST_STORE_PASSWORD = "synapse.endpoint.http.oauth.token.endpoint.trust.store.password";
 
+    //Disable message building for oauth secured endpoint token generation
+    public static final String OAUTH_RETRY_MESSAGE_BUILDING_DISABLED = "synapse.endpoint.http.oauth.token.retry.message.building.disabled";
+
     public static final String HTTPS_PROTOCOL = "https";
 }
