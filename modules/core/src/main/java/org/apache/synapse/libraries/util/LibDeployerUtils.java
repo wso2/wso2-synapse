@@ -218,7 +218,7 @@ public class LibDeployerUtils {
         }
         String packageName = readAttribute(artifactEle, LibDeployerConstants.PACKAGE_ATTR);
         SynapseLibrary synLib;
-        if (deploymentFileData.isVersionedDeployment()) {
+        if (deploymentFileData != null && deploymentFileData.isVersionedDeployment()) {
             synLib = new SynapseLibrary(deploymentFileData.getArtifactIdentifier(), readAttribute(artifactEle, LibDeployerConstants.NAME),
                     packageName);
         } else {
