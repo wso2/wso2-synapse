@@ -1600,6 +1600,11 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             }
         }
 
+        // destroy the managed mediators
+        for (ManagedLifecycle seq : getDefinedSequences().values()) {
+            seq.destroy();
+        }
+
         //destroy sequence templates
         for (TemplateMediator seqTemplate : getSequenceTemplates().values()) {
             seqTemplate.destroy();
@@ -1610,6 +1615,11 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             // This path trigger from server shutdown hook. So we don't want to remove scheduled inbound tasks
             // from registry. Only un-deployment should remove task from registry. Ref product-ei#1206
             endpoint.destroy(false);
+        }
+
+        // destroy the managed endpoints
+        for (Endpoint endpoint : getDefinedEndpoints().values()) {
+            endpoint.destroy();
         }
         
         // destroy the startups
@@ -1656,16 +1666,6 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
         for (API api : apiTable.values()) {
             api.destroy();
-        }
-
-        // destroy the managed endpoints
-        for (Endpoint endpoint : getDefinedEndpoints().values()) {
-            endpoint.destroy();
-        }
-
-        // destroy the managed sequences
-        for (ManagedLifecycle seq : getDefinedSequences().values()) {
-            seq.destroy();
         }
     }
 
