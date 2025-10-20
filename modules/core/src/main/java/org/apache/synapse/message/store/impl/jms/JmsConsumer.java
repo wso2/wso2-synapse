@@ -60,7 +60,7 @@ public class JmsConsumer implements MessageConsumer {
     /**
      * Boolean to store if the message processor is alive
      */
-    private boolean isAlive;
+    private volatile boolean isAlive;
 
     /**
      * Constructor for JMS consumer
@@ -149,6 +149,10 @@ public class JmsConsumer implements MessageConsumer {
     }
 
     public boolean cleanup() throws SynapseException {
+        // cleanup() only releases JMS resources and clears the local handles. It must not change
+        // the raw isAlive flag because receive() calls cleanup() after a JMSException and then calls
+        // receive() again; keeping the flag true lets that broker-failure path reconnect. Teardown
+        // callers that must block reconnects call setAlive(false) before cleanup().
         if (logger.isDebugEnabled()) {
             logger.debug(getId() + " cleaning up...");
         }
@@ -169,6 +173,11 @@ public class JmsConsumer implements MessageConsumer {
     public boolean isAlive() {
 
         if (isAlive) {
+            // cleanup() clears the session. The public health check should report that state as not
+            // alive so the processor can rebuild the consumer when needed.
+            if (session == null) {
+                return false;
+            }
             try {
                 session.getAcknowledgeMode(); /** No straight forward way to check session availability */
             } catch (JMSException e) {
