@@ -63,8 +63,7 @@ public class InboundEndpointFactory {
 
         InboundEndpoint inboundEndpoint = new InboundEndpoint();
         if (inboundEndpointElem.getAttributeValue(ATT_NAME) != null) {
-            inboundEndpoint.setName(FactoryUtils.getFullyQualifiedName(properties,
-                    inboundEndpointElem.getAttributeValue(ATT_NAME)));
+            inboundEndpoint.setName(inboundEndpointElem.getAttributeValue(ATT_NAME));
         } else {
             String msg = "Inbound Endpoint name cannot be null";
             log.error(msg);

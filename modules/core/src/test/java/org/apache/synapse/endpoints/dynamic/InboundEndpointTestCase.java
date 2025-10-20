@@ -28,6 +28,8 @@ import org.apache.synapse.config.xml.inbound.InboundEndpointFactory;
 import org.apache.synapse.config.xml.inbound.InboundEndpointSerializer;
 import org.apache.synapse.inbound.InboundEndpoint;
 
+import java.util.Properties;
+
 /**
  * Testing InboundEndpoint related operations
  */
@@ -73,6 +75,30 @@ public class InboundEndpointTestCase extends TestCase {
             + "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"receiveSeq\">\n" + "    <send/>\n"
             + "</sequence>";
 
+    private static final String rabbitMQInbound = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<inboundEndpoint name=\"RabbitMQInbound\" sequence=\"RabbitMQInbound-inboundSequence\" onError=\"RabbitMQInbound-inboundErrorSequence\" suspend=\"false\" protocol=\"rabbitmq\">\n" +
+            "    <parameters xmlns=\"http://ws.apache.org/ns/synapse\">\n" +
+            "        <parameter name=\"rabbitmq.connection.factory\">QueueConnectionFactory</parameter>\n" +
+            "        <parameter name=\"rabbitmq.server.host.name\">localhost</parameter>\n" +
+            "        <parameter name=\"rabbitmq.server.port\">5672</parameter>\n" +
+            "        <parameter name=\"rabbitmq.server.user.name\">guest</parameter>\n" +
+            "        <parameter name=\"rabbitmq.server.password\">guest</parameter>\n" +
+            "        <parameter name=\"rabbitmq.queue.name\">queue_transaction</parameter>\n" +
+            "        <parameter name=\"sequential\">true</parameter>\n" +
+            "        <parameter name=\"coordination\">true</parameter>\n" +
+            "        <parameter name=\"rabbitmq.queue.durable\">false</parameter>\n" +
+            "        <parameter name=\"rabbitmq.queue.exclusive\">false</parameter>\n" +
+            "        <parameter name=\"rabbitmq.queue.auto.delete\">false</parameter>\n" +
+            "        <parameter name=\"rabbitmq.queue.auto.ack\">false</parameter>\n" +
+            "        <parameter name=\"rabbitmq.queue.autodeclare\">false</parameter>\n" +
+            "        <parameter name=\"rabbitmq.exchange.durable\">false</parameter>\n" +
+            "        <parameter name=\"rabbitmq.exchange.auto.delete\">false</parameter>\n" +
+            "        <parameter name=\"rabbitmq.exchange.autodeclare\">false</parameter>\n" +
+            "        <parameter name=\"rabbitmq.connection.ssl.enabled\">false</parameter>\n" +
+            "        <parameter name=\"rabbitmq.channel.consumer.qos\">0</parameter>\n" +
+            "    </parameters>\n" +
+            "</inboundEndpoint>";
+
     public void testCreateValidInboundEP() throws Exception {
         ep = factory.createInboundEndpoint(AXIOMUtil.stringToOM(sampleEP), config);
         Assert.assertNotNull("Inbound Endpoint is null", ep);
@@ -109,5 +135,29 @@ public class InboundEndpointTestCase extends TestCase {
         } catch (SynapseException e) {
             Assert.assertEquals(e.getMessage().contains("Inbound Endpoint name cannot be null"), true);
         }
+    }
+
+    public void testInboundEPWithVersionedDeployment() throws Exception {
+
+        Properties properties = new Properties();
+        properties.put("synapse.artifact.versioned.deployment", true);
+        properties.put("synapse.artifact.identifier", "com.microintegrator.projects__beta1__1.0.2");
+
+        ep = factory.createInboundEndpoint(AXIOMUtil.stringToOM(rabbitMQInbound), config, properties);
+        Assert.assertEquals("RabbitMQInbound", ep.getName());
+        Assert.assertEquals("com.microintegrator.projects__beta1__1.0.2__RabbitMQInbound-inboundSequence", ep.getInjectingSeq());
+        Assert.assertEquals("com.microintegrator.projects__beta1__1.0.2__RabbitMQInbound-inboundErrorSequence", ep.getOnErrorSeq());
+    }
+
+    public void testInboundEPWithNonVersionedDeployment() throws Exception {
+
+        Properties properties = new Properties();
+        properties.put("synapse.artifact.versioned.deployment", false);
+        properties.put("synapse.artifact.identifier", "com.microintegrator.projects__beta1__1.0.2");
+
+        ep = factory.createInboundEndpoint(AXIOMUtil.stringToOM(rabbitMQInbound), config, properties);
+        Assert.assertEquals("RabbitMQInbound", ep.getName());
+        Assert.assertEquals("RabbitMQInbound-inboundSequence", ep.getInjectingSeq());
+        Assert.assertEquals("RabbitMQInbound-inboundErrorSequence", ep.getOnErrorSeq());
     }
 }

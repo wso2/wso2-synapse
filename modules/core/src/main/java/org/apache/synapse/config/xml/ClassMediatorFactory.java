@@ -25,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.ext.ClassMediator;
 import org.apache.synapse.mediators.v2.Utils;
 import org.apache.synapse.mediators.v2.ext.AbstractClassMediator;
@@ -118,6 +119,9 @@ public class ClassMediatorFactory extends AbstractMediatorFactory {
 
         try {
             mediator = (Mediator) clazz.newInstance();
+            if (mediator instanceof AbstractMediator && FactoryUtils.isVersionedDeployment(properties)) {
+                ((AbstractMediator) mediator).setArtifactIdentifier(properties.getProperty(SynapseConstants.SYNAPSE_ARTIFACT_IDENTIFIER));
+            }
         } catch (Throwable e) {
             String msg = "Error in instantiating class : " + name.getAttributeValue();
             log.error(msg, e);

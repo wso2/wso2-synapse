@@ -136,8 +136,7 @@ public class SimpleQuartzFactory implements StartupFactory {
 
         taskDescription.setName(FactoryUtils.getFullyQualifiedName(properties, taskDescription.getName()));
         taskDescription.getXmlProperties().forEach(prop -> {
-            if (prop.getAttributeValue(NAME).equals("sequenceName")
-                    || prop.getAttributeValue(NAME).equals("proxyName")) {
+            if (prop.getAttributeValue(NAME).equals("sequenceName")) {
                 prop.setText(FactoryUtils.getFullyQualifiedName(properties, prop.getText()));
                 String value = prop.getAttributeValue(VALUE);
                 if (value != null) {
