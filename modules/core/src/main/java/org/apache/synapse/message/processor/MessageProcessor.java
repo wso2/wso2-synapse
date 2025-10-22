@@ -189,6 +189,11 @@ public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArt
     public void cleanUpDeactivatedProcessors();
 
     /**
+     * Execute pause tasks of a message processor in cluster mode
+     */
+    public void pauseMessageProcessorTemporarily();
+
+    /**
      * Execute resume tasks of a message processor in cluster mode
      */
     public void resumeRemotely();

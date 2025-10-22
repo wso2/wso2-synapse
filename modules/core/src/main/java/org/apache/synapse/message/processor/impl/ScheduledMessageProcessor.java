@@ -638,6 +638,15 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		}
 	}
 
+    @Override
+    public void pauseMessageProcessorTemporarily() {
+        try {
+            terminate();
+        } finally {
+            cleanupLocalResources();
+        }
+    }
+
 	@Override
 	public void resumeRemotely() {
 		setMessageProcessorState(ProcessorState.RUNNING);
