@@ -74,6 +74,8 @@ public class ServerConnFactoryBuilder {
     private Map<InetSocketAddress, SSLContextDetails> sslByIPMap = null;
     private ConfigurationContext configurationContext;
     CertificateVerificationManager certificateVerifier = null;
+    private static final String PKIX = "PKIX";
+    private static final String JCE_PROVIDER = "security.jce.provider";
 
     public ServerConnFactoryBuilder(final TransportInDescription transportIn, final HttpHost host,
                                     ConfigurationContext configurationContext) {
@@ -145,8 +147,7 @@ public class ServerConnFactoryBuilder {
 
                 keyStore.load(fis, storePassword.toCharArray());
 
-                KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(
-                        KeyManagerFactory.getDefaultAlgorithm());
+                KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(getKeyManagerType());
                 kmfactory.init(keyStore, keyPassword.toCharArray());
                 keymanagers = kmfactory.getKeyManagers();
                 if (log.isInfoEnabled() && keymanagers != null) {
@@ -201,8 +202,7 @@ public class ServerConnFactoryBuilder {
                 }
 
                 trustStore.load(fis, storePassword.toCharArray());
-                TrustManagerFactory trustManagerfactory = TrustManagerFactory.getInstance(
-                           TrustManagerFactory.getDefaultAlgorithm());
+                TrustManagerFactory trustManagerfactory = TrustManagerFactory.getInstance(getTrustManagerType());
                 trustManagerfactory.init(trustStore);
                 trustManagers = trustManagerfactory.getTrustManagers();
                 TrustStoreHolder.getInstance().setClientTrustStore(trustStore);
@@ -491,6 +491,24 @@ public class ServerConnFactoryBuilder {
             value = ((OMElement) obj).getText();
         }
         return value;
+    }
+
+    private static String getKeyManagerType() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
+            return PKIX;
+        } else {
+            return KeyManagerFactory.getDefaultAlgorithm();
+        }
+    }
+
+    private static String getTrustManagerType() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
+            return PKIX;
+        } else {
+            return TrustManagerFactory.getDefaultAlgorithm();
+        }
     }
 
 }

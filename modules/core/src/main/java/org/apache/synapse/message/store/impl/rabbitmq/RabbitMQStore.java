@@ -84,6 +84,8 @@ public class RabbitMQStore extends AbstractMessageStore {
     public static final String SSL_TRUSTSTORE_TYPE = "rabbitmq.connection.ssl.truststore.type";
     public static final String SSL_TRUSTSTORE_PASSWORD = "rabbitmq.connection.ssl.truststore.password";
     public static final String SSL_VERSION = "rabbitmq.connection.ssl.version";
+    private static final String PKIX = "PKIX";
+    private static final String JCE_PROVIDER = "security.jce.provider";
 
     public static final String AMQ_PREFIX = "amq.";
 
@@ -214,15 +216,14 @@ public class RabbitMQStore extends AbstractMessageStore {
                     KeyStore ks = KeyStore.getInstance(keyStoreType);
                     ks.load(new FileInputStream(keyStoreLocation), keyPassphrase);
 
-                    KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                    KeyManagerFactory kmf = KeyManagerFactory.getInstance(getKeyManagerType());
                     kmf.init(ks, keyPassphrase);
 
                     char[] trustPassphrase = trustStorePassword.toCharArray();
                     KeyStore tks = KeyStore.getInstance(trustStoreType);
                     tks.load(new FileInputStream(trustStoreLocation), trustPassphrase);
 
-                    TrustManagerFactory tmf = TrustManagerFactory
-                            .getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                    TrustManagerFactory tmf = TrustManagerFactory.getInstance(getTrustManagerType());
                     tmf.init(tks);
 
                     SSLContext c = SSLContext.getInstance(sslVersion);
@@ -476,5 +477,23 @@ public class RabbitMQStore extends AbstractMessageStore {
 
     private String nameString() {
         return "Store [" + getName() + "]";
+    }
+
+    private static String getTrustManagerType() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (StringUtils.isNotEmpty(provider)) {
+            return PKIX;
+        } else {
+            return TrustManagerFactory.getDefaultAlgorithm();
+        }
+    }
+
+    private static String getKeyManagerType() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (StringUtils.isNotEmpty(provider)) {
+            return PKIX;
+        } else {
+            return KeyManagerFactory.getDefaultAlgorithm();
+        }
     }
 }
