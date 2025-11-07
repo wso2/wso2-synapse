@@ -49,6 +49,11 @@ public class XpathExtensionUtil {
      */
     private static final String SYNAPSE_XPATH_FUNCTION_EXTENSIONS = "synapse.xpath.func.extensions";
 
+    /**
+     * The Synapse property for custom xpath function extensions.
+     */
+    private static final String SYNAPSE_CUSTOM_XPATH_FUNCTION_EXTENSIONS = "synapse.custom.xpath.func.extensions";
+
     private static final Log log = LogFactory.getLog(XpathExtensionUtil.class);
 
     /**
@@ -94,16 +99,22 @@ public class XpathExtensionUtil {
 
     /**
      * Get all registered function context extensions. Synapse will look for synapse.properties
-     * property synapse.xpath.func.extensions
+     * property synapse.xpath.func.extensions and synapse.custom.xpath.func.extensions.
      *
      * @return List of Synapse Xpath Function Context Providers
      */
     public static List<SynapseXpathFunctionContextProvider> getRegisteredFunctionExtensions() {
         Properties synapseProps = SynapsePropertiesLoader.loadSynapseProperties();
-        String propValue = synapseProps.getProperty(SYNAPSE_XPATH_FUNCTION_EXTENSIONS);
-        List<SynapseXpathFunctionContextProvider> extProviders = new
-                ArrayList<SynapseXpathFunctionContextProvider>();
-        extractProviders(propValue, extProviders);
+        List<SynapseXpathFunctionContextProvider> extProviders = new ArrayList<SynapseXpathFunctionContextProvider>();
+
+        // Load default function extensions
+        String synapseXPathFunctionExtensionsPropValue = synapseProps.getProperty(SYNAPSE_XPATH_FUNCTION_EXTENSIONS);
+        extractProviders(synapseXPathFunctionExtensionsPropValue, extProviders);
+
+        // Load custom function extensions
+        String synapseCustomXPathFunctionExtensionsPropValue =
+                synapseProps.getProperty(SYNAPSE_CUSTOM_XPATH_FUNCTION_EXTENSIONS);
+        extractProviders(synapseCustomXPathFunctionExtensionsPropValue, extProviders);
         return extProviders;
     }
 
