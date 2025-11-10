@@ -19,6 +19,7 @@
 package org.apache.synapse.mediators.opa;
 
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
@@ -69,6 +70,10 @@ public class OPAClient {
     private int connectionTimeout = 30;
 
     private CloseableHttpClient httpClient = null;
+    private static final String PRIMARY_KEY_STORE_TYPE_PROPERTY = "primary.key.type";
+    private static final String DEFAULT_KEYSTORE_TYPE ="JKS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
+    public static final String BCFKS = "BCFKS";
 
     public OPAClient(String url, Map<String, String> additionalParameters) throws OPASecurityException {
 
@@ -191,7 +196,7 @@ public class OPAClient {
             String trustStoreLocation = System.getProperty(OPAConstants.TRUST_STORE_LOCATION_SYSTEM_PROPERTY);
             File trustStoreFile = new File(trustStoreLocation);
             try (InputStream localTrustStoreStream = new FileInputStream(trustStoreFile)) {
-                KeyStore trustStore = KeyStore.getInstance("JKS");
+                KeyStore trustStore = KeyStore.getInstance(getKeyType());
                 trustStore.load(localTrustStoreStream, trustStorePassword);
                 SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(trustStore).build();
 
@@ -250,5 +255,14 @@ public class OPAClient {
                 .setSocketTimeout((connectionTimeout + 10) * 10000).build();
 
         return HttpClients.custom().setConnectionManager(pool).setDefaultRequestConfig(params).build();
+    }
+
+    private static String getKeyType() {
+        String keyType = System.getProperty(PRIMARY_KEY_STORE_TYPE_PROPERTY);
+        if (System.getProperty(SECURITY_JCE_PROVIDER) != null) {
+            return StringUtils.isNotEmpty(keyType) ? keyType : BCFKS;
+        } else {
+            return StringUtils.isNotEmpty(keyType) ? keyType : DEFAULT_KEYSTORE_TYPE;
+        }
     }
 }
