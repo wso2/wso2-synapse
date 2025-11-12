@@ -55,7 +55,7 @@ public class ReplayDispatcher {
     private static final Properties props = MiscellaneousUtil.loadProperties(PROPERTY_FILE);
     // Maximum size of the replay record queue
     private static final int REPLAY_MAX_BUFFER_SIZE = Integer.parseInt(
-            MiscellaneousUtil.getProperty(props, PassThroughConstants.REPLAY_MAX_BUFFER_SIZE_KEY, "1000"));
+            MiscellaneousUtil.getProperty(props, PassThroughConstants.REPLAY_MAX_BUFFER_SIZE_KEY, "10000"));
     // Frequency at which dropped message logs are emitted
     private static final int REPLAY_LOG_DROP_FREQUENCY = Integer.parseInt(
             MiscellaneousUtil.getProperty(props, PassThroughConstants.REPLAY_LOG_DROP_FREQUENCY_KEY, "100"));
