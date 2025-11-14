@@ -45,7 +45,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ReplayDispatcher {
     private static final Log log = LogFactory.getLog(ReplayDispatcher.class);
     private static volatile ReplayDispatcher instance;
-    private volatile boolean running = true;
     // Counter tracking the number of dropped replay records due to queue overflow
     private final AtomicLong droppedCount = new AtomicLong(0);
     // Writer instance that handles actual replay data persistence
@@ -175,7 +174,7 @@ public class ReplayDispatcher {
     /**
      * Starts the background thread pool which asynchronously writes buffered replay records using
      * the configured ReplayDataWriter.
-     * The worker threads run until running is set to false and the queue is drained.
+     * The worker threads run until the queue is drained.
      */
     private void startReplayWorker() {
         // ExecutorService managing a configurable pool of worker threads for asynchronously processing replay records
@@ -193,7 +192,7 @@ public class ReplayDispatcher {
 
         for (int i = 0; i < ReplayDispatcher.CORE_POOL_SIZE; i++) {
             replayWorkerThreadPool.submit(() -> {
-                while (running || !replayQueue.isEmpty()) {
+                while (!replayQueue.isEmpty()) {
                     ReplayRecord replayRecord = replayQueue.poll();
                     if (replayRecord != null) {
                         try {
