@@ -1075,7 +1075,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         TargetContext.updateState(conn, ProtocolState.CLOSED);
         targetConfiguration.getConnections().shutdownConnection(conn, true);
         MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
-        if (requestMsgCtx != null) {
+        if (state != ProtocolState.RESPONSE_DONE && requestMsgCtx != null) {
             requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
                     PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
             targetErrorHandler.handleError(requestMsgCtx,
