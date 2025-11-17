@@ -1080,7 +1080,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                     PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
             targetErrorHandler.handleError(requestMsgCtx,
                     ErrorCodes.SND_IO_ERROR,
-                    "Error In Sender",
+                    "Error in Sender",
                     null,
                     state);
         }
