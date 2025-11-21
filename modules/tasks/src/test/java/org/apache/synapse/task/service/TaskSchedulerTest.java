@@ -28,14 +28,13 @@ import org.apache.synapse.task.TaskDescriptionFactory;
 import org.apache.synapse.task.TaskManager;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
+
 
 import javax.xml.stream.XMLStreamException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.Properties;
 
-@PrepareForTest(TaskManager.class)
 public class TaskSchedulerTest {
 
     private final String SYNAPSE_NAMESPACE = "http://ws.apache.org/ns/synapse";

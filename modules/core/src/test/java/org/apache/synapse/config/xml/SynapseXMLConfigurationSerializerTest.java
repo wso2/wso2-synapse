@@ -37,15 +37,13 @@ import org.apache.synapse.startup.quartz.StartUpController;
 import org.apache.synapse.task.TaskDescription;
 import org.junit.Assert;
 import org.junit.Test;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.Mockito;
 
 import javax.xml.namespace.QName;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.powermock.api.mockito.PowerMockito.doReturn;
 
 /**
  * This is the test class for SynapseXMLConfigurationSerializer class.
@@ -176,10 +174,10 @@ public class SynapseXMLConfigurationSerializerTest {
     public void testSerializeConfiguration7() throws MalformedURLException {
         SynapseXMLConfigurationSerializer serializer = new SynapseXMLConfigurationSerializer();
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
-        Entry entry = PowerMockito.mock(Entry.class);
+        Entry entry = Mockito.mock(Entry.class);
         entry.setType(Entry.URL_SRC);
-        doReturn(new URL("https://test")).when(entry).getSrc();
-        doReturn("testKey").when(entry).getKey();
+        Mockito.doReturn(new URL("https://test")).when(entry).getSrc();
+        Mockito.doReturn("testKey").when(entry).getKey();
         synapseConfiguration.addEntry("root_wsdl", entry);
         OMElement element = serializer.serializeConfiguration(synapseConfiguration);
         Assert.assertNotNull("OMElement is not returned", element);
