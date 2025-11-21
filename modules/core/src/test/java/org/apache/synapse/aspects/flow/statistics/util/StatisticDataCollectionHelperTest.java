@@ -28,10 +28,9 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -44,10 +43,7 @@ import static org.mockito.ArgumentMatchers.any;
 /**
  * Unit tests for StatisticDataCollectionHelper class.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(RuntimeStatisticCollector.class)
-@PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "javax.management.*", "javax.xml.parsers.*", "org.apache" +
-        ".xerces.jaxp.*", "javax.naming.spi.*", "javax.naming.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class StatisticDataCollectionHelperTest {
 
     private static Axis2MessageContext messageContext;
@@ -137,17 +133,19 @@ public class StatisticDataCollectionHelperTest {
      */
     @Test
     public void testCollectAggregatedParents() {
-        PowerMockito.mockStatic(RuntimeStatisticCollector.class);
-        PowerMockito.when(RuntimeStatisticCollector.isStatisticsEnabled()).thenReturn(true);
-        PowerMockito.when(RuntimeStatisticCollector.shouldReportStatistic(any(MessageContext.class))).thenReturn(true);
-        messageContextOld.setProperty(StatisticsConstants.MEDIATION_FLOW_STATISTICS_PARENT_INDEX, 1);
-        messageContextNew.setProperty(StatisticsConstants.MEDIATION_FLOW_STATISTICS_PARENT_INDEX, 2);
-        List<MessageContext> messageList = new ArrayList<>();
-        messageList.add(messageContextOld);
-        StatisticDataCollectionHelper.collectAggregatedParents(messageList, messageContextNew);
-        List<Integer> parentList = Arrays.asList(1);
-        Assert.assertEquals("should return all the parent indices in message list", parentList, messageContextNew
-                .getProperty(StatisticsConstants.MEDIATION_FLOW_STATISTICS_PARENT_LIST));
+        try (MockedStatic<RuntimeStatisticCollector> mockedCollector = Mockito.mockStatic(RuntimeStatisticCollector.class)) {
+            mockedCollector.when(RuntimeStatisticCollector::isStatisticsEnabled).thenReturn(true);
+            mockedCollector.when(() -> RuntimeStatisticCollector.shouldReportStatistic(any(MessageContext.class))).thenReturn(true);
+            
+            messageContextOld.setProperty(StatisticsConstants.MEDIATION_FLOW_STATISTICS_PARENT_INDEX, 1);
+            messageContextNew.setProperty(StatisticsConstants.MEDIATION_FLOW_STATISTICS_PARENT_INDEX, 2);
+            List<MessageContext> messageList = new ArrayList<>();
+            messageList.add(messageContextOld);
+            StatisticDataCollectionHelper.collectAggregatedParents(messageList, messageContextNew);
+            List<Integer> parentList = Arrays.asList(1);
+            Assert.assertEquals("should return all the parent indices in message list", parentList, messageContextNew
+                    .getProperty(StatisticsConstants.MEDIATION_FLOW_STATISTICS_PARENT_LIST));
+        }
     }
 
     /**
@@ -155,13 +153,15 @@ public class StatisticDataCollectionHelperTest {
      */
     @Test
     public void testCollectData() {
-        PowerMockito.mockStatic(RuntimeStatisticCollector.class);
-        PowerMockito.when(RuntimeStatisticCollector.isCollectingPayloads()).thenReturn(true);
-        PowerMockito.when(RuntimeStatisticCollector.isCollectingProperties()).thenReturn(true);
-        StatisticDataUnit dataUnit = new StatisticDataUnit();
-        StatisticDataCollectionHelper.collectData(messageContext, true, true, dataUnit);
-        Assert.assertNotNull("context properties should be inserted", dataUnit.getContextPropertyMap());
-        Assert.assertNotNull("transport properties should be inserted", dataUnit.getTransportPropertyMap());
-        Assert.assertNotNull("payload should be inserted", dataUnit.getPayload());
+        try (MockedStatic<RuntimeStatisticCollector> mockedCollector = Mockito.mockStatic(RuntimeStatisticCollector.class)) {
+            mockedCollector.when(RuntimeStatisticCollector::isCollectingPayloads).thenReturn(true);
+            mockedCollector.when(RuntimeStatisticCollector::isCollectingProperties).thenReturn(true);
+            
+            StatisticDataUnit dataUnit = new StatisticDataUnit();
+            StatisticDataCollectionHelper.collectData(messageContext, true, true, dataUnit);
+            Assert.assertNotNull("context properties should be inserted", dataUnit.getContextPropertyMap());
+            Assert.assertNotNull("transport properties should be inserted", dataUnit.getTransportPropertyMap());
+            Assert.assertNotNull("payload should be inserted", dataUnit.getPayload());
+        }
     }
 }
