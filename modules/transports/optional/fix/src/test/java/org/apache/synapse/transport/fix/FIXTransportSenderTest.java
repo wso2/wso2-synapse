@@ -29,10 +29,8 @@ import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.axis2.transport.OutTransportInfo;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 import quickfix.Message;
 import quickfix.SessionID;
 import quickfix.field.BeginString;
@@ -59,9 +57,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore("javax.management.*")
-@PrepareForTest(FIXTransportSender.class)
+@RunWith(MockitoJUnitRunner.class)
 public class FIXTransportSenderTest extends TestCase {
     @Test
     public void testFIXTransportSenderInit() throws Exception {
@@ -110,12 +106,12 @@ public class FIXTransportSenderTest extends TestCase {
         FIXUtils.getInstance().setSOAPEnvelope(message, SEQ_NUM, SESSION_ID, msgCtx);
 
         OutTransportInfo info = new FIXOutTransportInfo("fix://dummyEPR");
-        FIXTransportSender spy = PowerMockito.spy(new FIXTransportSender());
-        PowerMockito.doReturn(true)
-                .when(spy, "sendUsingEPR", anyString(), anyString(), any(), anyString(), anyInt(), any());
+        FIXTransportSender spy = Mockito.spy(new FIXTransportSender());
+        Mockito.doReturn(true)
+                .when(spy).sendUsingEPR(anyString(), anyString(), any(), anyString(), anyInt(), any());
         spy.sendMessage(msgCtx, "fix://dummyEPR", info);
-        PowerMockito.verifyPrivate(spy, times(1))
-                .invoke("sendUsingEPR", anyString(), anyString(), any(), anyString(), anyInt(), any());
+        Mockito.verify(spy, times(1))
+                .sendUsingEPR(anyString(), anyString(), any(), anyString(), anyInt(), any());
 
     }
 

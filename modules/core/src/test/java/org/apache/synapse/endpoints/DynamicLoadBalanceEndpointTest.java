@@ -41,7 +41,6 @@ import org.apache.synapse.endpoints.algorithms.AlgorithmContext;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
 
 import static org.mockito.ArgumentMatchers.any;
 
@@ -74,7 +73,7 @@ public class DynamicLoadBalanceEndpointTest {
         MessageContext messageContext = createMessageContext();
 
         //Mock a LoadBalanceMembershipHandler and set
-        LoadBalanceMembershipHandler loadBalanceMembershipHandler = PowerMockito.
+        LoadBalanceMembershipHandler loadBalanceMembershipHandler = Mockito.
                 mock(LoadBalanceMembershipHandler.class);
         Member member1 = new Member("localhost", 9000);
         Mockito.when(loadBalanceMembershipHandler.
@@ -101,7 +100,7 @@ public class DynamicLoadBalanceEndpointTest {
      * @throws AxisFault on creating/mocking object
      */
     private Axis2SynapseEnvironment getMockedSynapseEnvironment() throws AxisFault {
-        Axis2SynapseEnvironment synapseEnvironment = PowerMockito.mock(Axis2SynapseEnvironment.class);
+        Axis2SynapseEnvironment synapseEnvironment = Mockito.mock(Axis2SynapseEnvironment.class);
         ConfigurationContext axis2ConfigurationContext = new ConfigurationContext(new AxisConfiguration());
         axis2ConfigurationContext.getAxisConfiguration().addParameter(SynapseConstants.SYNAPSE_ENV, synapseEnvironment);
         Mockito.when(synapseEnvironment.getAxis2ConfigurationContext()).thenReturn(axis2ConfigurationContext);
