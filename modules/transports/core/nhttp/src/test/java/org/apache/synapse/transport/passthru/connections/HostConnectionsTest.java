@@ -29,8 +29,8 @@ import org.apache.synapse.transport.passthru.config.ConnectionTimeoutConfigurati
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.powermock.api.support.membermodification.MemberModifier;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,7 +59,9 @@ public class HostConnectionsTest {
         ConnectionTimeoutConfiguration conf = new ConnectionTimeoutConfiguration(connectionIdleTime,
                 maximumConnectionLifeSpan, connectionGraceTime);
         HostConnections hostConnections = new HostConnections(null, 1, conf);
-        MemberModifier.field(HostConnections.class, "freeConnections").set(hostConnections, freeConnections);
+        Field freeConnectionsField = HostConnections.class.getDeclaredField("freeConnections");
+        freeConnectionsField.setAccessible(true);
+        freeConnectionsField.set(hostConnections, freeConnections);
         long currentTime = System.currentTimeMillis();
         Mockito.when((nHttpClientConnection.getContext())).thenReturn(Mockito.mock(HttpContext.class));
         Mockito.when((Long) nHttpClientConnection.getContext().getAttribute(PassThroughConstants.CONNECTION_INIT_TIME))

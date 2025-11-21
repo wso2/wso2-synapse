@@ -26,7 +26,7 @@
    </parent>
    <groupId>org.apache.synapse</groupId>
    <artifactId>Apache-Synapse</artifactId>
-   <version>4.0.0-wso2v290-SNAPSHOT</version>
+   <version>4.1.0-wso2v1-SNAPSHOT</version>
    <name>Apache Synapse</name>
    <description>Apache Synapse</description>
    <packaging>pom</packaging>
@@ -218,8 +218,8 @@
                  <artifactId>maven-compiler-plugin</artifactId>
                  <version>${maven.compiler.plugin.version}</version>
                  <configuration>
-                     <source>1.8</source>
-                     <target>1.8</target>
+                     <source>21</source>
+                     <target>21</target>
                  </configuration>
              </plugin>
              <plugin>
@@ -1162,47 +1162,16 @@
               <artifactId>zipkin-sender-okhttp3</artifactId>
               <version>${zipkin.sender.okhttp3.version}</version>
           </dependency>
-          <!--Mockito Dependency-->
-          <dependency>
-              <groupId>org.powermock</groupId>
-              <artifactId>powermock-api-mockito2</artifactId>
-              <version>${powermock.version}</version>
-              <scope>test</scope>
-          </dependency>
-          <dependency>
-              <groupId>org.powermock</groupId>
-              <artifactId>powermock-module-junit4</artifactId>
-              <version>${powermock.version}</version>
-              <scope>test</scope>
-          </dependency>
-          <dependency>
-              <groupId>org.powermock</groupId>
-              <artifactId>powermock-core</artifactId>
-              <version>${powermock.version}</version>
-              <scope>test</scope>
-          </dependency>
-          <dependency>
-              <groupId>org.powermock</groupId>
-              <artifactId>powermock-reflect</artifactId>
-              <version>${powermock.version}</version>
-              <scope>test</scope>
-          </dependency>
-          <dependency>
-              <groupId>org.powermock</groupId>
-              <artifactId>powermock-module-junit4-common</artifactId>
-              <version>${powermock.version}</version>
-              <scope>test</scope>
-          </dependency>
-          <dependency>
-              <groupId>org.powermock</groupId>
-              <artifactId>powermock-api-support</artifactId>
-              <version>${powermock.version}</version>
-              <scope>test</scope>
-          </dependency>
           <dependency>
               <groupId>org.mockito</groupId>
               <artifactId>mockito-core</artifactId>
               <version>${mockito.version}</version>
+              <scope>test</scope>
+          </dependency>
+          <dependency>
+              <groupId>org.mockito</groupId>
+              <artifactId>mockito-inline</artifactId>
+              <version>5.2.0</version>
               <scope>test</scope>
           </dependency>
           <dependency>
@@ -1397,9 +1366,9 @@
               <version>${org.wso2.json.version}</version>
           </dependency>
           <dependency>
-              <groupId>javax.xml.bind</groupId>
-              <artifactId>jaxb-api</artifactId>
-              <version>${jaxb.version}</version>
+              <groupId>jakarta.xml.bind</groupId>
+              <artifactId>jakarta.xml.bind-api</artifactId>
+              <version>${jakarta.xml.bind.version}</version>
           </dependency>
           <dependency>
               <groupId>com.sun.xml.bind</groupId>
@@ -1517,14 +1486,14 @@
       <maven.site.plugin.version>2.0-beta-6</maven.site.plugin.version>
       <maven.surefire.plugin.version>2.12.4</maven.surefire.plugin.version>
       <maven.surefire.plugin.version.2.2>2.2</maven.surefire.plugin.version.2.2>
-      <maven.jacoco.plugin.version>0.8.6</maven.jacoco.plugin.version>
+      <maven.jacoco.plugin.version>0.8.12</maven.jacoco.plugin.version>
       <maven.assembly.plugin.version>2.2-beta-2</maven.assembly.plugin.version>
-      <maven.bundle.plugin.version>3.3.0</maven.bundle.plugin.version>
+      <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
       <maven.dependency.plugin.version>2.0</maven.dependency.plugin.version>
       <antlr3.maven.plugin.version>3.4</antlr3.maven.plugin.version>
       <antlr4.maven.plugin.version>4.7.1</antlr4.maven.plugin.version>
       <maven.antrun.plugin.version>1.8</maven.antrun.plugin.version>
-      <maven.war.plugin.version>2.6</maven.war.plugin.version>
+      <maven.war.plugin.version>3.5.0</maven.war.plugin.version>
       <build.helper.maven.plugin.version>3.2.0</build.helper.maven.plugin.version>
       <maven.archetype.packaging.version>2.0-alpha-4</maven.archetype.packaging.version>
       <maven.archetype.plugin.version>3.1.0</maven.archetype.plugin.version>
@@ -1641,8 +1610,7 @@
       <project.scm.id>wso2-scm-server</project.scm.id>
       <javax.cache.version>0.5</javax.cache.version>
       <javax.servlet.version>3.0.1</javax.servlet.version>
-      <powermock.version>2.0.9</powermock.version>
-      <mockito.version>3.0.0</mockito.version>
+      <mockito.version>5.3.1</mockito.version>
       <java-json-tools.json.schema.validator.version>2.2.14.wso2v1</java-json-tools.json.schema.validator.version>
       <fasterxml.jackson.version>2.17.2</fasterxml.jackson.version>
       <fasterxml.jackson-databind.version>2.17.2</fasterxml.jackson-databind.version>
@@ -1650,8 +1618,8 @@
       <failureaccess.version>1.0.3</failureaccess.version>
       <joda-time.version>2.9.4.wso2v1</joda-time.version>
       <com.googlecode.libphonenumber.version>9.0.22.wso2v1</com.googlecode.libphonenumber.version>
-      <jacoco.agent.version>0.8.6</jacoco.agent.version>
-      <jacoco.ant.version>0.8.6</jacoco.ant.version>
+      <jacoco.agent.version>0.8.12</jacoco.agent.version>
+      <jacoco.ant.version>0.8.12</jacoco.ant.version>
       <dataprovider.version>1.13.1</dataprovider.version>
       <activemq.version>5.2.0</activemq.version>
       <rhino.version>1.7.13</rhino.version>
@@ -1682,11 +1650,12 @@
        <javax.api.version>2.1.1</javax.api.version>
        <javax.inject.version>1</javax.inject.version>
 
-       <glassfish.jersey.version>2.35</glassfish.jersey.version>
+       <glassfish.jersey.version>2.41</glassfish.jersey.version>
 
        <freemarker.version>2.3.30</freemarker.version>
        <awaitility.version>3.1.2</awaitility.version>
-       <jaxb.version>2.3.0</jaxb.version>
+       <jaxb.version>4.0.6</jaxb.version>
+       <jakarta.xml.bind.version>4.0.4</jakarta.xml.bind.version>
        <nashorn.core.version>15.4</nashorn.core.version>
        <graalvm.version>22.3.4</graalvm.version>
        <icu.version>72.1</icu.version>
