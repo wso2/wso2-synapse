@@ -35,7 +35,6 @@ import org.apache.synapse.config.xml.SequenceMediatorFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
 
 import java.util.Properties;
 
@@ -86,7 +85,7 @@ public class ProxyServiceMessageReceiverTest {
      * @throws AxisFault on creating/mocking object
      */
     private Axis2SynapseEnvironment getMockedSynapseEnvironment() throws AxisFault {
-        Axis2SynapseEnvironment synapseEnvironment = PowerMockito.mock(Axis2SynapseEnvironment.class);
+        Axis2SynapseEnvironment synapseEnvironment = Mockito.mock(Axis2SynapseEnvironment.class);
         ConfigurationContext axis2ConfigurationContext = new ConfigurationContext(new AxisConfiguration());
         Mockito.when(synapseEnvironment.getAxis2ConfigurationContext()).thenReturn(axis2ConfigurationContext);
         return synapseEnvironment;
