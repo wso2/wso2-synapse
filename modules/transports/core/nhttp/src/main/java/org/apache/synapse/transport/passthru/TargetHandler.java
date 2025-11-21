@@ -25,6 +25,7 @@ import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.ConnectionClosedException;
+import org.apache.http.Header;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
@@ -89,10 +90,12 @@ public class TargetHandler implements NHttpClientEventHandler {
     private static boolean isMessageSizeValidationEnabled = false;
 
     private static int validMaxMessageSize = Integer.MAX_VALUE;
+    private static boolean dropMessageWhenSizeLimitExceeded = false;
 
     public static final String PROPERTY_FILE = "passthru-http.properties";
     public static final String MESSAGE_SIZE_VALIDATION = "message.size.validation.enabled";
     public static final String VALID_MAX_MESSAGE_SIZE = "valid.max.message.size.in.bytes";
+    public static final String DROP_MESSAGE_WHEN_SIZE_LIMIT_EXCEEDED = "drop.message.when.size.limit.exceeded";
     public static final String CONNECTION_POOL = "CONNECTION_POOL";
 
     private List<StreamInterceptor> streamInterceptors;
@@ -125,6 +128,9 @@ public class TargetHandler implements NHttpClientEventHandler {
         String validMaxMessageSizeStr = MiscellaneousUtil
                 .getProperty(props, VALID_MAX_MESSAGE_SIZE, String.valueOf(Integer.MAX_VALUE));
         isMessageSizeValidationEnabled = Boolean.valueOf(validationProperty);
+        String dropMessageWhenSizeLimitExceededProperty = MiscellaneousUtil
+                .getProperty(props, DROP_MESSAGE_WHEN_SIZE_LIMIT_EXCEEDED, "false");
+        dropMessageWhenSizeLimitExceeded = Boolean.valueOf(dropMessageWhenSizeLimitExceededProperty);
         try {
             validMaxMessageSize = Integer.valueOf(validMaxMessageSizeStr);
         } catch (NumberFormatException e) {
@@ -382,6 +388,26 @@ public class TargetHandler implements NHttpClientEventHandler {
         HttpResponse response = conn.getHttpResponse();
         ProtocolState connState;
         try {
+            if (isMessageSizeValidationEnabled) {
+                Header contentLengthHeader = response.getFirstHeader(PassThroughConstants.HTTP_CONTENT_LENGTH);
+                if (contentLengthHeader != null) {
+                    String value = contentLengthHeader.getValue();
+                    long length = Long.parseLong(value);
+                    if (length > validMaxMessageSize) {
+                        MessageContext requestMsgContext = TargetContext.get(conn).getRequestMsgCtx();
+                        if (requestMsgContext != null) {
+                            NHttpServerConnection sourceConn = (NHttpServerConnection) requestMsgContext.getProperty(
+                                    PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
+                            sourceConn.getContext()
+                                    .setAttribute(PassThroughConstants.MESSAGE_SIZE_LIMIT_EXCEEDED, true);
+                            if (dropMessageWhenSizeLimitExceeded) {
+                                sourceConn.getContext().setAttribute(
+                                        PassThroughConstants.DROP_MESSAGE_DUE_TO_SIZE_LIMIT_EXCEEDED, true);
+                            }
+                        }
+                    }
+                }
+            }
             boolean isError = false;
             String method = null;
             ProxyTunnelHandler tunnelHandler = (ProxyTunnelHandler) context.getAttribute(PassThroughConstants.TUNNEL_HANDLER);
