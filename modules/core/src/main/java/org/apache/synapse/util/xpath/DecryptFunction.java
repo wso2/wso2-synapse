@@ -15,6 +15,7 @@
  */
 package org.apache.synapse.util.xpath;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jaxen.Context;
@@ -44,7 +45,10 @@ public class DecryptFunction implements Function {
     private static final Log log = LogFactory.getLog(DecryptFunction.class);
     private static final String DEFAULT_ALGORITHM = "RSA";
     private static final String DEFAULT_KEYSTORE_TYPE = "JKS";
-    private static Map<String, Cipher> cipherInstancesMap = new ConcurrentHashMap<>();
+    private static final Map<String, Cipher> cipherInstancesMap = new ConcurrentHashMap<>();
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
+    private static final String PRIMARY_KEY_STORE_TYPE_PROPERTY = "primary.key.type";
+    public static final String BCFKS = "BCFKS";
 
     @Override
     public Object call(Context context, List args) throws FunctionCallException {
@@ -62,7 +66,7 @@ public class DecryptFunction implements Function {
             String keyStore = StringFunction.evaluate(args.get(1), context.getNavigator());
             String keyStorePassword = StringFunction.evaluate(args.get(2), context.getNavigator());
             String keyStoreAlias = StringFunction.evaluate(args.get(3), context.getNavigator());
-            return decrypt(encryptedText.getBytes(), keyStore, keyStorePassword, keyStoreAlias, DEFAULT_KEYSTORE_TYPE,
+            return decrypt(encryptedText.getBytes(), keyStore, keyStorePassword, keyStoreAlias, getKeyType(),
                         DEFAULT_ALGORITHM);
         }
         if (size == 5) {
@@ -131,5 +135,14 @@ public class DecryptFunction implements Function {
             cipherInstancesMap.put(algorithm, cipherInstance);
         }
         return cipherInstance;
+    }
+
+    private static String getKeyType() {
+        String keyType = System.getProperty(PRIMARY_KEY_STORE_TYPE_PROPERTY);
+        if (StringUtils.isNotEmpty(System.getProperty(SECURITY_JCE_PROVIDER))) {
+            return StringUtils.isNotEmpty(keyType) ? keyType : BCFKS;
+        } else {
+            return StringUtils.isNotEmpty(keyType) ? keyType : DEFAULT_KEYSTORE_TYPE;
+        }
     }
 }
