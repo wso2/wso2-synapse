@@ -37,7 +37,9 @@ import org.apache.http.nio.reactor.SessionInputBuffer;
 import org.apache.http.nio.reactor.SessionOutputBuffer;
 import org.apache.http.nio.util.ByteBufferAllocator;
 import org.apache.http.params.HttpParams;
+import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.transport.http.access.AccessHandler;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.TargetHandler;
 
 import java.io.IOException;
@@ -45,6 +47,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectionKey;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
@@ -62,6 +65,10 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
 
     private IOSession original;
     private boolean releaseConn = false;
+    private static final String PROPERTY_FILE = "passthru-http.properties";
+    private static final Properties props = MiscellaneousUtil.loadProperties(PROPERTY_FILE);
+    private static final boolean REPLAY_TXN_ENABLED = Boolean.parseBoolean(
+            MiscellaneousUtil.getProperty(props, PassThroughConstants.REPLAY_TXN_ENABLED_KEY, "false"));
 
     public LoggingNHttpClientConnection(
             final IOSession session,
@@ -78,6 +85,9 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
         this.original = session;
         if (this.iolog.isDebugEnabled() || this.wirelog.isDebugEnabled() || SynapseDebugInfoHolder.getInstance().isDebuggerEnabled()) {
             super.bind(new LoggingIOSession(session, this.id, this.iolog, this.wirelog));
+        }
+        if (REPLAY_TXN_ENABLED) {
+            super.bind(new ReplayIOSession(session, this.id));
         }
     }
 
@@ -316,6 +326,8 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
         this.original = session;
         if (this.iolog.isDebugEnabled() || this.wirelog.isDebugEnabled() || SynapseDebugInfoHolder.getInstance().isDebuggerEnabled()) {
             super.bind(new LoggingIOSession(session, this.id, this.iolog, this.wirelog));
+        } if (REPLAY_TXN_ENABLED) {
+            super.bind(new ReplayIOSession(session, this.id));
         } else {
             super.bind(session);
         }
