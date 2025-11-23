@@ -38,24 +38,21 @@ import org.apache.synapse.transport.passthru.connections.HostConnections;
 import org.apache.synapse.transport.passthru.connections.TargetConnections;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.nio.ByteBuffer;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class for TargetResponse
  */
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore("javax.management.*")
-@PrepareForTest({ TargetContext.class, TargetResponse.class, HttpRequest.class })
 public class TargetResponseTest extends TestCase {
     private static Log logger = LogFactory.getLog(TargetResponseTest.class.getName());
 
@@ -66,29 +63,29 @@ public class TargetResponseTest extends TestCase {
      */
     @Test
     public void testFalse() throws Exception {
-        ConfigurationContext configurationContext = new ConfigurationContext(new AxisConfiguration());
-        WorkerPool workerPool = new NativeWorkerPool(3, 4, 5, 5, "name", "id");
-        PassThroughTransportMetricsCollector metrics = new PassThroughTransportMetricsCollector(true, "testScheme");
+        try (MockedStatic<TargetContext> targetContextMock = mockStatic(TargetContext.class)) {
+            ConfigurationContext configurationContext = new ConfigurationContext(new AxisConfiguration());
+            WorkerPool workerPool = new NativeWorkerPool(3, 4, 5, 5, "name", "id");
+            PassThroughTransportMetricsCollector metrics = new PassThroughTransportMetricsCollector(true, "testScheme");
 
-        TargetConfiguration targetConfiguration = new TargetConfiguration(configurationContext, null, workerPool,
-                metrics, null);
-        HttpResponse response = PowerMockito.mock(HttpResponse.class, Mockito.RETURNS_DEEP_STUBS);
-        NHttpClientConnection conn = PowerMockito.mock(NHttpClientConnection.class, Mockito.RETURNS_DEEP_STUBS);
-        TargetConnections connections = PowerMockito.mock(TargetConnections.class);
-        targetConfiguration.setConnections(connections);
+            TargetConfiguration targetConfiguration = new TargetConfiguration(configurationContext, null, workerPool,
+                    metrics, null);
+            HttpResponse response = mock(HttpResponse.class, Mockito.RETURNS_DEEP_STUBS);
+            NHttpClientConnection conn = mock(NHttpClientConnection.class, Mockito.RETURNS_DEEP_STUBS);
+            TargetConnections connections = mock(TargetConnections.class);
+            targetConfiguration.setConnections(connections);
 
-        PowerMockito.mockStatic(TargetContext.class);
-        PowerMockito.mockStatic(HttpRequest.class);
-        HttpRequest httpRequest = new BasicHttpRequest("GET", "test.com");
-        PowerMockito.when(conn.getContext().getAttribute("http.request")).thenReturn(httpRequest);
+            HttpRequest httpRequest = new BasicHttpRequest("GET", "test.com");
+            when(conn.getContext().getAttribute("http.request")).thenReturn(httpRequest);
 
-        TargetResponse targetResponse = new TargetResponse(targetConfiguration, response, conn, false, false);
+            TargetResponse targetResponse = new TargetResponse(targetConfiguration, response, conn, false, false);
 
-        try {
-            targetResponse.start(conn);
-        } catch (Exception e) {
-            logger.error(e);
-            Assert.fail("Unable to start the target response!");
+            try {
+                targetResponse.start(conn);
+            } catch (Exception e) {
+                logger.error(e);
+                Assert.fail("Unable to start the target response!");
+            }
         }
     }
 
@@ -99,28 +96,28 @@ public class TargetResponseTest extends TestCase {
      */
     @Test
     public void testTrue() throws Exception {
-        ConfigurationContext configurationContext = new ConfigurationContext(new AxisConfiguration());
-        WorkerPool workerPool = new NativeWorkerPool(3, 4, 5, 5, "name", "id");
-        PassThroughTransportMetricsCollector metrics = new PassThroughTransportMetricsCollector(true, "testScheme");
+        try (MockedStatic<TargetContext> targetContextMock = mockStatic(TargetContext.class)) {
+            ConfigurationContext configurationContext = new ConfigurationContext(new AxisConfiguration());
+            WorkerPool workerPool = new NativeWorkerPool(3, 4, 5, 5, "name", "id");
+            PassThroughTransportMetricsCollector metrics = new PassThroughTransportMetricsCollector(true, "testScheme");
 
-        TargetConfiguration targetConfiguration = new TargetConfiguration(configurationContext, null, workerPool,
-                metrics, null);
-        targetConfiguration.build();
-        HttpResponse response = PowerMockito.mock(HttpResponse.class, Mockito.RETURNS_DEEP_STUBS);
-        NHttpClientConnection conn = PowerMockito.mock(NHttpClientConnection.class, Mockito.RETURNS_DEEP_STUBS);
+            TargetConfiguration targetConfiguration = new TargetConfiguration(configurationContext, null, workerPool,
+                    metrics, null);
+            targetConfiguration.build();
+            HttpResponse response = mock(HttpResponse.class, Mockito.RETURNS_DEEP_STUBS);
+            NHttpClientConnection conn = mock(NHttpClientConnection.class, Mockito.RETURNS_DEEP_STUBS);
 
-        PowerMockito.mockStatic(TargetContext.class);
+            TargetContext cntxt = new TargetContext(targetConfiguration);
+            targetContextMock.when(() -> TargetContext.get(any(NHttpClientConnection.class))).thenReturn(cntxt);
 
-        TargetContext cntxt = new TargetContext(targetConfiguration);
-        PowerMockito.when(TargetContext.get(any(NHttpClientConnection.class))).thenReturn(cntxt);
+            TargetResponse targetResponse = new TargetResponse(targetConfiguration, response, conn, true, false);
 
-        TargetResponse targetResponse = new TargetResponse(targetConfiguration, response, conn, true, false);
-
-        try {
-            targetResponse.start(conn);
-        } catch (Exception e) {
-            logger.error(e);
-            Assert.fail("Unable to start the target response!");
+            try {
+                targetResponse.start(conn);
+            } catch (Exception e) {
+                logger.error(e);
+                Assert.fail("Unable to start the target response!");
+            }
         }
     }
 
@@ -130,39 +127,39 @@ public class TargetResponseTest extends TestCase {
      */
     @Test
     public void testRead() throws Exception {
-        ConfigurationContext configurationContext = new ConfigurationContext(new AxisConfiguration());
-        WorkerPool workerPool = new NativeWorkerPool(3, 4, 5, 5, "name", "id");
-        PassThroughTransportMetricsCollector metrics = new PassThroughTransportMetricsCollector(true, "testScheme");
+        try (MockedStatic<TargetContext> targetContextMock = mockStatic(TargetContext.class)) {
+            ConfigurationContext configurationContext = new ConfigurationContext(new AxisConfiguration());
+            WorkerPool workerPool = new NativeWorkerPool(3, 4, 5, 5, "name", "id");
+            PassThroughTransportMetricsCollector metrics = new PassThroughTransportMetricsCollector(true, "testScheme");
 
-        HostConnections pool = new HostConnections(new RouteRequestMapping(new HttpRoute(new HttpHost("localhost")), ""), 1024);
-        HttpContext context = PowerMockito.mock(HttpContext.class);
-        context.setAttribute("CONNECTION_POOL", pool);
+            HostConnections pool = new HostConnections(new RouteRequestMapping(new HttpRoute(new HttpHost("localhost")), ""), 1024);
+            HttpContext context = mock(HttpContext.class);
+            context.setAttribute("CONNECTION_POOL", pool);
 
-        TargetConfiguration targetConfiguration = new TargetConfiguration(configurationContext, null, workerPool,
-                metrics, null);
-        targetConfiguration.build();
-        HttpResponse response = PowerMockito.mock(HttpResponse.class, Mockito.RETURNS_DEEP_STUBS);
-        NHttpClientConnection conn = PowerMockito.mock(NHttpClientConnection.class, Mockito.RETURNS_DEEP_STUBS);
-        ContentDecoder decoder = PowerMockito.mock(ContentDecoder.class);
-        TargetConnections connections = PowerMockito.mock(TargetConnections.class);
-        targetConfiguration.setConnections(connections);
+            TargetConfiguration targetConfiguration = new TargetConfiguration(configurationContext, null, workerPool,
+                    metrics, null);
+            targetConfiguration.build();
+            HttpResponse response = mock(HttpResponse.class, Mockito.RETURNS_DEEP_STUBS);
+            NHttpClientConnection conn = mock(NHttpClientConnection.class, Mockito.RETURNS_DEEP_STUBS);
+            ContentDecoder decoder = mock(ContentDecoder.class);
+            TargetConnections connections = mock(TargetConnections.class);
+            targetConfiguration.setConnections(connections);
 
-        PowerMockito.mockStatic(TargetContext.class);
-        PowerMockito.mockStatic(HttpRequest.class);
-        HttpRequest httpRequest = new BasicHttpRequest("GET", "test.com");
-        PowerMockito.when(conn.getContext().getAttribute("http.request")).thenReturn(httpRequest);
+            HttpRequest httpRequest = new BasicHttpRequest("GET", "test.com");
+            when(conn.getContext().getAttribute("http.request")).thenReturn(httpRequest);
 
-        TargetContext cntxt = new TargetContext(targetConfiguration);
-        PowerMockito.when(TargetContext.get(any(NHttpClientConnection.class))).thenReturn(cntxt);
-        PowerMockito.when(decoder.read(any(ByteBuffer.class))).thenReturn(12, -1);
-        PowerMockito.when(decoder.isCompleted()).thenReturn(true);
-        PowerMockito.when(conn.getContext()).thenReturn(context);
+            TargetContext cntxt = new TargetContext(targetConfiguration);
+            targetContextMock.when(() -> TargetContext.get(any(NHttpClientConnection.class))).thenReturn(cntxt);
+            when(decoder.read(any(ByteBuffer.class))).thenReturn(12, -1);
+            when(decoder.isCompleted()).thenReturn(true);
+            when(conn.getContext()).thenReturn(context);
 
-        TargetResponse targetResponse = new TargetResponse(targetConfiguration, response, conn, true, false);
-        targetResponse.start(conn);
-        int result = targetResponse.read(conn, decoder);
+            TargetResponse targetResponse = new TargetResponse(targetConfiguration, response, conn, true, false);
+            targetResponse.start(conn);
+            int result = targetResponse.read(conn, decoder);
 
-        Assert.assertEquals(12, result);
+            Assert.assertEquals(12, result);
+        }
     }
 
     /**
@@ -170,37 +167,38 @@ public class TargetResponseTest extends TestCase {
      *
      * @throws Exception
      */
-    @Mock
-    DefaultConnectionReuseStrategy connStrategy;
     @Test
     public void testCompletingStateTransition() throws Exception {
-        PowerMockito.whenNew(DefaultConnectionReuseStrategy.class).withNoArguments().thenReturn(connStrategy);
-        PowerMockito.when(connStrategy.keepAlive(any(HttpResponse.class), any(HttpContext.class))).thenReturn(true);
-        ConfigurationContext configurationContext = new ConfigurationContext(new AxisConfiguration());
-        WorkerPool workerPool = new NativeWorkerPool(3, 4, 5, 5, "name", "id");
-        PassThroughTransportMetricsCollector metrics = new PassThroughTransportMetricsCollector(true, "testScheme");
+        try (MockedStatic<TargetContext> targetContextMock = mockStatic(TargetContext.class);
+             MockedConstruction<DefaultConnectionReuseStrategy> connStrategyMock = mockConstruction(
+                     DefaultConnectionReuseStrategy.class,
+                     (mock, context) -> {
+                         when(mock.keepAlive(any(HttpResponse.class), any(HttpContext.class))).thenReturn(true);
+                     })) {
 
-        TargetConfiguration targetConfiguration = new TargetConfiguration(configurationContext, null, workerPool,
-                metrics, null);
-        HttpResponse response = PowerMockito.mock(HttpResponse.class, Mockito.RETURNS_DEEP_STUBS);
-        NHttpClientConnection conn = PowerMockito.mock(NHttpClientConnection.class, Mockito.RETURNS_DEEP_STUBS);
-        TargetConnections connections = PowerMockito.mock(TargetConnections.class);
-        targetConfiguration.setConnections(connections);
+            ConfigurationContext configurationContext = new ConfigurationContext(new AxisConfiguration());
+            WorkerPool workerPool = new NativeWorkerPool(3, 4, 5, 5, "name", "id");
+            PassThroughTransportMetricsCollector metrics = new PassThroughTransportMetricsCollector(true, "testScheme");
 
-        PowerMockito.mockStatic(TargetContext.class);
+            TargetConfiguration targetConfiguration = new TargetConfiguration(configurationContext, null, workerPool,
+                    metrics, null);
+            HttpResponse response = mock(HttpResponse.class, Mockito.RETURNS_DEEP_STUBS);
+            NHttpClientConnection conn = mock(NHttpClientConnection.class, Mockito.RETURNS_DEEP_STUBS);
+            TargetConnections connections = mock(TargetConnections.class);
+            targetConfiguration.setConnections(connections);
 
-        TargetResponse targetResponse = new TargetResponse(targetConfiguration, response, conn, false, false);
+            TargetResponse targetResponse = new TargetResponse(targetConfiguration, response, conn, false, false);
 
-        try {
-            targetResponse.start(conn);
-            // Verify that the following mock method was called exactly 1 time
-            PowerMockito.verifyStatic(TargetContext.class, Mockito.times(1));
-            TargetContext.updateState(conn, ProtocolState.RESPONSE_DONE);
+            try {
+                targetResponse.start(conn);
+                // Verify that the following method was called exactly 1 time
+                targetContextMock.verify(() -> TargetContext.updateState(conn, ProtocolState.RESPONSE_DONE),
+                        Mockito.times(1));
 
-
-        } catch (Exception e) {
-            logger.error(e);
-            Assert.fail("Unable to start the target response!");
+            } catch (Exception e) {
+                logger.error(e);
+                Assert.fail("Unable to start the target response!");
+            }
         }
     }
 }
