@@ -475,15 +475,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                 if (isMessageSizeValidationEnabled) {
                     if (conn.getContext().getAttribute(PassThroughConstants.MESSAGE_SIZE_LIMIT_EXCEEDED) != null) {
                         response.setStatus(HttpStatus.SC_BAD_GATEWAY);
-                        try {
-                            // Set status line using java reflection since there is no method to access it
-                            // Without setting this, it shows 'OK' for any status code.
-                            Field statusLineField = SourceResponse.class.getDeclaredField("statusLine");
-                            statusLineField.setAccessible(true);
-                            statusLineField.set(response, "Response Entity Too Large");
-                        } catch (NoSuchFieldException | IllegalAccessException e) {
-                            // Ignore
-                        }
+                        response.setStatusLine("Response Entity Too Large");
                     }
                 }
 
