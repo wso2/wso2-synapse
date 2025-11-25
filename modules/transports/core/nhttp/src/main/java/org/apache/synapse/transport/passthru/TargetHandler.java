@@ -392,19 +392,25 @@ public class TargetHandler implements NHttpClientEventHandler {
                 Header contentLengthHeader = response.getFirstHeader(PassThroughConstants.HTTP_CONTENT_LENGTH);
                 if (contentLengthHeader != null) {
                     String value = contentLengthHeader.getValue();
-                    long length = Long.parseLong(value);
-                    if (length > validMaxMessageSize) {
-                        MessageContext requestMsgContext = TargetContext.get(conn).getRequestMsgCtx();
-                        if (requestMsgContext != null) {
-                            NHttpServerConnection sourceConn = (NHttpServerConnection) requestMsgContext.getProperty(
-                                    PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
-                            sourceConn.getContext()
-                                    .setAttribute(PassThroughConstants.MESSAGE_SIZE_LIMIT_EXCEEDED, true);
-                            if (dropMessageWhenSizeLimitExceeded) {
-                                sourceConn.getContext().setAttribute(
-                                        PassThroughConstants.DROP_MESSAGE_DUE_TO_SIZE_LIMIT_EXCEEDED, true);
+                    try {
+                        long length = Long.parseLong(value);
+                        if (length > validMaxMessageSize) {
+                            MessageContext requestMsgContext = TargetContext.get(conn).getRequestMsgCtx();
+                            if (requestMsgContext != null) {
+                                NHttpServerConnection sourceConn = (NHttpServerConnection) requestMsgContext
+                                        .getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
+                                sourceConn.getContext()
+                                        .setAttribute(PassThroughConstants.MESSAGE_SIZE_LIMIT_EXCEEDED, true);
+                                if (dropMessageWhenSizeLimitExceeded) {
+                                    sourceConn.getContext().setAttribute(
+                                            PassThroughConstants.DROP_MESSAGE_DUE_TO_SIZE_LIMIT_EXCEEDED, true);
+                                }
                             }
                         }
+                    } catch (NumberFormatException e) {
+                        log.warn("Invalid Content-Length '" + value +
+                                "' from backend, response status code might be inaccurate if the payload exceeds " +
+                                "valid payload size range", e);
                     }
                 }
             }

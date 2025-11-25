@@ -475,6 +475,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                     if (conn.getContext().getAttribute(PassThroughConstants.MESSAGE_SIZE_LIMIT_EXCEEDED) != null) {
                         response.setStatus(HttpStatus.SC_BAD_GATEWAY);
                         response.setStatusLine("Response Entity Too Large");
+                        // Clean up the attribute after using, otherwise, a keep-alive connection will treat subsequent
+                        // responses as message size limit exceeded payloads, even if they are within the size limit.
+                        conn.getContext().removeAttribute(PassThroughConstants.MESSAGE_SIZE_LIMIT_EXCEEDED);
                     }
                 }
 

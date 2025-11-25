@@ -539,6 +539,9 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         SourceContext.setResponse(conn, sourceResponse);
         if (conn.getContext().getAttribute(PassThroughConstants.DROP_MESSAGE_DUE_TO_SIZE_LIMIT_EXCEEDED) != null) {
             msgContext.setProperty(PassThroughConstants.NO_ENTITY_BODY, true);
+            // Clean up the attribute after using, otherwise, a keep-alive connection will drop the message of
+            // subsequent connections, even if they are within the size limit.
+            conn.getContext().removeAttribute(PassThroughConstants.DROP_MESSAGE_DUE_TO_SIZE_LIMIT_EXCEEDED);
         }
         Boolean noEntityBody = (Boolean) msgContext.getProperty(PassThroughConstants.NO_ENTITY_BODY);
         Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
