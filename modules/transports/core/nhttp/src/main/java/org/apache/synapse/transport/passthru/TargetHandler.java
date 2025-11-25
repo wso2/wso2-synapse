@@ -399,11 +399,13 @@ public class TargetHandler implements NHttpClientEventHandler {
                             if (requestMsgContext != null) {
                                 NHttpServerConnection sourceConn = (NHttpServerConnection) requestMsgContext
                                         .getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
-                                sourceConn.getContext()
-                                        .setAttribute(PassThroughConstants.MESSAGE_SIZE_LIMIT_EXCEEDED, true);
-                                if (dropMessageWhenSizeLimitExceeded) {
-                                    sourceConn.getContext().setAttribute(
-                                            PassThroughConstants.DROP_MESSAGE_DUE_TO_SIZE_LIMIT_EXCEEDED, true);
+                                if (sourceConn != null) {
+                                    sourceConn.getContext()
+                                            .setAttribute(PassThroughConstants.MESSAGE_SIZE_LIMIT_EXCEEDED, true);
+                                    if (dropMessageWhenSizeLimitExceeded) {
+                                        sourceConn.getContext().setAttribute(
+                                                PassThroughConstants.DROP_MESSAGE_DUE_TO_SIZE_LIMIT_EXCEEDED, true);
+                                    }
                                 }
                             }
                         }
