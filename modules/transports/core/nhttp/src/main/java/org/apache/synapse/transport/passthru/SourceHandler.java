@@ -61,7 +61,6 @@ import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsColl
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
