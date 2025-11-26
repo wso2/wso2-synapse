@@ -65,14 +65,14 @@ public class HTTPEndpoint extends AbstractEndpoint {
         logSetter();
         boolean isRecursive = getParentEndpoint() instanceof FailoverEndpoint ||
                 getParentEndpoint() instanceof LoadbalanceEndpoint;
-        if (getContext().isMaxRetryLimitReached(isRecursive)) {
-            getContext().onFailoverRetryLimit(isRecursive);
+        if (getContext().isMaxRetryLimitReached(isRecursive, synCtx)) {
+            getContext().onFailoverRetryLimit(isRecursive, synCtx);
         } else {
             // is this really a fault or a timeout/connection close etc?
             if (isTimeout(synCtx)) {
-                getContext().onTimeout();
+                getContext().onTimeout(synCtx);
             } else if (isSuspendFault(synCtx)) {
-                getContext().onFault();
+                getContext().onFault(synCtx);
             }
         }
 
