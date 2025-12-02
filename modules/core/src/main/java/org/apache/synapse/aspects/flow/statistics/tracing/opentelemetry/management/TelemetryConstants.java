@@ -82,6 +82,13 @@ public class TelemetryConstants {
     public static final String ENDPOINT_ATTRIBUTE_KEY = "Endpoint";
     public static final String CORRELATION_ID_ATTRIBUTE_KEY = "CorrelationId";
 
+    public static final String ERROR_CODE_ATTRIBUTE_KEY = "error.code";
+    public static final String ERROR_MESSAGE_ATTRIBUTE_KEY = "error.message";
+
     public static final String OTEL_RESOURCE_ATTRIBUTE_KEY = "opentelemetry.properties.resource_attributes";
     public static final String OTEL_RESOURCE_ATTRIBUTES_ENVIRONMENT_VARIABLE_NAME = "OTEL_RESOURCE_ATTRIBUTES";
+
+    public static final String OLTP_CUSTOM_SPAN_TAGS = "oltp.custom.span.header.tags";
+
+    public static final String OLTP_FILTERED_MEDIATOR_NAMES = "oltp.filtered.mediator.names";
 }

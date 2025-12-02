@@ -102,7 +102,9 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
             addEventAndIncrementCount(messageContext, openEvent);
 
-            if (isOpenTelemetryEnabled()) {
+            boolean isFiltered = isSpanFilteredMediator(componentName) ||
+                    (aspectConfiguration != null && aspectConfiguration.isTraceFilterEnable());
+            if (!isFiltered && isOpenTelemetryEnabled()) {
 				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
 						.handleOpenEntryEvent(statisticDataUnit, messageContext);
 			}
@@ -134,7 +136,9 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
 
-			if (isOpenTelemetryEnabled()) {
+            boolean isFiltered = isSpanFilteredMediator(componentName) ||
+                    (aspectConfiguration != null && aspectConfiguration.isTraceFilterEnable());
+            if (!isFiltered && isOpenTelemetryEnabled()) {
 				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
 						.handleOpenChildEntryEvent(statisticDataUnit, messageContext);
 			}
@@ -168,7 +172,9 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
 
-			if (isOpenTelemetryEnabled()) {
+            boolean isFiltered = isSpanFilteredMediator(componentName) ||
+                    (aspectConfiguration != null && aspectConfiguration.isTraceFilterEnable());
+            if (!isFiltered && isOpenTelemetryEnabled()) {
 				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
 						.handleOpenFlowContinuableEvent(statisticDataUnit, messageContext);
 			}
@@ -203,7 +209,9 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
 
-			if (isOpenTelemetryEnabled()) {
+            boolean isFiltered = isSpanFilteredMediator(componentName) ||
+                    (aspectConfiguration != null && aspectConfiguration.isTraceFilterEnable());
+            if (!isFiltered && isOpenTelemetryEnabled()) {
 				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
 						.handleOpenFlowSplittingEvent(statisticDataUnit, messageContext);
 			}
@@ -237,7 +245,9 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
 
-			if (isOpenTelemetryEnabled()) {
+            boolean isFiltered = isSpanFilteredMediator(componentName) ||
+                    (aspectConfiguration != null && aspectConfiguration.isTraceFilterEnable());
+            if (!isFiltered && isOpenTelemetryEnabled()) {
 				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
 						.handleOpenFlowAggregateEvent(statisticDataUnit, messageContext);
 			}

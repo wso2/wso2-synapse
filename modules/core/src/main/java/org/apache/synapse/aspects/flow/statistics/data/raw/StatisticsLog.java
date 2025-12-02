@@ -170,7 +170,9 @@ public class StatisticsLog {
 	 */
 	private String statusDescription;
 
-	/**
+    private Map<String, Object> customProperties;
+
+    /**
 	 * Elastic analytics metadata holder.
 	 */
 	private ElasticMetadata elasticMetadata;
@@ -201,6 +203,7 @@ public class StatisticsLog {
 		this.transportHeaderMap = statisticDataUnit.getTransportHeaderMap();
 		this.statusCode = statisticDataUnit.getStatusCode();
 		this.statusDescription = statisticDataUnit.getStatusDescription();
+        this.customProperties = statisticDataUnit.getCustomProperties();
 	}
 
 	public StatisticsLog(ComponentType componentType, String componentName, int parentIndex) {
@@ -428,4 +431,8 @@ public class StatisticsLog {
 	public void setElasticMetadata(ElasticMetadata elasticMetadata) {
 		this.elasticMetadata = elasticMetadata;
 	}
+
+    public Map<String, Object> getCustomProperties() {
+        return customProperties;
+    }
 }

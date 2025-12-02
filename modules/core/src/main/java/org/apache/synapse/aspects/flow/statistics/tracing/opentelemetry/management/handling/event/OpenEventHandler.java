@@ -35,6 +35,14 @@ public interface OpenEventHandler {
     void handleOpenEntryEvent(StatisticDataUnit statisticDataUnit, MessageContext synCtx);
 
     /**
+     * Handles an open entry event.
+     *
+     * @param statisticDataUnit Statistic data unit object.
+     * @param msgCtx            Axis2 Message context.
+     */
+    void handleOpenEntryEvent(StatisticDataUnit statisticDataUnit, org.apache.axis2.context.MessageContext msgCtx);
+
+    /**
      * Handles an open child entry event.
      * @param statisticDataUnit Statistic data unit object.
      * @param synCtx            Message context.
