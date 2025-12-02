@@ -79,7 +79,12 @@ public class StatisticDataUnit extends BasicStatisticDataUnit {
 	 */
 	private ComponentType componentType;
 
-	/**
+    /**
+     * Component Type String of the reporting component.
+     */
+    private String componentTypeString;
+
+    /**
 	 * Unique Id of the reporting component.
 	 */
 	private String componentId;
@@ -126,7 +131,19 @@ public class StatisticDataUnit extends BasicStatisticDataUnit {
 	 */
 	private String statusCode;
 
-	/**
+    /**
+     * Error code if the statistic event is reported due to an error
+     */
+    private String errorCode;
+
+    /**
+     * Error message if the statistic event is reported due to an error
+     */
+    private String errorMessage;
+
+    private boolean isOuterLayerSpan = false;
+
+    /**
 	 * Status description of the response. Optional
 	 */
 	private String statusDescription;
@@ -299,4 +316,36 @@ public class StatisticDataUnit extends BasicStatisticDataUnit {
 	public void setPropertyValue(String propertyValue) {
 		this.propertyValue = propertyValue;
 	}
+
+    public String getComponentTypeString() {
+        return componentTypeString;
+    }
+
+    public void setComponentTypeString(String componentTypeString) {
+        this.componentTypeString = componentTypeString;
+    }
+
+    public String getErrorCode() {
+        return errorCode;
+    }
+
+    public void setErrorCode(String errorCode) {
+        this.errorCode = errorCode;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+
+    public boolean isOuterLayerSpan() {
+        return isOuterLayerSpan;
+    }
+
+    public void setOuterLayerSpan(boolean isOuterLayerSpan) {
+        this.isOuterLayerSpan = isOuterLayerSpan;
+    }
 }

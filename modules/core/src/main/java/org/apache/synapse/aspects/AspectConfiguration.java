@@ -47,7 +47,9 @@ public class AspectConfiguration implements StatisticsConfigurable, Identifiable
 
 	private Integer hashCode = null;
 
-	public AspectConfiguration(String id) {
+    private boolean traceFilterEnable = false;
+
+    public AspectConfiguration(String id) {
 		this.id = id;
 	}
 
@@ -120,4 +122,15 @@ public class AspectConfiguration implements StatisticsConfigurable, Identifiable
 		return hashCode;
 	}
 
+    public void enableTraceFilter() {
+        this.traceFilterEnable = true;
+    }
+
+    public void disableTraceFilter() {
+        this.traceFilterEnable = false;
+    }
+
+    public boolean isTraceFilterEnable() {
+        return traceFilterEnable;
+    }
 }

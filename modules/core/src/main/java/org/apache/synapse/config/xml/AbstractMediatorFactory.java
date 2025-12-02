@@ -183,6 +183,17 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
                     }
                 }
             }
+
+            OMAttribute traceFilter = mediatorOmElement.getAttribute(
+                    new QName(XMLConfigConstants.NULL_NAMESPACE, XMLConfigConstants.TRACE_FILTER_ATTRIB_NAME));
+            if (traceFilter != null) {
+                String traceFilterValue = traceFilter.getAttributeValue();
+                if (traceFilterValue != null) {
+                    if (traceFilterValue.equals(XMLConfigConstants.TRACE_FILTER_ENABLE)) {
+                        configuration.enableTraceFilter();
+                    }
+                }
+            }
         }
     }
 

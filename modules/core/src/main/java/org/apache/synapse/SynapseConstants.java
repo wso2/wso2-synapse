@@ -740,4 +740,6 @@ public final class SynapseConstants {
     public static final String CONNECTOR_ARTIFACT = "CONNECTOR_ARTIFACT";
     public static final String APPEND_ARTIFACT_IDENTIFIER = "APPEND_ARTIFACT_IDENTIFIER";
     public static final String EXPOSE_VERSIONED_SERVICES = "expose.versioned.services";
+
+    public static final String SKIP_MAIN_SEQUENCE = "SKIP_MAIN_SEQUENCE";
 }

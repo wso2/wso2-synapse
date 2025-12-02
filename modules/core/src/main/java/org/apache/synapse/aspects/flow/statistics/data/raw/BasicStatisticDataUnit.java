@@ -18,6 +18,7 @@
 
 package org.apache.synapse.aspects.flow.statistics.data.raw;
 
+import java.util.Map;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.elasticsearch.ElasticMetadata;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -67,7 +68,12 @@ public class BasicStatisticDataUnit {
 	 */
 	private MessageContext messageContext;
 
-	public String getStatisticId() {
+    /**
+     * Custom properties to be added to the statistic data unit.
+     */
+    private Map<String, Object> customProperties;
+
+    public String getStatisticId() {
 		return statisticId;
 	}
 
@@ -130,4 +136,12 @@ public class BasicStatisticDataUnit {
 	public MessageContext getMessageContext() {
 		return messageContext;
 	}
+
+    public Map<String, Object> getCustomProperties() {
+        return customProperties;
+    }
+
+    public void setCustomProperties(Map<String, Object> customProperties) {
+        this.customProperties = customProperties;
+    }
 }
