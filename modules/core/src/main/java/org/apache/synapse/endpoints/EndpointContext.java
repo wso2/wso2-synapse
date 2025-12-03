@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.Replicator;
@@ -388,9 +389,17 @@ public class EndpointContext {
             notYetSuspended = false;
         }
 
+        // check for global override and replace values if enabled
+        boolean isGlobalOverrideEnabled = SynapseConfigUtils.shouldEndpointSuspendConfigsOverrideWithGlobalValues();
+        long initialSuspendDuration = definition.getInitialSuspendDuration();
+        float suspendProgressionFactor = definition.getSuspendProgressionFactor();
+        if (isGlobalOverrideEnabled) {
+            initialSuspendDuration = SynapseConfigUtils.getGlobalSuspendDuration();
+            suspendProgressionFactor = SynapseConfigUtils.getGlobalSuspendProgressFactor();
+        }
+
         long nextSuspendDuration = (notYetSuspended ?
-                definition.getInitialSuspendDuration() :
-                (long) (lastSuspendDuration * definition.getSuspendProgressionFactor()));
+                initialSuspendDuration : (long) (lastSuspendDuration * suspendProgressionFactor));
 
         if (nextSuspendDuration > definition.getSuspendMaximumDuration()) {
             nextSuspendDuration = definition.getSuspendMaximumDuration();
