@@ -740,4 +740,17 @@ public final class SynapseConstants {
     public static final String CONNECTOR_ARTIFACT = "CONNECTOR_ARTIFACT";
     public static final String APPEND_ARTIFACT_IDENTIFIER = "APPEND_ARTIFACT_IDENTIFIER";
     public static final String EXPOSE_VERSIONED_SERVICES = "expose.versioned.services";
+
+    // Global endpoint properties and defaults
+    public static final String GLOBAL_ENDPOINT_SUSPEND_DURATION = "synapse.global_endpoint_suspend_duration";
+    public static final String DEFAULT_GLOBAL_ENDPOINT_SUSPEND_DURATION = "-1";
+    public static final String GLOBAL_ENDPOINT_SUSPEND_PROGRESSION_FACTOR =
+            "synapse.global_endpoint_suspend_progression_factor";
+    public static final String DEFAULT_GLOBAL_ENDPOINT_SUSPEND_PROGRESSION_FACTOR = "1.0";
+
+    // Property to override endpoint configurations with global values
+    // When this property is set to true, endpoint suspend durations and
+    // progression factors will be overridden with the global values
+    public static final String OVERRIDE_ENDPOINT_SUSPEND_CONFIG_WITH_GLOBAL_VALUES =
+            "synapse.override_endpoint_suspend_config_with_global_values";
 }
