@@ -195,6 +195,8 @@ public class EndpointDefinition implements AspectConfigurable {
             // This will be overridden if endpoint timeout is set
             effectiveTimeout = SynapseConfigUtils.getGlobalTimeoutInterval();
             this.endpointTimeoutType = SynapseConstants.ENDPOINT_TIMEOUT_TYPE.GLOBAL_TIMEOUT;
+            initialSuspendDuration = SynapseConfigUtils.getGlobalSuspendDuration();
+            suspendProgressionFactor = SynapseConfigUtils.getGlobalSuspendProgressFactor();
         } catch (Exception ex) {
             String msg = "Error while reading global timeout interval";
             log.error(msg, ex);
