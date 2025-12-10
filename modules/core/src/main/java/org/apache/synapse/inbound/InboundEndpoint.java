@@ -31,6 +31,7 @@ import org.apache.synapse.commons.handlers.MessagingHandler;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.registry.Registry;
+import org.apache.synapse.util.DynamicControlOperationResult;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 import org.wso2.securevault.SecretResolver;
