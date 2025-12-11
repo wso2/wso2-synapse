@@ -16,6 +16,11 @@
 
 package org.apache.synapse.transport.passthru;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 public class PassThroughConstants {
 
     public static final int DEFAULT_IO_THREAD_COUNT = Runtime.getRuntime().availableProcessors();
@@ -277,4 +282,33 @@ public class PassThroughConstants {
     public static final String CORRELATION_DEFAULT_HEADER = "activityid";
     public static final String TRANSPORT_LATENCY_LOGGER = "transport-latency";
     public static final String TRANSPORT_IN_URL = "TransportInURL";
+
+    /**
+     * Transaction replay configuration properties
+     */
+
+    // Configuration key to enable or disable replay transactions in pass-through transport
+    public static final String REPLAY_TXN_ENABLED_KEY = "pass.through.transport.enableReplayTransaction";
+    // Configuration key for frequency of logging dropped replay messages when the buffer overflows
+    public static final String REPLAY_LOG_DROP_FREQUENCY_KEY = "pass.through.transport.replay.buffer.log.drop.frequency";
+    // Configuration key defining max size of the replay transaction buffer queue
+    public static final String REPLAY_MAX_BUFFER_SIZE_KEY = "pass.through.transport.replay.transaction.max.buffer.size";
+    // Configuration key for polling interval (in milliseconds) for replay transaction buffer thread
+    public static final String REPLAY_BUFFER_POLL_INTERVAL_MS_KEY = "pass.through.transport.replay.transaction.buffer.poll.interval.ms";
+    // Configuration key specifying the fully qualified class name of the ReplayDataWriter implementation
+    public static final String REPLAY_TRANSACTION_WRITER_CLASS_KEY = "pass.through.transport.replay.transaction.writer.class";
+    // Core number of threads to keep in the pool consistently during idle periods
+    public static final String REPLAY_WORKER_CORE_POOL_SIZE_KEY = "pass.through.transport.replay.worker.core.pool.size";
+    // Maximum number of threads allowed in the pool to handle peak loads
+    public static final String REPLAY_WORKER_MAX_POOL_SIZE_KEY = "pass.through.transport.replay.worker.max.pool.size";
+    // Idle timeout in milliseconds after which threads above core size are terminated
+    public static final String REPLAY_WORKER_KEEP_ALIVE_TIME_MS_KEY = "pass.through.transport.replay.worker.keep.alive.time.ms";
+    // Allowed HTTP methods for replay writes.
+    // Arrays.asList creates a fixed-size list of elements,
+    // HashSet provides fast O(1) lookup for membership checks,
+    // Collections.unmodifiableSet wraps to ensure immutability for thread safety and consistency,
+    // this combination balances initialization simplicity, read performance, and memory efficiency.
+    public static final Set<String> ALLOWED_WRITE_METHODS =
+            Collections.unmodifiableSet(new HashSet<>(Arrays.asList("POST", "PUT", "PATCH", "DELETE")));
+    public static final String CHUNK_ORDER_PROPERTY = "CHUNK_ORDER";
 }
