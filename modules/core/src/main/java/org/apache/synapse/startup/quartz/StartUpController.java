@@ -228,9 +228,15 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
 
         try {
             if (this.isTaskActive()) {
-                ((Task)task).execute();
-                logger.info("Task [" + getName() + "] is successfully triggered.");
-                isSuccess = true;
+                if (task instanceof Task) {
+                    ((Task) task).execute();
+                    logger.info("Task [" + getName() + "] is successfully triggered.");
+                    isSuccess = true;
+                } else {
+                    errorMessage = "Cannot trigger the task: " + getName() +
+                            ". Task implementation does not implement Task interface.";
+                    logger.error(errorMessage);
+                }
             } else {
                 errorMessage = "Cannot trigger the task: " + getName();
                 logger.error(errorMessage);
