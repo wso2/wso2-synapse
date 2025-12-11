@@ -158,7 +158,7 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
      * </p>
      */
     public synchronized DynamicControlOperationResult activate() {
-        String errormessage = "";
+        String errorMessage = "";
         boolean isSuccess = false;
         logger.info("Activating the Task: " + getName());
         try {
@@ -167,18 +167,18 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
                 setStartupControllerStateInRegistry(StartUpController.StartUpControllerState.ACTIVE);
                 isSuccess = true;
             } else {
-                errormessage = "Failed to activate the Task: " + getName();
-                logger.error(errormessage);
+                errorMessage = "Failed to activate the Task: " + getName();
+                logger.error(errorMessage);
             }
         } catch (UnsupportedOperationException e) {
-            errormessage = "Activate operation is not supported for the Task " + getName();
-            logger.warn(errormessage, e);
+            errorMessage = "Activate operation is not supported for the Task " + getName();
+            logger.warn(errorMessage, e);
         } catch (Exception e) {
-            errormessage = "Failed to activate the Task: " + getName();
-            logger.error(errormessage, e);
+            errorMessage = "Failed to activate the Task: " + getName();
+            logger.error(errorMessage, e);
         }
 
-        return new DynamicControlOperationResult(isSuccess, errormessage);
+        return new DynamicControlOperationResult(isSuccess, errorMessage);
     }
 
     /**
