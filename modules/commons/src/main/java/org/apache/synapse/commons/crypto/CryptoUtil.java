@@ -18,6 +18,7 @@
 package org.apache.synapse.commons.crypto;
 
 import org.apache.axis2.AxisFault;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.securevault.CipherFactory;
@@ -43,6 +44,7 @@ public class CryptoUtil {
     private EncodeDecodeTypes inType = null;
     private EncodeDecodeTypes outType = null;
     private String algorithm = null;
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     /**
      * Public constructor
@@ -106,19 +108,7 @@ public class CryptoUtil {
         cipherInformation.setInType(null); //skipping decoding encoding in securevault
         cipherInformation.setOutType(null); //skipping decoding encoding in securevault
         if (provider != null && !provider.isEmpty()) {
-            String providerClass;
-            if (CryptoConstants.BOUNCY_CASTLE_PROVIDER.equals(provider)) {
-                providerClass = "org.bouncycastle.jce.provider.BouncyCastleProvider";
-            } else if (CryptoConstants.BOUNCY_CASTLE_FIPS_PROVIDER.equals(provider)) {
-                providerClass = "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider";
-            } else {
-                throw new AxisFault("Unsupported JCE Provider: " + provider);
-            }
-            try {
-                Security.addProvider((Provider) Class.forName(providerClass).getDeclaredConstructor().newInstance());
-            } catch (Exception e) {
-                throw new AxisFault("Error while initializing the JCE Provider: " + provider, e);
-            }
+            addProvider(provider);
             cipherInformation.setProvider(provider);
             //todo need to add other providers if there are any.
         }
@@ -146,6 +136,22 @@ public class CryptoUtil {
 
     public boolean isInitialized() {
         return isInitialized;
+    }
+
+    private static void addProvider(String jceProvider) throws AxisFault {
+        if (StringUtils.isEmpty(System.getProperty(SECURITY_JCE_PROVIDER))) {
+            String providerClass;
+            if (CryptoConstants.BOUNCY_CASTLE_FIPS_PROVIDER.equals(jceProvider)) {
+                providerClass = "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider";
+            } else {
+                providerClass = "org.bouncycastle.jce.provider.BouncyCastleProvider";
+            }
+            try {
+                Security.addProvider((Provider) Class.forName(providerClass).getDeclaredConstructor().newInstance());
+            } catch (Exception e) {
+                throw new AxisFault("Error while initializing the JCE provider: " + providerClass, e);
+            }
+        }
     }
 
 }
