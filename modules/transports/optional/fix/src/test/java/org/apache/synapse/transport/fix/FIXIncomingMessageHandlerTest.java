@@ -29,10 +29,8 @@ import org.junit.Test;
 import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 import quickfix.Message;
 import quickfix.SessionID;
 import quickfix.field.BeginString;
@@ -44,9 +42,7 @@ import quickfix.fix41.NewOrderSingle;
 
 import static org.mockito.MockitoAnnotations.initMocks;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore("javax.management.*")
-@PrepareForTest({ FIXIncomingMessageHandler.class })
+@RunWith(MockitoJUnitRunner.class)
 public class FIXIncomingMessageHandlerTest extends TestCase {
     @Mock
     AxisService service;
@@ -77,9 +73,9 @@ public class FIXIncomingMessageHandlerTest extends TestCase {
         message.getHeader().setField(new MsgSeqNum(1));
         message.getHeader().setField(new MsgType("A"));
 
-        PowerMockito.when(service.getParameter(FIXConstants.FIX_USERNAME))
+        Mockito.when(service.getParameter(FIXConstants.FIX_USERNAME))
                 .thenReturn(new Parameter(FIXConstants.FIX_USERNAME, "wos2"));
-        PowerMockito.when(service.getParameter(FIXConstants.FIX_PASSWORD))
+        Mockito.when(service.getParameter(FIXConstants.FIX_PASSWORD))
                 .thenReturn(new Parameter(FIXConstants.FIX_PASSWORD, "wos2"));
 
         ConfigurationContext cfgCtx = new ConfigurationContext(new AxisConfiguration());
