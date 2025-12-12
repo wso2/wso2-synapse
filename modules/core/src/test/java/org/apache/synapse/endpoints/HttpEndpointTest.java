@@ -88,6 +88,25 @@ public class HttpEndpointTest {
 
     }
 
+    @Test
+    public void testDynamicEndpointAddress() throws AxisFault, XMLStreamException {
+        HTTPEndpointFactory factory = new HTTPEndpointFactory();
+        OMElement em = AXIOMUtil.stringToOM("<http method=\"GET\"/>");
+        EndpointDefinition ep = factory.createEndpointDefinition(em);
+        ep.setAddress("{uri.var.base}{+uri.var.path}{+uri.var.query}");
+
+        HTTPEndpoint httpEndpoint = new HTTPEndpoint();
+        httpEndpoint.setDefinition(ep);
+        MessageContext messageContext = createMessageContext();
+        messageContext.setProperty("uri.var.base", "http://localhost:5000");
+        messageContext.setProperty("uri.var.path", "/service/test");
+        messageContext.setProperty("uri.var.query", "?param1=value1&param2=value2");
+
+        String actualAddress = httpEndpoint.getDefinition().getAddress(messageContext);
+        String expectedAddress = "http://localhost:5000/service/test?param1=value1&param2=value2";
+        Assert.assertEquals("Dynamic endpoint address mismatch: expected concatenated base + path + query", expectedAddress, actualAddress);
+    }
+
     /**
      * Tests sending sample characters that may be unreserved (@,: etc) as query parameter content
      */
