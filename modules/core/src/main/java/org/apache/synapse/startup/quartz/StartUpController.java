@@ -238,7 +238,7 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
                     logger.error(errorMessage);
                 }
             } else {
-                errorMessage = "Cannot trigger the task: " + getName();
+                errorMessage = "Cannot trigger the task: " + getName() + ". The task is not active";
                 logger.error(errorMessage);
             }
         } catch (UnsupportedOperationException e) {
