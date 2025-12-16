@@ -30,6 +30,11 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -162,14 +167,23 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
             throw new SynapseException("Error while initializing forwarding service "
                     + this.targetMessageStoreName, e);
         }
+
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
+        AspectConfiguration aspectConfiguration = messageProcessor.getAspectConfiguration();
+
         do {
             resetService();
             MessageContext messageContext = null;
+            Integer statisticReportingIndex = null;
             try {
                 if (!this.messageProcessor.isDeactivated() && !this.messageProcessor.isServerShuttingDown()) {
                     messageContext = fetch(messageConsumer);
                     if (messageContext != null) {
                         // Now it is NOT terminated anymore.
+                        if (isStatisticsEnabled) {
+                            statisticReportingIndex = OpenEventCollector.reportEntryEvent(messageContext,
+                                    messageProcessor.getName(), aspectConfiguration, ComponentType.MESSAGEPROCESSOR);
+                        }
                         isTerminated = messageProcessor.isDeactivated();
                         dispatch(messageContext);
                     } else {
@@ -206,6 +220,11 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
                 log.fatal("Deactivating the message processor [" + this.messageProcessor.getName() +
                           "]", e);
                 deactivateMessageProcessor(messageContext);
+            } finally {
+                if (messageContext != null && isStatisticsEnabled) {
+                    CloseEventCollector.closeEntryEvent(messageContext, messageProcessor.getName(),
+                            ComponentType.MESSAGEPROCESSOR, statisticReportingIndex, false);
+                }
             }
 
             if (log.isDebugEnabled()) {

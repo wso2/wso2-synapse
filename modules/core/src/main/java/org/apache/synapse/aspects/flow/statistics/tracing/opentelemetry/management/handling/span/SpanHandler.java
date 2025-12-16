@@ -411,8 +411,9 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
      */
     private boolean isOuterLevelSpan(StatisticDataUnit statisticDataUnit, SpanStore spanStore) {
         return spanStore.getOuterLevelSpanWrapper() == null
-                && (statisticDataUnit.getComponentType() == ComponentType.TASK ||
-                statisticDataUnit.getComponentType() == ComponentType.PROXYSERVICE
+                && (statisticDataUnit.getComponentType() == ComponentType.TASK
+                || statisticDataUnit.getComponentType() == ComponentType.MESSAGEPROCESSOR
+                || statisticDataUnit.getComponentType() == ComponentType.PROXYSERVICE
                 || statisticDataUnit.getComponentType() == ComponentType.API
                 || statisticDataUnit.getComponentType() == ComponentType.INBOUNDENDPOINT
                 || statisticDataUnit.isOuterLayerSpan()

@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.processor.MessageProcessorConstants;
 import org.apache.synapse.message.processor.impl.forwarder.ScheduledMessageForwardingProcessor;
@@ -134,6 +135,37 @@ public class MessageProcessorFactory {
         }
 
         assert processor != null;
+
+        String nameString = processor.getName();
+        if (nameString == null || nameString.isEmpty()) {
+            nameString = SynapseConstants.MESSAGE_PROCESSOR_NAME;
+        }
+
+        AspectConfiguration aspectConfiguration = new AspectConfiguration(nameString);
+        processor.configure(aspectConfiguration);
+
+        OMAttribute statistics = elem
+                .getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, XMLConfigConstants.STATISTICS_ATTRIB_NAME));
+        if (statistics != null) {
+            String statisticsValue = statistics.getAttributeValue();
+            if (statisticsValue != null) {
+                if (XMLConfigConstants.STATISTICS_ENABLE.equals(statisticsValue)) {
+                    aspectConfiguration.enableStatistics();
+                }
+            }
+        }
+
+        OMAttribute tracing = elem
+                .getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, XMLConfigConstants.TRACE_ATTRIB_NAME));
+        if (tracing != null) {
+            String tracingValue = tracing.getAttributeValue();
+            if (tracingValue != null) {
+                if (XMLConfigConstants.TRACE_ENABLE.equals(tracingValue)) {
+                    aspectConfiguration.enableTracing();
+                }
+            }
+        }
+
         processor.setParameters(getParameters(elem, properties));
 
         return processor;

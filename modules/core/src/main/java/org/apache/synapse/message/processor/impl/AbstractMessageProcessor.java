@@ -22,6 +22,10 @@ package org.apache.synapse.message.processor.impl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.message.MessageConsumer;
@@ -65,6 +69,8 @@ public abstract class AbstractMessageProcessor implements MessageProcessor {
 
     /**message store parameters */
     protected Map<String, Object> parameters = null;
+
+    private AspectConfiguration aspectConfiguration;
 
     @Override
     public void init(SynapseEnvironment se) {
@@ -197,5 +203,24 @@ public abstract class AbstractMessageProcessor implements MessageProcessor {
      * @param isUpdate      whether this is triggered in artifact update flow.
      */
     public void destroy(boolean preserveState, boolean isUpdate) {
+    }
+
+    @Override
+    public void configure(AspectConfiguration aspectConfiguration) {
+        this.aspectConfiguration = aspectConfiguration;
+    }
+
+    @Override
+    public AspectConfiguration getAspectConfiguration() {
+        return aspectConfiguration;
+    }
+
+    public void setComponentStatisticsId(ArtifactHolder holder) {
+        if (aspectConfiguration == null) {
+            aspectConfiguration = new AspectConfiguration(name);
+        }
+        String apiId = StatisticIdentityGenerator.getIdForComponent(name, ComponentType.MESSAGEPROCESSOR, holder);
+        aspectConfiguration.setUniqueId(apiId);
+        StatisticIdentityGenerator.reportingEndEvent(apiId, ComponentType.MESSAGEPROCESSOR, holder);
     }
 }

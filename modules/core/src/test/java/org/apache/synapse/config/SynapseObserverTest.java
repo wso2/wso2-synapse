@@ -30,6 +30,7 @@ import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.api.API;
+import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.startup.quartz.StartUpController;
 import org.apache.synapse.commons.executors.PriorityExecutor;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -230,6 +231,16 @@ public class SynapseObserverTest extends TestCase {
         @Override
         public void synapseLibraryRemoved(Library library) {
             tracker.get(LIBRARY).remove(library.getFileName());
+        }
+
+        @Override
+        public void messageProcessorAdded(MessageProcessor messageProcessor) {
+
+        }
+
+        @Override
+        public void messageProcessorRemoved(MessageProcessor messageProcessor) {
+
         }
     }
 }

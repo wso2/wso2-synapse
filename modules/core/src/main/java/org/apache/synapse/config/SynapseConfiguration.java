@@ -2009,6 +2009,10 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     public void addMessageProcessor(String name , MessageProcessor processor) {
         if(!(messageProcessors.containsKey(name))) {
             messageProcessors.put(name , processor);
+
+            for (SynapseObserver o : observers) {
+                o.messageProcessorAdded(processor);
+            }
         } else {
             handleException("Duplicate Message Processor " + name);
         }

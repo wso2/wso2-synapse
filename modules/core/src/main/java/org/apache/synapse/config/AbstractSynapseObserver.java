@@ -32,6 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.api.API;
+import org.apache.synapse.message.processor.MessageProcessor;
 
 public abstract class AbstractSynapseObserver implements SynapseObserver {
 
@@ -254,5 +255,29 @@ public abstract class AbstractSynapseObserver implements SynapseObserver {
     public void synapseLibraryRemoved(Library library) {
         log.info("Inbound Endpoint : " + library.getFileName() +
                 " was removed from the Synapse configuration successfully");
+    }
+
+    @Override
+    public void messageProcessorAdded(MessageProcessor messageProcessor) {
+        if (messageProcessor.getArtifactContainerName() != null) {
+            log.info("Message Processor : " + messageProcessor.getName() +
+                    " was added to the Synapse configuration successfully - " +
+                    messageProcessor.getArtifactContainerName());
+        } else {
+            log.info("Message Processor : " + messageProcessor.getName() +
+                    " was added to the Synapse configuration successfully");
+        }
+    }
+
+    @Override
+    public void messageProcessorRemoved(MessageProcessor messageProcessor) {
+        if (messageProcessor.getArtifactContainerName() != null) {
+            log.info("Message Processor : " + messageProcessor.getName() +
+                    " was removed from the Synapse configuration successfully - " +
+                    messageProcessor.getArtifactContainerName());
+        } else {
+            log.info("Message Processor : " + messageProcessor.getName() +
+                    " was removed from the Synapse configuration successfully");
+        }
     }
 }
