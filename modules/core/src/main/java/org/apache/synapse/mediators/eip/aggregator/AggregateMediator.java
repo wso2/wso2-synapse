@@ -31,6 +31,7 @@ import org.apache.axis2.AxisFault;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ContinuationState;
+import org.apache.synapse.FaultHandler;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
@@ -525,22 +526,49 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             if (onCompleteSequence != null) {
 
                 ContinuationStackManager.
-                        addReliantContinuationState(newSynCtx, 0, getMediatorPosition());
-                boolean result = onCompleteSequence.mediate(newSynCtx);
+                    addReliantContinuationState(newSynCtx, 0, getMediatorPosition());
+                boolean result = mediateTheOnCompleteSequence(onCompleteSequence, newSynCtx);
                 if (result) {
                     ContinuationStackManager.removeReliantContinuationState(newSynCtx);
                 }
                 return result;
-
             } else if (onCompleteSequenceRef != null
                 && newSynCtx.getSequence(onCompleteSequenceRef) != null) {
 
                 ContinuationStackManager.updateSeqContinuationState(newSynCtx, getMediatorPosition());
-                return newSynCtx.getSequence(onCompleteSequenceRef).mediate(newSynCtx);
+                return mediateTheOnCompleteSequence(
+                    (SequenceMediator) newSynCtx.getSequence(onCompleteSequenceRef), newSynCtx);
 
             } else {
                 handleException("Unable to find the sequence for the mediation " +
                     "of the aggregated message", newSynCtx);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * This method mediate the onComplete sequence and handles the errors in-place.
+     *
+     * @param seq       onComplete sequence.
+     * @param newSynCtx message context.
+     * @return success / failure.
+     */
+    private boolean mediateTheOnCompleteSequence(SequenceMediator seq, MessageContext newSynCtx) {
+        try {
+            return seq.mediate(newSynCtx);
+        } catch (Exception ex) {
+            Stack<FaultHandler> stack = newSynCtx.getFaultStack();
+            if (stack != null && !stack.isEmpty()) {
+                stack.pop().handleFault(newSynCtx, ex);
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("Error occurred in Aggregate mediator onComplete:"
+                        + ex.getMessage() + "throwing the exception since no fault "
+                        + "sequence is configured");
+                }
+                // Throwing again to match the previous behaviour
+                throw ex;
             }
         }
         return false;
