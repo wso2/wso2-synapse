@@ -103,6 +103,9 @@ class TestingAgent {
                         deploymentStats.put(key, TYPE_SEQUENCE);
                         testSuiteSummary.setDeploymentStatus(Constants.PASSED_KEY);
                         log.info("Primary test Sequence artifact deployed successfully");
+                        
+                        // Register sequence for coverage tracking
+                        registerSequenceForCoverage(synapseConfiguration, key);
                     } else {
                         String errorMessage = "Sequence " + artifactNameOrKey + " deployment failed";
                         log.error(errorMessage);
@@ -142,6 +145,9 @@ class TestingAgent {
                         deploymentStats.put(key, TYPE_API);
                         testSuiteSummary.setDeploymentStatus(Constants.PASSED_KEY);
                         log.info("Primary test API artifact deployed successfully");
+                        
+                        // Register API for coverage tracking
+                        registerAPIForCoverage(synapseConfiguration, key);
                     } else {
                         String errorMessage = "API " + artifactNameOrKey + " deployment failed";
                         log.error(errorMessage);
@@ -464,7 +470,93 @@ class TestingAgent {
             log.info("Undeployed all the deployed test and supportive artifacts");
 
         } catch (AxisFault e) {
-            log.error("Error while undeploying the artifacts", e);
+            log.error("Error occurred while un-deploying deployed artifact", e);
+        }
+    }
+
+    /**
+     * Register API for mediator coverage tracking.
+     *
+     * @param synapseConfig synapse configuration
+     * @param apiName       API name
+     */
+    private void registerAPIForCoverage(SynapseConfiguration synapseConfig, String apiName) {
+        try {
+            org.apache.synapse.api.API api = synapseConfig.getAPI(apiName);
+            if (api != null) {
+                MediatorCoverageTracker.getInstance().registerAPI(api);
+                log.info("Registered API for coverage tracking: " + apiName);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to register API for coverage tracking: " + apiName, e);
+        }
+    }
+
+    /**
+     * Register Sequence for mediator coverage tracking.
+     *
+     * @param synapseConfig synapse configuration
+     * @param sequenceName  sequence name
+     */
+    private void registerSequenceForCoverage(SynapseConfiguration synapseConfig, String sequenceName) {
+        try {
+            org.apache.synapse.mediators.base.SequenceMediator sequence =
+                    (org.apache.synapse.mediators.base.SequenceMediator) synapseConfig.getSequence(sequenceName);
+            if (sequence != null) {
+                MediatorCoverageTracker.getInstance().registerSequence(sequence);
+                log.info("Registered Sequence for coverage tracking: " + sequenceName);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to register Sequence for coverage tracking: " + sequenceName, e);
+        }
+    }
+
+    /**
+     * Generate coverage report and add to test suite summary.
+     *
+     * @param testSuiteSummary test suite summary object
+     */
+    void generateCoverageReport(TestSuiteSummary testSuiteSummary) {
+        try {
+            MediatorCoverageTracker tracker = MediatorCoverageTracker.getInstance();
+            
+            for (String artifactKey : tracker.getRegisteredArtifacts()) {
+                String[] parts = artifactKey.split(":", 2);
+                if (parts.length == 2) {
+                    String artifactType = parts[0];
+                    String artifactName = parts[1];
+                    
+                    org.apache.synapse.unittest.testcase.data.classes.MediatorCoverage coverage =
+                            new org.apache.synapse.unittest.testcase.data.classes.MediatorCoverage(
+                                    artifactType, artifactName);
+                    
+                    coverage.setTotalMediators(tracker.getTotalMediatorCount(artifactKey));
+                    coverage.setExecutedMediators(tracker.getExecutedMediatorCount(artifactKey));
+                    
+                    // Add executed mediator details
+                    for (String mediatorId : tracker.getExecutedMediatorIds(artifactKey)) {
+                        coverage.addMediatorDetail(mediatorId);
+                    }
+                    
+                    coverage.calculateCoveragePercentage();
+                    testSuiteSummary.addMediatorCoverage(coverage);
+                    
+                    log.info("Coverage for " + artifactKey + ": " + 
+                            coverage.getExecutedMediators() + "/" + coverage.getTotalMediators() +
+                            " (" + String.format("%.2f", coverage.getCoveragePercentage()) + "%)");
+                }
+            }
+            
+            // Generate JSON report
+            String testSuiteName = testSuiteSummary.getDescription() != null ? 
+                    testSuiteSummary.getDescription() : "UnitTestSuite";
+            testSuiteSummary.generateCoverageReportJson(testSuiteName);
+            
+            log.info("Mediator coverage report generated successfully");
+            log.info("*** Final Coverage Report ***\n" + testSuiteSummary.getCoverageReportJson());
+            
+        } catch (Exception e) {
+            log.error("Error generating coverage report", e);
         }
     }
 }

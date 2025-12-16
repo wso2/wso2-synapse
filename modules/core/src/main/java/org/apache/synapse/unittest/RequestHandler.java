@@ -213,6 +213,10 @@ public class RequestHandler implements Runnable {
             log.info("Synapse testing agent ready to mediate test cases through deployments");
             //performs test cases through the deployed synapse configuration
             agent.processTestCases(synapseTestCase, testSuiteSummary);
+            
+            //generate mediator coverage report
+            log.info("Generating mediator coverage report");
+            agent.generateCoverageReport(testSuiteSummary);
 
         } else if (testArtifactDeployment.getValue() != null) {
             testSuiteSummary.setDeploymentStatus(Constants.FAILED_KEY);
@@ -226,6 +230,9 @@ public class RequestHandler implements Runnable {
         ConfigModifier.unitTestMockEndpointMap.clear();
         UnitTestingExecutor.getExecuteInstance().getSynapseConfiguration().
                 setProperty(Constants.IS_RUNNING_AS_UNIT_TEST, "false");
+        
+        //clear coverage tracker
+        MediatorCoverageTracker.getInstance().clear();
     }
 
     /**
@@ -287,6 +294,18 @@ public class RequestHandler implements Runnable {
         }
 
         jsonResponse.add("testCases", jsonArray);
+        
+        // Add mediator coverage report if available
+        if (testSummary.getCoverageReportJson() != null) {
+            try {
+                JsonObject coverageJson = com.google.gson.JsonParser.parseString(
+                        testSummary.getCoverageReportJson()).getAsJsonObject();
+                jsonResponse.add("mediatorCoverage", coverageJson);
+            } catch (Exception e) {
+                log.warn("Failed to add coverage report to response", e);
+            }
+        }
+        
         return jsonResponse;
     }
 
