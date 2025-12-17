@@ -213,7 +213,6 @@
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <scope>test</scope>
-            <optional>true</optional>
         </dependency>
     </dependencies>
 </project>

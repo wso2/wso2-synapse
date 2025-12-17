@@ -812,6 +812,10 @@
                      <groupId>log4j</groupId>
                      <artifactId>log4j</artifactId>
                  </exclusion>
+                 <exclusion>
+                     <groupId>org.ops4j.pax.logging</groupId>
+                     <artifactId>pax-logging-api</artifactId>
+                 </exclusion>
              </exclusions>
          </dependency>
          <dependency>
@@ -1380,7 +1384,6 @@
               <artifactId>log4j</artifactId>
               <version>1.2.17</version>
               <scope>test</scope>
-              <optional>true</optional>
           </dependency>
           <dependency>
               <groupId>org.json.wso2</groupId>

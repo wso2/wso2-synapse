@@ -26,6 +26,10 @@ jobs:
         path: ~/.m2
         key: ${{ runner.os }}-m2
         restore-keys: ${{ runner.os }}-m2
+    - name: Debug logging-related dependencies (Synapse)
+      run: |
+        mvn -DskipTests dependency:tree -Dverbose \
+          | egrep -i "slf4j-log4j12|pax-logging|log4j-1.2-api|log4j-over-slf4j|reload4j|log4j:log4j" || true
     - name: Build Synapse with Maven
       run: mvn clean install --file pom.xml
     - name: Get synapse version
