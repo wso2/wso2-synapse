@@ -483,17 +483,15 @@ public class RabbitMQStore extends AbstractMessageStore {
         String provider = System.getProperty(JCE_PROVIDER);
         if (StringUtils.isNotEmpty(provider)) {
             return PKIX;
-        } else {
-            return TrustManagerFactory.getDefaultAlgorithm();
         }
+        return TrustManagerFactory.getDefaultAlgorithm();
     }
 
     private static String getKeyManagerType() {
         String provider = System.getProperty(JCE_PROVIDER);
         if (StringUtils.isNotEmpty(provider)) {
             return PKIX;
-        } else {
-            return KeyManagerFactory.getDefaultAlgorithm();
         }
+        return KeyManagerFactory.getDefaultAlgorithm();
     }
 }

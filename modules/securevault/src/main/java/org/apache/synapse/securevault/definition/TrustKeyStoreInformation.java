@@ -68,8 +68,7 @@ public class TrustKeyStoreInformation extends KeyStoreInformation {
         String provider = System.getProperty(JCE_PROVIDER);
         if (StringUtils.isNotEmpty(provider)) {
             return PKIX;
-        } else {
-            return TrustManagerFactory.getDefaultAlgorithm();
         }
+        return TrustManagerFactory.getDefaultAlgorithm();
     }
 }

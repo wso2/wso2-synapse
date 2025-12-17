@@ -495,20 +495,17 @@ public class ServerConnFactoryBuilder {
 
     private static String getKeyManagerType() {
         String provider = System.getProperty(JCE_PROVIDER);
-        if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
+        if (StringUtils.isNotEmpty(provider)) {
             return PKIX;
-        } else {
-            return KeyManagerFactory.getDefaultAlgorithm();
         }
+        return KeyManagerFactory.getDefaultAlgorithm();
     }
 
     private static String getTrustManagerType() {
         String provider = System.getProperty(JCE_PROVIDER);
-        if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
+        if (StringUtils.isNotEmpty(provider)) {
             return PKIX;
-        } else {
-            return TrustManagerFactory.getDefaultAlgorithm();
         }
+        return TrustManagerFactory.getDefaultAlgorithm();
     }
-
 }

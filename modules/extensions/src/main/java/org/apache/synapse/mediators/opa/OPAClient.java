@@ -259,10 +259,12 @@ public class OPAClient {
 
     private static String getKeyType() {
         String keyType = System.getProperty(PRIMARY_KEY_STORE_TYPE_PROPERTY);
-        if (System.getProperty(SECURITY_JCE_PROVIDER) != null) {
-            return StringUtils.isNotEmpty(keyType) ? keyType : BCFKS;
-        } else {
-            return StringUtils.isNotEmpty(keyType) ? keyType : DEFAULT_KEYSTORE_TYPE;
+        if (StringUtils.isNotEmpty(keyType)) {
+            return keyType;
         }
+        if (System.getProperty(SECURITY_JCE_PROVIDER) != null) {
+            return BCFKS;
+        }
+        return DEFAULT_KEYSTORE_TYPE;
     }
 }
