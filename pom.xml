@@ -700,6 +700,12 @@
              <groupId>org.apache.axis2.transport</groupId>
              <artifactId>axis2-transport-testkit</artifactId>
              <version>${axis2.transport.version}</version>
+             <exclusions>
+                 <exclusion>
+                     <groupId>log4j</groupId>
+                     <artifactId>log4j</artifactId>
+                 </exclusion>
+             </exclusions>
          </dependency>
          <dependency>
              <groupId>org.aspectj</groupId>
@@ -934,6 +940,14 @@
             <version>${rampart.version}</version>
             <exclusions>
                <exclusion>
+                  <groupId>org.slf4j</groupId>
+                  <artifactId>jcl-over-slf4j</artifactId>
+               </exclusion>
+               <exclusion>
+                  <groupId>org.slf4j</groupId>
+                  <artifactId>log4j-over-slf4j</artifactId>
+               </exclusion>
+               <exclusion>
                   <groupId>org.apache.woden</groupId>
                   <artifactId>woden-api</artifactId>
                </exclusion>
@@ -952,6 +966,10 @@
                   <groupId>org.apache.woden</groupId>
                   <artifactId>woden-api</artifactId>
                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>log4j-over-slf4j</artifactId>
+                </exclusion>
             </exclusions>
          </dependency>
          <dependency>
@@ -963,6 +981,10 @@
                   <groupId>org.apache.woden</groupId>
                   <artifactId>woden-api</artifactId>
                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>log4j-over-slf4j</artifactId>
+                </exclusion>
             </exclusions>
          </dependency>
          <dependency>
