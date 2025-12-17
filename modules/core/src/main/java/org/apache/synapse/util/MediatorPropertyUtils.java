@@ -18,6 +18,7 @@
 package org.apache.synapse.util;
 
 import org.apache.http.protocol.HTTP;
+import org.apache.synapse.AckDecisionSetter;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.endpoints.EndpointDefinition;
@@ -58,6 +59,59 @@ public class MediatorPropertyUtils {
             axis2MessageCtx.getOperationContext().setProperty(propertyName, resultValue);
         }
     }
+
+    /**
+     * This method handles the RabbitMQ ACK decision property if set in the message context
+     * @param propertyName RabbitMQ ACK decision property name
+     * @param axis2MessageCtx Axis2 message context
+     */
+    public static void handleAckDecisionProperty(String propertyName, Object resultValue,
+                                                  org.apache.axis2.context.MessageContext axis2MessageCtx) {
+        // RabbitMQ ACK decision by property name
+        // Accept extended names as propertyName itself (case-insensitive):
+        // "ACKNOWLEDGE", "SET_ROLLBACK_ONLY", "SET_REQUEUE_ON_ROLLBACK"
+        String key = propertyName == null ? "" : propertyName.trim().toUpperCase();
+
+        // ACK_ON_SUCCESS / ACKNOWLEDGE style property
+        if (SynapseConstants.ACK_ON_SUCCESS.equals(key)) {
+            if (isBooleanPropertyTrue(resultValue)) {
+                AckDecisionSetter.set(axis2MessageCtx, "ACKNOWLEDGE");
+            } else if (isBooleanPropertyFalse(resultValue)) {
+                // requirement: ACK=false => rollback/requeue decision
+                AckDecisionSetter.set(axis2MessageCtx, "SET_REQUEUE_ON_ROLLBACK");
+            }
+            return;
+        }
+
+        // Explicit rollback-only / requeue-on-rollback flags
+        if (SynapseConstants.SET_ROLLBACK_ONLY.equals(key)
+                || SynapseConstants.SET_REQUEUE_ON_ROLLBACK.equals(key)) {
+
+            if (isBooleanPropertyTrue(resultValue)) {
+                AckDecisionSetter.set(axis2MessageCtx, key);
+            }
+        }
+    }
+
+    private static boolean isBooleanPropertySet(Object resultValue) {
+        return (resultValue instanceof Boolean && ((Boolean) resultValue)) ||
+                (resultValue instanceof String && Boolean.parseBoolean((String) resultValue));
+    }
+
+    private static boolean isBooleanPropertyTrue(Object resultValue) {
+        return isBooleanPropertySet(resultValue);
+    }
+
+    private static boolean isBooleanPropertyFalse(Object resultValue) {
+        if (resultValue instanceof Boolean) {
+            return !((Boolean) resultValue);
+        }
+        if (resultValue instanceof String) {
+            return "false".equalsIgnoreCase(((String) resultValue).trim());
+        }
+        return false;
+    }
+
 
     /**
      * Validate the given name to identify whether it is static or dynamic key

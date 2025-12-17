@@ -259,6 +259,10 @@
 			<artifactId>synapse-commons</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.wso2.config.mapper</groupId>
+			<artifactId>config-mapper</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.synapse</groupId>
 			<artifactId>synapse-tasks</artifactId>       
 		</dependency>
