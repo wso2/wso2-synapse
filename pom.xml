@@ -800,7 +800,7 @@
          <dependency>
              <groupId>jaxen</groupId>
              <artifactId>jaxen</artifactId>
-             <version>1.1.1</version>
+             <version>${jaxen.version}</version>
          </dependency>
          <!-- Synapse -->
          <dependency>
@@ -1686,6 +1686,7 @@
        <xmlbeans.imp.pkg.version>[3.1.0,4.0.0)</xmlbeans.imp.pkg.version>
        <org.wso2.orbit.atlassian.oai.version>2.44.1.wso2v1</org.wso2.orbit.atlassian.oai.version>
        <swagger.parser.v3.version>2.1.22.wso2v2</swagger.parser.v3.version>
+       <jaxen.version>2.0.0</jaxen.version>
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->
