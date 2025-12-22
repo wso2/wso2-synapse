@@ -169,6 +169,7 @@ public class PropertyMediator extends AbstractMediator {
                 org.apache.axis2.context.MessageContext axis2MessageCtx =
                         axis2smc.getAxis2MessageContext();
                 axis2MessageCtx.setProperty(name, resultValue);
+                MediatorPropertyUtils.handleAckDecisionProperty(name, resultValue, axis2MessageCtx);
                 MediatorPropertyUtils.handleSpecialProperties(name, resultValue, axis2MessageCtx);
 
             } else if (XMLConfigConstants.SCOPE_CLIENT.equals(scope)

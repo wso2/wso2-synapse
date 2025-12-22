@@ -62,6 +62,10 @@ public class StatisticsReportingEventHolder {
         return new ArrayList<>(eventQueue);
     }
 
+    public synchronized void clearEventQueue() {
+        this.eventQueue.clear();
+    }
+
     public int getQueueSize() {
         return this.eventQueue.size();
     }
