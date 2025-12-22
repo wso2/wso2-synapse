@@ -25,6 +25,11 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapSetter;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ContinuationState;
@@ -34,6 +39,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryConstants;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryTracer;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.helpers.TracingUtils;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.parentresolving.ParentResolver;
@@ -42,14 +48,9 @@ import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.manageme
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.stores.SpanStore;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.models.SpanWrapper;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.models.ContinuationStateSequenceInfo;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Controls Jaeger spans, with respect to various events received during Synapse message flow.
@@ -130,6 +131,15 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
     @Override
     public void handleOpenEntryEvent(StatisticDataUnit statisticDataUnit, MessageContext synCtx) {
         startSpanOrBufferSequenceContinuationState(statisticDataUnit, synCtx);
+    }
+
+    @Override
+    public void handleOpenEntryEvent(StatisticDataUnit statisticDataUnit,
+                                     org.apache.axis2.context.MessageContext msgCtx) {
+        TracingScope tracingScope = tracingScopeManager.getTracingScope(msgCtx);
+        synchronized (tracingScope.getSpanStore()) {
+            startSpan(statisticDataUnit, msgCtx, tracingScope.getSpanStore());
+        }
     }
 
     @Override
@@ -239,6 +249,34 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         if (headersMap != null) {
             headersMap.putAll(tracerSpecificCarrier);
             statisticDataUnit.setTransportHeaderMap(headersMap);
+            ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                    .setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, headersMap);
+
+            // Set custom span header tags
+            Object prevCustomSpanTagsObj = synCtx.getProperty(TelemetryConstants.OLTP_CUSTOM_SPAN_TAGS);
+            String customTagsString =
+                    SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OLTP_CUSTOM_SPAN_TAGS, null);
+            boolean isCustomSpanTagsEnabled = customTagsString != null && !customTagsString.isEmpty();
+            if (isCustomSpanTagsEnabled) {
+                if (prevCustomSpanTagsObj != null) {
+                    Map<String, Object> customTagsMap = (Map<String, Object>) prevCustomSpanTagsObj;
+                    if (!customTagsMap.isEmpty()) {
+                        statisticDataUnit.setCustomProperties(customTagsMap);
+                    }
+                } else {
+                    String[] customTags = customTagsString.split(",");
+                    Map<String, Object> customTagsMap = new HashMap<>();
+                    for (String tag : customTags) {
+                        if (headersMap.containsKey(tag.trim())) {
+                            customTagsMap.put(tag, headersMap.get(tag));
+                        }
+                    }
+                    if (!customTagsMap.isEmpty()) {
+                        synCtx.setProperty(TelemetryConstants.OLTP_CUSTOM_SPAN_TAGS, customTagsMap);
+                        statisticDataUnit.setCustomProperties(customTagsMap);
+                    }
+                }
+            }
         }
 
         if (statusCode != null) {
@@ -254,6 +292,95 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
 
         String spanId = TracingUtils.extractId(statisticDataUnit);
         SpanWrapper spanWrapper = spanStore.addSpanWrapper(spanId, span, statisticDataUnit, parentSpanWrapper, synCtx);
+
+        if (isOuterLevelSpan(statisticDataUnit, spanStore)) {
+            spanStore.assignOuterLevelSpan(spanWrapper);
+        }
+    }
+
+    /**
+     * Starts a span, and stores necessary information in the span store to retrieve them back when needed.
+     *
+     * @param statisticDataUnit Statistic data unit object, which was collected during a statistic event.
+     * @param msgCtx            Axis2 Message context.
+     * @param spanStore         Span store object.
+     */
+    private void startSpan(StatisticDataUnit statisticDataUnit, org.apache.axis2.context.MessageContext msgCtx,
+                           SpanStore spanStore) {
+        String parentId = String.valueOf(statisticDataUnit.getParentIndex());
+        SpanWrapper parentSpanWrapper = spanStore.getSpanWrapper(parentId);
+        Span parentSpan = null;
+        Context context = null;
+        if (parentSpanWrapper != null) {
+            parentSpan = parentSpanWrapper.getSpan();
+        }
+        Span span;
+        Map<String, String> tracerSpecificCarrier = new HashMap<>();
+
+        Map headersMap;
+        Object headers = msgCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        if (headers instanceof Map) {
+            headersMap = new ConcurrentHashMap<>((Map) headers);
+        } else {
+            // We only need to extract span context from headers when there are trp headers available
+            headersMap = new ConcurrentHashMap();
+        }
+        if (isOuterLevelSpan(statisticDataUnit, spanStore)) {
+            context = extract(headersMap);
+        } else if (parentSpan != null) {
+            context = Context.current().with(parentSpan);
+        } else {
+            context = Context.current();
+        }
+        span = tracer.spanBuilder(statisticDataUnit.getComponentName()).setParent(context).startSpan();
+
+        // Set tracing headers
+        inject(span, tracerSpecificCarrier);
+        msgCtx.setProperty(SynapseConstants.JAEGER_TRACE_ID, span.getSpanContext().getTraceId());
+        msgCtx.setProperty(SynapseConstants.JAEGER_SPAN_ID, span.getSpanContext().getSpanId());
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "Jaeger Trace ID: " + msgCtx.getProperty(SynapseConstants.JAEGER_TRACE_ID) + " Jaeger Span ID: " +
+                            msgCtx.getProperty(SynapseConstants.JAEGER_SPAN_ID));
+        }
+
+        // Set text map key value pairs as HTTP headers
+        // Fix possible null pointer issue which can occur when following property is used
+        // <property name="TRANSPORT_HEADERS" action="remove" scope="axis2"/>
+        if (headersMap != null) {
+            headersMap.putAll(tracerSpecificCarrier);
+            msgCtx.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, headersMap);
+
+            Object prevCustomSpanTagsObj = msgCtx.getProperty(TelemetryConstants.OLTP_CUSTOM_SPAN_TAGS);
+            String customTagsString =
+                    SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OLTP_CUSTOM_SPAN_TAGS, null);
+            boolean isCustomSpanTagsEnabled = customTagsString != null && !customTagsString.isEmpty();
+            if (isCustomSpanTagsEnabled) {
+                if (prevCustomSpanTagsObj != null) {
+                    Map<String, Object> customTagsMap = (Map<String, Object>) prevCustomSpanTagsObj;
+                    if (!customTagsMap.isEmpty()) {
+                        statisticDataUnit.setCustomProperties(customTagsMap);
+                    }
+                } else {
+                    String[] customTags = customTagsString.split(",");
+                    Map<String, Object> customTagsMap = new HashMap<>();
+                    for (String tag : customTags) {
+                        if (headersMap.containsKey(tag.trim())) {
+                            customTagsMap.put(tag, headersMap.get(tag));
+                        }
+                    }
+                    if (!customTagsMap.isEmpty()) {
+                        msgCtx.setProperty(TelemetryConstants.OLTP_CUSTOM_SPAN_TAGS, customTagsMap);
+                        statisticDataUnit.setCustomProperties(customTagsMap);
+                    }
+                }
+            }
+        }
+
+        statisticDataUnit.setTransportHeaderMap(headersMap);
+
+        String spanId = TracingUtils.extractId(statisticDataUnit);
+        SpanWrapper spanWrapper = spanStore.addSpanWrapper(spanId, span, statisticDataUnit, parentSpanWrapper, msgCtx);
 
         if (isOuterLevelSpan(statisticDataUnit, spanStore)) {
             spanStore.assignOuterLevelSpan(spanWrapper);
@@ -285,11 +412,12 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
     private boolean isOuterLevelSpan(StatisticDataUnit statisticDataUnit, SpanStore spanStore) {
         return spanStore.getOuterLevelSpanWrapper() == null
                 && (statisticDataUnit.getComponentType() == ComponentType.TASK ||
-                        statisticDataUnit.getComponentType() == ComponentType.PROXYSERVICE
+                statisticDataUnit.getComponentType() == ComponentType.PROXYSERVICE
                 || statisticDataUnit.getComponentType() == ComponentType.API
                 || statisticDataUnit.getComponentType() == ComponentType.INBOUNDENDPOINT
-                        || (statisticDataUnit.getComponentType() == ComponentType.SEQUENCE
-                        && SynapseConstants.MAIN_SEQUENCE_KEY.equals(statisticDataUnit.getComponentName())));
+                || statisticDataUnit.isOuterLayerSpan()
+                || (statisticDataUnit.getComponentType() == ComponentType.SEQUENCE
+                && SynapseConstants.MAIN_SEQUENCE_KEY.equals(statisticDataUnit.getComponentName())));
     }
 
     @Override
@@ -308,8 +436,21 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
     }
 
     @Override
+    public void handleCloseEntryEvent(BasicStatisticDataUnit basicStatisticDataUnit,
+                                      org.apache.axis2.context.MessageContext msgCtx) {
+        handleCloseEvent(basicStatisticDataUnit, msgCtx, false);
+    }
+
+
+    @Override
     public void handleCloseEntryWithErrorEvent(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx) {
         handleCloseEvent(basicStatisticDataUnit, synCtx, true);
+    }
+
+    @Override
+    public void handleCloseEntryWithErrorEvent(BasicStatisticDataUnit basicStatisticDataUnit,
+                                               org.apache.axis2.context.MessageContext msgCtx) {
+        handleCloseEvent(basicStatisticDataUnit, msgCtx, true);
     }
 
     @Override
@@ -323,9 +464,27 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         handleCloseEvent(basicStatisticDataUnit, synCtx, false);
 
         // finish outer level spans since the control is not returned to the original flow to close them gracefully.
-        while (spanWrapper.getParentSpanWrapper() != null) {
+        while (spanWrapper != null && spanWrapper.getParentSpanWrapper() != null) {
             spanWrapper = spanWrapper.getParentSpanWrapper();
             spanStore.finishSpan(spanWrapper, synCtx);
+        }
+    }
+
+    @Override
+    public void handleCloseFlowForcefully(BasicStatisticDataUnit basicStatisticDataUnit,
+                                          org.apache.axis2.context.MessageContext msgCtx) {
+        TracingScope tracingScope = tracingScopeManager.getTracingScope(msgCtx);
+        SpanStore spanStore = tracingScope.getSpanStore();
+        String spanWrapperId = TracingUtils.extractId(basicStatisticDataUnit);
+        SpanWrapper spanWrapper = spanStore.getSpanWrapper(spanWrapperId);
+
+        // finish the current span
+        handleCloseEvent(basicStatisticDataUnit, msgCtx, true);
+
+        // finish outer level spans since the control is not returned to the original flow to close them gracefully.
+        while (spanWrapper != null && spanWrapper.getParentSpanWrapper() != null) {
+            spanWrapper = spanWrapper.getParentSpanWrapper();
+            spanStore.finishSpan(spanWrapper, msgCtx, true);
         }
     }
 
@@ -336,6 +495,16 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
                 finishSpan(basicStatisticDataUnit, synCtx, tracingScope.getSpanStore(), tracingScope, isError);
             }
             // Else: Absorb. Will end during pop from stack
+        }
+    }
+
+    private void handleCloseEvent(BasicStatisticDataUnit basicStatisticDataUnit,
+                                  org.apache.axis2.context.MessageContext msgCtx, boolean isError) {
+        TracingScope tracingScope = tracingScopeManager.getTracingScope(msgCtx);
+        synchronized (tracingScope.getSpanStore()) {
+            if (!isBufferedForContinuationState(basicStatisticDataUnit, tracingScope.getSpanStore())) {
+                finishSpan(basicStatisticDataUnit, msgCtx, tracingScope.getSpanStore(), tracingScope, isError);
+            }
         }
     }
 
@@ -392,6 +561,25 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
                 tracingScopeManager.cleanupTracingScope(tracingScope.getTracingScopeId());
             }
             // Else - Absorb. Will be handled when all the callbacks are completed
+        }
+    }
+
+    private void finishSpan(BasicStatisticDataUnit basicStatisticDataUnit,
+                            org.apache.axis2.context.MessageContext msgCtx,
+                            SpanStore spanStore,
+                            TracingScope tracingScope, boolean isError) {
+        String spanWrapperId = TracingUtils.extractId(basicStatisticDataUnit);
+        SpanWrapper spanWrapper = spanStore.getSpanWrapper(spanWrapperId);
+        //Set the statistic data unit of the close event into the span wrapper
+        if (spanWrapper != null && (basicStatisticDataUnit instanceof StatisticDataUnit)) {
+            spanWrapper.setCloseEventStatisticDataUnit((StatisticDataUnit) basicStatisticDataUnit);
+        }
+        if (!Objects.equals(spanWrapper, spanStore.getOuterLevelSpanWrapper())) {
+            spanStore.finishSpan(spanWrapper, msgCtx, isError);
+        } else {
+            spanStore.finishSpan(spanWrapper, msgCtx, isError);
+            tracingScopeManager.cleanupTracingScope(tracingScope.getTracingScopeId());
+
         }
     }
 

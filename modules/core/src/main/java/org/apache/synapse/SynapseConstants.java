@@ -751,6 +751,7 @@ public final class SynapseConstants {
     public static final String APPEND_ARTIFACT_IDENTIFIER = "APPEND_ARTIFACT_IDENTIFIER";
     public static final String EXPOSE_VERSIONED_SERVICES = "expose.versioned.services";
 
+    public static final String SKIP_MAIN_SEQUENCE = "SKIP_MAIN_SEQUENCE";
     // Global endpoint properties and defaults
     public static final String GLOBAL_ENDPOINT_SUSPEND_DURATION = "synapse.global_endpoint_suspend_duration";
     public static final String DEFAULT_GLOBAL_ENDPOINT_SUSPEND_DURATION = "-1";
