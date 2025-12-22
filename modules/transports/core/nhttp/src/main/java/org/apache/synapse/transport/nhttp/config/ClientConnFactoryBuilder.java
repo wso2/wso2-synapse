@@ -613,17 +613,15 @@ public class ClientConnFactoryBuilder {
         String provider = System.getProperty(JCE_PROVIDER);
         if (StringUtils.isNotEmpty(provider)) {
             return PKIX;
-        } else {
-            return KeyManagerFactory.getDefaultAlgorithm();
         }
+        return KeyManagerFactory.getDefaultAlgorithm();
     }
 
     private static String getTrustManagerType() {
         String provider = System.getProperty(JCE_PROVIDER);
         if (StringUtils.isNotEmpty(provider)) {
             return PKIX;
-        } else {
-            return TrustManagerFactory.getDefaultAlgorithm();
         }
+        return TrustManagerFactory.getDefaultAlgorithm();
     }
 }
