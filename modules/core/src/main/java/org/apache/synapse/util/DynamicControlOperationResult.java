@@ -16,7 +16,7 @@
  *  under the License.
  */
 
-package org.apache.synapse.inbound;
+package org.apache.synapse.util;
 
 public class DynamicControlOperationResult {
     private final boolean success;
