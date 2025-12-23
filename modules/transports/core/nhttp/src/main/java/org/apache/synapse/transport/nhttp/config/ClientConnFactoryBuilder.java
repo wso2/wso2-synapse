@@ -27,6 +27,7 @@ import org.apache.axis2.deployment.util.Utils;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.axis2.transport.base.ParamUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
@@ -73,6 +74,8 @@ public class ClientConnFactoryBuilder {
     private SSLContextDetails ssl = null;
     private Map<RequestDescriptor, SSLContext> sslByHostMap = null;
     private  ConfigurationContext configurationContext;
+    private static final String PKIX = "PKIX";
+    private static final String JCE_PROVIDER = "security.jce.provider";
 
     public ClientConnFactoryBuilder(final TransportOutDescription transportOut, ConfigurationContext configurationContext) {
         this(transportOut);
@@ -369,8 +372,7 @@ public class ClientConnFactoryBuilder {
                 }
 
                 keyStore.load(fis, storePassword.toCharArray());
-                KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(
-                        KeyManagerFactory.getDefaultAlgorithm());
+                KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(getKeyManagerType());
                 kmfactory.init(keyStore, keyPassword.toCharArray());
                 keymanagers = kmfactory.getKeyManagers();
 
@@ -412,8 +414,7 @@ public class ClientConnFactoryBuilder {
                 }
 
                 trustStore.load(fis, storePassword.toCharArray());
-                TrustManagerFactory trustManagerfactory = TrustManagerFactory.getInstance(
-                        TrustManagerFactory.getDefaultAlgorithm());
+                TrustManagerFactory trustManagerfactory = TrustManagerFactory.getInstance(getTrustManagerType());
                 trustManagerfactory.init(trustStore);
                 trustManagers = trustManagerfactory.getTrustManagers();
 
@@ -479,8 +480,7 @@ public class ClientConnFactoryBuilder {
                 }
 
                 keyStore.load(fis, storePassword.toCharArray());
-                KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(
-                        KeyManagerFactory.getDefaultAlgorithm());
+                KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(getKeyManagerType());
                 kmfactory.init(keyStore, keyPassword.toCharArray());
                 keymanagers = kmfactory.getKeyManagers();
 
@@ -511,8 +511,7 @@ public class ClientConnFactoryBuilder {
                 }
 
                 trustStore.load(fis, storePassword.toCharArray());
-                TrustManagerFactory trustManagerfactory = TrustManagerFactory.getInstance(
-                        TrustManagerFactory.getDefaultAlgorithm());
+                TrustManagerFactory trustManagerfactory = TrustManagerFactory.getInstance(getTrustManagerType());
                 trustManagerfactory.init(trustStore);
                 trustManagers = trustManagerfactory.getTrustManagers();
 
@@ -608,5 +607,21 @@ public class ClientConnFactoryBuilder {
 
     public SSLContextDetails getSSLContextDetails() {
         return ssl;
+    }
+
+    private static String getKeyManagerType() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (StringUtils.isNotEmpty(provider)) {
+            return PKIX;
+        }
+        return KeyManagerFactory.getDefaultAlgorithm();
+    }
+
+    private static String getTrustManagerType() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (StringUtils.isNotEmpty(provider)) {
+            return PKIX;
+        }
+        return TrustManagerFactory.getDefaultAlgorithm();
     }
 }
