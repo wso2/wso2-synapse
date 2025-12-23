@@ -30,6 +30,8 @@ import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTele
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
+import java.util.Objects;
+
 /**
  * CloseEventCollector receives  close statistic events from synapse mediation engine. It Receives Statistics for
  * Proxy Services, Inbound Endpoint, APIs, Sequences, Endpoints, Mediators and Resources.
@@ -50,7 +52,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 	 */
 	public static void closeEntryEvent(MessageContext messageContext, String componentName, ComponentType componentType,
 									   Integer currentIndex, boolean isContentAltering) {
-		closeEntryEvent(messageContext, componentName, componentType, currentIndex, isContentAltering, null, false);
+        closeEntryEvent(messageContext, componentName, componentType, currentIndex, isContentAltering, null, false);
 	}
 
 	/**
@@ -121,6 +123,12 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 				} else {
 					OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler().
 						handleCloseEntryEvent(statisticDataUnit, messageContext);
+
+                    // Set SKIP_CHILD_EVENTS property to false at the end of connector operation span.
+                    if (componentType == ComponentType.MEDIATOR && Objects.equals(componentName, "InvokeMediator:Connector")) {
+                        messageContext.setProperty(StatisticsConstants.SKIP_CHILD_EVENTS, false);
+
+                    }
 				}
 			}
 

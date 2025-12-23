@@ -278,6 +278,12 @@ public class InvokeMediator extends AbstractMediator implements
         return false;
     }
 
+    @Override
+    public String getMediatorName() {
+        // This is to differentiate between connectors and template mediators in open-telemetry.
+        return super.getMediatorName() + (isDynamicMediator() ? ":Connector" : ":Template");
+    }
+
     public boolean mediate(MessageContext synCtx, ContinuationState continuationState) {
         SynapseLog synLog = getLog(synCtx);
 
