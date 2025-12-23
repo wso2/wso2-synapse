@@ -29,6 +29,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.OpenTelemetryManager;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTelemetryManagerHolder;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.MediatorFaultHandler;
@@ -120,7 +121,21 @@ public class ContinuationStackManager {
 		if (synCtx.isContinuationEnabled()) {
             ContinuationState seqContState = ContinuationStackManager.peakContinuationStateStack(synCtx);
 			if (seqContState != null) {
-				seqContState.getLeafChild().setPosition(position);
+				ContinuationState leafChild = seqContState.getLeafChild();
+				leafChild.setPosition(position);
+				
+				// Save statistics parent context with the continuation state for tracing
+				if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+					Integer parentIndex = (Integer) synCtx.getProperty(
+						StatisticsConstants.MEDIATION_FLOW_STATISTICS_PARENT_INDEX);
+					java.util.List<Integer> parentList = (java.util.List<Integer>) synCtx.getProperty(
+						StatisticsConstants.MEDIATION_FLOW_STATISTICS_PARENT_LIST);
+					
+					// Store parent context in the continuation state
+					leafChild.setStatisticsParentIndex(parentIndex);
+					leafChild.setStatisticsParentList(parentList != null ? 
+						new java.util.LinkedList<>(parentList) : null);
+				}
 			} else {
 				// Ideally we should not get here.
 				log.warn("Continuation Stack is empty. Probably due to a configuration issue");
