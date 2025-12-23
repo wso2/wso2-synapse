@@ -89,6 +89,14 @@ do
 done
 SYNAPSE_CLASSPATH=$SYNAPSE_CLASSPATH:$CLASSPATH
 
+# Add endorsed JARs to classpath (for Java 9+ compatibility)
+if [ -d "$SYNAPSE_HOME/lib/endorsed" ]; then
+  for f in $SYNAPSE_HOME/lib/endorsed/*.jar
+  do
+    SYNAPSE_CLASSPATH=$f:$SYNAPSE_CLASSPATH
+  done
+fi
+
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin; then
   JAVA_HOME=`cygpath --absolute --windows "$JAVA_HOME"`
@@ -101,5 +109,4 @@ fi
 
 $JAVA_HOME/bin/java \
 -classpath "$SYNAPSE_CLASSPATH" \
--Djava.endorsed.dirs="$SYNAPSE_HOME/lib/endorsed":"$JAVA_HOME/jre/lib/endorsed":"$JAVA_HOME/lib/endorsed" \
 org.apache.synapse.securevault.tool.CipherTool $*

@@ -274,7 +274,7 @@ public class FIXTransportSender extends AbstractTransportSender {
      * @return boolean value indicating the result
      * @throws AxisFault on error
      */
-    private boolean sendUsingEPR(String targetEPR, String serviceName, Message fixMessage,
+    protected boolean sendUsingEPR(String targetEPR, String serviceName, Message fixMessage,
                                  String srcSession, int counter, MessageContext msgCtx) throws AxisFault {
 
         FIXOutTransportInfo fixOut = new FIXOutTransportInfo(targetEPR);
