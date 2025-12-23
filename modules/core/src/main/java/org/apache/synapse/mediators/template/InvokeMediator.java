@@ -288,6 +288,12 @@ public class InvokeMediator extends AbstractMediator implements
         boolean result;
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
 		boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
+		Integer statisticReportingIndex = null;
+
+		if (isStatisticsEnabled) {
+			statisticReportingIndex = reportOpenStatistics(synCtx, false);
+		}
+
         if (subBranch == 0) {
 	        // Default flow
 	        TemplateMediator templateMediator = (TemplateMediator) synCtx.getSequenceTemplate(targetTemplate);
@@ -332,6 +338,11 @@ public class InvokeMediator extends AbstractMediator implements
 				prefetchInvoke.reportCloseStatistics(synCtx, null);
 			}
         }
+
+		if (isStatisticsEnabled && statisticReportingIndex != null) {
+			reportCloseStatistics(synCtx, statisticReportingIndex);
+		}
+
         return result;
     }
 
