@@ -475,7 +475,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      * Returns the name of the class of respective mediator. This was introduced to provide a unique way to get the
      * mediator name because getType is implemented in different ways in different mediators (e.g.
      * PayloadFactoryMediator)
-     * @return
+     * @return the name of the mediator
      */
     public String getMediatorName(){
         String cls = getClass().getName();
