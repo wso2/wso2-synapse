@@ -1072,6 +1072,17 @@ public class TargetHandler implements NHttpClientEventHandler {
         log.warn("Connection ended unexpectedly" +
                 ", " + getConnectionLoggingInfo(conn) +
                 ", State: "  + state + ".");
+        
+        // Notify pipes based on state to prevent thread hangs
+        if (state == ProtocolState.REQUEST_HEAD || state == ProtocolState.REQUEST_BODY) {
+            informWriterError(conn);
+        } else if (state == ProtocolState.RESPONSE_HEAD || state == ProtocolState.RESPONSE_BODY) {
+            informReaderError(conn);
+        }
+        
+        // Update metrics
+        metrics.disconnected();
+        
         TargetContext.updateState(conn, ProtocolState.CLOSED);
         targetConfiguration.getConnections().shutdownConnection(conn, true);
         MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
