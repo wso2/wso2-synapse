@@ -232,7 +232,7 @@ public class RequestHandler implements Runnable {
                 setProperty(Constants.IS_RUNNING_AS_UNIT_TEST, "false");
         
         //clear coverage tracker
-        MediatorCoverageTracker.getInstance().clear();
+        MediatorRegistry.getInstance().clear();
     }
 
     /**

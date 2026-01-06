@@ -491,7 +491,7 @@ class TestingAgent {
         try {
             API api = synapseConfig.getAPI(apiName);
             if (api != null) {
-                MediatorCoverageTracker.getInstance().registerAPI(api);
+                MediatorRegistry.getInstance().registerAPI(api);
                 log.info("Registered API for coverage tracking: " + apiName);
             }
         } catch (Exception e) {
@@ -510,7 +510,7 @@ class TestingAgent {
             SequenceMediator sequence =
                     (SequenceMediator) synapseConfig.getSequence(sequenceName);
             if (sequence != null) {
-                MediatorCoverageTracker.getInstance().registerSequence(sequence);
+                MediatorRegistry.getInstance().registerSequence(sequence);
                 log.info("Registered Sequence for coverage tracking: " + sequenceName);
             }
         } catch (Exception e) {
@@ -525,7 +525,7 @@ class TestingAgent {
      */
     void generateCoverageReport(TestSuiteSummary testSuiteSummary) {
         try {
-            MediatorCoverageTracker tracker = MediatorCoverageTracker.getInstance();
+            MediatorRegistry tracker = MediatorRegistry.getInstance();
             
             for (String artifactKey : tracker.getRegisteredArtifacts()) {
                 String[] parts = artifactKey.split(":", 2);

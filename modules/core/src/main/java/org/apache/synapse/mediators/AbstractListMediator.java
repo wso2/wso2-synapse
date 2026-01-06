@@ -40,7 +40,7 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
-import org.apache.synapse.unittest.MediatorCoverageTracker;
+import org.apache.synapse.unittest.MediatorRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -306,17 +306,15 @@ public abstract class AbstractListMediator extends AbstractMediator
      * @param synCtx   message context
      */
     private void trackMediatorExecution(Mediator mediator, MessageContext synCtx) {
-        // Check if we are running in unit test mode
         if (synCtx.getConfiguration() != null &&
                 "true".equals(synCtx.getConfiguration().getProperty(
                         org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST))) {
             
-            // Get the artifact key from message context
             String artifactKey = (String) synCtx.getProperty(
                     org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY);
             
             if (artifactKey != null) {
-                MediatorCoverageTracker.getInstance().markMediatorExecuted(mediator, artifactKey);
+                MediatorRegistry.getInstance().markMediatorExecuted(mediator, artifactKey);
             }
         }
     }
