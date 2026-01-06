@@ -28,6 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.api.API;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
@@ -37,6 +38,8 @@ import org.apache.synapse.deployers.LocalEntryDeployer;
 import org.apache.synapse.deployers.ProxyServiceDeployer;
 import org.apache.synapse.deployers.SequenceDeployer;
 import org.apache.synapse.deployers.TemplateDeployer;
+import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.unittest.testcase.data.classes.MediatorCoverage;
 import org.apache.synapse.unittest.testcase.data.classes.SynapseTestCase;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 import org.apache.synapse.unittest.testcase.data.classes.TestCaseSummary;
@@ -47,6 +50,7 @@ import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import javax.xml.namespace.QName;
 
 import static org.apache.synapse.unittest.Constants.API_CONTEXT;
@@ -222,6 +226,9 @@ class TestingAgent {
                         config.deploySequenceArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairOfSequenceDeployment.getKey();
                 key = pairOfSequenceDeployment.getValue();
+                
+                // Register supporting sequences for coverage tracking
+                registerSequenceForCoverage(synapseConfiguration, key);
                 break;
 
             case TYPE_PROXY:
@@ -482,7 +489,7 @@ class TestingAgent {
      */
     private void registerAPIForCoverage(SynapseConfiguration synapseConfig, String apiName) {
         try {
-            org.apache.synapse.api.API api = synapseConfig.getAPI(apiName);
+            API api = synapseConfig.getAPI(apiName);
             if (api != null) {
                 MediatorCoverageTracker.getInstance().registerAPI(api);
                 log.info("Registered API for coverage tracking: " + apiName);
@@ -500,8 +507,8 @@ class TestingAgent {
      */
     private void registerSequenceForCoverage(SynapseConfiguration synapseConfig, String sequenceName) {
         try {
-            org.apache.synapse.mediators.base.SequenceMediator sequence =
-                    (org.apache.synapse.mediators.base.SequenceMediator) synapseConfig.getSequence(sequenceName);
+            SequenceMediator sequence =
+                    (SequenceMediator) synapseConfig.getSequence(sequenceName);
             if (sequence != null) {
                 MediatorCoverageTracker.getInstance().registerSequence(sequence);
                 log.info("Registered Sequence for coverage tracking: " + sequenceName);
@@ -526,16 +533,20 @@ class TestingAgent {
                     String artifactType = parts[0];
                     String artifactName = parts[1];
                     
-                    org.apache.synapse.unittest.testcase.data.classes.MediatorCoverage coverage =
-                            new org.apache.synapse.unittest.testcase.data.classes.MediatorCoverage(
-                                    artifactType, artifactName);
+                    MediatorCoverage coverage =
+                            new MediatorCoverage(artifactType, artifactName);
                     
                     coverage.setTotalMediators(tracker.getTotalMediatorCount(artifactKey));
                     coverage.setExecutedMediators(tracker.getExecutedMediatorCount(artifactKey));
                     
-                    // Add executed mediator details
-                    for (String mediatorId : tracker.getExecutedMediatorIds(artifactKey)) {
-                        coverage.addMediatorDetail(mediatorId);
+                    // Get all mediators and their execution status
+                    Set<String> allMediatorIds = tracker.getAllMediatorIds(artifactKey);
+                    Set<String> executedMediatorIds = tracker.getExecutedMediatorIds(artifactKey);
+                    
+                    // Add all mediators with execution status
+                    for (String mediatorId : allMediatorIds) {
+                        boolean isExecuted = executedMediatorIds.contains(mediatorId);
+                        coverage.addMediatorExecutionStatus(mediatorId, isExecuted);
                     }
                     
                     coverage.calculateCoveragePercentage();

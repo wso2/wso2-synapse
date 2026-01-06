@@ -346,13 +346,14 @@ public class Resource extends AbstractRequestProcessor implements ManagedLifecyc
         if (sequence != null) {
             registerFaultHandler(synCtx);
             
-            // Set artifact key for coverage tracking (for APIs invoked via HTTP)
-            String apiName = (String) synCtx.getProperty(RESTConstants.SYNAPSE_REST_API);
-            if (apiName != null && synCtx.getConfiguration() != null &&
-                    "true".equals(synCtx.getConfiguration().getProperty(
+            // Set artifact key for coverage tracking when running unit tests
+            if (synCtx.getConfiguration() != null && "true".equals(synCtx.getConfiguration().getProperty(
                             org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST))) {
-                synCtx.setProperty(org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY, 
-                        "API:" + apiName);
+                String apiName = (String) synCtx.getProperty(RESTConstants.SYNAPSE_REST_API);
+                if (apiName != null) {
+                    synCtx.setProperty(org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY,
+                            "API:" + apiName);
+                }
             }
             
             if (openAPI != null) {

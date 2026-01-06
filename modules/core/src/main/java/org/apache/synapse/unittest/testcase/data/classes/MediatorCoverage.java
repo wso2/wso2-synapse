@@ -22,7 +22,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Class to hold mediator coverage information for a specific artifact.
@@ -35,9 +37,11 @@ public class MediatorCoverage {
     private int totalMediators;
     private double coveragePercentage;
     private List<String> mediatorDetails;
+    private Map<String, Boolean> mediatorExecutionStatus;
 
     public MediatorCoverage() {
         this.mediatorDetails = new ArrayList<>();
+        this.mediatorExecutionStatus = new LinkedHashMap<>();
         this.executedMediators = 0;
         this.totalMediators = 0;
         this.coveragePercentage = 0.0;
@@ -169,6 +173,25 @@ public class MediatorCoverage {
     }
 
     /**
+     * Add mediator with execution status.
+     *
+     * @param mediatorIdentifier mediator identifier
+     * @param executed whether the mediator was executed
+     */
+    public void addMediatorExecutionStatus(String mediatorIdentifier, boolean executed) {
+        this.mediatorExecutionStatus.put(mediatorIdentifier, executed);
+    }
+
+    /**
+     * Get mediator execution status map.
+     *
+     * @return map of mediator identifier to execution status
+     */
+    public Map<String, Boolean> getMediatorExecutionStatus() {
+        return mediatorExecutionStatus;
+    }
+
+    /**
      * Calculate coverage percentage based on executed and total mediators.
      */
     public void calculateCoveragePercentage() {
@@ -192,9 +215,13 @@ public class MediatorCoverage {
         json.addProperty("totalMediators", totalMediators);
         json.addProperty("coveragePercentage", String.format("%.2f", coveragePercentage));
 
+        // Add mediator details with execution status
         JsonArray detailsArray = new JsonArray();
-        for (String detail : mediatorDetails) {
-            detailsArray.add(detail);
+        for (Map.Entry<String, Boolean> entry : mediatorExecutionStatus.entrySet()) {
+            JsonObject mediatorObj = new JsonObject();
+            mediatorObj.addProperty("mediatorId", entry.getKey());
+            mediatorObj.addProperty("executed", entry.getValue());
+            detailsArray.add(mediatorObj);
         }
         json.add("mediatorDetails", detailsArray);
 

@@ -26,9 +26,14 @@ import org.apache.synapse.api.Resource;
 import org.apache.synapse.config.xml.SwitchCase;
 import org.apache.synapse.mediators.ListMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.builtin.PropertyMediator;
+import org.apache.synapse.mediators.elementary.EnrichMediator;
+import org.apache.synapse.mediators.filters.FilterMediator;
+import org.apache.synapse.mediators.filters.SwitchMediator;
 
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,7 +47,7 @@ public class MediatorCoverageTracker {
 
     private static Log log = LogFactory.getLog(MediatorCoverageTracker.class.getName());
 
-    // Thread-safe singleton instance
+    // MediatorCoverageTracker singleton instance
     private static final MediatorCoverageTracker instance = new MediatorCoverageTracker();
 
     // Map to store all mediators for each artifact: artifactKey -> mediatorId -> mediator
@@ -50,9 +55,6 @@ public class MediatorCoverageTracker {
 
     // Set to track executed mediators: artifactKey -> set of executed mediatorIds
     private final Map<String, Set<String>> executedMediators = new ConcurrentHashMap<>();
-
-    // Counter for generating unique mediator IDs
-    private final Map<String, AtomicInteger> mediatorCounters = new ConcurrentHashMap<>();
 
     private MediatorCoverageTracker() {
     }
@@ -75,33 +77,43 @@ public class MediatorCoverageTracker {
         String artifactKey = "API:" + api.getName();
         log.info("Registering API for coverage tracking: " + api.getName());
 
-        Map<String, Mediator> mediatorMap = new HashMap<>();
-        mediatorCounters.put(artifactKey, new AtomicInteger(0));
+        Map<String, Mediator> mediatorMap = new LinkedHashMap<>();
 
         // Track mediators in all resources
-        int resourceIndex = 0;
         for (Resource resource : api.getResources()) {
-            String resourcePath = "api/" + api.getName() + "/res" + resourceIndex;
+            // Build resource identifier: method[uriTemplate]
+            String[] methods = resource.getMethods();
+            String methodStr = (methods != null && methods.length > 0) ? 
+                    String.join(",", methods) : "ANY";
+            
+            String uriTemplate = "/";
+            if (resource.getDispatcherHelper() != null) {
+                String helperString = resource.getDispatcherHelper().getString();
+                if (helperString != null && !helperString.isEmpty()) {
+                    uriTemplate = helperString;
+                }
+            }
+            
+            String resourcePath = "api:" + api.getName() + "/" + methodStr + "[" + uriTemplate + "]";
             
             // Track inSequence
             if (resource.getInSequence() != null) {
                 registerMediatorRecursively(resource.getInSequence(), artifactKey, 
                         resourcePath + "/in", 
-                        mediatorMap);
+                        mediatorMap, new AtomicInteger(0));
             }
             // Track outSequence
             if (resource.getOutSequence() != null) {
                 registerMediatorRecursively(resource.getOutSequence(), artifactKey,
                         resourcePath + "/out",
-                        mediatorMap);
+                        mediatorMap, new AtomicInteger(0));
             }
             // Track faultSequence
             if (resource.getFaultSequence() != null) {
                 registerMediatorRecursively(resource.getFaultSequence(), artifactKey,
                         resourcePath + "/fault",
-                        mediatorMap);
+                        mediatorMap, new AtomicInteger(0));
             }
-            resourceIndex++;
         }
 
         allMediators.put(artifactKey, mediatorMap);
@@ -119,11 +131,10 @@ public class MediatorCoverageTracker {
         String artifactKey = "Sequence:" + sequence.getName();
         log.info("Registering Sequence for coverage tracking: " + sequence.getName());
 
-        Map<String, Mediator> mediatorMap = new HashMap<>();
-        mediatorCounters.put(artifactKey, new AtomicInteger(0));
+        Map<String, Mediator> mediatorMap = new LinkedHashMap<>();
 
-        registerMediatorRecursively(sequence, artifactKey, "seq/" + sequence.getName(), 
-                mediatorMap);
+        registerMediatorRecursively(sequence, artifactKey, "sequence:" + sequence.getName(), 
+                mediatorMap, new AtomicInteger(0));
 
         allMediators.put(artifactKey, mediatorMap);
         executedMediators.put(artifactKey, ConcurrentHashMap.newKeySet());
@@ -138,64 +149,87 @@ public class MediatorCoverageTracker {
      * @param artifactKey  artifact key
      * @param path         path prefix for identification
      * @param mediatorMap  map to store mediators
+     * @param positionCounter counter for mediator positions at current level
      */
     private void registerMediatorRecursively(Mediator mediator, String artifactKey, 
-                                            String path, Map<String, Mediator> mediatorMap) {
+                                            String path, Map<String, Mediator> mediatorMap,
+                                            AtomicInteger positionCounter) {
         if (mediator == null) {
             return;
         }
 
-        // Generate unique ID for this mediator with improved format
-        int index = mediatorCounters.get(artifactKey).incrementAndGet();
+        // Get mediator type without "Mediator" suffix for cleaner names
         String mediatorType = mediator.getClass().getSimpleName();
-        String mediatorId = path + "/" + index + ":" + mediatorType;
+        if (mediatorType.endsWith("Mediator")) {
+            mediatorType = mediatorType.substring(0, mediatorType.length() - 8);
+        }
+        
+        // Generate position-based ID: path/position.Type
+        int position = positionCounter.incrementAndGet();
+        String mediatorId = path + "/" + position + "." + mediatorType;
+        
+        // Add context for specific mediators
+        if (mediator instanceof PropertyMediator) {
+            PropertyMediator propMediator =
+                    (PropertyMediator) mediator;
+            if (propMediator.getName() != null) {
+                mediatorId += "[" + propMediator.getName() + "]";
+            }
+        } else if (mediator instanceof EnrichMediator) {
+            mediatorId += "[enrich]";
+        }
 
         mediatorMap.put(mediatorId, mediator);
 
-        // If this is a list mediator, recursively register children
-        if (mediator instanceof ListMediator) {
-            ListMediator listMediator = (ListMediator) mediator;
-            List<Mediator> children = listMediator.getList();
+        // Special handling for FilterMediator to register then/else branches
+        if (mediator instanceof FilterMediator) {
+            FilterMediator filterMediator = (FilterMediator) mediator;
             
-            if (children != null && !children.isEmpty()) {
-                for (int i = 0; i < children.size(); i++) {
-                    Mediator child = children.get(i);
-                    String childPath = mediatorId;
-                    registerMediatorRecursively(child, artifactKey, childPath, mediatorMap);
+            // Register then branch
+            List<Mediator> thenChildren = filterMediator.getList();
+            if (thenChildren != null && !thenChildren.isEmpty()) {
+                AtomicInteger thenCounter = new AtomicInteger(0);
+                for (Mediator thenChild : thenChildren) {
+                    registerMediatorRecursively(thenChild, artifactKey, mediatorId + "/then", 
+                            mediatorMap, thenCounter);
                 }
             }
-        }
-        
-        // Special handling for FilterMediator to register else branch
-        if (mediator instanceof org.apache.synapse.mediators.filters.FilterMediator) {
-            org.apache.synapse.mediators.filters.FilterMediator filterMediator = 
-                    (org.apache.synapse.mediators.filters.FilterMediator) mediator;
             
-            // Register the else mediator if it exists
+            // Register else branch
             if (filterMediator.getElseMediator() != null) {
                 ListMediator elseMediator = filterMediator.getElseMediator();
                 List<Mediator> elseChildren = elseMediator.getList();
                 
                 if (elseChildren != null && !elseChildren.isEmpty()) {
+                    AtomicInteger elseCounter = new AtomicInteger(0);
                     for (Mediator elseChild : elseChildren) {
-                        registerMediatorRecursively(elseChild, artifactKey, mediatorId, mediatorMap);
+                        registerMediatorRecursively(elseChild, artifactKey, mediatorId + "/else", 
+                                mediatorMap, elseCounter);
                     }
                 }
             }
         }
-        
-        // Special handling for SwitchMediator to register all case branches
-        if (mediator instanceof org.apache.synapse.mediators.filters.SwitchMediator) {
-            org.apache.synapse.mediators.filters.SwitchMediator switchMediator = 
-                    (org.apache.synapse.mediators.filters.SwitchMediator) mediator;
+        // Special handling for SwitchMediator to register case branches
+        else if (mediator instanceof SwitchMediator) {
+            SwitchMediator switchMediator = (SwitchMediator) mediator;
             
             // Register all case mediators
             List<SwitchCase> cases = switchMediator.getCases();
             if (cases != null && !cases.isEmpty()) {
-                for (SwitchCase switchCase : cases) {
+                for (int i = 0; i < cases.size(); i++) {
+                    SwitchCase switchCase = cases.get(i);
                     Mediator caseMediator = switchCase.getCaseMediator();
-                    if (caseMediator != null) {
-                        registerMediatorRecursively(caseMediator, artifactKey, mediatorId, mediatorMap);
+                    if (caseMediator instanceof ListMediator) {
+                        ListMediator caseList = (ListMediator) caseMediator;
+                        List<Mediator> caseChildren = caseList.getList();
+                        if (caseChildren != null && !caseChildren.isEmpty()) {
+                            AtomicInteger caseCounter = new AtomicInteger(0);
+                            String casePath = mediatorId + "/case[" + (i + 1) + "]";
+                            for (Mediator caseChild : caseChildren) {
+                                registerMediatorRecursively(caseChild, artifactKey, casePath, 
+                                        mediatorMap, caseCounter);
+                            }
+                        }
                     }
                 }
             }
@@ -203,8 +237,32 @@ public class MediatorCoverageTracker {
             // Register default case mediator if it exists
             SwitchCase defaultCase = switchMediator.getDefaultCase();
             if (defaultCase != null && defaultCase.getCaseMediator() != null) {
-                registerMediatorRecursively(defaultCase.getCaseMediator(), artifactKey, 
-                        mediatorId, mediatorMap);
+                Mediator defaultMediator = defaultCase.getCaseMediator();
+                if (defaultMediator instanceof ListMediator) {
+                    ListMediator defaultList = (ListMediator) defaultMediator;
+                    List<Mediator> defaultChildren = defaultList.getList();
+                    if (defaultChildren != null && !defaultChildren.isEmpty()) {
+                        AtomicInteger defaultCounter = new AtomicInteger(0);
+                        String defaultPath = mediatorId + "/default";
+                        for (Mediator defaultChild : defaultChildren) {
+                            registerMediatorRecursively(defaultChild, artifactKey, defaultPath, 
+                                    mediatorMap, defaultCounter);
+                        }
+                    }
+                }
+            }
+        }
+        // For regular list mediators (SequenceMediator, etc.), register children normally
+        else if (mediator instanceof ListMediator) {
+            ListMediator listMediator = (ListMediator) mediator;
+            List<Mediator> children = listMediator.getList();
+            
+            if (children != null && !children.isEmpty()) {
+                // Create new counter for children at this level
+                AtomicInteger childCounter = new AtomicInteger(0);
+                for (Mediator child : children) {
+                    registerMediatorRecursively(child, artifactKey, mediatorId, mediatorMap, childCounter);
+                }
             }
         }
     }
@@ -261,7 +319,7 @@ public class MediatorCoverageTracker {
     }
 
     /**
-     * Get list of executed mediator identifiers.
+     * Get executed mediator identifiers.
      *
      * @param artifactKey artifact key
      * @return set of executed mediator identifiers
@@ -269,6 +327,17 @@ public class MediatorCoverageTracker {
     public Set<String> getExecutedMediatorIds(String artifactKey) {
         Set<String> executed = executedMediators.get(artifactKey);
         return executed != null ? new HashSet<>(executed) : new HashSet<>();
+    }
+
+    /**
+     * Get all mediator identifiers for an artifact in registration order.
+     *
+     * @param artifactKey artifact key
+     * @return set of all mediator identifiers (preserves insertion order)
+     */
+    public Set<String> getAllMediatorIds(String artifactKey) {
+        Map<String, Mediator> mediators = allMediators.get(artifactKey);
+        return mediators != null ? new LinkedHashSet<>(mediators.keySet()) : new LinkedHashSet<>();
     }
 
     /**
@@ -281,12 +350,21 @@ public class MediatorCoverageTracker {
     }
 
     /**
+     * Check if an artifact is already registered.
+     *
+     * @param artifactKey artifact key to check
+     * @return true if artifact is registered, false otherwise
+     */
+    public boolean isArtifactRegistered(String artifactKey) {
+        return allMediators.containsKey(artifactKey);
+    }
+
+    /**
      * Clear all tracking data.
      */
     public void clear() {
         allMediators.clear();
         executedMediators.clear();
-        mediatorCounters.clear();
         log.info("Cleared all mediator coverage tracking data");
     }
 
@@ -298,7 +376,6 @@ public class MediatorCoverageTracker {
     public void clearArtifact(String artifactKey) {
         allMediators.remove(artifactKey);
         executedMediators.remove(artifactKey);
-        mediatorCounters.remove(artifactKey);
         log.info("Cleared mediator coverage tracking data for: " + artifactKey);
     }
 

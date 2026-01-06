@@ -211,7 +211,14 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 // sequence mediator in the sequence
                 ContinuationStackManager.updateSeqContinuationState(synCtx, getMediatorPosition());
 
+                String originalArtifactKey = handleCoverageForReferencedSequence(synCtx, m, synLog);
+
                 boolean result = m.mediate(synCtx);
+
+                //Restore original artifact key for unit test coverage
+                if (originalArtifactKey != null) {
+                    synCtx.setProperty(org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY, originalArtifactKey);
+                }
 
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug("End : Sequence key=<" + key + ">");
@@ -520,5 +527,26 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         if (sequenceType != SequenceType.ANON) {
             StatisticIdentityGenerator.reportingFlowContinuableEndEvent(sequenceId, ComponentType.SEQUENCE, holder);
         }
+    }
+
+    private String handleCoverageForReferencedSequence(MessageContext synCtx, Mediator mediator, SynapseLog synLog) {
+        if (synCtx.getConfiguration() == null ||
+                !"true".equals(synCtx.getConfiguration().getProperty(
+                        org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST))) {
+            return null;
+        }
+
+        String originalKey = (String) synCtx.getProperty(
+                org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY);
+
+        if (mediator instanceof SequenceMediator) {
+            SequenceMediator refSeq = (SequenceMediator) mediator;
+            String refSeqName = refSeq.getName();
+            if (refSeqName != null && !refSeqName.isEmpty()) {
+                String refSeqKey = "Sequence:" + refSeqName;
+                synCtx.setProperty(org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY, refSeqKey);
+            }
+        }
+        return originalKey;
     }
 }
