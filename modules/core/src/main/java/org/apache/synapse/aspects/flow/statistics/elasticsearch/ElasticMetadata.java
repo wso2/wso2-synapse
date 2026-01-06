@@ -21,6 +21,7 @@ package org.apache.synapse.aspects.flow.statistics.elasticsearch;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.Endpoint;
@@ -28,6 +29,8 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.synapse.rest.RESTConstants;
+import org.apache.synapse.transport.netty.BridgeConstants;
 
 public class ElasticMetadata {
     private final SynapseConfiguration synapseConfiguration;
@@ -41,7 +44,7 @@ public class ElasticMetadata {
         this.faultResponse = msgCtx.isFaultResponse();
         this.messageId = msgCtx.getMessageID();
         this.contextEntries = msgCtx.getContextEntries();
-        this.contextProperties = ((Axis2MessageContext) msgCtx).getProperties();
+        this.contextProperties = populateContextProperties((Axis2MessageContext) msgCtx);
     }
 
     public ElasticMetadata(SynapseConfiguration synapseConfiguration, boolean faultResponse, String messageId,
@@ -104,5 +107,26 @@ public class ElasticMetadata {
         return this.contextProperties != null &&
                 this.contextEntries != null &&
                 this.synapseConfiguration != null;
+    }
+
+    /**
+     * Populating context-properties manually to de-reference the axis2 message context from
+     * ElasticMetadata.
+     *
+     * @param ctx Axis2MessageContext
+     * @return map with a copy of only required properties.
+     */
+    private Map<String, Object> populateContextProperties(Axis2MessageContext ctx) {
+        Map<String, Object> props = new HashMap<>();
+        String[] propNames = {RESTConstants.SYNAPSE_REST_API, RESTConstants.REST_SUB_REQUEST_PATH,
+            RESTConstants.REST_API_CONTEXT, RESTConstants.REST_METHOD, BridgeConstants.HTTP_METHOD,
+            SynapseConstants.TRANSPORT_IN_NAME, CorrelationConstants.CORRELATION_ID,
+            SynapseConstants.IS_CLIENT_DOING_REST, SynapseConstants.IS_CLIENT_DOING_SOAP11,
+            BridgeConstants.REMOTE_HOST, BridgeConstants.CONTENT_TYPE_HEADER,
+            SynapseConstants.ANALYTICS_METADATA};
+        for (String propName : propNames) {
+            props.put(propName, ctx.getProperty(propName));
+        }
+        return props;
     }
 }
