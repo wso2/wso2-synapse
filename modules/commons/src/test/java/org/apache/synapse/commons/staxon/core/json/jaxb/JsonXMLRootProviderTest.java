@@ -18,11 +18,11 @@ package org.apache.synapse.commons.staxon.core.json.jaxb;
 import java.lang.reflect.Method;
 
 import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.annotation.XmlElementDecl;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.annotation.XmlElementDecl;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import javax.xml.namespace.QName;
 
 import junit.framework.Assert;
