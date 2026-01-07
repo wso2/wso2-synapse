@@ -48,7 +48,7 @@ public class MediatorRegistry {
 
     private static Log log = LogFactory.getLog(MediatorRegistry.class.getName());
 
-    // Thread-safe singleton instance
+    // Singleton instance
     private static final MediatorRegistry instance = new MediatorRegistry();
 
     // Registry: artifactKey -> ordered set of mediatorIds
@@ -127,8 +127,17 @@ public class MediatorRegistry {
 
         LinkedHashSet<String> mediatorIds = new LinkedHashSet<>();
 
-        registerMediatorTree(sequence, artifactKey, "sequence:" + sequence.getName(), 
-                mediatorIds, new AtomicInteger(0));
+        // Register children directly - don't register the named sequence container itself
+        // The sequence is just a container, not an actual mediator to count
+        String sequencePath = "sequence:" + sequence.getName();
+        AtomicInteger counter = new AtomicInteger(0);
+        
+        List<Mediator> children = sequence.getList();
+        if (children != null && !children.isEmpty()) {
+            for (Mediator child : children) {
+                registerMediatorTree(child, artifactKey, sequencePath, mediatorIds, counter);
+            }
+        }
 
         registeredMediators.put(artifactKey, mediatorIds);
         executedMediators.put(artifactKey, ConcurrentHashMap.newKeySet());
@@ -145,52 +154,79 @@ public class MediatorRegistry {
      * @param mediatorIds     set to store mediator IDs
      * @param positionCounter counter for mediator positions at current level
      */
-    private void registerMediatorTree(Mediator mediator, String artifactKey, 
+    private void registerMediatorTree(Mediator mediator, String artifactKey,
                                      String path, LinkedHashSet<String> mediatorIds,
                                      AtomicInteger positionCounter) {
         if (mediator == null) {
             return;
         }
 
-        // Get mediator type without "Mediator" suffix
-        String mediatorType = mediator.getClass().getSimpleName();
-        if (mediatorType.endsWith("Mediator")) {
-            mediatorType = mediatorType.substring(0, mediatorType.length() - 8);
-        }
-        
-        // Generate position-based ID
-        int position = positionCounter.incrementAndGet();
-        String mediatorId = path + "/" + position + "." + mediatorType;
-        
-        // Add context for specific mediators
-        if (mediator instanceof PropertyMediator) {
-            PropertyMediator propMediator = (PropertyMediator) mediator;
-            if (propMediator.getName() != null) {
-                mediatorId += "[" + propMediator.getName() + "]";
-            }
-        } else if (mediator instanceof EnrichMediator) {
-            mediatorId += "[enrich]";
+        // Skip anonymous/inline sequence containers - they are not actual mediators
+        // But DO count sequence references (key != null) as they are actual callable mediators
+        boolean isAnonymousSequenceContainer = false;
+        if (mediator instanceof SequenceMediator) {
+            SequenceMediator seqMediator = (SequenceMediator) mediator;
+            // Anonymous sequences have no name AND no key - they are just inline containers
+            // Sequence references have a key (e.g., <sequence key="seq-1"/>) and should be counted
+            isAnonymousSequenceContainer = (seqMediator.getName() == null && seqMediator.getKey() == null);
         }
 
-        // Store ID in mediator
-        if (mediator instanceof AbstractMediator) {
-            AbstractMediator abstractMediator = (AbstractMediator) mediator;
-            abstractMediator.setMediatorId(mediatorId);
+        String mediatorId = null;
+        if (!isAnonymousSequenceContainer) {
+            // Get mediator type without "Mediator" suffix
+            String mediatorType = mediator.getClass().getSimpleName();
+            if (mediatorType.endsWith("Mediator")) {
+                mediatorType = mediatorType.substring(0, mediatorType.length() - 8);
+            }
             
-            if (log.isDebugEnabled()) {
-                log.debug("Assigned mediator ID: " + mediatorId);
+            // Generate position-based ID
+            int position = positionCounter.incrementAndGet();
+            mediatorId = path + "/" + position + "." + mediatorType;
+            
+            // Add context for specific mediators
+            if (mediator instanceof PropertyMediator) {
+                PropertyMediator propMediator = (PropertyMediator) mediator;
+                if (propMediator.getName() != null) {
+                    mediatorId += "[" + propMediator.getName() + "]";
+                }
+            } else if (mediator instanceof EnrichMediator) {
+                mediatorId += "[enrich]";
             }
-        }
 
-        mediatorIds.add(mediatorId);
+            // Store ID in mediator
+            if (mediator instanceof AbstractMediator) {
+                AbstractMediator abstractMediator = (AbstractMediator) mediator;
+                abstractMediator.setMediatorId(mediatorId);
+
+                if (log.isDebugEnabled()) {
+                    log.debug("Assigned mediator ID: " + mediatorId);
+                }
+            }
+
+            mediatorIds.add(mediatorId);
+        }
 
         // Handle child mediators
-        if (mediator instanceof FilterMediator) {
-            registerFilterBranches((FilterMediator) mediator, artifactKey, mediatorId, mediatorIds);
-        } else if (mediator instanceof SwitchMediator) {
-            registerSwitchCases((SwitchMediator) mediator, artifactKey, mediatorId, mediatorIds);
-        } else if (mediator instanceof ListMediator) {
-            registerListChildren((ListMediator) mediator, artifactKey, mediatorId, mediatorIds);
+        // For anonymous sequence containers, process children at the same level (no new path segment)
+        if (isAnonymousSequenceContainer) {
+            // Process children of anonymous sequence container at the same level
+            if (mediator instanceof ListMediator) {
+                List<Mediator> children = ((ListMediator) mediator).getList();
+                if (children != null && !children.isEmpty()) {
+                    for (Mediator child : children) {
+                        registerMediatorTree(child, artifactKey, path, mediatorIds, positionCounter);
+                    }
+                }
+            }
+        } else {
+            // For normal mediators, process children in their own scope
+            if (mediator instanceof FilterMediator) {
+                registerFilterBranches((FilterMediator) mediator, artifactKey, mediatorId, mediatorIds);
+            } else if (mediator instanceof SwitchMediator) {
+                registerSwitchCases((SwitchMediator) mediator, artifactKey, mediatorId, mediatorIds);
+            } else if (mediator instanceof ListMediator) {
+                registerListChildren((ListMediator) mediator, artifactKey, mediatorId, mediatorIds);
+            }
         }
     }
 
