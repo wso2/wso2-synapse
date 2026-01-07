@@ -52,6 +52,7 @@ public class MessageFlowRepresentationBasedParentResolver extends AbstractParent
                  */
                 return LatestActiveParentResolver.resolveParentForEndpointOrInboundEndpoint(spanStore);
             }
+
             if (TracingUtils.isAnonymousSequence(parent.getStatisticDataUnit()) ||
                     TracingUtils.isAnonymousSequence(child)) {
                 if (isFlowContinuableMediator(parent.getStatisticDataUnit()) ||
@@ -59,6 +60,12 @@ public class MessageFlowRepresentationBasedParentResolver extends AbstractParent
                     return parent;
                 }
                 return getLatestEligibleParent(spanStore);
+            }
+
+            // Special handling for sequences executing in cloned/parallel contexts
+            // (e.g., inside Clone mediator or Scatter Gather mediator)
+            if (isSequence(child)) {
+                return findRecentCloneOrScatterGatherMediator(spanStore);
             }
         }
         return null;
@@ -80,6 +87,27 @@ public class MessageFlowRepresentationBasedParentResolver extends AbstractParent
                     isForeachMediator(spanWrapper.getStatisticDataUnit())) {
                 // Only a flow continuable mediator, or a for each mediator can be the parent
                 return spanWrapper;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Finds the most recent Clone or Scatter Gather mediator in the span store.
+     * This is used when sequences are executing inside cloned/parallel contexts.
+     * @param spanStore Span store object.
+     * @return The most recent Clone or Scatter Gather mediator span wrapper, or null if not found.
+     */
+    private static SpanWrapper findRecentCloneOrScatterGatherMediator(SpanStore spanStore) {
+        Object[] spanWrapperKeys = spanStore.getSpanWrappers().keySet().toArray();
+        for (int i = spanWrapperKeys.length - 1; i >= 0; i--) {
+            String key = (String)spanWrapperKeys[i];
+            SpanWrapper spanWrapper = spanStore.getSpanWrapper(key);
+            if (spanWrapper != null && spanWrapper.getStatisticDataUnit() != null) {
+                StatisticDataUnit unit = spanWrapper.getStatisticDataUnit();
+                if (isCloneMediator(unit) || isScatterGatherMediator(unit)) {
+                    return spanWrapper;
+                }
             }
         }
         return null;
