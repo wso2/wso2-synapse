@@ -18,6 +18,8 @@
 */
 package org.apache.synapse.securevault.definition;
 
+import org.apache.commons.lang.StringUtils;
+
 import javax.net.ssl.TrustManagerFactory;
 import java.security.KeyStore;
 
@@ -25,6 +27,9 @@ import java.security.KeyStore;
  * Represents the abstraction - Trusted Certificate Store Information
  */
 public class TrustKeyStoreInformation extends KeyStoreInformation {
+
+    private static final String PKIX = "PKIX";
+    private static final String JCE_PROVIDER = "security.jce.provider";
 
     /**
      * Returns the TrustManagerFactory instance
@@ -38,8 +43,7 @@ public class TrustKeyStoreInformation extends KeyStoreInformation {
                 log.debug("Creating a TrustManagerFactory instance");
             }
             KeyStore trustStore = this.getTrustStore();
-            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
-                    TrustManagerFactory.getDefaultAlgorithm());
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(getManagerType());
             trustManagerFactory.init(trustStore);
 
             return trustManagerFactory;
@@ -60,4 +64,11 @@ public class TrustKeyStoreInformation extends KeyStoreInformation {
 
     }
 
+    private static String getManagerType() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (StringUtils.isNotEmpty(provider)) {
+            return PKIX;
+        }
+        return TrustManagerFactory.getDefaultAlgorithm();
+    }
 }
