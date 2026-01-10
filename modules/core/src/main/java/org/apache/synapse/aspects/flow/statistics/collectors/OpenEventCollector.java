@@ -32,6 +32,8 @@ import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTele
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
+import java.util.Objects;
+
 /**
  * OpenEventCollector receives  open statistic events from synapse mediation engine. It Receives Statistics for Proxy
  * Services, Inbound Endpoints, APIs, Sequences, Endpoints, Mediators and Resources.
@@ -60,6 +62,11 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 
 		boolean isCollectingTracing = (isCollectingProperties() || isCollectingPayloads() || isCollectingVariables())
 				&& aspectConfiguration != null && aspectConfiguration.isTracingEnabled();
+
+        // Purpose : Set this property to true where you want to skip creating spans for child entries
+        if (messageContext.getProperty(StatisticsConstants.SKIP_CHILD_EVENTS) == null) {
+            messageContext.setProperty(StatisticsConstants.SKIP_CHILD_EVENTS, false);
+        }
 
 		Boolean isFlowStatisticEnabled =
 				(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);//todo try to use single object for "FLOW_TRACE_IS_COLLECTED"
@@ -103,9 +110,10 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
             addEventAndIncrementCount(messageContext, openEvent);
 
             boolean isFiltered = isSpanFilteredMediator(componentName, aspectConfiguration);
-            if (!isFiltered && isOpenTelemetryEnabled()) {
-				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
-						.handleOpenEntryEvent(statisticDataUnit, messageContext);
+            if (!isFiltered && isOpenTelemetryEnabled()
+                    && messageContext.getProperty(StatisticsConstants.SKIP_CHILD_EVENTS).equals(false)) {
+                OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
+                            .handleOpenEntryEvent(statisticDataUnit, messageContext);
 			}
 
 			return statisticDataUnit.getCurrentIndex();
@@ -136,9 +144,11 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			                         aspectConfiguration);
 
             boolean isFiltered = isSpanFilteredMediator(componentName, aspectConfiguration);
-            if (!isFiltered && isOpenTelemetryEnabled()) {
-				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
-						.handleOpenChildEntryEvent(statisticDataUnit, messageContext);
+            boolean skipChildEvents = messageContext.getProperty(StatisticsConstants.SKIP_CHILD_EVENTS) != null &&
+                    messageContext.getProperty(StatisticsConstants.SKIP_CHILD_EVENTS).equals(true);
+            if (!isFiltered && isOpenTelemetryEnabled() && !skipChildEvents) {
+                OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
+                            .handleOpenChildEntryEvent(statisticDataUnit, messageContext);
 			}
 
 			return statisticDataUnit.getCurrentIndex();
@@ -171,10 +181,18 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			                         aspectConfiguration);
 
             boolean isFiltered = isSpanFilteredMediator(componentName, aspectConfiguration);
-            if (!isFiltered && isOpenTelemetryEnabled()) {
-				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
-						.handleOpenFlowContinuableEvent(statisticDataUnit, messageContext);
+            boolean skipChildEvents = messageContext.getProperty(StatisticsConstants.SKIP_CHILD_EVENTS) != null &&
+                    messageContext.getProperty(StatisticsConstants.SKIP_CHILD_EVENTS).equals(true);
+            if (!isFiltered && isOpenTelemetryEnabled() && !skipChildEvents) {
+                OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
+                            .handleOpenFlowContinuableEvent(statisticDataUnit, messageContext);
 			}
+
+            // Special case to skip child events for connectors where connector operation will be shown as a single unit
+            // in the tracing span.
+            if (componentType == ComponentType.MEDIATOR && Objects.equals(componentName, "InvokeMediator:Connector")) {
+                messageContext.setProperty(StatisticsConstants.SKIP_CHILD_EVENTS, true);
+            }
 
 			return statisticDataUnit.getCurrentIndex();
 		}
