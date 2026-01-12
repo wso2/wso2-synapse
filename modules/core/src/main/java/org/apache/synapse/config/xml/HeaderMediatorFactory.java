@@ -49,6 +49,7 @@ public class HeaderMediatorFactory extends AbstractMediatorFactory  {
     private static final QName HEADER_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "header");
     private static final QName ATT_ACTION = new QName("action");
     private static final QName ATT_SCOPE = new QName("scope");
+    private static final QName ATT_TYPE = new QName("type");
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
@@ -58,6 +59,7 @@ public class HeaderMediatorFactory extends AbstractMediatorFactory  {
         OMAttribute exprn  = elem.getAttribute(ATT_EXPRN);
         OMAttribute action = elem.getAttribute(ATT_ACTION);
         OMAttribute scope = elem.getAttribute(ATT_SCOPE);
+        OMAttribute type = elem.getAttribute(ATT_TYPE);
 
         if (name == null || name.getAttributeValue() == null) {
             if (elem.getChildElements() == null || !elem.getChildElements().hasNext()) {
@@ -109,7 +111,12 @@ public class HeaderMediatorFactory extends AbstractMediatorFactory  {
                 throw new SynapseException(msg);
             }
             headerMediator.setScope(valueStr);
-        }        
+        }
+
+        if (type != null) {
+            String typeAttr = type.getAttributeValue();
+            headerMediator.setValueType(typeAttr);
+        }
 
         // after successfully creating the mediator
         // set its common attributes such as tracing etc

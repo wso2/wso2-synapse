@@ -338,6 +338,7 @@ public class BlockingMsgSenderUtils {
                                                  "FOLLOW_REDIRECT",
                                                  "DISABLE_COOKIE",
                                                  "setCharacterEncoding",
+                                                 "DECODE_MULTIPART_DATA",
                                                  Constants.Configuration.CHARACTER_SET_ENCODING,
                                                  NhttpConstants.DISTRIBUTED_TRANSACTION,
                                                  NhttpConstants.DISTRIBUTED_TRANSACTION_MANAGER,

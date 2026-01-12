@@ -128,6 +128,8 @@ public class ServerConnFactoryBuilder {
             String type          = getValueOfElementWithLocalName(keyStoreEl,"Type");
             OMElement storePasswordEl = keyStoreEl.getFirstChildWithName(new QName("Password"));
             OMElement keyPasswordEl = keyStoreEl.getFirstChildWithName(new QName("KeyPassword"));
+            OMElement aliasEl = keyStoreEl.getFirstChildWithName(new QName("ServerCertificateAlias"));
+            String requiredAlias = aliasEl != null ? StringUtils.trimToNull(aliasEl.getText()) : null;
             if (storePasswordEl == null) {
                 throw new AxisFault("Cannot proceed because Password element is missing in KeyStore");
             }
@@ -149,7 +151,17 @@ public class ServerConnFactoryBuilder {
 
                 KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(getKeyManagerType());
                 kmfactory.init(keyStore, keyPassword.toCharArray());
-                keymanagers = kmfactory.getKeyManagers();
+                if (requiredAlias != null) {
+                    KeyManager[] keyManagers = kmfactory.getKeyManagers();
+                    for (int i = 0; i < keyManagers.length; i++) {
+                        if (keyManagers[i] instanceof X509KeyManager) {
+                            keyManagers[i] = new AliasBasedKeyManager((X509KeyManager) keyManagers[i], requiredAlias);
+                        }
+                    }
+                    keymanagers = keyManagers;
+                } else {
+                    keymanagers = kmfactory.getKeyManagers();
+                }
                 if (log.isInfoEnabled() && keymanagers != null) {
                     for (KeyManager keymanager: keymanagers) {
                         if (keymanager instanceof X509KeyManager) {

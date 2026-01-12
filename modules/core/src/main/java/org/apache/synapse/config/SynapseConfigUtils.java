@@ -768,6 +768,49 @@ public class SynapseConfigUtils {
 
     }
 
+    /**
+     * Get the global endpoint suspend duration from synapse properties.
+     *
+     * @return the global suspend duration in milliseconds, or -1 if not configured
+     */
+    public static long getGlobalSuspendDuration() {
+        try {
+            return Long.parseLong(SynapsePropertiesLoader.getPropertyValue(
+                    SynapseConstants.GLOBAL_ENDPOINT_SUSPEND_DURATION, null));
+        } catch (NumberFormatException e) {
+            return Long.parseLong(SynapseConstants.DEFAULT_GLOBAL_ENDPOINT_SUSPEND_DURATION);
+        }
+
+    }
+
+    /**
+     * Get the global endpoint suspend progression factor from synapse properties.
+     * The progression factor is used to calculate exponential backoff for endpoint suspension.
+     * @return the global suspend progression factor (geometric series multiplier), defaults to 1.0
+     */
+    public static float getGlobalSuspendProgressFactor() {
+        try {
+            return Float.parseFloat(SynapsePropertiesLoader.getPropertyValue(
+                    SynapseConstants.GLOBAL_ENDPOINT_SUSPEND_PROGRESSION_FACTOR,
+                    SynapseConstants.DEFAULT_GLOBAL_ENDPOINT_SUSPEND_PROGRESSION_FACTOR));
+        } catch (NumberFormatException e) {
+            return Float.parseFloat(SynapseConstants.DEFAULT_GLOBAL_ENDPOINT_SUSPEND_PROGRESSION_FACTOR);
+        }
+    }
+
+    /**
+     * Checks whether endpoint suspend configurations should be overridden with global values.
+     * When true, per-endpoint configuration settings are ignored in favor of the global configuration.
+     *
+     * @return true if global values should override per-endpoint settings, false otherwise (default)
+     */
+    public static boolean shouldEndpointSuspendConfigsOverrideWithGlobalValues() {
+        return SynapsePropertiesLoader.getBooleanProperty(
+                SynapseConstants.OVERRIDE_ENDPOINT_SUSPEND_CONFIG_WITH_GLOBAL_VALUES,
+                false);
+
+    }
+
     public static SynapseEnvironment getSynapseEnvironment(AxisConfiguration axisCfg) {
         return axisCfg != null && axisCfg.getParameter(SynapseConstants.SYNAPSE_HOME) != null ? (SynapseEnvironment)
                 axisCfg.getParameterValue(SynapseConstants.SYNAPSE_CONFIG) : null;

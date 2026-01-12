@@ -358,7 +358,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                         log.debug("Using Main Sequence for injected message");
                     }
 
-
+                    Object skipMainSequenceObj = synCtx.getProperty(SynapseConstants.SKIP_MAIN_SEQUENCE);
+                    if (Boolean.TRUE.equals(skipMainSequenceObj)) {
+                        return true;
+                    }
                     return synCtx.getMainSequence().mediate(synCtx);
                 }
             }

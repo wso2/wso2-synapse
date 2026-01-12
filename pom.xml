@@ -26,7 +26,7 @@
    </parent>
    <groupId>org.apache.synapse</groupId>
    <artifactId>Apache-Synapse</artifactId>
-   <version>4.0.0-wso2v272-SNAPSHOT</version>
+   <version>4.0.0-wso2v282-SNAPSHOT</version>
    <name>Apache Synapse</name>
    <description>Apache Synapse</description>
    <packaging>pom</packaging>
@@ -462,6 +462,11 @@
              <artifactId>synapse-config-migrator</artifactId>
              <version>${project.version}</version>
          </dependency>
+          <dependency>
+              <groupId>org.wso2.config.mapper</groupId>
+              <artifactId>config-mapper</artifactId>
+              <version>${config.mapper.version}</version>
+          </dependency>
          <dependency>
              <groupId>org.apache.maven</groupId>
              <artifactId>maven-plugin-api</artifactId>
@@ -1532,7 +1537,7 @@
       <maven.artifact.version>2.0.8</maven.artifact.version>
       <maven.archiver.version>2.2</maven.archiver.version>
       <plexus.utils.version>1.5.4</plexus.utils.version>
-      <com.google.code.gson.version>2.11.0</com.google.code.gson.version>
+      <com.google.code.gson.version>2.13.2</com.google.code.gson.version>
       <org.codehaus.jettison.version>1.5.3</org.codehaus.jettison.version>
       <com.damnhandy.version>2.1.6</com.damnhandy.version>
       <damnhandy.version>${com.damnhandy.version}.wso2v2</damnhandy.version>
@@ -1573,8 +1578,8 @@
       <mina.version>2.1.6</mina.version>
       <jms-1.1-spec.version>1.1</jms-1.1-spec.version>
       <!-- Axis2 and its dependencies -->
-      <axis2.version>1.6.1-wso2v114</axis2.version>
-      <axis2.transport.version>2.0.0-wso2v79</axis2.transport.version>
+      <axis2.version>1.6.1-wso2v117</axis2.version>
+      <axis2.transport.version>2.0.0-wso2v80</axis2.transport.version>
       <axiom.version>1.2.11-wso2v30</axiom.version>
       <xml_schema.version>1.4.7</xml_schema.version>
       <xml_apis.version>1.3.04</xml_apis.version>
@@ -1585,6 +1590,7 @@
       <woden.version>1.0M10</woden.version>
       <rampart.version>1.6.1-wso2v41</rampart.version>
       <sandesha2.version>1.6.1-wso2v1</sandesha2.version>
+       <config.mapper.version>1.0.20</config.mapper.version>
       <neethi.version>2.0.4-wso2v2</neethi.version>
       <jruby.version>1.3.0</jruby.version>
       <xmlsec.version>1.4.2</xmlsec.version>
@@ -1608,7 +1614,7 @@
       <net.minidev.accessors-smart.version>2.6.0</net.minidev.accessors-smart.version>
       <org.ow2.asm.asm.version>9.2</org.ow2.asm.asm.version>
       <json.smart.version>2.6.0</json.smart.version>
-       <org.wso2.json.version>3.0.0.wso2v4</org.wso2.json.version>
+       <org.wso2.json.version>3.0.0.wso2v7</org.wso2.json.version>
       <log4j2.version>2.24.3</log4j2.version>
       <xmlunit.version>1.1</xmlunit.version>
       <derby.version>10.4.2.0</derby.version>
@@ -1641,7 +1647,7 @@
       <fasterxml.jackson.version>2.17.2</fasterxml.jackson.version>
       <fasterxml.jackson-databind.version>2.17.2</fasterxml.jackson-databind.version>
       <google.guava.version>33.0.0-jre</google.guava.version>
-      <failureaccess.version>1.0.2</failureaccess.version>
+      <failureaccess.version>1.0.3</failureaccess.version>
       <joda-time.version>2.9.4.wso2v1</joda-time.version>
       <com.googlecode.libphonenumber.version>7.4.2.wso2v1</com.googlecode.libphonenumber.version>
       <jacoco.agent.version>0.8.6</jacoco.agent.version>

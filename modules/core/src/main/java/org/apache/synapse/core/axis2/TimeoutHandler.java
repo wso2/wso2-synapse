@@ -25,6 +25,7 @@ import org.apache.axis2.description.TransportOutDescription;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.nio.NHttpServerConnection;
+import org.apache.synapse.CallbackAckConfigUtil;
 import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
@@ -42,6 +43,7 @@ import org.apache.synapse.transport.passthru.SourceContext;
 import org.apache.synapse.transport.passthru.TargetContext;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.ConcurrencyThrottlingUtils;
+import org.wso2.config.mapper.ConfigParser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -170,6 +172,23 @@ public class TimeoutHandler extends TimerTask {
                             MessageContext msgContext = callback.getSynapseOutMsgCtx();
                             org.apache.axis2.context.MessageContext axis2MessageContext = callback.getAxis2OutMsgCtx();
 
+                            // Callback-controlled ack: for RabbitMQ timeouts we:
+                            // 1. Set CLIENT_API_NON_BLOCKING so Timer Thread Does not get blocked in any scenario.
+                            // 2. Log and explicitly invoke onAppError to close channel / release resources early
+                            //    preventing connection / buffer leaks since the message has already timed out.
+                            if (CallbackAckConfigUtil.isCallbackControlledAckEnabled()) {
+                                if (CallbackAckConfigUtil.isRabbitMQTransport(axis2MessageContext)) {
+                                    TransportOutDescription transportOut =
+                                            callback.getAxis2OutMsgCtx().getTransportOut();
+
+                                    ((Axis2MessageContext) msgContext).getAxis2MessageContext().setProperty
+                                            (SynapseConstants.CLIENT_API_NON_BLOCKING, Boolean.TRUE);
+                                    log.warn("Callback Controlled ack is enabled. " +
+                                            "Closing the RabbitMQ Channel for the timed out message : " + key);
+                                    transportOut.getSender().onAppError(callback.getAxis2OutMsgCtx());
+                                }
+                            }
+
                             /* Clear the pipe to prevent release of the associated writer buffer
                                to the buffer factory.
                                This is to prevent same buffer is getting released to both source
@@ -216,24 +235,26 @@ public class TimeoutHandler extends TimerTask {
                             ((Axis2MessageContext) msgContext).getAxis2MessageContext().
                                     removeProperty(PassThroughConstants.NO_KEEPALIVE);
 
-                            SOAPEnvelope soapEnvelope;
-                            if (msgContext.isSOAP11()) {
-                                soapEnvelope = OMAbstractFactory.
-                                        getSOAP11Factory().createSOAPEnvelope();
-                                soapEnvelope.addChild(
-                                        OMAbstractFactory.getSOAP11Factory().createSOAPBody());
-                            } else {
-                                soapEnvelope = OMAbstractFactory.
-                                        getSOAP12Factory().createSOAPEnvelope();
-                                soapEnvelope.addChild(
-                                        OMAbstractFactory.getSOAP12Factory().createSOAPBody());
-                            }
-                            try {
-                                msgContext.setEnvelope(soapEnvelope);
-                            } catch (Throwable ex) {
-                                ContextAwareLogger.getLogger(axis2MessageContext, log, true)
-                                        .error("Exception or Error occurred resetting SOAP Envelope", ex);
-                                continue;
+                            if (!CallbackAckConfigUtil.isPreservePayloadOnTimeout()) {
+                                SOAPEnvelope soapEnvelope;
+                                if (msgContext.isSOAP11()) {
+                                    soapEnvelope = OMAbstractFactory.
+                                            getSOAP11Factory().createSOAPEnvelope();
+                                    soapEnvelope.addChild(
+                                            OMAbstractFactory.getSOAP11Factory().createSOAPBody());
+                                } else {
+                                    soapEnvelope = OMAbstractFactory.
+                                            getSOAP12Factory().createSOAPEnvelope();
+                                    soapEnvelope.addChild(
+                                            OMAbstractFactory.getSOAP12Factory().createSOAPBody());
+                                }
+                                try {
+                                    msgContext.setEnvelope(soapEnvelope);
+                                } catch (Throwable ex) {
+                                    ContextAwareLogger.getLogger(axis2MessageContext, log, true)
+                                            .error("Exception or Error occurred resetting SOAP Envelope", ex);
+                                    continue;
+                                }
                             }
 
                             Stack<FaultHandler> faultStack = msgContext.getFaultStack();
@@ -269,7 +290,7 @@ public class TimeoutHandler extends TimerTask {
                         CallbackStatisticCollector.callbackCompletionEvent(callback.getSynapseOutMsgCtx(), (String) key);
                     }
 
-                    if (closeSocketOnEndpointTimeout || conf.isCloseSocketOnEndpointTimeout()) {                        TransportOutDescription transportOut = callback.getAxis2OutMsgCtx().getTransportOut();
+                    if (closeSocketOnEndpointTimeout || conf.isCloseSocketOnEndpointTimeout() ) {                        TransportOutDescription transportOut = callback.getAxis2OutMsgCtx().getTransportOut();
                         if (transportOut != null && transportOut.getSender() != null) {
                             // Call the TransportSender's onAppError method to release any resources
                             transportOut.getSender().onAppError(callback.getAxis2OutMsgCtx());
