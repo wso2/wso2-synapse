@@ -764,4 +764,11 @@ public final class SynapseConstants {
     // progression factors will be overridden with the global values
     public static final String OVERRIDE_ENDPOINT_SUSPEND_CONFIG_WITH_GLOBAL_VALUES =
             "synapse.override_endpoint_suspend_config_with_global_values";
+
+    /**
+     * Name of the custom data provider class that can add new properties to the elastic search
+     * properties.
+     */
+    public static final String ELASTICSEARCH_CUSTOM_DATA_PROVIDER_CLASS
+        = "analytics.custom_data_provider_class";
 }

@@ -20,7 +20,9 @@ package org.apache.synapse.aspects.flow.statistics.data.raw;
 
 import java.util.Map;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.elasticsearch.ElasticMetadata;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.SynapseEnvironment;
 
 /**
@@ -130,6 +132,12 @@ public class BasicStatisticDataUnit {
 	}
 
 	public void setMessageContext(MessageContext messageContext) {
+        // Add the message context only when the custom property feature is enabled.
+        String analyticsCustomDataProviderClass = SynapsePropertiesLoader.getPropertyValue(
+            SynapseConstants.ELASTICSEARCH_CUSTOM_DATA_PROVIDER_CLASS, null);
+        if (analyticsCustomDataProviderClass == null) {
+            return;
+        }
 		this.messageContext = messageContext;
 	}
 
