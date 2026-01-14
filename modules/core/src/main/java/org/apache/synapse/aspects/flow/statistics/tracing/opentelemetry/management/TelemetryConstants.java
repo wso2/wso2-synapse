@@ -44,6 +44,22 @@ public class TelemetryConstants {
      * OpenTelemetry port.
      */
     public static final String OPENTELEMETRY_PORT = "opentelemetry.port";
+
+    /**
+     * OpenTelemetry protocol (http or grpc).
+     */
+    public static final String OPENTELEMETRY_PROTOCOL = "opentelemetry.protocol";
+
+    /**
+     * HTTP protocol constant.
+     */
+    public static final String HTTP_PROTOCOL = "http";
+
+    /**
+     * gRPC protocol constant (default).
+     */
+    public static final String GRPC_PROTOCOL = "grpc";
+
     public static final String DEFAULT_OPENTELEMETRY_CLASS = "org.apache.synapse.aspects.flow.statistics.tracing" +
             ".opentelemetry.management.JaegerTelemetryManager";
     public static final String USER_DEFINED_NAME = System.getenv("SERVICE_NAME");

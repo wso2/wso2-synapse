@@ -159,6 +159,7 @@
                                 <bundleDef>
                                     org.wso2.orbit.io.opentelemetry:opentelemetry-all:${opentelemetry.all.version}
                                 </bundleDef>
+                                <bundleDef>io.opentelemetry:opentelemetry-exporter-otlp-http-trace:${opentelemetry.exporter.otlp.http.version}</bundleDef>
                                 <bundleDef>org.wso2.orbit.com.squareup.okhttp:okhttp:${okhttp.wso2.version}</bundleDef>
                                 <bundleDef>org.wso2.orbit.com.squareup.okio:okio:${okio.wso2.version}</bundleDef>
                                 <bundleDef>org.wso2.orbit.io.zipkin.reporter2:zipkin-sender-okhttp3:${zipkin.sender.okhttp3.version}
