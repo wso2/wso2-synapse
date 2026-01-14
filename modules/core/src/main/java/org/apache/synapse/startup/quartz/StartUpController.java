@@ -68,7 +68,7 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
     private Registry registry;
 
     private enum StartUpControllerState {
-        INITIAL, ACTIVE, INACTIVE
+        ACTIVE, INACTIVE
     }
 
     private static final String REG_STARTUP_CONTROLLER_BASE_PATH = "/repository/components/org.apache.synapse.startup/";
