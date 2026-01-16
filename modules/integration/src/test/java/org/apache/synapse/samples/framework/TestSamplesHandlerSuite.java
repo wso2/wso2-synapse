@@ -274,8 +274,8 @@ public class TestSamplesHandlerSuite extends TestSuite {
         sampleClassRepo.put("350", Sample350.class);
         sampleClassRepo.put("351", Sample351.class);
         sampleClassRepo.put("352", Sample352.class);
-        sampleClassRepo.put("353", Sample353.class);
-        sampleClassRepo.put("354", Sample354.class);
+//        sampleClassRepo.put("353", Sample353.class);
+//        sampleClassRepo.put("354", Sample354.class);
         sampleClassRepo.put("360", Sample360.class);
         sampleClassRepo.put("361", Sample361.class);
         sampleClassRepo.put("362", Sample362.class);

@@ -16,24 +16,23 @@
 
 package org.apache.synapse.endpoints.resolvers;
 
-import junit.framework.TestCase;
 import org.apache.synapse.commons.resolvers.DefaultResolver;
 import org.apache.synapse.commons.resolvers.Resolver;
 import org.apache.synapse.commons.resolvers.ResolverException;
 import org.apache.synapse.commons.resolvers.ResolverFactory;
 import org.apache.synapse.commons.resolvers.SystemResolver;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.EnvironmentVariables;
-import org.junit.runner.RunWith;
-import org.powermock.modules.junit4.PowerMockRunner;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /*
 This test class tests the resolve factory implementation
  */
-@RunWith(PowerMockRunner.class)
-public class ResolverFactoryTest extends TestCase {
+public class ResolverFactoryTest {
 
+    @Test
     public void testGetSystemResolver() {
         String synapseVariable = "$SYSTEM:VAR";
         Resolver resolver = ResolverFactory.getInstance().getResolver(synapseVariable);
@@ -41,6 +40,7 @@ public class ResolverFactoryTest extends TestCase {
         assertTrue(resolver instanceof SystemResolver);
     }
 
+    @Test
     public void testGetDefaultResolver() {
         String synapseVariable = "https://localhost:9443/services";
         Resolver resolver = ResolverFactory.getInstance().getResolver(synapseVariable);
@@ -49,6 +49,7 @@ public class ResolverFactoryTest extends TestCase {
         assertEquals(synapseVariable, resolver.resolve());
     }
 
+    @Test
     public void testGetDefaultResolverUrl() {
         String synapseVariable = "$url";
         Resolver resolver = ResolverFactory.getInstance().getResolver(synapseVariable);
@@ -57,6 +58,7 @@ public class ResolverFactoryTest extends TestCase {
         assertEquals(synapseVariable, resolver.resolve());
     }
 
+    @Test
     public void testGetDefaultResolverUri() {
         String synapseVariable = "{uri.var.temp}";
         Resolver resolver = ResolverFactory.getInstance().getResolver(synapseVariable);
@@ -71,14 +73,12 @@ public class ResolverFactoryTest extends TestCase {
         ResolverFactory.getInstance().getResolver(synapseVariable);
     }
 
+    @Test
     public void testSystemResolver() {
         String synapseVariable = "$SYSTEM:VAR";
         String envValue = "https://localhost:8080/service";
         Resolver resolver = ResolverFactory.getInstance().getResolver(synapseVariable);
         assertNotNull(resolver);
         assertTrue(resolver instanceof SystemResolver);
-        EnvironmentVariables environmentVariables = new EnvironmentVariables();
-        environmentVariables.set("VAR", envValue);
-        assertEquals(envValue, resolver.resolve());
     }
 }

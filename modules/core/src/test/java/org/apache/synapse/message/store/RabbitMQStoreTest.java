@@ -33,8 +33,7 @@ import org.apache.synapse.message.store.impl.rabbitmq.RabbitMQStore;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+
 
 import java.lang.reflect.Field;
 import java.net.UnknownHostException;
@@ -45,8 +44,6 @@ import java.util.Map;
 /**
  * Unit tests for RabbitMQStore class
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ConnectionFactory.class)
 public class RabbitMQStoreTest {
 
     private static RabbitMQStore rabbitMQStore;
