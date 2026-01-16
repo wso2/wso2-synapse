@@ -170,10 +170,8 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
                 errorMessage = "Failed to activate the Task: " + getName();
                 logger.error(errorMessage);
             }
-        } catch (UnsupportedOperationException e) {
-            errorMessage = "Activate operation is not supported for the Task " + getName();
-            logger.warn(errorMessage, e);
         } catch (Exception e) {
+            this.deactivateTask();   
             errorMessage = "Failed to activate the Task: " + getName();
             logger.error(errorMessage, e);
         }
@@ -204,10 +202,8 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
                 errorMessage = "Failed to deactivate the Task: " + getName();
                 logger.error(errorMessage);
             }
-        } catch (UnsupportedOperationException e) {
-            errorMessage = "Deactivate operation is not supported for the Task: " + getName();
-            logger.warn(errorMessage, e);
         } catch (Exception e) {
+            this.activateTask();
             errorMessage = "Failed to deactivate the Task: " + getName();
             logger.error(errorMessage, e);
         }
@@ -234,16 +230,13 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
                     isSuccess = true;
                 } else {
                     errorMessage = "Cannot trigger the task: " + getName() +
-                            ". Task is not a scheduled task.";
+                            " as it is not a scheduled task.";
                     logger.error(errorMessage);
                 }
             } else {
-                errorMessage = "Cannot trigger the task: " + getName() + ". The task is not active";
+                errorMessage = "Cannot trigger the task: " + getName() + "as it is not active.";
                 logger.error(errorMessage);
             }
-        } catch (UnsupportedOperationException e) {
-            errorMessage = "Trigger operation is not supported for the Task: " + getName();
-            logger.warn(errorMessage, e);
         } catch (Exception e) {
             errorMessage = "Failed to trigger the Task: " + getName();
             logger.error(errorMessage, e);
