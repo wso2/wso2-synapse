@@ -20,6 +20,7 @@
 package org.apache.synapse.continuation;
 
 import org.apache.synapse.ContinuationState;
+import java.util.List;
 
 public abstract class AbstractContinuationState implements ContinuationState {
 
@@ -29,6 +30,16 @@ public abstract class AbstractContinuationState implements ContinuationState {
      * Holds the Child ContinuationState.
      */
     private ContinuationState childContState = null;
+
+    /**
+     * Statistics parent index for tracing context preservation across async boundaries.
+     */
+    private Integer statisticsParentIndex;
+
+    /**
+     * Statistics parent list for tracing context preservation across async boundaries.
+     */
+    private List<Integer> statisticsParentList;
 
     /**
      * Get the child ContinuationState
@@ -113,6 +124,38 @@ public abstract class AbstractContinuationState implements ContinuationState {
                 this.childContState = null;
             }
         }
+    }
+
+    /**
+     * Get the statistics parent index stored in this continuation state.
+     * @return The parent index for statistics tracing
+     */
+    public Integer getStatisticsParentIndex() {
+        return statisticsParentIndex;
+    }
+
+    /**
+     * Set the statistics parent index for this continuation state.
+     * @param statisticsParentIndex The parent index to store
+     */
+    public void setStatisticsParentIndex(Integer statisticsParentIndex) {
+        this.statisticsParentIndex = statisticsParentIndex;
+    }
+
+    /**
+     * Get the statistics parent list stored in this continuation state.
+     * @return The parent list for statistics tracing
+     */
+    public List<Integer> getStatisticsParentList() {
+        return statisticsParentList;
+    }
+
+    /**
+     * Set the statistics parent list for this continuation state.
+     * @param statisticsParentList The parent list to store
+     */
+    public void setStatisticsParentList(List<Integer> statisticsParentList) {
+        this.statisticsParentList = statisticsParentList;
     }
 
 }

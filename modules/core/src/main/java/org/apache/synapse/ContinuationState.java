@@ -19,6 +19,8 @@
 
 package org.apache.synapse;
 
+import java.util.List;
+
 /**
  * Implementations of this interface holds the runtime state information of important checkpoints
  * of the mediation flow.
@@ -76,5 +78,29 @@ public interface ContinuationState {
      * Remove the Leaf child form this ContinuationState.
      */
     public void removeLeafChild();
+
+    /**
+     * Get the statistics parent index stored in this continuation state.
+     * @return The parent index for statistics tracing
+     */
+    public Integer getStatisticsParentIndex();
+
+    /**
+     * Set the statistics parent index for this continuation state.
+     * @param statisticsParentIndex The parent index to store
+     */
+    public void setStatisticsParentIndex(Integer statisticsParentIndex);
+
+    /**
+     * Get the statistics parent list stored in this continuation state.
+     * @return The parent list for statistics tracing
+     */
+    public List<Integer> getStatisticsParentList();
+
+    /**
+     * Set the statistics parent list for this continuation state.
+     * @param statisticsParentList The parent list to store
+     */
+    public void setStatisticsParentList(List<Integer> statisticsParentList);
 
 }
