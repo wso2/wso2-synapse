@@ -18,8 +18,10 @@
  */
 package org.apache.synapse.transport.certificatevalidation.pathvalidation;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.crypto.CryptoConstants;
 import org.apache.synapse.transport.certificatevalidation.*;
 
 import java.security.*;
@@ -42,6 +44,7 @@ public class CertificatePathValidator {
     // Certificate Chain without Root CA certificate. (eg: peer cert, issuer cert)
     List<X509Certificate> certChain;
     private static final Log log = LogFactory.getLog(CertificatePathValidator.class);
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     public CertificatePathValidator(X509Certificate[] certChainArray, RevocationVerifier verifier) {
         this.pathChecker = new PathChecker(certChainArray, verifier);
@@ -74,15 +77,7 @@ public class CertificatePathValidator {
      */
     public void validatePath() throws Exception {
         String jceProvider = getPreferredJceProvider();
-        String providerClass;
-        if (jceProvider.equals(Constants.BOUNCY_CASTLE_PROVIDER)) {
-            providerClass = "org.bouncycastle.jce.provider.BouncyCastleProvider";
-        } else if (jceProvider.equals(Constants.BOUNCY_CASTLE_FIPS_PROVIDER)) {
-            providerClass = "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider";
-        } else {
-            throw new NoSuchProviderException("Configured JCE provider " + jceProvider + " is not supported");
-        }
-        Security.addProvider((Provider) Class.forName(providerClass).getDeclaredConstructor().newInstance());
+        addProvider(jceProvider);
         CollectionCertStoreParameters params = new CollectionCertStoreParameters(fullCertChain);
         try {
             CertStore store = CertStore.getInstance("Collection", params, jceProvider);
@@ -125,5 +120,22 @@ public class CertificatePathValidator {
             return Constants.BOUNCY_CASTLE_FIPS_PROVIDER;
         }
         return Constants.BOUNCY_CASTLE_PROVIDER;
+    }
+
+    private static void addProvider(String jceProvider) throws CertificateVerificationException {
+        if (StringUtils.isEmpty(System.getProperty(SECURITY_JCE_PROVIDER))) {
+            String providerClass;
+            if (CryptoConstants.BOUNCY_CASTLE_FIPS_PROVIDER.equals(jceProvider)) {
+                providerClass = "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider";
+            } else {
+                providerClass = "org.bouncycastle.jce.provider.BouncyCastleProvider";
+            }
+            try {
+                Security.addProvider((Provider) Class.forName(providerClass).getDeclaredConstructor().newInstance());
+            } catch (Exception e) {
+                throw new CertificateVerificationException("Error while initializing the JCE provider: " +
+                        providerClass, e);
+            }
+        }
     }
 }
