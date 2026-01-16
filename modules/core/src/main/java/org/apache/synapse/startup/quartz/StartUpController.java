@@ -152,7 +152,7 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
      * Activates the startup controller task.
      * <p>
      * This method synchronizes access to ensure thread safety while activating the startup controller task.
-     * It calls the underlying to perform the activation logic.
+     * It calls the underlying {@link SynapseTaskManager} to perform the activation logic.
      * If the activation is successful, updates the startup controller task's state in the registry
      * to {@link StartUpController.StartUpControllerState#ACTIVE}
      * </p>
@@ -185,7 +185,7 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
      * Deactivates the startup controller task.
      * <p>
      * This method synchronizes access to ensure thread safety while deactivating the startup controller task.
-     * It calls the underlying to perform the deactivation logic.
+     * It calls the underlying {@link SynapseTaskManager} to perform the deactivation logic.
      * If the deactivation is successful, the method updates the startup controller task's state in the
      * registry to {@link StartUpController.StartUpControllerState#INACTIVE}.
      * </p>
@@ -218,7 +218,7 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
      * Trigger the startup controller task.
      * <p>
      * This method synchronizes access to ensure thread safety while trigger the startup controller task.
-     * It calls the underlying to perform the task trigger logic.
+     * It calls the underlying {@link Task} to perform the task trigger logic.
      * </p>
      */
     public synchronized DynamicControlOperationResult trigger() {
