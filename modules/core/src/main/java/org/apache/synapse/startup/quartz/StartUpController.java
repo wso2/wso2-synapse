@@ -234,7 +234,7 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
                     isSuccess = true;
                 } else {
                     errorMessage = "Cannot trigger the task: " + getName() +
-                            ". Task implementation does not implement Task interface.";
+                            ". Task is not a scheduled task.";
                     logger.error(errorMessage);
                 }
             } else {
