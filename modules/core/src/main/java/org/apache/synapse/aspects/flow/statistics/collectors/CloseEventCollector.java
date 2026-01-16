@@ -50,7 +50,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 	 */
 	public static void closeEntryEvent(MessageContext messageContext, String componentName, ComponentType componentType,
 									   Integer currentIndex, boolean isContentAltering) {
-		closeEntryEvent(messageContext, componentName, componentType, currentIndex, isContentAltering, null, false);
+        closeEntryEvent(messageContext, componentName, componentType, currentIndex, isContentAltering, null, false);
 	}
 
 	/**
