@@ -374,6 +374,14 @@ public class Resource extends AbstractRequestProcessor implements ManagedLifecyc
         String sequenceKey = synCtx.isResponse() ? outSequenceKey : inSequenceKey;
         if (sequenceKey != null) {
             registerFaultHandler(synCtx);
+            
+            // Set artifact key for coverage tracking when running unit tests
+            if (synCtx.getConfiguration() != null && "true".equals(synCtx.getConfiguration().getProperty(
+                            org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST))) {
+                synCtx.setProperty(org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY,
+                        "Sequence:" + sequenceKey);
+            }
+            
             Mediator referredSequence = synCtx.getSequence(sequenceKey);
             if (referredSequence != null) {
                 referredSequence.mediate(synCtx);

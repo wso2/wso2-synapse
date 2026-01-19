@@ -38,10 +38,12 @@ public class MediatorCoverage {
     private double coveragePercentage;
     private List<String> mediatorDetails;
     private Map<String, Boolean> mediatorExecutionStatus;
+    private List<String> referencedSequences;
 
     public MediatorCoverage() {
         this.mediatorDetails = new ArrayList<>();
         this.mediatorExecutionStatus = new LinkedHashMap<>();
+        this.referencedSequences = new ArrayList<>();
         this.executedMediators = 0;
         this.totalMediators = 0;
         this.coveragePercentage = 0.0;
@@ -192,6 +194,35 @@ public class MediatorCoverage {
     }
 
     /**
+     * Get list of referenced sequences.
+     *
+     * @return list of referenced sequence names
+     */
+    public List<String> getReferencedSequences() {
+        return referencedSequences;
+    }
+
+    /**
+     * Set referenced sequences.
+     *
+     * @param referencedSequences list of referenced sequence names
+     */
+    public void setReferencedSequences(List<String> referencedSequences) {
+        this.referencedSequences = referencedSequences;
+    }
+
+    /**
+     * Add a referenced sequence.
+     *
+     * @param sequenceName sequence name
+     */
+    public void addReferencedSequence(String sequenceName) {
+        if (!this.referencedSequences.contains(sequenceName)) {
+            this.referencedSequences.add(sequenceName);
+        }
+    }
+
+    /**
      * Calculate coverage percentage based on executed and total mediators.
      */
     public void calculateCoveragePercentage() {
@@ -214,6 +245,15 @@ public class MediatorCoverage {
         json.addProperty("executedMediators", executedMediators);
         json.addProperty("totalMediators", totalMediators);
         json.addProperty("coveragePercentage", String.format("%.2f", coveragePercentage));
+
+        // Add referenced sequences if any
+        if (!referencedSequences.isEmpty()) {
+            JsonArray refsArray = new JsonArray();
+            for (String seqName : referencedSequences) {
+                refsArray.add(seqName);
+            }
+            json.add("referencedSequences", refsArray);
+        }
 
         // Add mediator details with execution status
         JsonArray detailsArray = new JsonArray();

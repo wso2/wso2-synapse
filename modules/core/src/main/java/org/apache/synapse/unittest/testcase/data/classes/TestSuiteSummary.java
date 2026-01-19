@@ -239,24 +239,13 @@ public class TestSuiteSummary {
         root.addProperty("testSuite", testSuiteName);
 
         JsonArray artifactsArray = new JsonArray();
-        double totalExecuted = 0;
-        double totalMediators = 0;
 
         for (MediatorCoverage coverage : mediatorCoverageList) {
             coverage.calculateCoveragePercentage();
             artifactsArray.add(coverage.toJson());
-            totalExecuted += coverage.getExecutedMediators();
-            totalMediators += coverage.getTotalMediators();
         }
 
         root.add("artifacts", artifactsArray);
-
-        // Calculate overall coverage
-        double overallCoverage = 0.0;
-        if (totalMediators > 0) {
-            overallCoverage = (totalExecuted / totalMediators) * 100.0;
-        }
-        root.addProperty("overallCoverage", String.format("%.2f", overallCoverage));
 
         // Use Gson's pretty printing for better readability
         Gson gson = new GsonBuilder().setPrettyPrinting().create();

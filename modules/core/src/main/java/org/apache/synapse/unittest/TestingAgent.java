@@ -533,20 +533,31 @@ class TestingAgent {
                     String artifactType = parts[0];
                     String artifactName = parts[1];
                     
-                    MediatorCoverage coverage =
-                            new MediatorCoverage(artifactType, artifactName);
+                    MediatorCoverage coverage = new MediatorCoverage(artifactType, artifactName);
                     
-                    coverage.setTotalMediators(tracker.getTotalMediatorCount(artifactKey));
-                    coverage.setExecutedMediators(tracker.getExecutedMediatorCount(artifactKey));
+                    // Check if artifact has any referenced sequences
+                    Set<String> referencedSeqs = tracker.getReferencedSequences(artifactKey);
+                    boolean hasReferences = !referencedSeqs.isEmpty();
                     
-                    // Get all mediators and their execution status
-                    Set<String> allMediatorIds = tracker.getAllMediatorIds(artifactKey);
-                    Set<String> executedMediatorIds = tracker.getExecutedMediatorIds(artifactKey);
+                    // Use includeReferences parameter to control aggregation
+                    coverage.setTotalMediators(tracker.getTotalMediatorCount(artifactKey, hasReferences));
+                    coverage.setExecutedMediators(tracker.getExecutedMediatorCount(artifactKey, hasReferences));
+                    
+                    // Get all mediator IDs and their execution status (aggregated if has references)
+                    Set<String> allMediatorIds = tracker.getAllMediatorIds(artifactKey, hasReferences);
+                    Set<String> executedMediatorIds = tracker.getExecutedMediatorIds(artifactKey, hasReferences);
                     
                     // Add all mediators with execution status
                     for (String mediatorId : allMediatorIds) {
                         boolean isExecuted = executedMediatorIds.contains(mediatorId);
                         coverage.addMediatorExecutionStatus(mediatorId, isExecuted);
+                    }
+                    
+                    // Add referenced sequence names if any
+                    if (hasReferences) {
+                        for (String seqName : referencedSeqs) {
+                            coverage.addReferencedSequence(seqName);
+                        }
                     }
                     
                     coverage.calculateCoveragePercentage();
