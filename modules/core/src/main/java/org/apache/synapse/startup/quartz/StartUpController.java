@@ -256,7 +256,7 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
      */
     private void setStartupControllerStateInRegistry(StartUpController.StartUpControllerState state) {
         if (Objects.isNull(registry)) {
-            logger.warn("Registry not available! The state of the Task will not be saved.");
+            handleException("Registry not available! The state of the Task will not be saved.");
             return;
         }
         registry.newNonEmptyResource(REG_STARTUP_CONTROLLER_BASE_PATH + getName(), false, "text/plain",
