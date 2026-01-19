@@ -489,22 +489,6 @@
 			<artifactId>opentelemetry-all</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>io.opentelemetry</groupId>
-			<artifactId>opentelemetry-exporter-otlp-http-trace</artifactId>
-			<version>${opentelemetry.exporter.otlp.http.version}</version>
-			<exclusions>
-				<!-- Exclude vulnerable okio 2.8.0 - project uses WSO2 orbit okio instead -->
-				<exclusion>
-					<groupId>com.squareup.okio</groupId>
-					<artifactId>okio</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>com.squareup.okhttp3</groupId>
-					<artifactId>okhttp</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
 			<groupId>org.wso2.orbit.com.squareup.okhttp</groupId>
 			<artifactId>okhttp</artifactId>
 		</dependency>
