@@ -21,7 +21,8 @@ package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.managem
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.sdk.resources.Resource;
-import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
+import io.opentelemetry.semconv.ServerAttributes;
+import io.opentelemetry.semconv.ServiceAttributes;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -66,7 +67,7 @@ public class TelemetryUtil {
 
         Resource tracerProviderResource = Resource.getDefault();
         Resource serviceNameResource = Resource.create(
-                Attributes.of(ResourceAttributes.SERVICE_NAME, defaultServiceName));
+                Attributes.of(ServiceAttributes.SERVICE_NAME, defaultServiceName));
         tracerProviderResource = tracerProviderResource.merge(serviceNameResource);
         tracerProviderResource = tracerProviderResource.merge(Resource.create(attributes));
 
