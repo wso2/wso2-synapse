@@ -29,9 +29,10 @@ import org.apache.synapse.mediators.ListMediator;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.builtin.PropertyMediator;
-import org.apache.synapse.mediators.elementary.EnrichMediator;
 import org.apache.synapse.mediators.filters.FilterMediator;
 import org.apache.synapse.mediators.filters.SwitchMediator;
+import org.apache.synapse.mediators.template.InvokeMediator;
+import org.apache.synapse.mediators.v2.VariableMediator;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -221,7 +222,24 @@ public class MediatorRegistry {
         
         // Generate position-based ID
         int position = positionCounter.incrementAndGet();
-        mediatorId = path + "/" + position + "." + mediatorType;
+        
+        // For InvokeMediator (connectors), use the connector name instead of "Invoke"
+        if (mediator instanceof InvokeMediator) {
+            InvokeMediator invokeMediator = (InvokeMediator) mediator;
+            if (invokeMediator.getTargetTemplate() != null) {
+                String targetTemplate = invokeMediator.getTargetTemplate();
+                // Extract short name from qualified name (e.g., "org.wso2.carbon.connector.http.get" -> "http.get")
+                int lastDotBeforeConnector = targetTemplate.lastIndexOf(".connector.");
+                String connectorName = (lastDotBeforeConnector != -1) 
+                    ? targetTemplate.substring(lastDotBeforeConnector + ".connector.".length())
+                    : targetTemplate;
+                mediatorId = path + "/" + position + "." + connectorName;
+            } else {
+                mediatorId = path + "/" + position + "." + mediatorType;
+            }
+        } else {
+            mediatorId = path + "/" + position + "." + mediatorType;
+        }
         
         // Add context for specific mediators
         if (mediator instanceof PropertyMediator) {
@@ -229,8 +247,11 @@ public class MediatorRegistry {
             if (propMediator.getName() != null) {
                 mediatorId += "[" + propMediator.getName() + "]";
             }
-        } else if (mediator instanceof EnrichMediator) {
-            mediatorId += "[enrich]";
+        } else if (mediator instanceof VariableMediator) {
+            VariableMediator varMediator = (VariableMediator) mediator;
+            if (varMediator.getName() != null) {
+                mediatorId += "[" + varMediator.getName() + "]";
+            }
         }
 
         // Store ID in mediator
