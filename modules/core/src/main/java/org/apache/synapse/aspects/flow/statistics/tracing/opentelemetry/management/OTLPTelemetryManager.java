@@ -54,6 +54,10 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
         String protocol = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_PROTOCOL,
                 TelemetryConstants.GRPC_PROTOCOL);
         String endPointURL = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_URL, null);
+        if (endPointURL == null) {
+            logger.error("Url not found in opentelemetry configurations");
+            throw new SynapseException("Url not found in opentelemetry configurations");
+        }
 
         // Determine protocol: Use HTTP if protocol is "http"
         boolean useHttp = TelemetryConstants.HTTP_PROTOCOL.equalsIgnoreCase(protocol);
