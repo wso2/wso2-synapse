@@ -73,6 +73,7 @@ class TestingAgent {
     private String mainTestArtifactType = null;
     private String proxyTransportMethod = null;
     private String key = null;
+    private String primaryArtifactKey = null;
     private OMElement artifactNode = null;
     private String exception = null;
     private Map<String, String> deploymentStats = new HashMap<>();
@@ -110,6 +111,7 @@ class TestingAgent {
                         
                         // Register sequence for coverage tracking
                         registerSequenceForCoverage(synapseConfiguration, key);
+                        primaryArtifactKey = "Sequence:" + key;
                     } else {
                         String errorMessage = "Sequence " + artifactNameOrKey + " deployment failed";
                         log.error(errorMessage);
@@ -129,6 +131,7 @@ class TestingAgent {
                         deploymentStats.put(key, TYPE_PROXY);
                         testSuiteSummary.setDeploymentStatus(Constants.PASSED_KEY);
                         log.info("Primary test Proxy artifact deployed successfully");
+                        primaryArtifactKey = "Proxy:" + key;
                     } else {
                         String errorMessage = "Proxy " + artifactNameOrKey + " deployment failed";
                         log.error(errorMessage);
@@ -152,6 +155,7 @@ class TestingAgent {
                         
                         // Register API for coverage tracking
                         registerAPIForCoverage(synapseConfiguration, key);
+                        primaryArtifactKey = "API:" + key;
                     } else {
                         String errorMessage = "API " + artifactNameOrKey + " deployment failed";
                         log.error(errorMessage);
@@ -539,13 +543,13 @@ class TestingAgent {
                     Set<String> referencedSeqs = tracker.getReferencedSequences(artifactKey);
                     boolean hasReferences = !referencedSeqs.isEmpty();
                     
-                    // Use includeReferences parameter to control aggregation
+                    // Use includeReferences parameter to control aggregation for counts (for coverage %)
                     coverage.setTotalMediators(tracker.getTotalMediatorCount(artifactKey, hasReferences));
                     coverage.setExecutedMediators(tracker.getExecutedMediatorCount(artifactKey, hasReferences));
                     
-                    // Get all mediator IDs and their execution status (aggregated if has references)
-                    Set<String> allMediatorIds = tracker.getAllMediatorIds(artifactKey, hasReferences);
-                    Set<String> executedMediatorIds = tracker.getExecutedMediatorIds(artifactKey, hasReferences);
+                    // Get only own mediator IDs for mediatorDetails (not aggregated)
+                    Set<String> allMediatorIds = tracker.getAllMediatorIds(artifactKey, false);
+                    Set<String> executedMediatorIds = tracker.getExecutedMediatorIds(artifactKey, false);
                     
                     // Add all mediators with execution status
                     for (String mediatorId : allMediatorIds) {
@@ -561,7 +565,13 @@ class TestingAgent {
                     }
                     
                     coverage.calculateCoveragePercentage();
-                    testSuiteSummary.addMediatorCoverage(coverage);
+                    
+                    // Set as primary or add as supporting artifact
+                    if (artifactKey.equals(primaryArtifactKey)) {
+                        testSuiteSummary.setPrimaryCoverage(coverage);
+                    } else {
+                        testSuiteSummary.addMediatorCoverage(coverage);
+                    }
                     
                     log.info("Coverage for " + artifactKey + ": " + 
                             coverage.getExecutedMediators() + "/" + coverage.getTotalMediators() +
@@ -570,9 +580,7 @@ class TestingAgent {
             }
             
             // Generate JSON report
-            String testSuiteName = testSuiteSummary.getDescription() != null ? 
-                    testSuiteSummary.getDescription() : "UnitTestSuite";
-            testSuiteSummary.generateCoverageReportJson(testSuiteName);
+            testSuiteSummary.generateCoverageReportJson();
             
             log.info("Mediator coverage report generated successfully");
             log.info("*** Final Coverage Report ***\n" + testSuiteSummary.getCoverageReportJson());

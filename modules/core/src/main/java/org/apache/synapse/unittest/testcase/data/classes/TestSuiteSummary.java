@@ -37,6 +37,7 @@ public class TestSuiteSummary {
     private String recentTestCaseName;
     private String mediationException;
     private List<TestCaseSummary> testCases = new ArrayList<>();
+    private MediatorCoverage primaryCoverage;
     private List<MediatorCoverage> mediatorCoverageList = new ArrayList<>();
     private String coverageReportJson;
 
@@ -202,6 +203,24 @@ public class TestSuiteSummary {
     }
 
     /**
+     * Set primary artifact mediator coverage.
+     *
+     * @param coverage primary artifact coverage data
+     */
+    public void setPrimaryCoverage(MediatorCoverage coverage) {
+        this.primaryCoverage = coverage;
+    }
+
+    /**
+     * Get primary artifact mediator coverage.
+     *
+     * @return primary artifact coverage data
+     */
+    public MediatorCoverage getPrimaryCoverage() {
+        return primaryCoverage;
+    }
+
+    /**
      * Get list of mediator coverage data.
      *
      * @return list of mediator coverage
@@ -231,21 +250,24 @@ public class TestSuiteSummary {
     /**
      * Generate coverage report JSON from mediator coverage list.
      *
-     * @param testSuiteName name of the test suite
      * @return JSON string representation of coverage report
      */
-    public String generateCoverageReportJson(String testSuiteName) {
+    public String generateCoverageReportJson() {
         JsonObject root = new JsonObject();
-        root.addProperty("testSuite", testSuiteName);
 
-        JsonArray artifactsArray = new JsonArray();
-
-        for (MediatorCoverage coverage : mediatorCoverageList) {
-            coverage.calculateCoveragePercentage();
-            artifactsArray.add(coverage.toJson());
+        // Add primary artifact
+        if (primaryCoverage != null) {
+            primaryCoverage.calculateCoveragePercentage();
+            root.add("primaryArtifact", primaryCoverage.toJson());
         }
 
-        root.add("artifacts", artifactsArray);
+        // Add supporting artifacts
+        JsonArray supportingArtifactsArray = new JsonArray();
+        for (MediatorCoverage coverage : mediatorCoverageList) {
+            coverage.calculateCoveragePercentage();
+            supportingArtifactsArray.add(coverage.toJson());
+        }
+        root.add("supportingArtifacts", supportingArtifactsArray);
 
         // Use Gson's pretty printing for better readability
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
