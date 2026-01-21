@@ -158,25 +158,29 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
      * </p>
      */
     public synchronized DynamicControlOperationResult activate() {
-        String errorMessage = "";
+        String message = "";
         boolean isSuccess = false;
         logger.info("Activating the Task: " + getName());
-        try {
-            if (this.activateTask()) {
-                logger.info("Task [" + getName() + "] is successfully activated.");
-                setStartupControllerStateInRegistry(StartUpController.StartUpControllerState.ACTIVE);
-                isSuccess = true;
-            } else {
-                errorMessage = "Failed to activate the Task: " + getName();
-                logger.error(errorMessage);
+        if (this.isTaskActive()) {
+            message = "Task [" + getName() + "] is already active.";
+            logger.debug(message);
+        } else {
+            try {
+                if (this.activateTask()) {
+                    logger.info("Task [" + getName() + "] is successfully activated.");
+                    setStartupControllerStateInRegistry(StartUpController.StartUpControllerState.ACTIVE);
+                    isSuccess = true;
+                } else {
+                    message = "Failed to activate the Task: " + getName();
+                    logger.error(message);
+                }
+            } catch (Exception e) {
+                this.deactivateTask();   
+                message = "Failed to activate the Task: " + getName();
+                logger.error(message, e);
             }
-        } catch (Exception e) {
-            this.deactivateTask();   
-            errorMessage = "Failed to activate the Task: " + getName();
-            logger.error(errorMessage, e);
         }
-
-        return new DynamicControlOperationResult(isSuccess, errorMessage);
+        return new DynamicControlOperationResult(isSuccess, message);
     }
 
     /**
@@ -189,25 +193,29 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
      * </p>
      */
     public synchronized DynamicControlOperationResult deactivate() {
-        String errorMessage = "";
+        String message = "";
         boolean isSuccess = false;
         logger.info("Deactivating the Task: " + getName());
-
-        try {
-            if (this.deactivateTask()) {
-                logger.info("Task [" + getName() + "] is successfully deactivated.");
-                setStartupControllerStateInRegistry(StartUpController.StartUpControllerState.INACTIVE);
-                isSuccess = true;
-            } else {
-                errorMessage = "Failed to deactivate the Task: " + getName();
-                logger.error(errorMessage);
+        if (!this.isTaskActive()) {
+            message = "Task [" + getName() + "] is already deactivated.";
+            logger.debug(message);
+        } else {
+            try {
+                if (this.deactivateTask()) {
+                    logger.info("Task [" + getName() + "] is successfully deactivated.");
+                    setStartupControllerStateInRegistry(StartUpController.StartUpControllerState.INACTIVE);
+                    isSuccess = true;
+                } else {
+                    message = "Failed to deactivate the Task: " + getName();
+                    logger.error(message);
+                }
+            } catch (Exception e) {
+                this.activateTask();
+                message = "Failed to deactivate the Task: " + getName();
+                logger.error(message, e);
             }
-        } catch (Exception e) {
-            this.activateTask();
-            errorMessage = "Failed to deactivate the Task: " + getName();
-            logger.error(errorMessage, e);
         }
-        return new DynamicControlOperationResult(isSuccess, errorMessage);
+        return new DynamicControlOperationResult(isSuccess, message);
     }
 
     /**
@@ -218,7 +226,7 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
      * </p>
      */
     public synchronized DynamicControlOperationResult trigger() {
-        String errorMessage = "";
+        String message = "";
         boolean isSuccess = false;
         logger.info("Triggering the Task: " + getName());
 
@@ -229,19 +237,19 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
                     logger.info("Task [" + getName() + "] is successfully triggered.");
                     isSuccess = true;
                 } else {
-                    errorMessage = "Cannot trigger the task: " + getName() +
+                    message = "Cannot trigger the task: " + getName() +
                             " as it is not a scheduled task.";
-                    logger.error(errorMessage);
+                    logger.error(message);
                 }
             } else {
-                errorMessage = "Cannot trigger the task: " + getName() + " as it is not active.";
-                logger.error(errorMessage);
+                message = "Cannot trigger the task: " + getName() + " as it is not active.";
+                logger.error(message);
             }
         } catch (Exception e) {
-            errorMessage = "Failed to trigger the Task: " + getName();
-            logger.error(errorMessage, e);
+            message = "Failed to trigger the Task: " + getName();
+            logger.error(message, e);
         }
-        return new DynamicControlOperationResult(isSuccess, errorMessage);
+        return new DynamicControlOperationResult(isSuccess, message);
     }
 
 
