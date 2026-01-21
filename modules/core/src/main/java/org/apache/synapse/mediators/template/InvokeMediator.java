@@ -199,7 +199,16 @@ public class InvokeMediator extends AbstractMediator implements
 			}
 
 			prepareForMediation(synCtx);
+			
+			// Handle coverage tracking for unit tests
+			String originalArtifactKey = handleCoverageForTemplate(synCtx, (TemplateMediator) mediator);
+			
 			boolean result = mediator.mediate(synCtx);
+			
+			// Restore original artifact key for unit test coverage
+			if (originalArtifactKey != null) {
+				synCtx.setProperty(org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY, originalArtifactKey);
+			}
 
 			if (result && executePreFetchingSequence) {
 				ContinuationStackManager.removeReliantContinuationState(synCtx);
@@ -618,6 +627,34 @@ public class InvokeMediator extends AbstractMediator implements
             }
         });
         return jsonObject;
+    }
+
+    /**
+     * Handle coverage tracking when invoking a template during unit tests.
+     * Sets the COVERAGE_ARTIFACT_KEY to the template's key so mediators inside
+     * the template are tracked correctly.
+     *
+     * @param synCtx message context
+     * @param template the template being invoked
+     * @return the original artifact key (to be restored after template execution), or null if not in unit test mode
+     */
+    private String handleCoverageForTemplate(MessageContext synCtx, TemplateMediator template) {
+        if (synCtx.getConfiguration() == null ||
+                !"true".equals(synCtx.getConfiguration().getProperty(
+                        org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST))) {
+            return null;
+        }
+
+        String originalKey = (String) synCtx.getProperty(
+                org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY);
+
+        String templateName = template.getName();
+        if (templateName != null && !templateName.isEmpty()) {
+            String templateKey = "Template:" + templateName;
+            synCtx.setProperty(org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY, templateKey);
+        }
+
+        return originalKey;
     }
 
     public void destroy() {

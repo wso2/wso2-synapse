@@ -32,6 +32,7 @@ import org.apache.synapse.mediators.builtin.PropertyMediator;
 import org.apache.synapse.mediators.filters.FilterMediator;
 import org.apache.synapse.mediators.filters.SwitchMediator;
 import org.apache.synapse.mediators.template.InvokeMediator;
+import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.mediators.v2.VariableMediator;
 
 import java.util.HashSet;
@@ -149,6 +150,14 @@ public class MediatorRegistry {
         String sequencePath = "sequence:" + sequence.getName();
         AtomicInteger counter = new AtomicInteger(0);
         
+        // Track onError sequence dependency
+        if (sequence.getErrorHandler() != null) {
+            addSequenceDependency(artifactKey, sequence.getErrorHandler());
+            if (log.isDebugEnabled()) {
+                log.debug("Detected onError sequence in " + artifactKey + " -> " + sequence.getErrorHandler());
+            }
+        }
+        
         List<Mediator> children = sequence.getList();
         if (children != null && !children.isEmpty()) {
             for (Mediator child : children) {
@@ -160,6 +169,35 @@ public class MediatorRegistry {
         executedMediators.put(artifactKey, ConcurrentHashMap.newKeySet());
         
         log.info("Registered Sequence " + sequence.getName() + " with " + mediatorIds.size() + " mediators");
+    }
+
+    /**
+     * Register a Template and assign IDs to all its mediators.
+     *
+     * @param template Template to register
+     */
+    public void registerTemplate(TemplateMediator template) {
+        String artifactKey = "Template:" + template.getName();
+        log.info("Registering Template: " + template.getName());
+
+        LinkedHashSet<String> mediatorIds = new LinkedHashSet<>();
+
+        // Register children directly - don't register the named template container itself
+        // The template is just a container, not an actual mediator to count
+        String templatePath = "template:" + template.getName();
+        AtomicInteger counter = new AtomicInteger(0);
+        
+        List<Mediator> children = template.getList();
+        if (children != null && !children.isEmpty()) {
+            for (Mediator child : children) {
+                registerMediatorTree(child, artifactKey, templatePath, mediatorIds, counter);
+            }
+        }
+
+        registeredMediators.put(artifactKey, mediatorIds);
+        executedMediators.put(artifactKey, ConcurrentHashMap.newKeySet());
+        
+        log.info("Registered Template " + template.getName() + " with " + mediatorIds.size() + " mediators");
     }
 
     /**
@@ -223,17 +261,25 @@ public class MediatorRegistry {
         // Generate position-based ID
         int position = positionCounter.incrementAndGet();
         
-        // For InvokeMediator (connectors), use the connector name instead of "Invoke"
+        // For InvokeMediator (connectors or templates), use the connector/template name instead of "Invoke"
         if (mediator instanceof InvokeMediator) {
             InvokeMediator invokeMediator = (InvokeMediator) mediator;
             if (invokeMediator.getTargetTemplate() != null) {
                 String targetTemplate = invokeMediator.getTargetTemplate();
                 // Extract short name from qualified name (e.g., "org.wso2.carbon.connector.http.get" -> "http.get")
                 int lastDotBeforeConnector = targetTemplate.lastIndexOf(".connector.");
-                String connectorName = (lastDotBeforeConnector != -1) 
-                    ? targetTemplate.substring(lastDotBeforeConnector + ".connector.".length())
-                    : targetTemplate;
-                mediatorId = path + "/" + position + "." + connectorName;
+                if (lastDotBeforeConnector != -1) {
+                    // This is a connector
+                    String connectorName = targetTemplate.substring(lastDotBeforeConnector + ".connector.".length());
+                    mediatorId = path + "/" + position + "." + connectorName;
+                } else {
+                    // This is a template reference - track as dependency
+                    addTemplateDependency(artifactKey, targetTemplate);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Detected template reference in " + artifactKey + " -> " + targetTemplate);
+                    }
+                    mediatorId = path + "/" + position + ".call-template[" + targetTemplate + "]";
+                }
             } else {
                 mediatorId = path + "/" + position + "." + mediatorType;
             }
@@ -246,6 +292,14 @@ public class MediatorRegistry {
             PropertyMediator propMediator = (PropertyMediator) mediator;
             if (propMediator.getName() != null) {
                 mediatorId += "[" + propMediator.getName() + "]";
+                
+                // Skip test-injected properties that have been marked by the test framework
+                if (propMediator.isTestInjected()) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Skipping test-injected property mediator: " + mediatorId);
+                    }
+                    return; // Don't register this mediator
+                }
             }
         } else if (mediator instanceof VariableMediator) {
             VariableMediator varMediator = (VariableMediator) mediator;
@@ -353,7 +407,7 @@ public class MediatorRegistry {
     }
 
     /**
-     * Register ListMediator children.
+     * Register mediators in a ListMediator's children.
      */
     private void registerListChildren(ListMediator listMediator, String artifactKey, 
                                      String mediatorId, LinkedHashSet<String> mediatorIds) {
@@ -383,6 +437,18 @@ public class MediatorRegistry {
             String mediatorId = abstractMediator.getMediatorId();
             
             if (mediatorId != null) {
+                // Check if this mediatorId was registered during artifact deployment
+                LinkedHashSet<String> registeredIds = registeredMediators.get(artifactKey);
+                if (registeredIds == null || !registeredIds.contains(mediatorId)) {
+                    // This is a dynamically created mediator (e.g., internal PropertyMediator from Call mediator)
+                    // Don't track it to avoid inflating coverage counts
+                    if (log.isDebugEnabled()) {
+                        log.debug("Skipping unregistered mediator (likely internal): " + mediatorId + 
+                                " for artifact: " + artifactKey);
+                    }
+                    return;
+                }
+                
                 Set<String> executed = executedMediators.get(artifactKey);
                 if (executed != null) {
                     executed.add(mediatorId);
@@ -474,18 +540,42 @@ public class MediatorRegistry {
     }
 
     /**
-     * Record that an artifact references a sequence.
+     * Record that an artifact references another artifact (sequence or template).
+     *
+     * @param artifactKey the artifact key (e.g., "API:api-1")
+     * @param referencedArtifactKey the full key of the referenced artifact (e.g., "Sequence:xxx" or "Template:xxx")
+     */
+    private void addArtifactDependency(String artifactKey, String referencedArtifactKey) {
+        if (referencedArtifactKey != null && !referencedArtifactKey.isEmpty()) {
+            artifactDependencies.computeIfAbsent(artifactKey, k -> ConcurrentHashMap.newKeySet())
+                               .add(referencedArtifactKey);
+            if (log.isDebugEnabled()) {
+                log.debug("Recorded dependency: " + artifactKey + " -> " + referencedArtifactKey);
+            }
+        }
+    }
+    
+    /**
+     * Record that an artifact references a sequence (helper method).
      *
      * @param artifactKey the artifact key (e.g., "API:api-1")
      * @param sequenceName the name of the referenced sequence
      */
     private void addSequenceDependency(String artifactKey, String sequenceName) {
         if (sequenceName != null && !sequenceName.isEmpty()) {
-            artifactDependencies.computeIfAbsent(artifactKey, k -> ConcurrentHashMap.newKeySet())
-                               .add(sequenceName);
-            if (log.isDebugEnabled()) {
-                log.debug("Recorded dependency: " + artifactKey + " -> Sequence:" + sequenceName);
-            }
+            addArtifactDependency(artifactKey, "Sequence:" + sequenceName);
+        }
+    }
+    
+    /**
+     * Record that an artifact references a template (helper method).
+     *
+     * @param artifactKey the artifact key (e.g., "API:api-1")
+     * @param templateName the name of the referenced template
+     */
+    private void addTemplateDependency(String artifactKey, String templateName) {
+        if (templateName != null && !templateName.isEmpty()) {
+            addArtifactDependency(artifactKey, "Template:" + templateName);
         }
     }
 
@@ -514,12 +604,12 @@ public class MediatorRegistry {
     }
 
     /**
-     * Get the set of sequences referenced by an artifact.
+     * Get the set of artifacts referenced by an artifact.
      *
      * @param artifactKey artifact key
-     * @return set of referenced sequence names (empty if none)
+     * @return set of referenced artifact keys (e.g., "Sequence:xxx", "Template:xxx") (empty if none)
      */
-    public Set<String> getReferencedSequences(String artifactKey) {
+    public Set<String> getReferencedArtifacts(String artifactKey) {
         Set<String> refs = artifactDependencies.get(artifactKey);
         return refs != null ? new HashSet<>(refs) : new HashSet<>();
     }
@@ -542,19 +632,17 @@ public class MediatorRegistry {
         LinkedHashSet<String> mediatorIds = registeredMediators.get(artifactKey);
         int total = mediatorIds != null ? mediatorIds.size() : 0;
         
-        // Add mediators from referenced sequences
-        Set<String> referencedSequences = artifactDependencies.get(artifactKey);
-        if (referencedSequences != null) {
-            for (String seqName : referencedSequences) {
-                String seqKey = "Sequence:" + seqName;
-                
-                if (!isArtifactRegistered(seqKey)) {
-                    log.warn("Referenced sequence not found: " + seqName);
+        // Add mediators from referenced artifacts (sequences and templates)
+        Set<String> referencedArtifacts = artifactDependencies.get(artifactKey);
+        if (referencedArtifacts != null) {
+            for (String refArtifactKey : referencedArtifacts) {
+                if (!isArtifactRegistered(refArtifactKey)) {
+                    log.warn("Referenced artifact not found: " + refArtifactKey);
                     continue;
                 }
                 
-                // Recursively count sequence mediators
-                total += getTotalMediatorCount(seqKey, visited);
+                // Recursively count referenced artifact mediators
+                total += getTotalMediatorCount(refArtifactKey, visited);
             }
         }
         
@@ -578,18 +666,16 @@ public class MediatorRegistry {
         Set<String> executedSet = executedMediators.get(artifactKey);
         int executed = executedSet != null ? executedSet.size() : 0;
         
-        // Add executed mediators from referenced sequences
-        Set<String> referencedSequences = artifactDependencies.get(artifactKey);
-        if (referencedSequences != null) {
-            for (String seqName : referencedSequences) {
-                String seqKey = "Sequence:" + seqName;
-                
-                if (!isArtifactRegistered(seqKey)) {
+        // Add executed mediators from referenced artifacts (sequences and templates)
+        Set<String> referencedArtifacts = artifactDependencies.get(artifactKey);
+        if (referencedArtifacts != null) {
+            for (String refArtifactKey : referencedArtifacts) {
+                if (!isArtifactRegistered(refArtifactKey)) {
                     continue;
                 }
                 
-                // Recursively count executed sequence mediators
-                executed += getExecutedMediatorCount(seqKey, visited);
+                // Recursively count executed mediators in referenced artifacts
+                executed += getExecutedMediatorCount(refArtifactKey, visited);
             }
         }
         

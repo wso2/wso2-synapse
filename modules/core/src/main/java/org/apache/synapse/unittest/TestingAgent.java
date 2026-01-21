@@ -267,6 +267,8 @@ class TestingAgent {
                         config.deployTemplateArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairOfTemplateDeployment.getKey();
                 key = pairOfTemplateDeployment.getValue();
+                // Register template for coverage tracking
+                registerTemplateForCoverage(synapseConfiguration, key);
                 break;
 
             default:
@@ -507,18 +509,37 @@ class TestingAgent {
      * Register Sequence for mediator coverage tracking.
      *
      * @param synapseConfig synapse configuration
-     * @param sequenceName  sequence name
+     * @param sequenceName  Sequence name
      */
     private void registerSequenceForCoverage(SynapseConfiguration synapseConfig, String sequenceName) {
         try {
-            SequenceMediator sequence =
-                    (SequenceMediator) synapseConfig.getSequence(sequenceName);
+            SequenceMediator sequence = (SequenceMediator) synapseConfig.getSequence(sequenceName);
             if (sequence != null) {
+                // Only register named sequences, not inline sequences
                 MediatorRegistry.getInstance().registerSequence(sequence);
                 log.info("Registered Sequence for coverage tracking: " + sequenceName);
             }
         } catch (Exception e) {
             log.warn("Failed to register Sequence for coverage tracking: " + sequenceName, e);
+        }
+    }
+
+    /**
+     * Register Template for mediator coverage tracking.
+     *
+     * @param synapseConfig synapse configuration
+     * @param templateName  Template name
+     */
+    private void registerTemplateForCoverage(SynapseConfiguration synapseConfig, String templateName) {
+        try {
+            org.apache.synapse.mediators.template.TemplateMediator template =
+                    (org.apache.synapse.mediators.template.TemplateMediator) synapseConfig.getSequenceTemplate(templateName);
+            if (template != null) {
+                MediatorRegistry.getInstance().registerTemplate(template);
+                log.info("Registered Template for coverage tracking: " + templateName);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to register Template for coverage tracking: " + templateName, e);
         }
     }
 
@@ -539,9 +560,9 @@ class TestingAgent {
                     
                     MediatorCoverage coverage = new MediatorCoverage(artifactType, artifactName);
                     
-                    // Check if artifact has any referenced sequences
-                    Set<String> referencedSeqs = tracker.getReferencedSequences(artifactKey);
-                    boolean hasReferences = !referencedSeqs.isEmpty();
+                    // Check if artifact has any referenced artifacts (sequences or templates)
+                    Set<String> referencedArtifacts = tracker.getReferencedArtifacts(artifactKey);
+                    boolean hasReferences = !referencedArtifacts.isEmpty();
                     
                     // Use includeReferences parameter to control aggregation for counts (for coverage %)
                     coverage.setTotalMediators(tracker.getTotalMediatorCount(artifactKey, hasReferences));
@@ -557,10 +578,10 @@ class TestingAgent {
                         coverage.addMediatorExecutionStatus(mediatorId, isExecuted);
                     }
                     
-                    // Add referenced sequence names if any
+                    // Add referenced artifact keys if any
                     if (hasReferences) {
-                        for (String seqName : referencedSeqs) {
-                            coverage.addReferencedSequence(seqName);
+                        for (String refArtifactKey : referencedArtifacts) {
+                            coverage.addReferencedArtifact(refArtifactKey);
                         }
                     }
                     

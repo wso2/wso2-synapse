@@ -38,12 +38,12 @@ public class MediatorCoverage {
     private double coveragePercentage;
     private List<String> mediatorDetails;
     private Map<String, Boolean> mediatorExecutionStatus;
-    private List<String> referencedSequences;
+    private List<String> referencedArtifacts;
 
     public MediatorCoverage() {
         this.mediatorDetails = new ArrayList<>();
         this.mediatorExecutionStatus = new LinkedHashMap<>();
-        this.referencedSequences = new ArrayList<>();
+        this.referencedArtifacts = new ArrayList<>();
         this.executedMediators = 0;
         this.totalMediators = 0;
         this.coveragePercentage = 0.0;
@@ -194,31 +194,31 @@ public class MediatorCoverage {
     }
 
     /**
-     * Get list of referenced sequences.
+     * Get list of referenced artifacts.
      *
-     * @return list of referenced sequence names
+     * @return list of referenced artifact keys
      */
-    public List<String> getReferencedSequences() {
-        return referencedSequences;
+    public List<String> getReferencedArtifacts() {
+        return referencedArtifacts;
     }
 
     /**
-     * Set referenced sequences.
+     * Set referenced artifacts.
      *
-     * @param referencedSequences list of referenced sequence names
+     * @param referencedArtifacts list of referenced artifact keys
      */
-    public void setReferencedSequences(List<String> referencedSequences) {
-        this.referencedSequences = referencedSequences;
+    public void setReferencedArtifacts(List<String> referencedArtifacts) {
+        this.referencedArtifacts = referencedArtifacts;
     }
 
     /**
-     * Add a referenced sequence.
+     * Add a referenced artifact.
      *
-     * @param sequenceName sequence name
+     * @param artifactKey artifact key (e.g., "Sequence:xxx" or "Template:xxx")
      */
-    public void addReferencedSequence(String sequenceName) {
-        if (!this.referencedSequences.contains(sequenceName)) {
-            this.referencedSequences.add(sequenceName);
+    public void addReferencedArtifact(String artifactKey) {
+        if (!this.referencedArtifacts.contains(artifactKey)) {
+            this.referencedArtifacts.add(artifactKey);
         }
     }
 
@@ -246,13 +246,13 @@ public class MediatorCoverage {
         json.addProperty("totalMediators", totalMediators);
         json.addProperty("coveragePercentage", String.format("%.2f", coveragePercentage));
 
-        // Add referenced sequences if any
-        if (!referencedSequences.isEmpty()) {
+        // Add referenced artifacts if any
+        if (!referencedArtifacts.isEmpty()) {
             JsonArray refsArray = new JsonArray();
-            for (String seqName : referencedSequences) {
-                refsArray.add(seqName);
+            for (String artifactKey : referencedArtifacts) {
+                refsArray.add(artifactKey);
             }
-            json.add("referencedSequences", refsArray);
+            json.add("referencedArtifacts", refsArray);
         }
 
         // Add mediator details with execution status

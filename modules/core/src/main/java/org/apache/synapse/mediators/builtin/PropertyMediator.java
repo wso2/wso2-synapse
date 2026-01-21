@@ -93,6 +93,9 @@ public class PropertyMediator extends AbstractMediator {
 
     /** To keep the Property Value for tracing **/
     private String propertyValue = null;
+    
+    /** Flag to indicate if this property was injected by the test framework **/
+    private boolean testInjected = false;
 
     /**
      * Sets a property into the current (local) Synapse Context or into the Axis Message Context
@@ -582,6 +585,24 @@ public class PropertyMediator extends AbstractMediator {
 
     @Override public String getMediatorName() {
         return super.getMediatorName() + ":" + name;
+    }
+    
+    /**
+     * Check if this property was injected by the test framework.
+     *
+     * @return true if test-injected, false otherwise
+     */
+    public boolean isTestInjected() {
+        return testInjected;
+    }
+    
+    /**
+     * Mark this property as test-injected.
+     *
+     * @param testInjected true if test-injected
+     */
+    public void setTestInjected(boolean testInjected) {
+        this.testInjected = testInjected;
     }
 
     /**
