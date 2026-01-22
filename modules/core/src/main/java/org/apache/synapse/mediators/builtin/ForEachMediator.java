@@ -314,7 +314,18 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
                 if (log.isDebugEnabled()) {
                     log.debug("Synchronously mediating using the sequence " + "named : " + sequenceRef);
                 }
-                return referredSequence.mediate(synCtx);
+                
+                // Handle coverage tracking for referenced sequence in unit tests
+                String originalArtifactKey = handleCoverageForSequenceRef(synCtx);
+                
+                boolean result = referredSequence.mediate(synCtx);
+                
+                // Restore original artifact key for unit test coverage
+                if (originalArtifactKey != null) {
+                    synCtx.setProperty(org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY, originalArtifactKey);
+                }
+                
+                return result;
             } else {
                 handleException("Couldn't find the sequence named : " + sequenceRef, synCtx);
             }
@@ -322,6 +333,32 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
             handleException("Couldn't find sequence information", synCtx);
         }
         return false;
+    }
+
+    /**
+     * Handle coverage tracking when executing a sequence reference during unit tests.
+     * Sets the COVERAGE_ARTIFACT_KEY to the sequence's key so mediators inside
+     * the referenced sequence are tracked correctly.
+     *
+     * @param synCtx message context
+     * @return the original artifact key (to be restored after sequence execution), or null if not in unit test mode
+     */
+    private String handleCoverageForSequenceRef(MessageContext synCtx) {
+        if (synCtx.getConfiguration() == null ||
+                !"true".equals(synCtx.getConfiguration().getProperty(
+                        org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST))) {
+            return null;
+        }
+
+        String originalKey = (String) synCtx.getProperty(
+                org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY);
+
+        if (sequenceRef != null && !sequenceRef.isEmpty()) {
+            String sequenceKey = "Sequence:" + sequenceRef;
+            synCtx.setProperty(org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY, sequenceKey);
+        }
+
+        return originalKey;
     }
 
     /**

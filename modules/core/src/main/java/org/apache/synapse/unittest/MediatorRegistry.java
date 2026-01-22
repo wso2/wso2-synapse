@@ -28,6 +28,8 @@ import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.ListMediator;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.builtin.CommentMediator;
+import org.apache.synapse.mediators.builtin.ForEachMediator;
 import org.apache.synapse.mediators.builtin.PropertyMediator;
 import org.apache.synapse.mediators.filters.FilterMediator;
 import org.apache.synapse.mediators.filters.SwitchMediator;
@@ -172,6 +174,56 @@ public class MediatorRegistry {
     }
 
     /**
+     * Register a sequence with a specific key (for registry sequences).
+     * This is used when the sequence key doesn't match the sequence name (e.g., registry paths).
+     *
+     * @param sequence the sequence to register
+     * @param sequenceKey the key to use (e.g., "resources:xml/aaaaaaa.xml")
+     */
+    public void registerSequenceWithKey(SequenceMediator sequence, String sequenceKey) {
+        String artifactKey = "Sequence:" + sequenceKey;
+        log.info("Registering Sequence with key: " + sequenceKey);
+
+        LinkedHashSet<String> mediatorIds = new LinkedHashSet<>();
+
+        // Register children directly - don't register the named sequence container itself
+        String sequencePath = "sequence:" + sequenceKey;
+        AtomicInteger counter = new AtomicInteger(0);
+        
+        // Track onError sequence dependency
+        if (sequence.getErrorHandler() != null) {
+            addSequenceDependency(artifactKey, sequence.getErrorHandler());
+            if (log.isDebugEnabled()) {
+                log.debug("Detected onError sequence in " + artifactKey + " -> " + sequence.getErrorHandler());
+            }
+        }
+        
+        List<Mediator> children = sequence.getList();
+        if (children != null && !children.isEmpty()) {
+            for (Mediator child : children) {
+                registerMediatorTree(child, artifactKey, sequencePath, mediatorIds, counter);
+            }
+        }
+
+        registeredMediators.put(artifactKey, mediatorIds);
+        executedMediators.put(artifactKey, ConcurrentHashMap.newKeySet());
+        
+        log.info("Registered Sequence " + sequenceKey + " with " + mediatorIds.size() + " mediators");
+    }
+
+    /**
+     * Check if a sequence has already been registered for coverage tracking.
+     * Used to avoid duplicate registration of registry sequences.
+     *
+     * @param sequenceName the name of the sequence to check
+     * @return true if the sequence is already registered, false otherwise
+     */
+    public boolean isSequenceRegistered(String sequenceName) {
+        String artifactKey = "Sequence:" + sequenceName;
+        return registeredMediators.containsKey(artifactKey);
+    }
+
+    /**
      * Register a Template and assign IDs to all its mediators.
      *
      * @param template Template to register
@@ -213,6 +265,14 @@ public class MediatorRegistry {
                                      String path, LinkedHashSet<String> mediatorIds,
                                      AtomicInteger positionCounter) {
         if (mediator == null) {
+            return;
+        }
+
+        // Skip CommentMediator - these are just XML comments and should not be counted in coverage
+        if (mediator instanceof CommentMediator) {
+            if (log.isDebugEnabled()) {
+                log.debug("Skipping CommentMediator (XML comment node)");
+            }
             return;
         }
 
@@ -326,6 +386,8 @@ public class MediatorRegistry {
             registerFilterBranches((FilterMediator) mediator, artifactKey, mediatorId, mediatorIds);
         } else if (mediator instanceof SwitchMediator) {
             registerSwitchCases((SwitchMediator) mediator, artifactKey, mediatorId, mediatorIds);
+        } else if (mediator instanceof ForEachMediator) {
+            registerForEachSequence((ForEachMediator) mediator, artifactKey, mediatorId, mediatorIds);
         } else if (mediator instanceof ListMediator) {
             registerListChildren((ListMediator) mediator, artifactKey, mediatorId, mediatorIds);
         }
@@ -402,6 +464,39 @@ public class MediatorRegistry {
                                 mediatorIds, defaultCounter);
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Register ForEachMediator's inline sequence.
+     */
+    private void registerForEachSequence(ForEachMediator forEachMediator, String artifactKey,
+                                        String mediatorId, LinkedHashSet<String> mediatorIds) {
+        // Register inline sequence if present
+        SequenceMediator sequence = forEachMediator.getSequence();
+        if (sequence != null && sequence instanceof ListMediator) {
+            List<Mediator> children = ((ListMediator) sequence).getList();
+            if (children != null && !children.isEmpty()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("ForEach inline sequence has " + children.size() + " children under path: " + mediatorId);
+                }
+                AtomicInteger childCounter = new AtomicInteger(0);
+                for (Mediator child : children) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Registering ForEach child: " + child.getClass().getSimpleName());
+                    }
+                    registerMediatorTree(child, artifactKey, mediatorId, mediatorIds, childCounter);
+                }
+            }
+        }
+        
+        // Track sequence reference as dependency if present
+        String sequenceRef = forEachMediator.getSequenceRef();
+        if (sequenceRef != null && !sequenceRef.isEmpty()) {
+            addSequenceDependency(artifactKey, sequenceRef);
+            if (log.isDebugEnabled()) {
+                log.debug("Detected sequence reference in ForEach mediator: " + artifactKey + " -> " + sequenceRef);
             }
         }
     }

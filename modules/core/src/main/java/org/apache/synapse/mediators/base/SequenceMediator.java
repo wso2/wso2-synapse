@@ -211,7 +211,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 // sequence mediator in the sequence
                 ContinuationStackManager.updateSeqContinuationState(synCtx, getMediatorPosition());
 
-                String originalArtifactKey = handleCoverageForReferencedSequence(synCtx, m, synLog);
+                String originalArtifactKey = handleCoverageForReferencedSequence(synCtx, m, sequenceKey, synLog);
 
                 boolean result = m.mediate(synCtx);
 
@@ -529,7 +529,8 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         }
     }
 
-    private String handleCoverageForReferencedSequence(MessageContext synCtx, Mediator mediator, SynapseLog synLog) {
+    private String handleCoverageForReferencedSequence(MessageContext synCtx, Mediator mediator, 
+                                                        String sequenceKey, SynapseLog synLog) {
         if (synCtx.getConfiguration() == null ||
                 !"true".equals(synCtx.getConfiguration().getProperty(
                         org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST))) {
@@ -541,10 +542,26 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
         if (mediator instanceof SequenceMediator) {
             SequenceMediator refSeq = (SequenceMediator) mediator;
-            String refSeqName = refSeq.getName();
+            
+            // Use sequenceKey (e.g., "resources:xml/aaaaaaa.xml") instead of sequence name
+            // This ensures registry sequences are registered with the same key used in dependencies
+            String refSeqName = sequenceKey != null ? sequenceKey : refSeq.getName();
+            
             if (refSeqName != null && !refSeqName.isEmpty()) {
-                String refSeqKey = "Sequence:" + refSeqName;
-                synCtx.setProperty(org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY, refSeqKey);
+                // Register the sequence on-demand if not already registered
+                // This handles registry sequences that are referenced but not deployed as artifacts
+                org.apache.synapse.unittest.MediatorRegistry registry = 
+                    org.apache.synapse.unittest.MediatorRegistry.getInstance();
+                String artifactKey = "Sequence:" + refSeqName;
+                
+                if (!registry.isArtifactRegistered(artifactKey)) {
+                    registry.registerSequenceWithKey(refSeq, refSeqName);
+                    if (synLog.isTraceOrDebugEnabled()) {
+                        synLog.traceOrDebug("Registered referenced sequence for coverage: " + refSeqName);
+                    }
+                }
+                
+                synCtx.setProperty(org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY, artifactKey);
             }
         }
         return originalKey;
