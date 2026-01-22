@@ -269,9 +269,7 @@ public class TestSuiteSummary {
         }
         root.add("supportingArtifacts", supportingArtifactsArray);
 
-        // Use Gson's pretty printing for better readability
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        this.coverageReportJson = gson.toJson(root);
+        this.coverageReportJson = root.toString();
         return this.coverageReportJson;
     }
 }

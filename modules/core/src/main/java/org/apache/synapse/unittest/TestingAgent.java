@@ -131,7 +131,6 @@ class TestingAgent {
                         deploymentStats.put(key, TYPE_PROXY);
                         testSuiteSummary.setDeploymentStatus(Constants.PASSED_KEY);
                         log.info("Primary test Proxy artifact deployed successfully");
-                        primaryArtifactKey = "Proxy:" + key;
                     } else {
                         String errorMessage = "Proxy " + artifactNameOrKey + " deployment failed";
                         log.error(errorMessage);
@@ -483,7 +482,7 @@ class TestingAgent {
             log.info("Undeployed all the deployed test and supportive artifacts");
 
         } catch (AxisFault e) {
-            log.error("Error occurred while un-deploying deployed artifact", e);
+            log.error("Error while undeploying the artifacts", e);
         }
     }
 
@@ -498,7 +497,6 @@ class TestingAgent {
             API api = synapseConfig.getAPI(apiName);
             if (api != null) {
                 MediatorRegistry.getInstance().registerAPI(api);
-                log.info("Registered API for coverage tracking: " + apiName);
             }
         } catch (Exception e) {
             log.warn("Failed to register API for coverage tracking: " + apiName, e);
@@ -515,9 +513,7 @@ class TestingAgent {
         try {
             SequenceMediator sequence = (SequenceMediator) synapseConfig.getSequence(sequenceName);
             if (sequence != null) {
-                // Only register named sequences, not inline sequences
-                MediatorRegistry.getInstance().registerSequence(sequence);
-                log.info("Registered Sequence for coverage tracking: " + sequenceName);
+                MediatorRegistry.getInstance().registerSequence(sequence, null);
             }
         } catch (Exception e) {
             log.warn("Failed to register Sequence for coverage tracking: " + sequenceName, e);
@@ -533,10 +529,9 @@ class TestingAgent {
     private void registerTemplateForCoverage(SynapseConfiguration synapseConfig, String templateName) {
         try {
             org.apache.synapse.mediators.template.TemplateMediator template =
-                    (org.apache.synapse.mediators.template.TemplateMediator) synapseConfig.getSequenceTemplate(templateName);
+                    synapseConfig.getSequenceTemplate(templateName);
             if (template != null) {
                 MediatorRegistry.getInstance().registerTemplate(template);
-                log.info("Registered Template for coverage tracking: " + templateName);
             }
         } catch (Exception e) {
             log.warn("Failed to register Template for coverage tracking: " + templateName, e);
@@ -551,63 +546,59 @@ class TestingAgent {
     void generateCoverageReport(TestSuiteSummary testSuiteSummary) {
         try {
             MediatorRegistry tracker = MediatorRegistry.getInstance();
-            
+
             for (String artifactKey : tracker.getRegisteredArtifacts()) {
                 String[] parts = artifactKey.split(":", 2);
                 if (parts.length == 2) {
                     String artifactType = parts[0];
                     String artifactName = parts[1];
-                    
+
                     MediatorCoverage coverage = new MediatorCoverage(artifactType, artifactName);
-                    
+
                     // Check if artifact has any referenced artifacts (sequences or templates)
                     Set<String> referencedArtifacts = tracker.getReferencedArtifacts(artifactKey);
                     boolean hasReferences = !referencedArtifacts.isEmpty();
-                    
+
                     // Use includeReferences parameter to control aggregation for counts (for coverage %)
                     coverage.setTotalMediators(tracker.getTotalMediatorCount(artifactKey, hasReferences));
                     coverage.setExecutedMediators(tracker.getExecutedMediatorCount(artifactKey, hasReferences));
-                    
+
                     // Get only own mediator IDs for mediatorDetails (not aggregated)
-                    Set<String> allMediatorIds = tracker.getAllMediatorIds(artifactKey, false);
-                    Set<String> executedMediatorIds = tracker.getExecutedMediatorIds(artifactKey, false);
-                    
+                    Set<String> allMediatorIds = tracker.getAllMediatorIds(artifactKey);
+                    Set<String> executedMediatorIds = tracker.getExecutedMediatorIds(artifactKey);
+
                     // Add all mediators with execution status
                     for (String mediatorId : allMediatorIds) {
                         boolean isExecuted = executedMediatorIds.contains(mediatorId);
                         coverage.addMediatorExecutionStatus(mediatorId, isExecuted);
                     }
-                    
+
                     // Add referenced artifact keys if any
                     if (hasReferences) {
                         for (String refArtifactKey : referencedArtifacts) {
                             coverage.addReferencedArtifact(refArtifactKey);
                         }
                     }
-                    
+
                     coverage.calculateCoveragePercentage();
-                    
+
                     // Set as primary or add as supporting artifact
                     if (artifactKey.equals(primaryArtifactKey)) {
                         testSuiteSummary.setPrimaryCoverage(coverage);
                     } else {
                         testSuiteSummary.addMediatorCoverage(coverage);
                     }
-                    
-                    log.info("Coverage for " + artifactKey + ": " + 
-                            coverage.getExecutedMediators() + "/" + coverage.getTotalMediators() +
-                            " (" + String.format("%.2f", coverage.getCoveragePercentage()) + "%)");
                 }
             }
-            
+
             // Generate JSON report
             testSuiteSummary.generateCoverageReportJson();
-            
-            log.info("Mediator coverage report generated successfully");
-            log.info("*** Final Coverage Report ***\n" + testSuiteSummary.getCoverageReportJson());
-            
+
+            log.info("Coverage report generated successfully");
+
         } catch (Exception e) {
             log.error("Error generating coverage report", e);
         }
     }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2026, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -36,12 +36,10 @@ public class MediatorCoverage {
     private int executedMediators;
     private int totalMediators;
     private double coveragePercentage;
-    private List<String> mediatorDetails;
     private Map<String, Boolean> mediatorExecutionStatus;
     private List<String> referencedArtifacts;
 
     public MediatorCoverage() {
-        this.mediatorDetails = new ArrayList<>();
         this.mediatorExecutionStatus = new LinkedHashMap<>();
         this.referencedArtifacts = new ArrayList<>();
         this.executedMediators = 0;
@@ -143,35 +141,6 @@ public class MediatorCoverage {
      */
     public void setCoveragePercentage(double coveragePercentage) {
         this.coveragePercentage = coveragePercentage;
-    }
-
-    /**
-     * Get list of mediator details (identifiers).
-     *
-     * @return mediator details list
-     */
-    public List<String> getMediatorDetails() {
-        return mediatorDetails;
-    }
-
-    /**
-     * Set mediator details list.
-     *
-     * @param mediatorDetails mediator details list
-     */
-    public void setMediatorDetails(List<String> mediatorDetails) {
-        this.mediatorDetails = mediatorDetails;
-    }
-
-    /**
-     * Add a mediator detail identifier.
-     *
-     * @param mediatorIdentifier mediator identifier
-     */
-    public void addMediatorDetail(String mediatorIdentifier) {
-        if (!this.mediatorDetails.contains(mediatorIdentifier)) {
-            this.mediatorDetails.add(mediatorIdentifier);
-        }
     }
 
     /**

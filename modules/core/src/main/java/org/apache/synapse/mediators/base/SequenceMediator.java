@@ -26,6 +26,7 @@ import org.apache.synapse.Nameable;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.unittest.CoverageUtils;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
@@ -211,13 +212,15 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 // sequence mediator in the sequence
                 ContinuationStackManager.updateSeqContinuationState(synCtx, getMediatorPosition());
 
-                String originalArtifactKey = handleCoverageForReferencedSequence(synCtx, m, sequenceKey, synLog);
+                // Handle coverage tracking for referenced sequence
+                String originalArtifactKey = CoverageUtils.handleCoverageForReferencedSequence(synCtx, m, sequenceKey);
 
-                boolean result = m.mediate(synCtx);
-
-                //Restore original artifact key for unit test coverage
-                if (originalArtifactKey != null) {
-                    synCtx.setProperty(org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY, originalArtifactKey);
+                boolean result;
+                try {
+                    result = m.mediate(synCtx);
+                } finally {
+                    // Restore original artifact key for unit test coverage
+                    CoverageUtils.restoreCoverageArtifactKey(synCtx, originalArtifactKey);
                 }
 
                 if (synLog.isTraceOrDebugEnabled()) {
@@ -527,43 +530,5 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         if (sequenceType != SequenceType.ANON) {
             StatisticIdentityGenerator.reportingFlowContinuableEndEvent(sequenceId, ComponentType.SEQUENCE, holder);
         }
-    }
-
-    private String handleCoverageForReferencedSequence(MessageContext synCtx, Mediator mediator, 
-                                                        String sequenceKey, SynapseLog synLog) {
-        if (synCtx.getConfiguration() == null ||
-                !"true".equals(synCtx.getConfiguration().getProperty(
-                        org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST))) {
-            return null;
-        }
-
-        String originalKey = (String) synCtx.getProperty(
-                org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY);
-
-        if (mediator instanceof SequenceMediator) {
-            SequenceMediator refSeq = (SequenceMediator) mediator;
-            
-            // Use sequenceKey (e.g., "resources:xml/aaaaaaa.xml") instead of sequence name
-            // This ensures registry sequences are registered with the same key used in dependencies
-            String refSeqName = sequenceKey != null ? sequenceKey : refSeq.getName();
-            
-            if (refSeqName != null && !refSeqName.isEmpty()) {
-                // Register the sequence on-demand if not already registered
-                // This handles registry sequences that are referenced but not deployed as artifacts
-                org.apache.synapse.unittest.MediatorRegistry registry = 
-                    org.apache.synapse.unittest.MediatorRegistry.getInstance();
-                String artifactKey = "Sequence:" + refSeqName;
-                
-                if (!registry.isArtifactRegistered(artifactKey)) {
-                    registry.registerSequenceWithKey(refSeq, refSeqName);
-                    if (synLog.isTraceOrDebugEnabled()) {
-                        synLog.traceOrDebug("Registered referenced sequence for coverage: " + refSeqName);
-                    }
-                }
-                
-                synCtx.setProperty(org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY, artifactKey);
-            }
-        }
-        return originalKey;
     }
 }

@@ -95,11 +95,6 @@ public abstract class AbstractListMediator extends AbstractMediator
             }
         }
         
-        // Track this ListMediator itself for coverage (e.g., SequenceMediator)
-        if (mediatorPosition == 0) {
-            trackMediatorExecution(this, synCtx);
-        }
-        
         Mediator mediator = null;
         Integer statisticReportingIndex = 0;
         try {
@@ -121,7 +116,7 @@ public abstract class AbstractListMediator extends AbstractMediator
                     statisticReportingIndex = mediator.reportOpenStatistics(synCtx, i == mediatorPosition);
                     synCtx.setTracingState(myEffectiveTraceState);
                     
-                    // Track mediator execution for unit test coverage **********
+                    // Track mediator execution for unit test coverage
                     trackMediatorExecution(mediator, synCtx);
                     
                     if (!mediator.mediate(synCtx)) {
@@ -141,7 +136,7 @@ public abstract class AbstractListMediator extends AbstractMediator
                 } else {
                     synCtx.setTracingState(myEffectiveTraceState);
                     
-                    // Track mediator execution for unit test coverage **********
+                    // Track mediator execution for unit test coverage
                     trackMediatorExecution(mediator, synCtx);
                     
                     if (!mediator.mediate(synCtx)) {

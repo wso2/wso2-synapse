@@ -44,6 +44,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.apache.synapse.unittest.CoverageUtils;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
@@ -316,16 +317,14 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
                 }
                 
                 // Handle coverage tracking for referenced sequence in unit tests
-                String originalArtifactKey = handleCoverageForSequenceRef(synCtx);
+                String originalArtifactKey = CoverageUtils.handleCoverageForReferencedSequence(synCtx, referredSequence, sequenceRef);
                 
-                boolean result = referredSequence.mediate(synCtx);
-                
-                // Restore original artifact key for unit test coverage
-                if (originalArtifactKey != null) {
-                    synCtx.setProperty(org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY, originalArtifactKey);
+                try {
+                    return referredSequence.mediate(synCtx);
+                } finally {
+                    // Restore original artifact key for unit test coverage
+                    CoverageUtils.restoreCoverageArtifactKey(synCtx, originalArtifactKey);
                 }
-                
-                return result;
             } else {
                 handleException("Couldn't find the sequence named : " + sequenceRef, synCtx);
             }
@@ -333,32 +332,6 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
             handleException("Couldn't find sequence information", synCtx);
         }
         return false;
-    }
-
-    /**
-     * Handle coverage tracking when executing a sequence reference during unit tests.
-     * Sets the COVERAGE_ARTIFACT_KEY to the sequence's key so mediators inside
-     * the referenced sequence are tracked correctly.
-     *
-     * @param synCtx message context
-     * @return the original artifact key (to be restored after sequence execution), or null if not in unit test mode
-     */
-    private String handleCoverageForSequenceRef(MessageContext synCtx) {
-        if (synCtx.getConfiguration() == null ||
-                !"true".equals(synCtx.getConfiguration().getProperty(
-                        org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST))) {
-            return null;
-        }
-
-        String originalKey = (String) synCtx.getProperty(
-                org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY);
-
-        if (sequenceRef != null && !sequenceRef.isEmpty()) {
-            String sequenceKey = "Sequence:" + sequenceRef;
-            synCtx.setProperty(org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY, sequenceKey);
-        }
-
-        return originalKey;
     }
 
     /**
