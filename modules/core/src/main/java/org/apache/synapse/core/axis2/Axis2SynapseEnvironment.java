@@ -43,7 +43,6 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.commons.json.JsonUtil;
@@ -842,34 +841,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
         }
 
-        // Store parent context before opening continuation events (they will be consumed)
-        Integer savedParentIndex = null;
-        List<Integer> savedParentList = null;
-        
         if (RuntimeStatisticCollector.isStatisticsEnabled()) {
-            // Get parent context from continuation state before opening events
-            if (!synCtx.getContinuationStateStack().isEmpty()) {
-                ContinuationState contState = synCtx.getContinuationStateStack().peek();
-                if (contState != null) {
-                    // Get the leaf child where parent context was stored
-                    ContinuationState leafState = contState.getLeafChild();
-                    if (leafState != null) {
-                        savedParentIndex = leafState.getStatisticsParentIndex();
-                        savedParentList = leafState.getStatisticsParentList();
-                    }
-                }
-            }
             OpenEventCollector.openContinuationEvents(synCtx);
-            
-            // Restore parent context AFTER opening continuation events
-            if (savedParentIndex != null) {
-                synCtx.setProperty(StatisticsConstants.MEDIATION_FLOW_STATISTICS_PARENT_INDEX, 
-                    savedParentIndex);
-            }
-            if (savedParentList != null) {
-                synCtx.setProperty(StatisticsConstants.MEDIATION_FLOW_STATISTICS_PARENT_LIST, 
-                    new java.util.LinkedList<>(savedParentList));
-            }
         }
 
         //First push fault handlers for first continuation state.
@@ -897,25 +870,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     }
 
     private void callMediatorPostMediate(MessageContext response) {
-        // Restore statistics parent context from continuation state for blocking calls
-        if (RuntimeStatisticCollector.isStatisticsEnabled() && 
-            !response.getContinuationStateStack().isEmpty()) {
-            ContinuationState contState = response.getContinuationStateStack().peek();
-            if (contState != null) {
-                Integer savedParentIndex = contState.getStatisticsParentIndex();
-                List<Integer> savedParentList = contState.getStatisticsParentList();
-                
-                if (savedParentIndex != null) {
-                    response.setProperty(StatisticsConstants.MEDIATION_FLOW_STATISTICS_PARENT_INDEX, 
-                        savedParentIndex);
-                }
-                if (savedParentList != null) {
-                    response.setProperty(StatisticsConstants.MEDIATION_FLOW_STATISTICS_PARENT_LIST, 
-                        new java.util.LinkedList<>(savedParentList));
-                }
-            }
-        }
-        
         Target targetForInboundPayload = (Target) response.getProperty(TARGET_FOR_INBOUND_PAYLOAD);
         String sourceMessageType = (String) response.getProperty(SOURCE_MESSAGE_TYPE);
         String originalMessageType = (String) response.getProperty(ORIGINAL_MESSAGE_TYPE);
