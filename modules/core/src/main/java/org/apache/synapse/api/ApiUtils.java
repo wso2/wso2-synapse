@@ -45,10 +45,10 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Map;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class ApiUtils {
@@ -187,16 +187,21 @@ public class ApiUtils {
 
     public static Set<Resource> getAcceptableResources(Map<String, Resource> resources, MessageContext synCtx) {
         List<Resource> acceptableResourcesList = new LinkedList<>();
+        List<Resource> optionsResourcesList = new LinkedList<>();
         for (Resource r : resources.values()) {
             if (isBound(r, synCtx) && r.canProcess(synCtx)) {
-                if (Arrays.asList(r.getMethods()).contains(RESTConstants.METHOD_OPTIONS)) {
-                    acceptableResourcesList.add(0, r);
+                List<String> methods = Arrays.asList(r.getMethods());
+                if (methods.size() == 1 && methods.contains(RESTConstants.METHOD_OPTIONS)) {
+                    optionsResourcesList.add(r);
                 } else {
                     acceptableResourcesList.add(r);
                 }
             }
         }
-        return new LinkedHashSet<Resource>(acceptableResourcesList);
+        LinkedHashSet<Resource> result = new LinkedHashSet<>();
+        result.addAll(optionsResourcesList);
+        result.addAll(acceptableResourcesList);
+        return result;
     }
 
     /**
