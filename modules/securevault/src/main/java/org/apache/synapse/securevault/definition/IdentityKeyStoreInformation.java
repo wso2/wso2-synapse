@@ -18,6 +18,7 @@
 */
 package org.apache.synapse.securevault.definition;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.securevault.secret.SecretInformation;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -30,6 +31,8 @@ public class IdentityKeyStoreInformation extends KeyStoreInformation {
 
     /* Password for access private key*/
     private SecretInformation keyPasswordProvider;
+    private static final String PKIX = "PKIX";
+    private static final String JCE_PROVIDER = "security.jce.provider";
 
     public void setKeyPasswordProvider(SecretInformation keyPasswordProvider) {
         this.keyPasswordProvider = keyPasswordProvider;
@@ -48,8 +51,7 @@ public class IdentityKeyStoreInformation extends KeyStoreInformation {
             }
 
             KeyStore keyStore = this.getIdentityKeyStore();
-            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(
-                    KeyManagerFactory.getDefaultAlgorithm());
+            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(getManagerType());
             keyManagerFactory.init(keyStore, keyPasswordProvider.getResolvedSecret().toCharArray());
 
             return keyManagerFactory;
@@ -71,5 +73,14 @@ public class IdentityKeyStoreInformation extends KeyStoreInformation {
 
     public SecretInformation getKeyPasswordProvider() {
         return keyPasswordProvider;
+    }
+
+    private static String getManagerType() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (StringUtils.isNotEmpty(provider)) {
+            return PKIX;
+        } else {
+            return KeyManagerFactory.getDefaultAlgorithm();
+        }
     }
 }

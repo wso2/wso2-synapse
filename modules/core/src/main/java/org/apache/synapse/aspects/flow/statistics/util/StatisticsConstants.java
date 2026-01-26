@@ -200,5 +200,7 @@ public class StatisticsConstants {
 
 	public static final String QUEUE_EVICTION_POLICY_NEW_MESSAGES = "new-messages-first";
 
-	public static final String SKIP_CHILD_EVENTS = "SKIP_CHILD_EVENTS";
+    public static final String STATISTIC_REPORTING_INVOKE_MEDIATOR_CLOSE_INDEX = "statistics.invoke.mediator.close.index";
+
+    public static final String ATOMIC_UNIT_ACTIVE = "ATOMIC_UNIT_ACTIVE";
 }

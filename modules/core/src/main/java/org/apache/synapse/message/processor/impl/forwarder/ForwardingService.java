@@ -546,15 +546,14 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			if (JsonUtil.hasAJsonPayload(origAxis2Ctx)) {
 				Object o = origAxis2Ctx.getProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
 				if (o instanceof InputStream) {
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();
 					originalInputStream = (InputStream) o;
 					try {
 						// Reset the input Stream to bring the buffer pos back to 0
 						if (originalInputStream.markSupported()) {
 							originalInputStream.reset();
 						}
-						IOUtils.copy(originalInputStream, baos);
-						originalByteArrayInputStream = new ByteArrayInputStream(baos.toByteArray());
+						byte[] data = IOUtils.toByteArray(originalInputStream);
+						originalByteArrayInputStream = new ByteArrayInputStream(data);
 					} catch (IOException e) {
 						log.warn("Copying the json stream failed");
 					}
