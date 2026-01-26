@@ -31,10 +31,13 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.builtin.CommentMediator;
 import org.apache.synapse.mediators.builtin.ForEachMediator;
 import org.apache.synapse.mediators.builtin.PropertyMediator;
+import org.apache.synapse.mediators.eip.Target;
+import org.apache.synapse.mediators.eip.splitter.IterateMediator;
 import org.apache.synapse.mediators.filters.FilterMediator;
 import org.apache.synapse.mediators.filters.SwitchMediator;
 import org.apache.synapse.mediators.template.InvokeMediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
+import org.apache.synapse.mediators.v2.ForEachMediatorV2;
 import org.apache.synapse.mediators.v2.VariableMediator;
 
 import java.util.HashSet;
@@ -296,7 +299,6 @@ public class MediatorRegistry {
         if (mediatorType.endsWith("Mediator")) {
             mediatorType = mediatorType.substring(0, mediatorType.length() - 8);
         }
-        
         // Generate position-based ID
         int position = positionCounter.incrementAndGet();
         
@@ -359,15 +361,23 @@ public class MediatorRegistry {
 
         mediatorIds.add(mediatorId);
 
-        // Handle child mediators
+        // Handle child mediators - use specific handlers for mediators with special branch structures
+        // otherwise fall back to generic ListMediator handling
         if (mediator instanceof FilterMediator) {
             registerFilterBranches((FilterMediator) mediator, artifactKey, mediatorId, mediatorIds);
         } else if (mediator instanceof SwitchMediator) {
             registerSwitchCases((SwitchMediator) mediator, artifactKey, mediatorId, mediatorIds);
+        } else if (mediator instanceof ForEachMediatorV2) {
+            registerTargetBasedMediator(((ForEachMediatorV2) mediator).getTarget(), artifactKey, 
+                    mediatorId, mediatorIds, "ForEachV2");
+        } else if (mediator instanceof IterateMediator) {
+            registerTargetBasedMediator(((IterateMediator) mediator).getTarget(), artifactKey, 
+                    mediatorId, mediatorIds, "Iterate");
         } else if (mediator instanceof ForEachMediator) {
             registerForEachSequence((ForEachMediator) mediator, artifactKey, mediatorId, mediatorIds);
         } else if (mediator instanceof ListMediator) {
-            registerListChildren((ListMediator) mediator, artifactKey, mediatorId, mediatorIds);
+            // Generic handling for any ListMediator (covers most mediators with children)
+            registerInlineSequence((ListMediator) mediator, artifactKey, mediatorId, mediatorIds);
         }
     }
 
@@ -377,27 +387,12 @@ public class MediatorRegistry {
     private void registerFilterBranches(FilterMediator filterMediator, String artifactKey, 
                                        String mediatorId, LinkedHashSet<String> mediatorIds) {
         // Register then branch
-        List<Mediator> thenChildren = filterMediator.getList();
-        if (thenChildren != null && !thenChildren.isEmpty()) {
-            AtomicInteger thenCounter = new AtomicInteger(0);
-            for (Mediator thenChild : thenChildren) {
-                registerMediatorTree(thenChild, artifactKey, mediatorId + "/then", 
-                        mediatorIds, thenCounter);
-            }
-        }
+        registerInlineSequence(filterMediator, artifactKey, mediatorId + "/then", mediatorIds);
         
         // Register else branch
         if (filterMediator.getElseMediator() != null) {
-            ListMediator elseMediator = filterMediator.getElseMediator();
-            List<Mediator> elseChildren = elseMediator.getList();
-            
-            if (elseChildren != null && !elseChildren.isEmpty()) {
-                AtomicInteger elseCounter = new AtomicInteger(0);
-                for (Mediator elseChild : elseChildren) {
-                    registerMediatorTree(elseChild, artifactKey, mediatorId + "/else", 
-                            mediatorIds, elseCounter);
-                }
-            }
+            registerInlineSequence(filterMediator.getElseMediator(), artifactKey, 
+                    mediatorId + "/else", mediatorIds);
         }
     }
 
@@ -413,16 +408,9 @@ public class MediatorRegistry {
                 SwitchCase switchCase = cases.get(i);
                 Mediator caseMediator = switchCase.getCaseMediator();
                 if (caseMediator instanceof ListMediator) {
-                    ListMediator caseList = (ListMediator) caseMediator;
-                    List<Mediator> caseChildren = caseList.getList();
-                    if (caseChildren != null && !caseChildren.isEmpty()) {
-                        AtomicInteger caseCounter = new AtomicInteger(0);
-                        String casePath = mediatorId + "/case[" + (i + 1) + "]";
-                        for (Mediator caseChild : caseChildren) {
-                            registerMediatorTree(caseChild, artifactKey, casePath, 
-                                    mediatorIds, caseCounter);
-                        }
-                    }
+                    String casePath = mediatorId + "/case[" + (i + 1) + "]";
+                    registerInlineSequence((ListMediator) caseMediator, artifactKey, 
+                            casePath, mediatorIds);
                 }
             }
         }
@@ -432,16 +420,45 @@ public class MediatorRegistry {
         if (defaultCase != null && defaultCase.getCaseMediator() != null) {
             Mediator defaultMediator = defaultCase.getCaseMediator();
             if (defaultMediator instanceof ListMediator) {
-                ListMediator defaultList = (ListMediator) defaultMediator;
-                List<Mediator> defaultChildren = defaultList.getList();
-                if (defaultChildren != null && !defaultChildren.isEmpty()) {
-                    AtomicInteger defaultCounter = new AtomicInteger(0);
-                    String defaultPath = mediatorId + "/default";
-                    for (Mediator defaultChild : defaultChildren) {
-                        registerMediatorTree(defaultChild, artifactKey, defaultPath, 
-                                mediatorIds, defaultCounter);
-                    }
-                }
+                registerInlineSequence((ListMediator) defaultMediator, artifactKey, 
+                        mediatorId + "/default", mediatorIds);
+            }
+        }
+    }
+
+    /**
+     * Register mediators for Target-based mediators (ForEachV2, Iterate, etc.).
+     * These mediators use a Target object to hold their inline sequence or sequence reference.
+     *
+     * @param target the Target object containing the sequence
+     * @param artifactKey artifact key
+     * @param mediatorId mediator ID
+     * @param mediatorIds set to store mediator IDs
+     * @param mediatorType descriptive name for logging (e.g., "ForEachV2", "Iterate")
+     */
+    private void registerTargetBasedMediator(Target target, String artifactKey,
+                                            String mediatorId, LinkedHashSet<String> mediatorIds,
+                                            String mediatorType) {
+        if (target == null) {
+            return;
+        }
+
+        // Register inline sequence if present
+        SequenceMediator sequence = target.getSequence();
+        if (sequence != null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Registering " + mediatorType + " mediator inline sequence");
+            }
+            registerInlineSequence(sequence, artifactKey, mediatorId, mediatorIds);
+        }
+
+        // Track sequence reference as dependency if present
+        String sequenceRef = target.getSequenceRef();
+        if (sequenceRef != null && !sequenceRef.isEmpty()) {
+            addArtifactDependency(artifactKey, "Sequence", sequenceRef);
+            if (log.isDebugEnabled()) {
+                log.debug("Detected sequence reference in " + mediatorType + " mediator: " + 
+                        artifactKey + " -> " + sequenceRef);
             }
         }
     }
@@ -453,15 +470,11 @@ public class MediatorRegistry {
                                         String mediatorId, LinkedHashSet<String> mediatorIds) {
         // Register inline sequence if present
         SequenceMediator sequence = forEachMediator.getSequence();
-        if (sequence != null && sequence instanceof ListMediator) {
-            List<Mediator> children = ((ListMediator) sequence).getList();
-            if (children != null && !children.isEmpty()) {
+        if (sequence != null) {
+            if (log.isDebugEnabled()) {
                 log.debug("Registering ForEach mediator inline sequence");
-                AtomicInteger childCounter = new AtomicInteger(0);
-                for (Mediator child : children) {
-                    registerMediatorTree(child, artifactKey, mediatorId, mediatorIds, childCounter);
-                }
             }
+            registerInlineSequence(sequence, artifactKey, mediatorId, mediatorIds);
         }
         
         // Track sequence reference as dependency if present
@@ -475,16 +488,25 @@ public class MediatorRegistry {
     }
 
     /**
-     * Register mediators in a ListMediator's children.
+     * Reusable method to register mediators from an inline sequence.
+     * Handles any ListMediator (SequenceMediator, FilterMediator branches, etc.).
+     *
+     * @param listMediator the ListMediator containing child mediators
+     * @param artifactKey artifact key
+     * @param path path prefix for mediator IDs
+     * @param mediatorIds set to store mediator IDs
      */
-    private void registerListChildren(ListMediator listMediator, String artifactKey, 
-                                     String mediatorId, LinkedHashSet<String> mediatorIds) {
-        List<Mediator> children = listMediator.getList();
+    private void registerInlineSequence(ListMediator listMediator, String artifactKey,
+                                       String path, LinkedHashSet<String> mediatorIds) {
+        if (listMediator == null) {
+            return;
+        }
         
+        List<Mediator> children = listMediator.getList();
         if (children != null && !children.isEmpty()) {
             AtomicInteger childCounter = new AtomicInteger(0);
             for (Mediator child : children) {
-                registerMediatorTree(child, artifactKey, mediatorId, mediatorIds, childCounter);
+                registerMediatorTree(child, artifactKey, path, mediatorIds, childCounter);
             }
         }
     }

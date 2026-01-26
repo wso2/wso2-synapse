@@ -39,6 +39,7 @@ import org.apache.synapse.deployers.ProxyServiceDeployer;
 import org.apache.synapse.deployers.SequenceDeployer;
 import org.apache.synapse.deployers.TemplateDeployer;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.unittest.testcase.data.classes.MediatorCoverage;
 import org.apache.synapse.unittest.testcase.data.classes.SynapseTestCase;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
@@ -528,8 +529,7 @@ class TestingAgent {
      */
     private void registerTemplateForCoverage(SynapseConfiguration synapseConfig, String templateName) {
         try {
-            org.apache.synapse.mediators.template.TemplateMediator template =
-                    synapseConfig.getSequenceTemplate(templateName);
+            TemplateMediator template = synapseConfig.getSequenceTemplate(templateName);
             if (template != null) {
                 MediatorRegistry.getInstance().registerTemplate(template);
             }

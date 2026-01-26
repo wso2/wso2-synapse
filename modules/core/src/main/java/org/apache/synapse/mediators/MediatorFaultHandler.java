@@ -32,8 +32,10 @@ import org.apache.synapse.aspects.flow.statistics.collectors.FaultStatisticColle
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.ConcurrencyThrottlingUtils;
+
+import static org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY;
+import static org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST;
 
 /**
  * This implements the FaultHandler interface as a mediator fault handler. That is the fault handler is
@@ -101,7 +103,7 @@ public class MediatorFaultHandler extends FaultHandler {
         
         // Restore original artifact key for unit test coverage
         if (originalArtifactKey != null) {
-            synCtx.setProperty(org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY, originalArtifactKey);
+            synCtx.setProperty(COVERAGE_ARTIFACT_KEY, originalArtifactKey);
         }
         
         if(isStatisticsEnabled) {
@@ -137,20 +139,18 @@ public class MediatorFaultHandler extends FaultHandler {
      */
     private String handleCoverageForFaultSequence(MessageContext synCtx) {
         if (synCtx.getConfiguration() == null ||
-                !"true".equals(synCtx.getConfiguration().getProperty(
-                        org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST))) {
+                !"true".equals(synCtx.getConfiguration().getProperty(IS_RUNNING_AS_UNIT_TEST))) {
             return null;
         }
 
-        String originalKey = (String) synCtx.getProperty(
-                org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY);
+        String originalKey = (String) synCtx.getProperty(COVERAGE_ARTIFACT_KEY);
 
         if (faultMediator instanceof SequenceMediator) {
             SequenceMediator faultSeq = (SequenceMediator) faultMediator;
             String faultSeqName = faultSeq.getName();
             if (faultSeqName != null && !faultSeqName.isEmpty()) {
                 String faultSeqKey = "Sequence:" + faultSeqName;
-                synCtx.setProperty(org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY, faultSeqKey);
+                synCtx.setProperty(COVERAGE_ARTIFACT_KEY, faultSeqKey);
             }
         }
 

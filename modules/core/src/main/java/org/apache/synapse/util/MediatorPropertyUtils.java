@@ -28,6 +28,8 @@ import java.net.URISyntaxException;
 import java.util.Map;
 import javax.xml.stream.XMLStreamException;
 
+import static org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST;
+
 /*
  *  This class contains the util methods with respect to mediator properties
  */
@@ -113,9 +115,8 @@ public class MediatorPropertyUtils {
                                                       org.apache.axis2.context.MessageContext axisOutMsgCtx) {
 
         if (TRUE.equals(System.getProperty(SYNAPSE_TEST)) && (synapseOutMessageContext.getConfiguration().
-                getProperty(org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST) != null &&
-                synapseOutMessageContext.getConfiguration().getProperty
-                        (org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST).equals(TRUE)) &&
+                getProperty(IS_RUNNING_AS_UNIT_TEST) != null &&
+                synapseOutMessageContext.getConfiguration().getProperty(IS_RUNNING_AS_UNIT_TEST).equals(TRUE)) &&
                 endpoint.leafEndpoint != null &&
                 (ConfigModifier.unitTestMockEndpointMap.containsKey(endpoint.leafEndpoint.getName()))) {
             Map<String, String> endpointMockResources =
