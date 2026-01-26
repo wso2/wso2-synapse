@@ -31,6 +31,8 @@ import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.commons.util.PropertyHelper;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.registry.Registry;
+import org.apache.synapse.util.DynamicControlOperationResult;
 import org.apache.synapse.startup.AbstractStartup;
 import org.apache.synapse.startup.tasks.MessageInjector;
 import org.apache.synapse.task.SynapseTaskManager;
@@ -54,7 +56,7 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
     private static final Log logger = LogFactory.getLog(StartUpController.class.getName());
 
     private SynapseEnvironment synapseEnvironment;
-    
+
     private TaskDescription taskDescription;
 
     private SynapseTaskManager synapseTaskManager;
@@ -62,6 +64,15 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
     private AspectConfiguration aspectConfiguration;
 
     private Object task = null;
+
+    private Registry registry;
+
+    private enum StartUpControllerState {
+        ACTIVE, INACTIVE
+    }
+
+    private static final String REG_STARTUP_CONTROLLER_BASE_PATH = "/repository/components/org.apache.synapse.startup/";
+    private static final String STARTUP_CONTROLLER_STATE = "TASK_STATE";
 
     public QName getTagQName() {
         return SimpleQuartzFactory.TASK;
@@ -82,7 +93,7 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
         //Need to re initialize startup controller to support updates from source view
         if (!synapseTaskManager.isInitialized() && synapseEnvironment != null) {
             init(synapseEnvironment);
-        }        
+        }
         if (synapseTaskManager.isInitialized()) {
             TaskScheduler taskScheduler = synapseTaskManager.getTaskScheduler();
             if (taskScheduler != null && taskScheduler.isTaskSchedulerInitialized() && removeTask) {
@@ -138,6 +149,129 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
     }
 
     /**
+     * Activates the startup controller task.
+     * <p>
+     * This method synchronizes access to ensure thread safety while activating the startup controller task.
+     * It calls the underlying {@link SynapseTaskManager} to perform the activation logic.
+     * If the activation is successful, updates the startup controller task's state in the registry
+     * to {@link StartUpController.StartUpControllerState#ACTIVE}
+     * </p>
+     */
+    public synchronized DynamicControlOperationResult activate() {
+        String message = "";
+        boolean isSuccess = false;
+        logger.info("Activating the Task: " + getName());
+        if (this.isTaskActive()) {
+            message = "Task [" + getName() + "] is already active.";
+            logger.debug(message);
+        } else {
+            try {
+                if (this.activateTask()) {
+                    logger.info("Task [" + getName() + "] is successfully activated.");
+                    setStartupControllerStateInRegistry(StartUpController.StartUpControllerState.ACTIVE);
+                    isSuccess = true;
+                } else {
+                    message = "Failed to activate the Task: " + getName();
+                    logger.error(message);
+                }
+            } catch (Exception e) {
+                this.deactivateTask();   
+                message = "Failed to activate the Task: " + getName();
+                logger.error(message, e);
+            }
+        }
+        return new DynamicControlOperationResult(isSuccess, message);
+    }
+
+    /**
+     * Deactivates the startup controller task.
+     * <p>
+     * This method synchronizes access to ensure thread safety while deactivating the startup controller task.
+     * It calls the underlying {@link SynapseTaskManager} to perform the deactivation logic.
+     * If the deactivation is successful, the method updates the startup controller task's state in the
+     * registry to {@link StartUpController.StartUpControllerState#INACTIVE}.
+     * </p>
+     */
+    public synchronized DynamicControlOperationResult deactivate() {
+        String message = "";
+        boolean isSuccess = false;
+        logger.info("Deactivating the Task: " + getName());
+        if (!this.isTaskActive()) {
+            message = "Task [" + getName() + "] is already deactivated.";
+            logger.debug(message);
+        } else {
+            try {
+                if (this.deactivateTask()) {
+                    logger.info("Task [" + getName() + "] is successfully deactivated.");
+                    setStartupControllerStateInRegistry(StartUpController.StartUpControllerState.INACTIVE);
+                    isSuccess = true;
+                } else {
+                    message = "Failed to deactivate the Task: " + getName();
+                    logger.error(message);
+                }
+            } catch (Exception e) {
+                this.activateTask();
+                message = "Failed to deactivate the Task: " + getName();
+                logger.error(message, e);
+            }
+        }
+        return new DynamicControlOperationResult(isSuccess, message);
+    }
+
+    /**
+     * Trigger the startup controller task.
+     * <p>
+     * This method synchronizes access to ensure thread safety while trigger the startup controller task.
+     * It calls the underlying {@link Task} to perform the task trigger logic.
+     * </p>
+     */
+    public synchronized DynamicControlOperationResult trigger() {
+        String message = "";
+        boolean isSuccess = false;
+        logger.info("Triggering the Task: " + getName());
+
+        try {
+            if (this.isTaskActive()) {
+                if (task instanceof Task) {
+                    ((Task) task).execute();
+                    logger.info("Task [" + getName() + "] is successfully triggered.");
+                    isSuccess = true;
+                } else {
+                    message = "Cannot trigger the task: " + getName() +
+                            " as it is not a scheduled task.";
+                    logger.error(message);
+                }
+            } else {
+                message = "Cannot trigger the task: " + getName() + " as it is not active.";
+                logger.error(message);
+            }
+        } catch (Exception e) {
+            message = "Failed to trigger the Task: " + getName();
+            logger.error(message, e);
+        }
+        return new DynamicControlOperationResult(isSuccess, message);
+    }
+
+
+    /**
+     * Updates the state of the startup controller task in the registry.
+     *
+     * <p>This method ensures that the state of the startup controller task is persisted in
+     * the registry for future reference. If the registry is unavailable and state
+     * preservation is enabled, a warning is logged, and the state will not be updated.
+     * </p>
+     * @param state the {@link StartUpController.StartUpControllerState} to be saved in the registry
+     */
+    private void setStartupControllerStateInRegistry(StartUpController.StartUpControllerState state) {
+        if (Objects.isNull(registry)) {
+            handleException("Registry not available! The state of the Task will not be saved.");
+            return;
+        }
+        registry.newNonEmptyResource(REG_STARTUP_CONTROLLER_BASE_PATH + getName(), false, "text/plain",
+                state.toString(), STARTUP_CONTROLLER_STATE);
+    }
+
+    /**
      * Checks if the associated task is currently active.
      *
      * @return {@code true} if the task is active (i.e., not deactivated); {@code false} otherwise.
@@ -159,6 +293,7 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
 
     public void init(SynapseEnvironment synapseEnvironment) {
         this.synapseEnvironment = synapseEnvironment;
+        registry = synapseEnvironment.getSynapseConfiguration().getRegistry();
         if (taskDescription == null) {
             handleException("Error while initializing the startup. TaskDescription is null.");
         }
