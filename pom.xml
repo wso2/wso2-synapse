@@ -1545,7 +1545,7 @@
       <org.antlr.version>3.4</org.antlr.version>
       <org.antlr4.version>4.7.1</org.antlr4.version>
       <antlr.wso2.version>3.2.0.wso2v1</antlr.wso2.version>
-      <com.jayway.jsonpath.version>2.9.0.wso2v1</com.jayway.jsonpath.version>
+      <com.jayway.jsonpath.version>2.10.0.wso2v1</com.jayway.jsonpath.version>
       <qfj.version>1.5.3</qfj.version>
        <quickfixj.version>2.3.1</quickfixj.version>
       <org.bouncycastle.version>1.81.0.wso2v1</org.bouncycastle.version>
@@ -1643,13 +1643,13 @@
       <javax.servlet.version>3.0.1</javax.servlet.version>
       <powermock.version>2.0.9</powermock.version>
       <mockito.version>3.0.0</mockito.version>
-      <java-json-tools.json.schema.validator.version>2.2.7.wso2v2</java-json-tools.json.schema.validator.version>
+      <java-json-tools.json.schema.validator.version>2.2.14.wso2v1</java-json-tools.json.schema.validator.version>
       <fasterxml.jackson.version>2.17.2</fasterxml.jackson.version>
       <fasterxml.jackson-databind.version>2.17.2</fasterxml.jackson-databind.version>
       <google.guava.version>33.0.0-jre</google.guava.version>
       <failureaccess.version>1.0.3</failureaccess.version>
       <joda-time.version>2.9.4.wso2v1</joda-time.version>
-      <com.googlecode.libphonenumber.version>7.4.2.wso2v1</com.googlecode.libphonenumber.version>
+      <com.googlecode.libphonenumber.version>9.0.22.wso2v1</com.googlecode.libphonenumber.version>
       <jacoco.agent.version>0.8.6</jacoco.agent.version>
       <jacoco.ant.version>0.8.6</jacoco.ant.version>
       <dataprovider.version>1.13.1</dataprovider.version>
