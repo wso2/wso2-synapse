@@ -306,9 +306,7 @@ public abstract class AbstractListMediator extends AbstractMediator
     private void trackMediatorExecution(Mediator mediator, MessageContext synCtx) {
         if (synCtx.getConfiguration() != null &&
                 "true".equals(synCtx.getConfiguration().getProperty(IS_RUNNING_AS_UNIT_TEST))) {
-            
             String artifactKey = (String) synCtx.getProperty(COVERAGE_ARTIFACT_KEY);
-            
             if (artifactKey != null) {
                 MediatorRegistry.getInstance().markMediatorExecuted(mediator, artifactKey);
             }

@@ -32,12 +32,14 @@ import org.apache.synapse.mediators.builtin.CommentMediator;
 import org.apache.synapse.mediators.builtin.ForEachMediator;
 import org.apache.synapse.mediators.builtin.PropertyMediator;
 import org.apache.synapse.mediators.eip.Target;
+import org.apache.synapse.mediators.eip.splitter.CloneMediator;
 import org.apache.synapse.mediators.eip.splitter.IterateMediator;
 import org.apache.synapse.mediators.filters.FilterMediator;
 import org.apache.synapse.mediators.filters.SwitchMediator;
 import org.apache.synapse.mediators.template.InvokeMediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.mediators.v2.ForEachMediatorV2;
+import org.apache.synapse.mediators.v2.ScatterGather;
 import org.apache.synapse.mediators.v2.VariableMediator;
 
 import java.util.HashSet;
@@ -302,24 +304,33 @@ public class MediatorRegistry {
         // Generate position-based ID
         int position = positionCounter.incrementAndGet();
         
-        // For InvokeMediator (connectors or templates), use the connector/template name instead of "Invoke"
+        // For InvokeMediator (connectors, modules, or templates), use the connector/module/template name instead of "Invoke"
         if (mediator instanceof InvokeMediator) {
             InvokeMediator invokeMediator = (InvokeMediator) mediator;
             if (invokeMediator.getTargetTemplate() != null) {
                 String targetTemplate = invokeMediator.getTargetTemplate();
                 // Extract short name from qualified name (e.g., "org.wso2.carbon.connector.http.get" -> "http.get")
                 int lastDotBeforeConnector = targetTemplate.lastIndexOf(".connector.");
+                int lastDotBeforeModule = targetTemplate.lastIndexOf(".module.");
+                
                 if (lastDotBeforeConnector != -1) {
                     // This is a connector
                     String connectorName = targetTemplate.substring(lastDotBeforeConnector + ".connector.".length());
                     mediatorId = path + "/" + position + "." + connectorName;
+                } else if (lastDotBeforeModule != -1) {
+                    // This is a module (e.g., "org.wso2.carbon.module.csv.CSV.csvToJson" -> "CSV.csvToJson")
+                    String moduleName = targetTemplate.substring(lastDotBeforeModule + ".module.".length());
+                    mediatorId = path + "/" + position + "." + moduleName;
                 } else {
-                    // This is a template reference - track as dependency
+                    // This is a template reference - track as dependency only.
+                    // Decrement position counter to avoid gaps in the mediator numbering.
+                    positionCounter.decrementAndGet();
                     addArtifactDependency(artifactKey, "Template", targetTemplate);
                     if (log.isDebugEnabled()) {
                         log.debug("Detected template reference in " + artifactKey + " -> " + targetTemplate);
                     }
-                    mediatorId = path + "/" + position + ".call-template[" + targetTemplate + "]";
+                    // Skip storing mediatorID for template - return early
+                    return;
                 }
             } else {
                 mediatorId = path + "/" + position + "." + mediatorType;
@@ -367,6 +378,10 @@ public class MediatorRegistry {
             registerFilterBranches((FilterMediator) mediator, artifactKey, mediatorId, mediatorIds);
         } else if (mediator instanceof SwitchMediator) {
             registerSwitchCases((SwitchMediator) mediator, artifactKey, mediatorId, mediatorIds);
+        } else if (mediator instanceof CloneMediator) {
+            registerCloneTargets((CloneMediator) mediator, artifactKey, mediatorId, mediatorIds);
+        } else if (mediator instanceof ScatterGather) {
+            registerScatterGatherSequences((ScatterGather) mediator, artifactKey, mediatorId, mediatorIds);
         } else if (mediator instanceof ForEachMediatorV2) {
             registerTargetBasedMediator(((ForEachMediatorV2) mediator).getTarget(), artifactKey, 
                     mediatorId, mediatorIds, "ForEachV2");
@@ -422,6 +437,74 @@ public class MediatorRegistry {
             if (defaultMediator instanceof ListMediator) {
                 registerInlineSequence((ListMediator) defaultMediator, artifactKey, 
                         mediatorId + "/default", mediatorIds);
+            }
+        }
+    }
+
+    /**
+     * Register CloneMediator targets.
+     */
+    private void registerCloneTargets(CloneMediator cloneMediator, String artifactKey,
+                                     String mediatorId, LinkedHashSet<String> mediatorIds) {
+        // Register all clone targets
+        List<Target> targets = cloneMediator.getTargets();
+        if (targets != null && !targets.isEmpty()) {
+            for (int i = 0; i < targets.size(); i++) {
+                Target target = targets.get(i);
+                String targetPath = mediatorId + "/target[" + (i + 1) + "]";
+                
+                // Register inline sequence if present
+                SequenceMediator sequence = target.getSequence();
+                if (sequence != null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Registering Clone mediator target inline sequence");
+                    }
+                    registerInlineSequence(sequence, artifactKey, targetPath, mediatorIds);
+                }
+                
+                // Track sequence reference as dependency if present
+                String sequenceRef = target.getSequenceRef();
+                if (sequenceRef != null && !sequenceRef.isEmpty()) {
+                    addArtifactDependency(artifactKey, "Sequence", sequenceRef);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Detected sequence reference in Clone mediator target: " + 
+                                artifactKey + " -> " + sequenceRef);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Register ScatterGatherMediator sequences.
+     */
+    private void registerScatterGatherSequences(ScatterGather scatterGatherMediator, String artifactKey,
+                                               String mediatorId, LinkedHashSet<String> mediatorIds) {
+        // Register all scatter-gather targets
+        List<Target> targets = scatterGatherMediator.getTargets();
+        if (targets != null && !targets.isEmpty()) {
+            for (int i = 0; i < targets.size(); i++) {
+                Target target = targets.get(i);
+                String targetPath = mediatorId + "/target[" + (i + 1) + "]";
+                
+                // Register inline sequence if present
+                SequenceMediator sequence = target.getSequence();
+                if (sequence != null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Registering ScatterGather mediator target inline sequence");
+                    }
+                    registerInlineSequence(sequence, artifactKey, targetPath, mediatorIds);
+                }
+                
+                // Track sequence reference as dependency if present
+                String sequenceRef = target.getSequenceRef();
+                if (sequenceRef != null && !sequenceRef.isEmpty()) {
+                    addArtifactDependency(artifactKey, "Sequence", sequenceRef);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Detected sequence reference in ScatterGather mediator target: " + 
+                                artifactKey + " -> " + sequenceRef);
+                    }
+                }
             }
         }
     }
