@@ -1621,7 +1621,7 @@
       <wrapper.version>3.2.3</wrapper.version>
       <saxon.version>8.9</saxon.version>
       <saxon.wso2.version>${saxon.version}.0.wso2v2</saxon.wso2.version>
-      <commons_io.version>2.0</commons_io.version>
+      <commons_io.version>2.21.0</commons_io.version>
       <commons-cli.version>1.0</commons-cli.version>
       <jline.version>0.9.94</jline.version>
       <!-- dependencies of Synapse extensions module -->
