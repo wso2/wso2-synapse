@@ -663,7 +663,7 @@ public class ScriptMediator extends AbstractMediator {
         oracleNashornFactory = getOracleNashornFactory();
 
         if (language.equals(NASHORN_JAVA_SCRIPT)) {
-            log.warn("NashornJS support been removed. Hence defaulting to GraalVMJs");
+            log.warn("NashornJS support has been removed. Hence defaulting to GraalVMJs");
             System.setProperty("polyglot.js.nashorn-compat", "true");
             language = GRAAL_JAVA_SCRIPT;
         }

@@ -175,12 +175,6 @@ public class RecipientListEndpointTest {
      * @return Axis2SynapseEnvironment instance
      * @throws AxisFault on creating/mocking object
      */
-    /**
-     * Create a mock SynapseEnvironment object
-     *
-     * @return Axis2SynapseEnvironment instance
-     * @throws AxisFault on creating/mocking object
-     */
     private Axis2SynapseEnvironment getMockedSynapseEnvironment() throws AxisFault {
         Axis2SynapseEnvironment synapseEnvironment = Mockito.mock(Axis2SynapseEnvironment.class);
         ConfigurationContext axis2ConfigurationContext = new ConfigurationContext(new AxisConfiguration());

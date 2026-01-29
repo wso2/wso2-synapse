@@ -88,7 +88,8 @@ public class DataSourceFinder {
             throw new SynapseCommonsException("Error looking up DataSource : " + dsName
                     + " using JNDI" + " properties : " + context, e);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new SynapseCommonsException("Unexpected error resolving DataSource : "
+                    + dsName + " from JNDI", e, log);
         }
     }
 }
