@@ -33,32 +33,28 @@ import org.apache.http.impl.nio.DefaultNHttpServerConnection;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.util.BufferFactory;
-import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
+import org.apache.synapse.transport.passthru.util.PassThroughTestUtils;
+import org.junit.After;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 import org.wso2.caching.digest.DigestGenerator;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.any;
-
 /**
  * Test class for PassThroughHttpSender
  */
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "javax.management.*", "javax.xml.parsers.*", "org.apache" +
-        ".xerces.jaxp.*", "javax.naming.spi.*", "javax.naming.*", "jdk.internal.reflect.*"})
-@PrepareForTest({ PassThroughHttpSender.class, SourceContext.class, SourceResponseFactory.class})
 public class PassThroughHttpSenderTest extends TestCase {
 
     @Mock(name = "deliveryAgent")
@@ -78,6 +74,8 @@ public class PassThroughHttpSenderTest extends TestCase {
 
     @InjectMocks
     PassThroughHttpSender sender;
+
+    private PassThroughConfiguration passThroughConfiguration = PassThroughTestUtils.getPassThroughConfiguration();
 
     /**
      * This method tests the initialization of PassThroughHttpSender
@@ -110,14 +108,13 @@ public class PassThroughHttpSenderTest extends TestCase {
         messageContext.setProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH, "1000");
         messageContext.setOperationContext(new OperationContext());
 
-        sender = PowerMockito.spy(sender);
+        sender = spy(sender);
 
-        PowerMockito.when(targetConfiguration.getBufferFactory()).thenReturn(factory);
-        PowerMockito.doNothing().when(sender, "sendRequestContent", any(MessageContext.class), any(EndpointReference.class));
+        when(targetConfiguration.getBufferFactory()).thenReturn(factory);
 
         Handler.InvocationResponse response = sender.invoke(messageContext);
 
-        
+
         Assert.assertNotNull("PassThrough Http Sender not invoked!", response);
     }
 
@@ -135,7 +132,7 @@ public class PassThroughHttpSenderTest extends TestCase {
         messageContext.setProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH, "1000");
         messageContext.setOperationContext(new OperationContext());
 
-        IOSession session = PowerMockito.mock(IOSession.class);
+        IOSession session = mock(IOSession.class);
         NHttpServerConnection conn = new DefaultNHttpServerConnection(session, 12);
 
         messageContext.setProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION, conn);
@@ -146,9 +143,9 @@ public class PassThroughHttpSenderTest extends TestCase {
 
         messageContext.setProperty(MessageContext.TRANSPORT_HEADERS, headers);
 
-        sender = PowerMockito.spy(sender);
+        sender = spy(sender);
 
-        PowerMockito.when(digestGenerator.getDigest(any(MessageContext.class))).thenReturn("testString");
+        when(digestGenerator.getDigest(any(MessageContext.class))).thenReturn("testString");
         sender.submitResponse(messageContext);
     }
 }
