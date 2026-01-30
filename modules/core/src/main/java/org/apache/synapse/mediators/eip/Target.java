@@ -31,6 +31,7 @@ import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.unittest.CoverageUtils;
 import org.apache.synapse.util.logging.LoggingUtils;
 
 /**
@@ -130,7 +131,14 @@ public class Target {
                         log.debug("Synchronously mediating using the sequence " +
                                 "named : " + sequenceRef);
                     }
-                    returnValue = mediateMessage(refSequence, synCtx);
+                    // Handle coverage tracking for referenced sequence
+                    String originalArtifactKey = CoverageUtils.handleCoverageForReferencedSequence(
+                            synCtx, refSequence, sequenceRef);
+                    try {
+                        returnValue = mediateMessage(refSequence, synCtx);
+                    } finally {
+                        CoverageUtils.restoreCoverageArtifactKey(synCtx, originalArtifactKey);
+                    }
                 }
             } else {
                 handleException("Couldn't find the sequence named : " + sequenceRef);
