@@ -34,8 +34,9 @@ import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.util.ConcurrencyThrottlingUtils;
 
+import org.apache.synapse.unittest.UnitTestModeUtils;
+
 import static org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY;
-import static org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST;
 
 /**
  * This implements the FaultHandler interface as a mediator fault handler. That is the fault handler is
@@ -138,8 +139,7 @@ public class MediatorFaultHandler extends FaultHandler {
      * @return the original artifact key (to be restored after sequence execution), or null if not in unit test mode
      */
     private String handleCoverageForFaultSequence(MessageContext synCtx) {
-        if (synCtx.getConfiguration() == null ||
-                !"true".equals(synCtx.getConfiguration().getProperty(IS_RUNNING_AS_UNIT_TEST))) {
+        if (!UnitTestModeUtils.isUnitTestMode()) {
             return null;
         }
 

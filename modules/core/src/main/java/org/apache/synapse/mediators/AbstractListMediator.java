@@ -41,6 +41,7 @@ import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.unittest.MediatorRegistry;
+import org.apache.synapse.unittest.UnitTestModeUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +49,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY;
-import static org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST;
 
 /**
  * This is the base class for all List mediators
@@ -304,8 +304,7 @@ public abstract class AbstractListMediator extends AbstractMediator
      * @param synCtx   message context
      */
     private void trackMediatorExecution(Mediator mediator, MessageContext synCtx) {
-        if (synCtx.getConfiguration() != null &&
-                "true".equals(synCtx.getConfiguration().getProperty(IS_RUNNING_AS_UNIT_TEST))) {
+        if (UnitTestModeUtils.isUnitTestMode()) {
             String artifactKey = (String) synCtx.getProperty(COVERAGE_ARTIFACT_KEY);
             if (artifactKey != null) {
                 MediatorRegistry.getInstance().markMediatorExecuted(mediator, artifactKey);
