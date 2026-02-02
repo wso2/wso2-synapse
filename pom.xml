@@ -1639,7 +1639,7 @@
       <jacoco.ant.version>0.8.6</jacoco.ant.version>
       <dataprovider.version>1.13.1</dataprovider.version>
       <activemq.version>5.2.0</activemq.version>
-      <rhino.version>1.7.14.1</rhino.version>
+      <rhino.version>1.7.15.1</rhino.version>
       <jetty.version>7.2.0.v20101020</jetty.version>
        <xml.apis.version>1.4.01</xml.apis.version>
       <!-- The Java version used to execute maven-antrun-plugin in the integration module.
