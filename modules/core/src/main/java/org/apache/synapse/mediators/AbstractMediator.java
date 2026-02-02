@@ -73,6 +73,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
     private SynapseMediationFlowPoint flowPoint = null;
     private String artifactIdentifier;
+    private String mediatorId;
 
 
     /**
@@ -577,5 +578,13 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     public void setArtifactIdentifier(String artifactIdentifier) {
 
         this.artifactIdentifier = artifactIdentifier;
+    }
+
+    public String getMediatorId() {
+        return mediatorId;
+    }
+
+    public void setMediatorId(String mediatorId) {
+        this.mediatorId = mediatorId;
     }
 }

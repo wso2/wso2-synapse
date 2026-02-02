@@ -51,6 +51,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.synapse.unittest.UnitTestModeUtils;
+
+import static org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY;
+
 public class Resource extends AbstractRequestProcessor implements ManagedLifecycle, AspectConfigurable {
 
     /**
@@ -345,6 +349,15 @@ public class Resource extends AbstractRequestProcessor implements ManagedLifecyc
         SequenceMediator sequence = synCtx.isResponse() ? outSequence : inSequence;
         if (sequence != null) {
             registerFaultHandler(synCtx);
+            
+            // Set artifact key for coverage tracking when running unit tests
+            if (UnitTestModeUtils.isUnitTestMode()) {
+                String apiName = (String) synCtx.getProperty(RESTConstants.SYNAPSE_REST_API);
+                if (apiName != null) {
+                    synCtx.setProperty(COVERAGE_ARTIFACT_KEY, "API:" + apiName);
+                }
+            }
+            
             if (openAPI != null) {
                 if (synCtx.isResponse()) {
                     SchemaValidationUtils.validateAPIResponse(synCtx, openAPI);
@@ -363,6 +376,13 @@ public class Resource extends AbstractRequestProcessor implements ManagedLifecyc
         String sequenceKey = synCtx.isResponse() ? outSequenceKey : inSequenceKey;
         if (sequenceKey != null) {
             registerFaultHandler(synCtx);
+            
+            // Set artifact key for coverage tracking when running unit tests
+            if (UnitTestModeUtils.isUnitTestMode()) {
+                synCtx.setProperty(COVERAGE_ARTIFACT_KEY,
+                        "Sequence:" + sequenceKey);
+            }
+            
             Mediator referredSequence = synCtx.getSequence(sequenceKey);
             if (referredSequence != null) {
                 referredSequence.mediate(synCtx);

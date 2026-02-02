@@ -50,6 +50,7 @@ import org.apache.synapse.mediators.elementary.Source;
 import org.apache.synapse.mediators.elementary.Target;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.unittest.CoverageUtils;
 import org.apache.synapse.util.MediatorEnrichUtil;
 import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
 
@@ -201,7 +202,18 @@ public class InvokeMediator extends AbstractMediator implements
 			}
 
 			prepareForMediation(synCtx);
-			boolean result = mediator.mediate(synCtx);
+			
+			// Handle coverage tracking for unit tests
+			String originalArtifactKey = CoverageUtils.handleCoverageForTemplate(
+					synCtx, ((TemplateMediator) mediator).getName());
+			
+			boolean result;
+			try {
+				result = mediator.mediate(synCtx);
+			} finally {
+				// Restore original artifact key for unit test coverage
+				CoverageUtils.restoreCoverageArtifactKey(synCtx, originalArtifactKey);
+			}
 
 			if (result && executePreFetchingSequence) {
 				ContinuationStackManager.removeReliantContinuationState(synCtx);

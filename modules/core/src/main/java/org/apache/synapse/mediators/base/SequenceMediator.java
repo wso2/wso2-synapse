@@ -26,6 +26,7 @@ import org.apache.synapse.Nameable;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.unittest.CoverageUtils;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
@@ -211,7 +212,16 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 // sequence mediator in the sequence
                 ContinuationStackManager.updateSeqContinuationState(synCtx, getMediatorPosition());
 
-                boolean result = m.mediate(synCtx);
+                // Handle coverage tracking for referenced sequence
+                String originalArtifactKey = CoverageUtils.handleCoverageForReferencedSequence(synCtx, m, sequenceKey);
+
+                boolean result;
+                try {
+                    result = m.mediate(synCtx);
+                } finally {
+                    // Restore original artifact key for unit test coverage
+                    CoverageUtils.restoreCoverageArtifactKey(synCtx, originalArtifactKey);
+                }
 
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug("End : Sequence key=<" + key + ">");

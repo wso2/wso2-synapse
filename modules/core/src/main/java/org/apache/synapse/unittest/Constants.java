@@ -163,4 +163,5 @@ public class Constants {
 
     //synapse property constants
     public static final String IS_RUNNING_AS_UNIT_TEST = "IS_RUNNING_AS_UNIT_TEST";
+    public static final String COVERAGE_ARTIFACT_KEY = "COVERAGE_ARTIFACT_KEY";
 }
