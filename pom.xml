@@ -1646,7 +1646,7 @@
       <java-json-tools.json.schema.validator.version>2.2.14.wso2v1</java-json-tools.json.schema.validator.version>
       <fasterxml.jackson.version>2.17.2</fasterxml.jackson.version>
       <fasterxml.jackson-databind.version>2.17.2</fasterxml.jackson-databind.version>
-      <google.guava.version>33.0.0-jre</google.guava.version>
+      <google.guava.version>33.5.0-jre</google.guava.version>
       <failureaccess.version>1.0.3</failureaccess.version>
       <joda-time.version>2.9.4.wso2v1</joda-time.version>
       <com.googlecode.libphonenumber.version>9.0.22.wso2v1</com.googlecode.libphonenumber.version>
