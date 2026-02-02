@@ -96,6 +96,9 @@
                             org.quartz.*;version="${quartz.version}",
                             *;resolution:=optional,
                         </Import-Package>
+                        <Provide-Capability>
+                            osgi.service;objectClass=org.apache.synapse.task.service.TaskManagementService
+                        </Provide-Capability>
                         <DynamicImport-Package>*</DynamicImport-Package>
                     </instructions>
                 </configuration>
