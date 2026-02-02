@@ -276,32 +276,19 @@ public class EndpointDefinition implements AspectConfigurable {
         if (dynamicUrl != null && !dynamicUrl.isEmpty()) {
             addressString = dynamicUrl;
         }
-        boolean matches = false;
-        int s = 0;
-        Pattern pattern = Pattern.compile("\\$\\{.*?\\}");
 
-        StringBuffer computedAddress = new StringBuffer();
-
-        Matcher matcher = pattern.matcher(addressString);
-        while (matcher.find()) {
-
-
-            Object property = messageContext.getProperty(
-                    addressString.substring(matcher.start() + 2, matcher.end() - 1));
-            if (property != null) {
-                computedAddress.append(addressString.substring(s, matcher.start()));
-                computedAddress.append(property.toString());
-                s = matcher.end();
-                matches = true;
-            }
+        Pattern oldPattern = Pattern.compile("\\$\\{(.*?)\\}");
+        String oldProcessedAddress = SynapseConfigUtils.replacePatternWithProperties(addressString, oldPattern, messageContext);
+        if (!oldProcessedAddress.equals(addressString)) {
+            return oldProcessedAddress;
         }
 
-        if (!matches) {
-            return addressString;
-        } else {
-            computedAddress.append(addressString.substring(s, addressString.length()));
-            return computedAddress.toString();
+        Pattern newPattern = Pattern.compile("\\{\\+?([^}]+)\\}");
+        String newProcessedAddress = SynapseConfigUtils.replacePatternWithProperties(addressString, newPattern, messageContext);
+        if (!newProcessedAddress.equals(addressString)) {
+            return newProcessedAddress;
         }
+        return addressString;
     }
 
     /**
