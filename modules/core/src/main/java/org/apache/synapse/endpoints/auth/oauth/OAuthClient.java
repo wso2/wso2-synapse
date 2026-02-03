@@ -252,72 +252,87 @@ public class OAuthClient {
                                                        TrustStoreConfigs trustStoreConfigs)
             throws AuthException {
 
-        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(connectionTimeout)
-                .setConnectionRequestTimeout(connectionRequestTimeout).setSocketTimeout(socketTimeout).build();
-        if (proxyConfigs.isProxyEnabled()) {
-            return getSecureClientWithProxy(messageContext, proxyConfigs, trustStoreConfigs, requestConfig);
-        } else {
-            return getSecureClientWithoutProxy(trustStoreConfigs, requestConfig, tokenUrl, messageContext);
-        }
-    }
-
-    private static CloseableHttpClient getSecureClientWithoutProxy(TrustStoreConfigs trustStoreConfigs, RequestConfig requestConfig,
-                                                                   String tokenUrl, MessageContext messageContext)
-            throws AuthException {
         SSLContext sslContext;
-
-        if (trustStoreConfigs != null && trustStoreConfigs.isTrustStoreEnabled()) {
-            sslContext = getSSLContextFromTrustStore(trustStoreConfigs.getTrustStoreLocation(),
-                    trustStoreConfigs.getTrustStorePassword(), trustStoreConfigs.getTrustStoreType());
-        } else {
-            ConfigurationContext configurationContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext()
-                    .getConfigurationContext();
-            TransportOutDescription transportOut = configurationContext.getAxisConfiguration().getTransportOut("https");
-            try {
-                ClientConnFactoryBuilder clientConnFactoryBuilder = new ClientConnFactoryBuilder(transportOut,
-                        configurationContext).parseSSL();
-                sslContext = getSSLContextWithUrl(tokenUrl, clientConnFactoryBuilder.getSslByHostMap(),
-                        clientConnFactoryBuilder.getSSLContextDetails());
-            } catch (AxisFault e) {
-                throw new AuthException("Error while reading SSL configs. Using default Keystore and Truststore", e);
-            }
+        ConfigurationContext configurationContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext()
+                .getConfigurationContext();
+        TransportOutDescription transportOut = configurationContext.getAxisConfiguration().getTransportOut("https");
+        try {
+            ClientConnFactoryBuilder clientConnFactoryBuilder = new ClientConnFactoryBuilder(transportOut,
+                    configurationContext).parseSSL();
+            sslContext = getSSLContextWithUrl(tokenUrl, clientConnFactoryBuilder.getSslByHostMap(),
+                    clientConnFactoryBuilder.getSSLContextDetails());
+        } catch (AxisFault e) {
+            throw new AuthException("Error while reading SSL configs. Using default Keystore and Truststore", e);
         }
 
-        SSLConnectionSocketFactory sslConnectionFactory = new SSLConnectionSocketFactory(sslContext,
-                NoopHostnameVerifier.INSTANCE);
-        Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
+        HostnameVerifier hostnameVerifier;
+        if (proxyConfigs.isProxyEnabled()) {
+            String hostnameVerifierOption = System.getProperty(HOST_NAME_VERIFIER);
+            if (ALLOW_ALL.equalsIgnoreCase(hostnameVerifierOption)) {
+                hostnameVerifier = SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
+            } else if (STRICT.equalsIgnoreCase(hostnameVerifierOption)) {
+                hostnameVerifier = SSLSocketFactory.STRICT_HOSTNAME_VERIFIER;
+            } else if (DEFAULT_AND_LOCALHOST.equalsIgnoreCase(hostnameVerifierOption)) {
+                hostnameVerifier = new HostnameVerifier() {
+                    final String[] localhosts = { "::1", "127.0.0.1", "localhost", "localhost.localdomain" };
+
+                    @Override
+                    public boolean verify(String urlHostName, SSLSession session) {
+                        return SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER.verify(urlHostName,
+                                session) || Arrays.asList(localhosts).contains(urlHostName);
+                    }
+                };
+            } else {
+                hostnameVerifier = SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER;
+            }
+        } else {
+            hostnameVerifier = NoopHostnameVerifier.INSTANCE;
+        }
+
+        // Step 2: Create SSL Connection Socket Factory with custom hostname verifier
+        SSLConnectionSocketFactory sslConnectionFactory = new SSLConnectionSocketFactory(sslContext, hostnameVerifier);
+
+        // Step 3: Create Request Config
+        RequestConfig config = RequestConfig.custom().setConnectTimeout(connectionTimeout)
+                .setConnectionRequestTimeout(connectionRequestTimeout).setSocketTimeout(socketTimeout).build();
+
+        // Step 4: Create Registry for connection socket factories
+        Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory> create()
                 .register(HTTPS_CONNECTION, sslConnectionFactory)
                 .register(HTTP_CONNECTION, new PlainConnectionSocketFactory()).build();
 
-        BasicHttpClientConnectionManager connManager = new BasicHttpClientConnectionManager(registry);
-        return HttpClientBuilder.create().setDefaultRequestConfig(requestConfig)
-                .setConnectionManager(connManager).setSSLSocketFactory(sslConnectionFactory).build();
-    }
+        // Step 5: Choose connection manager based on proxy configuration
+        HttpClientBuilder clientBuilder;
+        if (proxyConfigs.isProxyEnabled()) {
+            // Use PoolingHttpClientConnectionManager for proxy scenarios
+            PoolingHttpClientConnectionManager pool = new PoolingHttpClientConnectionManager(registry);
+            pool.setMaxTotal(MAX_TOTAL_POOL_SIZE);
+            pool.setDefaultMaxPerRoute(DEFAULT_MAX_PER_ROUTE);
 
-    private static CloseableHttpClient getSecureClientWithProxy(MessageContext messageContext, ProxyConfigs proxyConfigs,
-                                                                TrustStoreConfigs trustStoreConfigs, RequestConfig requestConfig)
-            throws AuthException {
+            // Configure proxy settings
+            HttpHost host = new HttpHost(proxyConfigs.getProxyHost(), Integer.parseInt(proxyConfigs.getProxyPort()),
+                    proxyConfigs.getProxyProtocol());
 
-        PoolingHttpClientConnectionManager pool = getPoolingHttpClientConnectionManager(proxyConfigs.getProxyProtocol(),
-                trustStoreConfigs);
-        pool.setMaxTotal(MAX_TOTAL_POOL_SIZE);
-        pool.setDefaultMaxPerRoute(DEFAULT_MAX_PER_ROUTE);
+            DefaultProxyRoutePlanner  routePlanner = new DefaultProxyRoutePlanner(host);
 
-        HttpClientBuilder clientBuilder = HttpClients.custom().setConnectionManager(pool);
+            clientBuilder = HttpClients.custom().setConnectionManager(pool).setRoutePlanner(routePlanner)
+                    .setDefaultRequestConfig(config).setSSLSocketFactory(sslConnectionFactory);
 
-        HttpHost host = new HttpHost(proxyConfigs.getProxyHost(), Integer.parseInt(proxyConfigs.getProxyPort()),
-                proxyConfigs.getProxyProtocol());
-        DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(host);
-        clientBuilder = clientBuilder.setRoutePlanner(routePlanner).setDefaultRequestConfig(requestConfig);
-
-        if (StringUtils.isNotBlank(proxyConfigs.getProxyUsername()) && StringUtils.isNotBlank(
-                proxyConfigs.getProxyPassword())) {
-            CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-            credentialsProvider.setCredentials(
-                    new AuthScope(proxyConfigs.getProxyHost(), Integer.parseInt(proxyConfigs.getProxyPort())),
-                    new UsernamePasswordCredentials(proxyConfigs.getProxyUsername(), resolveProxyPassword(proxyConfigs,
-                            messageContext)));
-            clientBuilder = clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+            // Add proxy authentication if configured
+            if (StringUtils.isNotBlank(proxyConfigs.getProxyUsername()) && StringUtils.isNotBlank(
+                    proxyConfigs.getProxyPassword())) {
+                CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+                credentialsProvider.setCredentials(
+                        new AuthScope(proxyConfigs.getProxyHost(), Integer.parseInt(proxyConfigs.getProxyPort())),
+                        new UsernamePasswordCredentials(proxyConfigs.getProxyUsername(),
+                                resolveProxyPassword(proxyConfigs, messageContext)));
+                clientBuilder = clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+            }
+        } else {
+            // Use BasicHttpClientConnectionManager for non-proxy scenarios
+            BasicHttpClientConnectionManager connManager = new BasicHttpClientConnectionManager(registry);
+            clientBuilder = HttpClientBuilder.create().setDefaultRequestConfig(config).setConnectionManager(connManager)
+                    .setSSLSocketFactory(sslConnectionFactory);
         }
 
         return clientBuilder.build();
@@ -333,109 +348,6 @@ public class OAuthClient {
             // Resolves the password when endpoint specific proxy configurations are used
             return OAuthUtils.resolveExpression(proxyConfigs.getProxyPassword(), messageContext);
         }
-    }
-
-    private static PoolingHttpClientConnectionManager getPoolingHttpClientConnectionManager(String protocol,
-                                                                                            TrustStoreConfigs trustStoreConfigs)
-            throws AuthException {
-
-        PoolingHttpClientConnectionManager poolManager;
-        if (AuthConstants.HTTPS_PROTOCOL.equals(protocol)) {
-            SSLContext sslContext;
-            if (trustStoreConfigs != null && trustStoreConfigs.isTrustStoreEnabled()) {
-                sslContext = getSSLContextFromTrustStore(trustStoreConfigs.getTrustStoreLocation(),
-                        trustStoreConfigs.getTrustStorePassword(), trustStoreConfigs.getTrustStoreType());
-            } else {
-                char[] trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword").toCharArray();
-                String trustStoreLocation = System.getProperty("javax.net.ssl.trustStore");
-                sslContext = getSSLContextFromTrustStore(trustStoreLocation, trustStorePassword, "JKS");
-            }
-            SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext, getHostnameVerifier());
-            org.apache.http.config.Registry<ConnectionSocketFactory> socketFactoryRegistry =
-                    RegistryBuilder.<ConnectionSocketFactory>create()
-                            .register(AuthConstants.HTTPS_PROTOCOL, socketFactory).build();
-            poolManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
-        } else {
-            poolManager = new PoolingHttpClientConnectionManager();
-        }
-        return poolManager;
-    }
-
-    /**
-     * Returns a HostnameVerifier instance based on the configured system property HOST_NAME_VERIFIER. The verifier
-     * determines how hostnames are validated during SSL/TLS handshake when establishing secure connections.
-     *
-     * @return the configured HostnameVerifier implementation
-     * @throws AuthException if an error occurs while creating the hostname verifier
-     */
-    private static HostnameVerifier getHostnameVerifier() throws AuthException {
-        HostnameVerifier hostnameVerifier;
-        String hostnameVerifierOption = System.getProperty(HOST_NAME_VERIFIER);
-
-        if (ALLOW_ALL.equalsIgnoreCase(hostnameVerifierOption)) {
-            hostnameVerifier = SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
-        } else if (STRICT.equalsIgnoreCase(hostnameVerifierOption)) {
-            hostnameVerifier = SSLSocketFactory.STRICT_HOSTNAME_VERIFIER;
-        } else if (DEFAULT_AND_LOCALHOST.equalsIgnoreCase(hostnameVerifierOption)) {
-            hostnameVerifier = new HostnameVerifier() {
-                final String[] localhosts = {"::1", "127.0.0.1", "localhost", "localhost.localdomain"};
-
-                @Override
-                public boolean verify(String urlHostName, SSLSession session) {
-                    return SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER.verify(urlHostName,
-                            session) || Arrays.asList(localhosts).contains(urlHostName);
-                }
-            };
-        } else {
-            hostnameVerifier = SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER;
-        }
-        return hostnameVerifier;
-    }
-
-    /**
-     * Creates and returns an SSLContext using the given trust store configurations.
-     *
-     * This method loads the trust store from the provided location, initializes it with the specified type and
-     * password, and builds an SSLContext that trusts the certificates contained in it.
-     *
-     * @param trustStoreLocation the file system path to the trust store
-     * @param trustStorePassword the password to access the trust store
-     * @param trustStoreType     the type of the trust store
-     * @return an initialized SSLContext based on the provided trust store
-     * @throws AuthException if the trust store configuration is incomplete, the trust store cannot be loaded, or the
-     *                       SSLContext cannot be created
-     */
-    private static SSLContext getSSLContextFromTrustStore(String trustStoreLocation, char[] trustStorePassword,
-                                                          String trustStoreType) throws AuthException {
-
-        if (trustStoreLocation == null || trustStorePassword == null) {
-            throw new AuthException("Trust store configuration is incomplete");
-        }
-
-        File trustStoreFile = new File(trustStoreLocation);
-        if (!trustStoreFile.exists() || !trustStoreFile.canRead()) {
-            throw new AuthException("Trust store file not found or not readable");
-        }
-
-        final KeyStore trustStore;
-        try (FileInputStream fis = new FileInputStream(trustStoreFile)) {
-            trustStore = KeyStore.getInstance(trustStoreType);
-            trustStore.load(fis, trustStorePassword);
-        } catch (IOException | KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
-            throw new AuthException("Error loading trust store from location: " + trustStoreLocation, e);
-        }
-
-        try {
-            return SSLContexts.custom().loadTrustMaterial(trustStore).build();
-        } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
-            throw new AuthException("Error while creating SSL context from trust store configurations", e);
-        }
-    }
-
-    public CloseableHttpClient getDefaultHttpClient() {
-        HttpClientBuilder builder = HttpClientBuilder.create();
-        builder.setConnectionReuseStrategy(new NoConnectionReuseStrategy());
-        return builder.build();
     }
 
     private static SSLContext getSSLContextWithUrl(String urlPath, Map<RequestDescriptor, SSLContext> sslByHostMap,

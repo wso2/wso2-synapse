@@ -24,10 +24,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 import quickfix.Message;
 import quickfix.Session;
 import quickfix.SessionID;
@@ -39,9 +38,7 @@ import quickfix.fix41.NewOrderSingle;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore("javax.management.*")
-@PrepareForTest({ FIXOutgoingMessageHandler.class, Session.class })
+@RunWith(MockitoJUnitRunner.class)
 public class FIXOutgoingMessageHandlerTest extends TestCase {
     @Mock(name = "sessionFactory")
     FIXSessionFactory sessionFactory;
@@ -59,13 +56,15 @@ public class FIXOutgoingMessageHandlerTest extends TestCase {
 
         Message message = new NewOrderSingle();
         MessageContext msgCtx = new MessageContext();
-        PowerMockito.when(sessionFactory.getApplication(anyString())).thenReturn(app);
-        PowerMockito.mockStatic(Session.class);
-        PowerMockito.when(Session.sendToTarget(any(Message.class), any(SessionID.class))).thenReturn(true);
-        SessionID id = new SessionID(new BeginString("FIX.4.1"), new SenderCompID("SYNAPSE"),
-                new TargetCompID("BANZAI"), "FIX.4.1:SYNAPSE->BANZAI");
+        Mockito.when(sessionFactory.getApplication(anyString())).thenReturn(app);
+        
+        try (MockedStatic<Session> mockedSession = Mockito.mockStatic(Session.class)) {
+            mockedSession.when(() -> Session.sendToTarget(any(Message.class), any(SessionID.class))).thenReturn(true);
+            SessionID id = new SessionID(new BeginString("FIX.4.1"), new SenderCompID("SYNAPSE"),
+                    new TargetCompID("BANZAI"), "FIX.4.1:SYNAPSE->BANZAI");
 
-        spy.sendMessage(message, id, SESSION_ID, SEQ_NUM, msgCtx, "fix://sample");
+            spy.sendMessage(message, id, SESSION_ID, SEQ_NUM, msgCtx, "fix://sample");
+        }
     }
 
 }

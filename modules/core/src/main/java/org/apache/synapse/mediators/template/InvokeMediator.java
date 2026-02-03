@@ -30,8 +30,10 @@ import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
@@ -48,6 +50,7 @@ import org.apache.synapse.mediators.elementary.Source;
 import org.apache.synapse.mediators.elementary.Target;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.unittest.CoverageUtils;
 import org.apache.synapse.util.MediatorEnrichUtil;
 import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
 
@@ -199,7 +202,18 @@ public class InvokeMediator extends AbstractMediator implements
 			}
 
 			prepareForMediation(synCtx);
-			boolean result = mediator.mediate(synCtx);
+			
+			// Handle coverage tracking for unit tests
+			String originalArtifactKey = CoverageUtils.handleCoverageForTemplate(
+					synCtx, ((TemplateMediator) mediator).getName());
+			
+			boolean result;
+			try {
+				result = mediator.mediate(synCtx);
+			} finally {
+				// Restore original artifact key for unit test coverage
+				CoverageUtils.restoreCoverageArtifactKey(synCtx, originalArtifactKey);
+			}
 
 			if (result && executePreFetchingSequence) {
 				ContinuationStackManager.removeReliantContinuationState(synCtx);
@@ -482,6 +496,15 @@ public class InvokeMediator extends AbstractMediator implements
                     SynapseConstants.BEFORE_INVOKE_TEMPLATE);
         }
 
+        // Report close event for the invoke mediator after a continuation flow is completed
+        Integer closeIndex = (Integer) synCtx.getProperty(
+                StatisticsConstants.STATISTIC_REPORTING_INVOKE_MEDIATOR_CLOSE_INDEX);
+        if (closeIndex != null) {
+            CloseEventCollector.closeEntryEvent(synCtx, getMediatorName(), ComponentType.MEDIATOR, closeIndex,
+                    isContentAltering());
+            synCtx.getPropertyKeySet().remove(StatisticsConstants.STATISTIC_REPORTING_INVOKE_MEDIATOR_CLOSE_INDEX);
+        }
+
     }
 
 	public String getTargetTemplate() {
@@ -638,4 +661,20 @@ public class InvokeMediator extends AbstractMediator implements
 		getAspectConfiguration().setUniqueId(mediatorId);
 		StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR, holder);
 	}
+
+
+    @Override
+    public void reportCloseStatistics(MessageContext messageContext, Integer currentIndex) {
+
+        // Skipping premature closing of the invoke mediator in case of continuation call until response is received.
+        // Spans will be closed once the response is received and mediation is continued in postMediate() method.
+        if (Boolean.TRUE.equals(messageContext.getProperty(SynapseConstants.CONTINUATION_CALL))) {
+            messageContext.setProperty(StatisticsConstants.STATISTIC_REPORTING_INVOKE_MEDIATOR_CLOSE_INDEX, currentIndex);
+            return;
+        }
+
+        CloseEventCollector.closeEntryEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR, currentIndex,
+                isContentAltering());
+    }
+
 }

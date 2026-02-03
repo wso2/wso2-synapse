@@ -33,11 +33,9 @@ import org.apache.synapse.mediators.bean.enterprise.EJBMediator;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -48,10 +46,7 @@ import static org.mockito.ArgumentMatchers.any;
 /**
  * Unit tests for EJBMediator class.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({BeanUtils.class, EnterpriseBeanstalk.class})
-@PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "javax.management.*", "javax.xml.parsers.*", "org.apache" +
-        ".xerces.jaxp.*", "javax.naming.spi.*", "javax.naming.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class EJBMediatorTest {
 
     private static final String BEANSTALK_NAME = "testBeansTalk";
@@ -89,22 +84,24 @@ public class EJBMediatorTest {
             Assert.assertEquals("assert exception message", "Initialization failed. '"
                     + BEANSTALK_NAME + "' " + "beanstalk not found.", ex.getMessage());
         }
-        beanstalk = PowerMockito.mock(EnterpriseBeanstalk.class);
+        beanstalk = Mockito.mock(EnterpriseBeanstalk.class);
         Value beanId = new Value(VALUE);
         ejbMediator.setBeanId(beanId);
         Object obj = new Object();
-        PowerMockito.when(beanstalk.getEnterpriseBean(any(String.class), any(String.class), any(String.class)))
+        Mockito.when(beanstalk.getEnterpriseBean(any(String.class), any(String.class), any(String.class)))
                 .thenReturn(obj);
-        PowerMockito.when(beanstalkManager.getBeanstalk(BEANSTALK_NAME)).thenReturn(beanstalk);
-        PowerMockito.mockStatic(BeanUtils.class);
-        PowerMockito.when(BeanUtils.invokeInstanceMethod(any(Object.class), any(Method.class), any(Object[].class)))
-                .thenReturn(new Object());
-        ejbMediator.init(synapseEnvironment);
-        String samplePayload = "<test>value</test>";
-        Map<String, Entry> properties = new HashMap<>();
-        Axis2MessageContext messageContext = TestUtils.getAxis2MessageContext(samplePayload, properties);
-        ejbMediator.setClassName(CLASS_NAME);
-        ejbMediator.setJndiName(JNDI_NAME);
-        Assert.assertTrue("mediation must be successful", ejbMediator.mediate(messageContext));
+        Mockito.when(beanstalkManager.getBeanstalk(BEANSTALK_NAME)).thenReturn(beanstalk);
+        
+        try (MockedStatic<BeanUtils> mockedBeanUtils = Mockito.mockStatic(BeanUtils.class)) {
+            mockedBeanUtils.when(() -> BeanUtils.invokeInstanceMethod(any(Object.class), any(Method.class), any(Object[].class)))
+                    .thenReturn(new Object());
+            ejbMediator.init(synapseEnvironment);
+            String samplePayload = "<test>value</test>";
+            Map<String, Entry> properties = new HashMap<>();
+            Axis2MessageContext messageContext = TestUtils.getAxis2MessageContext(samplePayload, properties);
+            ejbMediator.setClassName(CLASS_NAME);
+            ejbMediator.setJndiName(JNDI_NAME);
+            Assert.assertTrue("mediation must be successful", ejbMediator.mediate(messageContext));
+        }
     }
 }

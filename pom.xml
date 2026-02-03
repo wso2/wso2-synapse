@@ -26,7 +26,7 @@
    </parent>
    <groupId>org.apache.synapse</groupId>
    <artifactId>Apache-Synapse</artifactId>
-   <version>4.0.0-wso2v272-SNAPSHOT</version>
+   <version>4.1.0-wso2v5-SNAPSHOT</version>
    <name>Apache Synapse</name>
    <description>Apache Synapse</description>
    <packaging>pom</packaging>
@@ -218,8 +218,8 @@
                  <artifactId>maven-compiler-plugin</artifactId>
                  <version>${maven.compiler.plugin.version}</version>
                  <configuration>
-                     <source>1.8</source>
-                     <target>1.8</target>
+                     <source>21</source>
+                     <target>21</target>
                  </configuration>
              </plugin>
              <plugin>
@@ -462,6 +462,11 @@
              <artifactId>synapse-config-migrator</artifactId>
              <version>${project.version}</version>
          </dependency>
+          <dependency>
+              <groupId>org.wso2.config.mapper</groupId>
+              <artifactId>config-mapper</artifactId>
+              <version>${config.mapper.version}</version>
+          </dependency>
          <dependency>
              <groupId>org.apache.maven</groupId>
              <artifactId>maven-plugin-api</artifactId>
@@ -797,15 +802,24 @@
              <artifactId>commons-cli</artifactId>
              <version>${commons-cli.version}</version>
          </dependency>
+         <dependency>
+             <groupId>jaxen</groupId>
+             <artifactId>jaxen</artifactId>
+             <version>${jaxen.version}</version>
+         </dependency>
          <!-- Synapse -->
          <dependency>
             <groupId>org.wso2.securevault</groupId>
             <artifactId>org.wso2.securevault</artifactId>
-            <version>1.1.2</version>
+            <version>1.1.16</version>
              <exclusions>
                  <exclusion>
                      <groupId>log4j</groupId>
                      <artifactId>log4j</artifactId>
+                 </exclusion>
+                 <exclusion>
+                     <groupId>org.ops4j.pax.logging</groupId>
+                     <artifactId>pax-logging-api</artifactId>
                  </exclusion>
              </exclusions>
          </dependency>
@@ -1148,47 +1162,16 @@
               <artifactId>zipkin-sender-okhttp3</artifactId>
               <version>${zipkin.sender.okhttp3.version}</version>
           </dependency>
-          <!--Mockito Dependency-->
-          <dependency>
-              <groupId>org.powermock</groupId>
-              <artifactId>powermock-api-mockito2</artifactId>
-              <version>${powermock.version}</version>
-              <scope>test</scope>
-          </dependency>
-          <dependency>
-              <groupId>org.powermock</groupId>
-              <artifactId>powermock-module-junit4</artifactId>
-              <version>${powermock.version}</version>
-              <scope>test</scope>
-          </dependency>
-          <dependency>
-              <groupId>org.powermock</groupId>
-              <artifactId>powermock-core</artifactId>
-              <version>${powermock.version}</version>
-              <scope>test</scope>
-          </dependency>
-          <dependency>
-              <groupId>org.powermock</groupId>
-              <artifactId>powermock-reflect</artifactId>
-              <version>${powermock.version}</version>
-              <scope>test</scope>
-          </dependency>
-          <dependency>
-              <groupId>org.powermock</groupId>
-              <artifactId>powermock-module-junit4-common</artifactId>
-              <version>${powermock.version}</version>
-              <scope>test</scope>
-          </dependency>
-          <dependency>
-              <groupId>org.powermock</groupId>
-              <artifactId>powermock-api-support</artifactId>
-              <version>${powermock.version}</version>
-              <scope>test</scope>
-          </dependency>
           <dependency>
               <groupId>org.mockito</groupId>
               <artifactId>mockito-core</artifactId>
               <version>${mockito.version}</version>
+              <scope>test</scope>
+          </dependency>
+          <dependency>
+              <groupId>org.mockito</groupId>
+              <artifactId>mockito-inline</artifactId>
+              <version>${mockito.inline.version}</version>
               <scope>test</scope>
           </dependency>
           <dependency>
@@ -1340,6 +1323,16 @@
               <version>${javax.inject.version}</version>
           </dependency>
           <dependency>
+              <groupId>org.wso2.orbit.com.sun.activation</groupId>
+              <artifactId>jakarta.activation</artifactId>
+              <version>${jakarta.activation.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.wso2.orbit.com.sun.mail</groupId>
+              <artifactId>jakarta.mail</artifactId>
+              <version>${jakarta.mail.version}</version>
+          </dependency>
+          <dependency>
               <groupId>org.glassfish.jersey.media</groupId>
               <artifactId>jersey-media-json-jackson</artifactId>
               <version>${glassfish.jersey.version}</version>
@@ -1383,9 +1376,9 @@
               <version>${org.wso2.json.version}</version>
           </dependency>
           <dependency>
-              <groupId>javax.xml.bind</groupId>
-              <artifactId>jaxb-api</artifactId>
-              <version>${jaxb.version}</version>
+              <groupId>jakarta.xml.bind</groupId>
+              <artifactId>jakarta.xml.bind-api</artifactId>
+              <version>${jakarta.xml.bind.version}</version>
           </dependency>
           <dependency>
               <groupId>com.sun.xml.bind</groupId>
@@ -1503,14 +1496,14 @@
       <maven.site.plugin.version>2.0-beta-6</maven.site.plugin.version>
       <maven.surefire.plugin.version>2.12.4</maven.surefire.plugin.version>
       <maven.surefire.plugin.version.2.2>2.2</maven.surefire.plugin.version.2.2>
-      <maven.jacoco.plugin.version>0.8.6</maven.jacoco.plugin.version>
+      <maven.jacoco.plugin.version>0.8.12</maven.jacoco.plugin.version>
       <maven.assembly.plugin.version>2.2-beta-2</maven.assembly.plugin.version>
-      <maven.bundle.plugin.version>3.3.0</maven.bundle.plugin.version>
+      <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
       <maven.dependency.plugin.version>2.0</maven.dependency.plugin.version>
       <antlr3.maven.plugin.version>3.4</antlr3.maven.plugin.version>
       <antlr4.maven.plugin.version>4.7.1</antlr4.maven.plugin.version>
       <maven.antrun.plugin.version>1.8</maven.antrun.plugin.version>
-      <maven.war.plugin.version>2.6</maven.war.plugin.version>
+      <maven.war.plugin.version>3.5.0</maven.war.plugin.version>
       <build.helper.maven.plugin.version>3.2.0</build.helper.maven.plugin.version>
       <maven.archetype.packaging.version>2.0-alpha-4</maven.archetype.packaging.version>
       <maven.archetype.plugin.version>3.1.0</maven.archetype.plugin.version>
@@ -1523,7 +1516,7 @@
       <maven.artifact.version>2.0.8</maven.artifact.version>
       <maven.archiver.version>2.2</maven.archiver.version>
       <plexus.utils.version>1.5.4</plexus.utils.version>
-      <com.google.code.gson.version>2.11.0</com.google.code.gson.version>
+      <com.google.code.gson.version>2.13.2</com.google.code.gson.version>
       <org.codehaus.jettison.version>1.5.3</org.codehaus.jettison.version>
       <com.damnhandy.version>2.1.6</com.damnhandy.version>
       <damnhandy.version>${com.damnhandy.version}.wso2v2</damnhandy.version>
@@ -1531,7 +1524,7 @@
       <org.antlr.version>3.4</org.antlr.version>
       <org.antlr4.version>4.7.1</org.antlr4.version>
       <antlr.wso2.version>3.2.0.wso2v1</antlr.wso2.version>
-      <com.jayway.jsonpath.version>2.9.0.wso2v1</com.jayway.jsonpath.version>
+      <com.jayway.jsonpath.version>2.10.0.wso2v1</com.jayway.jsonpath.version>
       <qfj.version>1.5.3</qfj.version>
        <quickfixj.version>2.3.1</quickfixj.version>
       <org.bouncycastle.version>1.81.0.wso2v1</org.bouncycastle.version>
@@ -1553,19 +1546,19 @@
        <orbit.version.tomcat>${version.tomcat}.wso2v1</orbit.version.tomcat>
       <commons.pool.version>1.3</commons.pool.version>
       <commons.pool.wso2.version>1.5.0.wso2v1</commons.pool.wso2.version>
-      <commons.vfs.version>2.2.0-wso2v22</commons.vfs.version>
+      <commons.vfs.version>2.10.0-wso2v6</commons.vfs.version>
       <truezip.version>6.6</truezip.version>
       <commons.net.version>3.9.0</commons.net.version>
       <commons.net.wso2.version>${commons.net.version}.wso2v1</commons.net.wso2.version>
-      <jsch.version>0.2.4</jsch.version>
-      <jsch.wso2.version>0.2.4.wso2v1</jsch.wso2.version>
+      <jsch.version>2.27.7</jsch.version>
+      <jsch.wso2.version>2.27.7.wso2v1</jsch.wso2.version>
       <oro.version>2.0.8</oro.version>
       <slf4j.version>1.5.6</slf4j.version>
       <mina.version>2.1.6</mina.version>
       <jms-1.1-spec.version>1.1</jms-1.1-spec.version>
       <!-- Axis2 and its dependencies -->
-      <axis2.version>1.6.1-wso2v114</axis2.version>
-      <axis2.transport.version>2.0.0-wso2v79</axis2.transport.version>
+      <axis2.version>1.6.1-wso2v118</axis2.version>
+      <axis2.transport.version>2.0.0-wso2v81</axis2.transport.version>
       <axiom.version>1.2.11-wso2v30</axiom.version>
       <xml_schema.version>1.4.7</xml_schema.version>
       <xml_apis.version>1.3.04</xml_apis.version>
@@ -1576,6 +1569,7 @@
       <woden.version>1.0M10</woden.version>
       <rampart.version>1.6.1-wso2v41</rampart.version>
       <sandesha2.version>1.6.1-wso2v1</sandesha2.version>
+       <config.mapper.version>1.0.20</config.mapper.version>
       <neethi.version>2.0.4-wso2v2</neethi.version>
       <jruby.version>1.3.0</jruby.version>
       <xmlsec.version>1.4.2</xmlsec.version>
@@ -1599,14 +1593,14 @@
       <net.minidev.accessors-smart.version>2.6.0</net.minidev.accessors-smart.version>
       <org.ow2.asm.asm.version>9.2</org.ow2.asm.asm.version>
       <json.smart.version>2.6.0</json.smart.version>
-       <org.wso2.json.version>3.0.0.wso2v4</org.wso2.json.version>
+       <org.wso2.json.version>3.0.0.wso2v7</org.wso2.json.version>
       <log4j2.version>2.24.3</log4j2.version>
       <xmlunit.version>1.1</xmlunit.version>
       <derby.version>10.4.2.0</derby.version>
       <wrapper.version>3.2.3</wrapper.version>
       <saxon.version>8.9</saxon.version>
       <saxon.wso2.version>${saxon.version}.0.wso2v2</saxon.wso2.version>
-      <commons_io.version>2.0</commons_io.version>
+      <commons_io.version>2.21.0</commons_io.version>
       <commons-cli.version>1.0</commons-cli.version>
       <jline.version>0.9.94</jline.version>
       <!-- dependencies of Synapse extensions module -->
@@ -1626,17 +1620,17 @@
       <project.scm.id>wso2-scm-server</project.scm.id>
       <javax.cache.version>0.5</javax.cache.version>
       <javax.servlet.version>3.0.1</javax.servlet.version>
-      <powermock.version>2.0.9</powermock.version>
-      <mockito.version>3.0.0</mockito.version>
-      <java-json-tools.json.schema.validator.version>2.2.7.wso2v2</java-json-tools.json.schema.validator.version>
+      <mockito.version>5.3.1</mockito.version>
+      <mockito.inline.version>5.2.0</mockito.inline.version>
+      <java-json-tools.json.schema.validator.version>2.2.14.wso2v1</java-json-tools.json.schema.validator.version>
       <fasterxml.jackson.version>2.17.2</fasterxml.jackson.version>
       <fasterxml.jackson-databind.version>2.17.2</fasterxml.jackson-databind.version>
-      <google.guava.version>33.0.0-jre</google.guava.version>
-      <failureaccess.version>1.0.2</failureaccess.version>
+      <google.guava.version>33.5.0-jre</google.guava.version>
+      <failureaccess.version>1.0.3</failureaccess.version>
       <joda-time.version>2.9.4.wso2v1</joda-time.version>
-      <com.googlecode.libphonenumber.version>7.4.2.wso2v1</com.googlecode.libphonenumber.version>
-      <jacoco.agent.version>0.8.6</jacoco.agent.version>
-      <jacoco.ant.version>0.8.6</jacoco.ant.version>
+      <com.googlecode.libphonenumber.version>9.0.22.wso2v1</com.googlecode.libphonenumber.version>
+      <jacoco.agent.version>0.8.12</jacoco.agent.version>
+      <jacoco.ant.version>0.8.12</jacoco.ant.version>
       <dataprovider.version>1.13.1</dataprovider.version>
       <activemq.version>5.2.0</activemq.version>
       <rhino.version>1.7.13</rhino.version>
@@ -1648,8 +1642,8 @@
        <activemq.broker.version>5.9.1</activemq.broker.version>
        <slf4j.log4j.version>1.5.2</slf4j.log4j.version>
        <system.rules.version>1.17.0</system.rules.version>
-       <io.netty.version>4.1.126.Final</io.netty.version>
-       <transport.http.netty.version>6.3.55</transport.http.netty.version>
+       <io.netty.version>4.2.9.Final</io.netty.version>
+       <transport.http.netty.version>6.3.58</transport.http.netty.version>
        <version.org.wso2.orbit.javax.activation>1.1.1.wso2v3</version.org.wso2.orbit.javax.activation>
        <rabbitmq.version>5.20.0</rabbitmq.version>
        <opentelemetry.all.version>1.57.0.wso2v2</opentelemetry.all.version>
@@ -1659,25 +1653,29 @@
        <zipkin.version>2.27.1</zipkin.version>
        <zipkin-reporter.version>2.17.2</zipkin-reporter.version>
        <javax.annotation.verion>1.3.2</javax.annotation.verion>
+       <jakarta.mail.version>2.0.2.wso2v1</jakarta.mail.version>
+       <jakarta.activation.version>2.0.1.wso2v1</jakarta.activation.version>
        <apache.felix.scr.ds-annotations.version>1.2.4</apache.felix.scr.ds-annotations.version>
-       <com.hierynomus.smbj.version>0.11.3.wso2v1</com.hierynomus.smbj.version>
+       <com.hierynomus.smbj.version>0.14.0.wso2v2</com.hierynomus.smbj.version>
        <com.hierynomus.asn1.version>0.6.0.wso2v1</com.hierynomus.asn1.version>
        <net.engio.mbassador.version>1.3.2.wso2v2</net.engio.mbassador.version>
 
        <javax.api.version>2.1.1</javax.api.version>
        <javax.inject.version>1</javax.inject.version>
 
-       <glassfish.jersey.version>2.35</glassfish.jersey.version>
+       <glassfish.jersey.version>2.41</glassfish.jersey.version>
 
        <freemarker.version>2.3.30</freemarker.version>
        <awaitility.version>3.1.2</awaitility.version>
-       <jaxb.version>2.3.0</jaxb.version>
+       <jaxb.version>4.0.6</jaxb.version>
+       <jakarta.xml.bind.version>4.0.4</jakarta.xml.bind.version>
        <nashorn.core.version>15.4</nashorn.core.version>
        <graalvm.version>22.3.4</graalvm.version>
        <icu.version>72.1</icu.version>
        <xmlbeans.imp.pkg.version>[3.1.0,4.0.0)</xmlbeans.imp.pkg.version>
        <org.wso2.orbit.atlassian.oai.version>2.44.1.wso2v1</org.wso2.orbit.atlassian.oai.version>
        <swagger.parser.v3.version>2.1.22.wso2v2</swagger.parser.v3.version>
+       <jaxen.version>2.0.0</jaxen.version>
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->

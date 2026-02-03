@@ -25,9 +25,9 @@ import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.resolver.ResourceMap;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.Mockito;
 import org.xml.sax.InputSource;
-import static org.mockito.ArgumentMatchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -62,7 +62,7 @@ public class ResourceMapTest extends TestCase {
 
         ResourceMap resourceMap = new ResourceMap();
         resourceMap.addResource(new Value(helloLocation), new Value(helloKey));
-        PowerMockito.when(synapseConfiguration.getEntry(anyString())).thenReturn(omElement);
+        Mockito.when(synapseConfiguration.getEntry(anyString())).thenReturn(omElement);
         InputSource inputSource = resourceMap.resolve(synapseConfiguration, helloLocation, null);
         Assert.assertNotNull("Stream should not be null", inputSource.getByteStream());
         Assert.assertEquals("Values should be equal",
@@ -73,8 +73,8 @@ public class ResourceMapTest extends TestCase {
     public void testResolveFromMapExpression() {
         ResourceMap resourceMap = new ResourceMap();
         resourceMap.addResource(new Value(helloLocation), new Value(synapsePath));
-        PowerMockito.when(synapsePath.getExpression()).thenReturn(helloKey);
-        PowerMockito.when(synapseConfiguration.getEntry(anyString())).thenReturn(omElement);
+        Mockito.when(synapsePath.getExpression()).thenReturn(helloKey);
+        Mockito.when(synapseConfiguration.getEntry(anyString())).thenReturn(omElement);
         InputSource inputSource = resourceMap.resolve(synapseConfiguration, helloLocation, null);
         Assert.assertNotNull("Stream should not be null", inputSource.getByteStream());
         Assert.assertEquals("Values should be equal",
@@ -85,8 +85,8 @@ public class ResourceMapTest extends TestCase {
     public void testResolveFromMessageContext() {
         ResourceMap resourceMap = new ResourceMap();
         resourceMap.addResource(new Value(helloLocation), value);
-        PowerMockito.when(synapseConfiguration.getEntry(anyString())).thenReturn(omElement);
-        PowerMockito.when(value.evaluateValue(((MessageContext) anyObject()))).thenReturn(helloKey);
+        Mockito.when(synapseConfiguration.getEntry(anyString())).thenReturn(omElement);
+        Mockito.when(value.evaluateValue(((MessageContext) any()))).thenReturn(helloKey);
         InputSource inputSource = resourceMap.resolve(synapseConfiguration, helloLocation, messageContext);
         Assert.assertNotNull("Stream should not be null", inputSource.getByteStream());
         Assert.assertEquals("Values should be equal",

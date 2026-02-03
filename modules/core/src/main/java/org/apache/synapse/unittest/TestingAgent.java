@@ -28,6 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.api.API;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
@@ -37,6 +38,9 @@ import org.apache.synapse.deployers.LocalEntryDeployer;
 import org.apache.synapse.deployers.ProxyServiceDeployer;
 import org.apache.synapse.deployers.SequenceDeployer;
 import org.apache.synapse.deployers.TemplateDeployer;
+import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.template.TemplateMediator;
+import org.apache.synapse.unittest.testcase.data.classes.MediatorCoverage;
 import org.apache.synapse.unittest.testcase.data.classes.SynapseTestCase;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 import org.apache.synapse.unittest.testcase.data.classes.TestCaseSummary;
@@ -47,6 +51,7 @@ import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import javax.xml.namespace.QName;
 
 import static org.apache.synapse.unittest.Constants.API_CONTEXT;
@@ -69,6 +74,7 @@ class TestingAgent {
     private String mainTestArtifactType = null;
     private String proxyTransportMethod = null;
     private String key = null;
+    private String primaryArtifactKey = null;
     private OMElement artifactNode = null;
     private String exception = null;
     private Map<String, String> deploymentStats = new HashMap<>();
@@ -103,6 +109,10 @@ class TestingAgent {
                         deploymentStats.put(key, TYPE_SEQUENCE);
                         testSuiteSummary.setDeploymentStatus(Constants.PASSED_KEY);
                         log.info("Primary test Sequence artifact deployed successfully");
+                        
+                        // Register sequence for coverage tracking
+                        registerSequenceForCoverage(synapseConfiguration, key);
+                        primaryArtifactKey = "Sequence:" + key;
                     } else {
                         String errorMessage = "Sequence " + artifactNameOrKey + " deployment failed";
                         log.error(errorMessage);
@@ -142,6 +152,10 @@ class TestingAgent {
                         deploymentStats.put(key, TYPE_API);
                         testSuiteSummary.setDeploymentStatus(Constants.PASSED_KEY);
                         log.info("Primary test API artifact deployed successfully");
+                        
+                        // Register API for coverage tracking
+                        registerAPIForCoverage(synapseConfiguration, key);
+                        primaryArtifactKey = "API:" + key;
                     } else {
                         String errorMessage = "API " + artifactNameOrKey + " deployment failed";
                         log.error(errorMessage);
@@ -216,6 +230,9 @@ class TestingAgent {
                         config.deploySequenceArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairOfSequenceDeployment.getKey();
                 key = pairOfSequenceDeployment.getValue();
+                
+                // Register supporting sequences for coverage tracking
+                registerSequenceForCoverage(synapseConfiguration, key);
                 break;
 
             case TYPE_PROXY:
@@ -250,6 +267,8 @@ class TestingAgent {
                         config.deployTemplateArtifact(artifact, artifactNameOrKey);
                 synapseConfiguration = pairOfTemplateDeployment.getKey();
                 key = pairOfTemplateDeployment.getValue();
+                // Register template for coverage tracking
+                registerTemplateForCoverage(synapseConfiguration, key);
                 break;
 
             default:
@@ -467,4 +486,119 @@ class TestingAgent {
             log.error("Error while undeploying the artifacts", e);
         }
     }
+
+    /**
+     * Register API for mediator coverage tracking.
+     *
+     * @param synapseConfig synapse configuration
+     * @param apiName       API name
+     */
+    private void registerAPIForCoverage(SynapseConfiguration synapseConfig, String apiName) {
+        try {
+            API api = synapseConfig.getAPI(apiName);
+            if (api != null) {
+                MediatorRegistry.getInstance().registerAPI(api);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to register API for coverage tracking: " + apiName, e);
+        }
+    }
+
+    /**
+     * Register Sequence for mediator coverage tracking.
+     *
+     * @param synapseConfig synapse configuration
+     * @param sequenceName  Sequence name
+     */
+    private void registerSequenceForCoverage(SynapseConfiguration synapseConfig, String sequenceName) {
+        try {
+            SequenceMediator sequence = (SequenceMediator) synapseConfig.getSequence(sequenceName);
+            if (sequence != null) {
+                MediatorRegistry.getInstance().registerSequence(sequence, null);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to register Sequence for coverage tracking: " + sequenceName, e);
+        }
+    }
+
+    /**
+     * Register Template for mediator coverage tracking.
+     *
+     * @param synapseConfig synapse configuration
+     * @param templateName  Template name
+     */
+    private void registerTemplateForCoverage(SynapseConfiguration synapseConfig, String templateName) {
+        try {
+            TemplateMediator template = synapseConfig.getSequenceTemplate(templateName);
+            if (template != null) {
+                MediatorRegistry.getInstance().registerTemplate(template);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to register Template for coverage tracking: " + templateName, e);
+        }
+    }
+
+    /**
+     * Generate coverage report and add to test suite summary.
+     *
+     * @param testSuiteSummary test suite summary object
+     */
+    void generateCoverageReport(TestSuiteSummary testSuiteSummary) {
+        try {
+            MediatorRegistry tracker = MediatorRegistry.getInstance();
+
+            for (String artifactKey : tracker.getRegisteredArtifacts()) {
+                String[] parts = artifactKey.split(":", 2);
+                if (parts.length == 2) {
+                    String artifactType = parts[0];
+                    String artifactName = parts[1];
+
+                    MediatorCoverage coverage = new MediatorCoverage(artifactType, artifactName);
+
+                    // Check if artifact has any referenced artifacts (sequences or templates)
+                    Set<String> referencedArtifacts = tracker.getReferencedArtifacts(artifactKey);
+                    boolean hasReferences = !referencedArtifacts.isEmpty();
+
+                    // Use includeReferences parameter to control aggregation for counts (for coverage %)
+                    coverage.setTotalMediators(tracker.getTotalMediatorCount(artifactKey, hasReferences));
+                    coverage.setExecutedMediators(tracker.getExecutedMediatorCount(artifactKey, hasReferences));
+
+                    // Get only own mediator IDs for mediatorDetails (not aggregated)
+                    Set<String> allMediatorIds = tracker.getAllMediatorIds(artifactKey);
+                    Set<String> executedMediatorIds = tracker.getExecutedMediatorIds(artifactKey);
+
+                    // Add all mediators with execution status
+                    for (String mediatorId : allMediatorIds) {
+                        boolean isExecuted = executedMediatorIds.contains(mediatorId);
+                        coverage.addMediatorExecutionStatus(mediatorId, isExecuted);
+                    }
+
+                    // Add referenced artifact keys if any
+                    if (hasReferences) {
+                        for (String refArtifactKey : referencedArtifacts) {
+                            coverage.addReferencedArtifact(refArtifactKey);
+                        }
+                    }
+
+                    coverage.calculateCoveragePercentage();
+
+                    // Set as primary or add as supporting artifact
+                    if (artifactKey.equals(primaryArtifactKey)) {
+                        testSuiteSummary.setPrimaryCoverage(coverage);
+                    } else {
+                        testSuiteSummary.addMediatorCoverage(coverage);
+                    }
+                }
+            }
+
+            // Generate JSON report
+            testSuiteSummary.generateCoverageReportJson();
+
+            log.info("Coverage report generated successfully");
+
+        } catch (Exception e) {
+            log.error("Error generating coverage report", e);
+        }
+    }
+
 }

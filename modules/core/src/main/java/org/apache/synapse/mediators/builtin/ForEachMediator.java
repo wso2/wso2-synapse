@@ -44,6 +44,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.apache.synapse.unittest.CoverageUtils;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
@@ -314,7 +315,16 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
                 if (log.isDebugEnabled()) {
                     log.debug("Synchronously mediating using the sequence " + "named : " + sequenceRef);
                 }
-                return referredSequence.mediate(synCtx);
+                
+                // Handle coverage tracking for referenced sequence in unit tests
+                String originalArtifactKey = CoverageUtils.handleCoverageForReferencedSequence(synCtx, referredSequence, sequenceRef);
+                
+                try {
+                    return referredSequence.mediate(synCtx);
+                } finally {
+                    // Restore original artifact key for unit test coverage
+                    CoverageUtils.restoreCoverageArtifactKey(synCtx, originalArtifactKey);
+                }
             } else {
                 handleException("Couldn't find the sequence named : " + sequenceRef, synCtx);
             }

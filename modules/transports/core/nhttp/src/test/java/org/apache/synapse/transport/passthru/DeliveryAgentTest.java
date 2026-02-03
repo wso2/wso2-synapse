@@ -28,17 +28,11 @@ import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.TargetConnections;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.modules.junit4.PowerMockRunner;
+import static org.mockito.Mockito.mock;
 
 /**
  * Test case for DeliveryAgent class
  */
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore("javax.management.*")
 public class DeliveryAgentTest extends TestCase {
     /**
      * This method tests whether the message is queued by the delivery agent when the connection is null
@@ -52,9 +46,9 @@ public class DeliveryAgentTest extends TestCase {
         OperationContext opCtx = new OperationContext(new InOutAxisOperation(), svcCtx);
         messageContext.setServiceContext(svcCtx);
         messageContext.setOperationContext(opCtx);
-        TargetConfiguration targetConfiguration = PowerMockito.mock(TargetConfiguration.class);
-        TargetConnections conns = PowerMockito.mock(TargetConnections.class);
-        ProxyConfig config = PowerMockito.mock(ProxyConfig.class);
+        TargetConfiguration targetConfiguration = mock(TargetConfiguration.class);
+        TargetConnections conns = mock(TargetConnections.class);
+        ProxyConfig config = mock(ProxyConfig.class);
         EndpointReference epr = new EndpointReference("http://127.0.0.1:3001/services");
         DeliveryAgent agent = new DeliveryAgent(targetConfiguration, conns, config);
         agent.submit(messageContext, epr);

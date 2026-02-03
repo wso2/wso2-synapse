@@ -199,4 +199,6 @@ public class StatisticsConstants {
 	public static final String QUEUE_EVICTION_POLICY_OLD_MESSAGES = "old-messages-first";
 
 	public static final String QUEUE_EVICTION_POLICY_NEW_MESSAGES = "new-messages-first";
+
+    public static final String STATISTIC_REPORTING_INVOKE_MEDIATOR_CLOSE_INDEX = "statistics.invoke.mediator.close.index";
 }
