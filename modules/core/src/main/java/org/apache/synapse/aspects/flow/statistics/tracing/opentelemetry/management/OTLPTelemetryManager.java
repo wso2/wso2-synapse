@@ -55,12 +55,24 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
                 TelemetryConstants.GRPC_PROTOCOL);
         String endPointURL = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_URL, null);
         if (endPointURL == null) {
-            logger.error("Url not found in opentelemetry configurations");
-            throw new SynapseException("Url not found in opentelemetry configurations");
+            String message = "Url not found in opentelemetry configurations";
+            logger.error(message);
+            throw new SynapseException(message);
         }
 
-        // Determine protocol: Use HTTP if protocol is "http"
-        boolean useHttp = TelemetryConstants.HTTP_PROTOCOL.equalsIgnoreCase(protocol);
+        // Determine protocol: validate protocol and select exporter
+        boolean useHttp;
+        if (TelemetryConstants.HTTP_PROTOCOL.equalsIgnoreCase(protocol)) {
+            useHttp = true;
+        } else if (TelemetryConstants.GRPC_PROTOCOL.equalsIgnoreCase(protocol)) {
+            useHttp = false;
+        } else {
+            String message = "Invalid OpenTelemetry protocol: " + protocol
+                    + ". Supported values are '" + TelemetryConstants.HTTP_PROTOCOL
+                    + "' and '" + TelemetryConstants.GRPC_PROTOCOL + "'.";
+            logger.error(message);
+            throw new SynapseException(message);
+        }
 
         // Get header property for authentication
         String headerProperty = getHeaderKeyProperty();
@@ -69,6 +81,11 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
         }
         String headerKey = headerProperty.substring(TelemetryConstants.OPENTELEMETRY_PROPERTIES_PREFIX.length());
         String headerValue = SynapsePropertiesLoader.getPropertyValue(headerProperty, null);
+        if (headerValue == null) {
+            String message = "Header value not found for property: " + headerKey;
+            logger.error(message);
+            throw new SynapseException(message);
+        }
 
         // Create appropriate exporter based on protocol
         SpanExporter spanExporter;
@@ -104,7 +121,7 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
 
         this.tracer = new TelemetryTracer(getTelemetryTracer());
         if (logger.isDebugEnabled()) {
-            logger.debug("Tracer: " + this.tracer + " is configured with " +
+            logger.debug("Tracer for instrumentation '" + TelemetryConstants.OPENTELEMETRY_INSTRUMENTATION_NAME + "' is configured with " +
                     (useHttp ? "HTTP" : "gRPC") + " protocol");
         }
         this.handler = new SpanHandler(tracer, openTelemetry, new TracingScopeManager());

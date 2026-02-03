@@ -21,7 +21,6 @@ package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.managem
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.sdk.resources.Resource;
-import io.opentelemetry.semconv.ServerAttributes;
 import io.opentelemetry.semconv.ServiceAttributes;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
