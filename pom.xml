@@ -1646,7 +1646,7 @@
        <transport.http.netty.version>6.3.58</transport.http.netty.version>
        <version.org.wso2.orbit.javax.activation>1.1.1.wso2v3</version.org.wso2.orbit.javax.activation>
        <rabbitmq.version>5.20.0</rabbitmq.version>
-       <opentelemetry.all.version>1.11.0.wso2v7</opentelemetry.all.version>
+       <opentelemetry.all.version>1.57.0.wso2v2</opentelemetry.all.version>
        <okhttp.wso2.version>4.12.0.wso2v4</okhttp.wso2.version>
        <okio.wso2.version>3.16.0.wso2v1</okio.wso2.version>
        <zipkin.sender.okhttp3.version>2.17.2.wso2v2</zipkin.sender.okhttp3.version>
