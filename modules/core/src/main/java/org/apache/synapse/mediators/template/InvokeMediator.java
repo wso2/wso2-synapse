@@ -55,6 +55,8 @@ import org.apache.synapse.util.MediatorEnrichUtil;
 import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS;
 import static org.apache.synapse.mediators.builtin.CallMediator.ORIGINAL_CONTENT_TYPE;
@@ -114,7 +116,7 @@ public class InvokeMediator extends AbstractMediator implements
 
 	private static final Random RANDOM = new Random();
 
-    //
+    private static final Pattern OPERATION_NAME_PATTERN = Pattern.compile(".*\\.([^.]+\\.[^.]+)$");
 
     /**
      * Flag to identify whether this InvokeMediator is used to invoke a connector operation
@@ -504,6 +506,7 @@ public class InvokeMediator extends AbstractMediator implements
             CloseEventCollector.closeEntryEvent(synCtx, getInvokingArtifactName(), ComponentType.MEDIATOR, closeIndex,
                     isContentAltering());
             synCtx.getPropertyKeySet().remove(StatisticsConstants.STATISTIC_REPORTING_INVOKE_MEDIATOR_CLOSE_INDEX);
+            synCtx.setProperty(StatisticsConstants.ATOMIC_UNIT_ACTIVE, false);
         }
 
     }
@@ -676,7 +679,7 @@ public class InvokeMediator extends AbstractMediator implements
             return super.getMediatorName();
         }
 
-        String operation = this.getTargetTemplate().replaceAll(".*\\.([^.]+\\.[^.]+)$", "$1");
+        String operation = OPERATION_NAME_PATTERN.matcher(this.getTargetTemplate()).replaceAll("$1");
         return super.getMediatorName() + ":" + (isConnector() ? "Connector" : "Module") + "[" + operation + "]";
     }
 
