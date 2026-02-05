@@ -432,7 +432,19 @@ public class ScriptMediator extends AbstractMediator {
     private ScriptMessageContext getScriptMessageContext(MessageContext synCtx, XMLHelper helper,
                                                          Context context) {
         ScriptMessageContext scriptMC;
-        if (language.equals(JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT)) {
+        if (language.equals(NASHORN_JAVA_SCRIPT)) {
+            // nashorn is deprecated and will be removed in the future in favor of graal.js
+            try {
+                if(isJDKContainNashorn()) {
+                    scriptMC = new NashornJavaScriptMessageContext(synCtx, helper, jsEngine);
+                } else {
+                    scriptMC = new OpenJDKNashornJavaScriptMessageContext(synCtx, helper, jsEngine);
+                }
+            } catch (ScriptException e) {
+                throw new SynapseException("Error occurred while evaluating empty json object", e);
+            }
+
+        } else if (language.equals(JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT)) {
             try {
                 scriptMC = new GraalVMJavaScriptMessageContext(synCtx, helper, context);
             } catch (ScriptException e) {
@@ -478,7 +490,13 @@ public class ScriptMediator extends AbstractMediator {
         if (JsonUtil.hasAJsonPayload(messageContext)) {
             try {
                 String jsonPayload = JsonUtil.jsonPayloadToString(messageContext);
-                if (JAVA_SCRIPT.equals(language) || GRAAL_JAVA_SCRIPT.equals(language)) {
+                if (NASHORN_JAVA_SCRIPT.equals(language)) {
+                    if(isJDKContainNashorn()) {
+                        jsonObject = ((NashornJavaScriptMessageContext) scriptMC).jsonSerializerCallMember("parse", jsonPayload);
+                    } else {
+                        jsonObject = ((OpenJDKNashornJavaScriptMessageContext) scriptMC).jsonSerializerCallMember("parse", jsonPayload);
+                    }
+                } else if (JAVA_SCRIPT.equals(language) || GRAAL_JAVA_SCRIPT.equals(language)) {
                     jsonObject = ((GraalVMJavaScriptMessageContext) scriptMC).jsonSerializerCallMember("parse", jsonPayload);
                 } else {
                     String scriptWithJsonParser = "JSON.parse(JSON.stringify(" + jsonPayload + "))";
@@ -656,6 +674,7 @@ public class ScriptMediator extends AbstractMediator {
             log.debug("Initializing script mediator for language : " + language);
         }
         System.setProperty("polyglot.engine.WarnInterpreterOnly", "false");
+        System.setProperty("polyglot.js.nashorn-compat", "true");
         engineManager = new ScriptEngineManager();
         engineManager.registerEngineExtension("groovy", new GroovyScriptEngineFactory());
         engineManager.registerEngineExtension("rb", new JRubyScriptEngineFactory());
@@ -663,12 +682,9 @@ public class ScriptMediator extends AbstractMediator {
         oracleNashornFactory = getOracleNashornFactory();
 
         if (language.equals(NASHORN_JAVA_SCRIPT)) {
-            log.warn("NashornJS support has been removed. Hence defaulting to GraalVMJs");
-            System.setProperty("polyglot.js.nashorn-compat", "true");
-            language = GRAAL_JAVA_SCRIPT;
-        }
-
-        if (language.equals(GRAAL_JAVA_SCRIPT) || language.equals(JAVA_SCRIPT)) {
+            this.scriptEngine = createNashornEnginePortable();
+            this.jsEngine = createNashornEnginePortable();
+        } else if (language.equals(GRAAL_JAVA_SCRIPT) || language.equals(JAVA_SCRIPT)) {
             this.scriptEngine = GraalJSScriptEngine.create(null, AccessControlUtils.createSecureGraalContext(classAccessControlConfig));
             this.jsEngine = GraalJSScriptEngine.create(null, AccessControlUtils.createSecureGraalContext(classAccessControlConfig));
         } else if (language.equals(RHINO_JAVA_SCRIPT)) {
