@@ -21,13 +21,13 @@ package org.apache.synapse.mediators.util;
 import org.apache.logging.log4j.ThreadContext;
 
 /**
- * MediatorLogSetter manages the mediator ID in ThreadContext for logging purposes.
+ * MediatorIdLogSetter manages the mediator ID in ThreadContext for logging purposes.
  */
-public class MediatorLogSetter {
-    private static final MediatorLogSetter instance = new MediatorLogSetter();
+public class MediatorIdLogSetter {
+    private static final MediatorIdLogSetter instance = new MediatorIdLogSetter();
     private static final String MEDIATOR_ID_KEY = "MediatorId";
 
-    private MediatorLogSetter() {
+    private MediatorIdLogSetter() {
     }
 
     /**
@@ -35,7 +35,7 @@ public class MediatorLogSetter {
      * 
      * @return the singleton instance
      */
-    public static MediatorLogSetter getInstance() {
+    public static MediatorIdLogSetter getInstance() {
         return instance;
     }
 
