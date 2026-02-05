@@ -112,7 +112,7 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
             InboundEndpoint existingInboundEndpoint = getSynapseConfiguration().getInboundEndpoint(existingArtifactName);
             existingInboundEndpoint.destroy();
             inboundEndpoint.init(getSynapseEnvironment());
-
+            
 
             if (existingArtifactName.equals(inboundEndpoint.getName())) {
                 getSynapseConfiguration().updateInboundEndpoint(existingArtifactName, inboundEndpoint);

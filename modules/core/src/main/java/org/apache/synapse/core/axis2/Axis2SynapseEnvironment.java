@@ -393,6 +393,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
             return true;
         } finally {
+            // Clear ThreadContext after message injection to prevent context leakage
+            org.apache.synapse.mediators.util.MediatorIdLogSetter.getInstance().clearMediatorId();
             if (synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
@@ -818,6 +820,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      * @return whether mediation is completed
      */
     private boolean mediateFromContinuationStateStack(MessageContext synCtx) {
+
+        // Sync mediator ID from MessageContext to ThreadContext when thread switches
+        org.apache.synapse.mediators.util.MediatorIdLogSetter.getInstance().syncToThreadContext(synCtx);
 
         if (log.isDebugEnabled()) {
             log.debug("Mediating response using the ContinuationStateStack");

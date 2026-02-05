@@ -35,7 +35,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
-import org.apache.synapse.mediators.util.MediatorLogSetter;
+import org.apache.synapse.mediators.util.MediatorIdLogSetter;
 import org.apache.synapse.util.logging.LoggingUtils;
 
 import java.util.ArrayList;
@@ -324,23 +324,15 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      */
     protected void handleException(String msg, MessageContext msgContext) {
 
-        // Set MediatorId in ThreadContext so it appears in error logs
-        MediatorLogSetter.getInstance().setMediatorId(this.getMediatorId());
-        
-        try {
-            String formattedLog = LoggingUtils.getFormattedLog(msgContext, msg);
-            log.error(formattedLog);
-            if (msgContext.getServiceLog() != null) {
-                msgContext.getServiceLog().error(msg);
-            }
-            if (shouldTrace(msgContext)) {
-                trace.error(formattedLog);
-            }
-            throw new SynapseException(msg);
-        } finally {
-            // Clear MediatorId to prevent ThreadContext leaks
-            MediatorLogSetter.getInstance().clearMediatorId();
+        String formattedLog = LoggingUtils.getFormattedLog(msgContext, msg);
+        log.error(formattedLog);
+        if (msgContext.getServiceLog() != null) {
+            msgContext.getServiceLog().error(msg);
         }
+        if (shouldTrace(msgContext)) {
+            trace.error(formattedLog);
+        }
+        throw new SynapseException(msg);
     }
 
     /**
@@ -376,23 +368,15 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      */
     protected void handleException(String msg, Exception e, MessageContext msgContext) {
 
-        // Set MediatorId in ThreadContext so it appears in error logs
-        MediatorLogSetter.getInstance().setMediatorId(this.getMediatorId());
-        
-        try {
-            String formattedLog = LoggingUtils.getFormattedLog(msgContext, msg);
-            log.error(formattedLog, e);
-            if (msgContext.getServiceLog() != null) {
-                msgContext.getServiceLog().error(msg, e);
-            }
-            if (shouldTrace(msgContext)) {
-                trace.error(formattedLog, e);
-            }
-            throw new SynapseException(msg, e);
-        } finally {
-            // Clear MediatorId to prevent ThreadContext leaks
-            MediatorLogSetter.getInstance().clearMediatorId();
+        String formattedLog = LoggingUtils.getFormattedLog(msgContext, msg);
+        log.error(formattedLog, e);
+        if (msgContext.getServiceLog() != null) {
+            msgContext.getServiceLog().error(msg, e);
         }
+        if (shouldTrace(msgContext)) {
+            trace.error(formattedLog, e);
+        }
+        throw new SynapseException(msg, e);
     }
 
     public boolean isStatisticsEnable() {

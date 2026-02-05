@@ -88,6 +88,9 @@ public class MediatorWorker implements Runnable {
                 configurator.applyTenantInfo(synCtx);
             }
 
+            // Sync mediator ID from MessageContext to ThreadContext when new thread starts
+            org.apache.synapse.mediators.util.MediatorIdLogSetter.getInstance().syncToThreadContext(synCtx);
+
             if (synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.acquireMediationFlowLock();
@@ -152,6 +155,9 @@ public class MediatorWorker implements Runnable {
             if (RuntimeStatisticCollector.isStatisticsEnabled() && !Utils.isScatterMessage(synCtx)) {
                 this.statisticsCloseEventListener.invokeCloseEventEntry(synCtx);
             }
+            
+            // Clear ThreadContext when thread finishes to prevent context leakage
+            org.apache.synapse.mediators.util.MediatorIdLogSetter.getInstance().clearMediatorId();
         }
         synCtx = null;
         seq = null;

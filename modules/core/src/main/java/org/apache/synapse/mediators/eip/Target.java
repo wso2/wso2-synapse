@@ -255,6 +255,9 @@ public class Target {
         try {
             return sequenceMediator.mediate(synCtx);
         } catch (SynapseException syne) {
+            // Restore mediator ID to ThreadContext for logging (cleared by finally block)
+            org.apache.synapse.mediators.util.MediatorIdLogSetter.getInstance().syncToThreadContext(synCtx);
+            
             synCtx.setProperty(EIPConstants.ERROR_ON_TARGET_EXECUTION, true);
             if (!synCtx.getFaultStack().isEmpty()) {
                 log.warn(LoggingUtils.getFormattedLog(synCtx, "Executing fault handler due to exception encountered"),
@@ -266,6 +269,9 @@ public class Target {
                                                               + "dropped"));
             }
         } catch (Exception e) {
+            // Restore mediator ID to ThreadContext for logging (cleared by finally block)
+            org.apache.synapse.mediators.util.MediatorIdLogSetter.getInstance().syncToThreadContext(synCtx);
+            
             synCtx.setProperty(EIPConstants.ERROR_ON_TARGET_EXECUTION, true);
             String msg = "Unexpected error occurred executing the Target";
             log.error(LoggingUtils.getFormattedLog(synCtx, msg), e);
@@ -280,6 +286,9 @@ public class Target {
                                                       "Exception encountered but no fault handler found - message "
                                                               + "dropped"));
             }
+        } finally {
+            // Clear ThreadContext after exception handling to prevent context leakage
+            org.apache.synapse.mediators.util.MediatorIdLogSetter.getInstance().clearMediatorId();
         }
         return false;
     }
