@@ -1704,7 +1704,7 @@
        <icu.version>72.1</icu.version>
        <xmlbeans.imp.pkg.version>[3.1.0,4.0.0)</xmlbeans.imp.pkg.version>
        <org.wso2.orbit.atlassian.oai.version>2.44.1.wso2v1</org.wso2.orbit.atlassian.oai.version>
-       <swagger.parser.v3.version>2.1.22.wso2v2</swagger.parser.v3.version>
+       <swagger.parser.v3.version>2.1.37.wso2v1</swagger.parser.v3.version>
        <jaxen.version>2.0.0</jaxen.version>
    </properties>
    <developers>
