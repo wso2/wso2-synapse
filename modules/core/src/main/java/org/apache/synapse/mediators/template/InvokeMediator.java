@@ -114,15 +114,14 @@ public class InvokeMediator extends AbstractMediator implements
 
 	private static final Random RANDOM = new Random();
 
-    //
-
     /**
      * Flag to identify whether this InvokeMediator is used to invoke a connector operation
      * This will help to differentiate between connectors and modules in open-telemetry tracing
      */
     private boolean isConnector = false;
+    private String operation = "";
 
-	public InvokeMediator() {
+    public InvokeMediator() {
 		// LinkedHashMap is used to preserve tag order
 		pName2ParamMap = new LinkedHashMap<>();
 		id = String.valueOf(RANDOM.nextLong());
@@ -504,6 +503,7 @@ public class InvokeMediator extends AbstractMediator implements
             CloseEventCollector.closeEntryEvent(synCtx, getInvokingArtifactName(), ComponentType.MEDIATOR, closeIndex,
                     isContentAltering());
             synCtx.getPropertyKeySet().remove(StatisticsConstants.STATISTIC_REPORTING_INVOKE_MEDIATOR_CLOSE_INDEX);
+            synCtx.setProperty(StatisticsConstants.ATOMIC_UNIT_ACTIVE, false);
         }
 
     }
@@ -671,12 +671,19 @@ public class InvokeMediator extends AbstractMediator implements
         isConnector = connector;
     }
 
+    public String getOperation() {
+        return operation;
+    }
+
+    public void setOperation(String operation) {
+        this.operation = operation;
+    }
+
     private String getInvokingArtifactName() {
         if (!isDynamicMediator()) {
             return super.getMediatorName();
         }
 
-        String operation = this.getTargetTemplate().replaceAll(".*\\.([^.]+\\.[^.]+)$", "$1");
         return super.getMediatorName() + ":" + (isConnector() ? "Connector" : "Module") + "[" + operation + "]";
     }
 

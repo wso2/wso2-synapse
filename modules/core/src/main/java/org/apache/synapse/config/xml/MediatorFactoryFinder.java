@@ -397,6 +397,7 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
                 && libraryName != null
                 && !libraryName.equals("")) {
             invokeMediator.setTargetTemplate(libraryName + "." + connectorElem.getLocalName());
+            invokeMediator.setOperation(connectorElem.getLocalName());
         }
 
         // load configuration based references for the given connector
