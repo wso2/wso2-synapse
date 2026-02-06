@@ -31,6 +31,7 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
@@ -55,6 +56,8 @@ import org.apache.synapse.util.MediatorEnrichUtil;
 import org.apache.synapse.util.synapse.expression.constants.ExpressionConstants;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS;
 import static org.apache.synapse.mediators.builtin.CallMediator.ORIGINAL_CONTENT_TYPE;
@@ -97,6 +100,10 @@ public class InvokeMediator extends AbstractMediator implements
 	 * attribute of the mediator
 	 */
 	private Map<String, InvokeParam> pName2ParamMap;
+
+    /**
+     * Flag to identify whether this InvokeMediator is used to invoke a connector/module operation
+     */
 	private boolean dynamicMediator = false;
 	
 	private Value key = null;
@@ -109,6 +116,14 @@ public class InvokeMediator extends AbstractMediator implements
 	private SynapseEnvironment synapseEnv;
 
 	private static final Random RANDOM = new Random();
+
+    private static final Pattern OPERATION_NAME_PATTERN = Pattern.compile(".*\\.([^.]+\\.[^.]+)$");
+
+    /**
+     * Flag to identify whether this InvokeMediator is used to invoke a connector operation
+     * This will help to differentiate between connectors and modules in open-telemetry tracing
+     */
+    private boolean isConnector = false;
 
 	public InvokeMediator() {
 		// LinkedHashMap is used to preserve tag order
@@ -500,9 +515,10 @@ public class InvokeMediator extends AbstractMediator implements
         Integer closeIndex = (Integer) synCtx.getProperty(
                 StatisticsConstants.STATISTIC_REPORTING_INVOKE_MEDIATOR_CLOSE_INDEX);
         if (closeIndex != null) {
-            CloseEventCollector.closeEntryEvent(synCtx, getMediatorName(), ComponentType.MEDIATOR, closeIndex,
+            CloseEventCollector.closeEntryEvent(synCtx, getInvokingArtifactName(), ComponentType.MEDIATOR, closeIndex,
                     isContentAltering());
             synCtx.getPropertyKeySet().remove(StatisticsConstants.STATISTIC_REPORTING_INVOKE_MEDIATOR_CLOSE_INDEX);
+            synCtx.setProperty(StatisticsConstants.ATOMIC_UNIT_ACTIVE, false);
         }
 
     }
@@ -662,19 +678,60 @@ public class InvokeMediator extends AbstractMediator implements
 		StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR, holder);
 	}
 
+    public boolean isConnector() {
+        return isConnector;
+    }
+
+    public void setConnector(boolean connector) {
+        isConnector = connector;
+    }
+
+    private String getInvokingArtifactName() {
+        if (!isDynamicMediator()) {
+            return super.getMediatorName();
+        }
+
+        String operation = OPERATION_NAME_PATTERN.matcher(this.getTargetTemplate()).replaceAll("$1");
+        return super.getMediatorName() + ":" + (isConnector() ? "Connector" : "Module") + "[" + operation + "]";
+    }
+
+    @Override
+    public Integer reportOpenStatistics(MessageContext messageContext, boolean isContentAltering) {
+        Integer index = OpenEventCollector
+                .reportFlowContinuableEvent(messageContext, getInvokingArtifactName(), ComponentType.MEDIATOR,
+                        getAspectConfiguration(), isContentAltering() || isContentAltering);
+
+        if (isDynamicMediator()) {
+            messageContext.setProperty(StatisticsConstants.ATOMIC_UNIT_ACTIVE, true);
+        }
+
+        return index;
+    }
 
     @Override
     public void reportCloseStatistics(MessageContext messageContext, Integer currentIndex) {
-
         // Skipping premature closing of the invoke mediator in case of continuation call until response is received.
         // Spans will be closed once the response is received and mediation is continued in postMediate() method.
-        if (Boolean.TRUE.equals(messageContext.getProperty(SynapseConstants.CONTINUATION_CALL))) {
+        if (isConnector && Boolean.TRUE.equals(messageContext.getProperty(SynapseConstants.CONTINUATION_CALL))) {
             messageContext.setProperty(StatisticsConstants.STATISTIC_REPORTING_INVOKE_MEDIATOR_CLOSE_INDEX, currentIndex);
             return;
         }
 
-        CloseEventCollector.closeEntryEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR, currentIndex,
-                isContentAltering());
+        CloseEventCollector.closeEntryEvent(messageContext, getInvokingArtifactName(), ComponentType.MEDIATOR,
+                currentIndex, isContentAltering());
+
+        if (isDynamicMediator()) {
+            messageContext.setProperty(StatisticsConstants.ATOMIC_UNIT_ACTIVE, false);
+        }
     }
 
+    @Override
+    public void reportCloseStatisticsWithError(MessageContext messageContext, Integer currentIndex) {
+        CloseEventCollector.closeEntryEvent(messageContext, getInvokingArtifactName(), ComponentType.MEDIATOR, currentIndex,
+                isContentAltering(), null, true);
+
+        if (isDynamicMediator()) {
+            messageContext.setProperty(StatisticsConstants.ATOMIC_UNIT_ACTIVE, false);
+        }
+    }
 }
