@@ -635,6 +635,9 @@ public final class SynapseConstants {
     public static final String JAEGER_TRACE_ID = "jaeger_trace_id";
     public static final String JAEGER_SPAN_ID = "jaeger_span_id";
 
+    public static final String TRACE_ID = "trace_id";
+    public static final String SPAN_ID = "span_id";
+
     public static final String ANALYTICS_METADATA = "ANALYTICS_METADATA";
 
     // Constants for the HTTP Connection

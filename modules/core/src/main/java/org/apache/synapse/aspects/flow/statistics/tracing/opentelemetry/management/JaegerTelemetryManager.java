@@ -19,7 +19,7 @@
 package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management;
 
 import io.opentelemetry.api.OpenTelemetry;
-import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.exporter.jaeger.JaegerGrpcSpanExporter;
@@ -94,6 +94,11 @@ public class JaegerTelemetryManager implements OpenTelemetryManager {
     public Tracer getTelemetryTracer() {
 
         return openTelemetry.getTracer(TelemetryConstants.OPENTELEMETRY_INSTRUMENTATION_NAME);
+    }
+
+    @Override
+    public Meter getTelemetryMeter() {
+        return openTelemetry.getMeter(TelemetryConstants.OPENTELEMETRY_INSTRUMENTATION_NAME);
     }
 
     @Override
