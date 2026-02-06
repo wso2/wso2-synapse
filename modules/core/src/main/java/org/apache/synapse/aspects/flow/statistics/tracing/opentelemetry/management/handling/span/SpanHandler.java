@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SequenceType;
@@ -239,6 +240,9 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         inject(span, tracerSpecificCarrier);
         synCtx.setProperty(SynapseConstants.JAEGER_TRACE_ID, span.getSpanContext().getTraceId());
         synCtx.setProperty(SynapseConstants.JAEGER_SPAN_ID, span.getSpanContext().getSpanId());
+        ThreadContext.put(SynapseConstants.TRACE_ID, span.getSpanContext().getTraceId());
+        ThreadContext.put(SynapseConstants.SPAN_ID, span.getSpanContext().getSpanId());
+
         if (logger.isDebugEnabled()) {
             logger.debug("Jaeger Trace ID: " + synCtx.getProperty(SynapseConstants.JAEGER_TRACE_ID) + " Jaeger Span ID: " + synCtx.getProperty(SynapseConstants.JAEGER_SPAN_ID));
         }
@@ -338,6 +342,9 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         inject(span, tracerSpecificCarrier);
         msgCtx.setProperty(SynapseConstants.JAEGER_TRACE_ID, span.getSpanContext().getTraceId());
         msgCtx.setProperty(SynapseConstants.JAEGER_SPAN_ID, span.getSpanContext().getSpanId());
+        ThreadContext.put(SynapseConstants.TRACE_ID, span.getSpanContext().getTraceId());
+        ThreadContext.put(SynapseConstants.SPAN_ID, span.getSpanContext().getSpanId());
+
         if (logger.isDebugEnabled()) {
             logger.debug(
                     "Jaeger Trace ID: " + msgCtx.getProperty(SynapseConstants.JAEGER_TRACE_ID) + " Jaeger Span ID: " +

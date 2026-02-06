@@ -51,6 +51,13 @@ public class TelemetryConstants {
     public static final String OPENTELEMETRY_PROTOCOL = "opentelemetry.protocol";
 
     /**
+     * OpenTelemetry metric push interval in seconds.
+     * if not defined, default value is 60 seconds.
+     */
+    public static final String OPENTELEMETRY_METRIC_PUSH_INTERVAL_SECONDS = "opentelemetry.metric.push.interval.seconds";
+
+    public static final String OPENTELEMETRY_METRIC_DEFAULT_PUSH_INTERVAL_SECONDS = "60";
+    /**
      * HTTP protocol constant.
      */
     public static final String HTTP_PROTOCOL = "http";
