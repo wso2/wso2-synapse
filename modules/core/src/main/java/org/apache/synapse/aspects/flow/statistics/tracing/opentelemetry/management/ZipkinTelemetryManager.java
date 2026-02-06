@@ -19,7 +19,7 @@
 package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management;
 
 import io.opentelemetry.api.OpenTelemetry;
-import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter;
@@ -90,6 +90,13 @@ public class ZipkinTelemetryManager implements OpenTelemetryManager {
     public Tracer getTelemetryTracer() {
 
         return openTelemetry.getTracer(TelemetryConstants.OPENTELEMETRY_INSTRUMENTATION_NAME);
+    }
+
+    @Override
+    public Meter getTelemetryMeter() {
+        // Current implementation does not support metrics for Zipkin, This is implemented to return a No-op Meter.
+        // Can be enhanced in the future to support metrics if required.
+        return openTelemetry.getMeter(TelemetryConstants.OPENTELEMETRY_INSTRUMENTATION_NAME);
     }
 
     @Override
