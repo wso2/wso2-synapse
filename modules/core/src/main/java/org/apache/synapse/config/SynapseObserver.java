@@ -28,6 +28,7 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.api.API;
+import org.apache.synapse.message.processor.MessageProcessor;
 
 /**
  * An implementation of this interface can be registered with the SynapseConfiguration to receive
@@ -179,4 +180,16 @@ public interface SynapseObserver {
      * @param library the library removed from the configuration
      */
     void synapseLibraryRemoved(Library library);
+
+    /** Event fired when a Message Processor is added to the configuration
+     *
+     * @param messageProcessor the Message Processor added to the configuration
+     */
+    void messageProcessorAdded(MessageProcessor messageProcessor);
+
+    /** Event fired when a Message Processor is removed from the configuration
+     *
+     * @param messageProcessor the Message Processor removed from the configuration
+     */
+    void messageProcessorRemoved(MessageProcessor messageProcessor);
 }
