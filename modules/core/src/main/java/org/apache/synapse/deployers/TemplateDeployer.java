@@ -32,6 +32,7 @@ import org.apache.synapse.config.xml.TemplateMediatorSerializer;
 import org.apache.synapse.config.xml.endpoints.TemplateSerializer;
 import org.apache.synapse.endpoints.Template;
 import org.apache.synapse.mediators.template.TemplateMediator;
+import org.apache.synapse.mediators.MediatorIdentityManager;
 
 import javax.xml.namespace.QName;
 import java.io.File;
@@ -103,6 +104,10 @@ public class TemplateDeployer extends AbstractSynapseArtifactDeployer {
                         }
 
                         getSynapseConfiguration().addSequenceTemplate(tm.getName(), tm);
+                        
+                        // Assign mediator IDs for error logging
+                        MediatorIdentityManager.getInstance().assignMediatorIds(tm);
+                        
                         if (log.isDebugEnabled()) {
                             log.debug("Template Deployment from file : " + fileName + " : Completed");
                         }
@@ -189,6 +194,9 @@ public class TemplateDeployer extends AbstractSynapseArtifactDeployer {
                             getSynapseConfiguration().removeSequenceTemplate(existingSt.getName());
                             log.info("Template: " + existingArtifactName + " has been undeployed");
                         }
+                        
+                        // Register mediators for ID assignment after update
+                        MediatorIdentityManager.getInstance().assignMediatorIds(tm);
 
                         existingSt.destroy();
                         log.info("Template: " + tm.getName() + " has been updated from the file: " + fileName);
