@@ -137,7 +137,7 @@ public class MessageProcessorFactory {
         assert processor != null;
 
         String nameString = processor.getName();
-        if (nameString == null || nameString.isEmpty()) {
+        if (nameString.isEmpty()) {
             nameString = SynapseConstants.MESSAGE_PROCESSOR_NAME;
         }
 
