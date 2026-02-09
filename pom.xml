@@ -1596,7 +1596,7 @@
        <org.wso2.json.version>3.0.0.wso2v7</org.wso2.json.version>
       <log4j2.version>2.24.3</log4j2.version>
       <xmlunit.version>1.1</xmlunit.version>
-      <derby.version>10.4.2.0</derby.version>
+      <derby.version>10.17.1.0</derby.version>
       <wrapper.version>3.2.3</wrapper.version>
       <saxon.version>8.9</saxon.version>
       <saxon.wso2.version>${saxon.version}.0.wso2v2</saxon.wso2.version>
