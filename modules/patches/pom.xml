@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache.synapse</groupId>
         <artifactId>Apache-Synapse</artifactId>
-        <version>4.1.0-wso2v7-SNAPSHOT</version>
+        <version>4.1.0-wso2v7</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <artifactId>synapse-patches</artifactId>
