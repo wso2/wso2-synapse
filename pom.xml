@@ -1533,11 +1533,11 @@
       <httpcore.wso2.version>${httpcore.version}.wso2v1</httpcore.wso2.version>
        <httpcore-nio.version>4.4.16</httpcore-nio.version>
        <httpcore-nio.wso2.version>${httpcore-nio.version}-wso2v4</httpcore-nio.wso2.version>
-       <hc.httpclient.version>4.5.13</hc.httpclient.version>
+       <hc.httpclient.version>4.5.14</hc.httpclient.version>
        <httpclient.wso2.version>${hc.httpclient.version}.wso2v1</httpclient.wso2.version>
       <aspectj.version>1.9.22.1</aspectj.version>
       <spring.version>1.2.8</spring.version>
-      <commons-codec.version>1.16.0</commons-codec.version>
+      <commons-codec.version>1.21.0</commons-codec.version>
       <!-- Sets the source encoding to UTF-8 -->
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
       <!-- Synapse and related components -->
