@@ -255,7 +255,7 @@ public class Target {
         try {
             return sequenceMediator.mediate(synCtx);
         } catch (SynapseException syne) {
-            // Restore mediator ID to ThreadContext for logging (cleared by finally block)
+            // Restore mediator ID to ThreadContext for logging
             org.apache.synapse.mediators.util.MediatorIdLogSetter.getInstance().syncToThreadContext(synCtx);
             
             synCtx.setProperty(EIPConstants.ERROR_ON_TARGET_EXECUTION, true);
@@ -269,7 +269,7 @@ public class Target {
                                                               + "dropped"));
             }
         } catch (Exception e) {
-            // Restore mediator ID to ThreadContext for logging (cleared by finally block)
+            // Restore mediator ID to ThreadContext for logging
             org.apache.synapse.mediators.util.MediatorIdLogSetter.getInstance().syncToThreadContext(synCtx);
             
             synCtx.setProperty(EIPConstants.ERROR_ON_TARGET_EXECUTION, true);

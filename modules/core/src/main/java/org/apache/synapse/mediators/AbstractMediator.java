@@ -35,7 +35,6 @@ import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
-import org.apache.synapse.mediators.util.MediatorIdLogSetter;
 import org.apache.synapse.util.logging.LoggingUtils;
 
 import java.util.ArrayList;

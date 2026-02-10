@@ -26,7 +26,6 @@ import org.apache.synapse.api.Resource;
 import org.apache.synapse.config.xml.AnonymousListMediator;
 import org.apache.synapse.config.xml.SwitchCase;
 import org.apache.synapse.core.axis2.ProxyService;
-import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.builtin.CommentMediator;
 import org.apache.synapse.mediators.builtin.ForEachMediator;

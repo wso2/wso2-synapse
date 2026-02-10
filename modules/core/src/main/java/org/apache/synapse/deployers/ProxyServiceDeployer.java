@@ -86,10 +86,11 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                     log.debug("Initialized the ProxyService : " + proxy.getName());
                 }
 
+                getSynapseConfiguration().addProxyService(proxy.getName(), proxy);
+
                 // Assign mediator IDs for error logging
                 MediatorIdentityManager.getInstance().assignMediatorIds(proxy);
 
-                getSynapseConfiguration().addProxyService(proxy.getName(), proxy);
                 try {
                     AxisService axisService = proxy.buildAxisService(getSynapseConfiguration(),
                                                                      getSynapseConfiguration().getAxisConfiguration());
@@ -164,10 +165,6 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                 if (log.isDebugEnabled()) {
                     log.debug("Initialized the ProxyService : " + proxy.getName());
                 }
-                
-                // Assign mediator IDs for error logging
-                MediatorIdentityManager.getInstance().assignMediatorIds(proxy);
-                
                 ProxyService currentProxy = getSynapseConfiguration().getProxyService(existingArtifactName);
                 currentProxy.stop(getSynapseConfiguration());
                 currentProxy.destroy();
@@ -184,6 +181,9 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                     }
                     return proxy.getName();
                 }
+
+                // Assign mediator IDs for error logging
+                MediatorIdentityManager.getInstance().assignMediatorIds(proxy);
 
                 if (log.isDebugEnabled()) {
                     log.debug("Started the ProxyService : " + proxy.getName());
