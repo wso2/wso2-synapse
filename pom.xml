@@ -1536,7 +1536,7 @@
        <hc.httpclient.version>4.5.14</hc.httpclient.version>
        <httpclient.wso2.version>${hc.httpclient.version}.wso2v1</httpclient.wso2.version>
       <aspectj.version>1.9.22.1</aspectj.version>
-      <spring.version>1.2.8</spring.version>
+      <spring.version>5.2.22.RELEASE</spring.version>
       <commons-codec.version>1.21.0</commons-codec.version>
       <!-- Sets the source encoding to UTF-8 -->
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
