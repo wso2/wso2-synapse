@@ -29,6 +29,7 @@ import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.builtin.CommentMediator;
 import org.apache.synapse.mediators.builtin.ForEachMediator;
+import org.apache.synapse.mediators.builtin.PropertyGroupMediator;
 import org.apache.synapse.mediators.builtin.PropertyMediator;
 import org.apache.synapse.mediators.eip.Target;
 import org.apache.synapse.mediators.eip.splitter.CloneMediator;
@@ -299,6 +300,18 @@ public class MediatorIdentityManager {
         // Set the ID
         if (mediator instanceof AbstractMediator) {
             ((AbstractMediator) mediator).setMediatorId(mediatorId);
+        }
+
+        // Handle PropertyGroupMediator (contains list of PropertyMediator objects)
+        if (mediator instanceof PropertyGroupMediator) {
+            PropertyGroupMediator propertyGroup = (PropertyGroupMediator) mediator;
+            List<PropertyMediator> propertyList = propertyGroup.getPropGroupList();
+            if (propertyList != null && !propertyList.isEmpty()) {
+                AtomicInteger childCounter = new AtomicInteger(0);
+                for (PropertyMediator child : propertyList) {
+                    assignMediatorIds(child, mediatorId, childCounter);
+                }
+            }
         }
 
         // Process children for container mediators
