@@ -1532,7 +1532,7 @@
        <httpcore.version>4.4.16</httpcore.version>
       <httpcore.wso2.version>${httpcore.version}.wso2v1</httpcore.wso2.version>
        <httpcore-nio.version>4.4.16</httpcore-nio.version>
-       <httpcore-nio.wso2.version>${httpcore-nio.version}-wso2v4</httpcore-nio.wso2.version>
+       <httpcore-nio.wso2.version>${httpcore-nio.version}-wso2v5</httpcore-nio.wso2.version>
        <hc.httpclient.version>4.5.14</hc.httpclient.version>
        <httpclient.wso2.version>${hc.httpclient.version}.wso2v1</httpclient.wso2.version>
       <aspectj.version>1.9.22.1</aspectj.version>
