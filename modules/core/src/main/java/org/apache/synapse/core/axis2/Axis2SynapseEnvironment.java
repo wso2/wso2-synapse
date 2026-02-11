@@ -64,6 +64,7 @@ import org.apache.synapse.mediators.MediatorWorker;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.elementary.Source;
 import org.apache.synapse.mediators.elementary.Target;
+import org.apache.synapse.mediators.util.MediatorIdLogSetter;
 import org.apache.synapse.rest.RESTRequestHandler;
 import org.apache.synapse.startup.quartz.QuartzTaskStatisticsCloseEventListener;
 import org.apache.synapse.startup.quartz.StartUpController;
@@ -394,7 +395,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             return true;
         } finally {
             // Clear ThreadContext after message injection to prevent context leakage
-            org.apache.synapse.mediators.util.MediatorIdLogSetter.getInstance().clearMediatorId();
+            MediatorIdLogSetter.getInstance().clearMediatorId();
             if (synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
@@ -822,7 +823,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     private boolean mediateFromContinuationStateStack(MessageContext synCtx) {
 
         // Sync mediator ID from MessageContext to ThreadContext when thread switches
-        org.apache.synapse.mediators.util.MediatorIdLogSetter.getInstance().syncToThreadContext(synCtx);
+        MediatorIdLogSetter.getInstance().syncToThreadContext(synCtx);
 
         if (log.isDebugEnabled()) {
             log.debug("Mediating response using the ContinuationStateStack");
