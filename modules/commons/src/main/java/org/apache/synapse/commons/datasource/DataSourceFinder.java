@@ -70,16 +70,26 @@ public class DataSourceFinder {
 
         try {
             Object dataSourceO = context.lookup(dsName);
-            if (dataSourceO != null && dataSourceO instanceof DataSource) {
-                return (DataSource) dataSourceO;
-            } else {
-                throw new SynapseCommonsException("DataSource : " + dsName + " not found " +
-                        "when looking up using JNDI properties : " + context.getEnvironment(), log);
+            if (dataSourceO != null) {
+                // Let JNDI automatically dereference if needed
+                if (dataSourceO instanceof javax.naming.Reference) {
+                    dataSourceO = javax.naming.spi.NamingManager.getObjectInstance(
+                            dataSourceO, null, null, context.getEnvironment());
+                }
+                if (dataSourceO instanceof DataSource) {
+                    return (DataSource) dataSourceO;
+                }
             }
+            throw new SynapseCommonsException("DataSource : " + dsName + " not found " +
+                    "when looking up using JNDI properties : " + context.getEnvironment(), log);
+
 
         } catch (NamingException e) {
             throw new SynapseCommonsException("Error looking up DataSource : " + dsName
                     + " using JNDI" + " properties : " + context, e);
+        } catch (Exception e) {
+            throw new SynapseCommonsException("Unexpected error resolving DataSource : "
+                    + dsName + " from JNDI", e, log);
         }
     }
 }

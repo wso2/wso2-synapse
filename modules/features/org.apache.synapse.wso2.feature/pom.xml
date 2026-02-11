@@ -20,7 +20,7 @@
     <parent>
         <artifactId>synapse-features</artifactId>
         <groupId>org.apache.synapse</groupId>
-        <version>4.0.0-wso2v276-SNAPSHOT</version>
+        <version>4.1.0-wso2v10-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -101,7 +101,7 @@
         </dependency>
         <dependency>
             <groupId>org.wso2.orbit.org.apache.tomcat</groupId>
-            <artifactId>tomcat</artifactId>
+            <artifactId>tomcat-jdk21</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-pool.wso2</groupId>
@@ -170,7 +170,7 @@
                                 <bundleDef>org.wso2.orbit.com.atlassian.oai:swagger-request-validator-core-v3:${org.wso2.orbit.atlassian.oai.version}</bundleDef>
                             </bundles>
                             <importBundles>
-                                <importBundleDef>org.wso2.orbit.org.apache.tomcat:tomcat</importBundleDef>
+                                <importBundleDef>org.wso2.orbit.org.apache.tomcat:tomcat-jdk21</importBundleDef>
                                 <importBundleDef>commons-pool.wso2:commons-pool</importBundleDef>
                                 <importBundleDef>org.antlr.wso2:antlr-runtime</importBundleDef>
                             </importBundles>

@@ -18,9 +18,13 @@
 
 package org.apache.synapse.aspects.flow.statistics.collectors;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTelemetryManagerHolder;
@@ -70,6 +74,16 @@ public abstract class RuntimeStatisticCollector {
     private static boolean isCollectingAllStatistics;
 
     public static long eventExpireTime;
+
+    /**
+     * Is mediator span filter enabled in otlp tracing.
+     */
+    private static boolean isMediatorSpanFilterEnabled;
+
+    /**
+     * Mediator list to filter spans in otlp tracing.
+     */
+    private static Set<String> mediatorSpanFilterSet;
 
     /**
      * Initialize statistics collection when ESB starts.
@@ -129,6 +143,21 @@ public abstract class RuntimeStatisticCollector {
                 }
                 OpenTelemetryManagerHolder.loadTracerConfigurations();
                 OpenTelemetryManagerHolder.setCollectingFlags(isCollectingPayloads, isCollectingProperties, isCollectingVariables);
+                String mediatorSpanFilterListStr = SynapsePropertiesLoader.getPropertyValue(
+                        TelemetryConstants.OLTP_FILTERED_MEDIATOR_NAMES, null);
+                isMediatorSpanFilterEnabled = mediatorSpanFilterListStr != null &&
+                        !mediatorSpanFilterListStr.isEmpty();
+                if (isMediatorSpanFilterEnabled) {
+                    mediatorSpanFilterSet = Stream.of(mediatorSpanFilterListStr.split(","))
+                            .map(String::trim)        // remove leading/trailing spaces
+                            .map(String::toLowerCase) // convert to lowercase
+                            .collect(Collectors.toSet());
+                    if (log.isDebugEnabled()) {
+                        log.debug(
+                                "Mediator span filter is enabled. Mediators with the following names " +
+                                        "will be not traced: " + mediatorSpanFilterListStr);
+                    }
+                }
             }
         } else {
             if (log.isDebugEnabled()) {
@@ -145,6 +174,20 @@ public abstract class RuntimeStatisticCollector {
     protected static void setStatisticsTraceId(MessageContext msgCtx) {
         if (msgCtx.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) == null && msgCtx.getMessageID() != null) {
             msgCtx.setProperty(StatisticsConstants.FLOW_STATISTICS_ID, msgCtx.getMessageID().replace(':', '_'));
+        } else if (msgCtx.getMessageID() == null) {
+            log.error("Message ID is null");
+        }
+    }
+
+    /**
+     * Set message Id of the message context as statistic trace Id at the beginning of the statistic flow.
+     *
+     * @param msgCtx Axis2 message context.
+     */
+    protected static void setStatisticsTraceId(org.apache.axis2.context.MessageContext msgCtx) {
+        if (msgCtx.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) == null && msgCtx.getMessageID() != null) {
+            msgCtx.setProperty(StatisticsConstants.FLOW_STATISTICS_ID,
+                    msgCtx.getMessageID().replace(':', '_'));
         } else if (msgCtx.getMessageID() == null) {
             log.error("Message ID is null");
         }
@@ -239,6 +282,23 @@ public abstract class RuntimeStatisticCollector {
     public static void setCollectingAllStatistics(boolean state) {
         isCollectingAllStatistics = state;
         log.info("Collecting statistics for all artifacts state changed to: " + state);
+    }
+
+    /**
+     * Check whether the given mediator is filtered out from tracing when using OpenTelemetry.
+     *
+     * @param componentName Name of the mediator
+     * @return true if the mediator is filtered out
+     */
+    public static boolean isSpanFilteredMediator(String componentName, AspectConfiguration aspectConfiguration) {
+        boolean isFiltered = false;
+        if (aspectConfiguration != null) {
+            isFiltered = aspectConfiguration.isTraceFilterEnable();
+        }
+        if (!isFiltered && isMediatorSpanFilterEnabled && componentName != null) {
+            isFiltered =  mediatorSpanFilterSet.contains(componentName.split(":")[0].trim().toLowerCase());
+        }
+        return isFiltered;
     }
 
     /**

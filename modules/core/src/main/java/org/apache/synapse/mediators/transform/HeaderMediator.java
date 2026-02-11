@@ -32,6 +32,7 @@ import org.apache.axis2.addressing.RelatesTo;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -70,6 +71,11 @@ public class HeaderMediator extends AbstractMediator {
     
     /** The scope which decides which header to update: SOAP or HTTP */
     private String scope = null; // null defaults to the SOAP header. 
+
+    /**
+     * Type of the Header value :- OM element | text
+     */
+    private String valueType = null;
 
     /**
      * Sets/Removes a SOAP header on the current message
@@ -246,7 +252,12 @@ public class HeaderMediator extends AbstractMediator {
         if (!isImplicit()) {
             SOAPHeaderBlock hb = header.addHeaderBlock(qName.getLocalPart(),
                                                        fac.createOMNamespace(qName.getNamespaceURI(), qName.getPrefix()));
-            hb.setText(value);
+            if ("OM".equalsIgnoreCase(valueType)) {
+                OMElement headerElement = SynapseConfigUtils.stringToOM(value);
+                hb.addChild(headerElement);
+            } else {
+                hb.setText(value);
+            }
         } else if (hasEmbeddedXml()) {
             addHeaderChildrenToMessageContext(synCtx, embeddedXmlContent);
         } else {
@@ -377,5 +388,13 @@ public class HeaderMediator extends AbstractMediator {
             }
         }
         return super.getMediatorName() + ":" + headerName;
+    }
+
+    public void setValueType(String valueType) {
+        this.valueType = valueType;
+    }
+
+    public String getValueType() {
+        return valueType;
     }
 }

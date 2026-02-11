@@ -51,8 +51,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.synapse.unittest.UnitTestModeUtils;
+
 import static org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY;
-import static org.apache.synapse.unittest.Constants.IS_RUNNING_AS_UNIT_TEST;
 
 public class Resource extends AbstractRequestProcessor implements ManagedLifecycle, AspectConfigurable {
 
@@ -350,8 +351,7 @@ public class Resource extends AbstractRequestProcessor implements ManagedLifecyc
             registerFaultHandler(synCtx);
             
             // Set artifact key for coverage tracking when running unit tests
-            if (synCtx.getConfiguration() != null &&
-                    "true".equals(synCtx.getConfiguration().getProperty(IS_RUNNING_AS_UNIT_TEST))) {
+            if (UnitTestModeUtils.isUnitTestMode()) {
                 String apiName = (String) synCtx.getProperty(RESTConstants.SYNAPSE_REST_API);
                 if (apiName != null) {
                     synCtx.setProperty(COVERAGE_ARTIFACT_KEY, "API:" + apiName);
@@ -378,8 +378,7 @@ public class Resource extends AbstractRequestProcessor implements ManagedLifecyc
             registerFaultHandler(synCtx);
             
             // Set artifact key for coverage tracking when running unit tests
-            if (synCtx.getConfiguration() != null &&
-                    "true".equals(synCtx.getConfiguration().getProperty(IS_RUNNING_AS_UNIT_TEST))) {
+            if (UnitTestModeUtils.isUnitTestMode()) {
                 synCtx.setProperty(COVERAGE_ARTIFACT_KEY,
                         "Sequence:" + sequenceKey);
             }

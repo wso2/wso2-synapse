@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.synapse</groupId>
         <artifactId>Apache-Synapse</artifactId>
-        <version>4.0.0-wso2v276-SNAPSHOT</version>
+        <version>4.1.0-wso2v10-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -92,26 +92,26 @@
                                 <mkdir dir="${basedir}/target/coverage-report" />
                                 <report>
                                     <executiondata>
-                                        <fileset dir="../core/target/coverage-reports">
-                                            <include name="jacoco-unit*.exec" />
+                                        <fileset dir="../core/target">
+                                            <include name="jacoco.exec" />
                                         </fileset>
-                                        <fileset dir="../commons/target/coverage-reports">
-                                            <include name="jacoco-unit*.exec" />
+                                        <fileset dir="../commons/target">
+                                            <include name="jacoco.exec" />
                                         </fileset>
-                                        <fileset dir="../extensions/target/coverage-reports">
-                                            <include name="jacoco-unit*.exec" />
+                                        <fileset dir="../extensions/target">
+                                            <include name="jacoco.exec" />
                                         </fileset>
-                                        <fileset dir="../tasks/target/coverage-reports">
-                                            <include name="jacoco-unit*.exec" />
+                                        <fileset dir="../tasks/target">
+                                            <include name="jacoco.exec" />
                                         </fileset>
-                                        <fileset dir="../transports/core/nhttp/target/coverage-reports">
-                                            <include name="jacoco-unit*.exec" />
+                                        <fileset dir="../transports/core/nhttp/target">
+                                            <include name="jacoco.exec" />
                                         </fileset>
-                                        <fileset dir="../transports/core/vfs/target/coverage-reports">
-                                            <include name="jacoco-unit*.exec" />
+                                        <fileset dir="../transports/core/vfs/target">
+                                            <include name="jacoco.exec" />
                                         </fileset>
-                                        <fileset dir="../transports/optional/fix/target/coverage-reports">
-                                            <include name="jacoco-unit*.exec" />
+                                        <fileset dir="../transports/optional/fix/target">
+                                            <include name="jacoco.exec" />
                                         </fileset>
                                     </executiondata>
                                     <structure name="Overall Synapse Code Coverage Summary">

@@ -78,6 +78,11 @@ public class HeaderMediatorSerializer extends AbstractMediatorSerializer {
             } else if (!mediator.isImplicit()) {
                 handleException("Value or expression required for a set header mediator");
             }
+
+            if (mediator.getValueType() != null) {
+                header.addAttribute(fac.createOMAttribute(
+                    "type", nullNS, mediator.getValueType()));
+            }
         }
         if (mediator.hasEmbeddedXml()) {
             for (OMElement e : mediator.getEmbeddedXml()) {
