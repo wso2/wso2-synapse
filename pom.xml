@@ -1518,8 +1518,8 @@
       <plexus.utils.version>1.5.4</plexus.utils.version>
       <com.google.code.gson.version>2.13.2</com.google.code.gson.version>
       <org.codehaus.jettison.version>1.5.3</org.codehaus.jettison.version>
-      <com.damnhandy.version>2.1.6</com.damnhandy.version>
-      <damnhandy.version>${com.damnhandy.version}.wso2v2</damnhandy.version>
+      <com.damnhandy.version>2.1.8</com.damnhandy.version>
+      <damnhandy.version>${com.damnhandy.version}.wso2v1</damnhandy.version>
       <javax.jms.version>1.1</javax.jms.version>
       <org.antlr.version>3.4</org.antlr.version>
       <org.antlr4.version>4.7.1</org.antlr4.version>
@@ -1527,7 +1527,7 @@
       <com.jayway.jsonpath.version>2.10.0.wso2v1</com.jayway.jsonpath.version>
       <qfj.version>1.5.3</qfj.version>
        <quickfixj.version>2.3.1</quickfixj.version>
-      <org.bouncycastle.version>1.81.0.wso2v1</org.bouncycastle.version>
+      <org.bouncycastle.version>1.83.0.wso2v1</org.bouncycastle.version>
       <imp.pkg.version.wso2.bouncycastle>[1.52.0,2.0.0)</imp.pkg.version.wso2.bouncycastle>
        <httpcore.version>4.4.16</httpcore.version>
       <httpcore.wso2.version>${httpcore.version}.wso2v1</httpcore.wso2.version>
@@ -1628,7 +1628,7 @@
       <google.guava.version>33.5.0-jre</google.guava.version>
       <failureaccess.version>1.0.3</failureaccess.version>
       <joda-time.version>2.9.4.wso2v1</joda-time.version>
-      <com.googlecode.libphonenumber.version>9.0.22.wso2v1</com.googlecode.libphonenumber.version>
+      <com.googlecode.libphonenumber.version>9.0.23.wso2v1</com.googlecode.libphonenumber.version>
       <jacoco.agent.version>0.8.12</jacoco.agent.version>
       <jacoco.ant.version>0.8.12</jacoco.ant.version>
       <dataprovider.version>1.13.1</dataprovider.version>
