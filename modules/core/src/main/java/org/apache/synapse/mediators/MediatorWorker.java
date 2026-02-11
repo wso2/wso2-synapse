@@ -33,6 +33,7 @@ import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.debug.SynapseDebugManager;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.util.MediatorIdLogSetter;
 import org.apache.synapse.mediators.v2.Utils;
 import org.apache.synapse.util.logging.LoggingUtils;
 
@@ -87,6 +88,9 @@ public class MediatorWorker implements Runnable {
             if (configurator != null) {
                 configurator.applyTenantInfo(synCtx);
             }
+
+            // Sync mediator ID from MessageContext to ThreadContext when new thread starts
+            MediatorIdLogSetter.getInstance().syncToThreadContext(synCtx);
 
             if (synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
@@ -152,6 +156,9 @@ public class MediatorWorker implements Runnable {
             if (RuntimeStatisticCollector.isStatisticsEnabled() && !Utils.isScatterMessage(synCtx)) {
                 this.statisticsCloseEventListener.invokeCloseEventEntry(synCtx);
             }
+            
+            // Clear ThreadContext when thread finishes to prevent context leakage
+            MediatorIdLogSetter.getInstance().clearMediatorId();
         }
         synCtx = null;
         seq = null;

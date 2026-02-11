@@ -32,6 +32,7 @@ import org.apache.synapse.config.xml.ProxyServiceFactory;
 import org.apache.synapse.config.xml.ProxyServiceSerializer;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.apache.synapse.mediators.MediatorIdentityManager;
 
 import java.io.File;
 import java.util.Properties;
@@ -86,6 +87,10 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                 }
 
                 getSynapseConfiguration().addProxyService(proxy.getName(), proxy);
+
+                // Assign mediator IDs for error logging
+                MediatorIdentityManager.getInstance().assignMediatorIds(proxy);
+
                 try {
                     AxisService axisService = proxy.buildAxisService(getSynapseConfiguration(),
                                                                      getSynapseConfiguration().getAxisConfiguration());
@@ -176,6 +181,9 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                     }
                     return proxy.getName();
                 }
+
+                // Assign mediator IDs for error logging
+                MediatorIdentityManager.getInstance().assignMediatorIds(proxy);
 
                 if (log.isDebugEnabled()) {
                     log.debug("Started the ProxyService : " + proxy.getName());

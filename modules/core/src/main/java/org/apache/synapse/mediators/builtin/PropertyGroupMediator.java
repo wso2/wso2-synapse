@@ -20,6 +20,7 @@ package org.apache.synapse.mediators.builtin;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.mediators.util.MediatorIdLogSetter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +48,8 @@ public class PropertyGroupMediator extends AbstractMediator {
      */
     public boolean mediate(MessageContext synCtx) {
         for (PropertyMediator propertyMediator : propGroupList) {
+            // Set mediator ID in ThreadContext for logging
+            MediatorIdLogSetter.getInstance().setMediatorId(synCtx, propertyMediator.getMediatorId());
             propertyMediator.mediate(synCtx);
         }
         return true;

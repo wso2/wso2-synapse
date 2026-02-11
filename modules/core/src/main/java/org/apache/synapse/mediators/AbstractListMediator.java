@@ -37,6 +37,7 @@ import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.util.MediatorIdLogSetter;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
@@ -100,6 +101,7 @@ public abstract class AbstractListMediator extends AbstractMediator
         
         Mediator mediator = null;
         Integer statisticReportingIndex = 0;
+        boolean mediatorIdSet = false;
         try {
             SynapseLog synLog = getLog(synCtx);
             if (synLog.isTraceOrDebugEnabled()) {
@@ -110,6 +112,12 @@ public abstract class AbstractListMediator extends AbstractMediator
                 // ensure correct trace state after each invocation of a mediator
                 mediator = mediators.get(i);
 
+                // Add mediator ID to synCtx and sync to ThreadContext for logging
+                if (mediator instanceof AbstractMediator) {
+                    mediatorIdSet = MediatorIdLogSetter.getInstance().setMediatorId(synCtx,
+                        ((AbstractMediator) mediator).getMediatorId());
+                }
+
                 if (sequenceContentAware && (mediator.isContentAware() || isStreamXpathEnabled) &&
                         (!Boolean.TRUE.equals(synCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)))) {
                     buildMessage(synCtx, synLog);
@@ -118,10 +126,9 @@ public abstract class AbstractListMediator extends AbstractMediator
                 if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                     statisticReportingIndex = mediator.reportOpenStatistics(synCtx, i == mediatorPosition);
                     synCtx.setTracingState(myEffectiveTraceState);
-                    
+
                     // Track mediator execution for unit test coverage
                     trackMediatorExecution(mediator, synCtx);
-                    
                     if (!mediator.mediate(synCtx)) {
                         mediator.reportCloseStatistics(synCtx, statisticReportingIndex);
                         returnVal = false;
@@ -138,10 +145,10 @@ public abstract class AbstractListMediator extends AbstractMediator
                     mediator.reportCloseStatistics(synCtx, statisticReportingIndex);
                 } else {
                     synCtx.setTracingState(myEffectiveTraceState);
-                    
+
                     // Track mediator execution for unit test coverage
                     trackMediatorExecution(mediator, synCtx);
-                    
+
                     if (!mediator.mediate(synCtx)) {
                         returnVal = false;
                         break;
@@ -185,6 +192,10 @@ public abstract class AbstractListMediator extends AbstractMediator
             }
             handleException(errorMsg, ex, synCtx);
         } finally {
+            // Clear any remaining mediator ID from ThreadContext
+            if (mediatorIdSet) {
+                MediatorIdLogSetter.getInstance().clearMediatorId();
+            }
             synCtx.setTracingState(parentsEffectiveTraceState);
         }
         return returnVal;
