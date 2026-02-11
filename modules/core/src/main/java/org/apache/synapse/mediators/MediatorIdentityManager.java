@@ -64,10 +64,10 @@ public class MediatorIdentityManager {
     private static final String PATH_IN = "/in";
     private static final String PATH_OUT = "/out";
     private static final String PATH_FAULT = "/fault";
+    private static final String PATH_THEN = "/then";
     private static final String PATH_ELSE = "/else";
     private static final String PATH_DEFAULT = "/default";
     private static final String PATH_TARGET = "/target";
-    private static final String PATH_FOREACH = "/foreach";
     private static final String PATH_CASE = "/case";
 
     // Singleton instance
@@ -313,30 +313,31 @@ public class MediatorIdentityManager {
                 }
             }
         }
-
-        // Process children for container mediators
-        if (mediator instanceof ListMediator) {
-            List<Mediator> children = ((ListMediator) mediator).getList();
-            if (children != null && !children.isEmpty()) {
-                AtomicInteger childCounter = new AtomicInteger(0);
-                for (Mediator child : children) {
-                    assignMediatorIds(child, mediatorId, childCounter);
+        // Handle FilterMediator (then/else branches)
+        else if (mediator instanceof FilterMediator) {
+            FilterMediator filter = (FilterMediator) mediator;
+            // Then branch
+            List<Mediator> thenChildren = filter.getList();
+            if (thenChildren != null && !thenChildren.isEmpty()) {
+                AtomicInteger thenCounter = new AtomicInteger(0);
+                for (Mediator child : thenChildren) {
+                    assignMediatorIds(child, mediatorId + PATH_THEN, thenCounter);
+                }
+            }
+            // Else branch
+            if (filter.getElseMediator() != null) {
+                ListMediator elseMediator = filter.getElseMediator();
+                List<Mediator> elseChildren = elseMediator.getList();
+                if (elseChildren != null && !elseChildren.isEmpty()) {
+                    AtomicInteger elseCounter = new AtomicInteger(0);
+                    for (Mediator child : elseChildren) {
+                        assignMediatorIds(child, mediatorId + PATH_ELSE, elseCounter);
+                    }
                 }
             }
         }
-
-        // Handle FilterMediator (then/else branches)
-        if (mediator instanceof FilterMediator) {
-            FilterMediator filter = (FilterMediator) mediator;
-            // Filter has inline child mediators (then path) and separate else branch
-            // Child mediators are in the list inherited from AbstractListMediator
-            if (filter.getElseMediator() != null) {
-                assignMediatorIds(filter.getElseMediator(), mediatorId + PATH_ELSE, new AtomicInteger(0));
-            }
-        }
-
         // Handle SwitchMediator (case branches)
-        if (mediator instanceof SwitchMediator) {
+        else if (mediator instanceof SwitchMediator) {
             SwitchMediator switchMediator = (SwitchMediator) mediator;
             List<SwitchCase> cases = switchMediator.getCases();
             if (cases != null) {
@@ -367,9 +368,8 @@ public class MediatorIdentityManager {
                 }
             }
         }
-
         // Handle CloneMediator
-        if (mediator instanceof CloneMediator) {
+        else if (mediator instanceof CloneMediator) {
             CloneMediator clone = (CloneMediator) mediator;
             List<Target> targets = clone.getTargets();
             if (targets != null) {
@@ -382,26 +382,22 @@ public class MediatorIdentityManager {
                 }
             }
         }
-
         // Handle IterateMediator
-        if (mediator instanceof IterateMediator) {
+        else if (mediator instanceof IterateMediator) {
             IterateMediator iterate = (IterateMediator) mediator;
             if (iterate.getTarget() != null && iterate.getTarget().getSequence() != null) {
-                assignMediatorIds(iterate.getTarget().getSequence(), mediatorId + PATH_TARGET, 
-                        new AtomicInteger(0));
+                assignMediatorIds(iterate.getTarget().getSequence(), mediatorId, new AtomicInteger(0));
             }
         }
-
         // Handle ForEachMediator
-        if (mediator instanceof ForEachMediator) {
+        else if (mediator instanceof ForEachMediator) {
             ForEachMediator forEach = (ForEachMediator) mediator;
             if (forEach.getSequenceRef() == null && forEach.getSequence() != null) {
-                assignMediatorIds(forEach.getSequence(), mediatorId + PATH_FOREACH, new AtomicInteger(0));
+                assignMediatorIds(forEach.getSequence(), mediatorId, new AtomicInteger(0));
             }
         }
-
         // Handle ScatterGather
-        if (mediator instanceof ScatterGather) {
+        else if (mediator instanceof ScatterGather) {
             ScatterGather scatterGather = (ScatterGather) mediator;
             List<Target> targets = scatterGather.getTargets();
             if (targets != null) {
@@ -411,6 +407,16 @@ public class MediatorIdentityManager {
                         assignMediatorIds(target.getSequence(), mediatorId + PATH_TARGET + "[" + (i + 1) + "]", 
                                 new AtomicInteger(0));
                     }
+                }
+            }
+        }
+        // Process children for other container mediators
+        else if (mediator instanceof ListMediator) {
+            List<Mediator> children = ((ListMediator) mediator).getList();
+            if (children != null && !children.isEmpty()) {
+                AtomicInteger childCounter = new AtomicInteger(0);
+                for (Mediator child : children) {
+                    assignMediatorIds(child, mediatorId, childCounter);
                 }
             }
         }
