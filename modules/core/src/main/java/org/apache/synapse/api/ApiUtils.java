@@ -312,6 +312,9 @@ public class ApiUtils {
 
         if (openAPI != null) {
             api.setOpenAPI(openAPI);
+        } else if (log.isDebugEnabled()) {
+            log.debug("Failed to parse OpenAPI definition for API: " + api.getName()
+                    + ". Errors: " + result.getMessages());
         }
     }
 }

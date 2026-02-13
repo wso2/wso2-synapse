@@ -379,7 +379,7 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
         synCtx.setProperty(RESTConstants.REST_API_CONTEXT, context);
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION_STRATEGY, versionStrategy.getVersionType());
         synCtx.setProperty(SynapseConstants.ARTIFACT_NAME, SynapseConstants.FAIL_SAFE_MODE_API + getName());
-        synCtx.setProperty(RESTConstants.RESOURCE_SCOPE_MAP, resourceScopeMap);
+        synCtx.setProperty(RESTConstants.RESOURCE_SCOPE_MAP, java.util.Collections.unmodifiableMap(resourceScopeMap));
 
         // get API log for this message and attach to the message context
         ((Axis2MessageContext) synCtx).setServiceLog(apiLog);
@@ -669,7 +669,7 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
 
                     for (SecurityRequirement req : security) {
                         for (Map.Entry<String, List<String>> entry : req.entrySet()) {
-                            if ("oauth2".contains(entry.getKey())) {
+                            if ("oauth2".equals(entry.getKey())) {
                                 scopes.addAll(entry.getValue());
                             }
                         }
