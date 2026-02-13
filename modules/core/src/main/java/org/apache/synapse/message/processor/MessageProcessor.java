@@ -21,12 +21,14 @@ package org.apache.synapse.message.processor;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Nameable;
 import org.apache.synapse.SynapseArtifact;
+import org.apache.synapse.aspects.AspectConfigurable;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.message.MessageConsumer;
 
 import java.util.List;
 import java.util.Map;
 
-public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArtifact {
+public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArtifact, AspectConfigurable {
     /**
      * This method is used to start the message processor. Once the message processor is started
      * it will start receiving messages
@@ -197,4 +199,6 @@ public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArt
      * Execute resume tasks of a message processor in cluster mode
      */
     public void resumeRemotely();
+
+    public void setComponentStatisticsId(ArtifactHolder holder);
 }

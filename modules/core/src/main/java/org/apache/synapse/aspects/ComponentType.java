@@ -26,6 +26,7 @@ public enum ComponentType {
     ENDPOINT,
     INBOUNDENDPOINT,
     TASK,
+    MESSAGEPROCESSOR,
     SEQUENCE,
     MEDIATOR,
     API,
