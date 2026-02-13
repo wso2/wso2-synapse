@@ -637,7 +637,7 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
         }
 
         if (openAPI != null) {
-            populateResourceScopeMap(openAPI);
+            populateResourceScopesFromOpenApi(openAPI);
         }
     }
 
@@ -651,7 +651,7 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
      *
      * @param openAPI the OpenAPI instance
      */
-    public void populateResourceScopeMap(OpenAPI openAPI) {
+    public void populateResourceScopesFromOpenApi(OpenAPI openAPI) {
         if (openAPI.getPaths() == null) return;
 
         openAPI.getPaths().forEach((path, pathItem) -> {
@@ -664,12 +664,18 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
                 }
 
                 if (security != null) {
+                    String key = method.name() + ":" + path;
+                    List<String> scopes = new ArrayList<>();
+
                     for (SecurityRequirement req : security) {
-                        for (List<String> scopes : req.values()) {
-                            // Key format: "GET:/testResource"
-                            String key = method.name() + ":" + path;
-                            resourceScopeMap.put(key, scopes);
+                        for (Map.Entry<String, List<String>> entry : req.entrySet()) {
+                            if ("oauth2".contains(entry.getKey())) {
+                                scopes.addAll(entry.getValue());
+                            }
                         }
+                    }
+                    if (!scopes.isEmpty()) {
+                        resourceScopeMap.put(key, scopes);
                     }
                 }
             });
