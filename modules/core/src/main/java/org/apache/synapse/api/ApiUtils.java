@@ -18,6 +18,9 @@
 
 package org.apache.synapse.api;
 
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.parser.OpenAPIV3Parser;
+import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import org.apache.axis2.Constants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -286,5 +289,29 @@ public class ApiUtils {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Parses a raw Swagger/OpenAPI string definition and attaches the resulting model to the API object.
+     * <p>
+     * This method utilizes the {@code OpenAPIV3Parser} to convert a string-based definition
+     * (JSON or YAML) into a structured {@link OpenAPI} object. If the parsing is successful,
+     * the model is set on the provided {@code api} instance for subsequent authorization
+     * and scope validation logic.
+     * </p>
+     *
+     * @param api               The {@link API} metadata object to be updated with the parsed model.
+     * @param swaggerDefinition The raw string containing the OpenAPI/Swagger specification.
+     */
+    public static void loadOpenAPIFromDefinition(API api, String swaggerDefinition) {
+
+        SwaggerParseResult result = new OpenAPIV3Parser().readContents(swaggerDefinition, null, null);
+
+        // Get the parsed OpenAPI object
+        OpenAPI openAPI = result.getOpenAPI();
+
+        if (openAPI != null) {
+            api.setOpenAPI(openAPI);
+        }
     }
 }
