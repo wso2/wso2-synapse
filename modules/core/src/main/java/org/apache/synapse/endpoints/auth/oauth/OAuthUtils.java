@@ -21,10 +21,32 @@ package org.apache.synapse.endpoints.auth.oauth;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.util.UIDGenerator;
+import org.apache.axis2.AxisFault;
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.description.TransportOutDescription;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
+import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.commons.resolvers.ResolverFactory;
@@ -37,6 +59,9 @@ import org.apache.synapse.endpoints.ProxyConfigs;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.mediators.Value;
+import org.apache.synapse.transport.http.conn.RequestDescriptor;
+import org.apache.synapse.transport.http.conn.SSLContextDetails;
+import org.apache.synapse.transport.nhttp.config.ClientConnFactoryBuilder;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.util.xpath.SynapseExpression;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
@@ -45,6 +70,9 @@ import org.jaxen.JaxenException;
 import org.wso2.securevault.SecretResolverFactory;
 import org.wso2.securevault.commons.MiscellaneousUtil;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -53,6 +81,9 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
 import javax.xml.namespace.QName;
 
 /**
@@ -62,6 +93,15 @@ public class OAuthUtils {
 
     private static final Log log = LogFactory.getLog(OAuthUtils.class);
     private static final Pattern EXPRESSION_PATTERN = Pattern.compile("(\\{[^\"<>}\\]]+})");
+    private static final String ALL_HOSTS = "*";
+    public static final String HOST_NAME_VERIFIER = "httpclient.hostnameVerifier";
+    public static final String ALLOW_ALL = "AllowAll";
+    public static final String STRICT = "Strict";
+    public static final String DEFAULT_AND_LOCALHOST = "DefaultAndLocalhost";
+    private static final String HTTP_CONNECTION = "http";
+    private static final String HTTPS_CONNECTION = "https";
+    public static final int MAX_TOTAL_POOL_SIZE = 100;
+    public static final int DEFAULT_MAX_PER_ROUTE = 50;
 
     /**
      * This method will return an OAuthHandler instance depending on the oauth configs.
@@ -749,5 +789,139 @@ public class OAuthUtils {
         proxyConfigsOM.addChild(proxyProtocolOM);
 
         return proxyConfigsOM;
+    }
+
+    /**
+     * Initializes a Secure HTTP client fot token endpoint.
+     *
+     * @return Secure CloseableHttpClient
+     * @throws AuthException
+     */
+    public static CloseableHttpClient getSecureClient(String tokenUrl, MessageContext messageContext,
+                                                       int connectionTimeout, int connectionRequestTimeout,
+                                                       int socketTimeout, ProxyConfigs proxyConfigs,
+                                                       TrustStoreConfigs trustStoreConfigs)
+            throws AuthException {
+
+        SSLContext sslContext;
+        ConfigurationContext configurationContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext()
+                .getConfigurationContext();
+        TransportOutDescription transportOut = configurationContext.getAxisConfiguration().getTransportOut("https");
+        try {
+            ClientConnFactoryBuilder clientConnFactoryBuilder = new ClientConnFactoryBuilder(transportOut,
+                    configurationContext).parseSSL();
+            sslContext = getSSLContextWithUrl(tokenUrl, clientConnFactoryBuilder.getSslByHostMap(),
+                    clientConnFactoryBuilder.getSSLContextDetails());
+        } catch (AxisFault e) {
+            throw new AuthException("Error while reading SSL configs. Using default Keystore and Truststore", e);
+        }
+
+        HostnameVerifier hostnameVerifier;
+        if (proxyConfigs.isProxyEnabled()) {
+            String hostnameVerifierOption = System.getProperty(HOST_NAME_VERIFIER);
+            if (ALLOW_ALL.equalsIgnoreCase(hostnameVerifierOption)) {
+                hostnameVerifier = SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
+            } else if (STRICT.equalsIgnoreCase(hostnameVerifierOption)) {
+                hostnameVerifier = SSLSocketFactory.STRICT_HOSTNAME_VERIFIER;
+            } else if (DEFAULT_AND_LOCALHOST.equalsIgnoreCase(hostnameVerifierOption)) {
+                hostnameVerifier = new HostnameVerifier() {
+                    final String[] localhosts = { "::1", "127.0.0.1", "localhost", "localhost.localdomain" };
+
+                    @Override
+                    public boolean verify(String urlHostName, SSLSession session) {
+                        return SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER.verify(urlHostName,
+                                session) || Arrays.asList(localhosts).contains(urlHostName);
+                    }
+                };
+            } else {
+                hostnameVerifier = SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER;
+            }
+        } else {
+            hostnameVerifier = NoopHostnameVerifier.INSTANCE;
+        }
+
+        // Step 2: Create SSL Connection Socket Factory with custom hostname verifier
+        SSLConnectionSocketFactory sslConnectionFactory = new SSLConnectionSocketFactory(sslContext, hostnameVerifier);
+
+        // Step 3: Create Request Config
+        RequestConfig config = RequestConfig.custom().setConnectTimeout(connectionTimeout)
+                .setConnectionRequestTimeout(connectionRequestTimeout).setSocketTimeout(socketTimeout).build();
+
+        // Step 4: Create Registry for connection socket factories
+        Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory> create()
+                .register(HTTPS_CONNECTION, sslConnectionFactory)
+                .register(HTTP_CONNECTION, new PlainConnectionSocketFactory()).build();
+
+        // Step 5: Choose connection manager based on proxy configuration
+        HttpClientBuilder clientBuilder;
+        if (proxyConfigs.isProxyEnabled()) {
+            // Use PoolingHttpClientConnectionManager for proxy scenarios
+            PoolingHttpClientConnectionManager pool = new PoolingHttpClientConnectionManager(registry);
+            pool.setMaxTotal(MAX_TOTAL_POOL_SIZE);
+            pool.setDefaultMaxPerRoute(DEFAULT_MAX_PER_ROUTE);
+
+            // Configure proxy settings
+            HttpHost host = new HttpHost(proxyConfigs.getProxyHost(), Integer.parseInt(proxyConfigs.getProxyPort()),
+                    proxyConfigs.getProxyProtocol());
+
+            DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(host);
+
+            clientBuilder = HttpClients.custom().setConnectionManager(pool).setRoutePlanner(routePlanner)
+                    .setDefaultRequestConfig(config).setSSLSocketFactory(sslConnectionFactory);
+
+            // Add proxy authentication if configured
+            if (org.apache.commons.lang3.StringUtils.isNotBlank(proxyConfigs.getProxyUsername()) && org.apache.commons.lang3.StringUtils.isNotBlank(
+                    proxyConfigs.getProxyPassword())) {
+                CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+                credentialsProvider.setCredentials(
+                        new AuthScope(proxyConfigs.getProxyHost(), Integer.parseInt(proxyConfigs.getProxyPort())),
+                        new UsernamePasswordCredentials(proxyConfigs.getProxyUsername(),
+                                resolveProxyPassword(proxyConfigs, messageContext)));
+                clientBuilder = clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+            }
+        } else {
+            // Use BasicHttpClientConnectionManager for non-proxy scenarios
+            BasicHttpClientConnectionManager connManager = new BasicHttpClientConnectionManager(registry);
+            clientBuilder = HttpClientBuilder.create().setDefaultRequestConfig(config).setConnectionManager(connManager)
+                    .setSSLSocketFactory(sslConnectionFactory);
+        }
+
+        return clientBuilder.build();
+    }
+
+    public static SSLContext getSSLContextWithUrl(String urlPath, Map<RequestDescriptor, SSLContext> sslByHostMap,
+                                                   SSLContextDetails ssl) throws AuthException {
+        try {
+            URL url = new URL(urlPath);
+            SSLContext customContext = null;
+            if (sslByHostMap != null) {
+                String host = url.getHost() + ":" + url.getPort();
+                RequestDescriptor request = new RequestDescriptor(host, "");
+                // See if there's a custom SSL profile configured for this server
+                customContext = sslByHostMap.get(request);
+                if (customContext == null) {
+                    customContext = sslByHostMap.get(ALL_HOSTS);
+                }
+            }
+            if (customContext != null) {
+                return customContext;
+            } else {
+                return ssl != null ? ssl.getContext() : null;
+            }
+        } catch (MalformedURLException e) {
+            throw new AuthException("OAuth token URL is invalid", e);
+        }
+    }
+
+    public static String resolveProxyPassword(ProxyConfigs proxyConfigs, MessageContext messageContext)
+            throws AuthException {
+        if (proxyConfigs.getProxyPasswordSecretResolver() != null) {
+            // Resolves the password when global proxy configurations are used
+            return MiscellaneousUtil.resolve(proxyConfigs.getProxyPassword(),
+                    proxyConfigs.getProxyPasswordSecretResolver());
+        } else {
+            // Resolves the password when endpoint specific proxy configurations are used
+            return OAuthUtils.resolveExpression(proxyConfigs.getProxyPassword(), messageContext);
+        }
     }
 }
