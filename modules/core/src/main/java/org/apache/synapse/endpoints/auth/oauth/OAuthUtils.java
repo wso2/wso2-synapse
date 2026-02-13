@@ -792,7 +792,7 @@ public class OAuthUtils {
     }
 
     /**
-     * Initializes a Secure HTTP client fot token endpoint.
+     * Initializes a Secure HTTP client for token endpoint.
      *
      * @return Secure CloseableHttpClient
      * @throws AuthException
