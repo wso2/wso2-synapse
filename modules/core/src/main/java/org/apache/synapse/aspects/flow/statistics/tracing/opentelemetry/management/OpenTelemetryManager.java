@@ -18,6 +18,7 @@
 
 package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management;
 
+import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.trace.Tracer;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.OpenTelemetrySpanHandler;
 
@@ -37,6 +38,13 @@ public interface OpenTelemetryManager {
      * @return OpenTelemetry tracer.
      */
     Tracer getTelemetryTracer();
+
+    /**
+     * Return the OpenTelemetry meter from the initialized openTelemetry instance.
+     *
+     * @return OpenTelemetry meter.
+     */
+    Meter getTelemetryMeter();
 
     /**
      * Shutdown the SDK cleanly at JVM exit.

@@ -19,16 +19,23 @@
 package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management;
 
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.ContextPropagators;
+import io.opentelemetry.exporter.otlp.http.metrics.OtlpHttpMetricExporter;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
+import io.opentelemetry.exporter.otlp.metrics.OtlpGrpcMetricExporter;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
+import io.opentelemetry.sdk.metrics.export.MetricExporter;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.metrics.SdkMeterProvider;
+import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
+import java.time.Duration;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
@@ -43,6 +50,7 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
 
     private Log logger = LogFactory.getLog(OTLPTelemetryManager.class);
     private SdkTracerProvider sdkTracerProvider;
+    private SdkMeterProvider sdkMeterProvider;
     private OpenTelemetry openTelemetry;
     private TelemetryTracer tracer;
     private SpanHandler handler;
@@ -89,20 +97,31 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
 
         // Create appropriate exporter based on protocol
         SpanExporter spanExporter;
+        MetricExporter metricExporter;
         if (useHttp) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Configuring OTLP HTTP Span Exporter for endpoint: " + endPointURL);
+                logger.debug("Configuring OTLP HTTP Exporters for endpoint: " + endPointURL);
             }
             spanExporter = OtlpHttpSpanExporter.builder()
                     .setEndpoint(endPointURL)
                     .setCompression("gzip")
                     .addHeader(headerKey, headerValue)
                     .build();
+            metricExporter = OtlpHttpMetricExporter.builder()
+                    .setEndpoint(endPointURL)
+                    .addHeader(headerKey, headerValue)
+                    .build();
         } else {
             if (logger.isDebugEnabled()) {
-                logger.debug("Configuring OTLP gRPC Span Exporter for endpoint: " + endPointURL);
+                logger.debug("Configuring OTLP gRPC Exporters for endpoint: " + endPointURL);
             }
             spanExporter = OtlpGrpcSpanExporter.builder()
+                    .setEndpoint(endPointURL)
+                    .setCompression("gzip")
+                    .addHeader(headerKey, headerValue)
+                    .build();
+
+            metricExporter = OtlpGrpcMetricExporter.builder()
                     .setEndpoint(endPointURL)
                     .setCompression("gzip")
                     .addHeader(headerKey, headerValue)
@@ -114,8 +133,19 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
                 .setResource(Resource.getDefault().merge(TelemetryUtil.getTracerProviderResource(TelemetryConstants.SERVICE_NAME)))
                 .build();
 
+        int metricIntervalSeconds = getMetricIntervalSeconds();
+
+        sdkMeterProvider = SdkMeterProvider.builder()
+                .registerMetricReader(PeriodicMetricReader.builder(metricExporter)
+                        .setInterval(Duration.ofSeconds(metricIntervalSeconds))
+                        .build())
+                .setResource(Resource.getDefault()
+                        .merge(TelemetryUtil.getTracerProviderResource(TelemetryConstants.SERVICE_NAME)))
+                .build();
+
         openTelemetry = OpenTelemetrySdk.builder()
                 .setTracerProvider(sdkTracerProvider)
+                .setMeterProvider(sdkMeterProvider)
                 .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
                 .build();
 
@@ -134,10 +164,19 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
     }
 
     @Override
+    public Meter getTelemetryMeter() {
+        return openTelemetry.getMeter(TelemetryConstants.OPENTELEMETRY_INSTRUMENTATION_NAME);
+    }
+
+    @Override
     public void close() {
 
         if (sdkTracerProvider != null) {
             sdkTracerProvider.close();
+        }
+
+        if (sdkMeterProvider != null) {
+            sdkMeterProvider.close();
         }
     }
 
@@ -168,5 +207,30 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
             }
         }
         return null;
+    }
+
+
+    private int getMetricIntervalSeconds() {
+        String metricIntervalString = SynapsePropertiesLoader.getPropertyValue(
+                TelemetryConstants.OPENTELEMETRY_METRIC_PUSH_INTERVAL_SECONDS,
+                TelemetryConstants.OPENTELEMETRY_METRIC_DEFAULT_PUSH_INTERVAL_SECONDS);
+
+        int metricIntervalSeconds;
+        try {
+            metricIntervalSeconds = Integer.parseInt(metricIntervalString);
+        } catch (NumberFormatException e) {
+            String message = "Invalid OpenTelemetry metric push interval: " + metricIntervalString + ". Using default value: "
+                    + TelemetryConstants.OPENTELEMETRY_METRIC_DEFAULT_PUSH_INTERVAL_SECONDS + " seconds.";
+            logger.warn(message);
+            metricIntervalSeconds = Integer.parseInt(
+                    TelemetryConstants.OPENTELEMETRY_METRIC_DEFAULT_PUSH_INTERVAL_SECONDS);
+        }
+        if (metricIntervalSeconds <= 0) {
+            logger.warn("OpenTelemetry metric push interval must be positive. Got: " + metricIntervalSeconds
+                    + ". Using default value: " + TelemetryConstants.OPENTELEMETRY_METRIC_DEFAULT_PUSH_INTERVAL_SECONDS + " seconds.");
+            metricIntervalSeconds = Integer.parseInt(
+                    TelemetryConstants.OPENTELEMETRY_METRIC_DEFAULT_PUSH_INTERVAL_SECONDS);
+        }
+        return metricIntervalSeconds;
     }
 }
