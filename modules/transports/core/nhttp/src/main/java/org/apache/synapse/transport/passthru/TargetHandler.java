@@ -1058,8 +1058,43 @@ public class TargetHandler implements NHttpClientEventHandler {
         }
     }
 
+    /**
+     * Invoked when the backend terminates the outbound HTTP connection unexpectedly.
+     * Logs diagnostics, marks the connection CLOSED, shuts it down, and routes the error
+     * to the standard fault handler.
+     *
+     * @param  conn        the target {@link NHttpClientConnection} that ended input
+     * @throws IOException if an error occurs while closing the connection
+     */
     public void endOfInput(NHttpClientConnection conn) throws IOException {
-        conn.close();
+
+        ProtocolState state = TargetContext.getState(conn);
+        log.warn("Connection ended unexpectedly" +
+                ", " + getConnectionLoggingInfo(conn) +
+                ", State: "  + state + ".");
+        
+        // Notify pipes based on state to prevent thread hangs
+        if (state == ProtocolState.REQUEST_HEAD || state == ProtocolState.REQUEST_BODY) {
+            informWriterError(conn);
+        } else if (state == ProtocolState.RESPONSE_HEAD || state == ProtocolState.RESPONSE_BODY) {
+            informReaderError(conn);
+        }
+        
+        // Update metrics
+        metrics.disconnected();
+        
+        TargetContext.updateState(conn, ProtocolState.CLOSED);
+        targetConfiguration.getConnections().shutdownConnection(conn, true);
+        MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
+        if (state != ProtocolState.RESPONSE_DONE && requestMsgCtx != null) {
+            requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                    PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
+            targetErrorHandler.handleError(requestMsgCtx,
+                    ErrorCodes.SND_IO_ERROR,
+                    "Error in Sender",
+                    null,
+                    state);
+        }
     }
 
     public void exception(NHttpClientConnection conn, Exception ex) {
