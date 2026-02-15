@@ -1643,7 +1643,7 @@
        <slf4j.log4j.version>1.5.2</slf4j.log4j.version>
        <system.rules.version>1.17.0</system.rules.version>
        <io.netty.version>4.2.9.Final</io.netty.version>
-       <transport.http.netty.version>6.3.58</transport.http.netty.version>
+       <transport.http.netty.version>6.3.59</transport.http.netty.version>
        <version.org.wso2.orbit.javax.activation>1.1.1.wso2v3</version.org.wso2.orbit.javax.activation>
        <rabbitmq.version>5.20.0</rabbitmq.version>
        <opentelemetry.all.version>1.57.0.wso2v2</opentelemetry.all.version>
