@@ -30,45 +30,30 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.synapse.ContinuationState;
-import org.apache.synapse.FaultHandler;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.MessageContext;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.endpoints.TrustStoreConfigs;
 import org.apache.synapse.endpoints.ProxyConfigs;
-import org.apache.synapse.mediators.TestUtils;
 import org.apache.synapse.transport.passthru.PassThroughHttpSender;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
 
 /**
  * Test for OAuthClient that is used to generate tokens
  */
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({"javax.net.ssl.*", "javax.security.*" })
+@RunWith(MockitoJUnitRunner.class)
 public class OAuthClientTest extends TestCase {
-
-    @PrepareForTest(HttpClientBuilder.class)
 
     /**
      * Tests if the oauth client correctly parse the response and generate a Token object
@@ -78,43 +63,44 @@ public class OAuthClientTest extends TestCase {
     @Test
     public void testGenerateToken() throws Exception {
 
-        HttpClientBuilder mockClientBuilder = mock(HttpClientBuilder.class);
-        CloseableHttpClient mockHttpClient = mock(CloseableHttpClient.class);
-        CloseableHttpResponse mockResponse = mock(CloseableHttpResponse.class);
-        HttpEntity entity = mock(HttpEntity.class);
-        StatusLine statusLine = mock(StatusLine.class);
-        PowerMockito.mockStatic(HttpClientBuilder.class);
+        HttpClientBuilder mockClientBuilder = Mockito.mock(HttpClientBuilder.class);
+        CloseableHttpClient mockHttpClient = Mockito.mock(CloseableHttpClient.class);
+        CloseableHttpResponse mockResponse = Mockito.mock(CloseableHttpResponse.class);
+        HttpEntity entity = Mockito.mock(HttpEntity.class);
+        StatusLine statusLine = Mockito.mock(StatusLine.class);
 
-        PowerMockito.when(HttpClientBuilder.class, "create").thenReturn(mockClientBuilder);
-        PowerMockito.when(mockClientBuilder.setDefaultRequestConfig(Mockito.any(RequestConfig.class))).thenReturn(mockClientBuilder);
-        PowerMockito.when(mockClientBuilder.setConnectionManager(any(HttpClientConnectionManager.class))).thenReturn(mockClientBuilder);
-        PowerMockito.when(mockClientBuilder.setSSLSocketFactory(any())).thenReturn(mockClientBuilder);
-        PowerMockito.when(mockClientBuilder.build()).thenReturn(mockHttpClient);
-        PowerMockito.when(mockHttpClient.execute(any(HttpPost.class))).thenReturn(mockResponse);
+        try (MockedStatic<HttpClientBuilder> mockedBuilder = Mockito.mockStatic(HttpClientBuilder.class)) {
+            mockedBuilder.when(HttpClientBuilder::create).thenReturn(mockClientBuilder);
+            Mockito.when(mockClientBuilder.setDefaultRequestConfig(Mockito.any(RequestConfig.class))).thenReturn(mockClientBuilder);
+            Mockito.when(mockClientBuilder.setConnectionManager(any(HttpClientConnectionManager.class))).thenReturn(mockClientBuilder);
+            Mockito.when(mockClientBuilder.setSSLSocketFactory(any())).thenReturn(mockClientBuilder);
+            Mockito.when(mockClientBuilder.build()).thenReturn(mockHttpClient);
+            Mockito.when(mockHttpClient.execute(any(HttpPost.class))).thenReturn(mockResponse);
 
-        when(statusLine.getStatusCode()).thenReturn(200);
-        when(mockResponse.getStatusLine()).thenReturn(statusLine);
+            Mockito.when(statusLine.getStatusCode()).thenReturn(200);
+            Mockito.when(mockResponse.getStatusLine()).thenReturn(statusLine);
 
-        when(mockResponse.getEntity()).thenReturn(entity);
+            Mockito.when(mockResponse.getEntity()).thenReturn(entity);
 
-        InputStream stream =
-                new ByteArrayInputStream(("{ \"access_token\" : \"abc123\", \"token_type\" : \"Bearer\", " +
-                        "\"expires_in\" : 3600 }").getBytes());
-        when(entity.getContent()).thenReturn(stream);
+            InputStream stream =
+                    new ByteArrayInputStream(("{ \"access_token\" : \"abc123\", \"token_type\" : \"Bearer\", " +
+                            "\"expires_in\" : 3600 }").getBytes());
+            Mockito.when(entity.getContent()).thenReturn(stream);
 
-        org.apache.axis2.context.MessageContext messageContext = new org.apache.axis2.context.MessageContext();
-        AxisConfiguration axisConfiguration = new AxisConfiguration();
-        TransportOutDescription transportOutDescription = new TransportOutDescription("https");
-        transportOutDescription.setSender(new PassThroughHttpSender());
-        axisConfiguration.addTransportOut(transportOutDescription);
-        ConfigurationContext configurationContext = new ConfigurationContext(axisConfiguration);
-        messageContext.setConfigurationContext(configurationContext);
-        SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
-        SynapseEnvironment synapseEnvironment = new Axis2SynapseEnvironment(synapseConfiguration);
-        String token = OAuthClient.generateToken("https://localhost:8280/token1/1.0.0", "body", "credentials",
-                new Axis2MessageContext(messageContext, new SynapseConfiguration(), synapseEnvironment), null, -1, -1,
-                -1, new ProxyConfigs(), new TrustStoreConfigs());
+            org.apache.axis2.context.MessageContext messageContext = new org.apache.axis2.context.MessageContext();
+            AxisConfiguration axisConfiguration = new AxisConfiguration();
+            TransportOutDescription transportOutDescription = new TransportOutDescription("https");
+            transportOutDescription.setSender(new PassThroughHttpSender());
+            axisConfiguration.addTransportOut(transportOutDescription);
+            ConfigurationContext configurationContext = new ConfigurationContext(axisConfiguration);
+            messageContext.setConfigurationContext(configurationContext);
+            SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
+            SynapseEnvironment synapseEnvironment = new Axis2SynapseEnvironment(synapseConfiguration);
+            String token = OAuthClient.generateToken("https://localhost:8280/token1/1.0.0", "body", "credentials",
+                    new Axis2MessageContext(messageContext, new SynapseConfiguration(), synapseEnvironment), null, -1, -1,
+                    -1, new ProxyConfigs(), new TrustStoreConfigs());
 
-        assertEquals("abc123", token);
+            assertEquals("abc123", token);
+        }
     }
 }

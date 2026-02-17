@@ -725,6 +725,7 @@ class SynapseTestcaseDataReader {
                     urlPostFixRemoveProperty.setAttribute(NAME_ATTRIBUTE, "REST_URL_POSTFIX");
                     urlPostFixRemoveProperty.setAttribute(TEST_CASE_INPUT_PROPERTY_SCOPE, Constants.INPUT_PROPERTY_SCOPE_AXIS2);
                     urlPostFixRemoveProperty.setAttribute("action", "remove");
+                    urlPostFixRemoveProperty.setAttribute("metadata", "synapse.unittest.injected");
                     node.getParentNode().appendChild(urlPostFixRemoveProperty);
                     node.getParentNode().insertBefore(urlPostFixRemoveProperty, node);
                     node.getParentNode().normalize();
@@ -736,6 +737,7 @@ class SynapseTestcaseDataReader {
                     setCharacterEncodingProperty.setAttribute(TEST_CASE_INPUT_PROPERTY_SCOPE, Constants.INPUT_PROPERTY_SCOPE_AXIS2);
                     setCharacterEncodingProperty.setAttribute("value", "false");
                     setCharacterEncodingProperty.setAttribute("type", "STRING");
+                    setCharacterEncodingProperty.setAttribute("metadata", "synapse.unittest.injected");
                     node.getParentNode().appendChild(setCharacterEncodingProperty);
                     node.getParentNode().insertBefore(setCharacterEncodingProperty, node);
                     node.getParentNode().normalize();

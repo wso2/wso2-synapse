@@ -117,8 +117,15 @@ if $cygwin; then
   CLASSPATH=`cygpath --path --windows "$CLASSPATH"`
   JAVA_ENDORSED_DIRS=`cygpath --path --windows "$JAVA_ENDORSED_DIRS"`
 fi
-# endorsed dir
+# endorsed dir - Note: -Djava.endorsed.dirs is removed in Java 9+
+# Endorsed JARs are now added to classpath instead
 SYNAPSE_ENDORSED=$SYNAPSE_HOME/lib/endorsed
+if [ -d "$SYNAPSE_ENDORSED" ]; then
+  for f in $SYNAPSE_ENDORSED/*.jar
+  do
+    SYNAPSE_CLASSPATH=$f:$SYNAPSE_CLASSPATH
+  done
+fi
 
 # synapse config
 SYNAPSE_XML=$SYNAPSE_HOME/repository/conf/synapse-config
@@ -173,7 +180,6 @@ $JAVA_HOME/bin/java -server -Xms128M -Xmx128M \
     $XDEBUG \
     $TEMP_PROPS \
     -Dorg.apache.xerces.xni.parser.XMLParserConfiguration=org.apache.xerces.parsers.XMLGrammarCachingConfiguration \
-    -Djava.endorsed.dirs=$SYNAPSE_ENDORSED \
     -Dconf.location=$SYNAPSE_HOME/repository/conf \
     -Dconf.location=$SYNAPSE_HOME/repository/conf \
     -Djava.io.tmpdir=$SYNAPSE_HOME/work/temp/synapse \

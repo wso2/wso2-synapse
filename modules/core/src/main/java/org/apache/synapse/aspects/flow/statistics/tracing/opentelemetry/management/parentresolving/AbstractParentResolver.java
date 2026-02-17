@@ -31,6 +31,10 @@ public abstract class AbstractParentResolver {
                 statisticDataUnit.getComponentType().equals(ComponentType.INBOUNDENDPOINT);
     }
 
+    protected static boolean isSequence(StatisticDataUnit statisticDataUnit) {
+        return statisticDataUnit.getComponentType().equals(ComponentType.SEQUENCE);
+    }
+
     protected static boolean isFlowContinuableMediator(StatisticDataUnit statisticDataUnit) {
         return statisticDataUnit.isFlowContinuableMediator();
     }
@@ -48,5 +52,15 @@ public abstract class AbstractParentResolver {
     protected static boolean isSendMediator(StatisticDataUnit statisticDataUnit) {
         return ComponentType.MEDIATOR.equals(statisticDataUnit.getComponentType()) &&
                 "sendmediator".equalsIgnoreCase(statisticDataUnit.getComponentName());
+    }
+
+    protected static boolean isCloneMediator(StatisticDataUnit statisticDataUnit) {
+        return ComponentType.MEDIATOR.equals(statisticDataUnit.getComponentType()) &&
+                "CloneMediator".equalsIgnoreCase(statisticDataUnit.getComponentName());
+    }
+
+    protected static boolean isScatterGatherMediator(StatisticDataUnit statisticDataUnit) {
+        return ComponentType.MEDIATOR.equals(statisticDataUnit.getComponentType()) &&
+                "ScatterGatherMediator".equalsIgnoreCase(statisticDataUnit.getComponentName());
     }
 }

@@ -37,14 +37,19 @@ import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.util.MediatorIdLogSetter;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
+import org.apache.synapse.unittest.MediatorRegistry;
+import org.apache.synapse.unittest.UnitTestModeUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY;
 
 /**
  * This is the base class for all List mediators
@@ -93,8 +98,10 @@ public abstract class AbstractListMediator extends AbstractMediator
                 observer.start(synCtx, ((SequenceMediator) this).getName());
             }
         }
+        
         Mediator mediator = null;
         Integer statisticReportingIndex = 0;
+        boolean mediatorIdSet = false;
         try {
             SynapseLog synLog = getLog(synCtx);
             if (synLog.isTraceOrDebugEnabled()) {
@@ -105,6 +112,12 @@ public abstract class AbstractListMediator extends AbstractMediator
                 // ensure correct trace state after each invocation of a mediator
                 mediator = mediators.get(i);
 
+                // Add mediator ID to synCtx and sync to ThreadContext for logging
+                if (mediator instanceof AbstractMediator) {
+                    mediatorIdSet = MediatorIdLogSetter.getInstance().setMediatorId(synCtx,
+                        ((AbstractMediator) mediator).getMediatorId());
+                }
+
                 if (sequenceContentAware && (mediator.isContentAware() || isStreamXpathEnabled) &&
                         (!Boolean.TRUE.equals(synCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)))) {
                     buildMessage(synCtx, synLog);
@@ -113,6 +126,9 @@ public abstract class AbstractListMediator extends AbstractMediator
                 if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                     statisticReportingIndex = mediator.reportOpenStatistics(synCtx, i == mediatorPosition);
                     synCtx.setTracingState(myEffectiveTraceState);
+
+                    // Track mediator execution for unit test coverage
+                    trackMediatorExecution(mediator, synCtx);
                     if (!mediator.mediate(synCtx)) {
                         mediator.reportCloseStatistics(synCtx, statisticReportingIndex);
                         returnVal = false;
@@ -129,6 +145,10 @@ public abstract class AbstractListMediator extends AbstractMediator
                     mediator.reportCloseStatistics(synCtx, statisticReportingIndex);
                 } else {
                     synCtx.setTracingState(myEffectiveTraceState);
+
+                    // Track mediator execution for unit test coverage
+                    trackMediatorExecution(mediator, synCtx);
+
                     if (!mediator.mediate(synCtx)) {
                         returnVal = false;
                         break;
@@ -172,6 +192,10 @@ public abstract class AbstractListMediator extends AbstractMediator
             }
             handleException(errorMsg, ex, synCtx);
         } finally {
+            // Clear any remaining mediator ID from ThreadContext
+            if (mediatorIdSet) {
+                MediatorIdLogSetter.getInstance().clearMediatorId();
+            }
             synCtx.setTracingState(parentsEffectiveTraceState);
         }
         return returnVal;
@@ -284,6 +308,20 @@ public abstract class AbstractListMediator extends AbstractMediator
         }
     }
 
+    /**
+     * Track mediator execution for unit test coverage.
+     *
+     * @param mediator mediator being executed
+     * @param synCtx   message context
+     */
+    private void trackMediatorExecution(Mediator mediator, MessageContext synCtx) {
+        if (UnitTestModeUtils.isUnitTestMode()) {
+            String artifactKey = (String) synCtx.getProperty(COVERAGE_ARTIFACT_KEY);
+            if (artifactKey != null) {
+                MediatorRegistry.getInstance().markMediatorExecuted(mediator, artifactKey);
+            }
+        }
+    }
 
     /**
      * This method will read the entire content from the input stream of the request if there is a parsing error.

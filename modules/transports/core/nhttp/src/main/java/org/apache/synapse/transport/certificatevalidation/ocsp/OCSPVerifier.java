@@ -18,6 +18,7 @@
  */
 package org.apache.synapse.transport.certificatevalidation.ocsp;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpResponse;
@@ -27,6 +28,7 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.synapse.commons.crypto.CryptoConstants;
 import org.apache.synapse.transport.certificatevalidation.CertificateVerificationException;
 import org.apache.synapse.transport.certificatevalidation.Constants;
 import org.apache.synapse.transport.certificatevalidation.RevocationStatus;
@@ -79,7 +81,7 @@ public class OCSPVerifier implements RevocationVerifier {
     public static final String ACCEPT_TYPE = "Accept";
     public static final String OCSP_REQUEST_TYPE = "application/ocsp-request";
     public static final String OCSP_RESPONSE_TYPE = "application/ocsp-response";
-
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     /**
      * Gets the revocation status (Good, Revoked or Unknown) of the given peer certificate.
@@ -201,20 +203,7 @@ public class OCSPVerifier implements RevocationVerifier {
     private OCSPReq generateOCSPRequest(X509Certificate issuerCert, BigInteger serialNumber)
             throws CertificateVerificationException {
         String jceProvider = getPreferredJceProvider();
-        String providerClass;
-        if (jceProvider.equals(Constants.BOUNCY_CASTLE_PROVIDER)) {
-            providerClass = "org.bouncycastle.jce.provider.BouncyCastleProvider";
-        } else if (jceProvider.equals(Constants.BOUNCY_CASTLE_FIPS_PROVIDER)) {
-            providerClass = "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider";
-        } else {
-            throw new CertificateVerificationException("Unsupported JCE provider: " + jceProvider);
-        }
-        try {
-            Security.addProvider((Provider) Class.forName(providerClass).getDeclaredConstructor().newInstance());
-        } catch (Exception e) {
-            throw new CertificateVerificationException("Error while initializing the JCE provider: "
-                    + providerClass, e);
-        }
+        addProvider(jceProvider);
 
         try {
 
@@ -298,5 +287,22 @@ public class OCSPVerifier implements RevocationVerifier {
             return Constants.BOUNCY_CASTLE_FIPS_PROVIDER;
         }
         return Constants.BOUNCY_CASTLE_PROVIDER;
+    }
+
+    public static void addProvider(String jceProvider) throws CertificateVerificationException {
+        if (StringUtils.isEmpty(System.getProperty(SECURITY_JCE_PROVIDER))) {
+            String providerClass;
+            if (CryptoConstants.BOUNCY_CASTLE_FIPS_PROVIDER.equals(jceProvider)) {
+                providerClass = "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider";
+            } else {
+                providerClass = "org.bouncycastle.jce.provider.BouncyCastleProvider";
+            }
+            try {
+                Security.addProvider((Provider) Class.forName(providerClass).getDeclaredConstructor().newInstance());
+            } catch (Exception e) {
+                throw new CertificateVerificationException("Error while initializing the JCE provider: " +
+                        providerClass, e);
+            }
+        }
     }
 }

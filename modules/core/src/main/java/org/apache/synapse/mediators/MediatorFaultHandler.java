@@ -32,8 +32,11 @@ import org.apache.synapse.aspects.flow.statistics.collectors.FaultStatisticColle
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.ConcurrencyThrottlingUtils;
+
+import org.apache.synapse.unittest.UnitTestModeUtils;
+
+import static org.apache.synapse.unittest.Constants.COVERAGE_ARTIFACT_KEY;
 
 /**
  * This implements the FaultHandler interface as a mediator fault handler. That is the fault handler is
@@ -93,7 +96,17 @@ public class MediatorFaultHandler extends FaultHandler {
         }
         ConcurrencyThrottlingUtils.decrementConcurrencyThrottleAccessController(synCtx);
         synCtx.getServiceLog().warn("Executing fault sequence mediator : " + name);
+        
+        // Handle coverage tracking for fault/onError sequences in unit tests
+        String originalArtifactKey = handleCoverageForFaultSequence(synCtx);
+        
         this.faultMediator.mediate(synCtx);
+        
+        // Restore original artifact key for unit test coverage
+        if (originalArtifactKey != null) {
+            synCtx.setProperty(COVERAGE_ARTIFACT_KEY, originalArtifactKey);
+        }
+        
         if(isStatisticsEnabled) {
             CloseEventCollector.closeFlowForcefully(synCtx, true);
         }
@@ -115,6 +128,33 @@ public class MediatorFaultHandler extends FaultHandler {
      */
     public void setFaultMediator(Mediator faultMediator) {
         this.faultMediator = faultMediator;
+    }
+
+    /**
+     * Handle coverage tracking when executing a fault/onError sequence during unit tests.
+     * Sets the COVERAGE_ARTIFACT_KEY to the fault sequence's key so mediators inside
+     * the fault sequence are tracked correctly.
+     *
+     * @param synCtx message context
+     * @return the original artifact key (to be restored after sequence execution), or null if not in unit test mode
+     */
+    private String handleCoverageForFaultSequence(MessageContext synCtx) {
+        if (!UnitTestModeUtils.isUnitTestMode()) {
+            return null;
+        }
+
+        String originalKey = (String) synCtx.getProperty(COVERAGE_ARTIFACT_KEY);
+
+        if (faultMediator instanceof SequenceMediator) {
+            SequenceMediator faultSeq = (SequenceMediator) faultMediator;
+            String faultSeqName = faultSeq.getName();
+            if (faultSeqName != null && !faultSeqName.isEmpty()) {
+                String faultSeqKey = "Sequence:" + faultSeqName;
+                synCtx.setProperty(COVERAGE_ARTIFACT_KEY, faultSeqKey);
+            }
+        }
+
+        return originalKey;
     }
 
     private void traceOrDebugWarn(boolean traceOn, String msg) {

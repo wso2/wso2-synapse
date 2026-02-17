@@ -30,6 +30,7 @@ import org.apache.synapse.config.xml.MediatorSerializerFinder;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.apache.synapse.mediators.MediatorIdentityManager;
 
 import java.io.File;
 import java.util.Properties;
@@ -73,6 +74,10 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
                     log.debug("Initialized the sequence : " + seq.getName());
                 }
                 getSynapseConfiguration().addSequence(seq.getName(), seq);
+                
+                // Register mediators for ID assignment
+                MediatorIdentityManager.getInstance().assignMediatorIds(seq);
+                
                 if (log.isDebugEnabled()) {
                     log.debug("Sequence Deployment from file : " + fileName + " : Completed");
                 }
@@ -132,6 +137,9 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
                 getSynapseConfiguration().removeSequence(existingArtifactName);
                 log.info("Sequence: " + existingArtifactName + " has been undeployed");
             }
+            
+            // Register mediators for ID assignment after update
+            MediatorIdentityManager.getInstance().assignMediatorIds(seq);
 
             log.info("Sequence: " + seq.getName() + " has been updated from the file: " + fileName);
 

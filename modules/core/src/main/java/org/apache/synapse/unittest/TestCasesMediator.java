@@ -123,6 +123,9 @@ public class TestCasesMediator {
         boolean mediationResult = false;
 
         if (msgCtxt != null) {
+            // Set artifact key for coverage tracking
+            msgCtxt.setProperty(Constants.COVERAGE_ARTIFACT_KEY, "Sequence:" + key);
+            
             mediationResult = sequenceMediator
                     .mediate(setInputMessageProperties(msgCtxt, currentTestCase.getPropertyMap()));
         }

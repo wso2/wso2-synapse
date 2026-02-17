@@ -51,6 +51,7 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
     private static final QName ATT_TYPE = new QName("type");
     private static final QName ATT_PATTERN = new QName("pattern");
     private static final QName ATT_GROUP = new QName("group");
+    private static final QName ATT_METADATA = new QName("metadata");
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
@@ -58,6 +59,7 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
         OMAttribute name = elem.getAttribute(ATT_NAME);
         OMAttribute value = elem.getAttribute(ATT_VALUE);
         OMAttribute expression = elem.getAttribute(ATT_EXPRN);
+        OMAttribute metadata = elem.getAttribute(ATT_METADATA);
         OMAttribute scope = elem.getAttribute(ATT_SCOPE);
         OMAttribute action = elem.getAttribute(ATT_ACTION);
         OMAttribute type = elem.getAttribute(ATT_TYPE);
@@ -177,6 +179,11 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
                 throw new SynapseException(msg);
             }
             propMediator.setScope(valueStr);
+        }
+        
+        // Check if this property was injected by the test framework
+        if (metadata != null && "synapse.unittest.injected".equals(metadata.getAttributeValue())) {
+            propMediator.setTestInjected(true);
         }
 
         // after successfully creating the mediator

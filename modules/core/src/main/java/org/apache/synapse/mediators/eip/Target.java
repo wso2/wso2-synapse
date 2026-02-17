@@ -31,6 +31,8 @@ import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.util.MediatorIdLogSetter;
+import org.apache.synapse.unittest.CoverageUtils;
 import org.apache.synapse.util.logging.LoggingUtils;
 
 /**
@@ -130,7 +132,14 @@ public class Target {
                         log.debug("Synchronously mediating using the sequence " +
                                 "named : " + sequenceRef);
                     }
-                    returnValue = mediateMessage(refSequence, synCtx);
+                    // Handle coverage tracking for referenced sequence
+                    String originalArtifactKey = CoverageUtils.handleCoverageForReferencedSequence(
+                            synCtx, refSequence, sequenceRef);
+                    try {
+                        returnValue = mediateMessage(refSequence, synCtx);
+                    } finally {
+                        CoverageUtils.restoreCoverageArtifactKey(synCtx, originalArtifactKey);
+                    }
                 }
             } else {
                 handleException("Couldn't find the sequence named : " + sequenceRef);
@@ -255,6 +264,9 @@ public class Target {
         try {
             return sequenceMediator.mediate(synCtx);
         } catch (SynapseException syne) {
+            // Restore mediator ID to ThreadContext for logging
+            MediatorIdLogSetter.getInstance().syncToThreadContext(synCtx);
+            
             synCtx.setProperty(EIPConstants.ERROR_ON_TARGET_EXECUTION, true);
             if (!synCtx.getFaultStack().isEmpty()) {
                 log.warn(LoggingUtils.getFormattedLog(synCtx, "Executing fault handler due to exception encountered"),
@@ -266,6 +278,9 @@ public class Target {
                                                               + "dropped"));
             }
         } catch (Exception e) {
+            // Restore mediator ID to ThreadContext for logging
+            MediatorIdLogSetter.getInstance().syncToThreadContext(synCtx);
+            
             synCtx.setProperty(EIPConstants.ERROR_ON_TARGET_EXECUTION, true);
             String msg = "Unexpected error occurred executing the Target";
             log.error(LoggingUtils.getFormattedLog(synCtx, msg), e);
@@ -280,6 +295,9 @@ public class Target {
                                                       "Exception encountered but no fault handler found - message "
                                                               + "dropped"));
             }
+        } finally {
+            // Clear ThreadContext after exception handling to prevent context leakage
+            MediatorIdLogSetter.getInstance().clearMediatorId();
         }
         return false;
     }

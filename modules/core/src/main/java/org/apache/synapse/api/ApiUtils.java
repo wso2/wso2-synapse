@@ -18,6 +18,9 @@
 
 package org.apache.synapse.api;
 
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.parser.OpenAPIV3Parser;
+import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import org.apache.axis2.Constants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -45,10 +48,10 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Map;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class ApiUtils {
@@ -187,16 +190,21 @@ public class ApiUtils {
 
     public static Set<Resource> getAcceptableResources(Map<String, Resource> resources, MessageContext synCtx) {
         List<Resource> acceptableResourcesList = new LinkedList<>();
+        List<Resource> optionsResourcesList = new LinkedList<>();
         for (Resource r : resources.values()) {
             if (isBound(r, synCtx) && r.canProcess(synCtx)) {
-                if (Arrays.asList(r.getMethods()).contains(RESTConstants.METHOD_OPTIONS)) {
-                    acceptableResourcesList.add(0, r);
+                List<String> methods = Arrays.asList(r.getMethods());
+                if (methods.size() == 1 && methods.contains(RESTConstants.METHOD_OPTIONS)) {
+                    optionsResourcesList.add(r);
                 } else {
                     acceptableResourcesList.add(r);
                 }
             }
         }
-        return new LinkedHashSet<Resource>(acceptableResourcesList);
+        LinkedHashSet<Resource> result = new LinkedHashSet<>();
+        result.addAll(optionsResourcesList);
+        result.addAll(acceptableResourcesList);
+        return result;
     }
 
     /**
@@ -281,5 +289,32 @@ public class ApiUtils {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Parses a raw Swagger/OpenAPI string definition and attaches the resulting model to the API object.
+     * <p>
+     * This method utilizes the {@code OpenAPIV3Parser} to convert a string-based definition
+     * (JSON or YAML) into a structured {@link OpenAPI} object. If the parsing is successful,
+     * the model is set on the provided {@code api} instance for subsequent authorization
+     * and scope validation logic.
+     * </p>
+     *
+     * @param api               The {@link API} metadata object to be updated with the parsed model.
+     * @param swaggerDefinition The raw string containing the OpenAPI/Swagger specification.
+     */
+    public static void loadOpenAPIFromDefinition(API api, String swaggerDefinition) {
+
+        SwaggerParseResult result = new OpenAPIV3Parser().readContents(swaggerDefinition, null, null);
+
+        // Get the parsed OpenAPI object
+        OpenAPI openAPI = result.getOpenAPI();
+
+        if (openAPI != null) {
+            api.setOpenAPI(openAPI);
+        } else if (log.isDebugEnabled()) {
+            log.debug("Failed to parse OpenAPI definition for API: " + api.getName()
+                    + ". Errors: " + result.getMessages());
+        }
     }
 }

@@ -32,6 +32,8 @@ import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTele
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
+import java.util.Objects;
+
 /**
  * OpenEventCollector receives  open statistic events from synapse mediation engine. It Receives Statistics for Proxy
  * Services, Inbound Endpoints, APIs, Sequences, Endpoints, Mediators and Resources.
@@ -54,7 +56,12 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 	 */
 	public static Integer reportEntryEvent(MessageContext messageContext, String componentName,
 	                                       AspectConfiguration aspectConfiguration, ComponentType componentType) {
-		// Enable statistics, if user enabled for all artifacts
+        // Avoid reporting endpoint entry event if it is an atomic unit
+		if (Objects.equals(componentType, ComponentType.ENDPOINT) && isAtomicUnit(messageContext)) {
+            return null;
+        }
+
+        // Enable statistics, if user enabled for all artifacts
 		boolean isCollectingStatistics = (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable())
 				|| RuntimeStatisticCollector.isCollectingAllStatistics();
 
@@ -102,9 +109,10 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
             addEventAndIncrementCount(messageContext, openEvent);
 
-            if (isOpenTelemetryEnabled()) {
-				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
-						.handleOpenEntryEvent(statisticDataUnit, messageContext);
+            boolean isFiltered = isSpanFilteredMediator(componentName, aspectConfiguration);
+            if (!isFiltered && isOpenTelemetryEnabled()) {
+                OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
+                            .handleOpenEntryEvent(statisticDataUnit, messageContext);
 			}
 
 			return statisticDataUnit.getCurrentIndex();
@@ -129,14 +137,17 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 	public static Integer reportChildEntryEvent(MessageContext messageContext, String componentName,
 	                                            ComponentType componentType, AspectConfiguration aspectConfiguration,
 	                                            boolean isContentAltering) {
+
 		if (shouldReportStatistic(messageContext)) {
 			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
 
-			if (isOpenTelemetryEnabled()) {
-				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
-						.handleOpenChildEntryEvent(statisticDataUnit, messageContext);
+            boolean isFiltered = isSpanFilteredMediator(componentName, aspectConfiguration);
+
+            if (isOpenTelemetryEnabled() && !isFiltered && !isAtomicUnit(messageContext)) {
+                OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
+                            .handleOpenChildEntryEvent(statisticDataUnit, messageContext);
 			}
 
 			return statisticDataUnit.getCurrentIndex();
@@ -168,9 +179,11 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
 
-			if (isOpenTelemetryEnabled()) {
-				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
-						.handleOpenFlowContinuableEvent(statisticDataUnit, messageContext);
+            boolean isFiltered = isSpanFilteredMediator(componentName, aspectConfiguration);
+
+            if (isOpenTelemetryEnabled() && !isFiltered && !isAtomicUnit(messageContext)) {
+                OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
+                            .handleOpenFlowContinuableEvent(statisticDataUnit, messageContext);
 			}
 
 			return statisticDataUnit.getCurrentIndex();
@@ -203,7 +216,8 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
 
-			if (isOpenTelemetryEnabled()) {
+            boolean isFiltered = isSpanFilteredMediator(componentName, aspectConfiguration);
+            if (isOpenTelemetryEnabled() && !isFiltered && !isAtomicUnit(messageContext)) {
 				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
 						.handleOpenFlowSplittingEvent(statisticDataUnit, messageContext);
 			}
@@ -237,7 +251,8 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
 
-			if (isOpenTelemetryEnabled()) {
+            boolean isFiltered = isSpanFilteredMediator(componentName, aspectConfiguration);
+            if (isOpenTelemetryEnabled() && !isFiltered && !isAtomicUnit(messageContext)) {
 				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
 						.handleOpenFlowAggregateEvent(statisticDataUnit, messageContext);
 			}
@@ -310,10 +325,22 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
             ParentReopenEvent parentReopenEvent = new ParentReopenEvent(basicStatisticDataUnit);
 			addEvent(synCtx, parentReopenEvent);
 
-			if (isOpenTelemetryEnabled()) {
+			if (isOpenTelemetryEnabled() && !isAtomicUnit(synCtx)) {
 				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
 						.handleOpenContinuationEvents(basicStatisticDataUnit, synCtx);
 			}
 		}
+    }
+
+    /**
+     * Checks if an atomic unit is currently active in the message context.
+     * An atomic unit groups related events together and prevents child events from being reported separately.
+     *
+     * @param messageContext synapse message context to check for atomic unit status
+     * @return true if an atomic unit is active, false otherwise
+     */
+    private static boolean isAtomicUnit(MessageContext messageContext) {
+        return messageContext.getProperty(StatisticsConstants.ATOMIC_UNIT_ACTIVE) != null &&
+                Boolean.TRUE.equals(messageContext.getProperty(StatisticsConstants.ATOMIC_UNIT_ACTIVE));
     }
 }

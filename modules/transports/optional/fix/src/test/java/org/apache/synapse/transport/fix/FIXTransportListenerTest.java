@@ -34,17 +34,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.mockito.ArgumentMatchers.anyString;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore("javax.management.*")
-@PrepareForTest(FIXTransportListener.class)
+@RunWith(MockitoJUnitRunner.class)
 public class FIXTransportListenerTest extends TestCase {
     @Mock(name = "sessionFactory")
     FIXSessionFactory fixSessionFactory;
@@ -93,7 +89,7 @@ public class FIXTransportListenerTest extends TestCase {
         MockitoAnnotations.initMocks(this);
         String[] serviceEPRStrings = { "epr1", "epr2" };
 
-        PowerMockito.when(fixSessionFactory.getServiceEPRs(anyString(), anyString())).thenReturn(serviceEPRStrings);
+        Mockito.when(fixSessionFactory.getServiceEPRs(anyString(), anyString())).thenReturn(serviceEPRStrings);
 
         EndpointReference[] eprs = spy.getEPRsForService("test.service", "random.ip");
         Assert.assertNotNull("Cannot get endpoint refernces from the service!", eprs);

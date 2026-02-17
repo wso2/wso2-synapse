@@ -19,7 +19,7 @@
 package org.apache.synapse.mediators.bsf;
 
 import org.apache.xerces.parsers.DOMParser;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import org.openjdk.nashorn.api.scripting.ScriptObjectMirror;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMException;
@@ -177,7 +177,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Saves the JavaScript Object to the message context.
-     * 
+     *
      * @param messageContext The message context of the sequence
      * @param jsonObject JavaScript Object which is passed to be saved in message context
      * @return true
@@ -559,7 +559,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
      * {@inheritDoc}
      */
     public OMElement getFormat(String s) {
-       return mc.getFormat(s);
+        return mc.getFormat(s);
     }
 
     /**
@@ -874,7 +874,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
         return mc.getSequenceTemplate(key);
     }
 
-     /**
+    /**
      * Saves the payload of this message context as a JSON payload.
      *
      * @param jsonPayload Javascript native object to be set as the message body
@@ -946,4 +946,3 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
         return mc.getVariableKeySet();
     }
 }
-

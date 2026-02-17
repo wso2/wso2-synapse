@@ -20,7 +20,9 @@ package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.stores;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.helpers.SpanTagger;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.helpers.TracingUtils;
@@ -114,6 +116,39 @@ public class SpanStore {
     }
 
     /**
+     * Denotes the beginning of a span. Adds appropriate elements to necessary data structures.
+     *
+     * @param spanId            Index of the span wrapper
+     * @param activeSpan        Reference to the span object, that have been started
+     * @param statisticDataUnit The statistic data unit object
+     * @param parentSpanWrapper Parent span wrapper of the created span wrapper
+     * @param msgCtx            Message Context that is reported during the open event
+     * @return Created span wrapper object
+     */
+    public SpanWrapper addSpanWrapper(String spanId,
+                                      Span activeSpan,
+                                      StatisticDataUnit statisticDataUnit,
+                                      SpanWrapper parentSpanWrapper,
+                                      org.apache.axis2.context.MessageContext msgCtx) {
+        SpanWrapper spanWrapper = new SpanWrapper(spanId, activeSpan, statisticDataUnit, parentSpanWrapper);
+        spanWrappers.put(spanId, spanWrapper);
+        spanWrapper.addKnownSynCtxHashCodeToAllParents(TracingUtils.getSystemIdentityHashCode(msgCtx));
+        if (parentSpanWrapper != null) {
+            parentSpanWrapper.addChildComponentUniqueId(statisticDataUnit.getComponentId());
+            if (TracingUtils.isAnonymousSequence(spanWrapper.getStatisticDataUnit())) {
+                /*
+                Add this anonymous sequence to the parent.
+                Note that, anonymous sequences are not pushed to the continuation stack
+                */
+                parentSpanWrapper.addAnonymousSequence(spanId, spanWrapper);
+            }
+        }
+        componentUniqueIdWiseSpanWrappers.put(statisticDataUnit.getComponentId(), spanWrapper);
+        activeSpanWrappers.add(spanWrapper);
+        return spanWrapper;
+    }
+
+    /**
      * Denotes the end of a span.
      * Adds tags to the span and removes reference to the appropriate span wrapper in activeSpanWrappers.
      * @param spanWrapper   Span wrapper object, which has been already created
@@ -121,6 +156,16 @@ public class SpanStore {
      */
     public void finishSpan(SpanWrapper spanWrapper, MessageContext synCtx) {
         finishSpan(spanWrapper, synCtx, false);
+    }
+
+    /**
+     * Denotes the end of a span.
+     * Adds tags to the span and removes reference to the appropriate span wrapper in activeSpanWrappers.
+     * @param spanWrapper   Span wrapper object, which has been already created
+     * @param msgCtx Axis2 message context
+     */
+    public void finishSpan(SpanWrapper spanWrapper, org.apache.axis2.context.MessageContext msgCtx) {
+        finishSpan(spanWrapper, msgCtx, false);
     }
 
     /**
@@ -138,6 +183,41 @@ public class SpanStore {
             }
             if (isError) {
                 spanWrapper.getSpan().setStatus(StatusCode.ERROR);
+            }
+            // Restore parent span ID in ThreadContext, or clear if this is the outermost span
+            if (spanWrapper.getParentSpanWrapper() != null && spanWrapper.getParentSpanWrapper().getSpan() != null) {
+                ThreadContext.put(SynapseConstants.SPAN_ID,
+                        spanWrapper.getParentSpanWrapper().getSpan().getSpanContext().getSpanId());
+            } else {
+                ThreadContext.remove(SynapseConstants.SPAN_ID);
+            }
+            spanWrapper.getSpan().end();
+            activeSpanWrappers.remove(spanWrapper);
+        }
+    }
+
+    /**
+     * Denotes the end of a span.
+     * Adds tags to the span and removes reference to the appropriate span wrapper in activeSpanWrappers.
+     *
+     * @param spanWrapper Span wrapper object, which has been already created
+     * @param msgCtx      Axis2 message context
+     * @param isError     finishing the span with an error
+     */
+    public void finishSpan(SpanWrapper spanWrapper, org.apache.axis2.context.MessageContext msgCtx, boolean isError) {
+        if (spanWrapper != null && spanWrapper.getSpan() != null) {
+            if (spanWrapper.getStatisticDataUnit() != null) {
+                SpanTagger.setSpanTags(spanWrapper, msgCtx);
+            }
+            if (isError) {
+                spanWrapper.getSpan().setStatus(StatusCode.ERROR);
+            }
+            // Restore parent span ID in ThreadContext, or clear if this is the outermost span
+            if (spanWrapper.getParentSpanWrapper() != null && spanWrapper.getParentSpanWrapper().getSpan() != null) {
+                ThreadContext.put(SynapseConstants.SPAN_ID,
+                        spanWrapper.getParentSpanWrapper().getSpan().getSpanContext().getSpanId());
+            } else {
+                ThreadContext.remove(SynapseConstants.SPAN_ID);
             }
             spanWrapper.getSpan().end();
             activeSpanWrappers.remove(spanWrapper);

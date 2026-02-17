@@ -18,7 +18,9 @@
 
 package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.scoping;
 
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 import java.util.LinkedHashMap;
@@ -60,6 +62,28 @@ public class TracingScopeManager {
     }
 
     /**
+     * Returns a tracing scope object for the provided message context.
+     * Returns the reference to the existing object when the tracing scope is known (has been already created).
+     * Otherwise creates a new scope, stores it, and returns its reference.
+     *
+     * @param msgCtx Axis2 Message context.
+     * @return Tracing scope object.
+     */
+    public TracingScope getTracingScope(org.apache.axis2.context.MessageContext msgCtx) {
+        synchronized (tracingScopes) {
+            String tracingScopeId = extractTracingScopeId(msgCtx);
+            if (tracingScopes.containsKey(tracingScopeId)) {
+                // Already existing scope. Return its reference
+                return tracingScopes.get(tracingScopeId);
+            } else {
+                TracingScope tracingScope = new TracingScope(tracingScopeId);
+                tracingScopes.put(tracingScopeId, tracingScope);
+                return tracingScope;
+            }
+        }
+    }
+
+    /**
      * Gets the tracing scope id for the provided message context.
      *
      * @param synCtx Message context.
@@ -67,6 +91,16 @@ public class TracingScopeManager {
      */
     private String extractTracingScopeId(MessageContext synCtx) {
         return (String) synCtx.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
+    }
+
+    /**
+     * Gets the tracing scope id for the provided message context.
+     *
+     * @param msgCtx Message context.
+     * @return Tracing scope id.
+     */
+    private String extractTracingScopeId(org.apache.axis2.context.MessageContext msgCtx) {
+        return (String) msgCtx.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
     }
 
     /**
@@ -88,5 +122,6 @@ public class TracingScopeManager {
         synchronized (tracingScopes){
             tracingScopes.remove(tracingScopeId);
         }
+        ThreadContext.remove(SynapseConstants.TRACE_ID);
     }
 }

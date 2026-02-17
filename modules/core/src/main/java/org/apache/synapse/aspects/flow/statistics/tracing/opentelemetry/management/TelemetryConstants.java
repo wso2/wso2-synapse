@@ -44,6 +44,29 @@ public class TelemetryConstants {
      * OpenTelemetry port.
      */
     public static final String OPENTELEMETRY_PORT = "opentelemetry.port";
+
+    /**
+     * OpenTelemetry protocol (http or grpc).
+     */
+    public static final String OPENTELEMETRY_PROTOCOL = "opentelemetry.protocol";
+
+    /**
+     * OpenTelemetry metric push interval in seconds.
+     * if not defined, default value is 60 seconds.
+     */
+    public static final String OPENTELEMETRY_METRIC_PUSH_INTERVAL_SECONDS = "opentelemetry.metric.push.interval.seconds";
+
+    public static final String OPENTELEMETRY_METRIC_DEFAULT_PUSH_INTERVAL_SECONDS = "60";
+    /**
+     * HTTP protocol constant.
+     */
+    public static final String HTTP_PROTOCOL = "http";
+
+    /**
+     * gRPC protocol constant (default).
+     */
+    public static final String GRPC_PROTOCOL = "grpc";
+
     public static final String DEFAULT_OPENTELEMETRY_CLASS = "org.apache.synapse.aspects.flow.statistics.tracing" +
             ".opentelemetry.management.JaegerTelemetryManager";
     public static final String USER_DEFINED_NAME = System.getenv("SERVICE_NAME");
@@ -82,6 +105,13 @@ public class TelemetryConstants {
     public static final String ENDPOINT_ATTRIBUTE_KEY = "Endpoint";
     public static final String CORRELATION_ID_ATTRIBUTE_KEY = "CorrelationId";
 
+    public static final String ERROR_CODE_ATTRIBUTE_KEY = "error.code";
+    public static final String ERROR_MESSAGE_ATTRIBUTE_KEY = "error.message";
+
     public static final String OTEL_RESOURCE_ATTRIBUTE_KEY = "opentelemetry.properties.resource_attributes";
     public static final String OTEL_RESOURCE_ATTRIBUTES_ENVIRONMENT_VARIABLE_NAME = "OTEL_RESOURCE_ATTRIBUTES";
+
+    public static final String OLTP_CUSTOM_SPAN_TAGS = "oltp.custom.span.header.tags";
+
+    public static final String OLTP_FILTERED_MEDIATOR_NAMES = "oltp.filtered.mediator.names";
 }

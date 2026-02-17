@@ -145,4 +145,7 @@ public class XMLConfigConstants {
      * The server push processing sequence name.
      */
     public static final String SERVER_PUSH_SEQUENCE = "serverPushSequence";
+
+    public static final String TRACE_FILTER_ATTRIB_NAME = "traceFilter";
+    public static final String TRACE_FILTER_ENABLE = "enable";
 }

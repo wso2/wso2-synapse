@@ -74,6 +74,8 @@ public class ServerConnFactoryBuilder {
     private Map<InetSocketAddress, SSLContextDetails> sslByIPMap = null;
     private ConfigurationContext configurationContext;
     CertificateVerificationManager certificateVerifier = null;
+    private static final String PKIX = "PKIX";
+    private static final String JCE_PROVIDER = "security.jce.provider";
 
     public ServerConnFactoryBuilder(final TransportInDescription transportIn, final HttpHost host,
                                     ConfigurationContext configurationContext) {
@@ -126,6 +128,8 @@ public class ServerConnFactoryBuilder {
             String type          = getValueOfElementWithLocalName(keyStoreEl,"Type");
             OMElement storePasswordEl = keyStoreEl.getFirstChildWithName(new QName("Password"));
             OMElement keyPasswordEl = keyStoreEl.getFirstChildWithName(new QName("KeyPassword"));
+            OMElement aliasEl = keyStoreEl.getFirstChildWithName(new QName("ServerCertificateAlias"));
+            String requiredAlias = aliasEl != null ? StringUtils.trimToNull(aliasEl.getText()) : null;
             if (storePasswordEl == null) {
                 throw new AxisFault("Cannot proceed because Password element is missing in KeyStore");
             }
@@ -145,10 +149,19 @@ public class ServerConnFactoryBuilder {
 
                 keyStore.load(fis, storePassword.toCharArray());
 
-                KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(
-                        KeyManagerFactory.getDefaultAlgorithm());
+                KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(getKeyManagerType());
                 kmfactory.init(keyStore, keyPassword.toCharArray());
-                keymanagers = kmfactory.getKeyManagers();
+                if (requiredAlias != null) {
+                    KeyManager[] keyManagers = kmfactory.getKeyManagers();
+                    for (int i = 0; i < keyManagers.length; i++) {
+                        if (keyManagers[i] instanceof X509KeyManager) {
+                            keyManagers[i] = new AliasBasedKeyManager((X509KeyManager) keyManagers[i], requiredAlias);
+                        }
+                    }
+                    keymanagers = keyManagers;
+                } else {
+                    keymanagers = kmfactory.getKeyManagers();
+                }
                 if (log.isInfoEnabled() && keymanagers != null) {
                     for (KeyManager keymanager: keymanagers) {
                         if (keymanager instanceof X509KeyManager) {
@@ -201,8 +214,7 @@ public class ServerConnFactoryBuilder {
                 }
 
                 trustStore.load(fis, storePassword.toCharArray());
-                TrustManagerFactory trustManagerfactory = TrustManagerFactory.getInstance(
-                           TrustManagerFactory.getDefaultAlgorithm());
+                TrustManagerFactory trustManagerfactory = TrustManagerFactory.getInstance(getTrustManagerType());
                 trustManagerfactory.init(trustStore);
                 trustManagers = trustManagerfactory.getTrustManagers();
                 TrustStoreHolder.getInstance().setClientTrustStore(trustStore);
@@ -493,4 +505,19 @@ public class ServerConnFactoryBuilder {
         return value;
     }
 
+    private static String getKeyManagerType() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (StringUtils.isNotEmpty(provider)) {
+            return PKIX;
+        }
+        return KeyManagerFactory.getDefaultAlgorithm();
+    }
+
+    private static String getTrustManagerType() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (StringUtils.isNotEmpty(provider)) {
+            return PKIX;
+        }
+        return TrustManagerFactory.getDefaultAlgorithm();
+    }
 }

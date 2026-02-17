@@ -20,7 +20,7 @@
     <parent>
         <artifactId>synapse-features</artifactId>
         <groupId>org.apache.synapse</groupId>
-        <version>4.0.0-wso2v273-SNAPSHOT</version>
+        <version>4.1.0-wso2v19-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -31,6 +31,14 @@
     <description>This feature powers the synapse vfs transport's smb2 support feature</description>
 
     <dependencies>
+        <dependency>
+            <groupId>org.wso2.orbit.com.sun.activation</groupId>
+            <artifactId>jakarta.activation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.orbit.com.sun.mail</groupId>
+            <artifactId>jakarta.mail</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.hierynomus.wso2</groupId>
             <artifactId>smbj</artifactId>
@@ -67,6 +75,8 @@
                                 </properties>
                             </adviceFile>
                             <importBundles>
+                                <importBundleDef>org.wso2.orbit.com.sun.activation:jakarta.activation</importBundleDef>
+                                <importBundleDef>org.wso2.orbit.com.sun.mail:jakarta.mail</importBundleDef>
                                 <importBundleDef>com.hierynomus.wso2:smbj</importBundleDef>
                                 <importBundleDef>com.hierynomus.wso2:asn-one</importBundleDef>
                                 <importBundleDef>net.engio.wso2:mbassador</importBundleDef>

@@ -113,8 +113,15 @@ if $cygwin; then
   JAVA_ENDORSED_DIRS=`cygpath --path --windows "$JAVA_ENDORSED_DIRS"`
 fi
 
-# endorsed dir
+# endorsed dir - Note: -Djava.endorsed.dirs is removed in Java 9+
+# Endorsed JARs are now added to classpath instead
 AXIS2_ENDORSED=$AXIS2_HOME/../../lib/endorsed
+if [ -d "$AXIS2_ENDORSED" ]; then
+  for f in $AXIS2_ENDORSED/*.jar
+  do
+    AXIS2_CLASSPATH=$f:$AXIS2_CLASSPATH
+  done
+fi
 
 echo " Using JAVA_HOME:   $JAVA_HOME"
 echo " Using AXIS2 Repository :   $AXIS2_HOME/repository"
@@ -159,5 +166,5 @@ if [ "$HTTPS_PORT_SET" = "FALSE" ]; then
 	PROGRAM_PARAMS="$PROGRAM_PARAMS""-Dhttps_port=9002 "
 fi
 
-java $PROGRAM_PARAMS -Djava.io.tmpdir=$AXIS2_HOME/../../work/temp/sampleServer -Djava.endorsed.dirs=$AXIS2_ENDORSED -classpath $AXIS2_CLASSPATH samples.util.SampleAxis2Server \
+java $PROGRAM_PARAMS -Djava.io.tmpdir=$AXIS2_HOME/../../work/temp/sampleServer -classpath $AXIS2_CLASSPATH samples.util.SampleAxis2Server \
 -repo $AXIS2_HOME/repository -conf $AXIS2_HOME/repository/conf/axis2.xml

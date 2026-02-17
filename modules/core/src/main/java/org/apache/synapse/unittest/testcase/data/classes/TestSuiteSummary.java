@@ -18,6 +18,11 @@
 
 package org.apache.synapse.unittest.testcase.data.classes;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +37,9 @@ public class TestSuiteSummary {
     private String recentTestCaseName;
     private String mediationException;
     private List<TestCaseSummary> testCases = new ArrayList<>();
+    private MediatorCoverage primaryCoverage;
+    private List<MediatorCoverage> mediatorCoverageList = new ArrayList<>();
+    private String coverageReportJson;
 
     /**
      * Get test case deployment status.
@@ -183,5 +191,85 @@ public class TestSuiteSummary {
         }
 
         return true;
+    }
+
+    /**
+     * Add mediator coverage data.
+     *
+     * @param coverage mediator coverage object
+     */
+    public void addMediatorCoverage(MediatorCoverage coverage) {
+        this.mediatorCoverageList.add(coverage);
+    }
+
+    /**
+     * Set primary artifact mediator coverage.
+     *
+     * @param coverage primary artifact coverage data
+     */
+    public void setPrimaryCoverage(MediatorCoverage coverage) {
+        this.primaryCoverage = coverage;
+    }
+
+    /**
+     * Get primary artifact mediator coverage.
+     *
+     * @return primary artifact coverage data
+     */
+    public MediatorCoverage getPrimaryCoverage() {
+        return primaryCoverage;
+    }
+
+    /**
+     * Get list of mediator coverage data.
+     *
+     * @return list of mediator coverage
+     */
+    public List<MediatorCoverage> getMediatorCoverageList() {
+        return mediatorCoverageList;
+    }
+
+    /**
+     * Set coverage report JSON string.
+     *
+     * @param coverageReportJson coverage report JSON
+     */
+    public void setCoverageReportJson(String coverageReportJson) {
+        this.coverageReportJson = coverageReportJson;
+    }
+
+    /**
+     * Get coverage report JSON string.
+     *
+     * @return coverage report JSON
+     */
+    public String getCoverageReportJson() {
+        return coverageReportJson;
+    }
+
+    /**
+     * Generate coverage report JSON from mediator coverage list.
+     *
+     * @return JSON string representation of coverage report
+     */
+    public String generateCoverageReportJson() {
+        JsonObject root = new JsonObject();
+
+        // Add primary artifact
+        if (primaryCoverage != null) {
+            primaryCoverage.calculateCoveragePercentage();
+            root.add("primaryArtifact", primaryCoverage.toJson());
+        }
+
+        // Add supporting artifacts
+        JsonArray supportingArtifactsArray = new JsonArray();
+        for (MediatorCoverage coverage : mediatorCoverageList) {
+            coverage.calculateCoveragePercentage();
+            supportingArtifactsArray.add(coverage.toJson());
+        }
+        root.add("supportingArtifacts", supportingArtifactsArray);
+
+        this.coverageReportJson = root.toString();
+        return this.coverageReportJson;
     }
 }

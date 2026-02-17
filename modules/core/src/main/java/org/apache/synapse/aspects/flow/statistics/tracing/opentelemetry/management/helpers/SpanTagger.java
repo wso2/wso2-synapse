@@ -137,5 +137,106 @@ public class SpanTagger {
             span.setAttribute(TelemetryConstants.CORRELATION_ID_ATTRIBUTE_KEY,
                     synCtx.getProperty(CorrelationConstants.CORRELATION_ID).toString());
         }
+
+        if (openStatisticsLog.getCustomProperties() != null) {
+            openStatisticsLog.getCustomProperties().forEach(
+                    (key, value) -> span.setAttribute(key, String.valueOf(value))
+            );
+        }
+        if (spanWrapper.getCloseEventStatisticDataUnit() != null) {
+            if (spanWrapper.getCloseEventStatisticDataUnit().getCustomProperties() != null) {
+                spanWrapper.getCloseEventStatisticDataUnit().getCustomProperties().forEach(
+                        (key, value) -> span.setAttribute(key, String.valueOf(value))
+                );
+            }
+        }
+    }
+
+    /**
+     * Sets tags to the span which is contained in the provided span wrapper, from information acquired from the
+     * given basic statistic data unit.
+     *
+     * @param spanWrapper Span wrapper that contains the target span.
+     * @param msgCtx      Axis2 message context
+     */
+    public static void setSpanTags(SpanWrapper spanWrapper, org.apache.axis2.context.MessageContext msgCtx) {
+        StatisticDataUnit openEventStatisticDataUnit = spanWrapper.getStatisticDataUnit();
+        Span span = spanWrapper.getSpan();
+        StatisticDataUnit closeEventStatisticDataUnit = spanWrapper.getCloseEventStatisticDataUnit();
+        if (OpenTelemetryManagerHolder.isCollectingPayloads()) {
+            if (openEventStatisticDataUnit.getPayload() != null) {
+                span.setAttribute(TelemetryConstants.BEFORE_PAYLOAD_ATTRIBUTE_KEY,
+                        openEventStatisticDataUnit.getPayload());
+            }
+            if (closeEventStatisticDataUnit != null) {
+                if (closeEventStatisticDataUnit.getPayload() != null) {
+                    span.setAttribute(TelemetryConstants.AFTER_PAYLOAD_ATTRIBUTE_KEY,
+                            closeEventStatisticDataUnit.getPayload());
+                }
+            }
+        }
+
+        if (openEventStatisticDataUnit.getComponentName() != null) {
+            span.setAttribute(TelemetryConstants.COMPONENT_NAME_ATTRIBUTE_KEY,
+                    openEventStatisticDataUnit.getComponentName());
+        }
+
+        if (openEventStatisticDataUnit.getComponentType() != null) {
+            span.setAttribute(TelemetryConstants.COMPONENT_TYPE_ATTRIBUTE_KEY,
+                    openEventStatisticDataUnit.getComponentType().toString());
+        } else if (openEventStatisticDataUnit.getComponentTypeString() != null) {
+            span.setAttribute(TelemetryConstants.COMPONENT_TYPE_ATTRIBUTE_KEY,
+                    openEventStatisticDataUnit.getComponentTypeString());
+        }
+
+        span.setAttribute(TelemetryConstants.THREAD_ID_ATTRIBUTE_KEY, Thread.currentThread().getId());
+        if (openEventStatisticDataUnit.getComponentId() != null) {
+            span.setAttribute(TelemetryConstants.COMPONENT_ID_ATTRIBUTE_KEY,
+                    openEventStatisticDataUnit.getComponentId());
+        }
+        if (openEventStatisticDataUnit.getHashCode() != null) {
+            span.setAttribute(TelemetryConstants.HASHCODE_ATTRIBUTE_KEY, openEventStatisticDataUnit.getHashCode());
+        }
+        if (openEventStatisticDataUnit.getTransportHeaderMap() != null) {
+            span.setAttribute(TelemetryConstants.TRANSPORT_HEADERS_ATTRIBUTE_KEY,
+                    openEventStatisticDataUnit.getTransportHeaderMap().toString());
+        }
+
+        if (openEventStatisticDataUnit.getStatusCode() != null) {
+            span.setAttribute(TelemetryConstants.STATUS_CODE_ATTRIBUTE_KEY, openEventStatisticDataUnit.getStatusCode());
+        }
+        if (openEventStatisticDataUnit.getStatusDescription() != null) {
+            span.setAttribute(TelemetryConstants.STATUS_DESCRIPTION_ATTRIBUTE_KEY,
+                    openEventStatisticDataUnit.getStatusDescription());
+        }
+        if (msgCtx.getProperty(CorrelationConstants.CORRELATION_ID) != null) {
+            span.setAttribute(TelemetryConstants.CORRELATION_ID_ATTRIBUTE_KEY,
+                    msgCtx.getProperty(CorrelationConstants.CORRELATION_ID).toString());
+        }
+
+        if (openEventStatisticDataUnit.getCustomProperties() != null) {
+            openEventStatisticDataUnit.getCustomProperties().forEach(
+                    (key, value) -> span.setAttribute(key, String.valueOf(value))
+            );
+        }
+
+        if (closeEventStatisticDataUnit != null) {
+            if (closeEventStatisticDataUnit.getErrorCode() != null) {
+                span.setAttribute(TelemetryConstants.ERROR_CODE_ATTRIBUTE_KEY,
+                        closeEventStatisticDataUnit.getErrorCode());
+            }
+
+            if (closeEventStatisticDataUnit.getErrorMessage() != null) {
+                span.setAttribute(TelemetryConstants.ERROR_MESSAGE_ATTRIBUTE_KEY,
+                        closeEventStatisticDataUnit.getErrorMessage());
+            }
+
+            if (closeEventStatisticDataUnit.getCustomProperties() != null) {
+                closeEventStatisticDataUnit.getCustomProperties().forEach(
+                        (key, value) -> span.setAttribute(key, String.valueOf(value))
+                );
+            }
+        }
+
     }
 }

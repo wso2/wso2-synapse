@@ -106,4 +106,5 @@ public class RESTConstants {
     public static final String RESOURCE_PATH_WITHOUT_QUERY_PARAMS = "RESOURCE_PATH_WITHOUT_QUERY_PARAMS";
     public static final String OPENAPI_VALIDATED = "OPENAPI_VALIDATED";
     public static final String CONTENT_TYPE = "Content-Type";
+    public static final String RESOURCE_SCOPE_MAP = "RESOURCE_SCOPE_MAP";
 }

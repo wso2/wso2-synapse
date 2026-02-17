@@ -33,11 +33,29 @@ public interface CloseEventHandler {
     void handleCloseEntryEvent(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx);
 
     /**
+     * Handles a close entry event.
+     *
+     * @param basicStatisticDataUnit Basic statistic data unit object.
+     * @param msgCtx                 Axis2 Message context.
+     */
+    void handleCloseEntryEvent(BasicStatisticDataUnit basicStatisticDataUnit,
+                               org.apache.axis2.context.MessageContext msgCtx);
+
+    /**
      * Handles a forceful close event.
      * @param basicStatisticDataUnit    Basic statistic data unit object.
      * @param synCtx                    Message context.
      */
     void handleCloseFlowForcefully(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx);
+
+    /**
+     * Handles a forceful close event.
+     *
+     * @param basicStatisticDataUnit Basic statistic data unit object.
+     * @param msgCtx                 Axis2 Message context.
+     */
+    void handleCloseFlowForcefully(BasicStatisticDataUnit basicStatisticDataUnit,
+                                   org.apache.axis2.context.MessageContext msgCtx);
 
     /**
      * Handles a try end flow event.
@@ -59,4 +77,13 @@ public interface CloseEventHandler {
      * @param synCtx                    Message context.
      */
     void handleCloseEntryWithErrorEvent(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx);
+
+    /**
+     * Handles a close entry with error event.
+     *
+     * @param basicStatisticDataUnit Basic statistic data unit object.
+     * @param msgCtx                 Message context.
+     */
+    void handleCloseEntryWithErrorEvent(BasicStatisticDataUnit basicStatisticDataUnit,
+                                        org.apache.axis2.context.MessageContext msgCtx);
 }
