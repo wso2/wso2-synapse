@@ -1548,7 +1548,7 @@
       <commons.pool.wso2.version>1.5.0.wso2v1</commons.pool.wso2.version>
       <commons.vfs.version>2.10.0-wso2v7</commons.vfs.version>
       <truezip.version>6.6</truezip.version>
-      <commons.net.version>3.9.0</commons.net.version>
+      <commons.net.version>3.10.0</commons.net.version>
       <commons.net.wso2.version>${commons.net.version}.wso2v1</commons.net.wso2.version>
       <jsch.version>2.27.7</jsch.version>
       <jsch.wso2.version>2.27.7.wso2v1</jsch.wso2.version>
