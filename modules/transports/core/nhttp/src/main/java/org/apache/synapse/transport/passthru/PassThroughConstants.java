@@ -282,6 +282,8 @@ public class PassThroughConstants {
     public static final String CORRELATION_DEFAULT_HEADER = "activityid";
     public static final String TRANSPORT_LATENCY_LOGGER = "transport-latency";
     public static final String TRANSPORT_IN_URL = "TransportInURL";
+    public static final String MESSAGE_SIZE_LIMIT_EXCEEDED = "MESSAGE_SIZE_LIMIT_EXCEEDED";
+    public static final String DROP_MESSAGE_DUE_TO_SIZE_LIMIT_EXCEEDED = "DROP_MESSAGE_DUE_TO_SIZE_LIMIT_EXCEEDED";
 
     /**
      * Transaction replay configuration properties

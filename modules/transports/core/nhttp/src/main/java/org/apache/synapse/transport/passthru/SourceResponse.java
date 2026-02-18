@@ -347,6 +347,11 @@ public class SourceResponse {
     public void setStatus(int status) {
         this.status = status;
     }
+
+    public void setStatusLine(String statusLine) {
+        this.statusLine = statusLine;
+    }
+
     public void removeHeader(String name) {
         if (headers.get(name) != null) {
             headers.remove(name);
