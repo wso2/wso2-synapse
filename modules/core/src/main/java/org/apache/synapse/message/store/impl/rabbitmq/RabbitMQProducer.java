@@ -18,6 +18,7 @@
 package org.apache.synapse.message.store.impl.rabbitmq;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.MessageProperties;
@@ -34,6 +35,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.util.HashMap;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -52,6 +54,8 @@ public class RabbitMQProducer implements MessageProducer {
     private String idString; // ID of the MessageProducer
     private boolean publisherConfirmsEnabled;
     private Channel channel;
+    private boolean isQueueDeclared = true;
+    public static final String AMQ_PREFIX = "amq.";
 
     /**
      * The RabbitMQ producer
@@ -65,6 +69,14 @@ public class RabbitMQProducer implements MessageProducer {
         }
         this.store = store;
         isInitialized = true;
+    }
+
+    public boolean isQueueDeclared() {
+        return isQueueDeclared;
+    }
+
+    public void setQueueDeclared(boolean isQueueDeclared) {
+        this.isQueueDeclared = isQueueDeclared;
     }
 
     /**
@@ -133,6 +145,43 @@ public class RabbitMQProducer implements MessageProducer {
     }
 
     /**
+     * Helper method to declare queue when direct channel is given
+     *
+     * @param channel   a rabbitmq channel
+     * @param queueName a name of the queue to declare
+     * @throws IOException
+     */
+    private void declareQueue(Channel channel, String queueName) throws IOException {
+        channel.queueDeclare(queueName, true, false, false, new HashMap<String, Object>());
+    }
+
+    /**
+     * Helper method to declare exchange when direct channel is given
+     *
+     * @param channel      {@link Channel} object
+     * @param exchangeName the exchange exchangeName
+     */
+    private void declareExchange(Channel channel, String exchangeName, String queueName, String routingKey)
+            throws IOException {
+        if (StringUtils.isNotEmpty(exchangeName)) {
+            // declare the exchange
+            if (!exchangeName.startsWith(AMQ_PREFIX)) {
+                channel.exchangeDeclare(exchangeName, BuiltinExchangeType.DIRECT, true,
+                        false, new HashMap<String, Object>());
+            }
+            // bind the queue and exchange with routing key
+            if (StringUtils.isNotEmpty(queueName) && StringUtils.isNotEmpty(routingKey)) {
+                channel.queueBind(queueName, exchangeName, routingKey);
+            } else if (StringUtils.isNotEmpty(queueName) && StringUtils.isEmpty(routingKey)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("No routing key specified. The queue name is using as the routing key.");
+                }
+                channel.queueBind(queueName, exchangeName, routingKey);
+            }
+        }
+    }
+
+    /**
      * Serialize the message to store in the queue
      *
      * @param storableMessage the {@link StorableMessage} object
@@ -173,6 +222,10 @@ public class RabbitMQProducer implements MessageProducer {
      */
     private void publishMessage(Channel channel, String exchangeName, String routingKey,
                                 AMQP.BasicProperties basicProperties, byte[] messageBody) throws IOException {
+        if (!isQueueDeclared) {
+            declareQueue(channel, routingKey);
+            declareExchange(channel, exchangeName, routingKey, routingKey);
+        }
         if (StringUtils.isNotEmpty(exchangeName)) {
             channel.basicPublish(exchangeName, routingKey, basicProperties, messageBody);
         } else {

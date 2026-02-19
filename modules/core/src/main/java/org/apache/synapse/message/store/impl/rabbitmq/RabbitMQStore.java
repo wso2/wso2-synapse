@@ -101,6 +101,7 @@ public class RabbitMQStore extends AbstractMessageStore {
     private int retryInterval;
     private int retryCount;
     private boolean publisherConfirmsEnabled;
+    private boolean isQueueDeclared = false;
     private Channel channel;
 
     @Override
@@ -109,23 +110,16 @@ public class RabbitMQStore extends AbstractMessageStore {
             log.error("Cannot initialize store [" + getName() + "]...");
         }
         super.init(se);
+        loadAndValidateParams();
         initConnectionFactory();
         publisherConfirmsEnabled = BooleanUtils.toBooleanDefaultIfNull(
                 BooleanUtils.toBoolean((String) parameters.get(PUBLISHER_CONFIRMS)), false);
         producerConnection = createConnection();
         if (producerConnection != null) {
             try (Channel channel = producerConnection.createChannel()) {
-                queueName = (String) parameters.get(QUEUE_NAME);
-                routingKey = (String) parameters.get(ROUTING_KEY);
-                exchangeName = (String) parameters.get(EXCHANGE_NAME);
-                if (StringUtils.isEmpty(queueName)) {
-                    queueName = getName();
-                }
-                if (StringUtils.isEmpty(routingKey)) {
-                    routingKey = queueName;
-                }
                 declareQueue(channel, queueName);
                 declareExchange(channel, exchangeName, queueName, routingKey);
+                isQueueDeclared = true;
                 log.info(nameString() + ". Initialized... ");
             } catch (TimeoutException | IOException e) {
                 log.warn(nameString() + " - Producer channel initialization failed. Will retry connecting  during "
@@ -140,6 +134,20 @@ public class RabbitMQStore extends AbstractMessageStore {
 
         }
         channel = createChannel(producerConnection);
+    }
+
+
+    private void loadAndValidateParams() {
+        queueName    = (String) parameters.get(QUEUE_NAME);
+        routingKey   = (String) parameters.get(ROUTING_KEY);
+        exchangeName = (String) parameters.get(EXCHANGE_NAME);
+
+        if (StringUtils.isEmpty(queueName)) {
+            queueName = getName();
+        }
+        if (StringUtils.isEmpty(routingKey)) {
+            routingKey = queueName;
+        }
     }
 
     /**
@@ -377,6 +385,20 @@ public class RabbitMQStore extends AbstractMessageStore {
         }
         if (channel == null || producerConnectionInvalidated) {
             channel = createChannel(producerConnection);
+        }
+        if (!isQueueDeclared) {
+            try {
+                log.info("Queue and exchange declaration is not done at startup." +
+                        " Declaring queue" + queueName + " and exchange "
+                        + exchangeName + " before message publishing.");
+                declareQueue(channel, queueName);
+                declareExchange(channel, exchangeName, queueName, routingKey);
+                isQueueDeclared = true;
+            } catch (IOException e) {
+                isQueueDeclared = false;
+                producer.setQueueDeclared(false);
+                log.warn("Error occurred while declaring queue " + queueName + " and exchange " + exchangeName, e);
+            }
         }
         producer.setChannel(channel);
         return producer;
