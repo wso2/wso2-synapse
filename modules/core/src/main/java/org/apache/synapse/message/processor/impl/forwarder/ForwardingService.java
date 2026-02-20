@@ -41,6 +41,11 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.commons.json.Constants;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
@@ -244,9 +249,14 @@ public class ForwardingService implements Task, ManagedLifecycle {
 				deactivateMessageProcessor(null);
 			}
 		}
+
+		boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
+		AspectConfiguration aspectConfiguration = messageProcessor.getAspectConfiguration();
+
 		do {
 			resetService();
 			MessageContext messageContext = null;
+			Integer statisticReportingIndex = null;
 			try {
 				if (!this.messageProcessor.isDeactivated() && !this.messageProcessor.isServerShuttingDown()) {
 					messageContext = fetch();
@@ -257,6 +267,10 @@ public class ForwardingService implements Task, ManagedLifecycle {
 							if (proSet.contains(ForwardingProcessorConstants.BLOCKING_SENDER_ERROR)) {
 								proSet.remove(ForwardingProcessorConstants.BLOCKING_SENDER_ERROR);
 							}
+						}
+						if (isStatisticsEnabled) {
+							statisticReportingIndex = OpenEventCollector.reportEntryEvent(messageContext,
+									messageProcessor.getName(), aspectConfiguration, ComponentType.MESSAGEPROCESSOR);
 						}
 						// Now it is NOT terminated anymore.
 						isTerminated = messageProcessor.isDeactivated();
@@ -296,6 +310,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
 				log.fatal("Deactivating the message processor [" + this.messageProcessor.getName()
 						+ "]", e);
 				deactivateMessageProcessor(messageContext);
+			} finally {
+				if (messageContext != null && isStatisticsEnabled) {
+					CloseEventCollector.closeEntryEvent(messageContext, messageProcessor.getName(),
+							ComponentType.MESSAGEPROCESSOR, statisticReportingIndex, false);
+				}
 			}
 
 			if (log.isDebugEnabled()) {

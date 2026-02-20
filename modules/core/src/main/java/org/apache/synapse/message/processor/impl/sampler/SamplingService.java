@@ -39,6 +39,11 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.processor.MessageProcessor;
@@ -137,13 +142,23 @@ public class SamplingService implements Task, ManagedLifecycle {
 				this.init(synapseEnvironment);
 			}
 
+			boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
+			AspectConfiguration aspectConfiguration = messageProcessor.getAspectConfiguration();
+
 			if (!this.messageProcessor.isDeactivated()) {
 				for (int i = 0; i < concurrency; i++) {
 
 					final MessageContext messageContext = fetch();
 
 					if (messageContext != null) {
-						dispatch(messageContext);
+						Integer statisticReportingIndex = null;
+						if (isStatisticsEnabled) {
+							statisticReportingIndex = OpenEventCollector.reportEntryEvent(messageContext,
+									messageProcessor.getName(), aspectConfiguration, ComponentType.MESSAGEPROCESSOR);
+							dispatch(messageContext, statisticReportingIndex);
+						} else {
+							dispatch(messageContext);
+						}
 					} else {
 						// either the connection is broken or there are no new
 						// massages.
@@ -260,6 +275,17 @@ public class SamplingService implements Task, ManagedLifecycle {
 	 *            message to be injected.
 	 */
     public void dispatch(final MessageContext messageContext) {
+		this.dispatch(messageContext, null);
+	}
+
+	/**
+	 * Sends the message to a given sequence.
+	 *
+	 * @param messageContext message to be injected
+	 * @param statisticReportingIndex statistic reporting index
+	 *
+	 */
+    public void dispatch(final MessageContext messageContext, Integer statisticReportingIndex) {
 
 		setSoapHeaderBlock(messageContext);
 
@@ -279,7 +305,13 @@ public class SamplingService implements Task, ManagedLifecycle {
                     log.error("Error occurred while executing the message", syne);
                 } catch (Throwable t) {
                     log.error("Error occurred while executing the message", t);
-                }
+                } finally {
+					boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
+					if (isStatisticsEnabled && statisticReportingIndex != null) {
+						CloseEventCollector.closeEntryEvent(messageContext, messageProcessor.getName(),
+								ComponentType.MESSAGEPROCESSOR, statisticReportingIndex, false);
+					}
+				}
             }
         });
     }
