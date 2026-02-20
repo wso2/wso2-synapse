@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -114,7 +115,11 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
                     public String get(Map<String, String> tracerSpecificCarrier, String key) {
 
                         if (tracerSpecificCarrier != null) {
-                            return tracerSpecificCarrier.get(key);
+                            return tracerSpecificCarrier.entrySet().stream()
+                                    .filter(entry -> key.equalsIgnoreCase(entry.getKey()))
+                                    .map(Map.Entry::getValue)
+                                    .findFirst()
+                                    .orElse(null);
                         }
                         return null;
                     }
@@ -215,14 +220,10 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         Span span;
         Map<String, String> tracerSpecificCarrier = new HashMap<>();
 
-        Map headersMap;
-        Object headers = ((Axis2MessageContext) synCtx).getAxis2MessageContext()
-                .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-        if (headers instanceof Map) {
-            headersMap = new ConcurrentHashMap<>((Map) headers);
-        } else {
-            // We only need to extract span context from headers when there are trp headers available
-            headersMap = new ConcurrentHashMap();
+        Map headersMap = (Map) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+            .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        if (headersMap == null) {
+            headersMap = new TreeMap<String, String>(String::compareToIgnoreCase);
         }
         Object statusCode = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty("HTTP_SC");
         Object statusDescription = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty("HTTP_DESC");
@@ -252,7 +253,7 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         // <property name="TRANSPORT_HEADERS" action="remove" scope="axis2"/>
         if (headersMap != null) {
             headersMap.putAll(tracerSpecificCarrier);
-            statisticDataUnit.setTransportHeaderMap(headersMap);
+            statisticDataUnit.setTransportHeaderMap(new ConcurrentHashMap<>(headersMap));
             ((Axis2MessageContext) synCtx).getAxis2MessageContext()
                     .setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, headersMap);
 
@@ -321,14 +322,12 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         Span span;
         Map<String, String> tracerSpecificCarrier = new HashMap<>();
 
-        Map headersMap;
-        Object headers = msgCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-        if (headers instanceof Map) {
-            headersMap = new ConcurrentHashMap<>((Map) headers);
-        } else {
-            // We only need to extract span context from headers when there are trp headers available
-            headersMap = new ConcurrentHashMap();
+        Map headersMap = (Map) msgCtx.getProperty(
+            org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        if (headersMap == null) {
+            headersMap = new TreeMap<String, String>(String::compareToIgnoreCase);
         }
+
         if (isOuterLevelSpan(statisticDataUnit, spanStore)) {
             context = extract(headersMap);
         } else if (parentSpan != null) {
@@ -384,7 +383,7 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
             }
         }
 
-        statisticDataUnit.setTransportHeaderMap(headersMap);
+        statisticDataUnit.setTransportHeaderMap(new ConcurrentHashMap<>(headersMap));
 
         String spanId = TracingUtils.extractId(statisticDataUnit);
         SpanWrapper spanWrapper = spanStore.addSpanWrapper(spanId, span, statisticDataUnit, parentSpanWrapper, msgCtx);
