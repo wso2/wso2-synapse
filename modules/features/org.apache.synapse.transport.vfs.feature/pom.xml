@@ -19,7 +19,7 @@
 
     <parent>
         <artifactId>synapse-features</artifactId>
-        <version>4.1.0-wso2v21</version>
+        <version>4.1.0-wso2v22-SNAPSHOT</version>
         <groupId>org.apache.synapse</groupId>
     </parent>
 
