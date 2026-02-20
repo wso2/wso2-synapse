@@ -21,6 +21,7 @@ package org.apache.synapse.endpoints;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -202,6 +203,11 @@ public class EndpointContext {
      */
     private void setState(int state) {
 
+        setState(state, null);
+    }
+
+    private void setState(int state, MessageContext synCtx) {
+
         recordStatistics(state);
 
         if (isClustered) {
@@ -226,12 +232,10 @@ public class EndpointContext {
                     }
 
                     if (retries <= 0) {
-                        log.info("Endpoint : " + endpointName + printEndpointAddress() +
+                        log.info("Endpoint : " + endpointName + printEndpointAddress(synCtx) +
                                 " has been marked for SUSPENSION," +
                                 " but no further retries remain. Thus it will be SUSPENDED.");
-
-                        setState(ST_SUSPENDED);
-
+                        setState(ST_SUSPENDED, synCtx);
                     } else {
                         Replicator.setAndReplicateState(
                                 REMAINING_RETRIES_KEY, (retries - 1), cfgCtx);
@@ -239,7 +243,7 @@ public class EndpointContext {
                                 + definition.getRetryDurationOnTimeout();
                         Replicator.setAndReplicateState(NEXT_RETRY_TIME_KEY, nextRetry, cfgCtx);
 
-                        log.warn("Endpoint : " + endpointName + printEndpointAddress() +
+                        log.warn("Endpoint : " + endpointName + printEndpointAddress(synCtx) +
                                 " is marked as TIMEOUT and " +
                                 "will be retried : " + (retries - 1) + " more time/s after : " +
                                 new Date(nextRetry) + " until its marked SUSPENDED for failure");
@@ -247,7 +251,7 @@ public class EndpointContext {
                     break;
                 }
                 case ST_SUSPENDED: {
-                    computeNextRetryTimeForSuspended();
+                    computeNextRetryTimeForSuspended(synCtx);
                     break;
                 }
                 case ST_OFF: {
@@ -291,17 +295,15 @@ public class EndpointContext {
                         }
 
                         if (retries <= 0) {
-                            log.info("Endpoint : " + endpointName + printEndpointAddress()
+                            log.info("Endpoint : " + endpointName + printEndpointAddress(synCtx)
                                     + " has been marked for SUSPENSION, "
                                     + "but no further retries remain. Thus it will be SUSPENDED.");
-
-                            setState(ST_SUSPENDED);
-
+                            setState(ST_SUSPENDED, synCtx);
                         } else {
                             localRemainingRetries = retries - 1;
                             localNextRetryTime =
                                     System.currentTimeMillis() + definition.getRetryDurationOnTimeout();
-                            log.warn("Endpoint : " + endpointName + printEndpointAddress()
+                            log.warn("Endpoint : " + endpointName + printEndpointAddress(synCtx)
                                     + " is marked as TIMEOUT and " +
                                     "will be retried : " + localRemainingRetries + " more time/s " +
                                     "after : " + new Date(localNextRetryTime)
@@ -310,7 +312,7 @@ public class EndpointContext {
                         break;
                     }
                     case ST_SUSPENDED: {
-                        computeNextRetryTimeForSuspended();
+                        computeNextRetryTimeForSuspended(synCtx);
                         break;
                     }
                     case ST_OFF: {
@@ -333,18 +335,23 @@ public class EndpointContext {
      * Endpoint has processed a message successfully
      */
     public void onSuccess() {
+
+        onSuccess(null);
+    }
+
+    public void onSuccess(MessageContext synCtx) {
         if (isClustered) {
             Integer state = (Integer) cfgCtx.getPropertyNonReplicable(STATE_KEY);
 
             if ((state != null) && ((state != ST_ACTIVE) && (state != ST_OFF))) {
-                log.info("Endpoint : " + endpointName + printEndpointAddress()
+                log.info("Endpoint : " + endpointName + printEndpointAddress(synCtx)
                         + " currently " + getStateAsString() +
                         " will now be marked active since it processed its last message");
                 setState(ST_ACTIVE);
             }
         } else {
             if (localState != ST_ACTIVE && localState != ST_OFF) {
-                log.info("Endpoint : " + endpointName + printEndpointAddress()
+                log.info("Endpoint : " + endpointName + printEndpointAddress(synCtx)
                         + " currently " + getStateAsString() +
                         " will now be marked active since it processed its last message");
                 setState(ST_ACTIVE);
@@ -356,26 +363,37 @@ public class EndpointContext {
      * Endpoint failed processing a message
      */
     public void onFault() {
-        log.warn("Endpoint : " + endpointName + printEndpointAddress() +
-                " will be marked SUSPENDED as it failed");
-        setState(ST_SUSPENDED);
+
+        onFault(null);
+    }
+
+    public void onFault(MessageContext synCtx) {
+
+        log.warn("Endpoint : " + endpointName + printEndpointAddress(synCtx) + " will be marked SUSPENDED as it failed");
+        setState(ST_SUSPENDED, synCtx);
     }
 
     /**
      * Endpoint timeout processing a message
      */
     public void onTimeout() {
+
+        onTimeout(null);
+    }
+
+    public void onTimeout(MessageContext synCtx) {
+
         if (log.isDebugEnabled()) {
-            log.debug("Endpoint : " + endpointName + printEndpointAddress() + " will be marked for " +
+            log.debug("Endpoint : " + endpointName + printEndpointAddress(synCtx) + " will be marked for " +
                     "SUSPENSION due to the occurrence of one of the configured errors");
         }
-        setState(ST_TIMEOUT);
+        setState(ST_TIMEOUT, synCtx);
     }
 
     /**
      * Compute the suspension duration according to the geometric series parameters defined
      */
-    private void computeNextRetryTimeForSuspended() {
+    private void computeNextRetryTimeForSuspended(MessageContext synCtx) {
         boolean notYetSuspended = true;
         long lastSuspendDuration = definition.getInitialSuspendDuration();
         if (isClustered) {
@@ -417,7 +435,7 @@ public class EndpointContext {
             localNextRetryTime = nextRetryTime;
         }
 
-        log.warn("Suspending endpoint : " + endpointName + printEndpointAddress() +
+        log.warn("Suspending endpoint : " + endpointName + printEndpointAddress(synCtx) +
                 (notYetSuspended ? " -" :
                         " - last suspend duration was : " + lastSuspendDuration + "ms and") +
                 " current suspend duration is : " + nextSuspendDuration + "ms - " +
@@ -607,8 +625,20 @@ public class EndpointContext {
     }
 
     private String printEndpointAddress() {
-        if(this.definition != null && this.definition.getAddress() != null) {
-            return " with address " + MessageHelper.maskURLPassword(this.definition.getAddress());
+
+        return printEndpointAddress(null);
+    }
+
+    private String printEndpointAddress(MessageContext synCtx) {
+
+        if (this.definition != null && this.definition.getAddress() != null) {
+            String address = "";
+            if (synCtx != null) {
+                address = this.definition.getAddress(synCtx);
+            } else {
+                address = this.definition.getAddress();
+            }
+            return " with address " + MessageHelper.maskURLPassword(address);
         } else {
             return " ";
         }
@@ -618,6 +648,11 @@ public class EndpointContext {
      * Check whether the endpoint has exceed the maximum retry limit on failover
      */
     public boolean isMaxRetryLimitReached(boolean isRecursiveEndpoint) {
+
+        return isMaxRetryLimitReached(isRecursiveEndpoint, null);
+    }
+
+    public boolean isMaxRetryLimitReached(boolean isRecursiveEndpoint, MessageContext synCtx) {
 
         if (isClustered) {
             Integer remainingMaxRetries;
@@ -638,7 +673,7 @@ public class EndpointContext {
                 return false;
             }
             if (log.isDebugEnabled()) {
-                log.debug("Endpoint : " + endpointName + printEndpointAddress()
+                log.debug("Endpoint : " + endpointName + printEndpointAddress(synCtx)
                         + " has " + remainingMaxRetries + " maximum retries before suspension");
             }
 
@@ -666,7 +701,7 @@ public class EndpointContext {
             }
 
             if (log.isDebugEnabled()) {
-                log.debug("Endpoint : " + endpointName + printEndpointAddress()
+                log.debug("Endpoint : " + endpointName + printEndpointAddress(synCtx)
                         + " has " + maximumRemainingRetriesCount + " maximum retries before suspension");
             }
 
@@ -692,6 +727,11 @@ public class EndpointContext {
      */
     public void onFailoverRetryLimit(boolean isRecursiveEndpoint) {
 
+        onFailoverRetryLimit(isRecursiveEndpoint, null);
+    }
+
+    public void onFailoverRetryLimit(boolean isRecursiveEndpoint, MessageContext synCtx) {
+
         recordStatistics(ST_SUSPENDED);
         long suspendDuration = isRecursiveEndpoint ? suspendDurationOnMaximumRecursiveFailover :
                 suspendDurationOnMaximumFailover;
@@ -706,7 +746,7 @@ public class EndpointContext {
             localNextRetryTime = nextRetryTime;
         }
 
-        log.warn("Endpoint : " + endpointName + printEndpointAddress() +
+        log.warn("Endpoint : " + endpointName + printEndpointAddress(synCtx) +
                 " will be marked SUSPENDED as it failed until the maximum failover retry limit. Current suspend " +
                 "duration is : " +
                 suspendDuration + "ms - Next retry after : " + new Date(nextRetryTime));
