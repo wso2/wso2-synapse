@@ -48,6 +48,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.xml.namespace.QName;
@@ -64,6 +65,7 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
     private static final String CONVERTED_RESOURCES_IDENTIFIER = "gov:mi-resources" + File.separator;
     private static final String HTTP_CONNECTION_IDENTIFIER = "http.init";
     private static final String CERTIFICATE_EXTENSION = ".crt";
+    private static final String MCP_TOOLS_IDENTIFIER = "mcptools";
 
     @Override
     public String deploySynapseArtifact(OMElement artifactConfig, String fileName,
@@ -91,6 +93,15 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
                 }
                 log.info("LocalEntry named '" + e.getKey()
                         + "' has been deployed from file : " + fileName);
+
+                OMElement mcpToolsElement = findMcpToolsElement(artifactConfig);
+                if (mcpToolsElement != null) {
+                    registerMcpTools(e.getKey(), mcpToolsElement);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Registered MCP tools for local entry key: " + e.getKey());
+                    }
+                }
+                
                 handleSSLSenderCertificates(artifactConfig);
                 deployEndpointsForHTTPConnection(artifactConfig, fileName, properties);
                 return e.getKey();
@@ -243,13 +254,37 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
                 log.debug("Local entry: " + e.getKey() + " has been built from the file: " + fileName);
             }
 
+            OMElement mcpToolsElement = findMcpToolsElement(artifactConfig);
+
             if (existingArtifactName.equals(e.getKey())) {
                 getSynapseConfiguration().updateEntry(existingArtifactName, e);
+
+                if (mcpToolsElement != null) {
+                    getSynapseConfiguration().removeMcpToolsForLocalEntry(existingArtifactName);
+                    registerMcpTools(existingArtifactName, mcpToolsElement);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Updated MCP tools for local entry key: " + existingArtifactName);
+                    }
+                } else {
+                    // No longer an MCP entry
+                    if (log.isDebugEnabled()) {
+                        log.debug("Removed MCP tools for local entry key: " + existingArtifactName);
+                    }
+                }
             } else {
                 // The user has changed the name of the entry
                 // We should add the updated entry as a new entry and remove the old one
                 getSynapseConfiguration().addEntry(e.getKey(), e);
                 getSynapseConfiguration().removeEntry(existingArtifactName);
+
+                if (mcpToolsElement != null) {
+                    getSynapseConfiguration().removeMcpToolsForLocalEntry(existingArtifactName);
+                    registerMcpTools(e.getKey(), mcpToolsElement);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Migrated MCP tools from " + existingArtifactName + " to " + e.getKey());
+                    }
+                }
+
                 log.info("Local entry: " + existingArtifactName + " has been undeployed");
             }
 
@@ -276,6 +311,12 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
             Entry e = getSynapseConfiguration().getDefinedEntries().get(artifactName);
             if (e != null && e.getType() != Entry.REMOTE_ENTRY) {
                 getSynapseConfiguration().removeEntry(artifactName);
+
+                getSynapseConfiguration().removeMcpToolsForLocalEntry(artifactName);
+                if (log.isDebugEnabled()) {
+                    log.debug("Removed MCP tools for local entry: " + artifactName);
+                }
+
                 if (log.isDebugEnabled()) {
                     log.debug("LocalEntry Undeployment of the entry named : "
                             + artifactName + " : Completed");
@@ -316,6 +357,62 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
         } catch (Exception e) {
             handleSynapseArtifactDeploymentError(
                     "Restoring of the LocalEntry named '" + artifactName + "' has failed", e);
+        }
+    }
+
+    private OMElement findMcpToolsElement(OMElement artifactConfig) {
+        return artifactConfig.getFirstChildWithName(
+                new QName(SynapseConstants.SYNAPSE_NAMESPACE, MCP_TOOLS_IDENTIFIER));
+    }
+
+    private void registerMcpTools(String localEntryKey, OMElement mcpToolsElement) {
+        if (localEntryKey == null || mcpToolsElement == null) {
+            return;
+        }
+
+        try {
+            Iterator<?> tools = mcpToolsElement.getChildElements();
+            while (tools.hasNext()) {
+                OMElement toolElement = (OMElement) tools.next();
+
+                String toolName = toolElement.getAttributeValue(new QName("name"));
+                if (toolName != null && !toolName.isEmpty()) {
+                    
+                    Map<String, Object> toolConfig = new java.util.HashMap<>();
+
+                    OMElement apiElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "api"));
+                    OMElement resourceElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "resource"));
+                    OMElement methodElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "method"));
+                    OMElement descriptionElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "description"));
+
+                    if (apiElement != null) {
+                        toolConfig.put("api", apiElement.getText());
+                    }
+                    if (resourceElement != null) {
+                        toolConfig.put("resource", resourceElement.getText());
+                    }
+                    if (methodElement != null) {
+                        toolConfig.put("method", methodElement.getText());
+                    }
+                    if (descriptionElement != null) {
+                        toolConfig.put("description", descriptionElement.getText());
+                    }
+
+                    // Create composite key: localEntryKey:toolName
+                    String compositeKey = localEntryKey + ":" + toolName;
+
+                    
+                    getSynapseConfiguration().addMcpTool(compositeKey, toolConfig);
+
+                    log.info("[MCP-DEBUG] Registered MCP tool: " + compositeKey);
+                    log.info("[MCP-DEBUG]   api=" + toolConfig.get("api") + 
+                             ", resource=" + toolConfig.get("resource") + 
+                             ", method=" + toolConfig.get("method"));
+                }
+            }
+            log.info("[MCP-DEBUG] Finished registering MCP tools for local entry: " + localEntryKey);
+        } catch (Exception e) {
+            log.error("Error while registering MCP tools for local entry: " + localEntryKey, e);
         }
     }
 }
