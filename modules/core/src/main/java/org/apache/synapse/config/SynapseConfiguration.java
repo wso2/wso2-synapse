@@ -34,6 +34,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.api.API;
 import org.apache.synapse.api.ApiConstants;
+import org.apache.synapse.api.Resource;
 import org.apache.synapse.api.inbound.InboundApiUtils;
 import org.apache.synapse.aspects.flow.statistics.store.CompletedStructureStore;
 import org.apache.synapse.carbonext.TenantInfoConfigProvider;
@@ -249,6 +250,13 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      */
     private Map<String, Object> decryptedCacheMap = new ConcurrentHashMap<String, Object>();
     
+    /**
+     * Map to hold MCP tools definitions indexed by composite key (localEntryKey:toolName)
+     * Value is a Map containing minimal config: api, resource, method (as strings)
+     * and cached references: cachedApi (API), cachedResource (Resource) after first lookup
+     */
+    private Map<String, Map<String, Object>> mcpToolsMap = new ConcurrentHashMap<>();
+
     private boolean allowHotUpdate = true;
 
     /**
@@ -2489,6 +2497,153 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             duplicateInboundApiMappings.put(mapping.getKey(), reconstructedApis);
         }
         apiTableWithBindsTo = duplicateInboundApiMappings;
+    }
+
+    /**
+     * Add or update an MCP tool definition using a composite key (localEntryKey:toolName)
+     *
+     * @param compositeKey composite key in format "localEntryKey:toolName"
+     * @param toolConfig Map containing minimal tool config with keys: "api", "resource", "method"
+     */
+    public void addMcpTool(String compositeKey, Map<String, Object> toolConfig) {
+        if (compositeKey != null && toolConfig != null) {
+            mcpToolsMap.put(compositeKey, toolConfig);
+            log.info("[MCP-CHECK] addMcpTool() called with key: " + compositeKey);
+            log.info("[MCP-CHECK] Tool config: " + toolConfig);
+            log.info("[MCP-CHECK] Total tools in mcpToolsMap: " + mcpToolsMap.size());
+            log.info("[MCP-CHECK] mcpToolsMap contents:\n" + dumpMcpToolsMapContents());
+        }
+    }
+
+    /**
+     * Get all registered MCP tools for listing
+     *
+     * @return Collection of tool metadata maps (api, resource, method, description, toolKey)
+     */
+    public Collection<Map<String, Object>> listMcpTools() {
+        log.info("[MCP-DEBUG] listMcpTools() called");
+        log.info("[MCP-DEBUG] mcpToolsMap contents:\n" + dumpMcpToolsMapContents());
+        
+        List<Map<String, Object>> tools = new ArrayList<>();
+        for (Map.Entry<String, Map<String, Object>> entry : mcpToolsMap.entrySet()) {
+            Map<String, Object> toolInfo = new HashMap<>();
+            toolInfo.put("toolKey", entry.getKey());
+            toolInfo.put("api", entry.getValue().get("api"));
+            toolInfo.put("resource", entry.getValue().get("resource"));
+            toolInfo.put("method", entry.getValue().get("method"));
+            toolInfo.put("description", entry.getValue().get("description"));
+            tools.add(toolInfo);
+        }
+        
+        log.info("[MCP-DEBUG] listMcpTools() returning " + tools.size() + " tools");
+        return tools;
+    }
+
+    /**
+     * Resolve an MCP tool by composite key. Caches API and Resource on first call.
+     *
+     * @param compositeKey composite key in format "localEntryKey:toolName"
+     * @return Map containing tool config with cached API and Resource, or null if not found
+     */
+    public Map<String, Object> resolveMcpTool(String compositeKey) {
+        log.info("[MCP-DEBUG] resolveMcpTool() called with key: " + compositeKey);
+        
+        if (compositeKey == null) {
+            log.info("[MCP-DEBUG] resolveMcpTool() - compositeKey is null, returning null");
+            return null;
+        }
+        
+        Map<String, Object> toolConfig = mcpToolsMap.get(compositeKey);
+        if (toolConfig == null) {
+            log.info("[MCP-DEBUG] resolveMcpTool() - tool NOT FOUND for key: " + compositeKey);
+            log.info("[MCP-DEBUG] Available keys: " + mcpToolsMap.keySet());
+            return null;
+        }
+        
+        log.info("[MCP-DEBUG] resolveMcpTool() - tool FOUND: " + toolConfig);
+        
+        // Thread-safe lazy initialization of cached API and Resource using computeIfAbsent
+        // This ensures only one thread performs the initialization even with concurrent calls
+        toolConfig.computeIfAbsent("cachedApi", key -> {
+            log.info("[MCP-DEBUG] resolveMcpTool() - caching API and Resource for first time");
+            String apiName = (String) toolConfig.get("api");
+            String resourceName = (String) toolConfig.get("resource");
+            
+            if (apiName != null) {
+                API api = getAPI(apiName);
+                if (api != null) {
+                    log.info("[MCP-DEBUG] resolveMcpTool() - API cached: " + apiName);
+                    
+                    if (resourceName != null) {
+                        Resource resource = api.getResource(resourceName);
+                        if (resource != null) {
+                            // Cache the resource as well (also thread-safe)
+                            toolConfig.putIfAbsent("cachedResource", resource);
+                            log.info("[MCP-DEBUG] resolveMcpTool() - Resource cached: " + resourceName);
+                        } else {
+                            log.warn("[MCP-DEBUG] resolveMcpTool() - Resource NOT FOUND: " + resourceName);
+                        }
+                    }
+                    return api;
+                } else {
+                    log.warn("[MCP-DEBUG] resolveMcpTool() - API NOT FOUND: " + apiName);
+                }
+            }
+            return null;
+        });
+        
+        if (toolConfig.containsKey("cachedApi")) {
+            log.info("[MCP-DEBUG] resolveMcpTool() - using cached API and Resource");
+        }
+        
+        return toolConfig;
+    }
+
+    /**
+     * Remove all MCP tool definitions associated with a local entry key
+     *
+     * @param localEntryKey the key of the local entry
+     */
+    public void removeMcpToolsForLocalEntry(String localEntryKey) {
+        if (localEntryKey == null) {
+            return;
+        }
+        log.info("[MCP-CHECK] removeMcpToolsForLocalEntry() called for key: " + localEntryKey);
+        log.info("[MCP-CHECK] mcpToolsMap BEFORE removal:\n" + dumpMcpToolsMapContents());
+        
+        // Find and remove all composite keys that start with localEntryKey:
+        mcpToolsMap.entrySet().removeIf(entry ->
+            entry.getKey().startsWith(localEntryKey + ":"));
+        
+        log.info("[MCP-CHECK] mcpToolsMap AFTER removal:\n" + dumpMcpToolsMapContents());
+        log.info("[MCP-CHECK] Total remaining tools: " + mcpToolsMap.size());
+    }
+
+    /**
+     * Helper method to format and dump the entire mcpToolsMap contents for logging
+     * 
+     * @return formatted string representation of the map
+     */
+    private String dumpMcpToolsMapContents() {
+        if (mcpToolsMap.isEmpty()) {
+            return "  [mcpToolsMap is EMPTY]";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("  [\n");
+        int index = 1;
+        for (Map.Entry<String, Map<String, Object>> entry : mcpToolsMap.entrySet()) {
+            Map<String, Object> toolConfig = entry.getValue();
+            sb.append("    ").append(index).append(". Key: ").append(entry.getKey()).append("\n");
+            sb.append("       api: ").append(toolConfig.get("api")).append("\n");
+            sb.append("       resource: ").append(toolConfig.get("resource")).append("\n");
+            sb.append("       method: ").append(toolConfig.get("method")).append("\n");
+            sb.append("       description: ").append(toolConfig.get("description")).append("\n");
+            sb.append("       cachedApi: ").append(toolConfig.containsKey("cachedApi") ? "CACHED" : "not cached").append("\n");
+            sb.append("       cachedResource: ").append(toolConfig.containsKey("cachedResource") ? "CACHED" : "not cached").append("\n");
+            index++;
+        }
+        sb.append("  ]");
+        return sb.toString();
     }
 
 }
