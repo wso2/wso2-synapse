@@ -384,6 +384,7 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
                     OMElement resourceElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "resource"));
                     OMElement methodElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "method"));
                     OMElement descriptionElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "description"));
+                    OMElement inputSchemaElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "inputSchema"));
 
                     if (apiElement != null) {
                         toolConfig.put("api", apiElement.getText());
@@ -397,6 +398,17 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
                     if (descriptionElement != null) {
                         toolConfig.put("description", descriptionElement.getText());
                     }
+                    if (inputSchemaElement != null) {
+                        String schemaText = inputSchemaElement.getText();
+                        try {
+                            toolConfig.put("inputSchema", schemaText);
+                            if (log.isDebugEnabled()) {
+                                log.debug("Input schema loaded for tool: " + toolName);
+                            }
+                        } catch (Exception e) {
+                            log.warn("Error parsing input schema for tool: " + toolName, e);
+                        }
+                    }
 
                     // Create composite key: localEntryKey:toolName
                     String compositeKey = localEntryKey + ":" + toolName;
@@ -407,7 +419,8 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
                     log.info("[MCP-DEBUG] Registered MCP tool: " + compositeKey);
                     log.info("[MCP-DEBUG]   api=" + toolConfig.get("api") + 
                              ", resource=" + toolConfig.get("resource") + 
-                             ", method=" + toolConfig.get("method"));
+                             ", method=" + toolConfig.get("method") +
+                             ", hasInputSchema=" + (toolConfig.containsKey("inputSchema") ? "yes" : "no"));
                 }
             }
             log.info("[MCP-DEBUG] Finished registering MCP tools for local entry: " + localEntryKey);
