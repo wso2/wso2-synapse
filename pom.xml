@@ -1649,9 +1649,9 @@
        <opentelemetry.all.version>1.57.0.wso2v2</opentelemetry.all.version>
        <okhttp.wso2.version>4.12.0.wso2v4</okhttp.wso2.version>
        <okio.wso2.version>3.16.0.wso2v1</okio.wso2.version>
-       <zipkin.sender.okhttp3.version>2.17.2.wso2v2</zipkin.sender.okhttp3.version>
+       <zipkin.sender.okhttp3.version>3.5.1.wso2v1</zipkin.sender.okhttp3.version>
        <zipkin.version>2.27.1</zipkin.version>
-       <zipkin-reporter.version>2.17.2</zipkin-reporter.version>
+       <zipkin-reporter.version>3.5.1</zipkin-reporter.version>
        <javax.annotation.verion>1.3.2</javax.annotation.verion>
        <jakarta.mail.version>2.0.2.wso2v1</jakarta.mail.version>
        <jakarta.activation.version>2.0.1.wso2v1</jakarta.activation.version>
