@@ -2099,6 +2099,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 libraryCountEntry.setValue(count);
             } else {
                 deployedLibs.remove(name);
+                libraryClassLoaders.remove(name);
             }
         }
     }
