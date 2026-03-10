@@ -102,6 +102,12 @@ public class OAuthUtils {
     private static final String HTTPS_CONNECTION = "https";
     public static final int MAX_TOTAL_POOL_SIZE = 100;
     public static final int DEFAULT_MAX_PER_ROUTE = 50;
+    private static final boolean useGlobalAuthTimeoutFromToml;
+
+    static {
+        useGlobalAuthTimeoutFromToml = SynapsePropertiesLoader.getBooleanProperty(
+            AuthConstants.ENABLE_OAUTH_GLOBAL_TIMEOUT_CONFIGS, false);
+    }
 
     /**
      * This method will return an OAuthHandler instance depending on the oauth configs.
@@ -541,10 +547,20 @@ public class OAuthUtils {
 
     public static int getOauthTimeouts(OMElement parentElement, String childName, String globalPropertyName) {
         String value = getChildValue(parentElement, childName);
-        if (value == null && Boolean.parseBoolean(getChildValue(parentElement,
-                AuthConstants.USE_GLOBAL_CONNECTION_TIMEOUT_CONFIGS))) {
-            // If the value is not defined at the endpoint level, check whether it is defined globally
-            value = SynapsePropertiesLoader.loadSynapseProperties().getProperty(globalPropertyName);
+        if (value == null) {
+            String enableGlobalAuthTimeoutFromXML = getChildValue(parentElement,
+                AuthConstants.USE_GLOBAL_CONNECTION_TIMEOUT_CONFIGS);
+            if (enableGlobalAuthTimeoutFromXML == null) {
+                // if use_global_timeout is enabled in toml and not disabled in XML,
+                // then we can use the global timeout value from toml
+                if (useGlobalAuthTimeoutFromToml) {
+                    value = SynapsePropertiesLoader.loadSynapseProperties()
+                        .getProperty(globalPropertyName);
+                }
+            } else if (Boolean.parseBoolean(enableGlobalAuthTimeoutFromXML)) {
+                value = SynapsePropertiesLoader.loadSynapseProperties()
+                    .getProperty(globalPropertyName);
+            }
         }
         try {
             if (value == null) {

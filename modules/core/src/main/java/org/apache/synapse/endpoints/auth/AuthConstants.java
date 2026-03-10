@@ -50,6 +50,7 @@ public class AuthConstants {
     public static final String OAUTH_GLOBAL_CONNECTION_TIMEOUT = "synapse.endpoint.http.oauth.token.endpoint.global.connection.timeout";
     public static final String OAUTH_GLOBAL_CONNECTION_REQUEST_TIMEOUT = "synapse.endpoint.http.oauth.token.endpoint.global.connection.request.timeout";
     public static final String OAUTH_GLOBAL_SOCKET_TIMEOUT = "synapse.endpoint.http.oauth.token.endpoint.global.socket.timeout";
+    public static final String ENABLE_OAUTH_GLOBAL_TIMEOUT_CONFIGS = "synapse.endpoint.http.oauth.enable.global.timeout.configs";
 
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String BEARER = "Bearer ";
