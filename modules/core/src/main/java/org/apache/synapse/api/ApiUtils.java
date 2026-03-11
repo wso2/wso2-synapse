@@ -19,6 +19,7 @@
 package org.apache.synapse.api;
 
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.parser.OpenAPIV3Parser;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import org.apache.axis2.Constants;
@@ -316,5 +317,67 @@ public class ApiUtils {
             log.debug("Failed to parse OpenAPI definition for API: " + api.getName()
                     + ". Errors: " + result.getMessages());
         }
+    }
+
+    /**
+     * Build the lookup key used in the RESOURCE_SCOPE_MAP for a given operation.
+     *
+     * <p>Key format: {@code <HTTP_METHOD>:<path>} (for example: {@code GET:/testResource}).
+     * This centralizes the key format so other code can reuse the exact same representation.
+     *
+     * @param httpMethod the HTTP method from the OpenAPI PathItem (must not be null)
+     * @param path the operation path from the OpenAPI object
+     * @return the normalized lookup key (never null)
+     * @throws IllegalArgumentException if {@code httpMethod} is null
+     */
+    public static String getResourceScopeKey(String httpMethod, String path) {
+        if (httpMethod == null) {
+            throw new IllegalArgumentException("HTTP method cannot be null");
+        }
+        if (path == null) {
+            path = "";
+        }
+        return httpMethod + ":" + path;
+    }
+
+    /**
+     * Scans the OpenAPI model to extract and map OAuth2 scopes to specific API resources.
+     *
+     * <p>Example key mapping:
+     * <pre>
+     *   GET:/testResource -> ["scope1", "scope2"]
+     * </pre>
+     *
+     * @param openAPI the OpenAPI instance
+     */
+    public static void populateResourceScopesFromOpenApi(Map<String, List<String>> resourceScopeMap, OpenAPI openAPI) {
+        if (openAPI.getPaths() == null) return;
+
+        openAPI.getPaths().forEach((path, pathItem) -> {
+            pathItem.readOperationsMap().forEach((method, operation) -> {
+                List<SecurityRequirement> security = operation.getSecurity();
+
+                // Fallback to global security if operation-level is null
+                if (security == null) {
+                    security = openAPI.getSecurity();
+                }
+
+                if (security != null) {
+                    String key = ApiUtils.getResourceScopeKey(method.name(), path);
+                    List<String> scopes = new ArrayList<>();
+
+                    for (SecurityRequirement req : security) {
+                        for (Map.Entry<String, List<String>> entry : req.entrySet()) {
+                            if (RESTConstants.OAUTH2_SCOPE_VALIDATION.equals(entry.getKey())) {
+                                scopes.addAll(entry.getValue());
+                            }
+                        }
+                    }
+                    if (!scopes.isEmpty()) {
+                        resourceScopeMap.put(key, scopes);
+                    }
+                }
+            });
+        });
     }
 }

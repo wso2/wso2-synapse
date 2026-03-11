@@ -637,49 +637,8 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
         }
 
         if (openAPI != null) {
-            populateResourceScopesFromOpenApi(openAPI);
+            ApiUtils.populateResourceScopesFromOpenApi(resourceScopeMap, openAPI);
         }
-    }
-
-    /**
-     * Scans the OpenAPI model to extract and map OAuth2 scopes to specific API resources.
-     *
-     * <p>Example key mapping:
-     * <pre>
-     *   GET:/testResource -> ["scope1", "scope2"]
-     * </pre>
-     *
-     * @param openAPI the OpenAPI instance
-     */
-    public void populateResourceScopesFromOpenApi(OpenAPI openAPI) {
-        if (openAPI.getPaths() == null) return;
-
-        openAPI.getPaths().forEach((path, pathItem) -> {
-            pathItem.readOperationsMap().forEach((method, operation) -> {
-                List<SecurityRequirement> security = operation.getSecurity();
-
-                // Fallback to global security if operation-level is null
-                if (security == null) {
-                    security = openAPI.getSecurity();
-                }
-
-                if (security != null) {
-                    String key = method.name() + ":" + path;
-                    List<String> scopes = new ArrayList<>();
-
-                    for (SecurityRequirement req : security) {
-                        for (Map.Entry<String, List<String>> entry : req.entrySet()) {
-                            if ("oauth2".equals(entry.getKey())) {
-                                scopes.addAll(entry.getValue());
-                            }
-                        }
-                    }
-                    if (!scopes.isEmpty()) {
-                        resourceScopeMap.put(key, scopes);
-                    }
-                }
-            });
-        });
     }
 
     private String getFormattedLog(String msg) {
