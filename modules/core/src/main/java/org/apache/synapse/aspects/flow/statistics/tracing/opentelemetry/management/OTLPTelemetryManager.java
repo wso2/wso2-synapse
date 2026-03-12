@@ -84,15 +84,19 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
 
         // Get header property for authentication
         String headerProperty = getHeaderKeyProperty();
+        String headerKey = null;
+        String headerValue = null;
         if (headerProperty == null) {
-            throw new SynapseException("No properties found starting with opentelemetry.properties");
-        }
-        String headerKey = headerProperty.substring(TelemetryConstants.OPENTELEMETRY_PROPERTIES_PREFIX.length());
-        String headerValue = SynapsePropertiesLoader.getPropertyValue(headerProperty, null);
-        if (headerValue == null) {
-            String message = "Header value not found for property: " + headerKey;
-            logger.error(message);
-            throw new SynapseException(message);
+            logger.warn("No properties found starting with opentelemetry.properties. "
+                    + "Continuing without authentication headers.");
+        } else {
+            headerKey = headerProperty.substring(TelemetryConstants.OPENTELEMETRY_PROPERTIES_PREFIX.length());
+            headerValue = SynapsePropertiesLoader.getPropertyValue(headerProperty, null);
+            if (headerValue == null) {
+                logger.warn("Header value not found for property: " + headerKey
+                        + ". Continuing without authentication headers.");
+                headerKey = null;
+            }
         }
 
         // Create appropriate exporter based on protocol
@@ -102,30 +106,33 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
             if (logger.isDebugEnabled()) {
                 logger.debug("Configuring OTLP HTTP Exporters for endpoint: " + endPointURL);
             }
-            spanExporter = OtlpHttpSpanExporter.builder()
+            var spanExporterBuilder = OtlpHttpSpanExporter.builder()
                     .setEndpoint(endPointURL)
-                    .setCompression("gzip")
-                    .addHeader(headerKey, headerValue)
-                    .build();
-            metricExporter = OtlpHttpMetricExporter.builder()
-                    .setEndpoint(endPointURL)
-                    .addHeader(headerKey, headerValue)
-                    .build();
+                    .setCompression("gzip");
+            var metricExporterBuilder = OtlpHttpMetricExporter.builder()
+                    .setEndpoint(endPointURL);
+            if (headerKey != null && headerValue != null) {
+                spanExporterBuilder.addHeader(headerKey, headerValue);
+                metricExporterBuilder.addHeader(headerKey, headerValue);
+            }
+            spanExporter = spanExporterBuilder.build();
+            metricExporter = metricExporterBuilder.build();
         } else {
             if (logger.isDebugEnabled()) {
                 logger.debug("Configuring OTLP gRPC Exporters for endpoint: " + endPointURL);
             }
-            spanExporter = OtlpGrpcSpanExporter.builder()
+            var spanExporterBuilder = OtlpGrpcSpanExporter.builder()
                     .setEndpoint(endPointURL)
-                    .setCompression("gzip")
-                    .addHeader(headerKey, headerValue)
-                    .build();
-
-            metricExporter = OtlpGrpcMetricExporter.builder()
+                    .setCompression("gzip");
+            var metricExporterBuilder = OtlpGrpcMetricExporter.builder()
                     .setEndpoint(endPointURL)
-                    .setCompression("gzip")
-                    .addHeader(headerKey, headerValue)
-                    .build();
+                    .setCompression("gzip");
+            if (headerKey != null && headerValue != null) {
+                spanExporterBuilder.addHeader(headerKey, headerValue);
+                metricExporterBuilder.addHeader(headerKey, headerValue);
+            }
+            spanExporter = spanExporterBuilder.build();
+            metricExporter = metricExporterBuilder.build();
         }
 
         sdkTracerProvider = SdkTracerProvider.builder()
