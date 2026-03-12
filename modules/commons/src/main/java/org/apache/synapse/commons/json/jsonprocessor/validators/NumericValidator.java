@@ -142,7 +142,7 @@ public class NumericValidator {
             }
             // convert to integer of give value is a float
             if (type.contains(INTEGER_STRING)) {
-                return new JsonPrimitive(DataTypeConverter.convertToInt(value));
+                return new JsonPrimitive(DataTypeConverter.convertToBigInteger(value));
             } else {
                 // this condition address both type number and empty json schemas
                 int scale = value.length() - (value.indexOf(".") + 1);
