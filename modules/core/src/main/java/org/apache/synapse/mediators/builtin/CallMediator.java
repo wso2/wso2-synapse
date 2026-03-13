@@ -237,6 +237,17 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             keySet.remove(SynapseConstants.BLOCKING_SENDER_ERROR);
         }
 
+        // Remove clientApiNonBlocking property if exists to avoid affecting the blocking call
+        Object disableCallBlockingThreadSwitch =
+                synInCtx.getProperty(SynapseConstants.SYNAPSE_AVOID_BLOCKING_THREAD_SWITCH);
+        if (disableCallBlockingThreadSwitch != null && Boolean.parseBoolean((String) disableCallBlockingThreadSwitch)) {
+            org.apache.axis2.context.MessageContext axis2MessageContext =
+                    ((Axis2MessageContext) synInCtx).getAxis2MessageContext();
+            if (axis2MessageContext != null) {
+                axis2MessageContext.removeProperty(org.apache.axis2.context.MessageContext.CLIENT_API_NON_BLOCKING);
+            }
+        }
+
         Object faultHandlerBeforeInvocation = getLastSequenceFaultHandler(synInCtx);
         synInCtx.setProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER, faultHandlerBeforeInvocation);
 
