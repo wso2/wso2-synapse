@@ -142,6 +142,10 @@ public class Axis2Sender {
             if (AddressingHelper.isReplyRedirected(messageContext) &&
                     !messageContext.getReplyTo().hasNoneAddress()) {
 
+                String replyToAddress = messageContext.getReplyTo().getAddress();
+                if (replyToAddress != null && !isValidURL(replyToAddress)) {
+                    handleException("Invalid ReplyTo URL detected." , null, smc);
+                }
                 messageContext.setTo(messageContext.getReplyTo());
                 messageContext.setReplyTo(null);
                 messageContext.setWSAAction("");
@@ -157,6 +161,12 @@ public class Axis2Sender {
                     (messageContext.getFaultTo() == null || !messageContext.getFaultTo()
                             .hasNoneAddress())) {
 
+                if (messageContext.getFaultTo() != null) {
+                    String faultToAddress = messageContext.getFaultTo().getAddress();
+                    if (faultToAddress != null && !isValidURL(faultToAddress)) {
+                        handleException("Invalid FaultTo URL detected.", null, smc);
+                    }
+                }
                 messageContext.setTo(messageContext.getFaultTo());
                 messageContext.setFaultTo(null);
                 messageContext.setWSAAction("");
@@ -238,6 +248,24 @@ public class Axis2Sender {
         } catch (AxisFault e) {
             handleException(getResponseMessage(messageContext), e, smc);
         }
+    }
+
+    /**
+     * Validates if a URL is safe by checking for newline characters (CR/LF).
+     *
+     * @param url   the URL to validate
+     * @return      true if the URL is valid (doesn't contain newline characters), false otherwise
+     */
+    private static boolean isValidURL(String url) {
+
+        String trimmedURL = url.trim();
+        if (trimmedURL.contains("\n") || trimmedURL.contains("\r")) {
+            if (log.isDebugEnabled()) {
+                log.debug("Newline character detected in URL.");
+            }
+            return false;
+        }
+        return true;
     }
 
     /**
