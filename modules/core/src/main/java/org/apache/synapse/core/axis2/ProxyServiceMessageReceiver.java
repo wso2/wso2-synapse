@@ -34,7 +34,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.commons.CorrelationConstants;
-import org.apache.synapse.rest.RESTConstants;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -54,6 +54,9 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
 
     private static final Log log = LogFactory.getLog(ProxyServiceMessageReceiver.class);
     private static final Log trace = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
+
+    private static boolean disableCallBlockingThreadSwitch = SynapsePropertiesLoader.getBooleanProperty(
+            SynapseConstants.SYNAPSE_AVOID_BLOCKING_THREAD_SWITCH, Boolean.FALSE);
 
     /** The name of the Proxy Service */
     private String name = null;
@@ -171,6 +174,11 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         synCtx.setProperty(SynapseConstants.IS_CLIENT_DOING_REST, mc.isDoingREST());
         synCtx.setProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11, mc.isSOAP11());
         synCtx.setProperty(CorrelationConstants.CORRELATION_ID, mc.getProperty(CorrelationConstants.CORRELATION_ID));
+
+        // Avoid thread switching during blocking backend calls
+        if (disableCallBlockingThreadSwitch) {
+            synCtx.setProperty(SynapseConstants.SYNAPSE_AVOID_BLOCKING_THREAD_SWITCH, "true");
+        }
 
         try {
             if(synCtx.getEnvironment().isDebuggerEnabled()) {
