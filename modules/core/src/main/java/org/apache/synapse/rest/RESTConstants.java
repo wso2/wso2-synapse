@@ -107,4 +107,5 @@ public class RESTConstants {
     public static final String OPENAPI_VALIDATED = "OPENAPI_VALIDATED";
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String RESOURCE_SCOPE_MAP = "RESOURCE_SCOPE_MAP";
+    public static final String OAUTH2_SCOPE_VALIDATION = "oauth2";
 }
