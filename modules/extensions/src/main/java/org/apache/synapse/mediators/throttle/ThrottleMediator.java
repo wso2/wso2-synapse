@@ -194,14 +194,19 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                                 getMediatorPosition());
                         
                         // Handle coverage tracking for referenced sequence in unit tests
-                        String originalArtifactKey = CoverageUtils.handleCoverageForReferencedSequence(
-                                synCtx, (SequenceMediator) mediator, onAcceptSeqKey);
-                        
-                        try {
+                        if (mediator instanceof SequenceMediator) {
+                            String originalArtifactKey = CoverageUtils.handleCoverageForReferencedSequence(
+                                    synCtx, (SequenceMediator) mediator, onAcceptSeqKey);
+                            
+                            try {
+                                return mediator.mediate(synCtx);
+                            } finally {
+                                // Restore original artifact key for unit test coverage
+                                CoverageUtils.restoreCoverageArtifactKey(synCtx, originalArtifactKey);
+                            }
+                        } else {
+                            // If the referenced mediator is not a SequenceMediator, mediate without coverage handling
                             return mediator.mediate(synCtx);
-                        } finally {
-                            // Restore original artifact key for unit test coverage
-                            CoverageUtils.restoreCoverageArtifactKey(synCtx, originalArtifactKey);
                         }
                     } else {
                         handleException("Unable to find onAccept sequence with key : "
@@ -231,14 +236,19 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                                 getMediatorPosition());
                         
                         // Handle coverage tracking for referenced sequence in unit tests
-                        String originalArtifactKey = CoverageUtils.handleCoverageForReferencedSequence(
-                                synCtx, (SequenceMediator) mediator, onRejectSeqKey);
-                        
-                        try {
+                        if (mediator instanceof SequenceMediator) {
+                            String originalArtifactKey = CoverageUtils.handleCoverageForReferencedSequence(
+                                    synCtx, (SequenceMediator) mediator, onRejectSeqKey);
+                            
+                            try {
+                                return mediator.mediate(synCtx);
+                            } finally {
+                                // Restore original artifact key for unit test coverage
+                                CoverageUtils.restoreCoverageArtifactKey(synCtx, originalArtifactKey);
+                            }
+                        } else {
+                            // If the referenced mediator is not a SequenceMediator, invoke it directly
                             return mediator.mediate(synCtx);
-                        } finally {
-                            // Restore original artifact key for unit test coverage
-                            CoverageUtils.restoreCoverageArtifactKey(synCtx, originalArtifactKey);
                         }
                     } else {
                         handleException("Unable to find onReject sequence with key : "
@@ -837,15 +847,15 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
         List<ChildSequence> children = new ArrayList<>();
         
         // Add on-accept child sequence if it exists
-        if (onAcceptMediator != null || onAcceptSeqKey != null) {
+        if (onAcceptMediator != null || (onAcceptSeqKey != null && !onAcceptSeqKey.isEmpty())) {
             children.add(new ChildSequence("on-accept", onAcceptMediator, onAcceptSeqKey));
         }
-        
+
         // Add on-reject child sequence if it exists
-        if (onRejectMediator != null || onRejectSeqKey != null) {
+        if (onRejectMediator != null || (onRejectSeqKey != null && !onRejectSeqKey.isEmpty())) {
             children.add(new ChildSequence("on-reject", onRejectMediator, onRejectSeqKey));
         }
-        
+
         return children;
     }
 }
