@@ -31,6 +31,9 @@ import org.apache.synapse.mediators.builtin.CommentMediator;
 import org.apache.synapse.mediators.builtin.ForEachMediator;
 import org.apache.synapse.mediators.builtin.PropertyGroupMediator;
 import org.apache.synapse.mediators.builtin.PropertyMediator;
+import org.apache.synapse.mediators.builtin.ValidateMediator;
+import org.apache.synapse.mediators.ChildSequence;
+import org.apache.synapse.mediators.MediatorWithChildren;
 import org.apache.synapse.mediators.eip.Target;
 import org.apache.synapse.mediators.eip.splitter.CloneMediator;
 import org.apache.synapse.mediators.eip.splitter.IterateMediator;
@@ -394,6 +397,39 @@ public class MediatorIdentityManager {
             ForEachMediator forEach = (ForEachMediator) mediator;
             if (forEach.getSequenceRef() == null && forEach.getSequence() != null) {
                 assignMediatorIds(forEach.getSequence(), mediatorId, new AtomicInteger(0));
+            }
+        }
+        // Handle ValidateMediator
+        else if (mediator instanceof ValidateMediator) {
+            ValidateMediator validate = (ValidateMediator) mediator;
+            List<Mediator> onFailMediators = validate.getList();
+            if (onFailMediators != null && !onFailMediators.isEmpty()) {
+                AtomicInteger onFailCounter = new AtomicInteger(0);
+                for (Mediator child : onFailMediators) {
+                    assignMediatorIds(child, mediatorId + "/on-fail", onFailCounter);
+                }
+            }
+        }
+        // Handle MediatorWithChildren (ThrottleMediator, CacheMediator, etc.)
+        else if (mediator instanceof MediatorWithChildren) {
+            MediatorWithChildren mediatorWithChildren = (MediatorWithChildren) mediator;
+            List<ChildSequence> children = mediatorWithChildren.getChildren();
+            if (children != null && !children.isEmpty()) {
+                for (ChildSequence child : children) {
+                    // Process inline mediators
+                    if (child.hasInlineMediator()) {
+                        Mediator childMediator = child.getMediator();
+                        if (childMediator instanceof ListMediator) {
+                            List<Mediator> childMediators = ((ListMediator) childMediator).getList();
+                            if (childMediators != null && !childMediators.isEmpty()) {
+                                AtomicInteger childCounter = new AtomicInteger(0);
+                                for (Mediator med : childMediators) {
+                                    assignMediatorIds(med, mediatorId + "/" + child.getName(), childCounter);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         // Handle ScatterGather
