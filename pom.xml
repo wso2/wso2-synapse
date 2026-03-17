@@ -677,6 +677,11 @@
              <version>${httpcore.version}</version>
          </dependency>
          <dependency>
+             <groupId>org.apache.httpcomponents.core5</groupId>
+             <artifactId>httpcore5</artifactId>
+             <version>${httpcore5.version}</version>
+         </dependency>
+         <dependency>
              <groupId>org.wso2.httpcomponents</groupId>
              <artifactId>httpcore-nio</artifactId>
              <version>${httpcore-nio.wso2.version}</version>
@@ -1521,6 +1526,7 @@
       <imp.pkg.version.wso2.bouncycastle>[1.52.0,2.0.0)</imp.pkg.version.wso2.bouncycastle>
        <httpcore.version>4.4.16</httpcore.version>
       <httpcore.wso2.version>${httpcore.version}.wso2v1</httpcore.wso2.version>
+       <httpcore5.version>5.4</httpcore5.version>
        <httpcore-nio.version>4.4.16</httpcore-nio.version>
        <httpcore-nio.wso2.version>${httpcore-nio.version}-wso2v4</httpcore-nio.wso2.version>
        <hc.httpclient.version>4.5.13</hc.httpclient.version>
