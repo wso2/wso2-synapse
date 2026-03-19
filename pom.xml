@@ -1623,7 +1623,7 @@
       <mockito.version>5.3.1</mockito.version>
       <mockito.inline.version>5.2.0</mockito.inline.version>
       <java-json-tools.json.schema.validator.version>2.2.14.wso2v1</java-json-tools.json.schema.validator.version>
-      <fasterxml.jackson.version>2.17.2</fasterxml.jackson.version>
+      <fasterxml.jackson.version>2.18.6</fasterxml.jackson.version>
       <fasterxml.jackson-databind.version>2.17.2</fasterxml.jackson-databind.version>
       <google.guava.version>33.5.0-jre</google.guava.version>
       <failureaccess.version>1.0.3</failureaccess.version>
