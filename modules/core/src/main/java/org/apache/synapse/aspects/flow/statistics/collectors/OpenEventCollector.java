@@ -21,6 +21,7 @@ package org.apache.synapse.aspects.flow.statistics.collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
@@ -31,7 +32,9 @@ import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsOpenEv
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTelemetryManagerHolder;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 
+import java.util.HashMap;
 import java.util.Objects;
 
 /**
@@ -114,6 +117,10 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
                 OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
                             .handleOpenEntryEvent(statisticDataUnit, messageContext);
 			}
+
+            if (((Axis2MessageContext) messageContext).getAnalyticsMetadata() == null) {
+                messageContext.setProperty(SynapseConstants.ANALYTICS_METADATA, new HashMap<>());
+            }
 
 			return statisticDataUnit.getCurrentIndex();
 		}
