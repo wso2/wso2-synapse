@@ -348,10 +348,12 @@ public class ApiUtils {
      *   GET:/testResource -> ["scope1", "scope2"]
      * </pre>
      *
-     * @param openAPI the OpenAPI instance
+     * @param resourceScopeMap map that will be populated with resource-to-scope mappings,
+     *                         keyed by {@code <HTTP_METHOD>:<path>}
+     * @param openAPI the OpenAPI instance to scan for resource scopes
      */
     public static void populateResourceScopesFromOpenApi(Map<String, List<String>> resourceScopeMap, OpenAPI openAPI) {
-        if (openAPI.getPaths() == null) return;
+        if (openAPI == null || openAPI.getPaths() == null) return;
 
         openAPI.getPaths().forEach((path, pathItem) -> {
             pathItem.readOperationsMap().forEach((method, operation) -> {
@@ -368,7 +370,7 @@ public class ApiUtils {
 
                     for (SecurityRequirement req : security) {
                         for (Map.Entry<String, List<String>> entry : req.entrySet()) {
-                            if (RESTConstants.OAUTH2_SCOPE_VALIDATION.equals(entry.getKey())) {
+                            if (RESTConstants.OAUTH2_SCOPE_VALIDATION.equalsIgnoreCase(entry.getKey())) {
                                 scopes.addAll(entry.getValue());
                             }
                         }
