@@ -92,7 +92,6 @@ import javax.xml.namespace.QName;
 public class OAuthUtils {
 
     private static final Log log = LogFactory.getLog(OAuthUtils.class);
-    private static final Pattern EXPRESSION_PATTERN = Pattern.compile("(\\{[^\"<>}\\]]+})");
     private static final String ALL_HOSTS = "*";
     public static final String HOST_NAME_VERIFIER = "httpclient.hostnameVerifier";
     public static final String ALLOW_ALL = "AllowAll";
@@ -642,8 +641,17 @@ public class OAuthUtils {
      */
     private static boolean isExpression(String value) {
 
-        Matcher matcher = EXPRESSION_PATTERN.matcher(value);
-        return matcher.find();
+        boolean isExpression = false;
+        if (StringUtils.isNotBlank(value)) {
+            final char startExpression = '{';
+            final char endExpression = '}';
+            char firstChar = value.charAt(0);
+            char lastChar = value.charAt(value.length() - 1);
+            if (startExpression == firstChar && endExpression == lastChar) {
+                isExpression = true;
+            }
+        }
+        return isExpression;
     }
 
     /**
