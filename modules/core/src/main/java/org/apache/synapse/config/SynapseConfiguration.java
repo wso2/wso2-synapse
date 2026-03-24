@@ -2531,4 +2531,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     }
 
 
+    public Map<String, Map<String, Object>> getMcpToolsMap() {
+        return mcpToolsMap;
+    }
+
+
 }
