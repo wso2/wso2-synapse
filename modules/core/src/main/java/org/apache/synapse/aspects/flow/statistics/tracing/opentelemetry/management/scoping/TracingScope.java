@@ -20,6 +20,7 @@ package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.managem
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryUtil;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.stores.SpanStore;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
@@ -101,7 +102,7 @@ public class TracingScope {
         return pendingCallbacksCount == 0 &&
                 synCtx.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY) != null &&
                 ((StatisticsReportingEventHolder) synCtx.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY))
-                        .isEvenCollectionFinished();
+                        .isEvenCollectionFinished() && TelemetryUtil.isAllSubBranchesFinished(synCtx);
     }
 
     public String getTracingScopeId() {

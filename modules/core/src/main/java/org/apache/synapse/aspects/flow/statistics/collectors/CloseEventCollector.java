@@ -27,6 +27,7 @@ import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.templates.EndFlowEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsCloseEvent;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTelemetryManagerHolder;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryUtil;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
@@ -108,10 +109,13 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 			statisticDataUnit.setMessageContext(messageContext);
 
 			StatisticsCloseEvent closeEvent = new StatisticsCloseEvent(statisticDataUnit);
+			if (isOuterLayer(componentType)) {
+				TelemetryUtil.decrementBranchCount(messageContext);
+			}
 			if (currentIndex == null) {
 				addEvent(messageContext, closeEvent);
 			} else {
-				addEventAndDecrementCount(messageContext, closeEvent);
+				addEventAndDecrementCount(messageContext, closeEvent, false);
 			}
 
 			if (isOpenTelemetryEnabled()) {
@@ -144,14 +148,14 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 
             EndFlowEvent endFlowEvent = new EndFlowEvent(dataUnit);
             if (!error) {
-                addEventAndDecrementCount(messageContext, endFlowEvent);
+                addEventAndDecrementCount(messageContext, endFlowEvent, true);
             } else {
                 addEventAndCloseFlow(messageContext, endFlowEvent);
             }
 
             if (isOpenTelemetryEnabled()) {
 				OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
-						.handleCloseFlowForcefully(dataUnit, messageContext);
+						.handleCloseFlowForcefully(dataUnit, messageContext, error);
 			}
 
         }
@@ -185,5 +189,13 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 			OpenTelemetryManagerHolder.getOpenTelemetryManager().getHandler()
 					.handleScatterGatherFinishEvent(messageContext);
 		}
+	}
+
+	private static boolean isOuterLayer(ComponentType componentType){
+		return componentType == ComponentType.TASK
+				|| componentType == ComponentType.MESSAGEPROCESSOR
+				|| componentType == ComponentType.PROXYSERVICE
+				|| componentType == ComponentType.API
+				|| componentType == ComponentType.INBOUNDENDPOINT;
 	}
 }

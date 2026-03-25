@@ -110,7 +110,9 @@ public class SpanStore {
                 parentSpanWrapper.addAnonymousSequence(spanId, spanWrapper);
             }
         }
-        componentUniqueIdWiseSpanWrappers.put(statisticDataUnit.getComponentId(), spanWrapper);
+        if(statisticDataUnit.getComponentId() != null) {
+            componentUniqueIdWiseSpanWrappers.put(statisticDataUnit.getComponentId(), spanWrapper);
+        }
         activeSpanWrappers.add(spanWrapper);
         return spanWrapper;
     }

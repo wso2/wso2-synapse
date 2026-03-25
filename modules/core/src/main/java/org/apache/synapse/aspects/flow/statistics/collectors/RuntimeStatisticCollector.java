@@ -27,8 +27,10 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
+import org.apache.synapse.aspects.flow.statistics.log.templates.EndFlowEvent;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTelemetryManagerHolder;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryConstants;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryUtil;
 import org.apache.synapse.aspects.flow.statistics.util.MediationFlowController;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -330,7 +332,7 @@ public abstract class RuntimeStatisticCollector {
      * @param messageContext
      * @param event
      */
-    protected static void addEventAndDecrementCount(MessageContext messageContext, StatisticsReportingEvent event) {
+    protected static void addEventAndDecrementCount(MessageContext messageContext, StatisticsReportingEvent event, boolean isEndFlowEvent) {
         StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
         if (eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
@@ -345,8 +347,15 @@ public abstract class RuntimeStatisticCollector {
         event.getDataUnit().generateElasticMetadata(messageContext);
         eventHolder.addEvent(event);
 
-        if (eventHolder.countHolder.decrementAndGetStatCount() <= 0 &&
-                eventHolder.countHolder.getCallBackCount() <= 0 && !continueStatisticFlow(messageContext)) {
+        int count;
+        if (isEndFlowEvent) {
+            // In case of EndFlowEvent, we should not decrement the stat count as it is used to denote MediatorWorker finished
+            count = eventHolder.countHolder.getStatCount();
+        } else {
+            count = eventHolder.countHolder.decrementAndGetStatCount();
+        }
+        if (count <= 0 && eventHolder.countHolder.getCallBackCount() <= 0 && !continueStatisticFlow(messageContext)
+        && TelemetryUtil.isAllSubBranchesFinished(messageContext)) {
             eventHolder.setEvenCollectionFinished(true);
             if (isMediationFlowStatisticsEnabled) {
                 messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
@@ -412,9 +421,11 @@ public abstract class RuntimeStatisticCollector {
         event.getDataUnit().generateElasticMetadata(messageContext);
         eventHolder.addEvent(event);
 
-        if (eventHolder.countHolder.decrementAndGetCallbackCount() <= 0 && eventHolder.countHolder.getStatCount() <= 0) {
+        if (eventHolder.countHolder.decrementAndGetCallbackCount() <= 0 && eventHolder.countHolder.getStatCount() <= 0
+        && TelemetryUtil.isAllSubBranchesFinished(messageContext)) {
             eventHolder.setEvenCollectionFinished(true);
             if (isMediationFlowStatisticsEnabled) {
+                log.warn("getMessageDataStore() is called in addEventAndDecrementCallbackCount");
                 messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
             }
         }
@@ -466,6 +477,7 @@ public abstract class RuntimeStatisticCollector {
             eventHolder.setEvenCollectionFinished(true);
             eventHolder.setMessageFlowError(true);
             if (isMediationFlowStatisticsEnabled) {
+                log.warn("getMessageDataStore() is called in addEventAndCloseFlow");
                 messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
             }
         }

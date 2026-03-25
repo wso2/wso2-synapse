@@ -19,6 +19,7 @@ package org.apache.synapse.aspects.flow.statistics;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryUtil;
 
 public class StatisticsCloseEventListener {
 
@@ -44,6 +45,7 @@ public class StatisticsCloseEventListener {
      * @param synCtx synapse message context
      */
     public void invokeCloseEventEntry(MessageContext synCtx) {
+        TelemetryUtil.decrementBranchCount(synCtx);
         CloseEventCollector.closeFlowForcefully(synCtx, false);
     }
 }

@@ -34,6 +34,7 @@ import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryUtil;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -244,7 +245,7 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
 
         MessageContext newCtx = null;
         try {
-        	
+            TelemetryUtil.incrementSubBranchCount(synCtx);
             newCtx = MessageHelper.cloneMessageContext(synCtx);
             
             // Set isServerSide property in the cloned message context

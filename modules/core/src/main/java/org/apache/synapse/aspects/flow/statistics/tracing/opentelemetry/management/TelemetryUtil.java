@@ -22,9 +22,13 @@ import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.semconv.ServiceAttributes;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 
 import java.util.HashMap;
@@ -85,6 +89,58 @@ public class TelemetryUtil {
                     otelResourceAttributes.put(keyValue[0], keyValue[1]);
                 }
             }
+        }
+    }
+
+    public static int getActiveSubBranchCount(MessageContext messageContext){
+        Object branchCountObj = messageContext.getProperty(StatisticsConstants.SUB_BRANCH_COUNT);
+        if (branchCountObj instanceof AtomicInteger) {
+            AtomicInteger branchCount = (AtomicInteger) branchCountObj;
+            log.warn("Active SubBranch count is: " + branchCount.get() + " ThreadId: " + Thread.currentThread().getId());
+            return branchCount.get();
+        }
+        return 0;
+    }
+
+    public static boolean isAllSubBranchesFinished(MessageContext messageContext) {
+        int subBranchCount = getActiveSubBranchCount(messageContext);
+        if (subBranchCount < 0) {
+            log.warn("Active SubBranch count is negative. This should not happen. subBranch count: " + subBranchCount + " ThreadId: " + Thread.currentThread().getId());
+            return true;
+        }
+        return subBranchCount == 0;
+
+    }
+
+    public static boolean isBranched(MessageContext messageContext) {
+        if (messageContext == null) {
+            return false;
+        }
+        Object subBranchObj = messageContext.getProperty(StatisticsConstants.SUB_BRANCH_COUNT);
+        return subBranchObj instanceof AtomicInteger;
+    }
+
+    public static void decrementBranchCount(MessageContext messageContext) {
+        Object subBranchObj = messageContext.getProperty(StatisticsConstants.SUB_BRANCH_COUNT);
+        if (subBranchObj instanceof AtomicInteger) {
+            AtomicInteger subBranch = (AtomicInteger) subBranchObj;
+            int count = subBranch.decrementAndGet();
+            log.warn("subBranch count: " + count + " ThreadId: " + Thread.currentThread().getId());
+        }
+    }
+
+
+    public static void incrementSubBranchCount(MessageContext synCtx) {
+        int subBranchIndex = 2;
+        if (RuntimeStatisticCollector.shouldReportStatistic(synCtx)) {
+            Object subBranchCountObj = synCtx.getProperty(StatisticsConstants.SUB_BRANCH_COUNT);
+            if (subBranchCountObj instanceof AtomicInteger) {
+                ((AtomicInteger) subBranchCountObj).incrementAndGet();
+            } else {
+                synCtx.setProperty(StatisticsConstants.SUB_BRANCH_COUNT, new AtomicInteger(subBranchIndex));
+            }
+            AtomicInteger subBranchCount = (AtomicInteger) synCtx.getProperty(StatisticsConstants.SUB_BRANCH_COUNT);
+            log.warn("Start Cloning. Clone count: " + (subBranchCount != null ? subBranchCount.get() : "null") + ", ThreadId: " + Thread.currentThread().getId());
         }
     }
 }

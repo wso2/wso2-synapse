@@ -43,6 +43,7 @@ import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUni
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryConstants;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryTracer;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryUtil;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.helpers.TracingUtils;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.parentresolving.ParentResolver;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.scoping.TracingScope;
@@ -179,7 +180,11 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
                 startSpan(statisticDataUnit, synCtx, tracingScope.getSpanStore());
             } else {
                 // Will begin during addSeqContinuationState
-                bufferSequenceContinuationState(statisticDataUnit, tracingScope.getSpanStore());
+                if (synCtx.isContinuationEnabled()) {
+                    bufferSequenceContinuationState(statisticDataUnit, tracingScope.getSpanStore());
+                }else {
+                    startSpan(statisticDataUnit, synCtx, tracingScope.getSpanStore());
+                }
             }
         }
     }
@@ -448,12 +453,18 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
     }
 
     @Override
-    public void handleCloseFlowForcefully(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx) {
+    public void handleCloseFlowForcefully(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx, boolean error) {
         TracingScope tracingScope = tracingScopeManager.getTracingScope(synCtx);
         SpanStore spanStore = tracingScope.getSpanStore();
         String spanWrapperId = TracingUtils.extractId(basicStatisticDataUnit);
         SpanWrapper spanWrapper = spanStore.getSpanWrapper(spanWrapperId);
 
+        if (!error && TelemetryUtil.isBranched(synCtx)) {
+            if (TelemetryUtil.isAllSubBranchesFinished(synCtx)) {
+                handleCloneFinishEvent(synCtx, spanWrapper);
+            }
+            return;
+        }
         // finish the current span
         handleCloseEvent(basicStatisticDataUnit, synCtx, false);
 
@@ -635,6 +646,20 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
                 cleanupContinuationStateSequences(tracingScope.getSpanStore(), messageContext);
                 SpanWrapper outerLevelSpanWrapper = tracingScope.getSpanStore().getOuterLevelSpanWrapper();
                 tracingScope.getSpanStore().finishSpan(outerLevelSpanWrapper, messageContext);
+                tracingScopeManager.cleanupTracingScope(tracingScope.getTracingScopeId());
+            }
+        }
+    }
+
+    private void handleCloneFinishEvent(MessageContext messageContext, SpanWrapper spanWrapper) {
+        TracingScope tracingScope = tracingScopeManager.getTracingScope(messageContext);
+        if (tracingScope.isEventCollectionFinished(messageContext)) {
+            synchronized (tracingScope.getSpanStore()) {
+                tracingScope.getSpanStore().finishSpan(spanWrapper, messageContext);
+                cleanupContinuationStateSequences(tracingScope.getSpanStore(), messageContext);
+                SpanWrapper outerLevelSpanWrapper = tracingScope.getSpanStore().getOuterLevelSpanWrapper();
+                tracingScope.getSpanStore().finishSpan(outerLevelSpanWrapper, messageContext);
+                cleanUpActiveSpans(tracingScope.getSpanStore(), messageContext);
                 tracingScopeManager.cleanupTracingScope(tracingScope.getTracingScopeId());
             }
         }

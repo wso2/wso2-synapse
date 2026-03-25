@@ -207,4 +207,6 @@ public class StatisticsConstants {
     public static final String STATISTIC_REPORTING_INVOKE_MEDIATOR_CLOSE_INDEX = "statistics.invoke.mediator.close.index";
 
     public static final String ATOMIC_UNIT_ACTIVE = "ATOMIC_UNIT_ACTIVE";
+    
+    public static final String SUB_BRANCH_COUNT = "SUB_BRANCH_COUNT";
 }
