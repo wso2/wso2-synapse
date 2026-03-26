@@ -2513,11 +2513,12 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             return;
         }
         
-        // Find and remove all composite keys that start with localEntryKey:
-        int removedCount = (int) mcpToolsMap.keySet().stream()
+        // Collect matching keys first, then remove to avoid mutating the map mid-stream
+        List<String> keysToRemove = mcpToolsMap.keySet().stream()
             .filter(key -> key.startsWith(localEntryKey + ":"))
-            .map(mcpToolsMap::remove)
-            .count();
+            .collect(java.util.stream.Collectors.toList());
+        keysToRemove.forEach(mcpToolsMap::remove);
+        int removedCount = keysToRemove.size();
         
         if (removedCount > 0) {
             log.info("Removed " + removedCount + " MCP tools for entry: " + localEntryKey + 
