@@ -67,6 +67,8 @@ import java.util.Arrays;
 public class ClientConnFactoryBuilder {
 
     private static final Log log = LogFactory.getLog(ClientConnFactoryBuilder.class);
+    private static final boolean skipSslProfileFailures =
+            Boolean.parseBoolean(System.getProperty(NhttpConstants.SSL_PROFILE_SKIP_FAILURES));
 
     private final TransportOutDescription transportOut;
     private final String name;
@@ -277,6 +279,16 @@ public class ClientConnFactoryBuilder {
                         sslContext = createSSLContext(ksElt, trElt, novalidatecert, secretResolver);
                     } catch (AxisFault axisFault) {
                         String err = "Error occurred while creating SSL context for the servers " + serversElt.getText();
+                        if (skipSslProfileFailures) {
+                            if (log.isWarnEnabled()) {
+                                String cause = axisFault.getCause() != null
+                                        ? axisFault.getCause().getClass().getName() + ": " + axisFault.getCause().getMessage()
+                                        : axisFault.getMessage();
+                                log.warn(name + " " + err + ". Skipping this SSL profile and continuing "
+                                        + "with the remaining profiles. Cause: " + cause);
+                            }
+                            continue;
+                        }
                         // This runtime exception stop the server startup But it will not affect for dynamic change
                         throw new InvalidConfigurationException(err, axisFault);
                     }
@@ -307,6 +319,16 @@ public class ClientConnFactoryBuilder {
                     sslContext = createSSLContext(ksElt, trElt, novalidatecert, secretResolver);
                 } catch (AxisFault axisFault) {
                     String err = "Error occurred while creating SSL context for the servers " + serversElt.getText();
+                    if (skipSslProfileFailures) {
+                        if (log.isWarnEnabled()) {
+                            String cause = axisFault.getCause() != null
+                                    ? axisFault.getCause().getClass().getName() + ": " + axisFault.getCause().getMessage()
+                                    : axisFault.getMessage();
+                            log.warn(name + " " + err + ". Skipping this SSL profile and continuing "
+                                    + "with the remaining profiles. Cause: " + cause);
+                        }
+                        continue;
+                    }
                     // This runtime exception stop the server startup But it will not affect for dynamic change
                     throw new InvalidConfigurationException(err, axisFault);
                 }
@@ -485,10 +507,14 @@ public class ClientConnFactoryBuilder {
                 keymanagers = kmfactory.getKeyManagers();
 
             } catch (GeneralSecurityException gse) {
-                log.error(name + " Error loading Keystore : " + location, gse);
+                if (!skipSslProfileFailures) {
+                    log.error(name + " Error loading Keystore : " + location, gse);
+                }
                 throw new AxisFault("Error loading Keystore : " + location, gse);
             } catch (IOException ioe) {
-                log.error(name + " Error opening Keystore : " + location, ioe);
+                if (!skipSslProfileFailures) {
+                    log.error(name + " Error opening Keystore : " + location, ioe);
+                }
                 throw new AxisFault("Error opening Keystore : " + location, ioe);
             } 
         }
@@ -521,10 +547,14 @@ public class ClientConnFactoryBuilder {
                 sslSenderTrustStoreHolder.setPassword(storePassword);
 
             } catch (GeneralSecurityException gse) {
-                log.error(name + " Error loading Key store : " + location, gse);
+                if (!skipSslProfileFailures) {
+                    log.error(name + " Error loading Key store : " + location, gse);
+                }
                 throw new AxisFault("Error loading Key store : " + location, gse);
             } catch (IOException ioe) {
-                log.error(name + " Error opening Key store : " + location, ioe);
+                if (!skipSslProfileFailures) {
+                    log.error(name + " Error opening Key store : " + location, ioe);
+                }
                 throw new AxisFault("Error opening Key store : " + location, ioe);
             }
         } else if (novalidatecert) {
@@ -543,7 +573,9 @@ public class ClientConnFactoryBuilder {
             return sslcontext;
 
         } catch (GeneralSecurityException gse) {
-            log.error(name + " Unable to create SSL context with the given configuration", gse);
+            if (!skipSslProfileFailures) {
+                log.error(name + " Unable to create SSL context with the given configuration", gse);
+            }
             throw new AxisFault("Unable to create SSL context with the given configuration", gse);
         }
     }
