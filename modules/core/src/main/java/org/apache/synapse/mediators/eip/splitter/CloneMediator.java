@@ -34,6 +34,7 @@ import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryUtil;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -135,7 +136,12 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
                 MessageContext clonedMsgCtx = getClonedMessageContext(synCtx, i++, targets.size());
                 ContinuationStackManager.addReliantContinuationState(clonedMsgCtx, i - 1,
                         getMediatorPosition());
-                iter.next().mediate(clonedMsgCtx);
+                Target target = iter.next();
+                if (target.isAsynchronous()) {
+                    // Only increase branch count if flow is Asynchronous so new MediatorWorker is used
+                    TelemetryUtil.incrementBranchCount(synCtx);
+                }
+                target.mediate(clonedMsgCtx);
                 boolean isFailure = "true".equalsIgnoreCase((String)clonedMsgCtx.
                         getProperty(EIPConstants.ERROR_ON_TARGET_EXECUTION));
                 if (isFailure && sequential && isStopFlowOnFailure) {
@@ -174,6 +180,10 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
             synCtx.setProperty(ITERATION_INDEX_PROPERTY_NAME, i + 1);
             MessageContext clonedMsgCtx = getClonedMessageContext(synCtx, i, noOfIterations);
             ContinuationStackManager.addReliantContinuationState(clonedMsgCtx, i - 1, getMediatorPosition());
+            if (target.isAsynchronous()) {
+                // Only increase branch count if flow is Asynchronous so new MediatorWorker is used
+                TelemetryUtil.incrementBranchCount(synCtx);
+            }
             target.mediate(clonedMsgCtx);
             boolean isFailure = "true".equalsIgnoreCase((String)clonedMsgCtx.
                     getProperty(EIPConstants.ERROR_ON_TARGET_EXECUTION));
@@ -244,7 +254,7 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
 
         MessageContext newCtx = null;
         try {
-        	
+
             newCtx = MessageHelper.cloneMessageContext(synCtx);
             
             // Set isServerSide property in the cloned message context
