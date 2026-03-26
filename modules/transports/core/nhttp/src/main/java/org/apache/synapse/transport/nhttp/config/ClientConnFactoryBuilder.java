@@ -277,6 +277,13 @@ public class ClientConnFactoryBuilder {
                         sslContext = createSSLContext(ksElt, trElt, novalidatecert, secretResolver);
                     } catch (AxisFault axisFault) {
                         String err = "Error occurred while creating SSL context for the servers " + serversElt.getText();
+                        if (Boolean.parseBoolean(System.getProperty(NhttpConstants.SSL_PROFILE_SKIP_FAILURES))) {
+                            if (log.isWarnEnabled()) {
+                                log.warn(name + " " + err + ". Skipping this SSL profile and continuing "
+                                        + "with the remaining profiles.", axisFault);
+                            }
+                            continue;
+                        }
                         // This runtime exception stop the server startup But it will not affect for dynamic change
                         throw new InvalidConfigurationException(err, axisFault);
                     }
@@ -307,6 +314,13 @@ public class ClientConnFactoryBuilder {
                     sslContext = createSSLContext(ksElt, trElt, novalidatecert, secretResolver);
                 } catch (AxisFault axisFault) {
                     String err = "Error occurred while creating SSL context for the servers " + serversElt.getText();
+                    if (Boolean.parseBoolean(System.getProperty(NhttpConstants.SSL_PROFILE_SKIP_FAILURES))) {
+                        if (log.isWarnEnabled()) {
+                            log.warn(name + " " + err + ". Skipping this SSL profile and continuing "
+                                    + "with the remaining profiles.", axisFault);
+                        }
+                        continue;
+                    }
                     // This runtime exception stop the server startup But it will not affect for dynamic change
                     throw new InvalidConfigurationException(err, axisFault);
                 }
