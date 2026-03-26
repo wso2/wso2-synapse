@@ -277,8 +277,9 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
                 getSynapseConfiguration().addEntry(e.getKey(), e);
                 getSynapseConfiguration().removeEntry(existingArtifactName);
 
+                // Always clean up old MCP tools regardless of whether the new entry has mcptools
+                getSynapseConfiguration().removeMcpToolsForLocalEntry(existingArtifactName);
                 if (mcpToolsElement != null) {
-                    getSynapseConfiguration().removeMcpToolsForLocalEntry(existingArtifactName);
                     registerMcpTools(e.getKey(), mcpToolsElement);
                     if (log.isDebugEnabled()) {
                         log.debug("Migrated MCP tools from " + existingArtifactName + " to " + e.getKey());
