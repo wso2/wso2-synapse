@@ -25,6 +25,11 @@ import io.opentelemetry.semconv.ServiceAttributes;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 
 import java.util.HashMap;
@@ -86,5 +91,41 @@ public class TelemetryUtil {
                 }
             }
         }
+    }
+
+    public static boolean isAllBranchesFinished(MessageContext synCtx) {
+        StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) synCtx.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
+        if (eventHolder != null) {
+            return eventHolder.countHolder.getBranchCount() <= 0;
+        }
+        return false;
+
+    }
+
+    public static void decrementBranchCount(MessageContext synCtx) {
+        if (RuntimeStatisticCollector.shouldReportStatistic(synCtx)) {
+            StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) synCtx.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
+            if (eventHolder != null) {
+                eventHolder.countHolder.decrementBranchCount();
+            }
+        }
+    }
+
+
+    public static void incrementBranchCount(MessageContext synCtx) {
+        if (RuntimeStatisticCollector.shouldReportStatistic(synCtx)) {
+            StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) synCtx.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
+            if (eventHolder != null) {
+                eventHolder.countHolder.incrementBranchCount();
+            }
+        }
+    }
+
+    public static boolean isOuterLayerComponent(ComponentType componentType){
+        return componentType == ComponentType.TASK
+                || componentType == ComponentType.MESSAGEPROCESSOR
+                || componentType == ComponentType.PROXYSERVICE
+                || componentType == ComponentType.API
+                || componentType == ComponentType.INBOUNDENDPOINT;
     }
 }
