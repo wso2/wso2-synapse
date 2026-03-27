@@ -33,6 +33,7 @@ import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.api.API;
+import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.startup.quartz.StartUpController;
 
 public class StatisticSynapseConfigurationObserver implements SynapseObserver{
@@ -183,4 +184,19 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 	public void synapseLibraryRemoved(Library library) {
 
 	}
+
+	@Override
+	public void messageProcessorAdded(MessageProcessor messageProcessor) {
+		ArtifactHolder holder = new ArtifactHolder();
+		holder.setParent(messageProcessor.getName());
+		messageProcessor.setComponentStatisticsId(holder);
+		messageProcessor.getAspectConfiguration().setHashCode(holder.getHashCodeAsString());
+		StatisticIdentityGenerator.conclude(holder);
+	}
+
+	@Override
+	public void messageProcessorRemoved(MessageProcessor messageProcessor) {
+
+	}
+
 }

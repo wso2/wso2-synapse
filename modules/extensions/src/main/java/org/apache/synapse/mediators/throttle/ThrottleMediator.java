@@ -54,7 +54,12 @@ import org.apache.synapse.commons.throttle.core.ThrottleException;
 import org.apache.synapse.commons.throttle.core.ThrottleContext;
 import org.apache.synapse.commons.throttle.core.AccessInformation;
 import org.apache.synapse.commons.throttle.core.ThrottleFactory;
+import org.apache.synapse.mediators.ChildSequence;
+import org.apache.synapse.mediators.MediatorWithChildren;
+import org.apache.synapse.unittest.CoverageUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -68,7 +73,7 @@ import java.util.Map;
  */
 
 public class ThrottleMediator extends AbstractMediator implements ManagedLifecycle,
-        FlowContinuableMediator, EnclosedInlinedSequence {
+        FlowContinuableMediator, EnclosedInlinedSequence, MediatorWithChildren {
 
     /* The key for getting the throttling policy - key refers to a/an [registry] entry */
     private String policyKey = null;
@@ -187,7 +192,22 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                     if (mediator != null) {
                         ContinuationStackManager.updateSeqContinuationState(synCtx,
                                 getMediatorPosition());
-                        return mediator.mediate(synCtx);
+                        
+                        // Handle coverage tracking for referenced sequence in unit tests
+                        if (mediator instanceof SequenceMediator) {
+                            String originalArtifactKey = CoverageUtils.handleCoverageForReferencedSequence(
+                                    synCtx, (SequenceMediator) mediator, onAcceptSeqKey);
+                            
+                            try {
+                                return mediator.mediate(synCtx);
+                            } finally {
+                                // Restore original artifact key for unit test coverage
+                                CoverageUtils.restoreCoverageArtifactKey(synCtx, originalArtifactKey);
+                            }
+                        } else {
+                            // If the referenced mediator is not a SequenceMediator, mediate without coverage handling
+                            return mediator.mediate(synCtx);
+                        }
                     } else {
                         handleException("Unable to find onAccept sequence with key : "
                                 + onAcceptSeqKey, synCtx);
@@ -214,7 +234,22 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                     if (mediator != null) {
                         ContinuationStackManager.updateSeqContinuationState(synCtx,
                                 getMediatorPosition());
-                        return mediator.mediate(synCtx);
+                        
+                        // Handle coverage tracking for referenced sequence in unit tests
+                        if (mediator instanceof SequenceMediator) {
+                            String originalArtifactKey = CoverageUtils.handleCoverageForReferencedSequence(
+                                    synCtx, (SequenceMediator) mediator, onRejectSeqKey);
+                            
+                            try {
+                                return mediator.mediate(synCtx);
+                            } finally {
+                                // Restore original artifact key for unit test coverage
+                                CoverageUtils.restoreCoverageArtifactKey(synCtx, originalArtifactKey);
+                            }
+                        } else {
+                            // If the referenced mediator is not a SequenceMediator, invoke it directly
+                            return mediator.mediate(synCtx);
+                        }
                     } else {
                         handleException("Unable to find onReject sequence with key : "
                                 + onRejectSeqKey, synCtx);
@@ -805,5 +840,22 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
         }
 
         return remoteIP;
+    }
+
+    @Override
+    public List<ChildSequence> getChildren() {
+        List<ChildSequence> children = new ArrayList<>();
+        
+        // Add on-accept child sequence if it exists
+        if (onAcceptMediator != null || (onAcceptSeqKey != null && !onAcceptSeqKey.isEmpty())) {
+            children.add(new ChildSequence("on-accept", onAcceptMediator, onAcceptSeqKey));
+        }
+
+        // Add on-reject child sequence if it exists
+        if (onRejectMediator != null || (onRejectSeqKey != null && !onRejectSeqKey.isEmpty())) {
+            children.add(new ChildSequence("on-reject", onRejectMediator, onRejectSeqKey));
+        }
+
+        return children;
     }
 }

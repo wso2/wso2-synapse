@@ -50,6 +50,7 @@ public class AuthConstants {
     public static final String OAUTH_GLOBAL_CONNECTION_TIMEOUT = "synapse.endpoint.http.oauth.token.endpoint.global.connection.timeout";
     public static final String OAUTH_GLOBAL_CONNECTION_REQUEST_TIMEOUT = "synapse.endpoint.http.oauth.token.endpoint.global.connection.request.timeout";
     public static final String OAUTH_GLOBAL_SOCKET_TIMEOUT = "synapse.endpoint.http.oauth.token.endpoint.global.socket.timeout";
+    public static final String ENABLE_OAUTH_GLOBAL_TIMEOUT_CONFIGS = "synapse.endpoint.http.oauth.enable.global.timeout.configs";
 
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String BEARER = "Bearer ";
@@ -107,6 +108,9 @@ public class AuthConstants {
     public static final String OAUTH_TOKEN_ENDPOINT_TRUST_STORE_LOCATION = "synapse.endpoint.http.oauth.token.endpoint.trust.store.location";
     public static final String OAUTH_TOKEN_ENDPOINT_TRUST_STORE_TYPE = "synapse.endpoint.http.oauth.token.endpoint.trust.store.type";
     public static final String OAUTH_TOKEN_ENDPOINT_TRUST_STORE_PASSWORD = "synapse.endpoint.http.oauth.token.endpoint.trust.store.password";
+
+    //Disable message building for oauth secured endpoint token generation
+    public static final String OAUTH_RETRY_MESSAGE_BUILDING_DISABLED = "synapse.endpoint.http.oauth.token.retry.message.building.disabled";
 
     public static final String HTTPS_PROTOCOL = "https";
 }

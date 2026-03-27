@@ -20,7 +20,9 @@ package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.stores;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.helpers.SpanTagger;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.helpers.TracingUtils;
@@ -182,6 +184,13 @@ public class SpanStore {
             if (isError) {
                 spanWrapper.getSpan().setStatus(StatusCode.ERROR);
             }
+            // Restore parent span ID in ThreadContext, or clear if this is the outermost span
+            if (spanWrapper.getParentSpanWrapper() != null && spanWrapper.getParentSpanWrapper().getSpan() != null) {
+                ThreadContext.put(SynapseConstants.SPAN_ID,
+                        spanWrapper.getParentSpanWrapper().getSpan().getSpanContext().getSpanId());
+            } else {
+                ThreadContext.remove(SynapseConstants.SPAN_ID);
+            }
             spanWrapper.getSpan().end();
             activeSpanWrappers.remove(spanWrapper);
         }
@@ -202,6 +211,13 @@ public class SpanStore {
             }
             if (isError) {
                 spanWrapper.getSpan().setStatus(StatusCode.ERROR);
+            }
+            // Restore parent span ID in ThreadContext, or clear if this is the outermost span
+            if (spanWrapper.getParentSpanWrapper() != null && spanWrapper.getParentSpanWrapper().getSpan() != null) {
+                ThreadContext.put(SynapseConstants.SPAN_ID,
+                        spanWrapper.getParentSpanWrapper().getSpan().getSpanContext().getSpanId());
+            } else {
+                ThreadContext.remove(SynapseConstants.SPAN_ID);
             }
             spanWrapper.getSpan().end();
             activeSpanWrappers.remove(spanWrapper);

@@ -44,14 +44,37 @@ public class TelemetryConstants {
      * OpenTelemetry port.
      */
     public static final String OPENTELEMETRY_PORT = "opentelemetry.port";
+
+    /**
+     * OpenTelemetry protocol (http or grpc).
+     */
+    public static final String OPENTELEMETRY_PROTOCOL = "opentelemetry.protocol";
+
+    /**
+     * OpenTelemetry metric push interval in seconds.
+     * if not defined, default value is 60 seconds.
+     */
+    public static final String OPENTELEMETRY_METRIC_PUSH_INTERVAL_SECONDS = "opentelemetry.metric.push.interval.seconds";
+
+    public static final String OPENTELEMETRY_METRIC_DEFAULT_PUSH_INTERVAL_SECONDS = "60";
+    /**
+     * HTTP protocol constant.
+     */
+    public static final String HTTP_PROTOCOL = "http";
+
+    /**
+     * gRPC protocol constant (default).
+     */
+    public static final String GRPC_PROTOCOL = "grpc";
+
     public static final String DEFAULT_OPENTELEMETRY_CLASS = "org.apache.synapse.aspects.flow.statistics.tracing" +
-            ".opentelemetry.management.JaegerTelemetryManager";
+            ".opentelemetry.management.OTLPTelemetryManager";
+    public static final String DEFAULT_OPENTELEMETRY_URL_FOR_HTTP = "http://localhost:4318";
+    public static final String DEFAULT_OPENTELEMETRY_URL_FOR_GRPC = "http://localhost:4317";
     public static final String USER_DEFINED_NAME = System.getenv("SERVICE_NAME");
     public static final String SERVICE_NAME =
             USER_DEFINED_NAME != null && !USER_DEFINED_NAME.isEmpty() ? USER_DEFINED_NAME : "WSO2-SYNAPSE";
     public static final String OPENTELEMETRY_INSTRUMENTATION_NAME = "org.wso2.synapse.tracing.telemetry";
-    public static final String DEFAULT_JAEGER_HOST = "localhost";
-    public static final String DEFAULT_JAEGER_PORT = "14250";
     public static final String DEFAULT_ZIPKIN_HOST = "localhost";
     public static final String DEFAULT_ZIPKIN_PORT = "9411";
     public static final String ZIPKIN_API_CONTEXT = "/api/v2/spans";

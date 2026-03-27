@@ -18,7 +18,9 @@
 
 package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.scoping;
 
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 import java.util.LinkedHashMap;
@@ -120,5 +122,6 @@ public class TracingScopeManager {
         synchronized (tracingScopes){
             tracingScopes.remove(tracingScopeId);
         }
+        ThreadContext.remove(SynapseConstants.TRACE_ID);
     }
 }

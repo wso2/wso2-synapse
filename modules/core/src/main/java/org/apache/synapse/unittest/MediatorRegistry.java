@@ -25,12 +25,15 @@ import org.apache.synapse.api.API;
 import org.apache.synapse.api.Resource;
 import org.apache.synapse.config.xml.SwitchCase;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.mediators.ChildSequence;
 import org.apache.synapse.mediators.ListMediator;
+import org.apache.synapse.mediators.MediatorWithChildren;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.builtin.CommentMediator;
 import org.apache.synapse.mediators.builtin.ForEachMediator;
 import org.apache.synapse.mediators.builtin.PropertyMediator;
+import org.apache.synapse.mediators.builtin.ValidateMediator;
 import org.apache.synapse.mediators.eip.Target;
 import org.apache.synapse.mediators.eip.splitter.CloneMediator;
 import org.apache.synapse.mediators.eip.splitter.IterateMediator;
@@ -390,6 +393,10 @@ public class MediatorRegistry {
                     mediatorId, mediatorIds, "Iterate");
         } else if (mediator instanceof ForEachMediator) {
             registerForEachSequence((ForEachMediator) mediator, artifactKey, mediatorId, mediatorIds);
+        } else if (mediator instanceof ValidateMediator) {
+            registerValidateOnFail((ValidateMediator) mediator, artifactKey, mediatorId, mediatorIds);
+        } else if (mediator instanceof MediatorWithChildren) {
+            registerMediatorWithChildren((MediatorWithChildren) mediator, artifactKey, mediatorId, mediatorIds);
         } else if (mediator instanceof ListMediator) {
             // Generic handling for any ListMediator (covers most mediators with children)
             registerInlineSequence((ListMediator) mediator, artifactKey, mediatorId, mediatorIds);
@@ -456,9 +463,7 @@ public class MediatorRegistry {
                 // Register inline sequence if present
                 SequenceMediator sequence = target.getSequence();
                 if (sequence != null) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Registering Clone mediator target inline sequence");
-                    }
+                    log.debug("Registering Clone mediator target inline sequence");
                     registerInlineSequence(sequence, artifactKey, targetPath, mediatorIds);
                 }
                 
@@ -490,9 +495,7 @@ public class MediatorRegistry {
                 // Register inline sequence if present
                 SequenceMediator sequence = target.getSequence();
                 if (sequence != null) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Registering ScatterGather mediator target inline sequence");
-                    }
+                    log.debug("Registering ScatterGather mediator target inline sequence");
                     registerInlineSequence(sequence, artifactKey, targetPath, mediatorIds);
                 }
                 
@@ -554,9 +557,7 @@ public class MediatorRegistry {
         // Register inline sequence if present
         SequenceMediator sequence = forEachMediator.getSequence();
         if (sequence != null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Registering ForEach mediator inline sequence");
-            }
+            log.debug("Registering ForEach mediator inline sequence");
             registerInlineSequence(sequence, artifactKey, mediatorId, mediatorIds);
         }
         
@@ -566,6 +567,54 @@ public class MediatorRegistry {
             addArtifactDependency(artifactKey, "Sequence", sequenceRef);
             if (log.isDebugEnabled()) {
                 log.debug("Detected sequence reference in ForEach mediator: " + artifactKey + " -> " + sequenceRef);
+            }
+        }
+    }
+
+    /**
+     * Register ValidateMediator's on-fail mediators.
+     */
+    private void registerValidateOnFail(ValidateMediator validateMediator, String artifactKey,
+                                       String mediatorId, LinkedHashSet<String> mediatorIds) {
+        // Register on-fail mediators
+        List<Mediator> onFailMediators = validateMediator.getList();
+        if (onFailMediators != null && !onFailMediators.isEmpty()) {
+            log.debug("Registering Validate mediator on-fail sequence");
+            registerInlineSequence(validateMediator, artifactKey, mediatorId + "/on-fail", mediatorIds);
+        }
+    }
+
+    /**
+     * Register children for mediators implementing MediatorWithChildren interface.
+     * This handles mediators with child sequences like ThrottleMediator (on-accept/on-reject),
+     * CacheMediator (on-cache-hit), etc.
+     */
+    private void registerMediatorWithChildren(MediatorWithChildren mediatorWithChildren, String artifactKey,
+                                           String mediatorId, LinkedHashSet<String> mediatorIds) {
+        List<ChildSequence> children = mediatorWithChildren.getChildren();
+        if (children == null || children.isEmpty()) {
+            return;
+        }
+        
+        for (ChildSequence child : children) {
+            String childPath = mediatorId + "/" + child.getName();
+            
+            // Handle sequence reference (key)
+            if (child.hasSequenceReference()) {
+                addArtifactDependency(artifactKey, "Sequence", child.getSequenceKey());
+                if (log.isDebugEnabled()) {
+                    log.debug("Detected sequence reference in " + mediatorId + "/" + 
+                            child.getName() + ": " + artifactKey + " -> " + child.getSequenceKey());
+                }
+            }
+            
+            // Handle inline mediator
+            if (child.hasInlineMediator()) {
+                Mediator childMediator = child.getMediator();
+                if (childMediator instanceof ListMediator) {
+                    log.debug("Registering " + child.getName() + " child sequence");
+                    registerInlineSequence((ListMediator) childMediator, artifactKey, childPath, mediatorIds);
+                }
             }
         }
     }

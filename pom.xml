@@ -26,7 +26,7 @@
    </parent>
    <groupId>org.apache.synapse</groupId>
    <artifactId>Apache-Synapse</artifactId>
-   <version>4.1.0-wso2v2</version>
+   <version>4.1.0-wso2v35-SNAPSHOT</version>
    <name>Apache Synapse</name>
    <description>Apache Synapse</description>
    <packaging>pom</packaging>
@@ -69,7 +69,7 @@
       <connection>scm:git:https://github.com/wso2/wso2-synapse.git</connection>
       <developerConnection>scm:git:https://github.com/wso2/wso2-synapse.git</developerConnection>
       <url>https://github.com/wso2/wso2-synapse.git/</url>
-      <tag>v4.1.0-wso2v2</tag>
+      <tag>HEAD</tag>
    </scm>
    <organization>
       <name>Apache Software Foundation</name>
@@ -1038,7 +1038,7 @@
           </dependency>
           <dependency>
               <groupId>org.wso2.orbit.org.apache.tomcat</groupId>
-              <artifactId>tomcat</artifactId>
+              <artifactId>tomcat-jdk21</artifactId>
               <version>${orbit.version.tomcat}</version>
           </dependency>
          <dependency>
@@ -1323,6 +1323,16 @@
               <version>${javax.inject.version}</version>
           </dependency>
           <dependency>
+              <groupId>org.wso2.orbit.com.sun.activation</groupId>
+              <artifactId>jakarta.activation</artifactId>
+              <version>${jakarta.activation.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.wso2.orbit.com.sun.mail</groupId>
+              <artifactId>jakarta.mail</artifactId>
+              <version>${jakarta.mail.version}</version>
+          </dependency>
+          <dependency>
               <groupId>org.glassfish.jersey.media</groupId>
               <artifactId>jersey-media-json-jackson</artifactId>
               <version>${glassfish.jersey.version}</version>
@@ -1508,8 +1518,8 @@
       <plexus.utils.version>1.5.4</plexus.utils.version>
       <com.google.code.gson.version>2.13.2</com.google.code.gson.version>
       <org.codehaus.jettison.version>1.5.3</org.codehaus.jettison.version>
-      <com.damnhandy.version>2.1.6</com.damnhandy.version>
-      <damnhandy.version>${com.damnhandy.version}.wso2v2</damnhandy.version>
+      <com.damnhandy.version>2.1.8</com.damnhandy.version>
+      <damnhandy.version>${com.damnhandy.version}.wso2v1</damnhandy.version>
       <javax.jms.version>1.1</javax.jms.version>
       <org.antlr.version>3.4</org.antlr.version>
       <org.antlr4.version>4.7.1</org.antlr4.version>
@@ -1517,39 +1527,39 @@
       <com.jayway.jsonpath.version>2.10.0.wso2v1</com.jayway.jsonpath.version>
       <qfj.version>1.5.3</qfj.version>
        <quickfixj.version>2.3.1</quickfixj.version>
-      <org.bouncycastle.version>1.81.0.wso2v1</org.bouncycastle.version>
+      <org.bouncycastle.version>1.83.0.wso2v1</org.bouncycastle.version>
       <imp.pkg.version.wso2.bouncycastle>[1.52.0,2.0.0)</imp.pkg.version.wso2.bouncycastle>
        <httpcore.version>4.4.16</httpcore.version>
       <httpcore.wso2.version>${httpcore.version}.wso2v1</httpcore.wso2.version>
        <httpcore-nio.version>4.4.16</httpcore-nio.version>
-       <httpcore-nio.wso2.version>${httpcore-nio.version}-wso2v4</httpcore-nio.wso2.version>
-       <hc.httpclient.version>4.5.13</hc.httpclient.version>
+       <httpcore-nio.wso2.version>${httpcore-nio.version}-wso2v6</httpcore-nio.wso2.version>
+       <hc.httpclient.version>4.5.14</hc.httpclient.version>
        <httpclient.wso2.version>${hc.httpclient.version}.wso2v1</httpclient.wso2.version>
-      <aspectj.version>1.8.5</aspectj.version>
+      <aspectj.version>1.9.22.1</aspectj.version>
       <spring.version>1.2.8</spring.version>
-      <commons-codec.version>1.16.0</commons-codec.version>
+      <commons-codec.version>1.21.0</commons-codec.version>
       <!-- Sets the source encoding to UTF-8 -->
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
       <!-- Synapse and related components -->
       <synapse.version>${project.version}</synapse.version>
-       <version.tomcat>9.0.82</version.tomcat>
+       <version.tomcat>11.0.18</version.tomcat>
        <orbit.version.tomcat>${version.tomcat}.wso2v1</orbit.version.tomcat>
       <commons.pool.version>1.3</commons.pool.version>
       <commons.pool.wso2.version>1.5.0.wso2v1</commons.pool.wso2.version>
-      <commons.vfs.version>2.2.0-wso2v23</commons.vfs.version>
+      <commons.vfs.version>2.2.0-wso2v28</commons.vfs.version>
       <truezip.version>6.6</truezip.version>
       <commons.net.version>3.9.0</commons.net.version>
       <commons.net.wso2.version>${commons.net.version}.wso2v1</commons.net.wso2.version>
-      <jsch.version>0.2.4</jsch.version>
-      <jsch.wso2.version>0.2.4.wso2v1</jsch.wso2.version>
+      <jsch.version>2.27.7</jsch.version>
+      <jsch.wso2.version>2.27.7.wso2v1</jsch.wso2.version>
       <oro.version>2.0.8</oro.version>
       <slf4j.version>1.5.6</slf4j.version>
       <mina.version>2.1.6</mina.version>
       <jms-1.1-spec.version>1.1</jms-1.1-spec.version>
       <!-- Axis2 and its dependencies -->
-      <axis2.version>1.6.1-wso2v117</axis2.version>
-      <axis2.transport.version>2.0.0-wso2v80</axis2.transport.version>
-      <axiom.version>1.2.11-wso2v30</axiom.version>
+      <axis2.version>1.6.1-wso2v123</axis2.version>
+      <axis2.transport.version>2.0.0-wso2v85</axis2.transport.version>
+      <axiom.version>1.2.11-wso2v36</axiom.version>
       <xml_schema.version>1.4.7</xml_schema.version>
       <xml_apis.version>1.3.04</xml_apis.version>
       <wsdl4j.version>1.6.2</wsdl4j.version>
@@ -1557,7 +1567,7 @@
       <!-- addressing, rampart, neethi -->
       <addressing.version>${axis2.version}</addressing.version>
       <woden.version>1.0M10</woden.version>
-      <rampart.version>1.6.1-wso2v41</rampart.version>
+      <rampart.version>1.7.0-wso2v9</rampart.version>
       <sandesha2.version>1.6.1-wso2v1</sandesha2.version>
        <config.mapper.version>1.0.20</config.mapper.version>
       <neethi.version>2.0.4-wso2v2</neethi.version>
@@ -1583,8 +1593,8 @@
       <net.minidev.accessors-smart.version>2.6.0</net.minidev.accessors-smart.version>
       <org.ow2.asm.asm.version>9.2</org.ow2.asm.asm.version>
       <json.smart.version>2.6.0</json.smart.version>
-       <org.wso2.json.version>3.0.0.wso2v7</org.wso2.json.version>
-      <log4j2.version>2.24.3</log4j2.version>
+       <org.wso2.json.version>3.0.0.wso2v8</org.wso2.json.version>
+      <log4j2.version>2.25.3</log4j2.version>
       <xmlunit.version>1.1</xmlunit.version>
       <derby.version>10.4.2.0</derby.version>
       <wrapper.version>3.2.3</wrapper.version>
@@ -1613,12 +1623,12 @@
       <mockito.version>5.3.1</mockito.version>
       <mockito.inline.version>5.2.0</mockito.inline.version>
       <java-json-tools.json.schema.validator.version>2.2.14.wso2v1</java-json-tools.json.schema.validator.version>
-      <fasterxml.jackson.version>2.17.2</fasterxml.jackson.version>
+      <fasterxml.jackson.version>2.18.6</fasterxml.jackson.version>
       <fasterxml.jackson-databind.version>2.17.2</fasterxml.jackson-databind.version>
-      <google.guava.version>33.0.0-jre</google.guava.version>
+      <google.guava.version>33.5.0-jre</google.guava.version>
       <failureaccess.version>1.0.3</failureaccess.version>
-      <joda-time.version>2.9.4.wso2v1</joda-time.version>
-      <com.googlecode.libphonenumber.version>9.0.22.wso2v1</com.googlecode.libphonenumber.version>
+      <joda-time.version>2.14.0.wso2v1</joda-time.version>
+      <com.googlecode.libphonenumber.version>9.0.23.wso2v1</com.googlecode.libphonenumber.version>
       <jacoco.agent.version>0.8.12</jacoco.agent.version>
       <jacoco.ant.version>0.8.12</jacoco.ant.version>
       <dataprovider.version>1.13.1</dataprovider.version>
@@ -1633,18 +1643,20 @@
        <slf4j.log4j.version>1.5.2</slf4j.log4j.version>
        <system.rules.version>1.17.0</system.rules.version>
        <io.netty.version>4.2.9.Final</io.netty.version>
-       <transport.http.netty.version>6.3.58</transport.http.netty.version>
+       <transport.http.netty.version>6.3.60</transport.http.netty.version>
        <version.org.wso2.orbit.javax.activation>1.1.1.wso2v3</version.org.wso2.orbit.javax.activation>
        <rabbitmq.version>5.20.0</rabbitmq.version>
-       <opentelemetry.all.version>1.11.0.wso2v7</opentelemetry.all.version>
+       <opentelemetry.all.version>1.57.0.wso2v3</opentelemetry.all.version>
        <okhttp.wso2.version>4.12.0.wso2v4</okhttp.wso2.version>
        <okio.wso2.version>3.16.0.wso2v1</okio.wso2.version>
-       <zipkin.sender.okhttp3.version>2.17.2.wso2v2</zipkin.sender.okhttp3.version>
+       <zipkin.sender.okhttp3.version>3.5.1.wso2v1</zipkin.sender.okhttp3.version>
        <zipkin.version>2.27.1</zipkin.version>
-       <zipkin-reporter.version>2.17.2</zipkin-reporter.version>
+       <zipkin-reporter.version>3.5.1</zipkin-reporter.version>
        <javax.annotation.verion>1.3.2</javax.annotation.verion>
+       <jakarta.mail.version>2.0.2.wso2v1</jakarta.mail.version>
+       <jakarta.activation.version>2.0.1.wso2v1</jakarta.activation.version>
        <apache.felix.scr.ds-annotations.version>1.2.4</apache.felix.scr.ds-annotations.version>
-       <com.hierynomus.smbj.version>0.11.3.wso2v2</com.hierynomus.smbj.version>
+       <com.hierynomus.smbj.version>0.14.0.wso2v2</com.hierynomus.smbj.version>
        <com.hierynomus.asn1.version>0.6.0.wso2v1</com.hierynomus.asn1.version>
        <net.engio.mbassador.version>1.3.2.wso2v2</net.engio.mbassador.version>
 
@@ -1662,7 +1674,7 @@
        <icu.version>72.1</icu.version>
        <xmlbeans.imp.pkg.version>[3.1.0,4.0.0)</xmlbeans.imp.pkg.version>
        <org.wso2.orbit.atlassian.oai.version>2.44.1.wso2v1</org.wso2.orbit.atlassian.oai.version>
-       <swagger.parser.v3.version>2.1.22.wso2v2</swagger.parser.v3.version>
+       <swagger.parser.v3.version>2.1.37.wso2v1</swagger.parser.v3.version>
        <jaxen.version>2.0.0</jaxen.version>
    </properties>
    <developers>

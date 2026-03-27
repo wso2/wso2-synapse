@@ -19,17 +19,23 @@
 package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management;
 
 import io.opentelemetry.api.OpenTelemetry;
-import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.ContextPropagators;
+import io.opentelemetry.exporter.otlp.http.metrics.OtlpHttpMetricExporter;
+import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
+import io.opentelemetry.exporter.otlp.metrics.OtlpGrpcMetricExporter;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
-import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporterBuilder;
+import io.opentelemetry.sdk.metrics.export.MetricExporter;
+import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.metrics.SdkMeterProvider;
+import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
-import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
+import java.time.Duration;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
@@ -44,6 +50,7 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
 
     private Log logger = LogFactory.getLog(OTLPTelemetryManager.class);
     private SdkTracerProvider sdkTracerProvider;
+    private SdkMeterProvider sdkMeterProvider;
     private OpenTelemetry openTelemetry;
     private TelemetryTracer tracer;
     private SpanHandler handler;
@@ -51,31 +58,111 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
     @Override
     public void init() {
 
-        String headerProperty = getHeaderKeyProperty();
-        if (headerProperty == null) {
-            throw new SynapseException("No properties found starting with opentelemetry.properties");
-        }
-        String headerKey = headerProperty.substring(TelemetryConstants.OPENTELEMETRY_PROPERTIES_PREFIX.length());
+        // Read configuration properties
+        String protocol = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_PROTOCOL,
+                TelemetryConstants.GRPC_PROTOCOL);
         String endPointURL = SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OPENTELEMETRY_URL, null);
-        String headerValue = SynapsePropertiesLoader.getPropertyValue(headerProperty, null);
-        OtlpGrpcSpanExporterBuilder otlpGrpcSpanExporterBuilder = OtlpGrpcSpanExporter.builder()
-                .setEndpoint(endPointURL)
-                .setCompression("gzip")
-                .addHeader(headerKey, headerValue);
+
+        // Determine protocol: validate protocol and select exporter
+        boolean useHttp;
+        if (TelemetryConstants.HTTP_PROTOCOL.equalsIgnoreCase(protocol)) {
+            useHttp = true;
+        } else if (TelemetryConstants.GRPC_PROTOCOL.equalsIgnoreCase(protocol)) {
+            useHttp = false;
+        } else {
+            String message = "Invalid OpenTelemetry protocol: " + protocol
+                    + ". Supported values are '" + TelemetryConstants.HTTP_PROTOCOL
+                    + "' and '" + TelemetryConstants.GRPC_PROTOCOL + "'.";
+            logger.error(message);
+            throw new SynapseException(message);
+        }
+        if (endPointURL == null || endPointURL.isBlank()) {
+            if (useHttp){
+                endPointURL = TelemetryConstants.DEFAULT_OPENTELEMETRY_URL_FOR_HTTP;
+            } else {
+                endPointURL = TelemetryConstants.DEFAULT_OPENTELEMETRY_URL_FOR_GRPC;
+            }
+            logger.warn("OpenTelemetry URL is not configured. Using default URL: " + endPointURL);
+        }
+
+        // Get header property for authentication
+        String headerProperty = getHeaderKeyProperty();
+        String headerKey = null;
+        String headerValue = null;
+        if (headerProperty == null) {
+            logger.warn("No properties found starting with opentelemetry.properties. "
+                    + "Continuing without authentication headers.");
+        } else {
+            headerKey = headerProperty.substring(TelemetryConstants.OPENTELEMETRY_PROPERTIES_PREFIX.length());
+            headerValue = SynapsePropertiesLoader.getPropertyValue(headerProperty, null);
+            if (headerValue == null) {
+                logger.warn("Header value not found for property: " + headerKey
+                        + ". Continuing without authentication headers.");
+                headerKey = null;
+            }
+        }
+
+        // Create appropriate exporter based on protocol
+        SpanExporter spanExporter;
+        MetricExporter metricExporter;
+        if (useHttp) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Configuring OTLP HTTP Exporters for endpoint: " + endPointURL);
+            }
+            var spanExporterBuilder = OtlpHttpSpanExporter.builder()
+                    .setEndpoint(endPointURL)
+                    .setCompression("gzip");
+            var metricExporterBuilder = OtlpHttpMetricExporter.builder()
+                    .setEndpoint(endPointURL);
+            if (headerKey != null && headerValue != null) {
+                spanExporterBuilder.addHeader(headerKey, headerValue);
+                metricExporterBuilder.addHeader(headerKey, headerValue);
+            }
+            spanExporter = spanExporterBuilder.build();
+            metricExporter = metricExporterBuilder.build();
+        } else {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Configuring OTLP gRPC Exporters for endpoint: " + endPointURL);
+            }
+            var spanExporterBuilder = OtlpGrpcSpanExporter.builder()
+                    .setEndpoint(endPointURL)
+                    .setCompression("gzip");
+            var metricExporterBuilder = OtlpGrpcMetricExporter.builder()
+                    .setEndpoint(endPointURL)
+                    .setCompression("gzip");
+            if (headerKey != null && headerValue != null) {
+                spanExporterBuilder.addHeader(headerKey, headerValue);
+                metricExporterBuilder.addHeader(headerKey, headerValue);
+            }
+            spanExporter = spanExporterBuilder.build();
+            metricExporter = metricExporterBuilder.build();
+        }
 
         sdkTracerProvider = SdkTracerProvider.builder()
-                .addSpanProcessor(BatchSpanProcessor.builder(otlpGrpcSpanExporterBuilder.build()).build())
+                .addSpanProcessor(BatchSpanProcessor.builder(spanExporter).build())
                 .setResource(Resource.getDefault().merge(TelemetryUtil.getTracerProviderResource(TelemetryConstants.SERVICE_NAME)))
+                .build();
+
+        int metricIntervalSeconds = getMetricIntervalSeconds();
+
+        sdkMeterProvider = SdkMeterProvider.builder()
+                .registerMetricReader(PeriodicMetricReader.builder(metricExporter)
+                        .setInterval(Duration.ofSeconds(metricIntervalSeconds))
+                        .build())
+                .setResource(Resource.getDefault()
+                        .merge(TelemetryUtil.getTracerProviderResource(TelemetryConstants.SERVICE_NAME)))
                 .build();
 
         openTelemetry = OpenTelemetrySdk.builder()
                 .setTracerProvider(sdkTracerProvider)
+                .setMeterProvider(sdkMeterProvider)
                 .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
                 .build();
 
         this.tracer = new TelemetryTracer(getTelemetryTracer());
         if (logger.isDebugEnabled()) {
-            logger.debug("Tracer: " + this.tracer + " is configured");
+            logger.debug("Tracer for instrumentation '" + TelemetryConstants.OPENTELEMETRY_INSTRUMENTATION_NAME + "' is configured with " +
+                    (useHttp ? "HTTP" : "gRPC") + " protocol");
         }
         this.handler = new SpanHandler(tracer, openTelemetry, new TracingScopeManager());
     }
@@ -87,10 +174,19 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
     }
 
     @Override
+    public Meter getTelemetryMeter() {
+        return openTelemetry.getMeter(TelemetryConstants.OPENTELEMETRY_INSTRUMENTATION_NAME);
+    }
+
+    @Override
     public void close() {
 
         if (sdkTracerProvider != null) {
             sdkTracerProvider.close();
+        }
+
+        if (sdkMeterProvider != null) {
+            sdkMeterProvider.close();
         }
     }
 
@@ -116,10 +212,36 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
         Enumeration<?> synapsePropertyKeys = SynapsePropertiesLoader.loadSynapseProperties().propertyNames();
         while (synapsePropertyKeys.hasMoreElements()) {
             String property = (String) synapsePropertyKeys.nextElement();
-            if (property.startsWith(TelemetryConstants.OPENTELEMETRY_PROPERTIES_PREFIX)) {
+            if (property.startsWith(TelemetryConstants.OPENTELEMETRY_PROPERTIES_PREFIX)
+            && !property.equals(TelemetryConstants.OTEL_RESOURCE_ATTRIBUTE_KEY)) { // Exclude resource attribute properties
                 return property;
             }
         }
         return null;
+    }
+
+
+    private int getMetricIntervalSeconds() {
+        String metricIntervalString = SynapsePropertiesLoader.getPropertyValue(
+                TelemetryConstants.OPENTELEMETRY_METRIC_PUSH_INTERVAL_SECONDS,
+                TelemetryConstants.OPENTELEMETRY_METRIC_DEFAULT_PUSH_INTERVAL_SECONDS);
+
+        int metricIntervalSeconds;
+        try {
+            metricIntervalSeconds = Integer.parseInt(metricIntervalString);
+        } catch (NumberFormatException e) {
+            String message = "Invalid OpenTelemetry metric push interval: " + metricIntervalString + ". Using default value: "
+                    + TelemetryConstants.OPENTELEMETRY_METRIC_DEFAULT_PUSH_INTERVAL_SECONDS + " seconds.";
+            logger.warn(message);
+            metricIntervalSeconds = Integer.parseInt(
+                    TelemetryConstants.OPENTELEMETRY_METRIC_DEFAULT_PUSH_INTERVAL_SECONDS);
+        }
+        if (metricIntervalSeconds <= 0) {
+            logger.warn("OpenTelemetry metric push interval must be positive. Got: " + metricIntervalSeconds
+                    + ". Using default value: " + TelemetryConstants.OPENTELEMETRY_METRIC_DEFAULT_PUSH_INTERVAL_SECONDS + " seconds.");
+            metricIntervalSeconds = Integer.parseInt(
+                    TelemetryConstants.OPENTELEMETRY_METRIC_DEFAULT_PUSH_INTERVAL_SECONDS);
+        }
+        return metricIntervalSeconds;
     }
 }

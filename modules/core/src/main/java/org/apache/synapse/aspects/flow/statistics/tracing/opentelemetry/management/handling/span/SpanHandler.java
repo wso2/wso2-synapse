@@ -29,9 +29,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SequenceType;
@@ -111,7 +113,6 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         TextMapGetter<Map<String, String>> getter =
                 new TextMapGetter<Map<String, String>>() {
                     public String get(Map<String, String> tracerSpecificCarrier, String key) {
-
                         if (tracerSpecificCarrier != null) {
                             return tracerSpecificCarrier.get(key);
                         }
@@ -214,14 +215,10 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         Span span;
         Map<String, String> tracerSpecificCarrier = new HashMap<>();
 
-        Map headersMap;
-        Object headers = ((Axis2MessageContext) synCtx).getAxis2MessageContext()
-                .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-        if (headers instanceof Map) {
-            headersMap = new ConcurrentHashMap<>((Map) headers);
-        } else {
-            // We only need to extract span context from headers when there are trp headers available
-            headersMap = new ConcurrentHashMap();
+        Map headersMap = (Map) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+            .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        if (headersMap == null) {
+            headersMap = new TreeMap<String, String>(String::compareToIgnoreCase);
         }
         Object statusCode = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty("HTTP_SC");
         Object statusDescription = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty("HTTP_DESC");
@@ -239,42 +236,41 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         inject(span, tracerSpecificCarrier);
         synCtx.setProperty(SynapseConstants.JAEGER_TRACE_ID, span.getSpanContext().getTraceId());
         synCtx.setProperty(SynapseConstants.JAEGER_SPAN_ID, span.getSpanContext().getSpanId());
+        ThreadContext.put(SynapseConstants.TRACE_ID, span.getSpanContext().getTraceId());
+        ThreadContext.put(SynapseConstants.SPAN_ID, span.getSpanContext().getSpanId());
+
         if (logger.isDebugEnabled()) {
             logger.debug("Jaeger Trace ID: " + synCtx.getProperty(SynapseConstants.JAEGER_TRACE_ID) + " Jaeger Span ID: " + synCtx.getProperty(SynapseConstants.JAEGER_SPAN_ID));
         }
 
-        // Set text map key value pairs as HTTP headers
-        // Fix possible null pointer issue which can occur when following property is used
-        // <property name="TRANSPORT_HEADERS" action="remove" scope="axis2"/>
-        if (headersMap != null) {
-            headersMap.putAll(tracerSpecificCarrier);
-            statisticDataUnit.setTransportHeaderMap(headersMap);
-            ((Axis2MessageContext) synCtx).getAxis2MessageContext()
-                    .setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, headersMap);
+        headersMap.putAll(tracerSpecificCarrier);
+        statisticDataUnit.setTransportHeaderMap(new ConcurrentHashMap<>(headersMap));
+        ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+            .setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, headersMap);
 
-            // Set custom span header tags
-            Object prevCustomSpanTagsObj = synCtx.getProperty(TelemetryConstants.OLTP_CUSTOM_SPAN_TAGS);
-            String customTagsString =
-                    SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OLTP_CUSTOM_SPAN_TAGS, null);
-            boolean isCustomSpanTagsEnabled = customTagsString != null && !customTagsString.isEmpty();
-            if (isCustomSpanTagsEnabled) {
-                if (prevCustomSpanTagsObj != null) {
-                    Map<String, Object> customTagsMap = (Map<String, Object>) prevCustomSpanTagsObj;
-                    if (!customTagsMap.isEmpty()) {
-                        statisticDataUnit.setCustomProperties(customTagsMap);
+        // Set custom span header tags
+        Object prevCustomSpanTagsObj = synCtx.getProperty(TelemetryConstants.OLTP_CUSTOM_SPAN_TAGS);
+        String customTagsString =
+            SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OLTP_CUSTOM_SPAN_TAGS,
+                null);
+        boolean isCustomSpanTagsEnabled = customTagsString != null && !customTagsString.isEmpty();
+        if (isCustomSpanTagsEnabled) {
+            if (prevCustomSpanTagsObj != null) {
+                Map<String, Object> customTagsMap = (Map<String, Object>) prevCustomSpanTagsObj;
+                if (!customTagsMap.isEmpty()) {
+                    statisticDataUnit.setCustomProperties(customTagsMap);
+                }
+            } else {
+                String[] customTags = customTagsString.split(",");
+                Map<String, Object> customTagsMap = new HashMap<>();
+                for (String tag : customTags) {
+                    if (headersMap.containsKey(tag.trim())) {
+                        customTagsMap.put(tag, headersMap.get(tag));
                     }
-                } else {
-                    String[] customTags = customTagsString.split(",");
-                    Map<String, Object> customTagsMap = new HashMap<>();
-                    for (String tag : customTags) {
-                        if (headersMap.containsKey(tag.trim())) {
-                            customTagsMap.put(tag, headersMap.get(tag));
-                        }
-                    }
-                    if (!customTagsMap.isEmpty()) {
-                        synCtx.setProperty(TelemetryConstants.OLTP_CUSTOM_SPAN_TAGS, customTagsMap);
-                        statisticDataUnit.setCustomProperties(customTagsMap);
-                    }
+                }
+                if (!customTagsMap.isEmpty()) {
+                    synCtx.setProperty(TelemetryConstants.OLTP_CUSTOM_SPAN_TAGS, customTagsMap);
+                    statisticDataUnit.setCustomProperties(customTagsMap);
                 }
             }
         }
@@ -317,14 +313,12 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         Span span;
         Map<String, String> tracerSpecificCarrier = new HashMap<>();
 
-        Map headersMap;
-        Object headers = msgCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-        if (headers instanceof Map) {
-            headersMap = new ConcurrentHashMap<>((Map) headers);
-        } else {
-            // We only need to extract span context from headers when there are trp headers available
-            headersMap = new ConcurrentHashMap();
+        Map headersMap = (Map) msgCtx.getProperty(
+            org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        if (headersMap == null) {
+            headersMap = new TreeMap<String, String>(String::compareToIgnoreCase);
         }
+
         if (isOuterLevelSpan(statisticDataUnit, spanStore)) {
             context = extract(headersMap);
         } else if (parentSpan != null) {
@@ -338,46 +332,45 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         inject(span, tracerSpecificCarrier);
         msgCtx.setProperty(SynapseConstants.JAEGER_TRACE_ID, span.getSpanContext().getTraceId());
         msgCtx.setProperty(SynapseConstants.JAEGER_SPAN_ID, span.getSpanContext().getSpanId());
+        ThreadContext.put(SynapseConstants.TRACE_ID, span.getSpanContext().getTraceId());
+        ThreadContext.put(SynapseConstants.SPAN_ID, span.getSpanContext().getSpanId());
+
         if (logger.isDebugEnabled()) {
             logger.debug(
                     "Jaeger Trace ID: " + msgCtx.getProperty(SynapseConstants.JAEGER_TRACE_ID) + " Jaeger Span ID: " +
                             msgCtx.getProperty(SynapseConstants.JAEGER_SPAN_ID));
         }
 
-        // Set text map key value pairs as HTTP headers
-        // Fix possible null pointer issue which can occur when following property is used
-        // <property name="TRANSPORT_HEADERS" action="remove" scope="axis2"/>
-        if (headersMap != null) {
-            headersMap.putAll(tracerSpecificCarrier);
-            msgCtx.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, headersMap);
+        headersMap.putAll(tracerSpecificCarrier);
+        msgCtx.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, headersMap);
 
-            Object prevCustomSpanTagsObj = msgCtx.getProperty(TelemetryConstants.OLTP_CUSTOM_SPAN_TAGS);
-            String customTagsString =
-                    SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OLTP_CUSTOM_SPAN_TAGS, null);
-            boolean isCustomSpanTagsEnabled = customTagsString != null && !customTagsString.isEmpty();
-            if (isCustomSpanTagsEnabled) {
-                if (prevCustomSpanTagsObj != null) {
-                    Map<String, Object> customTagsMap = (Map<String, Object>) prevCustomSpanTagsObj;
-                    if (!customTagsMap.isEmpty()) {
-                        statisticDataUnit.setCustomProperties(customTagsMap);
+        Object prevCustomSpanTagsObj = msgCtx.getProperty(TelemetryConstants.OLTP_CUSTOM_SPAN_TAGS);
+        String customTagsString =
+            SynapsePropertiesLoader.getPropertyValue(TelemetryConstants.OLTP_CUSTOM_SPAN_TAGS,
+                null);
+        boolean isCustomSpanTagsEnabled = customTagsString != null && !customTagsString.isEmpty();
+        if (isCustomSpanTagsEnabled) {
+            if (prevCustomSpanTagsObj != null) {
+                Map<String, Object> customTagsMap = (Map<String, Object>) prevCustomSpanTagsObj;
+                if (!customTagsMap.isEmpty()) {
+                    statisticDataUnit.setCustomProperties(customTagsMap);
+                }
+            } else {
+                String[] customTags = customTagsString.split(",");
+                Map<String, Object> customTagsMap = new HashMap<>();
+                for (String tag : customTags) {
+                    if (headersMap.containsKey(tag.trim())) {
+                        customTagsMap.put(tag, headersMap.get(tag));
                     }
-                } else {
-                    String[] customTags = customTagsString.split(",");
-                    Map<String, Object> customTagsMap = new HashMap<>();
-                    for (String tag : customTags) {
-                        if (headersMap.containsKey(tag.trim())) {
-                            customTagsMap.put(tag, headersMap.get(tag));
-                        }
-                    }
-                    if (!customTagsMap.isEmpty()) {
-                        msgCtx.setProperty(TelemetryConstants.OLTP_CUSTOM_SPAN_TAGS, customTagsMap);
-                        statisticDataUnit.setCustomProperties(customTagsMap);
-                    }
+                }
+                if (!customTagsMap.isEmpty()) {
+                    msgCtx.setProperty(TelemetryConstants.OLTP_CUSTOM_SPAN_TAGS, customTagsMap);
+                    statisticDataUnit.setCustomProperties(customTagsMap);
                 }
             }
         }
 
-        statisticDataUnit.setTransportHeaderMap(headersMap);
+        statisticDataUnit.setTransportHeaderMap(new ConcurrentHashMap<>(headersMap));
 
         String spanId = TracingUtils.extractId(statisticDataUnit);
         SpanWrapper spanWrapper = spanStore.addSpanWrapper(spanId, span, statisticDataUnit, parentSpanWrapper, msgCtx);
@@ -411,8 +404,9 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
      */
     private boolean isOuterLevelSpan(StatisticDataUnit statisticDataUnit, SpanStore spanStore) {
         return spanStore.getOuterLevelSpanWrapper() == null
-                && (statisticDataUnit.getComponentType() == ComponentType.TASK ||
-                statisticDataUnit.getComponentType() == ComponentType.PROXYSERVICE
+                && (statisticDataUnit.getComponentType() == ComponentType.TASK
+                || statisticDataUnit.getComponentType() == ComponentType.MESSAGEPROCESSOR
+                || statisticDataUnit.getComponentType() == ComponentType.PROXYSERVICE
                 || statisticDataUnit.getComponentType() == ComponentType.API
                 || statisticDataUnit.getComponentType() == ComponentType.INBOUNDENDPOINT
                 || statisticDataUnit.isOuterLayerSpan()

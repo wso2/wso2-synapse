@@ -18,7 +18,7 @@
 
 package org.apache.synapse.commons.json.jsonprocessor.utils;
 
-import org.apache.synapse.commons.json.jsonprocessor.constants.ValidatorConstants;
+import java.math.BigInteger;
 import org.apache.synapse.commons.json.jsonprocessor.exceptions.ParserException;
 
 /**
@@ -46,6 +46,18 @@ public class DataTypeConverter {
             value = JsonProcessorUtils.replaceEnclosingQuotes(value);
             try {
                 return Integer.parseInt(value.trim());
+            } catch (NumberFormatException nfe) {
+                throw new ParserException("NumberFormatException: " + nfe.getMessage(), nfe);
+            }
+        }
+        throw new ParserException("Empty value cannot convert to int");
+    }
+
+    public static BigInteger convertToBigInteger(String value) throws ParserException {
+        if (value != null && !value.isEmpty()) {
+            value = JsonProcessorUtils.replaceEnclosingQuotes(value);
+            try {
+                return new BigInteger(value.trim());
             } catch (NumberFormatException nfe) {
                 throw new ParserException("NumberFormatException: " + nfe.getMessage(), nfe);
             }

@@ -554,6 +554,9 @@ public final class SynapseConstants {
     //Streaming Json Path
     public static final String STREAMING_JSONPATH_PROCESSING = "synapse.streaming.jsonpath.enabled";
 
+    // avoid thread switch during blocking backend calls
+    public static final String SYNAPSE_AVOID_BLOCKING_THREAD_SWITCH = "synapse.blocking.call.disable.thread.switch";
+
     //Enable message building when doing failover
     public static final String BUILD_MESSAGE_ON_FAILOVER = "build.message.on.failover.enable";
 
@@ -574,6 +577,7 @@ public final class SynapseConstants {
     public static final String INBOUND_JMS_PROTOCOL = "INBOUND_JMS_PROTOCOL";
     public static final String INBOUND_ENDPOINT_NAME = "inbound.endpoint.name";
     public static final String TASK_NAME = "task.name";
+    public static final String MESSAGE_PROCESSOR_NAME = "message.processor.name";
     public static final String INBOUND_STATISTIC_ENABLE = "inbound.statistic.enable";
     public static final String ANNONYMOUS_INBOUND_ENDPOINT_NAME = "AnonymousInboundEndpoint";
     
@@ -634,6 +638,9 @@ public final class SynapseConstants {
     //Jaeger SpanID tracerID constants
     public static final String JAEGER_TRACE_ID = "jaeger_trace_id";
     public static final String JAEGER_SPAN_ID = "jaeger_span_id";
+
+    public static final String TRACE_ID = "trace_id";
+    public static final String SPAN_ID = "span_id";
 
     public static final String ANALYTICS_METADATA = "ANALYTICS_METADATA";
 

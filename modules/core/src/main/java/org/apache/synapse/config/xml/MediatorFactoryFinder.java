@@ -397,11 +397,13 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
                 && libraryName != null
                 && !libraryName.equals("")) {
             invokeMediator.setTargetTemplate(libraryName + "." + connectorElem.getLocalName());
+            invokeMediator.setOperation(connectorElem.getLocalName());
         }
 
         // load configuration based references for the given connector
         OMAttribute config_key = connectorElem.getAttribute(new QName(XMLConfigConstants.CONFIG_REF));
         if (config_key != null) {
+            invokeMediator.setConnector(true);
             // ValueFactory for creating dynamic or static Value
             ValueFactory keyFac = new ValueFactory();
             // create dynamic or static key based on OMElement

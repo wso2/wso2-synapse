@@ -28,6 +28,7 @@ import org.apache.synapse.config.xml.rest.APIFactory;
 import org.apache.synapse.config.xml.rest.APISerializer;
 import org.apache.synapse.api.API;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.apache.synapse.mediators.MediatorIdentityManager;
 
 import java.io.File;
 import java.util.Properties;
@@ -59,6 +60,10 @@ public class APIDeployer extends AbstractSynapseArtifactDeployer {
                     log.debug("Initialized the API: " + api.getName());
                 }
                 getSynapseConfiguration().addAPI(api.getName(), api);
+                
+                // Register mediators for ID assignment
+                MediatorIdentityManager.getInstance().assignMediatorIds(api);
+                
                 if (log.isDebugEnabled()) {
                     log.debug("API deployment from file : " + fileName + " : Completed");
                 }
@@ -117,6 +122,9 @@ public class APIDeployer extends AbstractSynapseArtifactDeployer {
                 getSynapseConfiguration().removeAPI(existingArtifactName);
                 log.info("API: " + existingArtifactName + " has been undeployed");
             }
+            
+            // Register mediators for ID assignment after update
+            MediatorIdentityManager.getInstance().assignMediatorIds(api);
 
             log.info("API: " + api.getName() + " has been updated from the file: " + fileName);
 

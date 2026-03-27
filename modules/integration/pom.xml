@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.synapse</groupId>
         <artifactId>Apache-Synapse</artifactId>
-        <version>4.1.0-wso2v2</version>
+        <version>4.1.0-wso2v35-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -37,7 +37,7 @@
         <connection>scm:svn:http://svn.apache.org/repos/asf/synapse/trunk/java/modules/integration</connection>
         <developerConnection>scm:svn:https://svn.apache.org/repos/asf/synapse/trunk/java/modules/integration</developerConnection>
         <url>http://svn.apache.org/viewvc/synapse/trunk/java/modules/integration</url>
-      <tag>v4.1.0-wso2v2</tag>
+      <tag>HEAD</tag>
   </scm>
 
     <build>
@@ -366,6 +366,22 @@
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.ops4j.pax.logging</groupId>
+                    <artifactId>pax-logging-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.wso2.org.ops4j.pax.logging</groupId>
+                    <artifactId>pax-logging-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.wso2.org.ops4j.pax.logging</groupId>
+                    <artifactId>pax-logging-log4j2</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.ws.commons.axiom.wso2</groupId>
+                    <artifactId>axiom</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
