@@ -282,4 +282,6 @@ public class NhttpConstants {
      */
     public static final String DEFAULT_MEDIATE_OPERATION = "_default_mediate_operation_";
 
+    public static final String SSL_PROFILE_SKIP_FAILURES = "ssl.profile.skip.failures";
+
 }
