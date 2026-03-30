@@ -267,6 +267,7 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
                     }
                 } else {
                     // No longer an MCP entry
+                    getSynapseConfiguration().removeMcpToolsForLocalEntry(existingArtifactName);
                     if (log.isDebugEnabled()) {
                         log.debug("Removed MCP tools for local entry key: " + existingArtifactName);
                     }
