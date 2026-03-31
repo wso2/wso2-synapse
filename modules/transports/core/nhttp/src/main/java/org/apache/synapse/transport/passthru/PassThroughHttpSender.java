@@ -371,7 +371,15 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 
         boolean hasNoMessageBody = HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(Constants.Configuration.
                 HTTP_METHOD)) || RelayUtils.isDeleteRequestWithoutPayload(msgContext);
-        // consume the buffer completely before sending a GET request or DELETE request without a payload
+        String requestMethod = (String) msgContext.getProperty(Constants.Configuration.HTTP_METHOD);
+        if (PassThroughConstants.HTTP_PUT.equals(requestMethod)
+                || PassThroughConstants.HTTP_POST.equals(requestMethod)
+                || PassThroughConstants.HTTP_PATCH.equals(requestMethod)) {
+            // Determine if request truly has no payload
+            hasNoMessageBody = RelayUtils.isRequestWithoutPayload(msgContext);
+        }
+
+        // consume the buffer completely before sending a request without a payload
         if (hasNoMessageBody) {
             RelayUtils.discardMessage(msgContext);
         }
@@ -398,7 +406,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     }
                     out = (OutputStream) msgContext.getProperty(PassThroughConstants.BUILDER_OUTPUT_STREAM);
                     if (out != null) {
-                        // Check HTTP method is GET or DELETE with no body
+                        // Check whether HTTP method is with no body
                         if (ignoreMessageBody(pipe, hasNoMessageBody)) {
                             return;
                         }
@@ -420,7 +428,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 }
                 out = (OutputStream) msgContext.getProperty(PassThroughConstants.BUILDER_OUTPUT_STREAM);
                 if (out != null) {
-                    // Check HTTP method is GET or DELETE with no body
+                    // Check whether HTTP method is with no body
                     if (ignoreMessageBody(pipe, hasNoMessageBody)) {
                         return;
                     }
@@ -438,7 +446,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         }
     }
 
-    // If the HTTP method is GET or DELETE with no body, we need to write down the HEADER information to the wire
+    // If the HTTP method is with no body, we need to write down the HEADER information to the wire
     // and need to ignore any entity enclosed methods available.
     private boolean ignoreMessageBody(Pipe pipe, boolean hasNoMessageBody) {
         if (hasNoMessageBody) {

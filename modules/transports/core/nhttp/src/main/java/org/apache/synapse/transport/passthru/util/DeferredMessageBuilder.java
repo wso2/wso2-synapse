@@ -91,14 +91,17 @@ public class DeferredMessageBuilder {
             XMLStreamException, IOException {
 
 		/**
-		 * HTTP Delete requests may contain entity body or not. Hence if the request is a HTTP DELETE, we have to verify
-		 * that the payload stream is empty or not.
+		 * HTTP Delete, PUT, POST, PATCH requests may contain entity body or not. Hence if the request is a HTTP DELETE,
+         * PUT, POST or PATCH we have to verify that the payload stream is empty or not.
 		 */
-		if (HTTPConstants.HEADER_DELETE.equals(msgCtx.getProperty(Constants.Configuration.HTTP_METHOD)) &&
-				RelayUtils.isEmptyPayloadStream(in)) {
-			msgCtx.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
-			return TransportUtils.createSOAPEnvelope(null);
-		}
+        if ((HTTPConstants.HEADER_DELETE.equals(msgCtx.getProperty(Constants.Configuration.HTTP_METHOD)) ||
+                PassThroughConstants.HTTP_PUT.equals(msgCtx.getProperty(Constants.Configuration.HTTP_METHOD)) ||
+                PassThroughConstants.HTTP_POST.equals(msgCtx.getProperty(Constants.Configuration.HTTP_METHOD)) ||
+                PassThroughConstants.HTTP_PATCH.equals(msgCtx.getProperty(Constants.Configuration.HTTP_METHOD)))
+                && RelayUtils.isEmptyPayloadStream(in)) {
+            msgCtx.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
+            return TransportUtils.createSOAPEnvelope(null);
+        }
     	
 		String contentType = (String) msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE);
 		String _contentType = getContentType(contentType, msgCtx);

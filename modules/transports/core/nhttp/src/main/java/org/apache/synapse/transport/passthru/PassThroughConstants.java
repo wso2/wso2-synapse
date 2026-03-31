@@ -241,6 +241,7 @@ public class PassThroughConstants {
     public static final String HTTP_POST = "POST";
     public static final String HTTP_DELETE = "DELETE";
     public static final String HTTP_PUT = "PUT";
+    public static final String HTTP_PATCH = "PATCH";
     public static final String HTTP_OPTIONS = "OPTIONS";
     public static final String HTTP_CONNECT = "CONNECT";
     public static final String HTTP_METHOD = "HTTP_METHOD";

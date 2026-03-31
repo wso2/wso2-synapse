@@ -277,6 +277,19 @@ public class RelayUtils {
     }
 
     /**
+     * Function to check whether the processing request (enclosed within MessageContext) is a request without
+     * entity body since we allow to have payload for PUT,POST or PATCH requests
+     *
+     * @param msgContext MessageContext
+     * @return whether the request is a PUT, POST or PATCH without payload
+     */
+    public static boolean isRequestWithoutPayload(MessageContext msgContext) {
+        // True if message builder ran and NO_ENTITY_BODY was set
+        return Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))
+                && Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.NO_ENTITY_BODY));
+    }
+
+    /**
      * Check whether the we should overwrite the content type for the outgoing request.
      * @param msgContext MessageContext
      * @return whether to overwrite the content type for the outgoing request
