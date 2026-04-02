@@ -281,9 +281,16 @@ public class RelayUtils {
      * entity body since we allow to have payload for PUT,POST or PATCH requests
      *
      * @param msgContext MessageContext
-     * @return whether the request is a PUT, POST or PATCH without payload
+     * @return whether the request is a POST, PUT,  or PATCH without payload
      */
     public static boolean isRequestWithoutPayload(MessageContext msgContext) {
+        String method = (String) msgContext.getProperty(Constants.Configuration.HTTP_METHOD);
+        if (!PassThroughConstants.HTTP_POST.equals(method)
+                && !PassThroughConstants.HTTP_PUT.equals(method)
+                && !PassThroughConstants.HTTP_PATCH.equals(method)) {
+            //Not a HTTP POST, PUT or PATCH request
+            return false;
+        }
         // True if message builder ran and NO_ENTITY_BODY was set
         return Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))
                 && Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.NO_ENTITY_BODY));

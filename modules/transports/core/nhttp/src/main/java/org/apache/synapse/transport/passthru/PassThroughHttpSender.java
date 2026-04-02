@@ -370,14 +370,8 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
     private void sendRequestContent(final MessageContext msgContext, final EndpointReference epr) throws AxisFault {
 
         boolean hasNoMessageBody = HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(Constants.Configuration.
-                HTTP_METHOD)) || RelayUtils.isDeleteRequestWithoutPayload(msgContext);
-        String requestMethod = (String) msgContext.getProperty(Constants.Configuration.HTTP_METHOD);
-        if (PassThroughConstants.HTTP_PUT.equals(requestMethod)
-                || PassThroughConstants.HTTP_POST.equals(requestMethod)
-                || PassThroughConstants.HTTP_PATCH.equals(requestMethod)) {
-            // Determine if request truly has no payload
-            hasNoMessageBody = RelayUtils.isRequestWithoutPayload(msgContext);
-        }
+                HTTP_METHOD)) || RelayUtils.isDeleteRequestWithoutPayload(msgContext) ||
+                RelayUtils.isRequestWithoutPayload(msgContext);
 
         // consume the buffer completely before sending a request without a payload
         if (hasNoMessageBody) {
