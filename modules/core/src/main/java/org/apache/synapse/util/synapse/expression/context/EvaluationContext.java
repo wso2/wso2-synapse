@@ -188,6 +188,29 @@ public class EvaluationContext {
         }
     }
 
+    /**
+     * Evaluates a XPath expression directly against a standalone OMElement.
+     * Used for accessing XML payloads stored inside connector response variables.
+     *
+     * @param expression    XPath expression
+     * @param element       the OMElement to evaluate against
+     * @param isObjectValue if true returns the node list, otherwise the string value
+     * @return evaluated result
+     * @throws JaxenException if an error occurs while evaluating the expression
+     */
+    public Object evaluateXpathExpressionOnVariable(String expression, OMElement element,
+                                                    boolean isObjectValue) throws JaxenException {
+        SynapseXPath xpath = new SynapseXPath(expression);
+        for (Map.Entry<String, String> entry : namespaceMap.entrySet()) {
+            xpath.addNamespace(entry.getKey(), entry.getValue());
+        }
+        if (isObjectValue) {
+            return xpath.selectNodes(element);
+        } else {
+            return xpath.stringValueOf(element);
+        }
+    }
+
     public String fetchSecretValue(String alias) throws JaxenException {
         SynapseXPath xpath = new SynapseXPath(ExpressionConstants.VAULT_LOOKUP + alias + "')");
         return xpath.stringValueOf(synCtx);
