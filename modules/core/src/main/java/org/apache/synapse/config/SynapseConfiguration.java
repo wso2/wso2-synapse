@@ -2526,6 +2526,8 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
 
     public Map<String, Map<String, Object>> getMcpToolsMap() {
-        return Collections.unmodifiableMap(mcpToolsMap);
+        synchronized (mcpToolsMap) {
+            return Collections.unmodifiableMap(new LinkedHashMap<>(mcpToolsMap));
+        }
     }
 }
