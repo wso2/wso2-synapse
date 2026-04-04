@@ -2503,13 +2503,15 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     }
 
 
-    public void addMcpTool(String compositeKey, Map<String, Object> toolConfig) {
-        if (compositeKey != null && toolConfig != null) {
-            mcpToolsMap.put(compositeKey, toolConfig);
-            log.info("MCP tool added: " + compositeKey + ". Total in map: " + mcpToolsMap.size());
-            mcpToolsMap.keySet().forEach(key -> 
-                log.info("  Present: " + key)
-            );
+    public void replaceMcpToolsForLocalEntry(String localEntryKey,
+            Map<String, Map<String, Object>> newTools) {
+        synchronized (mcpToolsMap) {
+            if (localEntryKey != null) {
+                mcpToolsMap.keySet().removeIf(k -> k.startsWith(localEntryKey + ":"));
+            }
+            if (newTools != null && !newTools.isEmpty()) {
+                mcpToolsMap.putAll(newTools);
+            }
         }
     }
 
@@ -2517,29 +2519,13 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         if (localEntryKey == null) {
             return;
         }
-        
-        // Collect matching keys first, then remove to avoid mutating the map mid-stream
-        List<String> keysToRemove = mcpToolsMap.keySet().stream()
-            .filter(key -> key.startsWith(localEntryKey + ":"))
-            .collect(java.util.stream.Collectors.toList());
-        keysToRemove.forEach(mcpToolsMap::remove);
-        int removedCount = keysToRemove.size();
-        
-        if (removedCount > 0) {
-            log.info("Removed " + removedCount + " MCP tools for entry: " + localEntryKey + 
-                      ". Total remaining: " + mcpToolsMap.size());
-            if (!mcpToolsMap.isEmpty()) {
-                mcpToolsMap.keySet().forEach(key -> 
-                    log.info("  Remaining: " + key)
-                );
-            }
+        synchronized (mcpToolsMap) {
+            mcpToolsMap.keySet().removeIf(key -> key.startsWith(localEntryKey + ":"));
         }
     }
 
 
     public Map<String, Map<String, Object>> getMcpToolsMap() {
-        return mcpToolsMap;
+        return Collections.unmodifiableMap(mcpToolsMap);
     }
-
-
 }
