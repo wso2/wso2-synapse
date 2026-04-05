@@ -34,6 +34,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.api.API;
 import org.apache.synapse.api.ApiConstants;
+import org.apache.synapse.api.Resource;
 import org.apache.synapse.api.inbound.InboundApiUtils;
 import org.apache.synapse.aspects.flow.statistics.store.CompletedStructureStore;
 import org.apache.synapse.carbonext.TenantInfoConfigProvider;
@@ -249,6 +250,11 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      */
     private Map<String, Object> decryptedCacheMap = new ConcurrentHashMap<String, Object>();
     
+    /**
+     * Map to hold MCP tools definitions indexed by composite key (localEntryKey:toolName)
+     */
+    private Map<String, Map<String, Object>> mcpToolsMap = new ConcurrentHashMap<>();
+
     private boolean allowHotUpdate = true;
 
     /**
@@ -2496,4 +2502,32 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         apiTableWithBindsTo = duplicateInboundApiMappings;
     }
 
+
+    public void replaceMcpToolsForLocalEntry(String localEntryKey,
+            Map<String, Map<String, Object>> newTools) {
+        synchronized (mcpToolsMap) {
+            if (localEntryKey != null) {
+                mcpToolsMap.keySet().removeIf(k -> k.startsWith(localEntryKey + ":"));
+            }
+            if (newTools != null && !newTools.isEmpty()) {
+                mcpToolsMap.putAll(newTools);
+            }
+        }
+    }
+
+    public void removeMcpToolsForLocalEntry(String localEntryKey) {
+        if (localEntryKey == null) {
+            return;
+        }
+        synchronized (mcpToolsMap) {
+            mcpToolsMap.keySet().removeIf(key -> key.startsWith(localEntryKey + ":"));
+        }
+    }
+
+
+    public Map<String, Map<String, Object>> getMcpToolsMap() {
+        synchronized (mcpToolsMap) {
+            return Collections.unmodifiableMap(new LinkedHashMap<>(mcpToolsMap));
+        }
+    }
 }

@@ -48,6 +48,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.xml.namespace.QName;
@@ -64,6 +65,7 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
     private static final String CONVERTED_RESOURCES_IDENTIFIER = "gov:mi-resources" + File.separator;
     private static final String HTTP_CONNECTION_IDENTIFIER = "http.init";
     private static final String CERTIFICATE_EXTENSION = ".crt";
+    private static final String MCP_TOOLS_IDENTIFIER = "mcptools";
 
     @Override
     public String deploySynapseArtifact(OMElement artifactConfig, String fileName,
@@ -91,6 +93,15 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
                 }
                 log.info("LocalEntry named '" + e.getKey()
                         + "' has been deployed from file : " + fileName);
+
+                OMElement mcpToolsElement = findMcpToolsElement(artifactConfig);
+                if (mcpToolsElement != null) {
+                    registerMcpTools(null, e.getKey(), mcpToolsElement);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Registered MCP tools for local entry key: " + e.getKey());
+                    }
+                }
+                
                 handleSSLSenderCertificates(artifactConfig);
                 deployEndpointsForHTTPConnection(artifactConfig, fileName, properties);
                 return e.getKey();
@@ -243,13 +254,45 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
                 log.debug("Local entry: " + e.getKey() + " has been built from the file: " + fileName);
             }
 
+            OMElement mcpToolsElement = findMcpToolsElement(artifactConfig);
+
             if (existingArtifactName.equals(e.getKey())) {
+                // Parse MCP tools before mutating entry state so a parse failure leaves everything intact
+                Map<String, Map<String, Object>> pendingTools =
+                        mcpToolsElement != null ? parseMcpTools(existingArtifactName, mcpToolsElement) : null;
+
                 getSynapseConfiguration().updateEntry(existingArtifactName, e);
+
+                if (pendingTools != null) {
+                    getSynapseConfiguration().replaceMcpToolsForLocalEntry(existingArtifactName, pendingTools);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Updated MCP tools for local entry key: " + existingArtifactName);
+                    }
+                } else {
+                    // No longer an MCP entry
+                    getSynapseConfiguration().removeMcpToolsForLocalEntry(existingArtifactName);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Removed MCP tools for local entry key: " + existingArtifactName);
+                    }
+                }
             } else {
                 // The user has changed the name of the entry
-                // We should add the updated entry as a new entry and remove the old one
+                // Parse MCP tools before mutating entry state so a parse failure leaves everything intact
+                Map<String, Map<String, Object>> pendingTools =
+                        mcpToolsElement != null ? parseMcpTools(e.getKey(), mcpToolsElement) : null;
+
                 getSynapseConfiguration().addEntry(e.getKey(), e);
                 getSynapseConfiguration().removeEntry(existingArtifactName);
+
+                if (pendingTools != null) {
+                    getSynapseConfiguration().replaceMcpToolsForLocalEntry(existingArtifactName, pendingTools);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Migrated MCP tools from " + existingArtifactName + " to " + e.getKey());
+                    }
+                } else {
+                    getSynapseConfiguration().removeMcpToolsForLocalEntry(existingArtifactName);
+                }
+
                 log.info("Local entry: " + existingArtifactName + " has been undeployed");
             }
 
@@ -276,6 +319,12 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
             Entry e = getSynapseConfiguration().getDefinedEntries().get(artifactName);
             if (e != null && e.getType() != Entry.REMOTE_ENTRY) {
                 getSynapseConfiguration().removeEntry(artifactName);
+
+                getSynapseConfiguration().removeMcpToolsForLocalEntry(artifactName);
+                if (log.isDebugEnabled()) {
+                    log.debug("Removed MCP tools for local entry: " + artifactName);
+                }
+
                 if (log.isDebugEnabled()) {
                     log.debug("LocalEntry Undeployment of the entry named : "
                             + artifactName + " : Completed");
@@ -316,6 +365,84 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
         } catch (Exception e) {
             handleSynapseArtifactDeploymentError(
                     "Restoring of the LocalEntry named '" + artifactName + "' has failed", e);
+        }
+    }
+
+    private OMElement findMcpToolsElement(OMElement artifactConfig) {
+        return artifactConfig.getFirstChildWithName(
+                new QName(SynapseConstants.SYNAPSE_NAMESPACE, MCP_TOOLS_IDENTIFIER));
+    }
+
+    private Map<String, Map<String, Object>> parseMcpTools(String localEntryKey, OMElement mcpToolsElement)
+            throws DeploymentException {
+        Map<String, Map<String, Object>> pendingTools = new java.util.LinkedHashMap<>();
+        java.util.Set<String> seenNames = new java.util.HashSet<>();
+        Iterator<?> tools = mcpToolsElement.getChildElements();
+        while (tools.hasNext()) {
+            OMElement toolElement = (OMElement) tools.next();
+
+            String rawToolName = toolElement.getAttributeValue(new QName("name"));
+            if (rawToolName == null || rawToolName.trim().isEmpty()) {
+                throw new DeploymentException(
+                        "Invalid MCP tool: missing or blank name in local entry: " + localEntryKey);
+            }
+            String toolName = rawToolName.trim();
+            if (!seenNames.add(toolName)) {
+                throw new DeploymentException(
+                        "Duplicate MCP tool name '" + toolName + "' in local entry: " + localEntryKey);
+            }
+
+            Map<String, Object> toolConfig = new java.util.HashMap<>();
+
+            OMElement apiElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "api"));
+            OMElement resourceElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "resource"));
+            OMElement methodElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "method"));
+            OMElement descriptionElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "description"));
+            OMElement inputSchemaElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "inputSchema"));
+
+            if (apiElement != null) {
+                toolConfig.put("api", apiElement.getText());
+            }
+            if (resourceElement != null) {
+                toolConfig.put("resource", resourceElement.getText());
+            }
+            if (methodElement != null) {
+                toolConfig.put("method", methodElement.getText());
+            }
+            if (descriptionElement != null) {
+                toolConfig.put("description", descriptionElement.getText());
+            }
+            if (inputSchemaElement != null) {
+                toolConfig.put("inputSchema", inputSchemaElement.getText());
+            }
+
+            pendingTools.put(localEntryKey + ":" + toolName, toolConfig);
+        }
+        return pendingTools;
+    }
+
+    private void registerMcpTools(String keyToRemove, String localEntryKey, OMElement mcpToolsElement) {
+        if (localEntryKey == null || mcpToolsElement == null) {
+            return;
+        }
+
+        Map<String, Map<String, Object>> pendingTools;
+        try {
+            pendingTools = parseMcpTools(localEntryKey, mcpToolsElement);
+        } catch (Exception e) {
+            log.error("Error while parsing MCP tools for local entry: " + localEntryKey
+                    + ". Previous tool registrations are preserved.", e);
+            return;
+        }
+
+        try {
+            getSynapseConfiguration().replaceMcpToolsForLocalEntry(keyToRemove, pendingTools);
+        } catch (Exception e) {
+            log.error("Error while registering MCP tools for local entry: " + localEntryKey, e);
+            return;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Registered " + pendingTools.size() + " MCP tools for local entry: " + localEntryKey);
         }
     }
 }
