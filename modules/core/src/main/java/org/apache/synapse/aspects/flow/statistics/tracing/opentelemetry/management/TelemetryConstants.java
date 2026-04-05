@@ -71,9 +71,13 @@ public class TelemetryConstants {
             ".opentelemetry.management.OTLPTelemetryManager";
     public static final String DEFAULT_OPENTELEMETRY_URL_FOR_HTTP = "http://localhost:4318";
     public static final String DEFAULT_OPENTELEMETRY_URL_FOR_GRPC = "http://localhost:4317";
+    public static final String OPENTELEMETRY_SERVICE_NAME = "opentelemetry.service.name";
     public static final String USER_DEFINED_NAME = System.getenv("SERVICE_NAME");
-    public static final String SERVICE_NAME =
+    public static final String DEFAULT_SERVICE_NAME =
             USER_DEFINED_NAME != null && !USER_DEFINED_NAME.isEmpty() ? USER_DEFINED_NAME : "WSO2-SYNAPSE";
+    /** @deprecated Use {@link #DEFAULT_SERVICE_NAME} instead */
+    @Deprecated
+    public static final String SERVICE_NAME = DEFAULT_SERVICE_NAME;
     public static final String OPENTELEMETRY_INSTRUMENTATION_NAME = "org.wso2.synapse.tracing.telemetry";
     public static final String DEFAULT_ZIPKIN_HOST = "localhost";
     public static final String DEFAULT_ZIPKIN_PORT = "9411";

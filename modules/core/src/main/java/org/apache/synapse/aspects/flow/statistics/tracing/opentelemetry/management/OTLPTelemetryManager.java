@@ -138,9 +138,12 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
             metricExporter = metricExporterBuilder.build();
         }
 
+        String serviceName = SynapsePropertiesLoader.getPropertyValue(
+                TelemetryConstants.OPENTELEMETRY_SERVICE_NAME, TelemetryConstants.DEFAULT_SERVICE_NAME);
+
         sdkTracerProvider = SdkTracerProvider.builder()
                 .addSpanProcessor(BatchSpanProcessor.builder(spanExporter).build())
-                .setResource(Resource.getDefault().merge(TelemetryUtil.getTracerProviderResource(TelemetryConstants.SERVICE_NAME)))
+                .setResource(Resource.getDefault().merge(TelemetryUtil.getTracerProviderResource(serviceName)))
                 .build();
 
         int metricIntervalSeconds = getMetricIntervalSeconds();
@@ -150,7 +153,7 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
                         .setInterval(Duration.ofSeconds(metricIntervalSeconds))
                         .build())
                 .setResource(Resource.getDefault()
-                        .merge(TelemetryUtil.getTracerProviderResource(TelemetryConstants.SERVICE_NAME)))
+                        .merge(TelemetryUtil.getTracerProviderResource(serviceName)))
                 .build();
 
         openTelemetry = OpenTelemetrySdk.builder()
