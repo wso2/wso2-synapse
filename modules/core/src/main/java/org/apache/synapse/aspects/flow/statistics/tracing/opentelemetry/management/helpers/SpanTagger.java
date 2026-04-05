@@ -176,6 +176,43 @@ public class SpanTagger {
             }
         }
 
+        if (OpenTelemetryManagerHolder.isCollectingProperties()) {
+            if (openEventStatisticDataUnit.getContextPropertyMap() != null) {
+                span.setAttribute(TelemetryConstants.BEFORE_CONTEXT_PROPERTY_MAP_ATTRIBUTE_KEY,
+                        openEventStatisticDataUnit.getContextPropertyMap().toString());
+            }
+            if (closeEventStatisticDataUnit != null) {
+                if (closeEventStatisticDataUnit.getContextPropertyMap() != null) {
+                    span.setAttribute(TelemetryConstants.AFTER_CONTEXT_PROPERTY_MAP_ATTRIBUTE_KEY,
+                            closeEventStatisticDataUnit.getContextPropertyMap().toString());
+                }
+            } else if (openEventStatisticDataUnit.getContextPropertyMap() != null) {
+                span.setAttribute(TelemetryConstants.AFTER_CONTEXT_PROPERTY_MAP_ATTRIBUTE_KEY,
+                        openEventStatisticDataUnit.getContextPropertyMap().toString());
+            }
+            if (closeEventStatisticDataUnit != null &&
+                    closeEventStatisticDataUnit.getPropertyValue() != null) {
+                span.setAttribute(TelemetryConstants.PROPERTY_MEDIATOR_VALUE_ATTRIBUTE_KEY,
+                        closeEventStatisticDataUnit.getPropertyValue());
+            }
+        }
+
+        if (OpenTelemetryManagerHolder.isCollectingVariables()) {
+            if (openEventStatisticDataUnit.getContextVariableMap() != null) {
+                span.setAttribute(TelemetryConstants.BEFORE_CONTEXT_VARIABLE_MAP_ATTRIBUTE_KEY,
+                        openEventStatisticDataUnit.getContextVariableMap().toString());
+            }
+            if (closeEventStatisticDataUnit != null) {
+                if (closeEventStatisticDataUnit.getContextVariableMap() != null) {
+                    span.setAttribute(TelemetryConstants.AFTER_CONTEXT_VARIABLE_MAP_ATTRIBUTE_KEY,
+                            closeEventStatisticDataUnit.getContextVariableMap().toString());
+                }
+            } else if (openEventStatisticDataUnit.getContextVariableMap() != null) {
+                span.setAttribute(TelemetryConstants.AFTER_CONTEXT_VARIABLE_MAP_ATTRIBUTE_KEY,
+                        openEventStatisticDataUnit.getContextVariableMap().toString());
+            }
+        }
+
         if (openEventStatisticDataUnit.getComponentName() != null) {
             span.setAttribute(TelemetryConstants.COMPONENT_NAME_ATTRIBUTE_KEY,
                     openEventStatisticDataUnit.getComponentName());
