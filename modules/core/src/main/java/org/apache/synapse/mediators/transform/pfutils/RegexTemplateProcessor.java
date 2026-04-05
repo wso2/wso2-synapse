@@ -117,14 +117,16 @@ public class RegexTemplateProcessor extends TemplateProcessor {
                     } else {
                         replacementValue = expressionResult.toString();
                         if (XML_TYPE.equals(mediaType)) {
-                            replacementValue = StringEscapeUtils.escapeXml10(replacementValue);
+                            replacementValue = Matcher.quoteReplacement(StringEscapeUtils.escapeXml10(replacementValue));
                         } else if (JSON_TYPE.equals(mediaType)) {
                             if (isXML(replacementValue)) {
                                 // consider the replacement value as a literal XML
                                 replacementValue = escapeSpecialChars(Matcher.quoteReplacement(replacementValue));
                             } else {
-                                replacementValue = escapeSpecialCharactersOfJson(replacementValue);
+                                replacementValue = escapeSpecialChars(Matcher.quoteReplacement(replacementValue));
                             }
+                        } else {
+                            replacementValue = Matcher.quoteReplacement(replacementValue);
                         }
                     }
                     matcher.appendReplacement(result, "\"" + replacementValue + "\"");

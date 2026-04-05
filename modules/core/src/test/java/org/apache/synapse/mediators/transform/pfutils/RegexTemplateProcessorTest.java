@@ -19,6 +19,8 @@
 package org.apache.synapse.mediators.transform.pfutils;
 
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.GsonJsonProvider;
@@ -166,7 +168,7 @@ public class RegexTemplateProcessorTest extends TestCase {
                                             "    \"is_active\": false,\n" +
                                             "    \"address\": \"1234 Elm Street\",\n" +
                                             "    \"escapedAddress\": \"1234 Elm Street\",\n" +
-                                            "    \"special_characters\": \"Special characters: &*()_+|~=`{}[]:\"<>?/'\"\n" +
+                                            "    \"special_characters\": \"Special characters: &*()_+|~=`{}[]:\\\"<>?/'\"\n" +
                                             "}\n"
                             },
                             // Test Case 7: XML to XML
@@ -241,6 +243,138 @@ public class RegexTemplateProcessorTest extends TestCase {
             TemplateProcessor templateProcessor = new RegexTemplateProcessor();
             String result = templateProcessor.processTemplate(template, mediaType, messageContext);
             Assert.assertEquals(expectedOutput, result);
+        }
+    }
+
+    /**
+     * Unit tests for issue #4623: PayloadFactory default template throws IllegalArgumentException
+     * when a variable value contains $ followed by a digit (e.g. stack traces like
+     * NativeWorkerPool$1.run or ThreadPoolExecutor$Worker).
+     */
+    public static class DollarSignInVariableValues {
+
+        @Before
+        public void setUpJsonPath() {
+            Configuration.setDefaults(new Configuration.Defaults() {
+                private final JsonProvider jsonProvider = new GsonJsonProvider(new GsonBuilder().serializeNulls().create());
+                private final MappingProvider mappingProvider = new GsonMappingProvider();
+
+                public JsonProvider jsonProvider() {
+                    return jsonProvider;
+                }
+
+                public MappingProvider mappingProvider() {
+                    return mappingProvider;
+                }
+
+                public Set<Option> options() {
+                    return EnumSet.noneOf(Option.class);
+                }
+            });
+        }
+
+        /** Exact bug scenario: $1 in a quoted "${vars.X}" expression causes IllegalArgumentException. */
+        @Test
+        public void testQuotedExpressionWithDollarDigit() throws Exception {
+            MessageContext synCtx = TestUtils.getTestContextJson("{}", null);
+            synCtx.setVariable("ERR_EXCEPTION", "NativeWorkerPool$1.run(NativeWorkerPool.java:206)");
+
+            RegexTemplateProcessor processor = new RegexTemplateProcessor();
+            String result = processor.processTemplate("{\"exception\": \"${vars.ERR_EXCEPTION}\"}", "json", synCtx);
+
+            JsonElement actual = JsonParser.parseString(result);
+            JsonElement expected = JsonParser.parseString(
+                    "{\"exception\": \"NativeWorkerPool$1.run(NativeWorkerPool.java:206)\"}");
+            Assert.assertEquals(expected, actual);
+        }
+
+        /** Multiple $n patterns in the same variable value. */
+        @Test
+        public void testMultipleDollarDigitsInVariable() throws Exception {
+            MessageContext synCtx = TestUtils.getTestContextJson("{}", null);
+            synCtx.setVariable("TRACE", "Foo$1$2.run(Foo.java:10)");
+
+            RegexTemplateProcessor processor = new RegexTemplateProcessor();
+            String result = processor.processTemplate("{\"trace\": \"${vars.TRACE}\"}", "json", synCtx);
+
+            JsonElement actual = JsonParser.parseString(result);
+            JsonElement expected = JsonParser.parseString("{\"trace\": \"Foo$1$2.run(Foo.java:10)\"}");
+            Assert.assertEquals(expected, actual);
+        }
+
+        /** $ not followed by a digit — should not throw and should preserve value. */
+        @Test
+        public void testDollarNotFollowedByDigit() throws Exception {
+            MessageContext synCtx = TestUtils.getTestContextJson("{}", null);
+            synCtx.setVariable("DETAIL", "ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)");
+
+            RegexTemplateProcessor processor = new RegexTemplateProcessor();
+            String result = processor.processTemplate("{\"detail\": \"${vars.DETAIL}\"}", "json", synCtx);
+
+            JsonElement actual = JsonParser.parseString(result);
+            JsonElement expected = JsonParser.parseString(
+                    "{\"detail\": \"ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)\"}");
+            Assert.assertEquals(expected, actual);
+        }
+
+        /** Double dollar $$ in variable value. */
+        @Test
+        public void testDoubleDollarSign() throws Exception {
+            MessageContext synCtx = TestUtils.getTestContextJson("{}", null);
+            synCtx.setVariable("PRICE", "USD$$100");
+
+            RegexTemplateProcessor processor = new RegexTemplateProcessor();
+            String result = processor.processTemplate("{\"price\": \"${vars.PRICE}\"}", "json", synCtx);
+
+            JsonElement actual = JsonParser.parseString(result);
+            JsonElement expected = JsonParser.parseString("{\"price\": \"USD$$100\"}");
+            Assert.assertEquals(expected, actual);
+        }
+
+        /** Multiple variables all containing $n patterns — the full issue scenario. */
+        @Test
+        public void testFullStackTraceScenario() throws Exception {
+            MessageContext synCtx = TestUtils.getTestContextJson("{}", null);
+            synCtx.setVariable("ERR_CLASS", "java.util.concurrent.ThreadPoolExecutor");
+            synCtx.setVariable("ERR_CODE", "500");
+            synCtx.setVariable("ERR_MESSAGE", "Internal Server Error");
+            synCtx.setVariable("ERR_DETAIL", "ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)");
+            synCtx.setVariable("ERR_EXCEPTION", "NativeWorkerPool$1.run(NativeWorkerPool.java:206)");
+
+            RegexTemplateProcessor processor = new RegexTemplateProcessor();
+            String template = "{" +
+                    "\"errorClass\": \"${vars.ERR_CLASS}\"," +
+                    "\"errorCode\": \"${vars.ERR_CODE}\"," +
+                    "\"message\": \"${vars.ERR_MESSAGE}\"," +
+                    "\"detail\": \"${vars.ERR_DETAIL}\"," +
+                    "\"exception\": \"${vars.ERR_EXCEPTION}\"" +
+                    "}";
+            String result = processor.processTemplate(template, "json", synCtx);
+
+            JsonElement actual = JsonParser.parseString(result);
+            JsonElement expected = JsonParser.parseString(
+                    "{\"errorClass\":\"java.util.concurrent.ThreadPoolExecutor\"," +
+                    "\"errorCode\":\"500\"," +
+                    "\"message\":\"Internal Server Error\"," +
+                    "\"detail\":\"ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)\"," +
+                    "\"exception\":\"NativeWorkerPool$1.run(NativeWorkerPool.java:206)\"}");
+            Assert.assertEquals(expected, actual);
+        }
+
+        /** $n combined in both template literal text and in variable value. */
+        @Test
+        public void testDollarDigitInVariableAlongsideTemplateExpressions() throws Exception {
+            MessageContext synCtx = TestUtils.getTestContextJson("{\"status\": 200}", null);
+            synCtx.setVariable("TRACE", "Worker$1.run(Worker.java:5)");
+
+            RegexTemplateProcessor processor = new RegexTemplateProcessor();
+            String result = processor.processTemplate(
+                    "{\"status\": ${payload.status}, \"trace\": \"${vars.TRACE}\"}", "json", synCtx);
+
+            JsonElement actual = JsonParser.parseString(result);
+            JsonElement expected = JsonParser.parseString(
+                    "{\"status\": 200, \"trace\": \"Worker$1.run(Worker.java:5)\"}");
+            Assert.assertEquals(expected, actual);
         }
     }
 }
