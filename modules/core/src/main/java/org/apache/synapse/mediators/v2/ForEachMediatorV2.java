@@ -541,6 +541,13 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
                 JsonElement jsonPayloadElement;
                 if (isWholeContent(jsonPath)) {
                     jsonPayloadElement = jsonArray;
+                } else if (isCollectionReferencedByVariable(this.collectionExpression)) {
+                    // The collection is a sub-path within a variable; parse the variable content,
+                    // not the message payload, to avoid PathNotFoundException
+                    String varName = getVariableName(this.collectionExpression);
+                    Object variableValue = originalMessageContext.getVariable(varName);
+                    DocumentContext parsedVariable = JsonPath.parse(variableValue.toString());
+                    jsonPayloadElement = parsedVariable.set(jsonPath, jsonArray).json();
                 } else {
                     jsonPayloadElement = parsedJsonPayload.set(jsonPath, jsonArray).json();
                 }

@@ -82,7 +82,8 @@ public abstract class FaultHandler {
         if (e != null && synCtx.getProperty(SynapseConstants.ERROR_CODE) == null) {
             synCtx.setProperty(SynapseConstants.ERROR_CODE, SynapseConstants.DEFAULT_ERROR);
             // use only the first line as the message for multiline exception messages (Axis2 has these)
-            synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, e.getMessage().split("\n")[0]);
+            synCtx.setProperty(SynapseConstants.ERROR_MESSAGE,
+                    e.getMessage() != null ? e.getMessage().split("\n")[0] : "");
             synCtx.setProperty(SynapseConstants.ERROR_DETAIL, getStackTrace(e));
             synCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, e);
         }
