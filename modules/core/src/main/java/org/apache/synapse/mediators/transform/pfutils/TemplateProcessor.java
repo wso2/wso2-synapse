@@ -441,6 +441,7 @@ public abstract class TemplateProcessor {
         return jsonString.replaceAll(ESCAPE_DOUBLE_QUOTE_WITH_FIVE_BACK_SLASHES,
                 ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES)
                 .replaceAll(ESCAPE_DOLLAR_WITH_TEN_BACK_SLASHES, ESCAPE_DOLLAR_WITH_SIX_BACK_SLASHES)
+                .replaceAll("(?<!\\\\)\\$", ESCAPE_DOLLAR_WITH_SIX_BACK_SLASHES)
                 .replaceAll("\\\\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
                 .replaceAll("\\\\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
                 .replaceAll("\\\\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
