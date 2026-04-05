@@ -93,6 +93,24 @@ public final class VTConstants {
     /** Name prefix for virtual threads */
     public static final String VT_THREAD_PREFIX = "vt-passthru-";
 
+    /**
+     * MessageContext property set by {@link VTBlockingMsgSender} before calling
+     * {@code VTPassThroughHttpSender.invoke()}.
+     * When present, {@code sendToBackend()} populates the response directly on the
+     * original context and returns — skipping {@link VTBlockingClientWorker} and
+     * {@code AxisEngine.receive()}.
+     */
+    public static final String VT_BLOCKING_CALL = "VT_BLOCKING_CALL";
+
+    /**
+     * ConfigurationContext property key under which {@link VTPassThroughHttpSender}
+     * registers itself during {@code init()}.
+     * {@code CallMediator.init()} looks up this key to obtain the VT transport sender
+     * and wraps it in a {@code VTBlockingMsgSender}. The string value must match
+     * the literal used in {@code CallMediator} (which cannot import this class).
+     */
+    public static final String VT_TRANSPORT_SENDER = "VT_TRANSPORT_SENDER";
+
     // ---- HttpContext attribute keys (set by VTPassThroughHttpListener) ----
     /** Remote socket address stored in HttpContext for the handler */
     public static final String CTX_REMOTE_ADDRESS = "vt.remote.address";

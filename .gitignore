@@ -17,3 +17,8 @@ target/
 ## various other file types we don't want to have in the repository:
 .DS_Store
 /modules/core/src/main/antlr4/org/apache/synapse/util/synapse_path/gen/
+claude/changes_20260323_153256.md
+.gitignore
+claude/generate_comparison_pdf.py
+claude/structure.md
+claude/VTHttpSender_Comparison.pdf
