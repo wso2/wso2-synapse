@@ -24,7 +24,7 @@ import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.ResolvingEndpoint;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.config.xml.SynapseXPathSerializer;
+import org.apache.synapse.config.xml.SynapsePathSerializer;
 
 /**
  * 
@@ -41,8 +41,8 @@ public class ResolvingEndpointSerializer extends EndpointSerializer {
         OMElement endpointElement = fac.createOMElement("endpoint", SynapseConstants.SYNAPSE_OMNAMESPACE);
 
         ResolvingEndpoint resolvingEndpoint = (ResolvingEndpoint) endpoint;
-        SynapseXPathSerializer.serializeXPath(resolvingEndpoint.getKeyExpression(),
-                endpointElement, "key-expression");
+        SynapsePathSerializer.serializePath(resolvingEndpoint.getKeyExpression(),
+                resolvingEndpoint.getKeyExpression().getExpression(), endpointElement, "key-expression");
         if (resolvingEndpoint.getName() != null && !resolvingEndpoint.isAnonymous()) {
             endpointElement.addAttribute("name", resolvingEndpoint.getName(), null);
         }
