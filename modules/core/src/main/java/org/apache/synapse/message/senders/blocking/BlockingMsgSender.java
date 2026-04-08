@@ -54,7 +54,7 @@ import org.apache.synapse.endpoints.auth.oauth.MessageCache;
 import org.apache.synapse.endpoints.auth.oauth.OAuthUtils;
 import org.apache.synapse.util.MediatorPropertyUtils;
 import org.apache.synapse.util.MessageHelper;
-import org.apache.synapse.util.xpath.SynapseXPath;
+import org.apache.synapse.config.xml.SynapsePath;
 
 import javax.xml.namespace.QName;
 import java.io.PrintWriter;
@@ -124,7 +124,7 @@ public class BlockingMsgSender {
         //If the Endpoint is a resolving endpoint, real endpoint details are required to
         // get the correct endpoint definition
         if (endpoint instanceof ResolvingEndpoint) {
-            SynapseXPath keyExpression = ((ResolvingEndpoint) endpoint).getKeyExpression();
+            SynapsePath keyExpression = ((ResolvingEndpoint) endpoint).getKeyExpression();
             String key = keyExpression.stringValueOf(synapseInMsgCtx);
             endpoint = ((ResolvingEndpoint) endpoint).loadAndInitEndpoint(((Axis2MessageContext) synapseInMsgCtx).
                     getAxis2MessageContext().getConfigurationContext(), key);
