@@ -31,6 +31,8 @@ import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axis2.AxisFault;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -41,7 +43,7 @@ import org.apache.synapse.util.synapse_expression.ExpressionParser;
 import org.apache.synapse.util.xpath.SynapseExpression;
 import org.jaxen.JaxenException;
 
-
+import javax.xml.stream.XMLStreamException;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -135,6 +137,8 @@ public class TestUtils {
 
     private static final Map<String, Object> variableMap3;
 
+    private static final Map<String, Object> variableMap4;
+
     static {
         variableMap1 = new HashMap<>();
         variableMap1.put("name", "John");
@@ -164,6 +168,40 @@ public class TestUtils {
         result.put("attributes", responseAttributes);
         result.put("payload", JsonParser.parseString(PAYLOAD2));
         variableMap3.put("fileRead_1", result);
+
+        variableMap4 = new HashMap<>();
+        try {
+            // Connector response with a simple person XML payload
+            OMElement personXml = AXIOMUtil.stringToOM(
+                    "<person><name>John</name><age>30</age>" +
+                    "<address><city>Colombo</city><country>Sri Lanka</country></address></person>");
+            Map<String, Object> personResponse = new HashMap<>();
+            personResponse.put("payload", personXml);
+            personResponse.put("headers", new HashMap<>());
+            personResponse.put("attributes", new HashMap<>());
+            variableMap4.put("personVar", personResponse);
+
+            // Connector response with an order XML payload (contains attributes)
+            OMElement orderXml = AXIOMUtil.stringToOM(
+                    "<order id=\"ORD-001\"><item quantity=\"3\">" +
+                    "<name>Widget</name><price>9.99</price></item></order>");
+            Map<String, Object> orderResponse = new HashMap<>();
+            orderResponse.put("payload", orderXml);
+            variableMap4.put("orderVar", orderResponse);
+
+            // Connector response with a namespaced XML payload
+            OMElement nsXml = AXIOMUtil.stringToOM(
+                    "<ns:employee xmlns:ns=\"http://example.com\">" +
+                    "<ns:name>Jane</ns:name><ns:department>Engineering</ns:department></ns:employee>");
+            Map<String, Object> nsResponse = new HashMap<>();
+            nsResponse.put("payload", nsXml);
+            variableMap4.put("nsVar", nsResponse);
+
+            // Variable that is NOT a Map (plain XML — for error-path testing)
+            variableMap4.put("plainXmlVar", AXIOMUtil.stringToOM("<root><value>42</value></root>"));
+        } catch (XMLStreamException e) {
+            throw new RuntimeException(e);
+        }
 
         try {
             synCtx = org.apache.synapse.mediators.TestUtils.getAxis2MessageContext("<test/>", null);
@@ -226,10 +264,32 @@ public class TestUtils {
                 for (Map.Entry<String, Object> entry : variableMap3.entrySet()) {
                     synCtx.setVariable(entry.getKey(), entry.getValue());
                 }
+            } else if (variableMapId == 4) {
+                for (Map.Entry<String, Object> entry : variableMap4.entrySet()) {
+                    synCtx.setVariable(entry.getKey(), entry.getValue());
+                }
             }
             SynapseExpression synapsePath = new SynapseExpression(expression);
             return synapsePath.stringValueOf(synCtx);
         } catch (JaxenException | AxisFault e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String evaluateExpressionWithNamespaces(String expression, int variableMapId,
+                                                          Map<String, String> namespaces) {
+        try {
+            if (variableMapId == 4) {
+                for (Map.Entry<String, Object> entry : variableMap4.entrySet()) {
+                    synCtx.setVariable(entry.getKey(), entry.getValue());
+                }
+            }
+            SynapseExpression synapsePath = new SynapseExpression(expression);
+            for (Map.Entry<String, String> ns : namespaces.entrySet()) {
+                synapsePath.addNamespace(ns.getKey(), ns.getValue());
+            }
+            return synapsePath.stringValueOf(synCtx);
+        } catch (JaxenException e) {
             throw new RuntimeException(e);
         }
     }
