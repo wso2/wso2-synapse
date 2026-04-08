@@ -253,11 +253,16 @@ private WorkerState state;
                 contentType = HTTPConstants.MEDIA_TYPE_X_WWW_FORM;
             }
         }
+        String httpMethod = (String) msgContext.getProperty(HTTP_METHOD);
+        boolean isGetOrDelete = HTTPConstants.HTTP_METHOD_GET.equals(httpMethod) || "DELETE".equals(httpMethod);
+        if (isGetOrDelete) {
+            contentType = HTTPConstants.MEDIA_TYPE_X_WWW_FORM;
+        }
         if (HTTPConstants.MEDIA_TYPE_X_WWW_FORM.equals(contentType) ||
                 (PassThroughConstants.APPLICATION_OCTET_STREAM.equals(contentType) && contentTypeHdr == null)) {
             msgContext.setTo(new EndpointReference(request.getRequest().getRequestLine().getUri()));
             String charSetEncoding;
-            if (contentTypeHdr != null) {
+            if (contentTypeHdr != null && !isGetOrDelete) {
                 msgContext.setProperty(Constants.Configuration.CONTENT_TYPE, contentTypeHdr);
                 charSetEncoding = BuilderUtil.getCharSetEncoding(contentTypeHdr);
             } else {
