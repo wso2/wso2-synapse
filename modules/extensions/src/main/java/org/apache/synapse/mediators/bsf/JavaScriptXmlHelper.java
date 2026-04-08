@@ -70,7 +70,8 @@ public class JavaScriptXmlHelper extends DefaultXMLHelper {
         OMElement omElement;
 
         try {
-            omElement = AXIOMUtil.stringToOM((String) ScriptableObject.callMethod(jsXML, "toXMLString", new Object[0]));
+            omElement = AXIOMUtil.stringToOM((String) ScriptableObject.callMethod(jsXML,
+                "toXMLString", new Object[0]), true);
         } catch (XMLStreamException e) {
             throw new ScriptException(e);
         }

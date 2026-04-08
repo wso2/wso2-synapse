@@ -48,7 +48,7 @@ public class ExtendedJavaScriptXmlHelper extends DefaultXMLHelper {
         } else if (scriptXML instanceof String) {
             try {
                 String xmlString = scriptXML.toString();
-                omElement = AXIOMUtil.stringToOM(xmlString);
+                omElement = AXIOMUtil.stringToOM(xmlString, true);
 
             } catch (XMLStreamException | OMException e) {
                 ScriptException scriptException = new ScriptException("Failed to create OMElement with provided " +
@@ -59,7 +59,7 @@ public class ExtendedJavaScriptXmlHelper extends DefaultXMLHelper {
         } else if (scriptXML instanceof Document) {
             try {
                 Element element = ((Document) scriptXML).getDocumentElement();
-                omElement = XMLUtils.toOM(element);
+                omElement = XMLUtils.toOM(element, true, true);
             } catch (Exception e) {
                 ScriptException scriptException = new ScriptException("Failed to create OMElement with provided " +
                         "payload");
