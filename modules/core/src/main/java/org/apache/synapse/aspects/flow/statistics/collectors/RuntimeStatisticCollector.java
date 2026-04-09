@@ -329,8 +329,11 @@ public abstract class RuntimeStatisticCollector {
      *
      * @param messageContext
      * @param event
+     * @param isEndFlowEvent whether this is an event denotes the end of the cloned message flow
+     *                       which needs special handling as it denotes the MediatorWorker finished
+     *                       we should not decrement the stat count in this case
      */
-    protected static void addEventAndDecrementCount(MessageContext messageContext, StatisticsReportingEvent event) {
+    protected static void addEventAndDecrementCount(MessageContext messageContext, StatisticsReportingEvent event, boolean isEndFlowEvent) {
         StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
         if (eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
@@ -345,8 +348,15 @@ public abstract class RuntimeStatisticCollector {
         event.getDataUnit().generateElasticMetadata(messageContext);
         eventHolder.addEvent(event);
 
-        if (eventHolder.countHolder.decrementAndGetStatCount() <= 0 &&
-                eventHolder.countHolder.getCallBackCount() <= 0 && !continueStatisticFlow(messageContext)) {
+        int statCount;
+        if (isEndFlowEvent) {
+            // In case of EndFlowEvent, we should not decrement the stat count as it is used to denote MediatorWorker finished
+            statCount = eventHolder.countHolder.getStatCount();
+        } else {
+            statCount = eventHolder.countHolder.decrementAndGetStatCount();
+        }
+        if (statCount <= 0 && eventHolder.countHolder.getCallBackCount() <= 0 && eventHolder.countHolder.getBranchCount() <= 0
+                && !continueStatisticFlow(messageContext)) {
             eventHolder.setEvenCollectionFinished(true);
             if (isMediationFlowStatisticsEnabled) {
                 messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
@@ -412,7 +422,8 @@ public abstract class RuntimeStatisticCollector {
         event.getDataUnit().generateElasticMetadata(messageContext);
         eventHolder.addEvent(event);
 
-        if (eventHolder.countHolder.decrementAndGetCallbackCount() <= 0 && eventHolder.countHolder.getStatCount() <= 0) {
+        if (eventHolder.countHolder.decrementAndGetCallbackCount() <= 0 && eventHolder.countHolder.getStatCount() <= 0
+        && eventHolder.countHolder.getBranchCount() <= 0) {
             eventHolder.setEvenCollectionFinished(true);
             if (isMediationFlowStatisticsEnabled) {
                 messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
@@ -465,8 +476,10 @@ public abstract class RuntimeStatisticCollector {
 
             eventHolder.setEvenCollectionFinished(true);
             eventHolder.setMessageFlowError(true);
-            if (isMediationFlowStatisticsEnabled) {
-                messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
+            if (eventHolder.countHolder.decrementAndGetBranchCount() <= 0){
+                if (isMediationFlowStatisticsEnabled) {
+                    messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
+                }
             }
         }
     }
