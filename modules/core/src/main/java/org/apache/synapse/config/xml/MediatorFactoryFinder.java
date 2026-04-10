@@ -148,6 +148,7 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
         }
         // now iterate through the available pluggable mediator factories
         registerExtensions();
+        MediatorAccessControl.init();
         initialized = true;
     }
 
@@ -212,6 +213,10 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
     public Mediator getMediator(OMElement element, Properties properties, SynapseConfiguration configuration, String artifactIdentifier) {
 
         String localName = element.getLocalName();
+
+        // Enforce mediator access control before instantiation
+        MediatorAccessControl.checkByElementName(localName);
+
         QName qName;
         if (element.getNamespace() != null) {
             qName = new QName(element.getNamespace().getNamespaceURI(), localName);
