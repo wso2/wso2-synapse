@@ -31,7 +31,6 @@ public final class VTConstants {
     public static final String VT_SOURCE_REQUEST = "VT_SOURCE_REQUEST";
     public static final String VT_SOURCE_CONFIGURATION = "VT_SOURCE_CONFIGURATION";
     public static final String VT_SOURCE_CONNECTION = "VT_SOURCE_CONNECTION";
-    public static final String VT_TARGET_RESPONSE = "VT_TARGET_RESPONSE";
     public static final String VT_TARGET_CONFIGURATION = "VT_TARGET_CONFIGURATION";
     public static final String VT_INPUT_STREAM_PIPE = "VT_INPUT_STREAM_PIPE";
 

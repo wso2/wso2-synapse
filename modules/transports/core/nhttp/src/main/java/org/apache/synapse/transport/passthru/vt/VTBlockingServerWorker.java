@@ -36,7 +36,6 @@ import org.apache.axis2.dispatchers.RequestURIBasedDispatcher;
 import org.apache.axis2.engine.AxisEngine;
 import org.apache.axis2.transport.MessageFormatter;
 import org.apache.axis2.transport.OutTransportInfo;
-import org.apache.axis2.transport.RequestResponseTransport;
 import org.apache.axis2.transport.TransportUtils;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HTTPTransportUtils;
@@ -257,17 +256,9 @@ public class VTBlockingServerWorker implements OutTransportInfo {
                     }
                 } catch (Exception ignore) { }
 
-                // 4. Close backend response if not already
-                try {
-                    VTTargetResponse tr = (VTTargetResponse)
-                            msgContext.getProperty(VTConstants.VT_TARGET_RESPONSE);
-                    if (tr != null) tr.close();
-                } catch (Exception ignore) { }
-
-                // 5. Remove heavyweight properties
+                // 4. Remove heavyweight properties
                 try {
                     msgContext.removeProperty(VTConstants.VT_SOURCE_CONFIGURATION);
-                    msgContext.removeProperty(VTConstants.VT_TARGET_RESPONSE);
                     msgContext.removeProperty(Constants.OUT_TRANSPORT_INFO);
                     msgContext.removeProperty(PassThroughConstants.PASS_THROUGH_PIPE);
                     msgContext.removeProperty(MessageContext.TRANSPORT_HEADERS);
@@ -471,9 +462,6 @@ public class VTBlockingServerWorker implements OutTransportInfo {
                         remoteInet.getHostName());
             }
         }
-
-        msgCtx.setProperty(RequestResponseTransport.TRANSPORT_CONTROL,
-                new VTRequestResponseTransport(msgCtx));
 
         return msgCtx;
     }

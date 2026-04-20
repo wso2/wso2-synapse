@@ -115,13 +115,6 @@ public class VTHttpSender extends AbstractHandler implements
     // ------------------------------------------------------------------ lifecycle
 
     public void cleanup(MessageContext msgContext) throws AxisFault {
-        // Close VTTargetResponse (merged from VTPassThroughHttpSender)
-        VTTargetResponse targetResponse =
-                (VTTargetResponse) msgContext.getProperty(VTConstants.VT_TARGET_RESPONSE);
-        if (targetResponse != null) {
-            targetResponse.close();
-        }
-
         // In HttpClient 4.5.x the connection is released when the response entity is consumed
         // or when the CloseableHttpResponse is closed. HttpMethod no longer exists.
         // For backward compatibility we still check the property and attempt cleanup.
