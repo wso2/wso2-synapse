@@ -583,12 +583,21 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
     }
 
     /**
-     * Setting return blocking makes CallMediator access the message’s content in blocking mode when mediating messages
-     * Fixes product-ei #1805, #3015
+     * Returns {@code false} so {@link AbstractListMediator} does not call
+     * {@code buildMessage()} purely because of this mediator. This matches the
+     * non-blocking NIO behaviour: the message is only built when a preceding
+     * mediator is itself content-aware (e.g. {@code <log level="full"/>}).
+     *
+     * <p>In the VT blocking path, {@code VTHttpSender.writeMessageWithCommons()}
+     * streams the request body directly from the {@code VTInputStreamPipe}
+     * (set on {@code PASS_THROUGH_PIPE}) via HttpClient 4.x's
+     * {@code InputStreamEntity} when {@code MESSAGE_BUILDER_INVOKED} is not set.
+     * If any preceding mediator forced a build, the sender falls back to the
+     * existing OM-tree serialisation path ({@code HTTPSender.send()}).</p>
      */
     @Override
     public boolean isContentAware() {
-        return blocking;
+        return false;
     }
 
     public boolean isBlocking() {

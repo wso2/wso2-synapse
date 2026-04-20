@@ -52,6 +52,7 @@ import org.apache.synapse.endpoints.ResolvingEndpoint;
 import org.apache.synapse.endpoints.TemplateEndpoint;
 import org.apache.synapse.endpoints.auth.oauth.MessageCache;
 import org.apache.synapse.endpoints.auth.oauth.OAuthUtils;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.util.MediatorPropertyUtils;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
@@ -181,6 +182,35 @@ public class BlockingMsgSender {
 
         axisOutMsgCtx.setConfigurationContext(configurationContext);
         axisOutMsgCtx.setEnvelope(axisInMsgCtx.getEnvelope());
+
+        // Propagate pipe + HTTP metadata so the VT transport sender can stream
+        // the request body straight from VTInputStreamPipe to the backend via
+        // HttpClient 4.x InputStreamEntity, bypassing OM-tree serialisation.
+        // If MESSAGE_BUILDER_INVOKED is true (a preceding content-aware mediator
+        // already built the message), the sender falls back to the OM path.
+        Object passThroughPipe = axisInMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+        if (passThroughPipe != null) {
+            axisOutMsgCtx.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, passThroughPipe);
+        }
+        Object builderInvoked = axisInMsgCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
+        if (builderInvoked != null) {
+            axisOutMsgCtx.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, builderInvoked);
+        }
+        Object ctProp = axisInMsgCtx.getProperty(Constants.Configuration.CONTENT_TYPE);
+        if (ctProp != null) {
+            axisOutMsgCtx.setProperty(Constants.Configuration.CONTENT_TYPE, ctProp);
+        }
+        Object httpMethodProp = axisInMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD);
+        if (httpMethodProp != null) {
+            axisOutMsgCtx.setProperty(Constants.Configuration.HTTP_METHOD, httpMethodProp);
+        }
+        Object transportHeaders = axisInMsgCtx.getProperty(
+                org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        if (transportHeaders != null) {
+            axisOutMsgCtx.setProperty(
+                    org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, transportHeaders);
+        }
+
         axisOutMsgCtx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES,
                 axisInMsgCtx.getProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES));
         axisOutMsgCtx.setProperty(HTTPConstants.ERROR_HTTP_STATUS_CODES,
@@ -338,6 +368,35 @@ public class BlockingMsgSender {
 
         axisOutMsgCtx.setConfigurationContext(configurationContext);
         axisOutMsgCtx.setEnvelope(axisInMsgCtx.getEnvelope());
+
+        // Propagate pipe + HTTP metadata so the VT transport sender can stream
+        // the request body straight from VTInputStreamPipe to the backend via
+        // HttpClient 4.x InputStreamEntity, bypassing OM-tree serialisation.
+        // If MESSAGE_BUILDER_INVOKED is true (a preceding content-aware mediator
+        // already built the message), the sender falls back to the OM path.
+        Object passThroughPipe = axisInMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+        if (passThroughPipe != null) {
+            axisOutMsgCtx.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, passThroughPipe);
+        }
+        Object builderInvoked = axisInMsgCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
+        if (builderInvoked != null) {
+            axisOutMsgCtx.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, builderInvoked);
+        }
+        Object ctProp = axisInMsgCtx.getProperty(Constants.Configuration.CONTENT_TYPE);
+        if (ctProp != null) {
+            axisOutMsgCtx.setProperty(Constants.Configuration.CONTENT_TYPE, ctProp);
+        }
+        Object httpMethodProp = axisInMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD);
+        if (httpMethodProp != null) {
+            axisOutMsgCtx.setProperty(Constants.Configuration.HTTP_METHOD, httpMethodProp);
+        }
+        Object transportHeaders = axisInMsgCtx.getProperty(
+                org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        if (transportHeaders != null) {
+            axisOutMsgCtx.setProperty(
+                    org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, transportHeaders);
+        }
+
         axisOutMsgCtx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES,
                 axisInMsgCtx.getProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES));
         axisOutMsgCtx.setProperty(HTTPConstants.ERROR_HTTP_STATUS_CODES,

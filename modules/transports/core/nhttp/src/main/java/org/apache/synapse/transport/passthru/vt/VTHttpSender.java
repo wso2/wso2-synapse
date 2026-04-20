@@ -26,17 +26,25 @@ import org.apache.commons.logging.LogFactory;
 // --- HttpClient 4.5.x imports (replacing Commons HttpClient 3.x) ---
 import org.apache.http.Header;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
+import org.apache.synapse.transport.passthru.PassThroughConstants;
+
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.stream.FactoryConfigurationError;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -451,6 +459,20 @@ public class VTHttpSender extends AbstractHandler implements
     private void writeMessageWithCommons(MessageContext messageContext,
                                          EndpointReference toEPR, OMOutputFormat format)
             throws AxisFault {
+
+        // Streaming fast path: if a VTInputStreamPipe is available on the context
+        // and no mediator has forced buildMessage, send the body directly from the
+        // pipe via HttpClient 4.x InputStreamEntity. Mirrors the NIO non-blocking
+        // behaviour where raw bytes flow from Pipe → backend without hitting the
+        // OM tree.
+        Object pipeObj = messageContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+        boolean builderInvoked = Boolean.TRUE.equals(
+                messageContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED));
+        if (pipeObj instanceof VTInputStreamPipe && !builderInvoked) {
+            sendStreamedRequest(messageContext, toEPR, (VTInputStreamPipe) pipeObj);
+            return;
+        }
+
         try {
             URL url = new URL(toEPR.getAddress());
 
@@ -485,6 +507,140 @@ public class VTHttpSender extends AbstractHandler implements
             log.debug(e);
             throw AxisFault.makeFault(e);
         }
+    }
+
+    // ------------------------------------------------------------------ streaming sender path
+
+    /**
+     * Send the outbound request by streaming the body directly from the
+     * {@link VTInputStreamPipe} via HttpClient 4.x {@link InputStreamEntity},
+     * bypassing OM-tree serialisation. The cached {@link CloseableHttpClient}
+     * is retrieved from the ConfigurationContext — same pooled client set up
+     * in {@link #init(ConfigurationContext, TransportOutDescription)}.
+     * <p>
+     * After the HTTP call, response status / headers / body stream are placed
+     * on the message context so Axis2's {@code OperationClient} can build the
+     * response envelope via its standard builder pipeline.
+     */
+    private void sendStreamedRequest(MessageContext msgContext, EndpointReference toEPR,
+                                     VTInputStreamPipe vtPipe) throws AxisFault {
+        CloseableHttpResponse response = null;
+        try {
+            String url = toEPR.getAddress();
+            String httpMethod = (String) msgContext.getProperty(
+                    Constants.Configuration.HTTP_METHOD);
+            if (httpMethod == null) {
+                httpMethod = "POST";
+            }
+            httpMethod = httpMethod.toUpperCase();
+
+            RequestBuilder reqBuilder = RequestBuilder.create(httpMethod).setUri(url);
+
+            // Copy transport headers (skip hop-by-hop / HttpClient-managed)
+            @SuppressWarnings("unchecked")
+            Map<String, Object> transportHeaders = (Map<String, Object>) msgContext
+                    .getProperty(MessageContext.TRANSPORT_HEADERS);
+            if (transportHeaders != null) {
+                for (Map.Entry<String, Object> e : transportHeaders.entrySet()) {
+                    if (e.getValue() != null && !isRestrictedHeader(e.getKey())) {
+                        reqBuilder.addHeader(e.getKey(), e.getValue().toString());
+                    }
+                }
+            }
+
+            boolean hasBody = !HTTPConstants.HTTP_METHOD_GET.equalsIgnoreCase(httpMethod)
+                    && !"DELETE".equalsIgnoreCase(httpMethod);
+            if (hasBody) {
+                String ct = (String) msgContext.getProperty(
+                        Constants.Configuration.CONTENT_TYPE);
+                ContentType parsedCT;
+                try {
+                    parsedCT = ct != null
+                            ? ContentType.parse(ct)
+                            : ContentType.APPLICATION_OCTET_STREAM;
+                } catch (Exception parseEx) {
+                    parsedCT = ContentType.APPLICATION_OCTET_STREAM;
+                }
+                InputStream bodyStream = vtPipe.getInputStream();
+                if (bodyStream != null) {
+                    reqBuilder.setEntity(new InputStreamEntity(bodyStream, parsedCT));
+                }
+            }
+
+            CloseableHttpClient httpClient = (CloseableHttpClient) msgContext
+                    .getConfigurationContext().getProperty(HTTPConstants.CACHED_HTTP_CLIENT);
+            if (httpClient == null) {
+                throw new AxisFault("VT cached HttpClient not available — ensure VTHttpSender "
+                        + "is registered in axis2_blocking_client.xml with cacheHttpClient=true");
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug("VTHttpSender streaming " + httpMethod + " to " + url
+                        + " (body from VTInputStreamPipe, no OM build)");
+            }
+
+            response = httpClient.execute(reqBuilder.build());
+
+            populateResponseOnMessageContext(msgContext, response);
+
+        } catch (IOException e) {
+            // Make sure we don't leak the response if execute succeeded but
+            // response population failed.
+            if (response != null) {
+                try { response.close(); } catch (IOException ignore) { }
+            }
+            log.debug(e);
+            throw AxisFault.makeFault(e);
+        }
+    }
+
+    /**
+     * Populate the message context with the HTTP response status, headers, and
+     * body input stream, in the same shape Axis2's {@code AbstractHTTPSender}
+     * leaves things — so {@code OperationClient.execute()} → builder pipeline
+     * can read the response via {@code TRANSPORT_IN}.
+     */
+    private void populateResponseOnMessageContext(MessageContext msgContext,
+                                                  CloseableHttpResponse response)
+            throws IOException {
+        int statusCode = response.getStatusLine().getStatusCode();
+        msgContext.setProperty(HTTPConstants.MC_HTTP_STATUS_CODE, statusCode);
+        // SynapseConstants.HTTP_SENDER_STATUSCODE — string literal to avoid a
+        // core-module dependency from the transports/nhttp module.
+        msgContext.setProperty("transport.http.statusCode", String.valueOf(statusCode));
+
+        Map<String, String> respHeaders = new HashMap<>();
+        for (Header h : response.getAllHeaders()) {
+            respHeaders.put(h.getName(), h.getValue());
+        }
+        msgContext.setProperty(MessageContext.TRANSPORT_HEADERS, respHeaders);
+
+        Header ctHeader = response.getFirstHeader(HTTPConstants.HEADER_CONTENT_TYPE);
+        if (ctHeader != null) {
+            msgContext.setProperty(Constants.Configuration.CONTENT_TYPE, ctHeader.getValue());
+        }
+
+        if (response.getEntity() != null && response.getEntity().getContent() != null) {
+            msgContext.setProperty(MessageContext.TRANSPORT_IN, response.getEntity().getContent());
+        }
+
+        // Stash the response so cleanup() / caller can close it (releases the
+        // pooled connection). HTTPConstants.HTTP_METHOD is the canonical key
+        // Axis2 uses for this, and cleanup() already handles HttpRequestBase;
+        // we use a parallel key so we don't collide.
+        msgContext.setProperty("VT_HTTP_RESPONSE", response);
+    }
+
+    /**
+     * HttpClient manages Host / Content-Length / Transfer-Encoding / Connection
+     * headers internally — passing them through causes duplicates or conflicts.
+     */
+    private static boolean isRestrictedHeader(String name) {
+        String lc = name.toLowerCase();
+        return "content-length".equals(lc)
+                || "host".equals(lc)
+                || "connection".equals(lc)
+                || "transfer-encoding".equals(lc);
     }
 
     // ------------------------------------------------------------------ SOAP action helpers
