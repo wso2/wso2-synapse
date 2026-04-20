@@ -98,7 +98,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
     /**
      * VT-transport blocking sender; non-null only when a VT transport sender
-     * (e.g. {@code VTPassThroughHttpSender}) is registered in the
+     * (e.g. {@code VTHttpSender}) is registered in the
      * ConfigurationContext under the key {@code "VT_TRANSPORT_SENDER"}.
      * When set, requests arriving on a VT transport context are routed through
      * this sender instead of the NIO callback path.
@@ -215,7 +215,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         // "VT_SOURCE_CONFIGURATION" is set by VTBlockingServerWorker on the *Axis2*
         // MessageContext. Axis2MessageContext.getProperty() only reads from the Synapse
         // property map, so we must check axis2MessageContext directly.
-        // Lazy-resolve vtBlockingMsgSender on first use in case VTPassThroughHttpSender
+        // Lazy-resolve vtBlockingMsgSender on first use in case VTHttpSender
         // was initialized after this mediator's init().
         // if (vtBlockingMsgSender == null && synapseEnv instanceof Axis2SynapseEnvironment) {
         //     Object vtSender = ((Axis2SynapseEnvironment) synapseEnv)
@@ -557,7 +557,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         }
 
         // Discover an optional VT transport sender registered in the ConfigurationContext.
-        // VTPassThroughHttpSender.init() stores itself under "VT_TRANSPORT_SENDER"
+        // VTHttpSender.init() stores itself under "VT_TRANSPORT_SENDER"
         // (= VTConstants.VT_TRANSPORT_SENDER — string literal avoids a transport module import).
         // When found, VT requests are handled via handleVTBlockingCall() without async callbacks.
         // if (synapseEnvironment instanceof Axis2SynapseEnvironment) {

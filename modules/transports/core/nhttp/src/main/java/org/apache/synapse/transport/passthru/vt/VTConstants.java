@@ -95,15 +95,14 @@ public final class VTConstants {
 
     /**
      * MessageContext property set by {@link VTBlockingMsgSender} before calling
-     * {@code VTPassThroughHttpSender.invoke()}.
-     * When present, {@code sendToBackend()} populates the response directly on the
-     * original context and returns — skipping {@link VTBlockingClientWorker} and
-     * {@code AxisEngine.receive()}.
+     * {@code VTHttpSender.invoke()}.
+     * When present, the sender populates the response directly on the
+     * original context and returns — skipping {@code AxisEngine.receive()}.
      */
     public static final String VT_BLOCKING_CALL = "VT_BLOCKING_CALL";
 
     /**
-     * ConfigurationContext property key under which {@link VTPassThroughHttpSender}
+     * ConfigurationContext property key under which {@link VTHttpSender}
      * registers itself during {@code init()}.
      * {@code CallMediator.init()} looks up this key to obtain the VT transport sender
      * and wraps it in a {@code VTBlockingMsgSender}. The string value must match

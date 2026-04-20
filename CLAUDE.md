@@ -18,9 +18,7 @@ I/O without pinning platform threads. Key classes:
 |---|---|---|
 | `VTBlockingServerWorker` | nhttp | Handles inbound requests on VT transport. Sets `PASS_THROUGH_PIPE = VTInputStreamPipe` on the axis2 MessageContext. |
 | `VTInputStreamPipe` | nhttp | Wraps the raw blocking `InputStream` from the client socket as a "pipe" object. |
-| `VTHttpSender` | nhttp | Outbound HTTP transport sender (HttpClient 4.5.x). Used by `BlockingMsgSender` → `OperationClient` in the blocking call path. |
-| `VTPassThroughHttpSender` | nhttp | **NOT used for backend calls** — do not modify for backend request streaming. |
-| `VTBlockingClientWorker` | nhttp | **NOT used in the blocking call path** — do not modify. |
+| `VTHttpSender` | nhttp | Unified outbound HTTP transport sender (HttpClient 4.5.x). Handles both backend calls (blocking call path) and passthrough client responses (via `submitResponse()`). Registered in both `axis2.xml` and `axis2_blocking_client.xml`. |
 
 ### Blocking Call Path (the one we modify)
 
@@ -33,7 +31,7 @@ CallMediator.handleBlockingCall()
             → HTTPSender.send()        [Axis2 dep — serializes from OM tree]
 ```
 
-`VTPassThroughHttpSender` and `VTBlockingClientWorker` are NOT in this path.
+`VTHttpSender` is the single unified sender for both this path and the passthrough response path.
 
 ---
 
@@ -141,8 +139,8 @@ mvn clean install -DskipTests
 
 ## Important: What NOT to touch
 
-- **`VTPassThroughHttpSender`** — not used for backend calls in the blocking path.
-- **`VTBlockingClientWorker`** — not used in this path.
+- **`VTPassThroughHttpSender`** — deleted, merged into `VTHttpSender`.
+- **`VTBlockingClientWorker`** — deleted, was only used by `VTPassThroughHttpSender`.
 - **Commented-out VT path in `CallMediator`** (`handleVTBlockingCall`,
   `vtBlockingMsgSender` field, commented blocks in `mediate()` and `init()`) —
   leave as-is, not relevant to the current streaming change.

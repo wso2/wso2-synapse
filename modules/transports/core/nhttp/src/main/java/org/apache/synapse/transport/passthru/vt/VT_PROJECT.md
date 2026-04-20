@@ -76,10 +76,10 @@ and scheduled by the JVM, not the OS.
                           │   2. Build Axis2 MessageContext│
                           │   3. AxisEngine.receive()      │  ← same VT
                           │   4. Synapse mediation         │  ← same VT
-                          │   5. VTPassThroughHttpSender   │  ← same VT
+                          │   5. VTHttpSender   │  ← same VT
                           │      .invoke()                 │
                           │   6. Backend call (blocking)   │  ← same VT
-                          │   7. VTBlockingClientWorker    │  ← same VT
+                          │   7. VTHttpSender    │  ← same VT
                           │      .run() inline             │
                           │   8. AxisEngine.receive()      │  ← same VT
                           │      (response flow)           │
@@ -89,7 +89,7 @@ and scheduled by the JVM, not the OS.
                           └───────────────────────────────┘
 
                           ┌───────────────────────────────┐
-                          │   VTPassThroughHttpSender      │
+                          │   VTHttpSender      │
                           │   (TransportSender)            │
                           │                                │
                           │   Uses Apache HttpClient 4.x   │
@@ -112,9 +112,9 @@ Platform Thread: accept-loop
   └─► vtExecutor.submit(VTBlockingServerWorker)   → spawns VT-1
         VT-1: parse request
         VT-1: AxisEngine.receive(msgCtx)            — Synapse IN flow
-        VT-1: VTPassThroughHttpSender.invoke()      — OUT flow
+        VT-1: VTHttpSender.invoke()      — OUT flow
         VT-1: httpClient.execute(req)               — blocking backend call
-        VT-1: VTBlockingClientWorker.run()          — inline, NOT submitted to pool
+        VT-1: VTHttpSender.run()          — inline, NOT submitted to pool
         VT-1: AxisEngine.receive(responseMsgCtx)    — response IN flow
         VT-1: serverWorker.submitResponse()         — write HTTP response
         VT-1: loop back (keep-alive) or exit
@@ -145,9 +145,9 @@ sourceConfiguration = new SourceConfiguration(cfgCtx, transportIn, scheme, worke
 | HTTP request parsing | VT-1 | Inline in ServerWorker |
 | AxisEngine.receive() (IN flow) | VT-1 | Inline |
 | Synapse mediators (Sequence, Log, etc.) | VT-1 | Inline |
-| VTPassThroughHttpSender.invoke() | VT-1 | Inline |
+| VTHttpSender.invoke() | VT-1 | Inline |
 | Backend HTTP call (httpClient.execute) | VT-1 | Blocking, inline |
-| VTBlockingClientWorker.run() | VT-1 | Called with `.run()`, not submitted |
+| VTHttpSender.run() | VT-1 | Called with `.run()`, not submitted |
 | AxisEngine.receive() (response flow) | VT-1 | Inline |
 | submitResponse() | VT-1 | Inline |
 | Clone/Iterate mediator `workerPool.execute()` | **VT-2** | New VT from same executor |
@@ -160,9 +160,9 @@ sourceConfiguration = new SourceConfiguration(cfgCtx, transportIn, scheme, worke
 | File | Role | Lines |
 |------|------|-------|
 | `VTPassThroughHttpListener.java` | Transport listener (server-side inbound). Accepts connections, manages lifecycle. Implements `TransportListener`. | ~409 |
-| `VTPassThroughHttpSender.java` | Transport sender (client-side outbound). Uses Apache HttpClient 4.x. Extends `AbstractHandler`, implements `TransportSender`. | ~380 |
+| `VTHttpSender.java` | Transport sender (client-side outbound). Uses Apache HttpClient 4.x. Extends `AbstractHandler`, implements `TransportSender`. | ~380 |
 | `VTBlockingServerWorker.java` | Per-connection worker. Runs entirely in one VT. Handles keep-alive loop, request parsing, Axis2 dispatch, response writing. Implements `Runnable` + `OutTransportInfo`. | ~835 |
-| `VTBlockingClientWorker.java` | Processes backend HTTP response. Builds response `MessageContext` and feeds into Axis2 engine. Called inline (`.run()`), not submitted to pool. | ~375 |
+| `VTHttpSender.java` | Processes backend HTTP response. Builds response `MessageContext` and feeds into Axis2 engine. Called inline (`.run()`), not submitted to pool. | ~375 |
 | `VTSourceRequest.java` | Parses incoming HTTP request (request line + headers) from socket's `InputStream`. Provides body `InputStream`. Supports keep-alive via shared buffered streams. | ~298 |
 | `VTSourceResponse.java` | Builds and writes HTTP response status line + headers to socket `OutputStream`. | ~186 |
 | `VTTargetResponse.java` | Wraps Apache HttpClient's `CloseableHttpResponse`. Provides headers, status, body `InputStream`. | ~160 |
@@ -224,9 +224,9 @@ run() {
 }
 ```
 
-**Response writing:** `submitResponse(MessageContext)` is called by `VTPassThroughHttpSender` → serializes body to byte array → writes `Content-Length` header → writes to socket. Hop-by-hop headers from backend are stripped.
+**Response writing:** `submitResponse(MessageContext)` is called by `VTHttpSender` → serializes body to byte array → writes `Content-Length` header → writes to socket. Hop-by-hop headers from backend are stripped.
 
-### VTPassThroughHttpSender
+### VTHttpSender
 
 **Extends:** `AbstractHandler`, **Implements:** `TransportSender`
 
@@ -236,10 +236,10 @@ run() {
 
 **invoke() flow:**
 1. Determine if sending to backend (EPR present) or responding to client
-2. **Backend:** `sendToBackend()` → build `RequestBuilder`, copy headers (skip restricted), serialize body → `httpClient.execute(req)` (blocking) → wrap response as `VTTargetResponse` → `new VTBlockingClientWorker(...).run()` (inline, same VT)
+2. **Backend:** `sendToBackend()` → build `RequestBuilder`, copy headers (skip restricted), serialize body → `httpClient.execute(req)` (blocking) → wrap response as `VTTargetResponse` → `new VTHttpSender(...).run()` (inline, same VT)
 3. **Client response:** find `VTBlockingServerWorker` from `OUT_TRANSPORT_INFO` → `submitResponse()`
 
-### VTBlockingClientWorker
+### VTHttpSender
 
 **Implements:** `Runnable`
 
@@ -295,27 +295,27 @@ Adapts `ExecutorService` to Axis2 `WorkerPool`:
       v.   Call processEntityEnclosingRequest() or processNonEntityEnclosingRESTHandler()
       vi.  Inside those methods: AxisEngine.receive(msgContext)
       vii. Axis2 IN flow → Synapse meditation sequence → IN/OUT mediation
-      viii. OUT flow reaches VTPassThroughHttpSender.invoke()
+      viii. OUT flow reaches VTHttpSender.invoke()
 ```
 
 ## Response Lifecycle
 
 ```
-1. VTPassThroughHttpSender.invoke() decides: backend call or client response
+1. VTHttpSender.invoke() decides: backend call or client response
 
 2a. Backend call path:
     i.   sendToBackend() — build Apache HC4 request
     ii.  httpClient.execute() — blocking, in same VT
     iii. Wrap as VTTargetResponse
-    iv.  VTBlockingClientWorker(targetConfig, msgCtx, response).run() — inline
+    iv.  VTHttpSender(targetConfig, msgCtx, response).run() — inline
     v.   ClientWorker builds response MessageContext
     vi.  AxisEngine.receive(responseMsgCtx) — response IN flow
-    vii. Response flow reaches VTPassThroughHttpSender.invoke() again
+    vii. Response flow reaches VTHttpSender.invoke() again
     viii. This time OUT_TRANSPORT_INFO is VTBlockingServerWorker → submitResponse()
     ix.  Finally block in ClientWorker guarantees submitResponse() if not yet called
 
 2b. Direct response path (no backend):
-    i.   VTPassThroughHttpSender.invoke() finds VTBlockingServerWorker
+    i.   VTHttpSender.invoke() finds VTBlockingServerWorker
     ii.  Calls serverWorker.submitResponse(msgCtx)
 
 3. submitResponse():
@@ -369,7 +369,7 @@ Adapts `ExecutorService` to Axis2 `WorkerPool`:
 
 The `VTBlockingServerWorker.createMessageContext()` method sets:
 - **incomingTransportName** = `"http"` or `"https"` (NOT `"vt-http"`) — so Axis2 dispatch works (services are exposed on `http`/`https`)
-- **transportOut** = VT sender (`"vt-http"`) — so response goes through `VTPassThroughHttpSender`
+- **transportOut** = VT sender (`"vt-http"`) — so response goes through `VTHttpSender`
 
 ### WorkerPool
 
@@ -398,7 +398,7 @@ The `VTBlockingServerWorker.createMessageContext()` method sets:
 
 <!-- Sender (HTTP) -->
 <transportSender name="vt-http"
-    class="org.apache.synapse.transport.passthru.vt.VTPassThroughHttpSender"/>
+    class="org.apache.synapse.transport.passthru.vt.VTHttpSender"/>
 ```
 
 ---
@@ -441,7 +441,7 @@ The `VTBlockingServerWorker.createMessageContext()` method sets:
 
 2. **Single VT per connection:** The entire request-response cycle (including backend calls) runs in one virtual thread. This avoids context-switching overhead and simplifies error handling.
 
-3. **VTBlockingClientWorker.run() called inline:** The sender calls `.run()` not `.submit()` — stays on the same VT. Only explicit `workerPool.execute()` calls (Clone, Iterate mediators) spawn new VTs.
+3. **VTHttpSender.run() called inline:** The sender calls `.run()` not `.submit()` — stays on the same VT. Only explicit `workerPool.execute()` calls (Clone, Iterate mediators) spawn new VTs.
 
 4. **Reuse SourceConfiguration/TargetConfiguration:** The VT transport reuses the existing pass-through configuration classes. This maximizes compatibility with existing Synapse code that reads configuration from these objects.
 
@@ -476,9 +476,9 @@ The `VTBlockingServerWorker.createMessageContext()` method sets:
 | Original (NIO) | VT Equivalent |
 |----------------|---------------|
 | `PassThroughHttpListener` | `VTPassThroughHttpListener` |
-| `PassThroughHttpSender` | `VTPassThroughHttpSender` |
+| `PassThroughHttpSender` | `VTHttpSender` |
 | `ServerWorker` | `VTBlockingServerWorker` |
-| `ClientWorker` | `VTBlockingClientWorker` |
+| `ClientWorker` | `VTHttpSender` |
 | `SourceRequest` | `VTSourceRequest` |
 | `SourceResponse` | `VTSourceResponse` |
 | `TargetResponse` | `VTTargetResponse` |
@@ -487,7 +487,7 @@ The `VTBlockingServerWorker.createMessageContext()` method sets:
 | `DefaultListeningIOReactor` | `ServerSocket` + accept loop |
 | `IOReactorExceptionHandler` | try/catch in accept loop |
 | `SourceHandler` (NIO event handler) | Part of `VTBlockingServerWorker` |
-| `TargetHandler` (NIO event handler) | Part of `VTPassThroughHttpSender.sendToBackend()` |
+| `TargetHandler` (NIO event handler) | Part of `VTHttpSender.sendToBackend()` |
 
 ### Reused from original transport (not copied):
 - `SourceConfiguration` — listener configuration

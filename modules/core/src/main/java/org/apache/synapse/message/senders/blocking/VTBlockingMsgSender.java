@@ -31,7 +31,7 @@ import java.util.Stack;
 
 /**
  * A {@link BlockingMsgSender} that delegates the actual HTTP call to the VT
- * transport's {@link TransportSender} (at runtime: {@code VTPassThroughHttpSender}),
+ * transport's {@link TransportSender} (at runtime: {@code VTHttpSender}),
  * reusing its shared connection pool.
  *
  * <h3>How it prevents async callback registration</h3>
@@ -44,9 +44,9 @@ import java.util.Stack;
  * <h3>Response path</h3>
  * <p>Before delegating to {@link TransportSender#invoke}, this class sets the
  * {@code VT_BLOCKING_CALL} flag on the Axis2 message context. That flag tells
- * {@code VTPassThroughHttpSender.sendToBackend()} to call
+ * {@code VTHttpSender.sendToBackend()} to call
  * {@code populateResponseOnContext()} instead of handing the response to
- * {@code VTBlockingClientWorker} / {@code AxisEngine.receive()}.
+ * {@code VTHttpSender} / {@code AxisEngine.receive()}.
  * The response (envelope, headers, status) is placed directly on the original
  * message context — same thread, no callbacks.</p>
  *
@@ -95,7 +95,7 @@ public class VTBlockingMsgSender extends BlockingMsgSender {
 
         try {
             // ---- Resolve target URL onto the axis2 context ----
-            // VTPassThroughHttpSender.invoke() reads the EPR via
+            // VTHttpSender.invoke() reads the EPR via
             // PassThroughTransportUtils.getDestinationEPR(msgContext).
             String url = null;
             if (endpointDefinition != null
@@ -111,7 +111,7 @@ public class VTBlockingMsgSender extends BlockingMsgSender {
 
             // ---- Signal the VT sender to use the blocking response path ----
             // sendToBackend() checks this flag and calls populateResponseOnContext()
-            // instead of VTBlockingClientWorker → AxisEngine.receive().
+            // instead of VTHttpSender → AxisEngine.receive().
             axis2MsgCtx.setProperty(VT_BLOCKING_CALL, Boolean.TRUE);
 
             // ---- Invoke VT sender — fully blocking on the same Virtual Thread ----

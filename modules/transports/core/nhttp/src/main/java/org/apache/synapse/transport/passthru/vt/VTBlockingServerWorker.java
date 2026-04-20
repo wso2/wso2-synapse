@@ -202,7 +202,7 @@ public class VTBlockingServerWorker implements OutTransportInfo {
             // At this point AxisEngine.receive() has returned.
             // In the VT blocking model the entire mediation flow
             // (including the backend call and response writing via
-            // VTBlockingClientWorker) is synchronous, so the response
+            // VTHttpSender) is synchronous, so the response
             // should already be set via submitResponse().
 
         } catch (Exception e) {
@@ -283,7 +283,7 @@ public class VTBlockingServerWorker implements OutTransportInfo {
     // ================================================================
 
     /**
-     * Called by VTPassThroughHttpSender to populate the HttpCore 5
+     * Called by VTHttpSender to populate the HttpCore 5
      * {@link ClassicHttpResponse} with status, headers, and body.
      * HttpCore 5 serializes this response to the socket after the
      * handler returns.

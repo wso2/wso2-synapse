@@ -35,7 +35,14 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
+import org.apache.axis2.addressing.AddressingHelper;
+import org.apache.axis2.transport.base.BaseConstants;
+import org.apache.axis2.transport.base.threads.WorkerPool;
+import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.config.TargetConfiguration;
+import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
+import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.stream.FactoryConfigurationError;
@@ -96,9 +103,25 @@ public class VTHttpSender extends AbstractHandler implements
      */
     private PoolingHttpClientConnectionManager connectionManager;
 
+    /** Protocol scheme (passthrough support, merged from VTPassThroughHttpSender). */
+    private Scheme scheme;
+
+    /** Target configuration (passthrough support, merged from VTPassThroughHttpSender). */
+    private TargetConfiguration targetConfiguration;
+
+    /** Sender state. */
+    private volatile int state = BaseConstants.STOPPED;
+
     // ------------------------------------------------------------------ lifecycle
 
     public void cleanup(MessageContext msgContext) throws AxisFault {
+        // Close VTTargetResponse (merged from VTPassThroughHttpSender)
+        VTTargetResponse targetResponse =
+                (VTTargetResponse) msgContext.getProperty(VTConstants.VT_TARGET_RESPONSE);
+        if (targetResponse != null) {
+            targetResponse.close();
+        }
+
         // In HttpClient 4.5.x the connection is released when the response entity is consumed
         // or when the CloseableHttpResponse is closed. HttpMethod no longer exists.
         // For backward compatibility we still check the property and attempt cleanup.
@@ -219,13 +242,45 @@ public class VTHttpSender extends AbstractHandler implements
             confContext.setProperty(HTTPConstants.REUSE_HTTP_CLIENT, "true");
             confContext.setProperty(HTTPConstants.CACHED_HTTP_CLIENT, httpClient);
         }
+
+        // --- Passthrough support (merged from VTPassThroughHttpSender) ---
+        scheme = new Scheme("http", 80, false);
+
+        WorkerPool workerPool = null;
+        Object wpObj = confContext.getProperty(PassThroughConstants.PASS_THROUGH_TRANSPORT_WORKER_POOL);
+        if (wpObj != null) {
+            workerPool = (WorkerPool) wpObj;
+        }
+
+        PassThroughTransportMetricsCollector metrics =
+                new PassThroughTransportMetricsCollector(false, scheme.getName());
+
+        targetConfiguration = new TargetConfiguration(confContext, transportOut, workerPool, metrics, null);
+        targetConfiguration.build();
+
+        confContext.setProperty(PassThroughConstants.PASS_THROUGH_TRANSPORT_WORKER_POOL,
+                targetConfiguration.getWorkerPool());
+
+        state = BaseConstants.STARTED;
     }
 
     public void stop() {
-        // Shut down the connection manager to release all pooled connections.
+        state = BaseConstants.STOPPED;
         if (connectionManager != null) {
             connectionManager.shutdown();
         }
+    }
+
+    public void pause() throws AxisFault {
+        if (state != BaseConstants.STARTED) return;
+        state = BaseConstants.PAUSED;
+        log.info("VTHttpSender Paused");
+    }
+
+    public void resume() throws AxisFault {
+        if (state != BaseConstants.PAUSED) return;
+        state = BaseConstants.STARTED;
+        log.info("VTHttpSender Resumed");
     }
 
     // ------------------------------------------------------------------ invoke
@@ -233,6 +288,17 @@ public class VTHttpSender extends AbstractHandler implements
     public InvocationResponse invoke(MessageContext msgContext)
             throws AxisFault {
         try {
+            // --- Passthrough header cleanup (from VTPassThroughHttpSender) ---
+            if (targetConfiguration != null) {
+                PassThroughTransportUtils.removeUnwantedHeaders(msgContext, targetConfiguration);
+            }
+
+            if (AddressingHelper.isReplyRedirected(msgContext)
+                    && !msgContext.getReplyTo().hasNoneAddress()) {
+                msgContext.setProperty(PassThroughConstants.IGNORE_SC_ACCEPTED, Constants.VALUE_TRUE);
+            }
+
+            // --- Format setup (existing VTHttpSender logic) ---
             OMOutputFormat format = new OMOutputFormat();
             msgContext.setDoingMTOM(TransportUtils.doWriteMTOM(msgContext));
             msgContext.setDoingSwA(TransportUtils.doWriteSwA(msgContext));
@@ -290,7 +356,7 @@ public class VTHttpSender extends AbstractHandler implements
                 }
             }
 
-            // Transport URL can be different from the WSA-To
+            // --- EPR resolution ---
             EndpointReference epr = null;
             String transportURL = (String) msgContext
                     .getProperty(Constants.Configuration.TRANSPORT_URL);
@@ -302,6 +368,7 @@ public class VTHttpSender extends AbstractHandler implements
                 epr = msgContext.getTo();
             }
 
+            // --- Dispatch ---
             if (epr != null) {
                 if (!epr.hasNoneAddress()) {
                     writeMessageWithCommons(msgContext, epr, format);
@@ -314,7 +381,10 @@ public class VTHttpSender extends AbstractHandler implements
                     }
                 }
             } else {
-                if (msgContext.getProperty(MessageContext.TRANSPORT_OUT) != null) {
+                // No EPR — this is a response back to the client
+                if (msgContext.getProperty(Constants.OUT_TRANSPORT_INFO) instanceof VTBlockingServerWorker) {
+                    submitResponse(msgContext);
+                } else if (msgContext.getProperty(MessageContext.TRANSPORT_OUT) != null) {
                     sendUsingOutputStream(msgContext, format);
                     TransportUtils.setResponseWritten(msgContext, true);
                 } else {
@@ -322,6 +392,13 @@ public class VTHttpSender extends AbstractHandler implements
                             "are null, so nowhere to send");
                 }
             }
+
+            // Mark response written (from VTPassThroughHttpSender)
+            if (msgContext.getOperationContext() != null) {
+                msgContext.getOperationContext().setProperty(
+                        Constants.RESPONSE_WRITTEN, Constants.VALUE_TRUE);
+            }
+
         } catch (FactoryConfigurationError e) {
             log.debug(e);
             throw AxisFault.makeFault(e);
@@ -641,6 +718,28 @@ public class VTHttpSender extends AbstractHandler implements
                 || "host".equals(lc)
                 || "connection".equals(lc)
                 || "transfer-encoding".equals(lc);
+    }
+
+    // ------------------------------------------------------------------ passthrough response path
+
+    /**
+     * Write the response back to the client via the VTBlockingServerWorker.
+     * This path is taken when there is no EPR (i.e. this is a response, not a backend call)
+     * and the OUT_TRANSPORT_INFO is a VTBlockingServerWorker.
+     */
+    private void submitResponse(MessageContext msgContext) throws AxisFault {
+        VTBlockingServerWorker serverWorker =
+                (VTBlockingServerWorker) msgContext.getProperty(Constants.OUT_TRANSPORT_INFO);
+        if (serverWorker == null) {
+            throw new AxisFault("No VTBlockingServerWorker found to submit response");
+        }
+        serverWorker.submitResponse(msgContext);
+    }
+
+    // ------------------------------------------------------------------ accessor
+
+    public TargetConfiguration getTargetConfiguration() {
+        return targetConfiguration;
     }
 
     // ------------------------------------------------------------------ SOAP action helpers
