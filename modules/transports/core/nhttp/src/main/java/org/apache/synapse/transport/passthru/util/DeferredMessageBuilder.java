@@ -94,11 +94,8 @@ public class DeferredMessageBuilder {
 		 * HTTP Delete, PUT, POST, PATCH requests may contain entity body or not. Hence if the request is a HTTP DELETE,
          * PUT, POST or PATCH we have to verify that the payload stream is empty or not.
 		 */
-        if ((HTTPConstants.HEADER_DELETE.equals(msgCtx.getProperty(Constants.Configuration.HTTP_METHOD)) ||
-                PassThroughConstants.HTTP_PUT.equals(msgCtx.getProperty(Constants.Configuration.HTTP_METHOD)) ||
-                PassThroughConstants.HTTP_POST.equals(msgCtx.getProperty(Constants.Configuration.HTTP_METHOD)) ||
-                PassThroughConstants.HTTP_PATCH.equals(msgCtx.getProperty(Constants.Configuration.HTTP_METHOD)))
-                && RelayUtils.isEmptyPayloadStream(in)) {
+        if (isEmptyBodySupportedMethod(msgCtx) && RelayUtils.isEmptyPayloadStream(in)
+                && isEnvelopeBodyMissingFirstElement(msgCtx)) {
             msgCtx.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
             return TransportUtils.createSOAPEnvelope(null);
         }
@@ -308,5 +305,27 @@ public class DeferredMessageBuilder {
                     type = HTTPConstants.MEDIA_TYPE_APPLICATION_XML;
         }
         return type;
+    }
+
+    /**
+     * Methods that may arrive with an empty payload. For these methods we evaluate empty-stream handling.
+     */
+    private boolean isEmptyBodySupportedMethod(MessageContext msgCtx) {
+        String method = (String) msgCtx.getProperty(Constants.Configuration.HTTP_METHOD);
+        return HTTPConstants.HEADER_DELETE.equals(method)
+                || PassThroughConstants.HTTP_PUT.equals(method)
+                || PassThroughConstants.HTTP_POST.equals(method)
+                || PassThroughConstants.HTTP_PATCH.equals(method);
+    }
+
+    /**
+     * Returns true when there is no usable first payload element in the current envelope.
+     * This avoids replacing an already-populated body (e.g., xformValues created
+     * earlier in the request flow) with an empty envelope on a subsequent build pass.
+     */
+    private boolean isEnvelopeBodyMissingFirstElement(MessageContext msgCtx) {
+        return msgCtx.getEnvelope() == null
+                || msgCtx.getEnvelope().getBody() == null
+                || msgCtx.getEnvelope().getBody().getFirstElement() == null;
     }
 }
