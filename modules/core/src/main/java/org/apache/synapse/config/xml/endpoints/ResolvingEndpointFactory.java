@@ -21,9 +21,9 @@ package org.apache.synapse.config.xml.endpoints;
 
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.FactoryUtils;
+import org.apache.synapse.config.xml.SynapsePathFactory;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.ResolvingEndpoint;
-import org.apache.synapse.config.xml.SynapseXPathFactory;
 import org.apache.axiom.om.OMElement;
 import org.jaxen.JaxenException;
 
@@ -55,7 +55,7 @@ public class ResolvingEndpointFactory extends EndpointFactory {
         }
         try {
             resolvingEndpoint.setKeyExpression(
-                    SynapseXPathFactory.getSynapseXPath(epConfig, ATTR_KEY_EXPRESSION));
+                    SynapsePathFactory.getSynapsePath(epConfig, ATTR_KEY_EXPRESSION));
         } catch (JaxenException e) {
             handleException("Couldn't build the ResolvingEndpoint, unable to set " +
                     "the key-expression XPath", e);

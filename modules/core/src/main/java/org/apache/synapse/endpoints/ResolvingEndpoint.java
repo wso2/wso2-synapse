@@ -27,7 +27,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.config.xml.FactoryUtils;
-import org.apache.synapse.util.xpath.SynapseXPath;
+import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -40,7 +40,7 @@ import org.json.JSONObject;
  */
 public class ResolvingEndpoint extends AbstractEndpoint {
 
-    private SynapseXPath keyExpression = null;
+    private SynapsePath keyExpression = null;
     private String artifactIdentifier = null;
 
     public void send(MessageContext synCtx) {
@@ -123,11 +123,11 @@ public class ResolvingEndpoint extends AbstractEndpoint {
         return null;
     }
 
-    public SynapseXPath getKeyExpression() {
+    public SynapsePath getKeyExpression() {
         return keyExpression;
     }
 
-    public void setKeyExpression(SynapseXPath keyExpression) {
+    public void setKeyExpression(SynapsePath keyExpression) {
         this.keyExpression = keyExpression;
     }
 
