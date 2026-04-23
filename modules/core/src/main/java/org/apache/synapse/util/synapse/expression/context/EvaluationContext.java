@@ -144,8 +144,12 @@ public class EvaluationContext {
                 if (resource != null) {
                     if (resource instanceof OMText) {
                         OMTextImpl omText = (OMTextImpl) resource;
-                        byte[] bytes = Base64.getDecoder().decode(omText.getText());
-                        return new String(bytes, StandardCharsets.UTF_8);
+                        if (omText.isBinary()) {
+                            byte[] bytes = Base64.getDecoder().decode(omText.getText());
+                            return new String(bytes, StandardCharsets.UTF_8);
+                        } else {
+                            return omText.getText();
+                        }
                     } else if (resource instanceof OMElement) {
                         return resource.toString();
                     }
