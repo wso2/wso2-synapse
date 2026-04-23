@@ -15,7 +15,6 @@
  */
 
 package org.apache.synapse.transport.passthru.vt;
-
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.context.ConfigurationContext;
@@ -28,11 +27,14 @@ import org.apache.axis2.transport.TransportListener;
 import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.base.BaseUtils;
 import org.apache.axis2.transport.base.threads.WorkerPool;
+// Axis2 transport tracker imports
 import org.apache.axis2.transport.base.tracker.AxisServiceFilter;
 import org.apache.axis2.transport.base.tracker.AxisServiceTracker;
 import org.apache.axis2.transport.base.tracker.AxisServiceTrackerListener;
+// Synapse imports for logging
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+// HttpCore 5 imports
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.ConnectionClosedException;
@@ -44,12 +46,14 @@ import org.apache.hc.core5.http.io.HttpRequestHandler;
 import org.apache.hc.core5.http.io.support.BasicHttpServerRequestHandler;
 import org.apache.hc.core5.http.protocol.BasicHttpContext;
 import org.apache.hc.core5.http.protocol.HttpContext;
+
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 import org.apache.synapse.transport.passthru.util.SessionContextUtil;
 
+// for out vt blocking socket handling, we use Java 21+ Virtual Threads and HttpCore 5's blocking I/O APIs
 import javax.net.ServerSocketFactory;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -58,9 +62,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
+
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -91,6 +97,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * &lt;/transportReceiver&gt;
  * </pre>
  */
+
 public class VTPassThroughHttpListener implements TransportListener {
 
     protected Log log = LogFactory.getLog(this.getClass());
@@ -342,6 +349,7 @@ public class VTPassThroughHttpListener implements TransportListener {
     private void handleConnection(Socket clientSocket) {
         DefaultBHttpServerConnection conn = null;
         try {
+            // config to define stream buffer size 
             Http1Config h1Config = Http1Config.custom()
                     .setBufferSize(VTConstants.STREAM_BUFFER_SIZE)
                     .build();
@@ -350,6 +358,7 @@ public class VTPassThroughHttpListener implements TransportListener {
             conn.bind(clientSocket);
 
             // Store socket addresses in context for the handler
+            //Synapse sets this in MessageContext, but http core 5 didn't expose it to handlers, so we set it in the HttpContext here.
             BasicHttpContext context = new BasicHttpContext();
             SocketAddress remoteAddr = clientSocket.getRemoteSocketAddress();
             SocketAddress localAddr = clientSocket.getLocalSocketAddress();
@@ -358,6 +367,7 @@ public class VTPassThroughHttpListener implements TransportListener {
             context.setAttribute(VTConstants.CTX_LOCAL_PORT, clientSocket.getLocalPort());
 
             while (conn.isOpen()) {
+                //handleRequest handle ont request-response cycle then returns, after it blocks until next request in socket.
                 httpService.handleRequest(conn, context);
             }
         } catch (ConnectionClosedException e) {
@@ -367,6 +377,7 @@ public class VTPassThroughHttpListener implements TransportListener {
                         + clientSocket.getRemoteSocketAddress());
             }
         } catch (Exception e) {
+
             if (log.isDebugEnabled()) {
                 log.debug("Connection ended: "
                         + clientSocket.getRemoteSocketAddress()

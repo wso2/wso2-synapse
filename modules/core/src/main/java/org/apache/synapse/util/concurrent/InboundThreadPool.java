@@ -81,4 +81,16 @@ public class InboundThreadPool extends ThreadPoolExecutor {
             qlen > 0 ? new LinkedBlockingQueue<Runnable>(qlen) : new LinkedBlockingQueue<Runnable>(),
             new SynapseThreadFactory(new ThreadGroup(threadGroup), threadIdPrefix));
     }
+
+    private final ExecutorService vtExecutor = Executors.newThreadPerTaskExecutor(
+        Thread.ofVirtual().name(INBOUND_THREAD_ID_PREFIX + "-", 0).factory());
+
+    @Override
+    public void execute(Runnable command) {
+        if (Thread.currentThread().isVirtual()) {
+            vtExecutor.execute(command);
+        } else {
+            super.execute(command);
+        }
+    }
 }
