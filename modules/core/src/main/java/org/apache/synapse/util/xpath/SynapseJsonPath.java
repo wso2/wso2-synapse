@@ -174,6 +174,7 @@ public class SynapseJsonPath extends SynapsePath {
                         stream = JsonUtil.getJsonPayload(amc);
                     } else {
                         JsonUtil.getNewJsonPayload(amc, stream, true, true);
+                        stream = JsonUtil.toReadOnlyStream(stream);
                     }
                 } else {
                     // Message Already built.
@@ -278,6 +279,7 @@ public class SynapseJsonPath extends SynapsePath {
                         stream = JsonUtil.getJsonPayload(amc);
                     } else {
                         JsonUtil.getNewJsonPayload(amc, stream, true, true);
+                        stream = JsonUtil.toReadOnlyStream(stream);
                     }
                 } else {
                     // Message Already built.
