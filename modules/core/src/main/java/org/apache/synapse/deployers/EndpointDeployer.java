@@ -74,6 +74,17 @@ public class EndpointDeployer extends AbstractSynapseArtifactDeployer {
                 if (log.isDebugEnabled()) {
                     log.debug("Initialized the endpoint : " + ep.getName());
                 }
+                Endpoint existingEp = getSynapseConfiguration().getDefinedEndpoints().get(ep.getName());
+                if (existingEp != null) {
+                    String existingContainer = existingEp.getArtifactContainerName();
+                    if (existingContainer != null && !existingContainer.equals(customLogContent)) {
+                        handleSynapseArtifactDeploymentError(
+                            "Endpoint named '" + ep.getName() + "' is already deployed"
+                            + (existingContainer.isEmpty() ? "." : " from " + existingContainer + ".")
+                            + " Duplicate endpoint names across Carbon applications are not allowed.");
+                        return null;
+                    }
+                }
                 getSynapseConfiguration().addEndpoint(ep.getName(), ep);
                 if (log.isDebugEnabled()) {
                     log.debug("Endpoint Deployment from file : " + fileName + " : Completed");
@@ -163,6 +174,14 @@ public class EndpointDeployer extends AbstractSynapseArtifactDeployer {
 
                 CustomLogSetter.getInstance().setLogAppender((ep != null) ? ep.getArtifactContainerName() : "");
 
+                String epContainer = ep.getArtifactContainerName();
+                if (customLogContent != null && epContainer != null
+                        && !customLogContent.equals(epContainer)) {
+                    log.warn("Endpoint '" + artifactName + "' was deployed from " + epContainer
+                            + " but undeployment was triggered from " + customLogContent
+                            + ". Skipping removal to avoid breaking the owning application.");
+                    return;
+                }
                 getSynapseConfiguration().removeEndpoint(artifactName);
                 if (log.isDebugEnabled()) {
                     log.debug("Destroying the endpoint named : " + artifactName);
