@@ -36,6 +36,8 @@ import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import java.time.Duration;
+
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
@@ -89,10 +91,7 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
         String headerProperty = getHeaderKeyProperty();
         String headerKey = null;
         String headerValue = null;
-        if (headerProperty == null) {
-            logger.warn("No properties found starting with opentelemetry.properties. "
-                    + "Continuing without authentication headers.");
-        } else {
+        if (StringUtils.isNotBlank(headerProperty)) {
             headerKey = headerProperty.substring(TelemetryConstants.OPENTELEMETRY_PROPERTIES_PREFIX.length());
             headerValue = SynapsePropertiesLoader.getPropertyValue(headerProperty, null);
             if (headerValue == null) {
