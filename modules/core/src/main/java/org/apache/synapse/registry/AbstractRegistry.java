@@ -91,12 +91,42 @@ public abstract class AbstractRegistry implements Registry {
             if (log.isDebugEnabled()) {
                 log.debug("Cached object has expired for key : " + entry.getKey());
             }
-            re = getRegistryEntry(entry.getKey());
-            // reload the properties since the cache is expired
-            entry.setEntryProperties(getResourceProperties(entry.getKey()));
 
-            if (re.getVersion() != Long.MIN_VALUE &&
-                re.getVersion() == entry.getVersion()) {
+            // Perform a lookup before fetching the registry entry to verify the resource
+            // still exists. This ensures getRegistryEntry() is only called on resources
+            // that are accessible, consistent with the non-cached path behavior.
+            omNode = null;
+            try {
+                omNode = lookup(entry.getKey());
+                entry.setEntryProperties(getResourceProperties(entry.getKey()));
+            } catch (OMException e) {
+                log.error("Error reading registry resource file : " + entry.getKey(), e);
+            }
+
+            if (omNode == null && entry.getEntryProperties() != null &&
+                    !entry.getEntryProperties().isEmpty()) {
+                // Collection
+                re = getRegistryEntry(entry.getKey());
+                if (re != null) {
+                    setExpiryTime(entry, re);
+                    entry.setVersion(re.getVersion());
+                }
+            }
+
+            if (omNode == null) {
+                if (entry.getEntryProperties() == null || entry.getEntryProperties().isEmpty()) {
+                    // Resource no longer exists; invalidate the cache so subsequent
+                    // lookups do not serve the stale cached value
+                    entry.clearCache();
+                }
+                return null;
+            }
+
+            // Resource still exists; fetch its registry entry to check version
+            re = getRegistryEntry(entry.getKey());
+
+            if (re != null && re.getVersion() != Long.MIN_VALUE &&
+                    re.getVersion() == entry.getVersion()) {
                 if (log.isDebugEnabled()) {
                     log.debug("Expired version number is same as current version in registry");
                 }
@@ -112,25 +142,6 @@ public abstract class AbstractRegistry implements Registry {
 
                 // return cached object
                 return entry.getValue();
-
-            } else {
-                omNode = lookup(entry.getKey());
-                entry.setEntryProperties(getResourceProperties(entry.getKey()));
-
-                if (omNode == null && entry.getEntryProperties() != null &&
-                        !entry.getEntryProperties().isEmpty()) {
-                    // Collection
-                    re = getRegistryEntry(entry.getKey());
-                    if (re != null) {
-                        setExpiryTime(entry, re);
-                        entry.setVersion(re.getVersion());
-                    }
-                }
-
-                if (omNode == null) {
-                    return null;
-                }
-
             }
         }
 

@@ -105,7 +105,7 @@ public class DynamicResourceTest extends TestCase {
         Mediator seq3 = synCtx.getSequence(KEY_DYNAMIC_SEQUENCE_1);
         assertNotNull(seq3);
         assertTrue(((SequenceMediator) seq3).isInitialized());
-        assertEquals(1, registry.getHitCount());
+        assertEquals(2, registry.getHitCount());
         seq3.mediate(synCtx);
         assertEquals("bar", synCtx.getProperty("foo"));
         assertTrue(seq1 == seq3);
@@ -119,7 +119,7 @@ public class DynamicResourceTest extends TestCase {
         Mediator seq4 = synCtx.getSequence(KEY_DYNAMIC_SEQUENCE_1);
         assertNotNull(seq4);
         assertTrue(((SequenceMediator) seq4).isInitialized());
-        assertEquals(2, registry.getHitCount());
+        assertEquals(3, registry.getHitCount());
         seq4.mediate(synCtx);
         assertEquals("baz", synCtx.getProperty("foo"));
         assertTrue(seq1 != seq4);
@@ -161,7 +161,7 @@ public class DynamicResourceTest extends TestCase {
         Thread.sleep(8500L);
         Endpoint ep3 = synCtx.getEndpoint(KEY_DYNAMIC_ENDPOINT_1);
         assertNotNull(ep3);
-        assertEquals(1, registry.getHitCount());
+        assertEquals(2, registry.getHitCount());
         assertTrue(ep1 == ep3);
 
         // Phase 4
@@ -173,7 +173,7 @@ public class DynamicResourceTest extends TestCase {
         Endpoint ep4 = synCtx.getEndpoint(KEY_DYNAMIC_ENDPOINT_1);
         assertNotNull(ep4);
         assertTrue(ep4.isInitialized());
-        assertEquals(2, registry.getHitCount());
+        assertEquals(3, registry.getHitCount());
         assertEquals("http://test2.url", ((AddressEndpoint) ep4).getDefinition().getAddress());
         assertTrue(ep1 != ep4);
         assertTrue(!ep1.isInitialized());
