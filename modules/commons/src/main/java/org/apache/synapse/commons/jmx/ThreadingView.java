@@ -53,6 +53,7 @@ public class ThreadingView implements ThreadingViewMBean {
     private String threadNamePrefix = null;
     private boolean periodicLogs = false;
     private double alertMargin = -1;
+    private double runnableAlertMargin = -1;
 
     private double avgBlockedWorkerPercentage = 0.0;
     private double avgUnblockedWorkerPercentage = 0.0;
@@ -84,6 +85,8 @@ public class ThreadingView implements ThreadingViewMBean {
 
     private boolean threadJMXViewEnabled = true;
 
+    private Queue<Double> runnableShortTermQueue = new LinkedList<Double>();
+
     public ThreadingView(final String threadNamePrefix) {
         this.threadNamePrefix = threadNamePrefix;
         this.scheduler = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -103,13 +106,28 @@ public class ThreadingView implements ThreadingViewMBean {
         if("false".equals(jmxEnabled)){
             this.threadJMXViewEnabled = false;
         }
-        
+
         this.periodicLogs = periodicLogs;
         if (alertMargin > 0 && alertMargin < 100) {
             this.alertMargin = alertMargin;
         } else {
             log.warn("Invalid alert margin for the thread group: " + threadNamePrefix + " - " +
                     "Using default value");
+        }
+
+        String runnableAlertMarginStr = MiscellaneousUtil.getProperty(props,
+                "synapse.passthrough.runnable.alert.margin", null);
+        if (runnableAlertMarginStr != null) {
+            try {
+                double configuredMargin = Double.parseDouble(runnableAlertMarginStr);
+                if (configuredMargin > 0 && configuredMargin < 100) {
+                    this.runnableAlertMargin = configuredMargin;
+                } else {
+                    log.warn("Invalid runnable alert margin for the thread group: " + threadNamePrefix);
+                }
+            } catch (NumberFormatException e) {
+                log.warn("Invalid runnable alert margin configured for the thread group: " + threadNamePrefix);
+            }
         }
     }
 
@@ -136,7 +154,7 @@ public class ThreadingView implements ThreadingViewMBean {
         boolean registered = false;
         try {
             registered = MBeanRegistrar.getInstance().registerMBean(this, SYNAPSE_THREADING_VIEW,
-                        threadNamePrefix);
+                    threadNamePrefix);
         } finally {
             if (!registered) {
                 scheduler.shutdownNow();
@@ -230,13 +248,14 @@ public class ThreadingView implements ThreadingViewMBean {
     }
 
     public void reset() {
-       avgBlockedWorkerPercentage = 0.0;
-       avgUnblockedWorkerPercentage = 0.0;
-       shortTermDataQueue.clear();
-       longTermDataQueue.clear();
-       samplesCount = 0;
-       totalCount = 0;
-       resetTime = Calendar.getInstance().getTime();
+        avgBlockedWorkerPercentage = 0.0;
+        avgUnblockedWorkerPercentage = 0.0;
+        shortTermDataQueue.clear();
+        longTermDataQueue.clear();
+        runnableShortTermQueue.clear();
+        samplesCount = 0;
+        totalCount = 0;
+        resetTime = Calendar.getInstance().getTime();
     }
 
     private boolean isBlocked(ThreadInfo threadInfo) {
@@ -339,6 +358,8 @@ public class ThreadingView implements ThreadingViewMBean {
         public void run() {
             samplesCount++;
 
+            double runnable = getRunnableWorkerPercentage();
+
             double blocked = getBlockedWorkerPercentage();
             double unblocked = 100 - blocked;
 
@@ -352,6 +373,11 @@ public class ThreadingView implements ThreadingViewMBean {
                 shortTermDataQueue.remove();
             }
             shortTermDataQueue.offer(blocked);
+
+            if (runnableShortTermQueue.size() == 15 * SAMPLES_PER_MINUTE) {
+                runnableShortTermQueue.remove();
+            }
+            runnableShortTermQueue.offer(runnable);
 
             if (samplesCount == SAMPLES_PER_MINUTE) {
                 samplesCount = 0;
@@ -377,6 +403,14 @@ public class ThreadingView implements ThreadingViewMBean {
                             " threads were in BLOCKED state during last minute!");
                 }
             }
+
+            if (runnableAlertMargin > 0) {
+                double running = getAverageRunnableThreads(1);
+                if (running > runnableAlertMargin) {
+                    log.warn("SYSTEM ALERT: " + running + "% of the " + threadNamePrefix +
+                            " threads were in RUNNING state during last minute!");
+                }
+            }
         }
     }
 
@@ -389,6 +423,52 @@ public class ThreadingView implements ThreadingViewMBean {
             }
             longTermDataQueue.offer(blocked);
         }
+    }
+
+    private double getRunnableWorkerPercentage() {
+        int totalCount = 0;
+        int runnableCount = 0;
+
+        ThreadInfo[] threadInfo = dumpAllThreads();
+
+        for (ThreadInfo ti : threadInfo) {
+            if (ti != null && ti.getThreadName().startsWith(threadNamePrefix)) {
+                totalCount++;
+                if (ti.getThreadState() == Thread.State.RUNNABLE) {
+                    runnableCount++;
+                }
+            }
+        }
+
+        if (totalCount == 0) {
+            return 0;
+        }
+
+        return ((double) runnableCount / (double) totalCount) * 100;
+    }
+
+    private double getAverageRunnableThreads(int n) {
+        int samples = n * SAMPLES_PER_MINUTE;
+        double sum = 0.0;
+
+        Double[] array = runnableShortTermQueue.toArray(new Double[runnableShortTermQueue.size()]);
+
+        if (samples > array.length) {
+            samples = array.length;
+            for (Double value : array) {
+                sum += value;
+            }
+        } else {
+            for (int i = 0; i < samples; i++) {
+                sum += array[array.length - 1 - i];
+            }
+        }
+
+        if (samples == 0) {
+            return 0.0;
+        }
+
+        return sum / samples;
     }
 }
 
