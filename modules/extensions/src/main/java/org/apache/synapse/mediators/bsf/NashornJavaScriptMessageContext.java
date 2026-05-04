@@ -18,7 +18,7 @@
 
 package org.apache.synapse.mediators.bsf;
 
-import org.apache.xerces.parsers.DOMParser;
+import org.apache.synapse.mediators.bsf.utils.ScriptUtils;
 import org.openjdk.nashorn.api.scripting.ScriptObjectMirror;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
@@ -53,7 +53,6 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.Endpoint;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -235,13 +234,9 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
      * @return parsed document
      */
     public Document parseXml(String text) throws ScriptException {
-        InputSource sax = new InputSource(new java.io.StringReader(text));
-        DOMParser parser = new DOMParser();
         Document doc;
         try {
-            parser.parse(sax);
-            doc = parser.getDocument();
-            doc.getDocumentElement().normalize();
+            doc = ScriptUtils.parseXml(text);
         } catch (SAXException | IOException e) {
             ScriptException scriptException = new ScriptException("Failed to parse provided xml");
             scriptException.initCause(e);
@@ -258,7 +253,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
      * @return parsed document
      */
     public OMElement getParsedOMElement(InputStream stream) {
-        OMXMLParserWrapper builder = OMXMLBuilderFactory.createOMBuilder(stream);
+        OMXMLParserWrapper builder = OMXMLBuilderFactory.createOMBuilderWithSec(stream);
         return builder.getDocumentElement();
     }
 

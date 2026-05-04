@@ -43,6 +43,7 @@ import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUni
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryConstants;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryTracer;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryUtil;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.helpers.TracingUtils;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.parentresolving.ParentResolver;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.scoping.TracingScope;
@@ -179,7 +180,11 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
                 startSpan(statisticDataUnit, synCtx, tracingScope.getSpanStore());
             } else {
                 // Will begin during addSeqContinuationState
-                bufferSequenceContinuationState(statisticDataUnit, tracingScope.getSpanStore());
+                if (synCtx.isContinuationEnabled()) {
+                    bufferSequenceContinuationState(statisticDataUnit, tracingScope.getSpanStore());
+                }else {
+                    startSpan(statisticDataUnit, synCtx, tracingScope.getSpanStore());
+                }
             }
         }
     }
@@ -404,12 +409,7 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
      */
     private boolean isOuterLevelSpan(StatisticDataUnit statisticDataUnit, SpanStore spanStore) {
         return spanStore.getOuterLevelSpanWrapper() == null
-                && (statisticDataUnit.getComponentType() == ComponentType.TASK
-                || statisticDataUnit.getComponentType() == ComponentType.MESSAGEPROCESSOR
-                || statisticDataUnit.getComponentType() == ComponentType.PROXYSERVICE
-                || statisticDataUnit.getComponentType() == ComponentType.API
-                || statisticDataUnit.getComponentType() == ComponentType.INBOUNDENDPOINT
-                || statisticDataUnit.isOuterLayerSpan()
+                && (TelemetryUtil.isOuterLayerComponent(statisticDataUnit.getComponentType()) || statisticDataUnit.isOuterLayerSpan()
                 || (statisticDataUnit.getComponentType() == ComponentType.SEQUENCE
                 && SynapseConstants.MAIN_SEQUENCE_KEY.equals(statisticDataUnit.getComponentName())));
     }
@@ -448,12 +448,19 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
     }
 
     @Override
-    public void handleCloseFlowForcefully(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx) {
+    public void handleCloseFlowForcefully(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx, boolean error) {
         TracingScope tracingScope = tracingScopeManager.getTracingScope(synCtx);
         SpanStore spanStore = tracingScope.getSpanStore();
         String spanWrapperId = TracingUtils.extractId(basicStatisticDataUnit);
         SpanWrapper spanWrapper = spanStore.getSpanWrapper(spanWrapperId);
 
+        if (!error) {
+            if (TelemetryUtil.isAllBranchesFinished(synCtx)) {
+                handleCloneFinishEvent(synCtx, spanWrapper);
+            }
+            // if it's not an error we shouldn't close parent span wrappers
+            return;
+        }
         // finish the current span
         handleCloseEvent(basicStatisticDataUnit, synCtx, false);
 
@@ -607,8 +614,7 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
 
     @Override
     public void handleAddCallback(MessageContext messageContext, String callbackId) {
-        TracingScope tracingScope = tracingScopeManager.getTracingScope(messageContext);
-        tracingScope.addCallback();
+
     }
 
     @Override
@@ -628,13 +634,28 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
 
     private void handleCallbackFinishEvent(MessageContext messageContext) {
         TracingScope tracingScope = tracingScopeManager.getTracingScope(messageContext);
-        tracingScope.removeCallback();
         // The last callback received in a scope will finish the outer level span
         if (tracingScope.isEventCollectionFinished(messageContext)) {
             synchronized (tracingScope.getSpanStore()) {
                 cleanupContinuationStateSequences(tracingScope.getSpanStore(), messageContext);
                 SpanWrapper outerLevelSpanWrapper = tracingScope.getSpanStore().getOuterLevelSpanWrapper();
                 tracingScope.getSpanStore().finishSpan(outerLevelSpanWrapper, messageContext);
+                tracingScopeManager.cleanupTracingScope(tracingScope.getTracingScopeId());
+            }
+        }
+    }
+
+    private void handleCloneFinishEvent(MessageContext messageContext, SpanWrapper spanWrapper) {
+        TracingScope tracingScope = tracingScopeManager.getTracingScope(messageContext);
+        tracingScope.getSpanStore().finishSpan(spanWrapper, messageContext);
+        if (tracingScope.isEventCollectionFinished(messageContext)) {
+            synchronized (tracingScope.getSpanStore()) {
+                cleanupContinuationStateSequences(tracingScope.getSpanStore(), messageContext);
+                cleanUpActiveSpans(tracingScope.getSpanStore(), messageContext);
+                SpanWrapper outerLevelSpanWrapper = tracingScope.getSpanStore().getOuterLevelSpanWrapper();
+                if (outerLevelSpanWrapper != null && !outerLevelSpanWrapper.equals(spanWrapper)) {
+                    tracingScope.getSpanStore().finishSpan(outerLevelSpanWrapper, messageContext);
+                }
                 tracingScopeManager.cleanupTracingScope(tracingScope.getTracingScopeId());
             }
         }

@@ -249,7 +249,14 @@ public class Target {
                     throw new SynapseException("Variable key cannot be null");
                 }
                 Map<String, Object> result = new HashMap<>();
-                result.put(ExpressionConstants.PAYLOAD, sourceNodeList);
+                OMElement xmlPayload = null;
+                for (OMNode node : sourceNodeList) {
+                    if (node instanceof OMElement) {
+                        xmlPayload = (OMElement) node;
+                        break;
+                    }
+                }
+                result.put(ExpressionConstants.PAYLOAD, xmlPayload != null ? xmlPayload : sourceNodeList);
                 Map transportHeaders = (Map)((Axis2MessageContext) synContext).getAxis2MessageContext()
                         .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
                 JsonObject headers = EIPUtils.convertMapToJsonObj(transportHeaders);

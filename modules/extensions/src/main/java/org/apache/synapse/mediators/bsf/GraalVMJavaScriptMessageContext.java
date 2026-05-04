@@ -49,12 +49,11 @@ import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.Endpoint;
-import org.apache.xerces.parsers.DOMParser;
+import org.apache.synapse.mediators.bsf.utils.ScriptUtils;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
@@ -258,13 +257,9 @@ public class GraalVMJavaScriptMessageContext implements ScriptMessageContext {
      * @return parsed document
      */
     public Document parseXml(String text) throws ScriptException {
-        InputSource sax = new InputSource(new java.io.StringReader(text));
-        DOMParser parser = new DOMParser();
         Document doc;
         try {
-            parser.parse(sax);
-            doc = parser.getDocument();
-            doc.getDocumentElement().normalize();
+            doc = ScriptUtils.parseXml(text);
         } catch (SAXException | IOException e) {
             ScriptException scriptException = new ScriptException("Failed to parse provided xml");
             scriptException.initCause(e);
@@ -281,7 +276,7 @@ public class GraalVMJavaScriptMessageContext implements ScriptMessageContext {
      * @return parsed document
      */
     public OMElement getParsedOMElement(InputStream stream) {
-        OMXMLParserWrapper builder = OMXMLBuilderFactory.createOMBuilder(stream);
+        OMXMLParserWrapper builder = OMXMLBuilderFactory.createOMBuilderWithSec(stream);
         return builder.getDocumentElement();
     }
 

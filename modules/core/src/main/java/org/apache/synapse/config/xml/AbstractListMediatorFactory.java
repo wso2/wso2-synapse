@@ -40,24 +40,35 @@ public abstract class AbstractListMediatorFactory extends AbstractMediatorFactor
 
     protected static void addChildren(OMElement el, ListMediator m, Properties properties) {
         Iterator it = el.getChildren();
+        StringBuilder blockedMediators = null;
 
         while (it.hasNext()) {
             OMNode child = (OMNode) it.next();
             if (child instanceof OMElement) {
                 if (!DESCRIPTION_Q.equals(((OMElement) child).getQName())) { // neglect the description tag
-                    SynapseConfiguration configuration = null;
-                    if (properties != null) {
-                        configuration = properties.get(SynapseConstants.SYNAPSE_CONFIGURATION) != null
-                                ? (SynapseConfiguration) properties.get(SynapseConstants.SYNAPSE_CONFIGURATION) : null;
-                    }
-                    Mediator med = MediatorFactoryFinder.getInstance().getMediator((OMElement) child, properties,
-                            configuration);
-                    if (med != null) {
-                        m.addChild(med);
-                    } else {
-                        String msg = "Unknown mediator : " + ((OMElement) child).getLocalName();
-                        log.error(msg);
-                        throw new SynapseException(msg);
+                    try {
+                        SynapseConfiguration configuration = null;
+                        if (properties != null) {
+                            configuration = properties.get(SynapseConstants.SYNAPSE_CONFIGURATION) != null
+                                    ? (SynapseConfiguration) properties.get(SynapseConstants.SYNAPSE_CONFIGURATION)
+                                    : null;
+                        }
+                        Mediator med = MediatorFactoryFinder.getInstance().getMediator((OMElement) child, properties,
+                                configuration);
+                        if (med != null) {
+                            m.addChild(med);
+                        } else {
+                            String msg = "Unknown mediator : " + ((OMElement) child).getLocalName();
+                            log.error(msg);
+                            throw new SynapseException(msg);
+                        }
+                    } catch (MediatorAccessControlException e) {
+                        // Collect and continue to report all blocked mediators at once
+                        if (blockedMediators == null) {
+                            blockedMediators = new StringBuilder(e.getMediatorName());
+                        } else {
+                            blockedMediators.append(", ").append(e.getMediatorName());
+                        }
                     }
                 }
             } else if (child instanceof OMComment) {
@@ -65,6 +76,12 @@ public abstract class AbstractListMediatorFactory extends AbstractMediatorFactor
                 commendMediator.setCommentText(((OMComment) child).getValue());
                 m.addChild(commendMediator);
             }
+        }
+
+        if (blockedMediators != null) {
+            String msg = "Access control blocked for the following mediators: " + blockedMediators;
+            log.error(msg);
+            throw new SynapseException(msg);
         }
     }
 

@@ -46,7 +46,7 @@ public interface CloseEventHandler {
      * @param basicStatisticDataUnit    Basic statistic data unit object.
      * @param synCtx                    Message context.
      */
-    void handleCloseFlowForcefully(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx);
+    void handleCloseFlowForcefully(BasicStatisticDataUnit basicStatisticDataUnit, MessageContext synCtx, boolean error);
 
     /**
      * Handles a forceful close event.

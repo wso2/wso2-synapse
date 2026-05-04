@@ -37,8 +37,11 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import org.apache.axiom.om.OMElement;
+
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a node in the AST that holds a predefined function.
@@ -666,6 +669,32 @@ public class PredefinedFunctionNode implements ExpressionNode {
         try {
             if (StringUtils.isEmpty(variableName)) {
                 throw new EvaluationException("Invalid variable name provided for XPATH function");
+            }
+            // Dot notation support: "varName.fieldKey" (e.g. "myVar.payload") allows accessing
+            // a specific field of a Map-typed variable, such as a connector response payload.
+            int dotIndex = variableName.indexOf('.');
+            if (dotIndex != -1) {
+                String baseName = variableName.substring(0, dotIndex);
+                String fieldKey = variableName.substring(dotIndex + 1);
+                Object variable = context.getVariable(baseName);
+                if (variable == null) {
+                    throw new EvaluationException("Variable '" + baseName + "' is not defined");
+                }
+                if (!(variable instanceof Map)) {
+                    throw new EvaluationException("Variable '" + baseName + "' is not a Map type");
+                }
+                Object fieldValue = ((Map<?, ?>) variable).get(fieldKey);
+                if (!(fieldValue instanceof OMElement)) {
+                    throw new EvaluationException("Field '" + fieldKey + "' of variable '" + baseName
+                            + "' is not an XML element");
+                }
+                Object result = context.evaluateXpathExpressionOnVariable(
+                        expression.asString(), (OMElement) fieldValue, isObjectValue);
+                if (isObjectValue) {
+                    return new ExpressionResult((List<?>) result);
+                } else {
+                    return new ExpressionResult(result.toString());
+                }
             }
             Object result = context.evaluateXpathExpression("$var:" + variableName + expression.asString(),
                     isObjectValue);

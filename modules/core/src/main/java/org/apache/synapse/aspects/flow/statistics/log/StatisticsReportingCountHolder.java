@@ -33,6 +33,12 @@ public class StatisticsReportingCountHolder {
      */
     private AtomicInteger callBackCount = new AtomicInteger(0);
 
+    /**
+     * Which holds count of branches created by clone or iterate mediators. This is used to track the sub branches created by clone or iterate mediators, and to make sure all the branches are closed before closing the main branch.
+     * Initial value is 1 since main branch is also considered as a branch, and it is closed when all the sub branches are closed.
+     */
+    private AtomicInteger branchCount = new AtomicInteger(1);
+
     public void incrementStatCount() {
         this.statCount.incrementAndGet();
     }
@@ -55,6 +61,18 @@ public class StatisticsReportingCountHolder {
 
     public int getCallBackCount() {
         return this.callBackCount.get();
+    }
+
+    public void incrementBranchCount() {
+        this.branchCount.incrementAndGet();
+    }
+
+    public int decrementAndGetBranchCount() {
+        return this.branchCount.decrementAndGet();
+    }
+
+    public int getBranchCount() {
+        return this.branchCount.get();
     }
 
 }

@@ -20,6 +20,7 @@ package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.managem
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryUtil;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.stores.SpanStore;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
@@ -55,40 +56,14 @@ public class TracingScope {
      * An increment/decrement in a child scope's pending callbacks count will reflect in all its parents.
      * But such a change in a parent scope's pending callbacks count will not reflect in any of its children.
      */
-    private Integer pendingCallbacksCount;
 
     public TracingScope(String tracingScopeId) {
         this.tracingScopeId = tracingScopeId;
         this.spanStore = new SpanStore();
-        this.pendingCallbacksCount = 0;
     }
 
     public SpanStore getSpanStore() {
         return spanStore;
-    }
-
-    /**
-     * Increments pending callbacks count in this scope, till its super parent.
-     */
-    public void addCallback() {
-        this.incrementPendingCallbacksCount();
-    }
-
-    /**
-     * Decrements pending callbacks count in this scope, till its super parent.
-     */
-    public void removeCallback() {
-        this.decrementPendingCallbacksCount();
-    }
-
-    private synchronized void incrementPendingCallbacksCount() {
-        pendingCallbacksCount++;
-    }
-
-    private synchronized void decrementPendingCallbacksCount() {
-        if (pendingCallbacksCount > 0) {
-            pendingCallbacksCount--;
-        }
     }
 
     /**
@@ -98,10 +73,9 @@ public class TracingScope {
      * @return          Whether event collection has been finished or not.
      */
     public boolean isEventCollectionFinished(MessageContext synCtx) {
-        return pendingCallbacksCount == 0 &&
-                synCtx.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY) != null &&
+        return synCtx.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY) != null &&
                 ((StatisticsReportingEventHolder) synCtx.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY))
-                        .isEvenCollectionFinished();
+                        .isEvenCollectionFinished() && TelemetryUtil.isAllBranchesFinished(synCtx);
     }
 
     public String getTracingScopeId() {
