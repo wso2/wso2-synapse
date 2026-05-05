@@ -173,25 +173,6 @@ public class ThreadingView implements ThreadingViewMBean {
         return count;
     }
 
-    private double getBlockedWorkerPercentage() {
-        int totalCount = 0;
-        int blockedCount = 0;
-        ThreadInfo[] threadInfo = dumpAllThreads();
-        for (ThreadInfo ti : threadInfo) {
-            // see if the thread name matches the prefix
-            if (ti != null && ti.getThreadName().startsWith(threadNamePrefix)) {
-                totalCount++;
-                if (isBlocked(ti)) {
-                    blockedCount++;
-                }
-            }
-        }
-        if (totalCount == 0) {
-            return 0;
-        }
-        return ((double) blockedCount/(double) totalCount) * 100;
-    }
-
     public String[] getDeadLockedWorkers() {
         String[] workers = null;
         // JDK 1.6 has a better implementation of this method but since we are on JDK 1.5
@@ -358,9 +339,9 @@ public class ThreadingView implements ThreadingViewMBean {
         public void run() {
             samplesCount++;
 
-            double runnable = getRunnableWorkerPercentage();
-
-            double blocked = getBlockedWorkerPercentage();
+            double[] percentages = getRunnableAndBlockedWorkerPercentages();
+            double runnable = percentages[0];
+            double blocked = percentages[1];
             double unblocked = 100 - blocked;
 
             // calculate all time average values
@@ -416,7 +397,7 @@ public class ThreadingView implements ThreadingViewMBean {
 
     private class LongTermDataCollectorTask implements Runnable {
         public void run() {
-            double blocked = getBlockedWorkerPercentage();
+            double blocked = getRunnableAndBlockedWorkerPercentages()[1];
 
             if (longTermDataQueue.size() == 24 * SAMPLES_PER_HOUR) {
                 longTermDataQueue.remove();
@@ -425,9 +406,10 @@ public class ThreadingView implements ThreadingViewMBean {
         }
     }
 
-    private double getRunnableWorkerPercentage() {
+    private double[] getRunnableAndBlockedWorkerPercentages() {
         int totalCount = 0;
         int runnableCount = 0;
+        int blockedCount = 0;
 
         ThreadInfo[] threadInfo = dumpAllThreads();
 
@@ -437,14 +419,16 @@ public class ThreadingView implements ThreadingViewMBean {
                 if (ti.getThreadState() == Thread.State.RUNNABLE) {
                     runnableCount++;
                 }
+                if (isBlocked(ti)) {
+                    blockedCount++;
+                }
             }
         }
 
-        if (totalCount == 0) {
-            return 0;
-        }
+        double runnablePercentage = (totalCount == 0) ? 0 : ((double) runnableCount / (double) totalCount) * 100;
+        double blockedPercentage = (totalCount == 0) ? 0 : ((double) blockedCount / (double) totalCount) * 100;
 
-        return ((double) runnableCount / (double) totalCount) * 100;
+        return new double[]{runnablePercentage, blockedPercentage};
     }
 
     private double getAverageRunnableThreads(int n) {
