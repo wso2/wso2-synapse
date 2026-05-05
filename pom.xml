@@ -1542,7 +1542,7 @@
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
       <!-- Synapse and related components -->
       <synapse.version>${project.version}</synapse.version>
-       <version.tomcat>11.0.18</version.tomcat>
+       <version.tomcat>11.0.21</version.tomcat>
        <orbit.version.tomcat>${version.tomcat}.wso2v1</orbit.version.tomcat>
       <commons.pool.version>1.3</commons.pool.version>
       <commons.pool.wso2.version>1.5.0.wso2v1</commons.pool.wso2.version>
@@ -1633,7 +1633,7 @@
       <jacoco.ant.version>0.8.12</jacoco.ant.version>
       <dataprovider.version>1.13.1</dataprovider.version>
       <activemq.version>5.2.0</activemq.version>
-      <rhino.version>1.7.13</rhino.version>
+      <rhino.version>1.7.15.1</rhino.version>
       <jetty.version>7.2.0.v20101020</jetty.version>
        <xml.apis.version>1.4.01</xml.apis.version>
       <!-- The Java version used to execute maven-antrun-plugin in the integration module.
