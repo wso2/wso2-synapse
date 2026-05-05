@@ -53,6 +53,15 @@ public class TemplateEndpoint extends AbstractEndpoint {
     public void send(MessageContext synCtx) {
         reLoadAndInitEndpoint(synCtx.getEnvironment());
 
+        if (synCtx.getProperty(SynapseConstants.BLOCKING_MSG_SENDER) != null
+                && ((org.apache.synapse.core.axis2.Axis2MessageContext) synCtx)
+                .getAxis2MessageContext().getProperty("VT_INPUT_STREAM_PIPE") != null) {
+            log.warn("VTTRACE TemplateEndpoint send; messageId=" + synCtx.getMessageID()
+                    + "; name=" + getName() + "; template=" + template
+                    + "; realEndpoint="
+                    + (realEndpoint == null ? "null" : realEndpoint.getClass().getName()));
+        }
+
         if (realEndpoint != null) {
             realEndpoint.send(synCtx);
         } else {

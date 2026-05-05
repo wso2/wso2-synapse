@@ -23,7 +23,6 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.ConfigurationContextFactory;
-import org.apache.axis2.transport.TransportSender;
 import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.ManagedLifecycle;
@@ -39,7 +38,6 @@ import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.Endpoint;
@@ -50,7 +48,6 @@ import org.apache.synapse.mediators.elementary.EnrichMediator;
 import org.apache.synapse.mediators.elementary.Source;
 import org.apache.synapse.mediators.elementary.Target;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
-import org.apache.synapse.message.senders.blocking.VTBlockingMsgSender;
 import org.apache.synapse.util.MediatorEnrichUtil;
 import org.apache.synapse.util.MessageHelper;
 
@@ -95,15 +92,6 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
     }
 
     private BlockingMsgSender blockingMsgSender = null;
-
-    /**
-     * VT-transport blocking sender; non-null only when a VT transport sender
-     * (e.g. {@code VTHttpSender}) is registered in the
-     * ConfigurationContext under the key {@code "VT_TRANSPORT_SENDER"}.
-     * When set, requests arriving on a VT transport context are routed through
-     * this sender instead of the NIO callback path.
-     */
-
 
     private ConfigurationContext configCtx = null;
 
@@ -211,25 +199,6 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         synInCtx.setProperty(ORIGINAL_CONTENT_TYPE, originalContentType);
         synInCtx.setProperty(ORIGINAL_TRANSPORT_HEADERS, originalTransportHeaders);
 
-        // Route through the VT blocking path when the request arrived on a VT transport.
-        // "VT_SOURCE_CONFIGURATION" is set by VTBlockingServerWorker on the *Axis2*
-        // MessageContext. Axis2MessageContext.getProperty() only reads from the Synapse
-        // property map, so we must check axis2MessageContext directly.
-        // Lazy-resolve vtBlockingMsgSender on first use in case VTHttpSender
-        // was initialized after this mediator's init().
-        // if (vtBlockingMsgSender == null && synapseEnv instanceof Axis2SynapseEnvironment) {
-        //     Object vtSender = ((Axis2SynapseEnvironment) synapseEnv)
-        //             .getAxis2ConfigurationContext().getProperty("VT_TRANSPORT_SENDER");
-        //     if (vtSender instanceof TransportSender) {
-        //         vtBlockingMsgSender = new VTBlockingMsgSender((TransportSender) vtSender);
-        //     }
-        // }
-        // if (vtBlockingMsgSender != null
-        //         && axis2MessageContext.getProperty("VT_SOURCE_CONFIGURATION") != null) {
-        //     return handleVTBlockingCall(synInCtx, originalMessageType, originalContentType,
-        //             originalTransportHeaders);
-        // } else 
-            
         if (blocking) {
             return handleBlockingCall(synInCtx, originalMessageType, originalContentType, originalTransportHeaders);
         } else {
@@ -259,6 +228,14 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         blockingMsgSender.setInitClientOptions(initClientOptions);
         // Set the blockingMsgSender with synapse message Context
         synInCtx.setProperty(SynapseConstants.BLOCKING_MSG_SENDER, blockingMsgSender);
+        boolean vtRequest = ((Axis2MessageContext) synInCtx).getAxis2MessageContext()
+                .getProperty("VT_SOURCE_CONFIGURATION") != null;
+        if (vtRequest) {
+            log.warn("VTTRACE CallMediator blocking call entered; messageId="
+                    + synInCtx.getMessageID() + "; endpoint="
+                    + (endpoint == null ? "null" : endpoint.getClass().getName())
+                    + "; faultStackSize=" + synInCtx.getFaultStack().size());
+        }
         // Clear the message context properties related to endpoint in last service invocation
         Set keySet = synInCtx.getPropertyKeySet();
         if (keySet != null) {
@@ -270,6 +247,13 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
         Object faultHandlerBeforeInvocation = getLastSequenceFaultHandler(synInCtx);
         synInCtx.setProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER, faultHandlerBeforeInvocation);
+        if (vtRequest) {
+            log.warn("VTTRACE CallMediator before endpoint send; messageId="
+                    + synInCtx.getMessageID() + "; lastFaultHandlerBefore="
+                    + (faultHandlerBeforeInvocation == null ? "null"
+                    : faultHandlerBeforeInvocation.getClass().getName())
+                    + "; faultStackSize=" + synInCtx.getFaultStack().size());
+        }
 
         // Ensure the backend response's Content-Type is propagated back onto the message
         // context (MESSAGE_TYPE / CONTENT_TYPE properties) after the blocking call.
@@ -287,13 +271,57 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         // blocking sender.
         if (endpoint == null) {
             EndpointDefinition endpointDefinition = new EndpointDefinition();
-            synInCtx.getEnvironment().send(endpointDefinition, synInCtx);
+            try {
+                synInCtx.getEnvironment().send(endpointDefinition, synInCtx);
+            } catch (RuntimeException e) {
+                if (vtRequest) {
+                    log.warn("VTTRACE CallMediator default endpoint send threw; messageId="
+                            + synInCtx.getMessageID() + "; exception="
+                            + e.getClass().getName() + ": " + e.getMessage(), e);
+                }
+                throw e;
+            }
         } else {
-            endpoint.send(synInCtx);
+            try {
+                endpoint.send(synInCtx);
+            } catch (RuntimeException e) {
+                if (vtRequest) {
+                    log.warn("VTTRACE CallMediator endpoint.send threw; messageId="
+                            + synInCtx.getMessageID() + "; exception="
+                            + e.getClass().getName() + ": " + e.getMessage(), e);
+                }
+                throw e;
+            }
+        }
+        if (vtRequest) {
+            Object faultHandlerAfterInvocation = getLastSequenceFaultHandler(synInCtx);
+            log.warn("VTTRACE CallMediator endpoint.send returned; messageId="
+                    + synInCtx.getMessageID() + "; blockingSenderError="
+                    + synInCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR)
+                    + "; vtResponsePipe="
+                    + (((Axis2MessageContext) synInCtx).getAxis2MessageContext()
+                    .getProperty("VT_RESPONSE_INPUT_STREAM_PIPE") != null)
+                    + "; lastFaultHandlerAfter="
+                    + (faultHandlerAfterInvocation == null ? "null"
+                    : faultHandlerAfterInvocation.getClass().getName())
+                    + "; faultStackSize=" + synInCtx.getFaultStack().size()
+                    + "; errorCode=" + synInCtx.getProperty(SynapseConstants.ERROR_CODE)
+                    + "; errorMessage=" + synInCtx.getProperty(SynapseConstants.ERROR_MESSAGE));
         }
 
         // check whether fault sequence is already invoked
         if (faultHandlerBeforeInvocation != getLastSequenceFaultHandler(synInCtx)) {
+            if (vtRequest) {
+                Object faultHandlerAfterInvocation = getLastSequenceFaultHandler(synInCtx);
+                log.warn("VTTRACE CallMediator returning false because fault handler changed; messageId="
+                        + synInCtx.getMessageID() + "; before="
+                        + (faultHandlerBeforeInvocation == null ? "null"
+                        : faultHandlerBeforeInvocation.getClass().getName())
+                        + "; after="
+                        + (faultHandlerAfterInvocation == null ? "null"
+                        : faultHandlerAfterInvocation.getClass().getName())
+                        + "; faultStackSize=" + synInCtx.getFaultStack().size());
+            }
             return false;
         }
 
@@ -320,69 +348,31 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
                 }
             }
         } else {
+            if (vtRequest) {
+                log.warn("VTTRACE CallMediator blocking sender error detected; messageId="
+                        + synInCtx.getMessageID() + "; errorMessage="
+                        + synInCtx.getProperty(SynapseConstants.ERROR_MESSAGE)
+                        + "; exception="
+                        + synInCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
+            }
             log.error("Error while performing the call operation in blocking mode");
             return false;
         }
+        if (vtRequest) {
+            log.warn("VTTRACE CallMediator before postMediate; messageId="
+                    + synInCtx.getMessageID() + "; vtResponsePipe="
+                    + (((Axis2MessageContext) synInCtx).getAxis2MessageContext()
+                    .getProperty("VT_RESPONSE_INPUT_STREAM_PIPE") != null));
+        }
         postMediate(synInCtx, originalMessageType, originalContentType, originalTransportHeaders);
+        if (vtRequest) {
+            log.warn("VTTRACE CallMediator after postMediate; messageId="
+                    + synInCtx.getMessageID() + "; vtResponsePipe="
+                    + (((Axis2MessageContext) synInCtx).getAxis2MessageContext()
+                    .getProperty("VT_RESPONSE_INPUT_STREAM_PIPE") != null));
+        }
         return true;
     }
-
-    /**
-     * Send request via the VT transport's blocking sender.
-     *
-     * <p>Setting {@link SynapseConstants#BLOCKING_MSG_SENDER} to {@code vtBlockingMsgSender}
-     * causes {@code Axis2FlexibleMEPClient.send()} to call the sender directly and return —
-     * no MEP client is created, no async callback is registered, and the continuation stack
-     * is never touched. The VT sender populates the response on the same context, same thread.</p>
-     */
-    // private boolean handleVTBlockingCall(MessageContext synInCtx, String originalMessageType,
-    //                                      String originalContentType, Map originalTransportHeaders) {
-    //     SynapseLog synLog = getLog(synInCtx);
-
-    //     if (synLog.isTraceOrDebugEnabled()) {
-    //         synLog.traceOrDebug("Start : Call mediator - VT Blocking Call");
-    //         if (synLog.isTraceTraceEnabled()) {
-    //             synLog.traceTrace("Message : " + synInCtx.getEnvelope());
-    //         }
-    //     }
-
-    //     // Prevent Axis2FlexibleMEPClient from registering an async callback
-    //     synInCtx.setProperty(SynapseConstants.BLOCKING_MSG_SENDER, vtBlockingMsgSender);
-
-    //     Set keySet = synInCtx.getPropertyKeySet();
-    //     if (keySet != null) {
-    //         keySet.remove(SynapseConstants.RECEIVING_SEQUENCE);
-    //         keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
-    //         keySet.remove(SynapseConstants.LAST_ENDPOINT);
-    //         keySet.remove(SynapseConstants.BLOCKING_SENDER_ERROR);
-    //     }
-
-    //     Object faultHandlerBeforeInvocation = getLastSequenceFaultHandler(synInCtx);
-    //     synInCtx.setProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER, faultHandlerBeforeInvocation);
-
-    //     if (endpoint == null) {
-    //         EndpointDefinition endpointDefinition = new EndpointDefinition();
-    //         synInCtx.getEnvironment().send(endpointDefinition, synInCtx);
-    //     } else {
-    //         endpoint.send(synInCtx);
-    //     }
-
-    //     if (faultHandlerBeforeInvocation != getLastSequenceFaultHandler(synInCtx)) {
-    //         return false;
-    //     }
-
-    //     if ("true".equals(synInCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
-    //         log.error("Error while performing the call operation in VT blocking mode");
-    //         return false;
-    //     }
-
-    //     postMediate(synInCtx, originalMessageType, originalContentType, originalTransportHeaders);
-
-    //     if (synLog.isTraceOrDebugEnabled()) {
-    //         synLog.traceOrDebug("End : Call mediator - VT Blocking Call");
-    //     }
-    //     return true;
-    // }
 
     public void postMediate(MessageContext response, String originalMessageType, String originalContentType,
                             Map originalTransportHeaders) {
@@ -556,21 +546,6 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             synapseEnvironment.updateCallMediatorCount(true);
         }
 
-        // Discover an optional VT transport sender registered in the ConfigurationContext.
-        // VTHttpSender.init() stores itself under "VT_TRANSPORT_SENDER"
-        // (= VTConstants.VT_TRANSPORT_SENDER — string literal avoids a transport module import).
-        // When found, VT requests are handled via handleVTBlockingCall() without async callbacks.
-        // if (synapseEnvironment instanceof Axis2SynapseEnvironment) {
-        //     ConfigurationContext vtCfgCtx =
-        //             ((Axis2SynapseEnvironment) synapseEnvironment).getAxis2ConfigurationContext();
-        //     Object vtSender = vtCfgCtx.getProperty("VT_TRANSPORT_SENDER");
-        //     if (vtSender instanceof TransportSender) {
-        //         vtBlockingMsgSender = new VTBlockingMsgSender((TransportSender) vtSender);
-        //         if (log.isDebugEnabled()) {
-        //             log.debug("CallMediator: VT blocking sender acquired from ConfigurationContext.");
-        //         }
-        //     }
-        // }
     }
 
     public void destroy() {

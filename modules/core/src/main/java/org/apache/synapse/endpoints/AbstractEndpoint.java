@@ -427,7 +427,22 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         }
 
         // Send the message through this endpoint
+        boolean vtBlockingRequest = synCtx.getProperty(SynapseConstants.BLOCKING_MSG_SENDER) != null
+                && ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                .getProperty("VT_INPUT_STREAM_PIPE") != null;
+        if (vtBlockingRequest) {
+            log.warn("VTTRACE AbstractEndpoint before environment.send; messageId="
+                    + synCtx.getMessageID() + "; endpoint=" + getName()
+                    + "; address=" + definition.getAddress()
+                    + "; faultStackSize=" + synCtx.getFaultStack().size());
+        }
         synCtx.getEnvironment().send(definition, synCtx);
+        if (vtBlockingRequest) {
+            log.warn("VTTRACE AbstractEndpoint after environment.send; messageId="
+                    + synCtx.getMessageID() + "; blockingSenderError="
+                    + synCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR)
+                    + "; faultStackSize=" + synCtx.getFaultStack().size());
+        }
 
         if (isStatisticsEnabled) {
             CloseEventCollector.closeEntryEvent(synCtx, getReportingName(), ComponentType.ENDPOINT,

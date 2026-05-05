@@ -94,9 +94,21 @@ public class Axis2FlexibleMEPClient {
             org.apache.synapse.MessageContext synapseOutMessageContext) throws AxisFault {
 
         if (synapseOutMessageContext.getProperty(SynapseConstants.BLOCKING_MSG_SENDER) != null) {
+            boolean vtRequest = ((org.apache.synapse.core.axis2.Axis2MessageContext) synapseOutMessageContext)
+                    .getAxis2MessageContext().getProperty("VT_INPUT_STREAM_PIPE") != null;
+            if (vtRequest) {
+                log.warn("VTTRACE Axis2FlexibleMEPClient calling BlockingMsgSender; messageId="
+                        + synapseOutMessageContext.getMessageID() + "; endpoint="
+                        + (endpoint != null ? endpoint.getAddress() : null));
+            }
             BlockingMsgSender blockingMsgSender = (BlockingMsgSender) synapseOutMessageContext
                     .getProperty(SynapseConstants.BLOCKING_MSG_SENDER);
             blockingMsgSender.send(endpoint, synapseOutMessageContext);
+            if (vtRequest) {
+                log.warn("VTTRACE Axis2FlexibleMEPClient BlockingMsgSender returned; messageId="
+                        + synapseOutMessageContext.getMessageID() + "; blockingSenderError="
+                        + synapseOutMessageContext.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR));
+            }
             return;
         }
 

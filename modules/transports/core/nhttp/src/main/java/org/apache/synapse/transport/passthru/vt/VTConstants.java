@@ -33,6 +33,10 @@ public final class VTConstants {
     public static final String VT_SOURCE_CONNECTION = "VT_SOURCE_CONNECTION";
     public static final String VT_TARGET_CONFIGURATION = "VT_TARGET_CONFIGURATION";
     public static final String VT_INPUT_STREAM_PIPE = "VT_INPUT_STREAM_PIPE";
+    /** Streaming response body from the backend, set by VTHttpSender after a streamed
+     *  call. Read by VTBlockingServerWorker.submitResponse() to write the body
+     *  straight to the client without OM building. */
+    public static final String VT_RESPONSE_INPUT_STREAM_PIPE = "VT_RESPONSE_INPUT_STREAM_PIPE";
 
     // ---- Transport names (used in axis2.xml) ----
     public static final String TRANSPORT_NAME_HTTP = "vt-http";

@@ -53,6 +53,7 @@ import org.apache.synapse.endpoints.TemplateEndpoint;
 import org.apache.synapse.endpoints.auth.oauth.MessageCache;
 import org.apache.synapse.endpoints.auth.oauth.OAuthUtils;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.vt.VTConstants;
 import org.apache.synapse.util.MediatorPropertyUtils;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
@@ -188,10 +189,11 @@ public class BlockingMsgSender {
         // HttpClient 4.x InputStreamEntity, bypassing OM-tree serialisation.
         // If MESSAGE_BUILDER_INVOKED is true (a preceding content-aware mediator
         // already built the message), the sender falls back to the OM path.
-        Object passThroughPipe = axisInMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-        if (passThroughPipe != null) {
-            axisOutMsgCtx.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, passThroughPipe);
+        Object vtInputStreamPipe = axisInMsgCtx.getProperty(VTConstants.VT_INPUT_STREAM_PIPE);
+        if (vtInputStreamPipe != null) {
+            axisOutMsgCtx.setProperty(VTConstants.VT_INPUT_STREAM_PIPE, vtInputStreamPipe);
         }
+        boolean vtRequest = vtInputStreamPipe != null;
         Object builderInvoked = axisInMsgCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
         if (builderInvoked != null) {
             axisOutMsgCtx.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, builderInvoked);
@@ -210,6 +212,15 @@ public class BlockingMsgSender {
             axisOutMsgCtx.setProperty(
                     org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, transportHeaders);
         }
+        if (vtRequest) {
+            log.warn("VTTRACE BlockingMsgSender prepared axisOut; messageId="
+                    + synapseInMsgCtx.getMessageID() + "; method="
+                    + axisOutMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD)
+                    + "; contentType="
+                    + axisOutMsgCtx.getProperty(Constants.Configuration.CONTENT_TYPE)
+                    + "; builderInvoked=" + builderInvoked
+                    + "; transportHeaders=" + (transportHeaders != null));
+        }
 
         axisOutMsgCtx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES,
                 axisInMsgCtx.getProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES));
@@ -225,6 +236,9 @@ public class BlockingMsgSender {
                 axisInMsgCtx.getProperty(SynapseConstants.NO_DEFAULT_CONTENT_TYPE));
 		// Fill MessageContext
         BlockingMsgSenderUtils.fillMessageContext(endpointDefinition, axisOutMsgCtx, synapseInMsgCtx);
+        if (vtRequest && httpMethodProp != null) {
+            axisOutMsgCtx.setProperty(Constants.Configuration.HTTP_METHOD, httpMethodProp);
+        }
         if (JsonUtil.hasAJsonPayload(axisInMsgCtx)) {
             JsonUtil.cloneJsonPayload(axisInMsgCtx, axisOutMsgCtx);
         }
@@ -268,6 +282,20 @@ public class BlockingMsgSender {
                         JsonUtil.cloneJsonPayload(result, ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
                     }
                 }
+                // Forward the streamed VT response body so <respond/> can stream it
+                // straight to the client without OM serialisation.
+                Object vtRespPipe = result.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE);
+                if (vtRespPipe != null) {
+                    axisInMsgCtx.setProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE, vtRespPipe);
+                    axisInMsgCtx.removeProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
+                    axisInMsgCtx.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
+                }
+                if (vtRequest) {
+                    log.warn("VTTRACE BlockingMsgSender result returned; messageId="
+                            + synapseInMsgCtx.getMessageID() + "; vtResponsePipe="
+                            + (vtRespPipe != null) + "; status="
+                            + result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE));
+                }
                 final String statusCode =
                                           String.valueOf(result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE))
                                                 .trim();
@@ -286,6 +314,12 @@ public class BlockingMsgSender {
                 return synapseInMsgCtx;
             }
         } catch (Exception ex) {
+            if (vtRequest) {
+                log.warn("VTTRACE BlockingMsgSender caught exception; messageId="
+                        + synapseInMsgCtx.getMessageID() + "; isOutOnly=" + isOutOnly
+                        + "; exception=" + ex.getClass().getName() + ": "
+                        + ex.getMessage(), ex);
+            }
             /*
              * Extract the HTTP status code from the Exception message.
              */
@@ -374,10 +408,11 @@ public class BlockingMsgSender {
         // HttpClient 4.x InputStreamEntity, bypassing OM-tree serialisation.
         // If MESSAGE_BUILDER_INVOKED is true (a preceding content-aware mediator
         // already built the message), the sender falls back to the OM path.
-        Object passThroughPipe = axisInMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-        if (passThroughPipe != null) {
-            axisOutMsgCtx.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, passThroughPipe);
+        Object vtInputStreamPipe = axisInMsgCtx.getProperty(VTConstants.VT_INPUT_STREAM_PIPE);
+        if (vtInputStreamPipe != null) {
+            axisOutMsgCtx.setProperty(VTConstants.VT_INPUT_STREAM_PIPE, vtInputStreamPipe);
         }
+        boolean vtRequest = vtInputStreamPipe != null;
         Object builderInvoked = axisInMsgCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
         if (builderInvoked != null) {
             axisOutMsgCtx.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, builderInvoked);
@@ -411,6 +446,9 @@ public class BlockingMsgSender {
                 axisInMsgCtx.getProperty(SynapseConstants.NO_KEEPALIVE));
         // Fill MessageContext
         BlockingMsgSenderUtils.fillMessageContext(endpointDefinition, axisOutMsgCtx, synapseInMsgCtx);
+        if (vtRequest && httpMethodProp != null) {
+            axisOutMsgCtx.setProperty(Constants.Configuration.HTTP_METHOD, httpMethodProp);
+        }
         if (JsonUtil.hasAJsonPayload(axisInMsgCtx)) {
             JsonUtil.cloneJsonPayload(axisInMsgCtx, axisOutMsgCtx);
         }
@@ -472,6 +510,11 @@ public class BlockingMsgSender {
                 this.invokeHandlers(synapseInMsgCtx);
             }
         } catch (Exception ex) {
+            if (vtRequest) {
+                log.warn("VTTRACE BlockingMsgSender caught exception; messageId="
+                        + synapseInMsgCtx.getMessageID() + "; exception="
+                        + ex.getClass().getName() + ": " + ex.getMessage(), ex);
+            }
             /*
              * Extract the HTTP status code from the Exception message.
              */
@@ -515,6 +558,14 @@ public class BlockingMsgSender {
 
         // Check fault occure when send the request to endpoint
         if ("true".equals(synapseInMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
+            if (((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext()
+                    .getProperty(VTConstants.VT_INPUT_STREAM_PIPE) != null) {
+                log.warn("VTTRACE BlockingMsgSender invoking endpoint fault handler; messageId="
+                        + synapseInMsgCtx.getMessageID() + "; errorMessage="
+                        + synapseInMsgCtx.getProperty(SynapseConstants.ERROR_MESSAGE)
+                        + "; exception="
+                        + synapseInMsgCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
+            }
             // Handle the fault
             synapseInMsgCtx.getFaultStack().pop().handleFault(synapseInMsgCtx,
                     (Exception) synapseInMsgCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
@@ -593,9 +644,29 @@ public class BlockingMsgSender {
         operationClient.addMessageContext(axisOutMsgCtx);
         axisOutMsgCtx.setAxisMessage(
                 axisAnonymousOperation.getMessage(WSDLConstants.MESSAGE_LABEL_OUT_VALUE));
+        boolean vtRequest = axisOutMsgCtx.getProperty(VTConstants.VT_INPUT_STREAM_PIPE) != null;
+        if (vtRequest) {
+            log.warn("VTTRACE BlockingMsgSender sendReceive before execute; messageId="
+                    + synapseInMsgCtx.getMessageID() + "; to="
+                    + (axisOutMsgCtx.getTo() != null ? axisOutMsgCtx.getTo().getAddress() : null)
+                    + "; method="
+                    + axisOutMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD));
+        }
         operationClient.execute(true);
+        if (vtRequest) {
+            log.warn("VTTRACE BlockingMsgSender sendReceive after execute; messageId="
+                    + synapseInMsgCtx.getMessageID() + "; axisOutRespPipe="
+                    + (axisOutMsgCtx.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE) != null));
+        }
         org.apache.axis2.context.MessageContext resultMsgCtx =
                 operationClient.getMessageContext(WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+        Object vtRespPipe = resultMsgCtx.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE);
+        if (vtRespPipe == null) {
+            vtRespPipe = axisOutMsgCtx.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE);
+            if (vtRespPipe != null) {
+                resultMsgCtx.setProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE, vtRespPipe);
+            }
+        }
 
         org.apache.axis2.context.MessageContext returnMsgCtx =
                 new org.apache.axis2.context.MessageContext();
@@ -611,15 +682,24 @@ public class BlockingMsgSender {
                 returnMsgCtx.setEnvelope(OMAbstractFactory.getSOAP12Factory().getDefaultEnvelope());
             }
         }
-        try {
-            // Message need to be serialized since if not the stream given in data handler can be closed prior to
-            // writing the response
-            MediatorPropertyUtils.serializeOMElement(resultMsgCtx);
-        } catch (Exception e) {
-            handleException("Error while serializing the  message", e);
+        if (vtRespPipe == null) {
+            try {
+                // Message need to be serialized since if not the stream given in data handler can be closed prior to
+                // writing the response
+                MediatorPropertyUtils.serializeOMElement(resultMsgCtx);
+            } catch (Exception e) {
+                handleException("Error while serializing the  message", e);
+            }
         }
         returnMsgCtx.setProperty(SynapseConstants.HTTP_SENDER_STATUSCODE,
                                  resultMsgCtx.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE));
+        // Carry the VT streamed response body across to the caller — used by
+        // <respond/> to stream the backend body straight to the client.
+        if (vtRespPipe != null) {
+            returnMsgCtx.setProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE, vtRespPipe);
+            returnMsgCtx.removeProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
+            returnMsgCtx.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
+        }
         axisOutMsgCtx.getTransportOut().getSender().cleanup(axisOutMsgCtx);
         returnMsgCtx.setProperty(
                 org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,

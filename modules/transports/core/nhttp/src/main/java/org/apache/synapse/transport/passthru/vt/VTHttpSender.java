@@ -1,11 +1,15 @@
 package org.apache.synapse.transport.passthru.vt;
 
+import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMOutputFormat;
+import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.MessageContext;
+import org.apache.axis2.context.OperationContext;
+import org.apache.axis2.wsdl.WSDLConstants;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.axis2.handlers.AbstractHandler;
@@ -46,6 +50,7 @@ import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.stream.FactoryConfigurationError;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -73,6 +78,8 @@ public class VTHttpSender extends AbstractHandler implements
         TransportSender {
 
     private static final Log log = LogFactory.getLog(VTHttpSender.class);
+    private static final String VT_CACHED_HTTP_CLIENT =
+            "org.apache.synapse.transport.passthru.vt.CACHED_HTTP_CLIENT";
 
     /**
      * The {@link TransportOutDescription} object received by the call to
@@ -232,8 +239,7 @@ public class VTHttpSender extends AbstractHandler implements
                     .setDefaultRequestConfig(defaultRequestConfig)
                     .build();
 
-            confContext.setProperty(HTTPConstants.REUSE_HTTP_CLIENT, "true");
-            confContext.setProperty(HTTPConstants.CACHED_HTTP_CLIENT, httpClient);
+            confContext.setProperty(VT_CACHED_HTTP_CLIENT, httpClient);
         }
 
         // --- Passthrough support (merged from VTPassThroughHttpSender) ---
@@ -347,6 +353,20 @@ public class VTHttpSender extends AbstractHandler implements
                                 Boolean.TRUE);
                     }
                 }
+            }
+
+            boolean vtBackChannelResponse =
+                    msgContext.getProperty(Constants.OUT_TRANSPORT_INFO) instanceof VTBlockingServerWorker
+                            && !AddressingHelper.isReplyRedirected(msgContext)
+                            && Boolean.TRUE.equals(msgContext.getProperty("synapse.isresponse"));
+
+            if (vtBackChannelResponse) {
+                submitResponse(msgContext);
+                if (msgContext.getOperationContext() != null) {
+                    msgContext.getOperationContext().setProperty(
+                            Constants.RESPONSE_WRITTEN, Constants.VALUE_TRUE);
+                }
+                return InvocationResponse.CONTINUE;
             }
 
             // --- EPR resolution ---
@@ -535,12 +555,18 @@ public class VTHttpSender extends AbstractHandler implements
         // pipe via HttpClient 4.x InputStreamEntity. Mirrors the NIO non-blocking
         // behaviour where raw bytes flow from Pipe → backend without hitting the
         // OM tree.
-        Object pipeObj = messageContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+        Object pipeObj = messageContext.getProperty(VTConstants.VT_INPUT_STREAM_PIPE);
         boolean builderInvoked = Boolean.TRUE.equals(
                 messageContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED));
         if (pipeObj instanceof VTInputStreamPipe && !builderInvoked) {
+            log.warn("VTTRACE VTHttpSender using streamed request path; messageId="
+                    + messageContext.getMessageID() + "; to="
+                    + (toEPR != null ? toEPR.getAddress() : null));
             sendStreamedRequest(messageContext, toEPR, (VTInputStreamPipe) pipeObj);
             return;
+        } else if (pipeObj instanceof VTInputStreamPipe) {
+            log.warn("VTTRACE VTHttpSender skipping streamed request path because builder was invoked; messageId="
+                    + messageContext.getMessageID());
         }
 
         try {
@@ -585,8 +611,9 @@ public class VTHttpSender extends AbstractHandler implements
      * Send the outbound request by streaming the body directly from the
      * {@link VTInputStreamPipe} via HttpClient 4.x {@link InputStreamEntity},
      * bypassing OM-tree serialisation. The cached {@link CloseableHttpClient}
-     * is retrieved from the ConfigurationContext — same pooled client set up
-     * in {@link #init(ConfigurationContext, TransportOutDescription)}.
+     * is retrieved from the ConfigurationContext using a VT-specific key; the
+     * normal Axis2 {@code CACHED_HTTP_CLIENT} slot may contain the legacy
+     * Commons HttpClient used by the standard blocking sender.
      * <p>
      * After the HTTP call, response status / headers / body stream are placed
      * on the message context so Axis2's {@code OperationClient} can build the
@@ -595,10 +622,11 @@ public class VTHttpSender extends AbstractHandler implements
     private void sendStreamedRequest(MessageContext msgContext, EndpointReference toEPR,
                                      VTInputStreamPipe vtPipe) throws AxisFault {
         CloseableHttpResponse response = null;
+        boolean ownershipTransferred = false;
+        String url = toEPR.getAddress();
+        String httpMethod = (String) msgContext.getProperty(
+                Constants.Configuration.HTTP_METHOD);
         try {
-            String url = toEPR.getAddress();
-            String httpMethod = (String) msgContext.getProperty(
-                    Constants.Configuration.HTTP_METHOD);
             if (httpMethod == null) {
                 httpMethod = "POST";
             }
@@ -633,50 +661,71 @@ public class VTHttpSender extends AbstractHandler implements
                 }
                 InputStream bodyStream = vtPipe.getInputStream();
                 if (bodyStream != null) {
-                    reqBuilder.setEntity(new InputStreamEntity(bodyStream, parsedCT));
+                    long contentLength = getContentLength(transportHeaders);
+                    InputStreamEntity entity = new InputStreamEntity(bodyStream, contentLength, parsedCT);
+                    entity.setChunked(contentLength < 0 && defaultChunked);
+                    reqBuilder.setEntity(entity);
                 }
             }
 
-            CloseableHttpClient httpClient = (CloseableHttpClient) msgContext
-                    .getConfigurationContext().getProperty(HTTPConstants.CACHED_HTTP_CLIENT);
-            if (httpClient == null) {
-                throw new AxisFault("VT cached HttpClient not available — ensure VTHttpSender "
-                        + "is registered in axis2_blocking_client.xml with cacheHttpClient=true");
-            }
+            CloseableHttpClient httpClient = getOrCreateHttpClient(msgContext.getConfigurationContext());
 
             if (log.isDebugEnabled()) {
                 log.debug("VTHttpSender streaming " + httpMethod + " to " + url
                         + " (body from VTInputStreamPipe, no OM build)");
             }
+            log.warn("VTTRACE VTHttpSender before backend execute; messageId="
+                    + msgContext.getMessageID() + "; method=" + httpMethod
+                    + "; url=" + url + "; hasEntity=" + hasBody
+                    + "; contentLength=" + getContentLength(transportHeaders));
 
             response = httpClient.execute(reqBuilder.build());
+            log.warn("VTTRACE VTHttpSender backend responded; messageId="
+                    + msgContext.getMessageID() + "; status="
+                    + response.getStatusLine().getStatusCode());
 
-            populateResponseOnMessageContext(msgContext, response);
+            setupStreamingResponse(msgContext, response);
+            log.warn("VTTRACE VTHttpSender response pipe setup complete; messageId="
+                    + msgContext.getMessageID() + "; pipe="
+                    + (msgContext.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE) != null));
+            ownershipTransferred = true;
 
         } catch (IOException e) {
-            // Make sure we don't leak the response if execute succeeded but
-            // response population failed.
-            if (response != null) {
+            log.warn("VTHttpSender streaming request failed: " + httpMethod + " " + url, e);
+            throw AxisFault.makeFault(e);
+        } catch (RuntimeException e) {
+            log.warn("VTTRACE VTHttpSender streaming request runtime failure; messageId="
+                    + msgContext.getMessageID() + "; method=" + httpMethod
+                    + "; url=" + url + "; exception=" + e.getClass().getName()
+                    + ": " + e.getMessage(), e);
+            throw e;
+        } finally {
+            if (response != null && !ownershipTransferred) {
                 try { response.close(); } catch (IOException ignore) { }
             }
-            log.debug(e);
-            throw AxisFault.makeFault(e);
         }
     }
 
     /**
-     * Populate the message context with the HTTP response status, headers, and
-     * body input stream, in the same shape Axis2's {@code AbstractHTTPSender}
-     * leaves things — so {@code OperationClient.execute()} → builder pipeline
-     * can read the response via {@code TRANSPORT_IN}.
+     * Wire the backend response into the Axis2 IN MessageContext for streaming
+     * pass-through. The response body InputStream is stashed under
+     * {@link VTConstants#VT_RESPONSE_INPUT_STREAM_PIPE}; an empty SOAP envelope
+     * is pre-set so {@code OutInAxisOperation.handleResponse()} skips
+     * {@code TransportUtils.createSOAPMessage()} (which would otherwise consume
+     * the stream and build an OM tree).
+     * <p>
+     * The response stream is wrapped so closing it (which {@code HttpCore 5}'s
+     * server-side entity does after writing) also closes the {@link
+     * CloseableHttpResponse}, releasing the pooled connection.
      */
-    private void populateResponseOnMessageContext(MessageContext msgContext,
-                                                  CloseableHttpResponse response)
+    private void setupStreamingResponse(MessageContext msgContext,
+                                        final CloseableHttpResponse response)
             throws IOException {
         int statusCode = response.getStatusLine().getStatusCode();
         msgContext.setProperty(HTTPConstants.MC_HTTP_STATUS_CODE, statusCode);
-        // SynapseConstants.HTTP_SENDER_STATUSCODE — string literal to avoid a
-        // core-module dependency from the transports/nhttp module.
+        msgContext.setProperty(PassThroughConstants.HTTP_SC, statusCode);
+        msgContext.setProperty(PassThroughConstants.HTTP_SC_DESC,
+                response.getStatusLine().getReasonPhrase());
         msgContext.setProperty("transport.http.statusCode", String.valueOf(statusCode));
 
         Map<String, String> respHeaders = new HashMap<>();
@@ -688,17 +737,73 @@ public class VTHttpSender extends AbstractHandler implements
         Header ctHeader = response.getFirstHeader(HTTPConstants.HEADER_CONTENT_TYPE);
         if (ctHeader != null) {
             msgContext.setProperty(Constants.Configuration.CONTENT_TYPE, ctHeader.getValue());
+            msgContext.setProperty(Constants.Configuration.MESSAGE_TYPE,
+                    TransportUtils.getContentType(ctHeader.getValue(), msgContext));
         }
 
-        if (response.getEntity() != null && response.getEntity().getContent() != null) {
-            msgContext.setProperty(MessageContext.TRANSPORT_IN, response.getEntity().getContent());
+        // Wrap the backend response stream so close() also releases the
+        // pooled HC4 connection (via CloseableHttpResponse.close()).
+        InputStream rawContent = (response.getEntity() != null)
+                ? response.getEntity().getContent() : null;
+        InputStream wrappedContent = (rawContent == null) ? null
+                : new FilterInputStream(rawContent) {
+                    @Override
+                    public void close() throws IOException {
+                        try {
+                            super.close();
+                        } finally {
+                            response.close();
+                        }
+                    }
+                };
+
+        OperationContext opCtx = msgContext.getOperationContext();
+        MessageContext inMsgCtx = (opCtx == null) ? null
+                : opCtx.getMessageContext(WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+        log.warn("VTTRACE VTHttpSender response setup contexts; messageId="
+                + msgContext.getMessageID() + "; opCtx=" + (opCtx != null)
+                + "; inMsgCtx=" + (inMsgCtx != null));
+
+        if (wrappedContent != null) {
+            msgContext.setProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE,
+                    new VTInputStreamPipe(wrappedContent));
+            msgContext.removeProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
+            msgContext.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
+            log.warn("VTTRACE VTHttpSender stored response pipe on outbound context; messageId="
+                    + msgContext.getMessageID());
+        } else {
+            msgContext.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
+            log.warn("VTTRACE VTHttpSender backend response had no entity; messageId="
+                    + msgContext.getMessageID());
         }
 
-        // Stash the response so cleanup() / caller can close it (releases the
-        // pooled connection). HTTPConstants.HTTP_METHOD is the canonical key
-        // Axis2 uses for this, and cleanup() already handles HttpRequestBase;
-        // we use a parallel key so we don't collide.
-        msgContext.setProperty("VT_HTTP_RESPONSE", response);
+        if (inMsgCtx != null) {
+            // Pre-set a default envelope so handleResponse() skips createSOAPMessage().
+            SOAPFactory soapFactory = msgContext.isSOAP11()
+                    ? OMAbstractFactory.getSOAP11Factory()
+                    : OMAbstractFactory.getSOAP12Factory();
+            inMsgCtx.setEnvelope(soapFactory.getDefaultEnvelope());
+            inMsgCtx.setProperty(HTTPConstants.MC_HTTP_STATUS_CODE, statusCode);
+            inMsgCtx.setProperty(PassThroughConstants.HTTP_SC, statusCode);
+            inMsgCtx.setProperty(PassThroughConstants.HTTP_SC_DESC,
+                    response.getStatusLine().getReasonPhrase());
+            inMsgCtx.setProperty("transport.http.statusCode", String.valueOf(statusCode));
+            inMsgCtx.setProperty(MessageContext.TRANSPORT_HEADERS, respHeaders);
+            if (ctHeader != null) {
+                inMsgCtx.setProperty(Constants.Configuration.CONTENT_TYPE, ctHeader.getValue());
+                inMsgCtx.setProperty(Constants.Configuration.MESSAGE_TYPE,
+                        TransportUtils.getContentType(ctHeader.getValue(), inMsgCtx));
+            }
+
+            if (wrappedContent != null) {
+                inMsgCtx.setProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE,
+                        msgContext.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE));
+                inMsgCtx.removeProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
+                inMsgCtx.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
+            } else {
+                inMsgCtx.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
+            }
+        }
     }
 
     /**
@@ -711,6 +816,73 @@ public class VTHttpSender extends AbstractHandler implements
                 || "host".equals(lc)
                 || "connection".equals(lc)
                 || "transfer-encoding".equals(lc);
+    }
+
+    private static long getContentLength(Map<String, Object> transportHeaders) {
+        String contentLength = getHeaderValue(transportHeaders, HTTPConstants.HEADER_CONTENT_LENGTH);
+        if (contentLength != null) {
+            try {
+                return Long.parseLong(contentLength.trim());
+            } catch (NumberFormatException ignore) {
+                return -1;
+            }
+        }
+        return -1;
+    }
+
+    private static String getHeaderValue(Map<String, Object> transportHeaders, String name) {
+        if (transportHeaders == null || name == null) {
+            return null;
+        }
+        for (Map.Entry<String, Object> entry : transportHeaders.entrySet()) {
+            if (entry.getKey() != null && name.equalsIgnoreCase(entry.getKey())
+                    && entry.getValue() != null) {
+                return entry.getValue().toString();
+            }
+        }
+        return null;
+    }
+
+    private CloseableHttpClient getOrCreateHttpClient(ConfigurationContext configurationContext)
+            throws AxisFault {
+        Object cached = configurationContext.getProperty(VT_CACHED_HTTP_CLIENT);
+        if (cached instanceof CloseableHttpClient) {
+            return (CloseableHttpClient) cached;
+        }
+        if (cached != null) {
+            throw new AxisFault("Cached VT HTTP client is not an HttpClient 4.x CloseableHttpClient: "
+                    + cached.getClass().getName());
+        }
+
+        synchronized (this) {
+            cached = configurationContext.getProperty(VT_CACHED_HTTP_CLIENT);
+            if (cached instanceof CloseableHttpClient) {
+                return (CloseableHttpClient) cached;
+            }
+            if (cached != null) {
+                throw new AxisFault("Cached VT HTTP client is not an HttpClient 4.x CloseableHttpClient: "
+                        + cached.getClass().getName());
+            }
+
+            if (connectionManager == null) {
+                connectionManager = new PoolingHttpClientConnectionManager();
+                connectionManager.setDefaultMaxPerRoute(100);
+                connectionManager.setMaxTotal(1000);
+            }
+
+            RequestConfig defaultRequestConfig = RequestConfig.custom()
+                    .setSocketTimeout(soTimeout)
+                    .setConnectTimeout(connectionTimeout)
+                    .setConnectionRequestTimeout(connectionTimeout)
+                    .build();
+
+            CloseableHttpClient httpClient = HttpClients.custom()
+                    .setConnectionManager(connectionManager)
+                    .setDefaultRequestConfig(defaultRequestConfig)
+                    .build();
+            configurationContext.setProperty(VT_CACHED_HTTP_CLIENT, httpClient);
+            return httpClient;
+        }
     }
 
     // ------------------------------------------------------------------ passthrough response path
