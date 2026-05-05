@@ -236,8 +236,9 @@ public class BlockingMsgSender {
                 axisInMsgCtx.getProperty(SynapseConstants.NO_DEFAULT_CONTENT_TYPE));
 		// Fill MessageContext
         BlockingMsgSenderUtils.fillMessageContext(endpointDefinition, axisOutMsgCtx, synapseInMsgCtx);
-        if (vtRequest && httpMethodProp != null) {
-            axisOutMsgCtx.setProperty(Constants.Configuration.HTTP_METHOD, httpMethodProp);
+        Object selectedHttpMethod = synapseInMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD);
+        if (vtRequest && selectedHttpMethod != null) {
+            axisOutMsgCtx.setProperty(Constants.Configuration.HTTP_METHOD, selectedHttpMethod);
         }
         if (JsonUtil.hasAJsonPayload(axisInMsgCtx)) {
             JsonUtil.cloneJsonPayload(axisInMsgCtx, axisOutMsgCtx);
@@ -446,8 +447,9 @@ public class BlockingMsgSender {
                 axisInMsgCtx.getProperty(SynapseConstants.NO_KEEPALIVE));
         // Fill MessageContext
         BlockingMsgSenderUtils.fillMessageContext(endpointDefinition, axisOutMsgCtx, synapseInMsgCtx);
-        if (vtRequest && httpMethodProp != null) {
-            axisOutMsgCtx.setProperty(Constants.Configuration.HTTP_METHOD, httpMethodProp);
+        Object selectedHttpMethod = synapseInMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD);
+        if (vtRequest && selectedHttpMethod != null) {
+            axisOutMsgCtx.setProperty(Constants.Configuration.HTTP_METHOD, selectedHttpMethod);
         }
         if (JsonUtil.hasAJsonPayload(axisInMsgCtx)) {
             JsonUtil.cloneJsonPayload(axisInMsgCtx, axisOutMsgCtx);
@@ -493,6 +495,22 @@ public class BlockingMsgSender {
                 synapseInMsgCtx.setEnvelope(result.getEnvelope());
                 if (JsonUtil.hasAJsonPayload(result)) {
                     JsonUtil.cloneJsonPayload(result, ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
+                }
+                Object vtRespPipe = result.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE);
+                if (vtRespPipe != null) {
+                    axisInMsgCtx.setProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE, vtRespPipe);
+                    axisInMsgCtx.removeProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
+                    axisInMsgCtx.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
+                }
+                Object httpSCDesc = result.getProperty(PassThroughConstants.HTTP_SC_DESC);
+                if (httpSCDesc != null) {
+                    axisInMsgCtx.setProperty(PassThroughConstants.HTTP_SC_DESC, httpSCDesc);
+                }
+                if (vtRequest) {
+                    log.warn("VTTRACE BlockingMsgSender result returned; messageId="
+                            + synapseInMsgCtx.getMessageID() + "; vtResponsePipe="
+                            + (vtRespPipe != null) + "; status="
+                            + result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE));
                 }
                 final String statusCode =
                         String.valueOf(result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE))
@@ -667,6 +685,26 @@ public class BlockingMsgSender {
                 resultMsgCtx.setProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE, vtRespPipe);
             }
         }
+        Object statusCode = resultMsgCtx.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE);
+        if (statusCode == null) {
+            statusCode = axisOutMsgCtx.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE);
+        }
+        if (statusCode == null) {
+            statusCode = resultMsgCtx.getProperty(PassThroughConstants.HTTP_SC);
+        }
+        if (statusCode == null) {
+            statusCode = axisOutMsgCtx.getProperty(PassThroughConstants.HTTP_SC);
+        }
+        Object statusDescription = resultMsgCtx.getProperty(PassThroughConstants.HTTP_SC_DESC);
+        if (statusDescription == null) {
+            statusDescription = axisOutMsgCtx.getProperty(PassThroughConstants.HTTP_SC_DESC);
+        }
+        Object transportHeaders = resultMsgCtx.getProperty(
+                org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        if (transportHeaders == null) {
+            transportHeaders = axisOutMsgCtx.getProperty(
+                    org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        }
 
         org.apache.axis2.context.MessageContext returnMsgCtx =
                 new org.apache.axis2.context.MessageContext();
@@ -691,8 +729,11 @@ public class BlockingMsgSender {
                 handleException("Error while serializing the  message", e);
             }
         }
-        returnMsgCtx.setProperty(SynapseConstants.HTTP_SENDER_STATUSCODE,
-                                 resultMsgCtx.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE));
+        returnMsgCtx.setProperty(SynapseConstants.HTTP_SENDER_STATUSCODE, statusCode);
+        returnMsgCtx.setProperty(PassThroughConstants.HTTP_SC, statusCode);
+        if (statusDescription != null) {
+            returnMsgCtx.setProperty(PassThroughConstants.HTTP_SC_DESC, statusDescription);
+        }
         // Carry the VT streamed response body across to the caller — used by
         // <respond/> to stream the backend body straight to the client.
         if (vtRespPipe != null) {
@@ -702,8 +743,7 @@ public class BlockingMsgSender {
         }
         axisOutMsgCtx.getTransportOut().getSender().cleanup(axisOutMsgCtx);
         returnMsgCtx.setProperty(
-                org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
-                resultMsgCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
+                org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, transportHeaders);
         return returnMsgCtx;
     }
 
