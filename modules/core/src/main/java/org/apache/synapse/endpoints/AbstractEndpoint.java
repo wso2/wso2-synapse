@@ -429,7 +429,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         // Send the message through this endpoint
         boolean vtBlockingRequest = synCtx.getProperty(SynapseConstants.BLOCKING_MSG_SENDER) != null
                 && ((Axis2MessageContext) synCtx).getAxis2MessageContext()
-                .getProperty("VT_INPUT_STREAM_PIPE") != null;
+                .getProperty("VT_STREAM_PIPE") != null;
         if (vtBlockingRequest) {
             log.warn("VTTRACE AbstractEndpoint before environment.send; messageId="
                     + synCtx.getMessageID() + "; endpoint=" + getName()

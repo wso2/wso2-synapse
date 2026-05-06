@@ -81,7 +81,7 @@ public class Axis2Sender {
             boolean vtBlockingRequest =
                     synapseInMessageContext.getProperty(SynapseConstants.BLOCKING_MSG_SENDER) != null
                             && ((Axis2MessageContext) synapseInMessageContext).getAxis2MessageContext()
-                            .getProperty("VT_INPUT_STREAM_PIPE") != null;
+                            .getProperty("VT_STREAM_PIPE") != null;
             if (vtBlockingRequest) {
                 log.warn("VTTRACE Axis2Sender sendOn entered; messageId="
                         + synapseInMessageContext.getMessageID() + "; handlers="

@@ -32,6 +32,7 @@ import org.apache.http.Header;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -50,6 +51,7 @@ import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.stream.FactoryConfigurationError;
+import java.io.ByteArrayOutputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -550,19 +552,22 @@ public class VTHttpSender extends AbstractHandler implements
                                          EndpointReference toEPR, OMOutputFormat format)
             throws AxisFault {
 
-        // Streaming fast path: if a VTInputStreamPipe is available on the context
-        // and no mediator has forced buildMessage, send the body directly from the
-        // pipe via HttpClient 4.x InputStreamEntity. Mirrors the NIO non-blocking
-        // behaviour where raw bytes flow from Pipe → backend without hitting the
-        // OM tree.
-        Object pipeObj = messageContext.getProperty(VTConstants.VT_INPUT_STREAM_PIPE);
+        // VT backend path: use the HC4 client for every VT blocking backend call
+        // so the backend response can always be exposed as VT_STREAM_PIPE. If a
+        // raw request pipe is still available, the request body is streamed too;
+        // if a mediator already built the request, the request is serialized
+        // normally while the response still remains streamable.
+        Object pipeObj = messageContext.getProperty(VTConstants.VT_STREAM_PIPE);
+        boolean vtBackendCall = Boolean.TRUE.equals(messageContext.getProperty(VTConstants.VT_BACKEND_CALL));
         boolean builderInvoked = Boolean.TRUE.equals(
                 messageContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED));
-        if (pipeObj instanceof VTInputStreamPipe && !builderInvoked) {
+        if (vtBackendCall) {
             log.warn("VTTRACE VTHttpSender using streamed request path; messageId="
                     + messageContext.getMessageID() + "; to="
                     + (toEPR != null ? toEPR.getAddress() : null));
-            sendStreamedRequest(messageContext, toEPR, (VTInputStreamPipe) pipeObj);
+            VTInputStreamPipe vtPipe = pipeObj instanceof VTInputStreamPipe && !builderInvoked
+                    ? (VTInputStreamPipe) pipeObj : null;
+            sendStreamedRequest(messageContext, toEPR, vtPipe, format, builderInvoked);
             return;
         } else if (pipeObj instanceof VTInputStreamPipe) {
             log.warn("VTTRACE VTHttpSender skipping streamed request path because builder was invoked; messageId="
@@ -620,7 +625,8 @@ public class VTHttpSender extends AbstractHandler implements
      * response envelope via its standard builder pipeline.
      */
     private void sendStreamedRequest(MessageContext msgContext, EndpointReference toEPR,
-                                     VTInputStreamPipe vtPipe) throws AxisFault {
+                                     VTInputStreamPipe vtPipe, OMOutputFormat format,
+                                     boolean builderInvoked) throws AxisFault {
         CloseableHttpResponse response = null;
         boolean ownershipTransferred = false;
         String url = toEPR.getAddress();
@@ -646,9 +652,10 @@ public class VTHttpSender extends AbstractHandler implements
                 }
             }
 
-            boolean hasBody = !HTTPConstants.HTTP_METHOD_GET.equalsIgnoreCase(httpMethod)
+            boolean methodAllowsBody = !HTTPConstants.HTTP_METHOD_GET.equalsIgnoreCase(httpMethod)
                     && !"DELETE".equalsIgnoreCase(httpMethod);
-            if (hasBody) {
+            boolean entityAttached = false;
+            if (methodAllowsBody) {
                 String ct = (String) msgContext.getProperty(
                         Constants.Configuration.CONTENT_TYPE);
                 ContentType parsedCT;
@@ -659,12 +666,28 @@ public class VTHttpSender extends AbstractHandler implements
                 } catch (Exception parseEx) {
                     parsedCT = ContentType.APPLICATION_OCTET_STREAM;
                 }
-                InputStream bodyStream = vtPipe.getInputStream();
-                if (bodyStream != null) {
+                if (vtPipe != null && vtPipe.getInputStream() != null) {
+                    InputStream bodyStream = vtPipe.getInputStream();
                     long contentLength = getContentLength(transportHeaders);
                     InputStreamEntity entity = new InputStreamEntity(bodyStream, contentLength, parsedCT);
                     entity.setChunked(contentLength < 0 && defaultChunked);
                     reqBuilder.setEntity(entity);
+                    entityAttached = true;
+                } else if (builderInvoked && !Boolean.TRUE.equals(
+                        msgContext.getProperty(PassThroughConstants.NO_ENTITY_BODY))) {
+                    MessageFormatter formatter = MessageProcessorSelector.getMessageFormatter(msgContext);
+                    if (formatter == null) {
+                        throw new AxisFault("No MessageFormatter in MessageContext");
+                    }
+                    ByteArrayOutputStream bodyBuffer = new ByteArrayOutputStream(8192);
+                    formatter.writeTo(msgContext, format, bodyBuffer, false);
+                    byte[] bodyBytes = bodyBuffer.toByteArray();
+                    if (bodyBytes.length > 0) {
+                        ContentType formatterContentType = parseContentType(formatter.getContentType(
+                                msgContext, format, findSOAPAction(msgContext)), parsedCT);
+                        reqBuilder.setEntity(new ByteArrayEntity(bodyBytes, formatterContentType));
+                        entityAttached = true;
+                    }
                 }
             }
 
@@ -676,7 +699,7 @@ public class VTHttpSender extends AbstractHandler implements
             }
             log.warn("VTTRACE VTHttpSender before backend execute; messageId="
                     + msgContext.getMessageID() + "; method=" + httpMethod
-                    + "; url=" + url + "; hasEntity=" + hasBody
+                    + "; url=" + url + "; hasEntity=" + entityAttached
                     + "; contentLength=" + getContentLength(transportHeaders));
 
             response = httpClient.execute(reqBuilder.build());
@@ -687,7 +710,7 @@ public class VTHttpSender extends AbstractHandler implements
             setupStreamingResponse(msgContext, response);
             log.warn("VTTRACE VTHttpSender response pipe setup complete; messageId="
                     + msgContext.getMessageID() + "; pipe="
-                    + (msgContext.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE) != null));
+                    + (msgContext.getProperty(VTConstants.VT_STREAM_PIPE) != null));
             ownershipTransferred = true;
 
         } catch (IOException e) {
@@ -709,7 +732,7 @@ public class VTHttpSender extends AbstractHandler implements
     /**
      * Wire the backend response into the Axis2 IN MessageContext for streaming
      * pass-through. The response body InputStream is stashed under
-     * {@link VTConstants#VT_RESPONSE_INPUT_STREAM_PIPE}; an empty SOAP envelope
+     * {@link VTConstants#VT_STREAM_PIPE}; an empty SOAP envelope
      * is pre-set so {@code OutInAxisOperation.handleResponse()} skips
      * {@code TransportUtils.createSOAPMessage()} (which would otherwise consume
      * the stream and build an OM tree).
@@ -765,13 +788,14 @@ public class VTHttpSender extends AbstractHandler implements
                 + "; inMsgCtx=" + (inMsgCtx != null));
 
         if (wrappedContent != null) {
-            msgContext.setProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE,
+            msgContext.setProperty(VTConstants.VT_STREAM_PIPE,
                     new VTInputStreamPipe(wrappedContent));
             msgContext.removeProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
             msgContext.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
             log.warn("VTTRACE VTHttpSender stored response pipe on outbound context; messageId="
                     + msgContext.getMessageID());
         } else {
+            msgContext.removeProperty(VTConstants.VT_STREAM_PIPE);
             msgContext.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
             log.warn("VTTRACE VTHttpSender backend response had no entity; messageId="
                     + msgContext.getMessageID());
@@ -796,8 +820,8 @@ public class VTHttpSender extends AbstractHandler implements
             }
 
             if (wrappedContent != null) {
-                inMsgCtx.setProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE,
-                        msgContext.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE));
+                inMsgCtx.setProperty(VTConstants.VT_STREAM_PIPE,
+                        msgContext.getProperty(VTConstants.VT_STREAM_PIPE));
                 inMsgCtx.removeProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
                 inMsgCtx.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
             } else {
@@ -828,6 +852,18 @@ public class VTHttpSender extends AbstractHandler implements
             }
         }
         return -1;
+    }
+
+    private static ContentType parseContentType(String contentType, ContentType defaultContentType) {
+
+        if (contentType != null) {
+            try {
+                return ContentType.parse(contentType);
+            } catch (Exception ignore) {
+                return defaultContentType;
+            }
+        }
+        return defaultContentType;
     }
 
     private static String getHeaderValue(Map<String, Object> transportHeaders, String name) {

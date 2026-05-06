@@ -32,11 +32,16 @@ public final class VTConstants {
     public static final String VT_SOURCE_CONFIGURATION = "VT_SOURCE_CONFIGURATION";
     public static final String VT_SOURCE_CONNECTION = "VT_SOURCE_CONNECTION";
     public static final String VT_TARGET_CONFIGURATION = "VT_TARGET_CONFIGURATION";
-    public static final String VT_INPUT_STREAM_PIPE = "VT_INPUT_STREAM_PIPE";
-    /** Streaming response body from the backend, set by VTHttpSender after a streamed
-     *  call. Read by VTBlockingServerWorker.submitResponse() to write the body
-     *  straight to the client without OM building. */
-    public static final String VT_RESPONSE_INPUT_STREAM_PIPE = "VT_RESPONSE_INPUT_STREAM_PIPE";
+    public static final String VT_BACKEND_CALL = "VT_BACKEND_CALL";
+    /**
+     * Body stream of the current Axis2 message context.
+     * <p>
+     * Request contexts carry the client request body under this key; response
+     * contexts carry the backend response body under the same key. This mirrors
+     * the pass-through transport's context-local pipe model without using
+     * PASS_THROUGH_PIPE, which existing code casts to the NIO Pipe type.
+     */
+    public static final String VT_STREAM_PIPE = "VT_STREAM_PIPE";
 
     // ---- Transport names (used in axis2.xml) ----
     public static final String TRANSPORT_NAME_HTTP = "vt-http";

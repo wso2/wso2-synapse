@@ -95,7 +95,7 @@ public class Axis2FlexibleMEPClient {
 
         if (synapseOutMessageContext.getProperty(SynapseConstants.BLOCKING_MSG_SENDER) != null) {
             boolean vtRequest = ((org.apache.synapse.core.axis2.Axis2MessageContext) synapseOutMessageContext)
-                    .getAxis2MessageContext().getProperty("VT_INPUT_STREAM_PIPE") != null;
+                    .getAxis2MessageContext().getProperty("VT_STREAM_PIPE") != null;
             if (vtRequest) {
                 log.warn("VTTRACE Axis2FlexibleMEPClient calling BlockingMsgSender; messageId="
                         + synapseOutMessageContext.getMessageID() + "; endpoint="

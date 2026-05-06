@@ -214,8 +214,8 @@ public class VTBlockingServerWorker implements OutTransportInfo {
             // already placed on the original inbound context. Only fall back to
             // a plain 500 when there is no response pipe to write.
             if (!responseSent && msgContext != null) {
-                if (msgContext.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE)
-                        instanceof VTInputStreamPipe) {
+                if (msgContext.getProperty(VTConstants.VT_STREAM_PIPE) instanceof VTInputStreamPipe
+                        && isResponseContext(msgContext)) {
                     try {
                         msgContext.setProperty("synapse.isresponse", Boolean.TRUE);
                         msgContext.removeProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
@@ -269,11 +269,7 @@ public class VTBlockingServerWorker implements OutTransportInfo {
                 try {
                     msgContext.removeProperty(VTConstants.VT_SOURCE_CONFIGURATION);
                     msgContext.removeProperty(Constants.OUT_TRANSPORT_INFO);
-                    msgContext.removeProperty(VTConstants.VT_INPUT_STREAM_PIPE);
-                    // Don't close the response pipe here — HC5 still needs to read it
-                    // when writing the response after this handler returns. The wrapper
-                    // close() in VTHttpSender releases the pooled HC4 connection.
-                    msgContext.removeProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE);
+                    msgContext.removeProperty(VTConstants.VT_STREAM_PIPE);
                     msgContext.removeProperty(MessageContext.TRANSPORT_HEADERS);
                 } catch (Exception ignore) { }
             }
@@ -332,7 +328,7 @@ public class VTBlockingServerWorker implements OutTransportInfo {
             Boolean noEntityBody = (Boolean) responseMsgCtx
                     .getProperty(PassThroughConstants.NO_ENTITY_BODY);
             VTInputStreamPipe vtResponsePipe =
-                    (VTInputStreamPipe) responseMsgCtx.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE);
+                    (VTInputStreamPipe) responseMsgCtx.getProperty(VTConstants.VT_STREAM_PIPE);
             boolean messageBuilderInvoked =
                     Boolean.TRUE.equals(responseMsgCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED));
 
@@ -411,7 +407,7 @@ public class VTBlockingServerWorker implements OutTransportInfo {
         StringBuilder message = new StringBuilder("Internal Server Error");
         message.append(" - VT response was not written");
         message.append("; responsePipePresent=")
-                .append(context.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE) != null);
+                .append(context.getProperty(VTConstants.VT_STREAM_PIPE) != null);
         message.append("; blockingSenderError=")
                 .append(context.getProperty("blocking.sender.error"));
         Object errorMessage = context.getProperty("ERROR_MESSAGE");
@@ -428,6 +424,14 @@ public class VTBlockingServerWorker implements OutTransportInfo {
             }
         }
         return message.toString();
+    }
+
+    private boolean isResponseContext(MessageContext context) {
+
+        return Boolean.TRUE.equals(context.getProperty("synapse.isresponse"))
+                || context.getProperty(PassThroughConstants.HTTP_SC) != null
+                || context.getProperty("transport.http.statusCode") != null
+                || context.getProperty(HTTPConstants.MC_HTTP_STATUS_CODE) != null;
     }
 
     private ContentType parseContentTypeOrDefault(String contentType) {
@@ -599,7 +603,7 @@ public class VTBlockingServerWorker implements OutTransportInfo {
                 // to o.a.s.transport.passthru.Pipe) don't blow up with ClassCastException.
                 InputStream bodyStream = getBodyInputStream();
                 if (bodyStream != null) {
-                    msgContext.setProperty(VTConstants.VT_INPUT_STREAM_PIPE,
+                    msgContext.setProperty(VTConstants.VT_STREAM_PIPE,
                             new VTInputStreamPipe(bodyStream));
                     log.warn("VTTRACE VTBlockingServerWorker stored request pipe; messageId="
                             + msgContext.getMessageID() + "; method=" + method
@@ -636,7 +640,7 @@ public class VTBlockingServerWorker implements OutTransportInfo {
             // Set the entity body stream under the VT-specific key (see comment above).
             InputStream bodyStream = getBodyInputStream();
             if (bodyStream != null) {
-                msgContext.setProperty(VTConstants.VT_INPUT_STREAM_PIPE,
+                msgContext.setProperty(VTConstants.VT_STREAM_PIPE,
                         new VTInputStreamPipe(bodyStream));
                 log.warn("VTTRACE VTBlockingServerWorker stored request pipe; messageId="
                         + msgContext.getMessageID() + "; method=" + method
@@ -651,12 +655,12 @@ public class VTBlockingServerWorker implements OutTransportInfo {
                 log.warn("VTTRACE VTBlockingServerWorker before AxisEngine.receive; messageId="
                         + msgContext.getMessageID() + "; method=" + method
                         + "; uri=" + uri + "; requestPipe="
-                        + (msgContext.getProperty(VTConstants.VT_INPUT_STREAM_PIPE) != null));
+                        + (msgContext.getProperty(VTConstants.VT_STREAM_PIPE) != null));
                 AxisEngine.receive(msgContext);
                 log.warn("VTTRACE VTBlockingServerWorker after AxisEngine.receive; messageId="
                         + msgContext.getMessageID() + "; responseSent=" + responseSent
                         + "; responsePipe="
-                        + (msgContext.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE) != null)
+                        + (msgContext.getProperty(VTConstants.VT_STREAM_PIPE) != null)
                         + "; blockingSenderError="
                         + msgContext.getProperty("blocking.sender.error"));
             }
@@ -696,12 +700,12 @@ public class VTBlockingServerWorker implements OutTransportInfo {
                 log.warn("VTTRACE VTBlockingServerWorker before AxisEngine.receive; messageId="
                         + msgContext.getMessageID() + "; method=" + method
                         + "; uri=" + uri + "; requestPipe="
-                        + (msgContext.getProperty(VTConstants.VT_INPUT_STREAM_PIPE) != null));
+                        + (msgContext.getProperty(VTConstants.VT_STREAM_PIPE) != null));
                 AxisEngine.receive(msgContext);
                 log.warn("VTTRACE VTBlockingServerWorker after AxisEngine.receive; messageId="
                         + msgContext.getMessageID() + "; responseSent=" + responseSent
                         + "; responsePipe="
-                        + (msgContext.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE) != null)
+                        + (msgContext.getProperty(VTConstants.VT_STREAM_PIPE) != null)
                         + "; blockingSenderError="
                         + msgContext.getProperty("blocking.sender.error"));
             }

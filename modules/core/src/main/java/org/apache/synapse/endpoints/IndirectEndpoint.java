@@ -54,7 +54,7 @@ public class IndirectEndpoint extends AbstractEndpoint {
 
         if (synCtx.getProperty(SynapseConstants.BLOCKING_MSG_SENDER) != null
                 && ((Axis2MessageContext) synCtx).getAxis2MessageContext()
-                .getProperty("VT_INPUT_STREAM_PIPE") != null) {
+                .getProperty("VT_STREAM_PIPE") != null) {
             log.warn("VTTRACE IndirectEndpoint send; messageId=" + synCtx.getMessageID()
                     + "; key=" + key + "; realEndpoint="
                     + (realEndpoint == null ? "null" : realEndpoint.getClass().getName()));

@@ -189,11 +189,15 @@ public class BlockingMsgSender {
         // HttpClient 4.x InputStreamEntity, bypassing OM-tree serialisation.
         // If MESSAGE_BUILDER_INVOKED is true (a preceding content-aware mediator
         // already built the message), the sender falls back to the OM path.
-        Object vtInputStreamPipe = axisInMsgCtx.getProperty(VTConstants.VT_INPUT_STREAM_PIPE);
+        Object vtInputStreamPipe = axisInMsgCtx.getProperty(VTConstants.VT_STREAM_PIPE);
         if (vtInputStreamPipe != null) {
-            axisOutMsgCtx.setProperty(VTConstants.VT_INPUT_STREAM_PIPE, vtInputStreamPipe);
+            axisOutMsgCtx.setProperty(VTConstants.VT_STREAM_PIPE, vtInputStreamPipe);
         }
-        boolean vtRequest = vtInputStreamPipe != null;
+        boolean vtRequest = vtInputStreamPipe != null
+                || axisInMsgCtx.getProperty(VTConstants.VT_SOURCE_CONFIGURATION) != null;
+        if (vtRequest) {
+            axisOutMsgCtx.setProperty(VTConstants.VT_BACKEND_CALL, Boolean.TRUE);
+        }
         Object builderInvoked = axisInMsgCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
         if (builderInvoked != null) {
             axisOutMsgCtx.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, builderInvoked);
@@ -285,9 +289,9 @@ public class BlockingMsgSender {
                 }
                 // Forward the streamed VT response body so <respond/> can stream it
                 // straight to the client without OM serialisation.
-                Object vtRespPipe = result.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE);
+                Object vtRespPipe = result.getProperty(VTConstants.VT_STREAM_PIPE);
                 if (vtRespPipe != null) {
-                    axisInMsgCtx.setProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE, vtRespPipe);
+                    axisInMsgCtx.setProperty(VTConstants.VT_STREAM_PIPE, vtRespPipe);
                     axisInMsgCtx.removeProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
                     axisInMsgCtx.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
                 }
@@ -409,11 +413,15 @@ public class BlockingMsgSender {
         // HttpClient 4.x InputStreamEntity, bypassing OM-tree serialisation.
         // If MESSAGE_BUILDER_INVOKED is true (a preceding content-aware mediator
         // already built the message), the sender falls back to the OM path.
-        Object vtInputStreamPipe = axisInMsgCtx.getProperty(VTConstants.VT_INPUT_STREAM_PIPE);
+        Object vtInputStreamPipe = axisInMsgCtx.getProperty(VTConstants.VT_STREAM_PIPE);
         if (vtInputStreamPipe != null) {
-            axisOutMsgCtx.setProperty(VTConstants.VT_INPUT_STREAM_PIPE, vtInputStreamPipe);
+            axisOutMsgCtx.setProperty(VTConstants.VT_STREAM_PIPE, vtInputStreamPipe);
         }
-        boolean vtRequest = vtInputStreamPipe != null;
+        boolean vtRequest = vtInputStreamPipe != null
+                || axisInMsgCtx.getProperty(VTConstants.VT_SOURCE_CONFIGURATION) != null;
+        if (vtRequest) {
+            axisOutMsgCtx.setProperty(VTConstants.VT_BACKEND_CALL, Boolean.TRUE);
+        }
         Object builderInvoked = axisInMsgCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
         if (builderInvoked != null) {
             axisOutMsgCtx.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, builderInvoked);
@@ -496,9 +504,9 @@ public class BlockingMsgSender {
                 if (JsonUtil.hasAJsonPayload(result)) {
                     JsonUtil.cloneJsonPayload(result, ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
                 }
-                Object vtRespPipe = result.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE);
+                Object vtRespPipe = result.getProperty(VTConstants.VT_STREAM_PIPE);
                 if (vtRespPipe != null) {
-                    axisInMsgCtx.setProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE, vtRespPipe);
+                    axisInMsgCtx.setProperty(VTConstants.VT_STREAM_PIPE, vtRespPipe);
                     axisInMsgCtx.removeProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
                     axisInMsgCtx.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
                 }
@@ -577,7 +585,7 @@ public class BlockingMsgSender {
         // Check fault occure when send the request to endpoint
         if ("true".equals(synapseInMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
             if (((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext()
-                    .getProperty(VTConstants.VT_INPUT_STREAM_PIPE) != null) {
+                    .getProperty(VTConstants.VT_STREAM_PIPE) != null) {
                 log.warn("VTTRACE BlockingMsgSender invoking endpoint fault handler; messageId="
                         + synapseInMsgCtx.getMessageID() + "; errorMessage="
                         + synapseInMsgCtx.getProperty(SynapseConstants.ERROR_MESSAGE)
@@ -662,7 +670,7 @@ public class BlockingMsgSender {
         operationClient.addMessageContext(axisOutMsgCtx);
         axisOutMsgCtx.setAxisMessage(
                 axisAnonymousOperation.getMessage(WSDLConstants.MESSAGE_LABEL_OUT_VALUE));
-        boolean vtRequest = axisOutMsgCtx.getProperty(VTConstants.VT_INPUT_STREAM_PIPE) != null;
+        boolean vtRequest = Boolean.TRUE.equals(axisOutMsgCtx.getProperty(VTConstants.VT_BACKEND_CALL));
         if (vtRequest) {
             log.warn("VTTRACE BlockingMsgSender sendReceive before execute; messageId="
                     + synapseInMsgCtx.getMessageID() + "; to="
@@ -674,15 +682,15 @@ public class BlockingMsgSender {
         if (vtRequest) {
             log.warn("VTTRACE BlockingMsgSender sendReceive after execute; messageId="
                     + synapseInMsgCtx.getMessageID() + "; axisOutRespPipe="
-                    + (axisOutMsgCtx.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE) != null));
+                    + (axisOutMsgCtx.getProperty(VTConstants.VT_STREAM_PIPE) != null));
         }
         org.apache.axis2.context.MessageContext resultMsgCtx =
                 operationClient.getMessageContext(WSDLConstants.MESSAGE_LABEL_IN_VALUE);
-        Object vtRespPipe = resultMsgCtx.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE);
+        Object vtRespPipe = resultMsgCtx.getProperty(VTConstants.VT_STREAM_PIPE);
         if (vtRespPipe == null) {
-            vtRespPipe = axisOutMsgCtx.getProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE);
+            vtRespPipe = axisOutMsgCtx.getProperty(VTConstants.VT_STREAM_PIPE);
             if (vtRespPipe != null) {
-                resultMsgCtx.setProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE, vtRespPipe);
+                resultMsgCtx.setProperty(VTConstants.VT_STREAM_PIPE, vtRespPipe);
             }
         }
         Object statusCode = resultMsgCtx.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE);
@@ -737,7 +745,7 @@ public class BlockingMsgSender {
         // Carry the VT streamed response body across to the caller — used by
         // <respond/> to stream the backend body straight to the client.
         if (vtRespPipe != null) {
-            returnMsgCtx.setProperty(VTConstants.VT_RESPONSE_INPUT_STREAM_PIPE, vtRespPipe);
+            returnMsgCtx.setProperty(VTConstants.VT_STREAM_PIPE, vtRespPipe);
             returnMsgCtx.removeProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
             returnMsgCtx.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
         }

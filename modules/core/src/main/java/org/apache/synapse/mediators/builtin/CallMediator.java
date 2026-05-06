@@ -300,7 +300,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
                     + synInCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR)
                     + "; vtResponsePipe="
                     + (((Axis2MessageContext) synInCtx).getAxis2MessageContext()
-                    .getProperty("VT_RESPONSE_INPUT_STREAM_PIPE") != null)
+                    .getProperty("VT_STREAM_PIPE") != null)
                     + "; lastFaultHandlerAfter="
                     + (faultHandlerAfterInvocation == null ? "null"
                     : faultHandlerAfterInvocation.getClass().getName())
@@ -362,14 +362,14 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             log.warn("VTTRACE CallMediator before postMediate; messageId="
                     + synInCtx.getMessageID() + "; vtResponsePipe="
                     + (((Axis2MessageContext) synInCtx).getAxis2MessageContext()
-                    .getProperty("VT_RESPONSE_INPUT_STREAM_PIPE") != null));
+                    .getProperty("VT_STREAM_PIPE") != null));
         }
         postMediate(synInCtx, originalMessageType, originalContentType, originalTransportHeaders);
         if (vtRequest) {
             log.warn("VTTRACE CallMediator after postMediate; messageId="
                     + synInCtx.getMessageID() + "; vtResponsePipe="
                     + (((Axis2MessageContext) synInCtx).getAxis2MessageContext()
-                    .getProperty("VT_RESPONSE_INPUT_STREAM_PIPE") != null));
+                    .getProperty("VT_STREAM_PIPE") != null));
         }
         return true;
     }
