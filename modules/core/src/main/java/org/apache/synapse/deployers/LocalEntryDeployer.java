@@ -397,8 +397,20 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
             OMElement apiElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "api"));
             OMElement resourceElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "resource"));
             OMElement methodElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "method"));
+            OMElement sequenceElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "sequence"));
             OMElement descriptionElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "description"));
             OMElement inputSchemaElement = toolElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "inputSchema"));
+
+            if (apiElement == null && sequenceElement == null) {
+                throw new DeploymentException(
+                        "Invalid MCP tool '" + toolName + "' in local entry '" + localEntryKey
+                                + "': must specify either <api> or <sequence>");
+            }
+            if (apiElement != null && sequenceElement != null) {
+                throw new DeploymentException(
+                        "Invalid MCP tool '" + toolName + "' in local entry '" + localEntryKey
+                                + "': cannot specify both <api> and <sequence>");
+            }
 
             if (apiElement != null) {
                 toolConfig.put("api", apiElement.getText());
@@ -408,6 +420,9 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
             }
             if (methodElement != null) {
                 toolConfig.put("method", methodElement.getText());
+            }
+            if (sequenceElement != null) {
+                toolConfig.put("sequence", sequenceElement.getText());
             }
             if (descriptionElement != null) {
                 toolConfig.put("description", descriptionElement.getText());
