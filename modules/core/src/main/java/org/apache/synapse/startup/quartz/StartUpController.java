@@ -337,7 +337,7 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
 
         StartUpControllerState startupState = getStartupStateFromRegistry();
         if (startupState == StartUpControllerState.INITIAL) {
-            taskDescription.setStartInPausedMode(!taskDescription.isStartOnLoad());
+            taskDescription.setStartInPausedMode(false);
         } else {
             taskDescription.setStartInPausedMode(startupState == StartUpControllerState.INACTIVE);
         }

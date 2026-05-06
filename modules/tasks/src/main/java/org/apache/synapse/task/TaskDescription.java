@@ -18,8 +18,6 @@ public final class TaskDescription {
 
     private String taskGroup;
 
-    private boolean startOnLoad = true;
-
     /**
      * Indicates whether the task should be scheduled in a paused state.
      * <p>
@@ -108,15 +106,6 @@ public final class TaskDescription {
 
     public void setTaskGroup(String taskGroup) {
         this.taskGroup = taskGroup;
-    }
-
-    public void setStartOnLoad(boolean startOnLoad) {
-        this.startOnLoad = startOnLoad;
-    }
-
-    public boolean isStartOnLoad() {
-
-        return startOnLoad;
     }
 
     public boolean isStartInPausedMode() {
