@@ -110,7 +110,7 @@ public final class TaskDescription {
         this.taskGroup = taskGroup;
     }
 
-    public void setTaskStartOnLoad(boolean startOnLoad) {
+    public void setStartOnLoad(boolean startOnLoad) {
         this.startOnLoad = startOnLoad;
     }
 

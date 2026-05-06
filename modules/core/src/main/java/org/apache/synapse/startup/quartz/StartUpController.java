@@ -335,11 +335,12 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
 
     private void configureStartupStateFromRegistry(TaskDescription taskDescription) {
 
-        if (getStartupStateFromRegistry() == StartUpControllerState.INITIAL) {
+        StartUpControllerState startupState = getStartupStateFromRegistry();
+        if (startupState == StartUpControllerState.INITIAL) {
             taskDescription.setStartInPausedMode(!taskDescription.isStartOnLoad());
+        } else {
+            taskDescription.setStartInPausedMode(startupState == StartUpControllerState.INACTIVE);
         }
-
-        taskDescription.setStartInPausedMode(getStartupStateFromRegistry() == StartUpControllerState.INACTIVE);
     }
 
     public void init(SynapseEnvironment synapseEnvironment) {
