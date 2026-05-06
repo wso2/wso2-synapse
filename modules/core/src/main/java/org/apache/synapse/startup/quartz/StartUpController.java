@@ -50,6 +50,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.Set;
 
 public class StartUpController extends AbstractStartup implements AspectConfigurable {
@@ -68,7 +69,7 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
     private Registry registry;
 
     private enum StartUpControllerState {
-        ACTIVE, INACTIVE
+        INITIAL, ACTIVE, INACTIVE
     }
 
     private static final String REG_STARTUP_CONTROLLER_BASE_PATH = "/repository/components/org.apache.synapse.startup/";
@@ -162,12 +163,14 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
         boolean isSuccess = false;
         logger.info("Activating the Task: " + getName());
         if (this.isTaskActive()) {
+            isSuccess = true;
             message = "Task [" + getName() + "] is already active.";
             logger.debug(message);
         } else {
             try {
                 if (this.activateTask()) {
-                    logger.info("Task [" + getName() + "] is successfully activated.");
+                    message = "Task [" + getName() + "] is successfully activated.";
+                    logger.info(message);
                     setStartupControllerStateInRegistry(StartUpController.StartUpControllerState.ACTIVE);
                     isSuccess = true;
                 } else {
@@ -197,12 +200,14 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
         boolean isSuccess = false;
         logger.info("Deactivating the Task: " + getName());
         if (!this.isTaskActive()) {
+            isSuccess = true;
             message = "Task [" + getName() + "] is already deactivated.";
             logger.debug(message);
         } else {
             try {
                 if (this.deactivateTask()) {
-                    logger.info("Task [" + getName() + "] is successfully deactivated.");
+                    message = "Task [" + getName() + "] is successfully deactivated.";
+                    logger.info(message);
                     setStartupControllerStateInRegistry(StartUpController.StartUpControllerState.INACTIVE);
                     isSuccess = true;
                 } else {
@@ -234,7 +239,8 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
             if (this.isTaskActive()) {
                 if (task instanceof Task) {
                     ((Task) task).execute();
-                    logger.info("Task [" + getName() + "] is successfully triggered.");
+                    message = "Task [" + getName() + "] is successfully triggered.";
+                    logger.info(message);
                     isSuccess = true;
                 } else {
                     message = "Cannot trigger the task: " + getName() +
@@ -291,12 +297,58 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
         return !taskScheduler.isTaskDeactivated(taskDescription.getName());
     }
 
+    /**
+     * Retrieve the persisted startup controller state for this startup from the registry.
+     *
+     * <p>This method attempts to read resource properties from the registry path
+     * {@code REG_STARTUP_CONTROLLER_BASE_PATH + getName()} and then reads the property
+     * named {@code STARTUP_CONTROLLER_STATE}.</p>
+     *
+     * <p>Return rules:
+     * <ul>
+     *   <li>If the registry is not available or no resource properties are found, returns
+     *       {@link StartUpControllerState#INITIAL}.</li>
+     *   <li>If the stored state string equals {@code "ACTIVE"} (case-insensitive), returns
+     *       {@link StartUpControllerState#ACTIVE}.</li>
+     *   <li>For any other stored value, returns {@link StartUpControllerState#INACTIVE}.</li>
+     * </ul>
+     * </p>
+     *
+     * @return the persisted {@link StartUpControllerState} or a sensible default when not available
+     */
+    private StartUpControllerState getStartupStateFromRegistry() {
+        Properties resourceProperties = null;
+        if (Objects.nonNull(registry)) {
+            resourceProperties = registry.getResourceProperties(REG_STARTUP_CONTROLLER_BASE_PATH + getName());
+        }
+
+        if (resourceProperties == null) {
+            return StartUpControllerState.INITIAL;
+        }
+
+        String state = resourceProperties.getProperty(STARTUP_CONTROLLER_STATE);
+        if (StartUpControllerState.ACTIVE.toString().equalsIgnoreCase(state)) {
+            return StartUpControllerState.ACTIVE;
+        }
+        return StartUpControllerState.INACTIVE;
+    }
+
+    private void configureStartupStateFromRegistry(TaskDescription taskDescription) {
+
+        if (getStartupStateFromRegistry() == StartUpControllerState.INITIAL) {
+            taskDescription.setStartInPausedMode(!taskDescription.isStartOnLoad());
+        }
+
+        taskDescription.setStartInPausedMode(getStartupStateFromRegistry() == StartUpControllerState.INACTIVE);
+    }
+
     public void init(SynapseEnvironment synapseEnvironment) {
         this.synapseEnvironment = synapseEnvironment;
         registry = synapseEnvironment.getSynapseConfiguration().getRegistry();
         if (taskDescription == null) {
             handleException("Error while initializing the startup. TaskDescription is null.");
         }
+        configureStartupStateFromRegistry(taskDescription);
         initSynapseTaskManager(synapseEnvironment);
         TaskDescriptionRepository repository = synapseTaskManager.getTaskDescriptionRepository();
         if (repository == null) {
