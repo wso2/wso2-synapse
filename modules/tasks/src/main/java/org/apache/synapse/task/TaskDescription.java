@@ -18,6 +18,15 @@ public final class TaskDescription {
 
     private String taskGroup;
 
+    /**
+     * Indicates whether the task should be scheduled in a paused state.
+     * <p>
+     * This flag is maintained internally and is determined by registry state
+     * (not by the external task definition). When true, the scheduler should schedule the
+     * task as paused on deployment and it must be explicitly resumed to run.
+     */
+    private boolean startInPausedMode;
+
     /** Name of the task manager class */
     private String taskMgrClassName;
 
@@ -97,6 +106,16 @@ public final class TaskDescription {
 
     public void setTaskGroup(String taskGroup) {
         this.taskGroup = taskGroup;
+    }
+
+    public boolean isStartInPausedMode() {
+
+        return startInPausedMode;
+    }
+
+    public void setStartInPausedMode(boolean startInPausedMode) {
+
+        this.startInPausedMode = startInPausedMode;
     }
 
     public String getTaskImplClassName() {
