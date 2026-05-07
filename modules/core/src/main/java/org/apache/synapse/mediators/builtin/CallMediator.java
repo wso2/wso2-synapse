@@ -61,18 +61,6 @@ import java.util.Set;
  * send the message to that endpoint. Once a message is sent to the endpoint further sending
  * behaviors are completely governed by that endpoint. If there is no endpoint available,
  * CallMediator will send the message to the implicitly stated destination.
- * <p/>
- * Even though Call mediator leverages the non-blocking transports which is same as Send mediator,
- * response will be mediated from the next mediator placed after the Call mediator. Behaviour is
- * very much same as the Callout Mediator.
- * So Call mediator can be considered as a non-blocking Callout mediator.
- * <p/>
- * To implement this behaviour, important states in the mediation flow is stored in the
- * message context.
- * An important state in the mediation flow is represented by the
- * {@link org.apache.synapse.ContinuationState} which are stored in the ContinuationStateStack
- * which resides in the MessageContext.
- * <p/>
  * These ContinuationStates are used to mediate the response message and continue the message flow.
  */
 public class CallMediator extends AbstractMediator implements ManagedLifecycle {
@@ -140,6 +128,9 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
      */
     public boolean mediate(MessageContext synInCtx) {
 
+        blocking = Thread.currentThread().isVirtual();
+
+
         if (synInCtx.getEnvironment().isDebuggerEnabled()) {
             MessageHelper.setWireLogHolderProperties(synInCtx, isBreakPoint(), getRegisteredMediationFlowPoint()); //this needs to be set only in mediators where outgoing messages are present
             if (super.divertMediationRoute(synInCtx)) {
@@ -199,7 +190,9 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         synInCtx.setProperty(ORIGINAL_CONTENT_TYPE, originalContentType);
         synInCtx.setProperty(ORIGINAL_TRANSPORT_HEADERS, originalTransportHeaders);
 
-        if (blocking) {
+
+
+        if (isBlocking()) {
             return handleBlockingCall(synInCtx, originalMessageType, originalContentType, originalTransportHeaders);
         } else {
             return handleNonBlockingCall(synInCtx);
@@ -450,7 +443,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             endpoint.init(synapseEnvironment);
         }
 
-        if (blocking) {
+        if (isBlocking()) {
             try {
                 configCtx = ConfigurationContextFactory.createConfigurationContextFromFileSystem(
                         clientRepository != null ? clientRepository : DEFAULT_CLIENT_REPO,
@@ -474,31 +467,21 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         if (endpoint != null) {
             endpoint.destroy();
         }
-        if (!blocking) {
+        if (!isBlocking()) {
             synapseEnv.updateCallMediatorCount(false);
         }
     }
 
     /**
-     * Returns {@code false} so {@link AbstractListMediator} does not call
-     * {@code buildMessage()} purely because of this mediator. This matches the
-     * non-blocking NIO behaviour: the message is only built when a preceding
-     * mediator is itself content-aware (e.g. {@code <log level="full"/>}).
-     *
-     * <p>In the VT blocking path, {@code VTHttpSender.writeMessageWithCommons()}
-     * streams the request body directly from the {@code VTInputStreamPipe}
-     * (set on {@code PASS_THROUGH_PIPE}) via HttpClient 4.x's
-     * {@code InputStreamEntity} when {@code MESSAGE_BUILDER_INVOKED} is not set.
-     * If any preceding mediator forced a build, the sender falls back to the
-     * existing OM-tree serialisation path ({@code HTTPSender.send()}).</p>
+
      */
     @Override
     public boolean isContentAware() {
-        return false;
+        return !this.blocking;
     }
 
     public boolean isBlocking() {
-        return blocking;
+        return this.blocking;
     }
 
     public void setBlocking(boolean blocking) {
@@ -589,7 +572,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         String cloneId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.MEDIATOR, holder);
         getAspectConfiguration().setUniqueId(cloneId);
 
-        if (endpoint != null && !blocking) {
+        if (endpoint != null && !isBlocking()) {
             if (endpoint instanceof IndirectEndpoint && !StringUtils.isEmpty(((IndirectEndpoint) endpoint).getKey()) &&
                     isDynamicEndpoint(((IndirectEndpoint) endpoint).getKey())) {
                 Endpoint realEndpoint = ((IndirectEndpoint) endpoint).getRealEndpoint();
