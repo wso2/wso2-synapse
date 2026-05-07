@@ -614,15 +614,6 @@ public class VTHttpSender extends AbstractHandler implements
 
     /**
      * Send the outbound request by streaming the body directly from the
-     * {@link VTInputStreamPipe} via HttpClient 4.x {@link InputStreamEntity},
-     * bypassing OM-tree serialisation. The cached {@link CloseableHttpClient}
-     * is retrieved from the ConfigurationContext using a VT-specific key; the
-     * normal Axis2 {@code CACHED_HTTP_CLIENT} slot may contain the legacy
-     * Commons HttpClient used by the standard blocking sender.
-     * <p>
-     * After the HTTP call, response status / headers / body stream are placed
-     * on the message context so Axis2's {@code OperationClient} can build the
-     * response envelope via its standard builder pipeline.
      */
     private void sendStreamedRequest(MessageContext msgContext, EndpointReference toEPR,
                                      VTInputStreamPipe vtPipe, OMOutputFormat format,
@@ -731,15 +722,6 @@ public class VTHttpSender extends AbstractHandler implements
 
     /**
      * Wire the backend response into the Axis2 IN MessageContext for streaming
-     * pass-through. The response body InputStream is stashed under
-     * {@link VTConstants#VT_STREAM_PIPE}; an empty SOAP envelope
-     * is pre-set so {@code OutInAxisOperation.handleResponse()} skips
-     * {@code TransportUtils.createSOAPMessage()} (which would otherwise consume
-     * the stream and build an OM tree).
-     * <p>
-     * The response stream is wrapped so closing it (which {@code HttpCore 5}'s
-     * server-side entity does after writing) also closes the {@link
-     * CloseableHttpResponse}, releasing the pooled connection.
      */
     private void setupStreamingResponse(MessageContext msgContext,
                                         final CloseableHttpResponse response)

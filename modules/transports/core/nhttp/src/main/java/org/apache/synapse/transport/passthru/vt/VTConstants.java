@@ -55,6 +55,11 @@ public final class VTConstants {
     public static final String PARAM_BACKLOG = "backlog";
     public static final int DEFAULT_BACKLOG = 1024;
 
+    /** Max active accepted connections handled by virtual threads */
+    public static final String VT_MAX_ACCEPT_CONNECTIONS =
+            "synapse.vt.accept.max.connections";
+    public static final int DEFAULT_VT_MAX_ACCEPT_CONNECTIONS = 1000;
+
     /** Socket read timeout in millis for both source and target sockets */
     public static final String PARAM_SO_TIMEOUT = "so_timeout";
     public static final int DEFAULT_SO_TIMEOUT = 60_000;
@@ -125,4 +130,17 @@ public final class VTConstants {
     public static final String CTX_LOCAL_ADDRESS = "vt.local.address";
     /** Local port stored in HttpContext */
     public static final String CTX_LOCAL_PORT = "vt.local.port";
+
+    public static int getSystemInt(String key, int defaultValue) {
+        String value = System.getProperty(key);
+        if (value == null || value.trim().isEmpty()) {
+            return defaultValue;
+        }
+        try {
+            int parsedValue = Integer.parseInt(value.trim());
+            return parsedValue > 0 ? parsedValue : defaultValue;
+        } catch (NumberFormatException ignore) {
+            return defaultValue;
+        }
+    }
 }

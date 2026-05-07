@@ -75,24 +75,6 @@ import java.util.TreeMap;
 /**
  * Per-request server-side worker that processes <b>one HTTP request</b>
  * entirely within a single Virtual Thread.
- * <p>
- * HttpCore 5's {@link org.apache.hc.core5.http.impl.io.HttpService} handles
- * all HTTP protocol concerns (parsing, keep-alive, chunked decoding, response
- * serialization).  This worker is called by an
- * {@link org.apache.hc.core5.http.io.HttpRequestHandler} for each request
- * and is responsible only for:
- * <ol>
- *   <li>Building an Axis2 {@link MessageContext} from the HttpCore 5
- *       {@link ClassicHttpRequest}.</li>
- *   <li>Dispatching to the Axis2/Synapse mediation engine via
- *       {@link AxisEngine#receive(MessageContext)}.</li>
- *   <li>Populating the HttpCore 5 {@link ClassicHttpResponse} when the
- *       sender calls {@link #submitResponse(MessageContext)}.</li>
- *   <li>Cleaning up Axis2 context objects between requests.</li>
- * </ol>
- * </p>
- * <p>This class implements {@link OutTransportInfo} so the Axis2 engine can
- * treat it as the out-transport-info for response writing.</p>
  */
 public class VTBlockingServerWorker implements OutTransportInfo {
 
@@ -105,8 +87,6 @@ public class VTBlockingServerWorker implements OutTransportInfo {
     private final HttpContext httpContext;
     private final SourceConfiguration sourceConfiguration;
     private final ConfigurationContext configurationContext;
-    private final Map<String, String> serviceNameToEPRMap;
-    private final Map<String, String> eprToServiceNameMap;
 
     // ---- Per-request state ----
     private MessageContext msgContext;
@@ -125,16 +105,12 @@ public class VTBlockingServerWorker implements OutTransportInfo {
                                   ClassicHttpResponse httpResponse,
                                   HttpContext httpContext,
                                   SourceConfiguration sourceConfiguration,
-                                  ConfigurationContext configurationContext,
-                                  Map<String, String> serviceNameToEPRMap,
-                                  Map<String, String> eprToServiceNameMap) {
+                                  ConfigurationContext configurationContext) {
         this.httpRequest = httpRequest;
         this.httpResponse = httpResponse;
         this.httpContext = httpContext;
         this.sourceConfiguration = sourceConfiguration;
         this.configurationContext = configurationContext;
-        this.serviceNameToEPRMap = serviceNameToEPRMap;
-        this.eprToServiceNameMap = eprToServiceNameMap;
     }
 
     /**
@@ -201,9 +177,6 @@ public class VTBlockingServerWorker implements OutTransportInfo {
 
             // At this point AxisEngine.receive() has returned.
             // In the VT blocking model the entire mediation flow
-            // (including the backend call and response writing via
-            // VTHttpSender) is synchronous, so the response
-            // should already be set via submitResponse().
 
         } catch (Exception e) {
             log.error("Error processing request in VT server worker", e);
@@ -284,9 +257,6 @@ public class VTBlockingServerWorker implements OutTransportInfo {
 
     /**
      * Called by VTHttpSender to populate the HttpCore 5
-     * {@link ClassicHttpResponse} with status, headers, and body.
-     * HttpCore 5 serializes this response to the socket after the
-     * handler returns.
      */
     public void submitResponse(MessageContext responseMsgCtx) throws AxisFault {
         if (responseSent) return;
@@ -334,23 +304,22 @@ public class VTBlockingServerWorker implements OutTransportInfo {
 
             if (noEntityBody != null && noEntityBody) {
                 // No body — HttpCore 5 writes just the status + headers
+                log.warn("VTTRACE VTBlockingServerWorker response has no entity; messageId="
+                        + responseMsgCtx.getMessageID() + "; status=" + httpResponse.getCode());
             } else if (vtResponsePipe != null && !messageBuilderInvoked) {
-                // Streamed backend response. For the blocking HttpCore server, materialize
-                // the stream before returning from the handler so any IO failure is caught
-                // here and the server does not close the client connection without a
-                // response head.
                 InputStream bodyStream = vtResponsePipe.getInputStream();
                 if (bodyStream != null) {
                     String contentType = getResponseContentType(responseMsgCtx);
                     ContentType parsedContentType = parseContentTypeOrDefault(contentType);
-                    byte[] bodyBytes = bodyStream.readAllBytes();
-                    if (bodyBytes.length > 0) {
-                        httpResponse.setEntity(new ByteArrayEntity(bodyBytes, parsedContentType));
-                    } else {
-                        responseMsgCtx.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
-                    }
+                    long contentLength = getResponseContentLength(responseMsgCtx);
+                    httpResponse.setEntity(new InputStreamEntity(bodyStream, contentLength, parsedContentType));
+                    log.warn("VTTRACE VTBlockingServerWorker streaming response entity; messageId="
+                            + responseMsgCtx.getMessageID() + "; status=" + httpResponse.getCode()
+                            + "; contentType=" + contentType + "; contentLength=" + contentLength);
                 } else {
                     responseMsgCtx.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
+                    log.warn("VTTRACE VTBlockingServerWorker response pipe had no stream; messageId="
+                            + responseMsgCtx.getMessageID() + "; status=" + httpResponse.getCode());
                 }
             } else {
                 MessageFormatter formatter =
@@ -368,8 +337,13 @@ public class VTBlockingServerWorker implements OutTransportInfo {
                 if (bodyBytes.length > 0) {
                     ContentType parsedContentType = parseContentTypeOrDefault(contentType);
                     httpResponse.setEntity(new ByteArrayEntity(bodyBytes, parsedContentType));
+                    log.warn("VTTRACE VTBlockingServerWorker serialized built response entity; messageId="
+                            + responseMsgCtx.getMessageID() + "; status=" + httpResponse.getCode()
+                            + "; bytes=" + bodyBytes.length + "; contentType=" + contentType);
                 } else {
                     responseMsgCtx.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
+                    log.warn("VTTRACE VTBlockingServerWorker built response produced no entity; messageId="
+                            + responseMsgCtx.getMessageID() + "; status=" + httpResponse.getCode());
                 }
             }
 
@@ -401,6 +375,36 @@ public class VTBlockingServerWorker implements OutTransportInfo {
 
         Object axisContentType = responseMsgCtx.getProperty(Constants.Configuration.CONTENT_TYPE);
         return axisContentType != null ? axisContentType.toString() : null;
+    }
+
+    private long getResponseContentLength(MessageContext responseMsgCtx) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> transportHeaders =
+                (Map<String, Object>) responseMsgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
+        if (transportHeaders == null) {
+            return -1;
+        }
+
+        Object headerContentLength = transportHeaders.get(HTTP.CONTENT_LEN);
+        if (headerContentLength == null) {
+            for (Map.Entry<String, Object> entry : transportHeaders.entrySet()) {
+                if (HTTP.CONTENT_LEN.equalsIgnoreCase(entry.getKey())) {
+                    headerContentLength = entry.getValue();
+                    break;
+                }
+            }
+        }
+        if (headerContentLength == null) {
+            return -1;
+        }
+
+        try {
+            return Long.parseLong(headerContentLength.toString());
+        } catch (NumberFormatException e) {
+            log.warn("Invalid response Content-Length for VT streaming response: "
+                    + headerContentLength, e);
+            return -1;
+        }
     }
 
     private String getFallbackFailureMessage(MessageContext context) {

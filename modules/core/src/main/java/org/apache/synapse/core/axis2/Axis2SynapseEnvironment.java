@@ -74,6 +74,7 @@ import org.apache.synapse.unittest.UnitTestingExecutor;
 import org.apache.synapse.util.MediatorEnrichUtil;
 import org.apache.synapse.util.concurrent.InboundThreadPool;
 import org.apache.synapse.util.concurrent.SynapseThreadPool;
+import org.apache.synapse.util.concurrent.VirtualThreadConstants;
 import org.apache.synapse.util.logging.LoggingUtils;
 import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
 import org.apache.synapse.util.xpath.ext.SynapseXpathVariableResolver;
@@ -180,11 +181,17 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             keepAlive = Long.parseLong(synCfg.getProperty(SynapseThreadPool.SYN_THREAD_ALIVE));
         } catch (Exception ignore) {}
 
+        int vtMaxThreads = VirtualThreadConstants.parseInt(
+                synCfg.getProperty(VirtualThreadConstants.VT_MAX_SYNAPSE_THREADS),
+                VirtualThreadConstants.getSystemInt(VirtualThreadConstants.VT_MAX_SYNAPSE_THREADS,
+                        VirtualThreadConstants.DEFAULT_VT_MAX_SYNAPSE_THREADS));
+
         this.executorService = new SynapseThreadPool(coreThreads, maxThreads, keepAlive, qLength,
             synCfg.getProperty(SynapseThreadPool.SYN_THREAD_GROUP,
                 SynapseThreadPool.SYNAPSE_THREAD_GROUP),
             synCfg.getProperty(SynapseThreadPool.SYN_THREAD_IDPREFIX,
-                SynapseThreadPool.SYNAPSE_THREAD_ID_PREFIX));
+                SynapseThreadPool.SYNAPSE_THREAD_ID_PREFIX),
+            vtMaxThreads);
 
 		int ibCoreThreads = InboundThreadPool.INBOUND_CORE_THREADS;
 		int ibMaxThreads = InboundThreadPool.INBOUND_MAX_THREADS;
@@ -199,6 +206,11 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 		} catch (Exception ignore) {
 		}
 
+		int ibVtMaxThreads = VirtualThreadConstants.parseInt(
+		        synCfg.getProperty(VirtualThreadConstants.VT_MAX_INBOUND_THREADS),
+		        VirtualThreadConstants.getSystemInt(VirtualThreadConstants.VT_MAX_INBOUND_THREADS,
+		                VirtualThreadConstants.DEFAULT_VT_MAX_INBOUND_THREADS));
+
 		this.executorServiceInbound =
 		                              new InboundThreadPool(
 		                                                    ibCoreThreads,
@@ -206,7 +218,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 		                                                    InboundThreadPool.INBOUND_KEEP_ALIVE,
 		                                                    InboundThreadPool.INBOUND_THREAD_QLEN,
 		                                                    InboundThreadPool.INBOUND_THREAD_GROUP,
-		                                                    InboundThreadPool.INBOUND_THREAD_ID_PREFIX);
+		                                                    InboundThreadPool.INBOUND_THREAD_ID_PREFIX,
+		                                                    ibVtMaxThreads);
 
         taskManager = new SynapseTaskManager();
         restHandler = new RESTRequestHandler();

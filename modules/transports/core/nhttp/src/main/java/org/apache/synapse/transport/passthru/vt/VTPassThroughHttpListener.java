@@ -69,33 +69,13 @@ import java.util.Map;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A fully blocking HTTP transport listener that uses Java 21+ Virtual Threads
  * and Apache HttpCore 5 for HTTP protocol handling.
- * <p>
- * Instead of manually parsing raw HTTP on sockets, this listener delegates
- * HTTP protocol processing (request-line parsing, header parsing, chunked
- * decoding, keep-alive management, response serialization) to HttpCore 5's
- * blocking {@link HttpService}.  Each accepted connection is dispatched to
- * a Virtual Thread where {@code httpService.handleRequest()} is called in a
- * loop until the connection closes.
- * </p>
- * <p>
- * For each individual HTTP request, HttpCore 5 calls our
- * {@link HttpRequestHandler} which creates a per-request
- * {@link VTBlockingServerWorker} to handle the Axis2/Synapse mediation flow
- * synchronously within the same VT.
- * </p>
- *
- * <p>Configure in axis2.xml as a {@code transportReceiver}:</p>
- * <pre>
- * &lt;transportReceiver name="vt-http"
- *     class="org.apache.synapse.transport.passthru.vt.VTPassThroughHttpListener"&gt;
- *     &lt;parameter name="port"&gt;8290&lt;/parameter&gt;
- * &lt;/transportReceiver&gt;
- * </pre>
  */
 
 public class VTPassThroughHttpListener implements TransportListener {
@@ -107,6 +87,9 @@ public class VTPassThroughHttpListener implements TransportListener {
 
     /** Virtual-thread executor for handling accepted connections */
     private ExecutorService vtExecutor;
+
+    /** Limits concurrently accepted virtual-thread connections */
+    private Semaphore connectionSemaphore;
 
     /** Flag to signal the accept-loop to stop */
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -184,18 +167,26 @@ public class VTPassThroughHttpListener implements TransportListener {
         
         System.setProperty(transportInDescription.getName() + ".VT.port", String.valueOf(operatingPort));
         // Read optional parameters
+        //socket timout
         Parameter soTimeoutParam = transportIn.getParameter(VTConstants.PARAM_SO_TIMEOUT);
         if (soTimeoutParam != null) {
             soTimeout = Integer.parseInt(soTimeoutParam.getValue().toString());
         }
+        //tcp connection that can be queued unitl accept
         Parameter backlogParam = transportIn.getParameter(VTConstants.PARAM_BACKLOG);
         if (backlogParam != null) {
             backlog = Integer.parseInt(backlogParam.getValue().toString());
         }
+        // disables nagles algorithm, which can reduce latency for small messages at the cost of potentially more packets
         Parameter tcpNoDelayParam = transportIn.getParameter(VTConstants.PARAM_TCP_NODELAY);
         if (tcpNoDelayParam != null) {
             tcpNoDelay = Boolean.parseBoolean(tcpNoDelayParam.getValue().toString());
         }
+
+        int maxConnections = VTConstants.getSystemInt(
+                VTConstants.VT_MAX_ACCEPT_CONNECTIONS,
+                VTConstants.DEFAULT_VT_MAX_ACCEPT_CONNECTIONS);
+        connectionSemaphore = new Semaphore(maxConnections);
 
         // Create the shared virtual-thread executor
         vtExecutor = Executors.newThreadPerTaskExecutor(
@@ -240,8 +231,7 @@ public class VTPassThroughHttpListener implements TransportListener {
                                              HttpContext context) -> {
             VTBlockingServerWorker worker = new VTBlockingServerWorker(
                     request, response, context,
-                    sourceConfiguration, configurationContext,
-                    serviceNameToEPRMap, eprToServiceNameMap);
+                    sourceConfiguration, configurationContext);
             worker.process();
         };
 
@@ -326,25 +316,65 @@ public class VTPassThroughHttpListener implements TransportListener {
      */
     private void acceptLoop() {
         while (running.get()) {
+            Socket clientSocket = null;
+            boolean permitAcquired = false;
             try {
-                Socket clientSocket = serverSocket.accept();
+                connectionSemaphore.acquire();
+                permitAcquired = true;
+
+                clientSocket = serverSocket.accept();
                 clientSocket.setSoTimeout(soTimeout);
                 clientSocket.setTcpNoDelay(tcpNoDelay);
 
-                vtExecutor.submit(() -> handleConnection(clientSocket));
+                Socket acceptedSocket = clientSocket;
+                vtExecutor.submit(() -> {
+                    try {
+                        handleConnection(acceptedSocket);
+                    } finally {
+                        connectionSemaphore.release();
+                    }
+                });
             } catch (IOException e) {
+                if (permitAcquired) {
+                    connectionSemaphore.release();
+                }
+                closeClientSocket(clientSocket);
                 if (running.get()) {
                     log.error("Error accepting connection on " + namePrefix + " listener", e);
                 }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                if (permitAcquired) {
+                    connectionSemaphore.release();
+                }
+                closeClientSocket(clientSocket);
+                if (running.get()) {
+                    log.error("Interrupted while waiting for connection permit on " + namePrefix + " listener", e);
+                }
+                break;
+            } catch (RejectedExecutionException e) {
+                if (permitAcquired) {
+                    connectionSemaphore.release();
+                }
+                closeClientSocket(clientSocket);
+                if (running.get()) {
+                    log.error("Virtual-thread executor rejected connection on " + namePrefix + " listener", e);
+                }
+            }
+        }
+    }
+
+    private void closeClientSocket(Socket clientSocket) {
+        if (clientSocket != null) {
+            try {
+                clientSocket.close();
+            } catch (IOException ignore) {
             }
         }
     }
 
     /**
      * Handle a single TCP connection using HttpCore 5's blocking HTTP service.
-     * {@code httpService.handleRequest()} handles one request-response cycle.
-     * The loop supports HTTP keep-alive — HttpCore 5 automatically manages
-     * connection persistence and body framing.
      */
     private void handleConnection(Socket clientSocket) {
         DefaultBHttpServerConnection conn = null;
@@ -399,6 +429,10 @@ public class VTPassThroughHttpListener implements TransportListener {
         log.info("Stopping Virtual Thread Pass-through " + namePrefix + " Listener...");
         running.set(false);
         state = BaseConstants.STOPPED;
+
+        if (acceptThread != null) {
+            acceptThread.interrupt();
+        }
 
         try {
             if (serverSocket != null && !serverSocket.isClosed()) {
