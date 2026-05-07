@@ -310,7 +310,9 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
      *       {@link StartUpControllerState#INITIAL}.</li>
      *   <li>If the stored state string equals {@code "ACTIVE"} (case-insensitive), returns
      *       {@link StartUpControllerState#ACTIVE}.</li>
-     *   <li>For any other stored value, returns {@link StartUpControllerState#INACTIVE}.</li>
+     *   <li>If the stored state string equals {@code "INACTIVE"} (case-insensitive), returns
+     *       @link StartUpControllerState#INACTIVE}.</li>
+     *   <li>For any other stored value, returns {@link StartUpControllerState#INITIAL}.</li>
      * </ul>
      * </p>
      *
@@ -329,8 +331,10 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
         String state = resourceProperties.getProperty(STARTUP_CONTROLLER_STATE);
         if (StartUpControllerState.ACTIVE.toString().equalsIgnoreCase(state)) {
             return StartUpControllerState.ACTIVE;
+        } else if (StartUpControllerState.INACTIVE.toString().equalsIgnoreCase(state)) {
+            return StartUpControllerState.INACTIVE;
         }
-        return StartUpControllerState.INACTIVE;
+        return StartUpControllerState.INITIAL;
     }
 
     private void configureStartupStateFromRegistry(TaskDescription taskDescription) {
