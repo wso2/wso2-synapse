@@ -562,16 +562,10 @@ public class VTHttpSender extends AbstractHandler implements
         boolean builderInvoked = Boolean.TRUE.equals(
                 messageContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED));
         if (vtBackendCall) {
-            log.warn("VTTRACE VTHttpSender using streamed request path; messageId="
-                    + messageContext.getMessageID() + "; to="
-                    + (toEPR != null ? toEPR.getAddress() : null));
             VTInputStreamPipe vtPipe = pipeObj instanceof VTInputStreamPipe && !builderInvoked
                     ? (VTInputStreamPipe) pipeObj : null;
             sendStreamedRequest(messageContext, toEPR, vtPipe, format, builderInvoked);
             return;
-        } else if (pipeObj instanceof VTInputStreamPipe) {
-            log.warn("VTTRACE VTHttpSender skipping streamed request path because builder was invoked; messageId="
-                    + messageContext.getMessageID());
         }
 
         try {
@@ -645,7 +639,6 @@ public class VTHttpSender extends AbstractHandler implements
 
             boolean methodAllowsBody = !HTTPConstants.HTTP_METHOD_GET.equalsIgnoreCase(httpMethod)
                     && !"DELETE".equalsIgnoreCase(httpMethod);
-            boolean entityAttached = false;
             if (methodAllowsBody) {
                 String ct = (String) msgContext.getProperty(
                         Constants.Configuration.CONTENT_TYPE);
@@ -663,7 +656,6 @@ public class VTHttpSender extends AbstractHandler implements
                     InputStreamEntity entity = new InputStreamEntity(bodyStream, contentLength, parsedCT);
                     entity.setChunked(contentLength < 0 && defaultChunked);
                     reqBuilder.setEntity(entity);
-                    entityAttached = true;
                 } else if (builderInvoked && !Boolean.TRUE.equals(
                         msgContext.getProperty(PassThroughConstants.NO_ENTITY_BODY))) {
                     MessageFormatter formatter = MessageProcessorSelector.getMessageFormatter(msgContext);
@@ -677,7 +669,6 @@ public class VTHttpSender extends AbstractHandler implements
                         ContentType formatterContentType = parseContentType(formatter.getContentType(
                                 msgContext, format, findSOAPAction(msgContext)), parsedCT);
                         reqBuilder.setEntity(new ByteArrayEntity(bodyBytes, formatterContentType));
-                        entityAttached = true;
                     }
                 }
             }
@@ -688,31 +679,14 @@ public class VTHttpSender extends AbstractHandler implements
                 log.debug("VTHttpSender streaming " + httpMethod + " to " + url
                         + " (body from VTInputStreamPipe, no OM build)");
             }
-            log.warn("VTTRACE VTHttpSender before backend execute; messageId="
-                    + msgContext.getMessageID() + "; method=" + httpMethod
-                    + "; url=" + url + "; hasEntity=" + entityAttached
-                    + "; contentLength=" + getContentLength(transportHeaders));
-
             response = httpClient.execute(reqBuilder.build());
-            log.warn("VTTRACE VTHttpSender backend responded; messageId="
-                    + msgContext.getMessageID() + "; status="
-                    + response.getStatusLine().getStatusCode());
 
             setupStreamingResponse(msgContext, response);
-            log.warn("VTTRACE VTHttpSender response pipe setup complete; messageId="
-                    + msgContext.getMessageID() + "; pipe="
-                    + (msgContext.getProperty(VTConstants.VT_STREAM_PIPE) != null));
             ownershipTransferred = true;
 
         } catch (IOException e) {
             log.warn("VTHttpSender streaming request failed: " + httpMethod + " " + url, e);
             throw AxisFault.makeFault(e);
-        } catch (RuntimeException e) {
-            log.warn("VTTRACE VTHttpSender streaming request runtime failure; messageId="
-                    + msgContext.getMessageID() + "; method=" + httpMethod
-                    + "; url=" + url + "; exception=" + e.getClass().getName()
-                    + ": " + e.getMessage(), e);
-            throw e;
         } finally {
             if (response != null && !ownershipTransferred) {
                 try { response.close(); } catch (IOException ignore) { }
@@ -765,22 +739,15 @@ public class VTHttpSender extends AbstractHandler implements
         OperationContext opCtx = msgContext.getOperationContext();
         MessageContext inMsgCtx = (opCtx == null) ? null
                 : opCtx.getMessageContext(WSDLConstants.MESSAGE_LABEL_IN_VALUE);
-        log.warn("VTTRACE VTHttpSender response setup contexts; messageId="
-                + msgContext.getMessageID() + "; opCtx=" + (opCtx != null)
-                + "; inMsgCtx=" + (inMsgCtx != null));
 
         if (wrappedContent != null) {
             msgContext.setProperty(VTConstants.VT_STREAM_PIPE,
                     new VTInputStreamPipe(wrappedContent));
             msgContext.removeProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
             msgContext.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
-            log.warn("VTTRACE VTHttpSender stored response pipe on outbound context; messageId="
-                    + msgContext.getMessageID());
         } else {
             msgContext.removeProperty(VTConstants.VT_STREAM_PIPE);
             msgContext.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
-            log.warn("VTTRACE VTHttpSender backend response had no entity; messageId="
-                    + msgContext.getMessageID());
         }
 
         if (inMsgCtx != null) {

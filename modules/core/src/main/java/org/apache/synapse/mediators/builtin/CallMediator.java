@@ -228,14 +228,6 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         blockingMsgSender.setInitClientOptions(initClientOptions);
         // Set the blockingMsgSender with synapse message Context
         synInCtx.setProperty(SynapseConstants.BLOCKING_MSG_SENDER, blockingMsgSender);
-        boolean vtRequest = ((Axis2MessageContext) synInCtx).getAxis2MessageContext()
-                .getProperty("VT_SOURCE_CONFIGURATION") != null;
-        if (vtRequest) {
-            log.warn("VTTRACE CallMediator blocking call entered; messageId="
-                    + synInCtx.getMessageID() + "; endpoint="
-                    + (endpoint == null ? "null" : endpoint.getClass().getName())
-                    + "; faultStackSize=" + synInCtx.getFaultStack().size());
-        }
         // Clear the message context properties related to endpoint in last service invocation
         Set keySet = synInCtx.getPropertyKeySet();
         if (keySet != null) {
@@ -247,13 +239,6 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
         Object faultHandlerBeforeInvocation = getLastSequenceFaultHandler(synInCtx);
         synInCtx.setProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER, faultHandlerBeforeInvocation);
-        if (vtRequest) {
-            log.warn("VTTRACE CallMediator before endpoint send; messageId="
-                    + synInCtx.getMessageID() + "; lastFaultHandlerBefore="
-                    + (faultHandlerBeforeInvocation == null ? "null"
-                    : faultHandlerBeforeInvocation.getClass().getName())
-                    + "; faultStackSize=" + synInCtx.getFaultStack().size());
-        }
 
         // Ensure the backend response's Content-Type is propagated back onto the message
         // context (MESSAGE_TYPE / CONTENT_TYPE properties) after the blocking call.
@@ -271,57 +256,13 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         // blocking sender.
         if (endpoint == null) {
             EndpointDefinition endpointDefinition = new EndpointDefinition();
-            try {
-                synInCtx.getEnvironment().send(endpointDefinition, synInCtx);
-            } catch (RuntimeException e) {
-                if (vtRequest) {
-                    log.warn("VTTRACE CallMediator default endpoint send threw; messageId="
-                            + synInCtx.getMessageID() + "; exception="
-                            + e.getClass().getName() + ": " + e.getMessage(), e);
-                }
-                throw e;
-            }
+            synInCtx.getEnvironment().send(endpointDefinition, synInCtx);
         } else {
-            try {
-                endpoint.send(synInCtx);
-            } catch (RuntimeException e) {
-                if (vtRequest) {
-                    log.warn("VTTRACE CallMediator endpoint.send threw; messageId="
-                            + synInCtx.getMessageID() + "; exception="
-                            + e.getClass().getName() + ": " + e.getMessage(), e);
-                }
-                throw e;
-            }
-        }
-        if (vtRequest) {
-            Object faultHandlerAfterInvocation = getLastSequenceFaultHandler(synInCtx);
-            log.warn("VTTRACE CallMediator endpoint.send returned; messageId="
-                    + synInCtx.getMessageID() + "; blockingSenderError="
-                    + synInCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR)
-                    + "; vtResponsePipe="
-                    + (((Axis2MessageContext) synInCtx).getAxis2MessageContext()
-                    .getProperty("VT_STREAM_PIPE") != null)
-                    + "; lastFaultHandlerAfter="
-                    + (faultHandlerAfterInvocation == null ? "null"
-                    : faultHandlerAfterInvocation.getClass().getName())
-                    + "; faultStackSize=" + synInCtx.getFaultStack().size()
-                    + "; errorCode=" + synInCtx.getProperty(SynapseConstants.ERROR_CODE)
-                    + "; errorMessage=" + synInCtx.getProperty(SynapseConstants.ERROR_MESSAGE));
+            endpoint.send(synInCtx);
         }
 
         // check whether fault sequence is already invoked
         if (faultHandlerBeforeInvocation != getLastSequenceFaultHandler(synInCtx)) {
-            if (vtRequest) {
-                Object faultHandlerAfterInvocation = getLastSequenceFaultHandler(synInCtx);
-                log.warn("VTTRACE CallMediator returning false because fault handler changed; messageId="
-                        + synInCtx.getMessageID() + "; before="
-                        + (faultHandlerBeforeInvocation == null ? "null"
-                        : faultHandlerBeforeInvocation.getClass().getName())
-                        + "; after="
-                        + (faultHandlerAfterInvocation == null ? "null"
-                        : faultHandlerAfterInvocation.getClass().getName())
-                        + "; faultStackSize=" + synInCtx.getFaultStack().size());
-            }
             return false;
         }
 
@@ -348,29 +289,10 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
                 }
             }
         } else {
-            if (vtRequest) {
-                log.warn("VTTRACE CallMediator blocking sender error detected; messageId="
-                        + synInCtx.getMessageID() + "; errorMessage="
-                        + synInCtx.getProperty(SynapseConstants.ERROR_MESSAGE)
-                        + "; exception="
-                        + synInCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
-            }
             log.error("Error while performing the call operation in blocking mode");
             return false;
         }
-        if (vtRequest) {
-            log.warn("VTTRACE CallMediator before postMediate; messageId="
-                    + synInCtx.getMessageID() + "; vtResponsePipe="
-                    + (((Axis2MessageContext) synInCtx).getAxis2MessageContext()
-                    .getProperty("VT_STREAM_PIPE") != null));
-        }
         postMediate(synInCtx, originalMessageType, originalContentType, originalTransportHeaders);
-        if (vtRequest) {
-            log.warn("VTTRACE CallMediator after postMediate; messageId="
-                    + synInCtx.getMessageID() + "; vtResponsePipe="
-                    + (((Axis2MessageContext) synInCtx).getAxis2MessageContext()
-                    .getProperty("VT_STREAM_PIPE") != null));
-        }
         return true;
     }
 

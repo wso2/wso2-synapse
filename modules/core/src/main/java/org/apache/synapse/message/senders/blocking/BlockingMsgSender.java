@@ -216,16 +216,6 @@ public class BlockingMsgSender {
             axisOutMsgCtx.setProperty(
                     org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, transportHeaders);
         }
-        if (vtRequest) {
-            log.warn("VTTRACE BlockingMsgSender prepared axisOut; messageId="
-                    + synapseInMsgCtx.getMessageID() + "; method="
-                    + axisOutMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD)
-                    + "; contentType="
-                    + axisOutMsgCtx.getProperty(Constants.Configuration.CONTENT_TYPE)
-                    + "; builderInvoked=" + builderInvoked
-                    + "; transportHeaders=" + (transportHeaders != null));
-        }
-
         axisOutMsgCtx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES,
                 axisInMsgCtx.getProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES));
         axisOutMsgCtx.setProperty(HTTPConstants.ERROR_HTTP_STATUS_CODES,
@@ -295,12 +285,6 @@ public class BlockingMsgSender {
                     axisInMsgCtx.removeProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
                     axisInMsgCtx.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
                 }
-                if (vtRequest) {
-                    log.warn("VTTRACE BlockingMsgSender result returned; messageId="
-                            + synapseInMsgCtx.getMessageID() + "; vtResponsePipe="
-                            + (vtRespPipe != null) + "; status="
-                            + result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE));
-                }
                 final String statusCode =
                                           String.valueOf(result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE))
                                                 .trim();
@@ -319,12 +303,6 @@ public class BlockingMsgSender {
                 return synapseInMsgCtx;
             }
         } catch (Exception ex) {
-            if (vtRequest) {
-                log.warn("VTTRACE BlockingMsgSender caught exception; messageId="
-                        + synapseInMsgCtx.getMessageID() + "; isOutOnly=" + isOutOnly
-                        + "; exception=" + ex.getClass().getName() + ": "
-                        + ex.getMessage(), ex);
-            }
             /*
              * Extract the HTTP status code from the Exception message.
              */
@@ -514,12 +492,6 @@ public class BlockingMsgSender {
                 if (httpSCDesc != null) {
                     axisInMsgCtx.setProperty(PassThroughConstants.HTTP_SC_DESC, httpSCDesc);
                 }
-                if (vtRequest) {
-                    log.warn("VTTRACE BlockingMsgSender result returned; messageId="
-                            + synapseInMsgCtx.getMessageID() + "; vtResponsePipe="
-                            + (vtRespPipe != null) + "; status="
-                            + result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE));
-                }
                 final String statusCode =
                         String.valueOf(result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE))
                                 .trim();
@@ -536,11 +508,6 @@ public class BlockingMsgSender {
                 this.invokeHandlers(synapseInMsgCtx);
             }
         } catch (Exception ex) {
-            if (vtRequest) {
-                log.warn("VTTRACE BlockingMsgSender caught exception; messageId="
-                        + synapseInMsgCtx.getMessageID() + "; exception="
-                        + ex.getClass().getName() + ": " + ex.getMessage(), ex);
-            }
             /*
              * Extract the HTTP status code from the Exception message.
              */
@@ -584,14 +551,6 @@ public class BlockingMsgSender {
 
         // Check fault occure when send the request to endpoint
         if ("true".equals(synapseInMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
-            if (((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext()
-                    .getProperty(VTConstants.VT_STREAM_PIPE) != null) {
-                log.warn("VTTRACE BlockingMsgSender invoking endpoint fault handler; messageId="
-                        + synapseInMsgCtx.getMessageID() + "; errorMessage="
-                        + synapseInMsgCtx.getProperty(SynapseConstants.ERROR_MESSAGE)
-                        + "; exception="
-                        + synapseInMsgCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
-            }
             // Handle the fault
             synapseInMsgCtx.getFaultStack().pop().handleFault(synapseInMsgCtx,
                     (Exception) synapseInMsgCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
@@ -670,20 +629,7 @@ public class BlockingMsgSender {
         operationClient.addMessageContext(axisOutMsgCtx);
         axisOutMsgCtx.setAxisMessage(
                 axisAnonymousOperation.getMessage(WSDLConstants.MESSAGE_LABEL_OUT_VALUE));
-        boolean vtRequest = Boolean.TRUE.equals(axisOutMsgCtx.getProperty(VTConstants.VT_BACKEND_CALL));
-        if (vtRequest) {
-            log.warn("VTTRACE BlockingMsgSender sendReceive before execute; messageId="
-                    + synapseInMsgCtx.getMessageID() + "; to="
-                    + (axisOutMsgCtx.getTo() != null ? axisOutMsgCtx.getTo().getAddress() : null)
-                    + "; method="
-                    + axisOutMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD));
-        }
         operationClient.execute(true);
-        if (vtRequest) {
-            log.warn("VTTRACE BlockingMsgSender sendReceive after execute; messageId="
-                    + synapseInMsgCtx.getMessageID() + "; axisOutRespPipe="
-                    + (axisOutMsgCtx.getProperty(VTConstants.VT_STREAM_PIPE) != null));
-        }
         org.apache.axis2.context.MessageContext resultMsgCtx =
                 operationClient.getMessageContext(WSDLConstants.MESSAGE_LABEL_IN_VALUE);
         Object vtRespPipe = resultMsgCtx.getProperty(VTConstants.VT_STREAM_PIPE);
