@@ -14,6 +14,14 @@
 # ignore target directories
 target/
 
+# ignore local Claude files
+.claude/
+claude/
+CLAUDE.md
+VT_PROJECT.md
+**/VT_PROJECT.md
+docs/
+
 ## various other file types we don't want to have in the repository:
 .DS_Store
 /modules/core/src/main/antlr4/org/apache/synapse/util/synapse_path/gen/
