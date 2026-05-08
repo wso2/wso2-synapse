@@ -103,6 +103,10 @@ public class HTTPEndpoint extends AbstractEndpoint {
 
         executeEpTypeSpecificFunctions(synCtx);
         if (getParentEndpoint() == null && !readyToSend()) {
+            if (synCtx.getProperty(SynapseConstants.BLOCKING_MSG_SENDER) != null) {
+                log.warn("VTTRACE HTTPEndpoint not ready; messageId="
+                        + synCtx.getMessageID() + "; endpoint=" + getContext());
+            }
             // if the this leaf endpoint is too a root endpoint and is in inactive
             informFailure(synCtx, SynapseConstants.ENDPOINT_ADDRESS_NONE_READY,
                     "Currently, HTTP endpoint : " + getContext());

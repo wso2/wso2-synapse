@@ -59,7 +59,8 @@ public class TraceMessageBuilderDispatchHandler extends AbstractDispatcher{
     public InvocationResponse invoke(MessageContext messageContext) throws AxisFault {
 
         InvocationResponse invocationResponse = super.invoke(messageContext);
-        Pipe pipe = (Pipe) messageContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+        Object pipeObject = messageContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+        Pipe pipe = pipeObject instanceof Pipe ? (Pipe) pipeObject : null;
         if (pipe != null || RequestResponseUtils.isHttpCarbonMessagePresent(messageContext)) {
             if (!messageContext.isEngaged(PassThroughConstants.SECURITY_MODULE_NAME)) {
                 if (messageContext.isEngaged(PassThroughConstants.TRACE_SOAP_MESSAGE)) {

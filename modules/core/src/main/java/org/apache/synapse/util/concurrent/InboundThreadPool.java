@@ -38,6 +38,7 @@ public class InboundThreadPool extends ThreadPoolExecutor {
     public static final String IB_THREAD_CORE     = "inbound.threads.core";
     public static final String IB_THREAD_MAX      = "inbound.threads.max";  
 
+    private final ExecutorService vtExecutor;
 
     /**
      * Constructor for the Inbound thread poll
@@ -54,6 +55,8 @@ public class InboundThreadPool extends ThreadPoolExecutor {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue,
             new InboundThreadFactory(
                 new ThreadGroup(INBOUND_THREAD_GROUP), INBOUND_THREAD_ID_PREFIX));
+        this.vtExecutor = createVirtualThreadExecutor(INBOUND_THREAD_ID_PREFIX,
+                VirtualThreadConstants.DEFAULT_VT_MAX_INBOUND_THREADS);
     }
 
     /**
@@ -77,8 +80,44 @@ public class InboundThreadPool extends ThreadPoolExecutor {
      */
     public InboundThreadPool(int corePoolSize, int maxPoolSize, long keepAliveTime, int qlen,
         String threadGroup, String threadIdPrefix) {
+        this(corePoolSize, maxPoolSize, keepAliveTime, qlen, threadGroup, threadIdPrefix,
+                VirtualThreadConstants.DEFAULT_VT_MAX_INBOUND_THREADS);
+    }
+
+    public InboundThreadPool(int corePoolSize, int maxPoolSize, long keepAliveTime, int qlen,
+        String threadGroup, String threadIdPrefix, int vtMaxThreads) {
         super(corePoolSize, maxPoolSize, keepAliveTime, TimeUnit.SECONDS,
             qlen > 0 ? new LinkedBlockingQueue<Runnable>(qlen) : new LinkedBlockingQueue<Runnable>(),
             new SynapseThreadFactory(new ThreadGroup(threadGroup), threadIdPrefix));
+        this.vtExecutor = createVirtualThreadExecutor(threadIdPrefix, vtMaxThreads);
+    }
+
+    @Override
+    public void execute(Runnable command) {
+        if (Thread.currentThread().isVirtual()) {
+            vtExecutor.execute(command);
+        } else {
+            super.execute(command);
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        vtExecutor.shutdown();
+        super.shutdown();
+    }
+
+    @Override
+    public java.util.List<Runnable> shutdownNow() {
+        java.util.List<Runnable> tasks = super.shutdownNow();
+        tasks.addAll(vtExecutor.shutdownNow());
+        return tasks;
+    }
+
+    private static ExecutorService createVirtualThreadExecutor(String threadIdPrefix, int vtMaxThreads) {
+        return new SemaphoreLimitedExecutor(
+                Executors.newThreadPerTaskExecutor(
+                        Thread.ofVirtual().name(threadIdPrefix + "-", 0).factory()),
+                vtMaxThreads);
     }
 }

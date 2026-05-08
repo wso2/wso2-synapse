@@ -61,18 +61,6 @@ import java.util.Set;
  * send the message to that endpoint. Once a message is sent to the endpoint further sending
  * behaviors are completely governed by that endpoint. If there is no endpoint available,
  * CallMediator will send the message to the implicitly stated destination.
- * <p/>
- * Even though Call mediator leverages the non-blocking transports which is same as Send mediator,
- * response will be mediated from the next mediator placed after the Call mediator. Behaviour is
- * very much same as the Callout Mediator.
- * So Call mediator can be considered as a non-blocking Callout mediator.
- * <p/>
- * To implement this behaviour, important states in the mediation flow is stored in the
- * message context.
- * An important state in the mediation flow is represented by the
- * {@link org.apache.synapse.ContinuationState} which are stored in the ContinuationStateStack
- * which resides in the MessageContext.
- * <p/>
  * These ContinuationStates are used to mediate the response message and continue the message flow.
  */
 public class CallMediator extends AbstractMediator implements ManagedLifecycle {
@@ -97,7 +85,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
     private Endpoint endpoint = null;
 
-    private boolean blocking = false;
+    private boolean blocking = true;
 
     private SynapseEnvironment synapseEnv;
 
@@ -139,6 +127,9 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
      * true for out only invocations
      */
     public boolean mediate(MessageContext synInCtx) {
+
+        blocking = Thread.currentThread().isVirtual();
+
 
         if (synInCtx.getEnvironment().isDebuggerEnabled()) {
             MessageHelper.setWireLogHolderProperties(synInCtx, isBreakPoint(), getRegisteredMediationFlowPoint()); //this needs to be set only in mediators where outgoing messages are present
@@ -199,7 +190,9 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         synInCtx.setProperty(ORIGINAL_CONTENT_TYPE, originalContentType);
         synInCtx.setProperty(ORIGINAL_TRANSPORT_HEADERS, originalTransportHeaders);
 
-        if (blocking) {
+
+
+        if (isBlocking()) {
             return handleBlockingCall(synInCtx, originalMessageType, originalContentType, originalTransportHeaders);
         } else {
             return handleNonBlockingCall(synInCtx);
@@ -251,6 +244,18 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         Object faultHandlerBeforeInvocation = getLastSequenceFaultHandler(synInCtx);
         synInCtx.setProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER, faultHandlerBeforeInvocation);
 
+        // Ensure the backend response's Content-Type is propagated back onto the message
+        // context (MESSAGE_TYPE / CONTENT_TYPE properties) after the blocking call.
+        // BlockingMsgSender only calls MessageHelper.copyResponseMessageHeaders() when this
+        // flag is "false"; without it the stale request MESSAGE_TYPE is used by the formatter
+        // in submitResponse(), which can cause application/octet-stream to be sent back to
+        // the client instead of the real content type.
+        // Only override the flag when the user has not set it explicitly — a value of "true"
+        // means the caller wants to keep the original request headers after the call.
+        if (synInCtx.getProperty(SynapseConstants.BLOCKING_SENDER_PRESERVE_REQ_HEADERS) == null) {
+            synInCtx.setProperty(SynapseConstants.BLOCKING_SENDER_PRESERVE_REQ_HEADERS, "false");
+        }
+
         // fixing ESBJAVA-4976, if no endpoint is defined in call mediator, this is required to avoid NPEs in
         // blocking sender.
         if (endpoint == null) {
@@ -269,6 +274,12 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             if (synInCtx.getProperty(SynapseConstants.OUT_ONLY) == null || "false"
                     .equals(synInCtx.getProperty(SynapseConstants.OUT_ONLY))) {
                 if (synInCtx.getEnvelope() != null) {
+                    // Clear NO_ENTITY_BODY that may have been set during request processing
+                    // (e.g. for GET/DELETE requests with no body). The same MessageContext is
+                    // reused for the response in blocking mode, so the stale flag would otherwise
+                    // suppress the response body even when the backend returned one.
+                    ((Axis2MessageContext) synInCtx).getAxis2MessageContext()
+                            .removeProperty("NO_ENTITY_BODY");
                     if (synLog.isTraceTraceEnabled()) {
                         synLog.traceTrace("Response payload received : " + synInCtx.getEnvelope());
                     }
@@ -316,6 +327,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
                     getSourceMessageType());
         }
     }
+    
 
     /**
      * Send request in non-blocking manner
@@ -442,7 +454,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             endpoint.init(synapseEnvironment);
         }
 
-        if (blocking) {
+        if (isBlocking()) {
             try {
                 configCtx = ConfigurationContextFactory.createConfigurationContextFromFileSystem(
                         clientRepository != null ? clientRepository : DEFAULT_CLIENT_REPO,
@@ -459,28 +471,28 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         } else {
             synapseEnvironment.updateCallMediatorCount(true);
         }
+
     }
 
     public void destroy() {
         if (endpoint != null) {
             endpoint.destroy();
         }
-        if (!blocking) {
+        if (!isBlocking()) {
             synapseEnv.updateCallMediatorCount(false);
         }
     }
 
     /**
-     * Setting return blocking makes CallMediator access the message’s content in blocking mode when mediating messages
-     * Fixes product-ei #1805, #3015
+
      */
     @Override
     public boolean isContentAware() {
-        return blocking;
+        return !this.blocking;
     }
 
     public boolean isBlocking() {
-        return blocking;
+        return this.blocking;
     }
 
     public void setBlocking(boolean blocking) {
@@ -571,7 +583,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         String cloneId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.MEDIATOR, holder);
         getAspectConfiguration().setUniqueId(cloneId);
 
-        if (endpoint != null && !blocking) {
+        if (endpoint != null && !isBlocking()) {
             if (endpoint instanceof IndirectEndpoint && !StringUtils.isEmpty(((IndirectEndpoint) endpoint).getKey()) &&
                     isDynamicEndpoint(((IndirectEndpoint) endpoint).getKey())) {
                 Endpoint realEndpoint = ((IndirectEndpoint) endpoint).getRealEndpoint();

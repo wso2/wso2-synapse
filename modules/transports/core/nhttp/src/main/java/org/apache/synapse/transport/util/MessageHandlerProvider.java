@@ -19,6 +19,9 @@
 package org.apache.synapse.transport.util;
 
 import org.apache.axis2.context.MessageContext;
+import org.apache.synapse.transport.passthru.vt.VTConstants;
+import org.apache.synapse.transport.passthru.vt.VTInputStreamPipe;
+import org.apache.synapse.transport.passthru.vt.VTMessageHandler;
 import org.apache.synapse.transport.netty.BridgeConstants;
 
 import java.util.Objects;
@@ -40,7 +43,13 @@ public class MessageHandlerProvider {
 
         MessageHandler messageHandler =
                 (MessageHandler) messageContext.getProperty(BridgeConstants.TRANSPORT_MESSAGE_HANDLER);
-        return Objects.nonNull(messageHandler) ? messageHandler : new PassThroughMessageHandler();
+        if (Objects.nonNull(messageHandler)) {
+            return messageHandler;
+        }
+        if (messageContext.getProperty(VTConstants.VT_STREAM_PIPE) instanceof VTInputStreamPipe) {
+            return new VTMessageHandler();
+        }
+        return new PassThroughMessageHandler();
 
     }
 

@@ -78,6 +78,15 @@ public class Axis2Sender {
                               org.apache.synapse.MessageContext synapseInMessageContext) {
 
         try {
+            boolean vtBlockingRequest =
+                    synapseInMessageContext.getProperty(SynapseConstants.BLOCKING_MSG_SENDER) != null
+                            && ((Axis2MessageContext) synapseInMessageContext).getAxis2MessageContext()
+                            .getProperty("VT_STREAM_PIPE") != null;
+            if (vtBlockingRequest) {
+                log.warn("VTTRACE Axis2Sender sendOn entered; messageId="
+                        + synapseInMessageContext.getMessageID() + "; handlers="
+                        + synapseInMessageContext.getEnvironment().getSynapseHandlers().size());
+            }
 
             // Invoke Synapse Handlers
             Iterator<SynapseHandler> iterator =
@@ -85,8 +94,17 @@ public class Axis2Sender {
             while (iterator.hasNext()) {
                 SynapseHandler handler = iterator.next();
                 if (!handler.handleRequestOutFlow(synapseInMessageContext)) {
+                    if (vtBlockingRequest) {
+                        log.warn("VTTRACE Axis2Sender request handler returned false; messageId="
+                                + synapseInMessageContext.getMessageID() + "; handler="
+                                + handler.getClass().getName());
+                    }
                     return;
                 }
+            }
+            if (vtBlockingRequest) {
+                log.warn("VTTRACE Axis2Sender before Axis2FlexibleMEPClient; messageId="
+                        + synapseInMessageContext.getMessageID());
             }
 
             Axis2FlexibleMEPClient.send(
@@ -94,6 +112,11 @@ public class Axis2Sender {
                     endpoint,
                     // The Axis2 Message context of the Synapse MC
                     synapseInMessageContext);
+            if (vtBlockingRequest) {
+                log.warn("VTTRACE Axis2Sender after Axis2FlexibleMEPClient; messageId="
+                        + synapseInMessageContext.getMessageID() + "; blockingSenderError="
+                        + synapseInMessageContext.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR));
+            }
         } catch (Exception e) {
             if (e.getMessage() != null) {
                 handleException("Unexpected error during sending message out. " + e.getMessage(), e, synapseInMessageContext);
