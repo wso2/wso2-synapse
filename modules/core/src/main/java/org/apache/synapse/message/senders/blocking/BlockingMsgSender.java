@@ -196,6 +196,7 @@ public class BlockingMsgSender {
         boolean vtRequest = vtInputStreamPipe != null
                 || axisInMsgCtx.getProperty(VTConstants.VT_SOURCE_CONFIGURATION) != null;
         if (vtRequest) {
+            
             axisOutMsgCtx.setProperty(VTConstants.VT_BACKEND_CALL, Boolean.TRUE);
         }
         Object builderInvoked = axisInMsgCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED);
