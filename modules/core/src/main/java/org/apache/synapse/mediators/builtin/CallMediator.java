@@ -23,6 +23,7 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.ConfigurationContextFactory;
+import org.apache.axis2.description.TransportOutDescription;
 import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.ManagedLifecycle;
@@ -465,7 +466,22 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         if (endpoint != null) {
             endpoint.destroy();
         }
-        if (!blocking) {
+        if (blocking) {
+            // Stop the per mediator JMS transport sender so its JMSConnectionFactoryManager
+            // closes the cached SMF connections. Without this hook, every CAR redeploy
+            // orphans up to maxSharedConnectionCount JMS Connections on the broker.
+            if (configCtx != null) {
+                try {
+                    TransportOutDescription jmsOut =
+                            configCtx.getAxisConfiguration().getTransportOut("jms");
+                    if (jmsOut != null && jmsOut.getSender() != null) {
+                        jmsOut.getSender().stop();
+                    }
+                } catch (Exception e) {
+                    log.warn("Error stopping JMS transport sender on CallMediator destroy", e);
+                }
+            }
+        } else {
             synapseEnv.updateCallMediatorCount(false);
         }
     }
