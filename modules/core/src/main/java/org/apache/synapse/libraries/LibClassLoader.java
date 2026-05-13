@@ -48,7 +48,9 @@ public class LibClassLoader extends URLClassLoader {
 
         File file = new File(path);
         ArrayList urls = new ArrayList();
-        urls.add(file.toURL());
+        if (file.exists()) {
+            urls.add(file.toURL());
+        }
         File libfiles = new File(file, "lib");
         if (!addFiles(urls, libfiles)) {
             libfiles = new File(file, "Lib");
