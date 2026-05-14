@@ -1,17 +1,19 @@
-/**
- *  Copyright (c) 2024, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+/*
+ * Copyright (c) 2026, WSO2 LLC. (http://www.wso2.com).
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.apache.synapse.transport.passthru.vt;
@@ -35,11 +37,6 @@ public final class VTConstants {
     public static final String VT_BACKEND_CALL = "VT_BACKEND_CALL";
     /**
      * Body stream of the current Axis2 message context.
-     * <p>
-     * Request contexts carry the client request body under this key; response
-     * contexts carry the backend response body under the same key. This mirrors
-     * the pass-through transport's context-local pipe model without using
-     * PASS_THROUGH_PIPE, which existing code casts to the NIO Pipe type.
      */
     public static final String VT_STREAM_PIPE = "VT_STREAM_PIPE";
 
@@ -65,8 +62,7 @@ public final class VTConstants {
     public static final int DEFAULT_SO_TIMEOUT = 60_000;
 
     /** Keep-alive idle timeout in millis — how long to wait for the next request
-     *  on a keep-alive connection before closing it.  If not configured,
-     *  defaults to {@link #DEFAULT_KEEP_ALIVE_TIMEOUT}. */
+ */
     public static final String PARAM_KEEP_ALIVE_TIMEOUT = "keep_alive_timeout";
     public static final int DEFAULT_KEEP_ALIVE_TIMEOUT = 115_000;
 
@@ -107,19 +103,7 @@ public final class VTConstants {
     public static final String VT_THREAD_PREFIX = "vt-passthru-";
 
     /**
-     * MessageContext property set by {@link VTBlockingMsgSender} before calling
-     * {@code VTHttpSender.invoke()}.
-     * When present, the sender populates the response directly on the
-     * original context and returns — skipping {@code AxisEngine.receive()}.
-     */
-    public static final String VT_BLOCKING_CALL = "VT_BLOCKING_CALL";
-
-    /**
      * ConfigurationContext property key under which {@link VTHttpSender}
-     * registers itself during {@code init()}.
-     * {@code CallMediator.init()} looks up this key to obtain the VT transport sender
-     * and wraps it in a {@code VTBlockingMsgSender}. The string value must match
-     * the literal used in {@code CallMediator} (which cannot import this class).
      */
     public static final String VT_TRANSPORT_SENDER = "VT_TRANSPORT_SENDER";
 
