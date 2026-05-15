@@ -778,4 +778,11 @@ public final class SynapseConstants {
      */
     public static final String ELASTICSEARCH_CUSTOM_DATA_PROVIDER_CLASS
         = "analytics.custom_data_provider_class";
+
+    /**
+     * Message context property holding the stack of span wrapper IDs that tracks the chain of currently open
+     * tracing spans, used to resolve the parent of the next span.
+     */
+    public static final String PARENT_STACK_PROPERTY = "synapse.parent.stack";
+
 }
