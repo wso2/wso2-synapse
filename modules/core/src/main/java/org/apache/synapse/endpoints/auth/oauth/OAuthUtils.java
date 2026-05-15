@@ -28,7 +28,9 @@ import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
@@ -46,6 +48,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
@@ -343,6 +346,8 @@ public class OAuthUtils {
             proxyConfigs.setProxyProtocol(getChildValue(proxyConfigsOM, AuthConstants.OAUTH_PROXY_PROTOCOL));
             proxyConfigs.setProxyUsername(getChildValue(proxyConfigsOM, AuthConstants.PROXY_USERNAME));
             proxyConfigs.setProxyPassword(getChildValue(proxyConfigsOM, AuthConstants.PROXY_PASSWORD));
+            proxyConfigs.setNonProxyHosts(getChildValue(proxyConfigsOM, AuthConstants.PROXY_NON_PROXY_HOSTS));
+            proxyConfigs.setTargetProxyHosts(getChildValue(proxyConfigsOM, AuthConstants.PROXY_TARGET_PROXY_HOSTS));
         } else {
             Properties synapseProperties = SynapsePropertiesLoader.loadSynapseProperties();
             if (Boolean.parseBoolean(getChildValue(grantTypeOMElement, AuthConstants.USE_GLOBAL_PROXY_CONFIGS))
@@ -352,6 +357,8 @@ public class OAuthUtils {
                 proxyConfigs.setProxyHost(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_HOST));
                 proxyConfigs.setProxyPort(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_PORT));
                 proxyConfigs.setProxyProtocol(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_PROTOCOL));
+                proxyConfigs.setNonProxyHosts(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_NON_PROXY_HOSTS));
+                proxyConfigs.setTargetProxyHosts(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_TARGET_PROXY_HOSTS));
                 if (StringUtils.isNotBlank(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_USERNAME)) &&
                         StringUtils.isNotBlank(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_PASSWORD))) {
                     proxyConfigs.setProxyUsername(synapseProperties.getProperty(AuthConstants.OAUTH_GLOBAL_PROXY_USERNAME));
@@ -812,6 +819,18 @@ public class OAuthUtils {
                 proxyConfigs.getProxyProtocol());
         proxyConfigsOM.addChild(proxyProtocolOM);
 
+        if (StringUtils.isNotBlank(proxyConfigs.getNonProxyHosts())) {
+            OMElement nonProxyHostsOM = OAuthUtils.createOMElementWithValue(omFactory,
+                    AuthConstants.PROXY_NON_PROXY_HOSTS, proxyConfigs.getNonProxyHosts());
+            proxyConfigsOM.addChild(nonProxyHostsOM);
+        }
+
+        if (StringUtils.isNotBlank(proxyConfigs.getTargetProxyHosts())) {
+            OMElement targetProxyHostsOM = OAuthUtils.createOMElementWithValue(omFactory,
+                    AuthConstants.PROXY_TARGET_PROXY_HOSTS, proxyConfigs.getTargetProxyHosts());
+            proxyConfigsOM.addChild(targetProxyHostsOM);
+        }
+
         return proxyConfigsOM;
     }
 
@@ -888,7 +907,8 @@ public class OAuthUtils {
             HttpHost host = new HttpHost(proxyConfigs.getProxyHost(), Integer.parseInt(proxyConfigs.getProxyPort()),
                     proxyConfigs.getProxyProtocol());
 
-            DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(host);
+            NonProxyAwareProxyRoutePlanner routePlanner = new NonProxyAwareProxyRoutePlanner(host,
+                    proxyConfigs.getNonProxyHosts(), proxyConfigs.getTargetProxyHosts());
 
             clientBuilder = HttpClients.custom().setConnectionManager(pool).setRoutePlanner(routePlanner)
                     .setDefaultRequestConfig(config).setSSLSocketFactory(sslConnectionFactory);
@@ -946,6 +966,86 @@ public class OAuthUtils {
         } else {
             // Resolves the password when endpoint specific proxy configurations are used
             return OAuthUtils.resolveExpression(proxyConfigs.getProxyPassword(), messageContext);
+        }
+    }
+
+    private static class NonProxyAwareProxyRoutePlanner extends DefaultProxyRoutePlanner {
+
+        private final String[] nonProxyPatterns;
+        private final String[] targetProxyPatterns;
+
+        NonProxyAwareProxyRoutePlanner(HttpHost proxy, String nonProxyHosts, String targetProxyHosts) {
+            super(proxy);
+            if (org.apache.commons.lang3.StringUtils.isNotBlank(nonProxyHosts)) {
+                this.nonProxyPatterns = nonProxyHosts.split("\\|");
+            } else {
+                this.nonProxyPatterns = new String[0];
+            }
+            if (org.apache.commons.lang3.StringUtils.isNotBlank(targetProxyHosts)) {
+                this.targetProxyPatterns = targetProxyHosts.split("\\|");
+            } else {
+                this.targetProxyPatterns = new String[0];
+            }
+        }
+
+        @Override
+        protected HttpHost determineProxy(HttpHost target, HttpRequest request, HttpContext context)
+                throws HttpException {
+
+            String targetHost = target.getHostName();
+
+            for (String pattern : nonProxyPatterns) {
+                String trimmedPattern = pattern.trim();
+                if (!trimmedPattern.isEmpty()) {
+                    if ("*".equals(trimmedPattern)) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Host [" + targetHost + "] matches wildcard non-proxy pattern [*]. "
+                                    + "Bypassing proxy.");
+                        }
+                        return null;
+                    }
+                    if (matchesPattern(targetHost, trimmedPattern)) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Host [" + targetHost + "] matches non-proxy pattern [" + trimmedPattern
+                                    + "]. Bypassing proxy.");
+                        }
+                        return null;
+                    }
+                }
+            }
+
+            if (targetProxyPatterns.length > 0) {
+                for (String pattern : targetProxyPatterns) {
+                    String trimmedPattern = pattern.trim();
+                    if (!trimmedPattern.isEmpty()) {
+                        if ("*".equals(trimmedPattern)) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Host [" + targetHost + "] matches wildcard target-proxy pattern [*]. "
+                                        + "Using proxy.");
+                            }
+                            return super.determineProxy(target, request, context);
+                        }
+                        if (matchesPattern(targetHost, trimmedPattern)) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Host [" + targetHost + "] matches target-proxy pattern [" + trimmedPattern
+                                        + "]. Using proxy.");
+                            }
+                            return super.determineProxy(target, request, context);
+                        }
+                    }
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug("Host [" + targetHost + "] does not match any target-proxy pattern. Bypassing proxy.");
+                }
+                return null;
+            }
+
+            return super.determineProxy(target, request, context);
+        }
+
+        private boolean matchesPattern(String hostname, String pattern) {
+            String regex = pattern.replace(".", "\\.").replace("*", ".*");
+            return hostname.matches(regex);
         }
     }
 }
