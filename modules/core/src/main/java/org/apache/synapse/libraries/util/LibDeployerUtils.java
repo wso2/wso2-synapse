@@ -91,7 +91,14 @@ public class LibDeployerUtils {
         } else {
             if (deployedLibClassLoader instanceof LibClassLoader) {
                 try {
-                    ((LibClassLoader) deployedLibClassLoader).addToClassPath(extractPath);
+                    if (!isDependencyAlreadyLoaded((LibClassLoader) deployedLibClassLoader, extractPath)) {
+                        ((LibClassLoader) deployedLibClassLoader).addToClassPath(extractPath);
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Synapse Library '" + libArtifactName +
+                                    "' is already loaded in the class loader. Skipping duplicate addition of: " + extractPath);
+                        }
+                    }
                 } catch (MalformedURLException e) {
                     throw new SynapseArtifactDeploymentException("Error setting up lib classpath for Synapse" +
                             " Library  : " + libFile.getAbsolutePath(), e);
@@ -133,7 +140,15 @@ public class LibDeployerUtils {
             if (classLoader instanceof LibClassLoader) {
                 LibClassLoader libClassLoader = (LibClassLoader) classLoader;
                 try {
-                    libClassLoader.addToClassPath(dependencyPath);
+                    if (!isDependencyAlreadyLoaded(libClassLoader, dependencyPath)) {
+                        libClassLoader.addToClassPath(dependencyPath);
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Dependency '" + new File(dependencyPath).getName() +
+                                    "' is already loaded in the class loader for Synapse Library '" +
+                                    libraryName + "'. Skipping duplicate addition.");
+                        }
+                    }
                 } catch (MalformedURLException e) {
                     throw new SynapseArtifactDeploymentException("Error while adding dependency to the Synapse Library : " +
                             libraryName, e);
@@ -593,6 +608,25 @@ public class LibDeployerUtils {
 
     /////////////////// End Of Common Utility Methods
 
+    /**
+     * Checks whether a dependency (identified by its file name) is already loaded
+     * in the given LibClassLoader. This guards against duplicate class-path entries
+     * when multiple CARs bundle the same connector dependency jar.
+     *
+     * @param libClassLoader the class loader to inspect
+     * @param dependencyPath absolute path to the dependency jar or directory
+     * @return true if a URL with the same file name is already present
+     */
+    private static boolean isDependencyAlreadyLoaded(LibClassLoader libClassLoader, String dependencyPath) {
+        String dependencyName = new File(dependencyPath).getName();
+        for (URL url : libClassLoader.getURLs()) {
+            File urlFile = new File(url.getPath());
+            if (dependencyName.equals(urlFile.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public static void main(String[] args) {
         new SynapseLibrary(null, null).resolveDependencies(null);
