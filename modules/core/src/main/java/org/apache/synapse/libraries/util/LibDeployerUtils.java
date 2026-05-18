@@ -91,14 +91,7 @@ public class LibDeployerUtils {
         } else {
             if (deployedLibClassLoader instanceof LibClassLoader) {
                 try {
-                    if (!isDependencyAlreadyLoaded((LibClassLoader) deployedLibClassLoader, extractPath)) {
-                        ((LibClassLoader) deployedLibClassLoader).addToClassPath(extractPath);
-                    } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Synapse Library '" + libArtifactName +
-                                    "' is already loaded in the class loader. Skipping duplicate addition of: " + extractPath);
-                        }
-                    }
+                    ((LibClassLoader) deployedLibClassLoader).addToClassPath(extractPath);
                 } catch (MalformedURLException e) {
                     throw new SynapseArtifactDeploymentException("Error setting up lib classpath for Synapse" +
                             " Library  : " + libFile.getAbsolutePath(), e);
