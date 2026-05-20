@@ -369,9 +369,10 @@ public class SharedParamManager {
 				.getDistributedCounterManager();
 
 		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
-			distributedCounterManager.removeLock(callerContextId);
+			String lockKey = ThrottleConstants.THROTTLE_LOCK_KEY_PREFIX + callerContextId;
+			distributedCounterManager.removeLock(lockKey);
 			if (log.isTraceEnabled()) {
-				log.trace("Current time:" + System.currentTimeMillis() + "Lock released for key: " + callerContextId);
+				log.trace("Current time:" + System.currentTimeMillis() + "Lock released for key: " + lockKey);
 			}
 		}
 	}

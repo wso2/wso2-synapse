@@ -455,6 +455,18 @@ public abstract class CallerContext implements Serializable, Cloneable {
         localCount.incrementAndGet();
     }
 
+    public void decrementLocalCounter() {
+        long currentValue;
+        long newValue;
+        do {
+            currentValue = localCount.get();
+            if (currentValue <= 0) {
+                return; // Don't decrement below zero
+            }
+            newValue = currentValue - 1;
+        } while (!localCount.compareAndSet(currentValue, newValue));
+    }
+
     public long getGlobalCounter() {
         return globalCount.get();
     }
@@ -484,6 +496,18 @@ public abstract class CallerContext implements Serializable, Cloneable {
 
     public void incrementLocalHits() {
         localHits.incrementAndGet();
+    }
+
+    public void decrementLocalHits() {
+        long currentValue;
+        long newValue;
+        do {
+            currentValue = localHits.get();
+            if (currentValue <= 0) {
+                return; // Don't decrement below zero
+            }
+            newValue = currentValue - 1;
+        } while (!localHits.compareAndSet(currentValue, newValue));
     }
 
     public void resetLocalCounter() {
