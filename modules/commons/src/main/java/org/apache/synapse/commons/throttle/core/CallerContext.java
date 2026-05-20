@@ -146,16 +146,17 @@ public abstract class CallerContext implements Serializable, Cloneable {
         boolean canAccess = false;
         int maxRequest = configuration.getMaximumRequestPerUnitTime();
         if (maxRequest != 0) {
-            long currentGlobal = this.globalCount.get();
             long currentLocal;
             boolean incremented = false;
+            long requestedCount = eventCount == null ? 1L : eventCount;
             do {
+                long currentGlobal = this.globalCount.get();
                 currentLocal = this.localCount.get();
-                if (currentGlobal + currentLocal >= maxRequest) {
+                if (currentGlobal + currentLocal + requestedCount > maxRequest) {
                     break; // slot exhausted; do not increment
                 }
                 // Try to atomically increment only if localCount hasn't changed
-                incremented = this.localCount.compareAndSet(currentLocal, currentLocal + 1);
+                incremented = this.localCount.compareAndSet(currentLocal, currentLocal + requestedCount);
             } while (!incremented);
 
             if (incremented) {
