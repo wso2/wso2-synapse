@@ -109,28 +109,38 @@ public class ThrottleReplicator {
                             //get distributed map instance and update counters
                             //If both global and local counters are 0 then that means cleanup caller
                             if (callerContext != null) {
-                                //If local counter > 0 and time window is not expired then only we have to replicate counters.
-                                //Otherwise we do not need to do replication.
                                 if (callerContext.getLocalCounter() > 0 &&
                                         callerContext.getNextTimeWindow() > System.currentTimeMillis()) {
-	                                String id = callerContext.getId();
-	                                //First put local counter to variable and reset it just after it because
-	                                //if there are incoming requests coming. the local counter will be updated
-	                                //if that happen, reset will cause to miss the additional requests come after
-	                                //local counter value taken into the consideration
-	                                long localCounter = callerContext.getLocalCounter();
-	                                callerContext.resetLocalCounter();
-	                                Long distributedCounter = SharedParamManager.asyncGetAndAddDistributedCounter(id, localCounter);
-	                                //Update instance global counter with distributed counter
-                                    callerContext.setGlobalCounter(distributedCounter + localCounter);
-                                    if(log.isDebugEnabled()) {
-                                        log.debug("Increasing counters of context :" + callerContext.getId() + " "
-                                                  + "Replicated Count After  Update : distributedCounter =" +distributedCounter
-                                                  + " localCounter=" + localCounter + " total=" + (distributedCounter + localCounter));
+                                    String id = callerContext.getId();
+                                    // Read current local count and reset to 0 in one atomic step.
+                                    // Any request that increments localCounter after this line will be picked up on the next tick.
+                                    long snapshotCounter = callerContext.getAndSetLocalCounter(0);
+                                    boolean redisSuccess = false;
+                                    try {
+                                        Long distributedCounter = SharedParamManager.asyncGetAndAddDistributedCounter(id, snapshotCounter);
+                                        callerContext.setGlobalCounter(distributedCounter + snapshotCounter);
+                                        redisSuccess = true;
+                                        if (log.isDebugEnabled()) {
+                                            log.debug("Replicated counter for context:" + callerContext.getId()
+                                                    + " distributedCounter=" + distributedCounter
+                                                    + " snapshotCounter=" + snapshotCounter
+                                                    + " total=" + (distributedCounter + snapshotCounter));
+                                        }
+                                    } catch (Exception e) {
+                                        // Restore snapshot to local counter so the counts are retried on the next tick.
+                                        callerContext.incrementLocalCounterBy(snapshotCounter);
+                                        log.error("Could not replicate throttle counter for key: " + id
+                                                + ". Restored " + snapshotCounter + " counts to local counter for retry.", e);
                                     }
+                                    if (redisSuccess) {
+                                        set.remove(key);
+                                    }
+                                } else {
+                                    set.remove(key);
                                 }
+                            } else {
+                                set.remove(key);
                             }
-	                        set.remove(key);
                         }
 
                     }
