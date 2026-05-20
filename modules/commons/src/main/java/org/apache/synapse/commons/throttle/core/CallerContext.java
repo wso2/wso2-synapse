@@ -52,7 +52,7 @@ public abstract class CallerContext implements Serializable, Cloneable {
      This is specific for each API EP
      if this is true, then syncing of throttle parameter with global redis counters be synced will be done in sync mode
      */
-    private boolean isThrottleParamSyncingModeSync;
+    private volatile boolean isThrottleParamSyncingModeSync;
     private ThrottleProperties throttleProperties;
 
 
@@ -146,7 +146,19 @@ public abstract class CallerContext implements Serializable, Cloneable {
         boolean canAccess = false;
         int maxRequest = configuration.getMaximumRequestPerUnitTime();
         if (maxRequest != 0) {
-            if ((this.globalCount.get() + this.localCount.get()) < maxRequest) {    //If the globalCount is less than max request
+            long currentGlobal = this.globalCount.get();
+            long currentLocal;
+            boolean incremented = false;
+            do {
+                currentLocal = this.localCount.get();
+                if (currentGlobal + currentLocal >= maxRequest) {
+                    break; // slot exhausted; do not increment
+                }
+                // Try to atomically increment only if localCount hasn't changed
+                incremented = this.localCount.compareAndSet(currentLocal, currentLocal + 1);
+            } while (!incremented);
+
+            if (incremented) {
                 if (log.isDebugEnabled()) {
                     log.debug("CallerContext Checking access if unit time is not over and less than max count>> Access "
                             + "allowed=" + maxRequest + " available="+ (maxRequest - (this.globalCount.get() + this.localCount.get()))
@@ -155,7 +167,6 @@ public abstract class CallerContext implements Serializable, Cloneable {
                             + configuration.getID() + " nextAccessTime=" + this.nextAccessTime);
                 }
                 canAccess = true;     // can continue access
-                this.localCount.addAndGet(eventCount);
                 // Send the current state to others (clustered env)
                 throttleContext.flushCallerContext(this, id);
                 // can complete access
@@ -453,6 +464,14 @@ public abstract class CallerContext implements Serializable, Cloneable {
 
     public void incrementLocalCounter() {
         localCount.incrementAndGet();
+    }
+
+    public long getAndSetLocalCounter(long newValue) {
+        return localCount.getAndSet(newValue);
+    }
+
+    public void incrementLocalCounterBy(long delta) {
+        localCount.addAndGet(delta);
     }
 
     public void decrementLocalCounter() {
