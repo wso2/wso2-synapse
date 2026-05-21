@@ -84,6 +84,13 @@ public class NonProxyAwareProxyRoutePlannerTest {
     }
 
     @Test
+    public void testNonProxyHostsCaseInsensitiveMatch() throws Exception {
+        Object planner = createRoutePlanner("*.INTERNAL.com", null);
+        HttpHost result = callDetermineProxy(planner, new HttpHost("API.internal.COM", 443));
+        assertNull("Host should match nonProxyHosts regardless of case", result);
+    }
+
+    @Test
     public void testNonProxyHostsWildcardNoMatch() throws Exception {
         Object planner = createRoutePlanner("*.internal.com", null);
         HttpHost result = callDetermineProxy(planner, new HttpHost("api.external.com", 443));
@@ -156,6 +163,13 @@ public class NonProxyAwareProxyRoutePlannerTest {
                 callDetermineProxy(planner, new HttpHost("api.partner.org", 443)));
         assertNull("localhost should not match any targetProxyHosts",
                 callDetermineProxy(planner, new HttpHost("localhost", 80)));
+    }
+
+    @Test
+    public void testTargetProxyHostsCaseInsensitiveMatch() throws Exception {
+        Object planner = createRoutePlanner(null, "*.EXTERNAL.com");
+        HttpHost result = callDetermineProxy(planner, new HttpHost("API.external.COM", 443));
+        assertNotNull("Host should match targetProxyHosts regardless of case", result);
     }
 
     @Test

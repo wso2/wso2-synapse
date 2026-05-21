@@ -78,6 +78,7 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.Properties;
@@ -1044,8 +1045,10 @@ public class OAuthUtils {
         }
 
         private boolean matchesPattern(String hostname, String pattern) {
-            String regex = pattern.replace(".", "\\.").replace("*", ".*");
-            return hostname.matches(regex);
+            String normalizedHost = hostname.toLowerCase(Locale.ROOT);
+            String normalizedPattern = pattern.toLowerCase(Locale.ROOT);
+            String regex = normalizedPattern.replace(".", "\\.").replace("*", ".*");
+            return normalizedHost.matches(regex);
         }
     }
 }
