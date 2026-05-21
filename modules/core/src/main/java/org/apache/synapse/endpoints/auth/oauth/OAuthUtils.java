@@ -84,6 +84,7 @@ import java.util.Set;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -1047,8 +1048,31 @@ public class OAuthUtils {
         private boolean matchesPattern(String hostname, String pattern) {
             String normalizedHost = hostname.toLowerCase(Locale.ROOT);
             String normalizedPattern = pattern.toLowerCase(Locale.ROOT);
-            String regex = normalizedPattern.replace(".", "\\.").replace("*", ".*");
-            return normalizedHost.matches(regex);
+            StringBuilder regex = new StringBuilder(normalizedPattern.length() + 8);
+            StringBuilder literal = new StringBuilder();
+            for (int i = 0; i < normalizedPattern.length(); i++) {
+                char c = normalizedPattern.charAt(i);
+                if (c == '*') {
+                    if (literal.length() > 0) {
+                        regex.append(Pattern.quote(literal.toString()));
+                        literal.setLength(0);
+                    }
+                    regex.append(".*");
+                } else {
+                    literal.append(c);
+                }
+            }
+            if (literal.length() > 0) {
+                regex.append(Pattern.quote(literal.toString()));
+            }
+            try {
+                return normalizedHost.matches(regex.toString());
+            } catch (PatternSyntaxException e) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Invalid proxy host pattern [" + pattern + "], treating as no match.", e);
+                }
+                return false;
+            }
         }
     }
 }

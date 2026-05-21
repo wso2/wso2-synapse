@@ -91,6 +91,27 @@ public class NonProxyAwareProxyRoutePlannerTest {
     }
 
     @Test
+    public void testNonProxyHostsBracketPatternDoesNotThrow() throws Exception {
+        Object planner = createRoutePlanner("host[1].internal.com", null);
+        HttpHost result = callDetermineProxy(planner, new HttpHost("anything.example.com", 443));
+        assertNotNull("Pattern with literal brackets should not crash; host should use proxy", result);
+    }
+
+    @Test
+    public void testNonProxyHostsBracketPatternMatchesLiteral() throws Exception {
+        Object planner = createRoutePlanner("host[1].internal.com", null);
+        HttpHost result = callDetermineProxy(planner, new HttpHost("host[1].internal.com", 443));
+        assertNull("Literal bracketed host should match the same bracketed pattern", result);
+    }
+
+    @Test
+    public void testNonProxyHostsRegexMetacharsDoNotThrow() throws Exception {
+        Object planner = createRoutePlanner("foo?+.example.(com)", null);
+        HttpHost result = callDetermineProxy(planner, new HttpHost("api.example.com", 443));
+        assertNotNull("Pattern with regex metacharacters should not crash; host should use proxy", result);
+    }
+
+    @Test
     public void testNonProxyHostsWildcardNoMatch() throws Exception {
         Object planner = createRoutePlanner("*.internal.com", null);
         HttpHost result = callDetermineProxy(planner, new HttpHost("api.external.com", 443));
