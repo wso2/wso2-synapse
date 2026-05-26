@@ -973,6 +973,10 @@ public class OAuthUtils {
 
     private static class NonProxyAwareProxyRoutePlanner extends DefaultProxyRoutePlanner {
 
+        // Small arbitrary buffer added to the initial StringBuilder capacity as a hint to reduce resizes
+        // for typical short hostname patterns. StringBuilder grows automatically if this is exceeded.
+        private static final int REGEX_BUILDER_EXTRA_CAPACITY = 8;
+
         private final String[] nonProxyPatterns;
         private final String[] targetProxyPatterns;
 
@@ -1048,7 +1052,7 @@ public class OAuthUtils {
         private boolean matchesPattern(String hostname, String pattern) {
             String normalizedHost = hostname.toLowerCase(Locale.ROOT);
             String normalizedPattern = pattern.toLowerCase(Locale.ROOT);
-            StringBuilder regex = new StringBuilder(normalizedPattern.length() + 8);
+            StringBuilder regex = new StringBuilder(normalizedPattern.length() + REGEX_BUILDER_EXTRA_CAPACITY);
             StringBuilder literal = new StringBuilder();
             for (int i = 0; i < normalizedPattern.length(); i++) {
                 char c = normalizedPattern.charAt(i);
