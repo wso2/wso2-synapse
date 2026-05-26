@@ -97,12 +97,16 @@ public class AuthConstants {
     public static final String PROXY_USERNAME = "proxyUsername";
     public static final String PROXY_PASSWORD = "proxyPassword";
     public static final String OAUTH_PROXY_PROTOCOL = "proxyProtocol";
+    public static final String PROXY_NON_PROXY_HOSTS = "nonProxyHosts";
+    public static final String PROXY_TARGET_PROXY_HOSTS = "targetProxyHosts";
     public static final String OAUTH_GLOBAL_PROXY_ENABLED = "synapse.endpoint.http.oauth.token.endpoint.global.proxy.enabled";
     public static final String OAUTH_GLOBAL_PROXY_HOST = "synapse.endpoint.http.oauth.token.endpoint.global.proxy.host";
     public static final String OAUTH_GLOBAL_PROXY_PORT = "synapse.endpoint.http.oauth.token.endpoint.global.proxy.port";
     public static final String OAUTH_GLOBAL_PROXY_USERNAME = "synapse.endpoint.http.oauth.token.endpoint.global.proxy.username";
     public static final String OAUTH_GLOBAL_PROXY_PASSWORD = "synapse.endpoint.http.oauth.token.endpoint.global.proxy.password";
     public static final String OAUTH_GLOBAL_PROXY_PROTOCOL = "synapse.endpoint.http.oauth.token.endpoint.global.proxy.protocol";
+    public static final String OAUTH_GLOBAL_PROXY_NON_PROXY_HOSTS = "synapse.endpoint.http.oauth.token.endpoint.global.proxy.nonProxyHosts";
+    public static final String OAUTH_GLOBAL_PROXY_TARGET_PROXY_HOSTS = "synapse.endpoint.http.oauth.token.endpoint.global.proxy.targetProxyHosts";
 
     // OAuth token endpoint truststore property names for synapse.properties
     public static final String OAUTH_TOKEN_ENDPOINT_TRUST_STORE_LOCATION = "synapse.endpoint.http.oauth.token.endpoint.trust.store.location";

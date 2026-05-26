@@ -29,6 +29,8 @@ public class ProxyConfigs {
     private String proxyPassword;
     private String proxyProtocol;
     private boolean proxyEnabled;
+    private String nonProxyHosts;
+    private String targetProxyHosts;
     private SecretResolver proxyPasswordSecretResolver;
 
     public void setProxyEnabled(boolean proxyEnabled) {
@@ -77,6 +79,22 @@ public class ProxyConfigs {
 
     public String getProxyProtocol() {
         return proxyProtocol;
+    }
+
+    public void setNonProxyHosts(String nonProxyHosts) {
+        this.nonProxyHosts = nonProxyHosts;
+    }
+
+    public String getNonProxyHosts() {
+        return nonProxyHosts;
+    }
+
+    public void setTargetProxyHosts(String targetProxyHosts) {
+        this.targetProxyHosts = targetProxyHosts;
+    }
+
+    public String getTargetProxyHosts() {
+        return targetProxyHosts;
     }
 
     public void setProxyPasswordSecretResolver(SecretResolver proxyPasswordSecretResolver) {
