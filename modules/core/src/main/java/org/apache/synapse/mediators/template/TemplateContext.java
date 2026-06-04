@@ -30,6 +30,7 @@ import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.util.xpath.SynapseExpression;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
+import org.apache.synapse.util.xpath.SynapseXPathConstants;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
@@ -222,7 +223,18 @@ public class TemplateContext {
                             expression.getExpression() instanceof SynapseExpression) {
                         return expression.evaluateValue(synCtx);
                     } else {
-                        return resolveExpressionValue(synCtx, expression);
+                        // introducing a system property to enable the legacy XPath evaluation
+                        // which returns the text value if the expression result is a single node.
+                        boolean isLegacyXPathEnabled =
+                            System.getProperty(
+                                SynapseXPathConstants.LEGACY_XPATH_CHILD_ELEMENT_ACCESS_ENABLED)
+                                != null && Boolean.parseBoolean(System.getProperty(
+                                SynapseXPathConstants.LEGACY_XPATH_CHILD_ELEMENT_ACCESS_ENABLED));
+                        if (isLegacyXPathEnabled) {
+                            return expression.evaluateValue(synCtx);
+                        } else {
+                            return resolveExpressionValue(synCtx, expression);
+                        }
                     }
                 }
             } else if (expression.getKeyValue() != null) {

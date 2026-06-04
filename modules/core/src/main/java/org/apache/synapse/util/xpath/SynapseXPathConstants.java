@@ -82,4 +82,12 @@ public final class SynapseXPathConstants {
     public static final String NULL_STRING = "";
 
     public static final String DEFAULT_CHARSET = "UTF-8";
+
+    /**
+     * The name of the system property which is used to enable the legacy behaviour of the XPath
+     * evaluator when accessing child elements. Enabling this property will bring back the legacy
+     * behaviour only for connector
+     */
+    public static final String LEGACY_XPATH_CHILD_ELEMENT_ACCESS_ENABLED
+        = "synapse.legacy.xpath.behaviour";
 }
