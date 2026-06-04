@@ -40,9 +40,9 @@ public abstract class CallerContext implements Serializable, Cloneable {
     /* next access time - the end of prohibition */
     private long nextAccessTime = 0;
     /* first access time - when caller came across the on first time */
-    private long firstAccessTime = 0;
+    private volatile long firstAccessTime = 0;
     /* The nextTimeWindow - beginning of next unit time period- end of current unit time period  */
-    private long nextTimeWindow = 0;
+    private volatile long nextTimeWindow = 0;
     /* The globalCount to keep track number of request */
     private AtomicLong globalCount = new AtomicLong(0);
     private long localQuota;
@@ -493,6 +493,21 @@ public abstract class CallerContext implements Serializable, Cloneable {
 
     public void setGlobalCounter(long counter) {
         globalCount.set(counter);
+    }
+
+    /**
+     * Atomically sets globalCount to newValue only if newValue is strictly greater than
+     * the current value. If newValue is less than or equal to the current value, the
+     * method returns without modifying globalCount.
+     *
+     * @param newValue the value to set if it is greater than the current globalCount
+     */
+    public void updateGlobalCounterIfHigher(long newValue) {
+        long current;
+        do {
+            current = globalCount.get();
+            if (newValue <= current) return;
+        } while (!globalCount.compareAndSet(current, newValue));
     }
 
     public void setLocalCounter(long counter) {
