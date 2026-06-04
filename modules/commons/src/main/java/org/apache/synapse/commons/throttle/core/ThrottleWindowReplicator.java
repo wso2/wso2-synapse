@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.throttle.core.internal.ThrottleServiceDataHolder;
 
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -38,17 +39,17 @@ public class ThrottleWindowReplicator {
 
 	private static final Log log = LogFactory.getLog(ThrottleWindowReplicator.class);
 	private static int replicatorPoolSize ;
-	private ConfigurationContext configContext;
-private ThrottleProperties throttleProperties;
+	private volatile ConfigurationContext configContext;
+	private ThrottleProperties throttleProperties;
 	private int replicatorCount;
 
 	private Set<String> set = new ConcurrentSkipListSet<String>();
+	private ConcurrentHashMap<String, Boolean> processingKeys = new ConcurrentHashMap<>();
 
 	public ThrottleWindowReplicator() {
 
 		throttleProperties = ThrottleServiceDataHolder.getInstance().getThrottleProperties();
 		replicatorPoolSize = Integer.parseInt(throttleProperties.getWindowReplicatorPoolSize());
-
 
 		if (log.isDebugEnabled()) {
 			log.debug("Throttle window replicator pool size set to " + replicatorPoolSize);
@@ -93,9 +94,7 @@ private ThrottleProperties throttleProperties;
 		if (configContext == null) {
 			throw new IllegalStateException("ConfigurationContext has not been set");
 		}
-		synchronized (key.intern()) {
-			set.add(key);
-		}
+		set.add(key);
 		if (log.isDebugEnabled()) {
 			log.trace("Adding key " + key + " to replication list");
 		}
@@ -104,68 +103,78 @@ private ThrottleProperties throttleProperties;
 	private class ReplicatorTask implements Runnable {
 
 		public void run() {
-			try {
-				log.debug("Start running ThrottleWindowReplicatorTask.");
-				if (!set.isEmpty()) {
-					for (String key : set) {
-						String callerId;
-						long localFirstAccessTime;
-						synchronized (key.intern()) {
-							ThrottleDataHolder dataHolder = (ThrottleDataHolder)
-									configContext.getProperty(ThrottleConstants.THROTTLE_INFO_KEY);
-							CallerContext callerContext = dataHolder.getCallerContext(key);
-							if (callerContext != null) {
-								callerId = callerContext.getId();
-								long sharedTimestamp = SharedParamManager.getSharedTimestamp(callerContext.getId());
-								long sharedNextWindow = sharedTimestamp + callerContext.getUnitTime();
-								localFirstAccessTime = callerContext.getFirstAccessTime();
-								//First if statement check whether local first access time is lower than the current
-								// global counter if so it will adjust the local first access time to global time to
-								// adjust the time window
-								if (localFirstAccessTime < sharedTimestamp) {
+			log.debug("Start running ThrottleWindowReplicatorTask.");
+			if (!set.isEmpty()) {
+				for (String key : set) {
+					boolean claimed = processingKeys.putIfAbsent(key, Boolean.TRUE) == null;
+					if (!claimed) {
+						if (log.isDebugEnabled()) {
+							log.debug("Key " + key + " already being processed by another window replicator thread - skipping");
+						}
+						continue;
+					}
+
+					try {
+						ThrottleDataHolder dataHolder = (ThrottleDataHolder)
+								configContext.getProperty(ThrottleConstants.THROTTLE_INFO_KEY);
+						CallerContext callerContext = dataHolder.getCallerContext(key);
+						if (callerContext != null) {
+							String callerId = callerContext.getId();
+							long sharedTimestamp = SharedParamManager.getSharedTimestamp(callerContext.getId());
+							long sharedNextWindow = sharedTimestamp + callerContext.getUnitTime();
+							long localFirstAccessTime = callerContext.getFirstAccessTime();
+							// Branch A: Sync local window to cluster if cluster has active window
+							if (localFirstAccessTime < sharedNextWindow && sharedTimestamp > 0) {
+								long distributedCounter = SharedParamManager.getDistributedCounter(callerId);
+								synchronized (callerId.intern()) {
+									// Re-read FAT inside lock to detect concurrent window changes
+									long currentFirstAccessTime = callerContext.getFirstAccessTime();
+									// If cluster is ahead, reset local window to match cluster
+									if (sharedTimestamp > currentFirstAccessTime) {
+										callerContext.resetGlobalCounter();
+										callerContext.resetLocalCounter();
+									}
+									// Apply distCounter only if firstAccessTime unchanged (detects concurrent changes).
+									// Note: After reset above, localFirstAccessTime==currentFirstAccessTime still holds,
+									// so node-behind case correctly applies cluster's distCounter.
+									if (localFirstAccessTime == currentFirstAccessTime) {
+										callerContext.updateGlobalCounterIfHigher(distributedCounter);
+									}
+									
+									// Update window boundaries atomically (prevents half-updated state)
 									callerContext.setFirstAccessTime(sharedTimestamp);
 									callerContext.setNextTimeWindow(sharedNextWindow);
-									callerContext.setGlobalCounter(SharedParamManager.getDistributedCounter(callerId));
-									if(log.isDebugEnabled()) {
-										log.debug("Setting time windows of caller context when window already set=" + callerId);
-									}
-									//If some request comes to a nodes after some node set the shared timestamp then this
-									// check whether the first access time of local is in between the global time window
-									// if so this will set local caller context time window to global
-								} else if (localFirstAccessTime > sharedTimestamp
-								           && localFirstAccessTime < sharedNextWindow) {
-									callerContext.setFirstAccessTime(sharedTimestamp);
-									callerContext.setNextTimeWindow(sharedNextWindow);
-									callerContext.setGlobalCounter(SharedParamManager.getDistributedCounter(callerId));
-									if (log.isDebugEnabled()) {
-										log.debug("Setting time windows of caller context in intermediate interval=" +
-										         callerId);
-									}
-									//If above two statements not meets, this is the place where node set new window if
-									// global first access time is 0, then it will be the beginning of the throttle time time
-									// window so present node will set shared timestamp and the distributed counter. Also if time
-									// window expired this will be the node who set the next time window starting time
-								} else {
-									SharedParamManager.setSharedTimestamp(callerId, localFirstAccessTime);
-									SharedParamManager.setDistributedCounter(callerId, 0);
-									SharedParamManager.setExpiryTime(callerId,
-											callerContext.getUnitTime() + localFirstAccessTime);
-									//Reset global counter here as throttle replicator task may have updated global counter
-									//with dirty value
+								}
+								if (log.isDebugEnabled()) {
+									log.debug("Setting time windows for callerId: " + callerId);
+								}
+							} else {
+								// Branch B: Node is ahead or cluster has no window — create new window in Redis.
+								// Write order matters: setDistributedCounter(0) MUST happen before setSharedTimestamp.
+								// If reversed and setDistributedCounter fails, next tick would enter Branch A (timestamp matches)
+								// and apply stale counter from old window → false throttling for entire window duration.
+								SharedParamManager.setDistributedCounter(callerId, 0);
+								SharedParamManager.setSharedTimestamp(callerId, localFirstAccessTime);
+								SharedParamManager.setExpiryTime(callerId,
+										callerContext.getUnitTime() + localFirstAccessTime);
+								synchronized (callerId.intern()) {
+									// Reset to clear any dirty counter from previous window
 									callerContext.resetGlobalCounter();
-									callerContext.setLocalCounter(1);//Local counter will be set to one as new time window starts
-									if (log.isDebugEnabled()) {
-										log.debug("Complete resetting time window of=" + callerId);
-									}
+								}
+								if (log.isDebugEnabled()) {
+									log.debug("Complete resetting time window of=" + callerId);
 								}
 							}
-							set.remove(key);
 						}
+						set.remove(key);
+					} catch (Throwable t) {
 
+						log.error("Could not replicate window data for key: " + key
+								+ ". Will retry on next tick.", t);
+					} finally {
+						processingKeys.remove(key);
 					}
 				}
-			} catch (Throwable t) {
-				log.error("Could not replicate throttle data", t);
 			}
 		}
 	}

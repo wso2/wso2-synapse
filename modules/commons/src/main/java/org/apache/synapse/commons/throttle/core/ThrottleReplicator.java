@@ -37,11 +37,12 @@ public class ThrottleReplicator {
     private static final int REPLICATOR_THREAD_POOL_SIZE = 1;
     private static int replicatorPoolSize = REPLICATOR_THREAD_POOL_SIZE;
 
-    private ConfigurationContext configContext;
+    private volatile ConfigurationContext configContext;
     private ThrottleProperties throttleProperties;
     private int replicatorCount;
 
     private Set<String> set = new ConcurrentSkipListSet<String>();
+    private ConcurrentHashMap<String, Boolean> processingKeys = new ConcurrentHashMap<>();
 
     public ThrottleReplicator() {
         throttleProperties = ThrottleServiceDataHolder.getInstance().getThrottleProperties();
@@ -88,9 +89,7 @@ public class ThrottleReplicator {
         if (configContext == null) {
             throw new IllegalStateException("ConfigurationContext has not been set");
         }
-        synchronized (key.intern()) {
-            set.add(key);
-        }
+        set.add(key);
         if (log.isDebugEnabled()) {
             log.trace("Adding key " + key + " to replication list");
         }
@@ -99,44 +98,125 @@ public class ThrottleReplicator {
     private class ReplicatorTask implements Runnable {
         public void run() {
             log.debug("Start running ThrottleReplicatorTask.");
-            try {
-                if (!set.isEmpty()) {
-                    for (String key : set) {
-                        synchronized (key.intern()) {
-                            ThrottleDataHolder dataHolder = (ThrottleDataHolder)
-                                    configContext.getProperty(ThrottleConstants.THROTTLE_INFO_KEY);
-                            CallerContext callerContext = dataHolder.getCallerContext(key);
-                            //get distributed map instance and update counters
-                            //If both global and local counters are 0 then that means cleanup caller
-                            if (callerContext != null) {
-                                //If local counter > 0 and time window is not expired then only we have to replicate counters.
-                                //Otherwise we do not need to do replication.
-                                if (callerContext.getLocalCounter() > 0 &&
-                                        callerContext.getNextTimeWindow() > System.currentTimeMillis()) {
-	                                String id = callerContext.getId();
-	                                //First put local counter to variable and reset it just after it because
-	                                //if there are incoming requests coming. the local counter will be updated
-	                                //if that happen, reset will cause to miss the additional requests come after
-	                                //local counter value taken into the consideration
-	                                long localCounter = callerContext.getLocalCounter();
-	                                callerContext.resetLocalCounter();
-	                                Long distributedCounter = SharedParamManager.asyncGetAndAddDistributedCounter(id, localCounter);
-	                                //Update instance global counter with distributed counter
-                                    callerContext.setGlobalCounter(distributedCounter + localCounter);
-                                    if(log.isDebugEnabled()) {
-                                        log.debug("Increasing counters of context :" + callerContext.getId() + " "
-                                                  + "Replicated Count After  Update : distributedCounter =" +distributedCounter
-                                                  + " localCounter=" + localCounter + " total=" + (distributedCounter + localCounter));
-                                    }
-                                }
-                            }
-	                        set.remove(key);
+            if (!set.isEmpty()) {
+                for (String key : set) {
+                    // Lock-free deduplication: Claim key for processing to prevent concurrent replicator threads
+                    // from processing same key (pool > 1 safety)
+                    boolean claimed = processingKeys.putIfAbsent(key, Boolean.TRUE) == null;
+                    if (!claimed) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Key " + key + " already being processed by another replicator thread - skipping");
                         }
+                        continue;
+                    }
 
+                    // Error recovery state: Track snapshot values to restore on failure
+                    long snapshotToRestore = 0;
+                    CallerContext contextForRestore = null;
+                    long windowAtSnapshot = 0;
+                    try {
+                        // Get distributed map instance and update counters
+                        ThrottleDataHolder dataHolder = (ThrottleDataHolder)
+                                configContext.getProperty(ThrottleConstants.THROTTLE_INFO_KEY);
+                        CallerContext callerContext = dataHolder.getCallerContext(key);
+                        // If callerContext is null, cleanup caller from replication set
+                        if (callerContext != null) {
+                            contextForRestore = callerContext;
+                            windowAtSnapshot = callerContext.getNextTimeWindow();
+                            // Only replicate if time window is not expired. If expired, cleanup without replication.
+                            if (windowAtSnapshot > System.currentTimeMillis()) {
+                                String id = callerContext.getId();
+                                // Atomically snapshot and reset local counter. If incoming requests arrive after this,
+                                // they increment localCounter from 0, preventing loss of concurrent request counts.
+                                long snapshotCounter = callerContext.getAndSetLocalCounter(0);
+                                snapshotToRestore = snapshotCounter;
+
+                                // Skip replication if snapshotCounter is 0 (no local activity since last replication)
+                                if (snapshotCounter == 0) {
+                                    snapshotToRestore = 0;
+                                    set.remove(key);
+                                    continue;
+                                }
+                                // Window-change guard 1: Detect if window rolled over between snapshot and here.
+                                // If window changed, discard snapshotCounter to prevent old-window counts contaminating new window.
+                                if (callerContext.getNextTimeWindow() != windowAtSnapshot) {
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("Window changed from " + windowAtSnapshot
+                                                + " to " + callerContext.getNextTimeWindow()
+                                                + " during snapshot for key: " + key
+                                                + " — discarding " + snapshotCounter
+                                                + " counts to prevent old-window contamination (Trade-off T3).");
+                                    }
+                                    set.remove(key);
+                                    snapshotToRestore = 0;
+                                    continue;
+                                }
+
+                                try {
+                                    // Replicate snapshotCounter to Redis distributed counter and get previous value
+                                    Long distributedCounter = SharedParamManager.asyncGetAndAddDistributedCounter(id, snapshotCounter);
+                                    // Update instance global counter with distributed counter under lock for consistency
+                                    synchronized (id.intern()) {
+                                        // Window-change guard 2: Verify window didn't change during Redis call.
+                                        // If changed, skip globalCounter update to prevent new-window inflation.
+                                        if (callerContext.getNextTimeWindow() == windowAtSnapshot) {
+                                            callerContext.updateGlobalCounterIfHigher(distributedCounter + snapshotCounter);
+                                        } else {
+                                            if (log.isDebugEnabled()) {
+                                                log.debug("Window changed during Redis flush for key: " + key
+                                                        + " — skipping globalCount update to prevent new-window inflation.");
+                                            }
+                                        }
+                                    }
+                                    snapshotToRestore = 0;
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("Replicated counter for context:" + callerContext.getId()
+                                                + " distributedCounter=" + distributedCounter
+                                                + " snapshotCounter=" + snapshotCounter
+                                                + " total=" + (distributedCounter + snapshotCounter));
+                                    }
+                                } catch (Exception e) {
+                                    // Redis failure: Restore snapshotCounter to localCounter so counts aren't lost.
+                                    // Key stays in set for retry on next tick.
+                                    callerContext.incrementLocalCounterBy(snapshotCounter);
+                                    snapshotToRestore = 0;
+                                    log.error("Could not replicate throttle counter for key: " + id
+                                            + ". Restored " + snapshotCounter + " counts to local counter for retry.", e);
+                                    continue;
+                                }
+                                try {
+                                    set.remove(key);
+                                } catch (Throwable removeEx) {
+                                    log.warn("Failed to remove key from replication set: " + key
+                                            + ". Key will be retried on next tick with zero-count early exit.", removeEx);
+                                }
+                            } else {
+                                set.remove(key);
+                            }
+                        } else {
+                            set.remove(key);
+                        }
+                    } catch (Throwable t) {
+                        // Outer error recovery: Restore snapshot if failure occurred after snapshot was taken.
+                        // Window-change guard 3: Only restore if window hasn't changed (same-window counts).
+                        if (snapshotToRestore > 0 && contextForRestore != null) {
+                            if (contextForRestore.getNextTimeWindow() == windowAtSnapshot) {
+                                contextForRestore.incrementLocalCounterBy(snapshotToRestore);
+                                log.error("Could not replicate throttle data for key: " + key
+                                        + ". Restored " + snapshotToRestore + " counts for retry.", t);
+                            } else {
+                                log.error("Could not replicate throttle data for key: " + key
+                                        + ". Window changed during error - discarding " + snapshotToRestore
+                                        + " old-window counts to prevent contamination.", t);
+                            }
+                        } else {
+                            log.error("Could not replicate throttle data for key: " + key
+                                    + ". Will retry on next tick.", t);
+                        }
+                    } finally {
+                        processingKeys.remove(key);
                     }
                 }
-            } catch (Throwable t) {
-                log.error("Could not replicate throttle data", t);
             }
         }
     }

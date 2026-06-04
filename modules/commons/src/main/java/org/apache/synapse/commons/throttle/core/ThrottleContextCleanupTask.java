@@ -21,8 +21,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.throttle.core.internal.ThrottleServiceDataHolder;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -36,7 +36,7 @@ public class ThrottleContextCleanupTask {
 
 	private static final Log log = LogFactory.getLog(ThrottleContextCleanupTask.class);
 
-	private List<ThrottleContext> throttleContexts = new ArrayList<ThrottleContext>();
+	private List<ThrottleContext> throttleContexts = new CopyOnWriteArrayList<ThrottleContext>();
 
 	public ThrottleContextCleanupTask() {
 

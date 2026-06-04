@@ -43,7 +43,7 @@ public abstract class ThrottleContext {
     /* For mapping id (ip | domainame) to TimeStamp */
     private Map keyToTimeStampMap;
     /* The Time which next cleaning for this throttle will have to take place */
-    private long nextCleanTime;
+    private volatile long nextCleanTime;
     /* The configuration of a throttle */
     private ThrottleConfiguration throttleConfiguration;
     /* The configuration that corresponding to this context – this holds all
@@ -236,7 +236,16 @@ public abstract class ThrottleContext {
         if (debugOn) {
             log.debug("Cleaning up process is executing");
         }
+        // Double-checked lock: volatile outer check is a cheap fast-path that avoids
+        // monitor acquisition on most calls. The inner lock ensures only one thread
+        // runs the cleanup loop per DEFAULT_THROTTLE_CLEAN_PERIOD (5 minutes).
         if (time > nextCleanTime) {
+            synchronized (this) {
+                if (time <= nextCleanTime) {
+                    return;
+                }
+                nextCleanTime = time + ThrottleConstants.DEFAULT_THROTTLE_CLEAN_PERIOD;
+            }
             SortedMap map = ((ConcurrentNavigableMap) callersMap).headMap(new Long(time));
             if (map != null && map.size() > 0) {
                 for (Iterator it = map.values().iterator(); it.hasNext(); ) {
@@ -282,7 +291,6 @@ public abstract class ThrottleContext {
                     }
                 }
             }
-            nextCleanTime = time + ThrottleConstants.DEFAULT_THROTTLE_CLEAN_PERIOD;
         }
     }
 

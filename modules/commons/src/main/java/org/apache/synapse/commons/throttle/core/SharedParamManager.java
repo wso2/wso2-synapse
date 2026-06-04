@@ -123,10 +123,8 @@ public class SharedParamManager {
 		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
 			return distributedCounterManager.addAndGetCounter(id, value);
 		} else {
-			long currentCount = counters.get(id);
-			long updatedCount = currentCount + value;
-			counters.put(id, updatedCount);
-			return updatedCount;
+			// Atomically increment counter and return new total.
+			return counters.compute(id, (k, v) -> (v == null ? 0L : v) + value);
 		}
 	}
 
@@ -147,13 +145,13 @@ public class SharedParamManager {
 		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
 			return distributedCounterManager.asyncGetAndAddCounter(id, value);
 		} else {
-			Long currentCount = counters.get(id);
-			if(currentCount == null) {
-				currentCount = 0L;
-			}
-			long updatedCount = currentCount + value;
-			counters.put(id, updatedCount);
-			return currentCount;
+			// Atomically increment counter and return old value (before the add).
+			long[] oldValue = {0L};
+			counters.compute(id, (k, v) -> {
+				oldValue[0] = (v == null ? 0L : v);
+				return oldValue[0] + value;
+			});
+			return oldValue[0];
 		}
 	}
 
@@ -171,13 +169,13 @@ public class SharedParamManager {
 		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
 			return distributedCounterManager.asyncGetAndAlterCounter(id,value);
 		} else {
-			Long currentCount = counters.get(id);
-			if(currentCount == null) {
-				currentCount = 0L;
-			}
-			long updatedCount = currentCount + value;
-			counters.put(id, updatedCount);
-			return currentCount;
+			// Atomically alter counter and return old value (before the alter).
+			long[] oldValue = {0L};
+			counters.compute(id, (k, v) -> {
+				oldValue[0] = (v == null ? 0L : v);
+				return oldValue[0] + value;
+			});
+			return oldValue[0];
 		}
 	}
 
