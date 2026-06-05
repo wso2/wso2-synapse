@@ -35,6 +35,7 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.ParentSpanWrapperStackManager;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -193,7 +194,10 @@ public class MessageHelper {
                     obj = (OMElement) ((OMElement) obj).cloneOMElement();
                 } else if (obj instanceof ResponseState) {
                     // do nothing and let the same reference to go to the cloned context
-                } else{
+                } else if (obj instanceof Stack
+                            && strkey.equals(SynapseConstants.PARENT_STACK_PROPERTY)) {
+                    obj = ParentSpanWrapperStackManager.copyOf((Stack<String>) obj);
+                } else {
                     /**
                      * Need to add conditions according to type if found in
                      * future
