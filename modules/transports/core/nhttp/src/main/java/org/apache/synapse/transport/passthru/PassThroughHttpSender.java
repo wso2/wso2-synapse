@@ -553,8 +553,13 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 msgContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
             }
 
-            pipe.attachConsumer(conn);
-            sourceResponse.connect(pipe);
+            boolean delayPipeAttachment = msgContext.isPropertyTrue(PassThroughConstants.MESSAGE_BUILDER_INVOKED)
+                            && !Boolean.TRUE.equals(noEntityBody);
+
+            if (!delayPipeAttachment) {
+                pipe.attachConsumer(conn);
+                sourceResponse.connect(pipe);
+            }
         }
 
         Integer errorCode = (Integer) msgContext.getProperty(PassThroughConstants.ERROR_CODE);
@@ -602,6 +607,8 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 MessageFormatter formatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
                 OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
                 setContentType(msgContext, sourceResponse, formatter, format, sourceConfiguration);
+                pipe.attachConsumer(conn);
+                sourceResponse.connect(pipe);
                 try {
                     formatter.writeTo(msgContext, format, out, false);
                 } catch (RemoteException fault) {
