@@ -54,10 +54,11 @@ private ThrottleProperties throttleProperties;
 			log.debug("Throttle window replicator pool size set to " + replicatorPoolSize);
 		}
 
-		if (ThrottleServiceDataHolder.getInstance().getThrottleProperties().isThrottleSyncAsyncHybridModeEnabled()) {
+		if (throttleProperties.isThrottleSyncAsyncHybridModeEnabled()
+				|| throttleProperties.isUnifiedThrottleReplicatorEnabled()) {
 			if (log.isDebugEnabled()) {
-				log.debug("Throttle Sync Async Hybrid Mode is enabled. So throttle window replicator task will not be "
-						+ "scheduled.");
+				log.debug("Throttle Sync Async Hybrid Mode or Unified Replicator is enabled. So throttle window "
+						+ "replicator task will not be scheduled.");
 			}
 			return;
 		}

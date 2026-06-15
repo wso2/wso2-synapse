@@ -114,27 +114,27 @@ public class AccessRateController {
                     long currentTime = System.currentTimeMillis();
 
                     if (!caller.canAccess(throttleContext, configuration, currentTime)) {
-                        //if current caller cannot access , then perform cleaning
                         log.info(ACCESS_DENIED_TEMPORALLY);
-                        throttleContext.processCleanList(currentTime);
                         accessInformation.setAccessAllowed(false);
                         accessInformation.setFaultReason(ACCESS_DENIED_TEMPORALLY);
-                        return accessInformation;
                     } else {
                         if (debugOn) {
                             log.debug("Access  from " + type + " " + callerID + " is successful.");
                         }
                         accessInformation.setAccessAllowed(true);
-                        return accessInformation;
                     }
                 } else {
                     if (debugOn) {
                         log.debug("Caller " + type + " not found! " + callerID);
                     }
                     accessInformation.setAccessAllowed(true);
-                    return accessInformation;
                 }
             }
+            //if current caller cannot access , then perform cleaning
+            if (!accessInformation.isAccessAllowed()) {
+                throttleContext.processCleanList(System.currentTimeMillis());
+            }
+            return accessInformation;
         }
         accessInformation.setAccessAllowed(true);
         return accessInformation;

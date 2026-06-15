@@ -40,9 +40,9 @@ public abstract class CallerContext implements Serializable, Cloneable {
     /* next access time - the end of prohibition */
     private long nextAccessTime = 0;
     /* first access time - when caller came across the on first time */
-    private long firstAccessTime = 0;
+    private volatile long firstAccessTime = 0;
     /* The nextTimeWindow - beginning of next unit time period- end of current unit time period  */
-    private long nextTimeWindow = 0;
+    private volatile long nextTimeWindow = 0;
     /* The globalCount to keep track number of request */
     private AtomicLong globalCount = new AtomicLong(0);
     private long localQuota;
@@ -485,6 +485,14 @@ public abstract class CallerContext implements Serializable, Cloneable {
             }
             newValue = currentValue - 1;
         } while (!localCount.compareAndSet(currentValue, newValue));
+    }
+
+    public void subtractFromLocalCounterSafe(long amount) {
+        long current, next;
+        do {
+            current = localCount.get();
+            next = Math.max(0L, current - amount);
+        } while (!localCount.compareAndSet(current, next));
     }
 
     public long getGlobalCounter() {

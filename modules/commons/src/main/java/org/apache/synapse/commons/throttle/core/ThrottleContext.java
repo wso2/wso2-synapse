@@ -43,7 +43,7 @@ public abstract class ThrottleContext {
     /* For mapping id (ip | domainame) to TimeStamp */
     private Map keyToTimeStampMap;
     /* The Time which next cleaning for this throttle will have to take place */
-    private long nextCleanTime;
+    private volatile long nextCleanTime;
     /* The configuration of a throttle */
     private ThrottleConfiguration throttleConfiguration;
     /* The configuration that corresponding to this context – this holds all
@@ -63,6 +63,10 @@ public abstract class ThrottleContext {
 
     private ThrottleWindowReplicator throttleWindowReplicator;
 
+    private UnifiedThrottleReplicator unifiedThrottleReplicator;
+
+    private final boolean unifiedReplicatorEnabled;
+
     /**
      * default constructor – expects a throttle configuration.
      *
@@ -81,6 +85,9 @@ public abstract class ThrottleContext {
         this.throttleConfiguration = throttleConfiguration;
         this.debugOn = log.isDebugEnabled();
         this.throttleWindowReplicator = ThrottleContextFactory.getThrottleWindowReplicatorInstance();
+        this.unifiedThrottleReplicator = ThrottleContextFactory.getUnifiedThrottleReplicatorInstance();
+        this.unifiedReplicatorEnabled = ThrottleServiceDataHolder.getInstance()
+                .getThrottleProperties().isUnifiedThrottleReplicatorEnabled();
         ThrottleContextFactory.getThrottleContextCleanupTaskInstance().addThrottleContext(this);
     }
 
@@ -236,44 +243,56 @@ public abstract class ThrottleContext {
         if (debugOn) {
             log.debug("Cleaning up process is executing");
         }
+        // Double-checked lock: volatile outer check is a cheap fast-path that avoids
+        // monitor acquisition on most calls. The inner lock ensures only one thread
+        // runs the cleanup loop per DEFAULT_THROTTLE_CLEAN_PERIOD (5 minutes).
         if (time > nextCleanTime) {
-            SortedMap map = ((ConcurrentNavigableMap) callersMap).headMap(new Long(time));
-            if (map != null && map.size() > 0) {
-                for (Iterator it = map.values().iterator(); it.hasNext(); ) {
-                    Object o = it.next();
-                    if (o != null) {
-                        if (o instanceof CallerContext) { // In the case nextAccessTime is unique
-                            CallerContext c = ((CallerContext) o);
-                            String key = c.getId();
-                            String role = c.getRoleId();
-                            if (key != null) {
-                                if (dataHolder != null && keyPrefix != null) {
-                                    c = dataHolder.getCallerContext(key);
-                                }
-                                if (c != null) {
-                                    c.cleanUpCallers(
-                                            this.throttleConfiguration.getCallerConfiguration(role)
-                                            , this
-                                            , time);
+            synchronized (this) {
+                if (time <= nextCleanTime) {
+                    return;
+                }
+                nextCleanTime = time + ThrottleConstants.DEFAULT_THROTTLE_CLEAN_PERIOD;
+            }
+            boolean cleanupCompleted = false;
+            try {
+                SortedMap map = ((ConcurrentNavigableMap) callersMap).headMap(new Long(time));
+                if (map != null && map.size() > 0) {
+                    for (Iterator it = map.values().iterator(); it.hasNext(); ) {
+                        Object o = it.next();
+                        if (o != null) {
+                            if (o instanceof CallerContext) { // In the case nextAccessTime is unique
+                                CallerContext c = ((CallerContext) o);
+                                String key = c.getId();
+                                String role = c.getRoleId();
+                                if (key != null) {
+                                    if (dataHolder != null && keyPrefix != null) {
+                                        c = dataHolder.getCallerContext(key);
+                                    }
+                                    if (c != null) {
+                                        c.cleanUpCallers(
+                                                this.throttleConfiguration.getCallerConfiguration(role)
+                                                , this
+                                                , time);
+                                    }
                                 }
                             }
-                        }
-                        if (o instanceof LinkedList) { //In the case nextAccessTime of callers are same
-                            LinkedList callers = (LinkedList) o;
-                            synchronized (callers) {
-                                for (Iterator ite = callers.iterator(); ite.hasNext(); ) {
-                                    CallerContext c = (CallerContext) ite.next();
-                                    String key = c.getId();
-                                    String role = c.getRoleId();
-                                    if (key != null) {
-                                        if (dataHolder != null && keyPrefix != null) {
-                                            c = (CallerContext) dataHolder.getCallerContext(key);
-                                        }
-                                        if (c != null) {
-                                            c.cleanUpCallers(
-                                                    this.throttleConfiguration.getCallerConfiguration(role)
-                                                    , this
-                                                    , time);
+                            if (o instanceof LinkedList) { //In the case nextAccessTime of callers are same
+                                LinkedList callers = (LinkedList) o;
+                                synchronized (callers) {
+                                    for (Iterator ite = callers.iterator(); ite.hasNext(); ) {
+                                        CallerContext c = (CallerContext) ite.next();
+                                        String key = c.getId();
+                                        String role = c.getRoleId();
+                                        if (key != null) {
+                                            if (dataHolder != null && keyPrefix != null) {
+                                                c = (CallerContext) dataHolder.getCallerContext(key);
+                                            }
+                                            if (c != null) {
+                                                c.cleanUpCallers(
+                                                        this.throttleConfiguration.getCallerConfiguration(role)
+                                                        , this
+                                                        , time);
+                                            }
                                         }
                                     }
                                 }
@@ -281,8 +300,18 @@ public abstract class ThrottleContext {
                         }
                     }
                 }
+                cleanupCompleted = true;
+            } finally {
+                if (!cleanupCompleted) {
+                    // Cleanup aborted (exception/error) — roll the claim back so a subsequent
+                    // call retries rather than skipping cleanup for a full clean period.
+                    synchronized (this) {
+                        if (nextCleanTime == time + ThrottleConstants.DEFAULT_THROTTLE_CLEAN_PERIOD) {
+                            nextCleanTime = time;
+                        }
+                    }
+                }
             }
-            nextCleanTime = time + ThrottleConstants.DEFAULT_THROTTLE_CLEAN_PERIOD;
         }
     }
 
@@ -408,8 +437,13 @@ public abstract class ThrottleContext {
                     log.debug("Going to replicate the states of the caller : " + id);
                 }
 
-                throttleReplicator.setConfigContext(configctx);
-                throttleReplicator.add(id);
+                if (unifiedReplicatorEnabled) {
+                    unifiedThrottleReplicator.setConfigContext(configctx);
+                    unifiedThrottleReplicator.add(id);
+                } else {
+                    throttleReplicator.setConfigContext(configctx);
+                    throttleReplicator.add(id);
+                }
 
             } catch (Exception clusteringFault) {
                 log.error("Error during the replicating states ", clusteringFault);
@@ -428,8 +462,13 @@ public abstract class ThrottleContext {
                     log.debug("Going to replicate the time window states of the caller : " + id);
                 }
 
-                throttleWindowReplicator.setConfigContext(configctx);
-                throttleWindowReplicator.add(id);
+                if (unifiedReplicatorEnabled) {
+                    unifiedThrottleReplicator.setConfigContext(configctx);
+                    unifiedThrottleReplicator.add(id);
+                } else {
+                    throttleWindowReplicator.setConfigContext(configctx);
+                    throttleWindowReplicator.add(id);
+                }
 
             } catch (Exception e) {
                 log.error("Error during the replicating window change ", e);

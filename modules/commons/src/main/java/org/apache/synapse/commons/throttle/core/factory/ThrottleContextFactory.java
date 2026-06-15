@@ -30,6 +30,7 @@ public class ThrottleContextFactory {
     // Task for replicating CallerContexts.
     private static final ThrottleReplicator throttleReplicator = new ThrottleReplicator();
     private static final ThrottleWindowReplicator throttleWindowReplicator = new ThrottleWindowReplicator();
+    private static final UnifiedThrottleReplicator unifiedThrottleReplicator = new UnifiedThrottleReplicator();
     private static final ThrottleContextCleanupTask throttleContextCleanupTask = new ThrottleContextCleanupTask();
     /**
      * To create a ThrottleContext for the given throttle type
@@ -61,6 +62,16 @@ public class ThrottleContextFactory {
      */
     public static ThrottleWindowReplicator getThrottleWindowReplicatorInstance() {
         return throttleWindowReplicator;
+    }
+
+    /**
+     * Get the unified throttle replicator instance to make sure there is one unified replicator in the
+     * implementation
+     *
+     * @return UnifiedThrottleReplicator instance
+     */
+    public static UnifiedThrottleReplicator getUnifiedThrottleReplicatorInstance() {
+        return unifiedThrottleReplicator;
     }
 
     /**
