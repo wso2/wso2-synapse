@@ -39,6 +39,7 @@ public class ThrottleProperties implements Serializable {
 	private String distributedThrottleProcessorType = "hybrid";
 	private String hybridThrottleProcessorWindowType = "start_time_based";
 	private String localQuotaBufferPercentage = "20";
+	private boolean unifiedThrottleReplicatorEnabled = false;
 
 	public String getWindowReplicatorPoolSize() {
 		return windowReplicatorPoolSize;
@@ -192,5 +193,13 @@ public class ThrottleProperties implements Serializable {
 
 	public String getLocalQuotaBufferPercentage() {
 		return localQuotaBufferPercentage;
+	}
+	
+	public boolean isUnifiedThrottleReplicatorEnabled() {
+		return unifiedThrottleReplicatorEnabled;
+	}
+
+	public void setUnifiedThrottleReplicatorEnabled(boolean unifiedThrottleReplicatorEnabled) {
+		this.unifiedThrottleReplicatorEnabled = unifiedThrottleReplicatorEnabled;
 	}
 }

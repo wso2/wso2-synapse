@@ -166,6 +166,13 @@ public class ThrottleUtil {
 									Boolean.parseBoolean(throttleSyncAsyncHybridModeEnabled));
 						}
 					}
+					if (key.contains(ThrottleConstants.UNIFIED_THROTTLE_REPLICATOR_ENABLED)) {
+						String unifiedThrottleReplicatorEnabled = properties.getProperty(key);
+						if (StringUtils.isNotEmpty(unifiedThrottleReplicatorEnabled)) {
+							throttleProperties.setUnifiedThrottleReplicatorEnabled(
+									Boolean.parseBoolean(unifiedThrottleReplicatorEnabled));
+						}
+					}
 					if (key.contains(ThrottleConstants.HYBRID_THROTTLE_PROCESSOR_WINDOW_TYPE)) {
 						String hybridThrottleProcessorWindowType = properties.getProperty(key);
 						if (StringUtils.isNotEmpty(hybridThrottleProcessorWindowType)) {

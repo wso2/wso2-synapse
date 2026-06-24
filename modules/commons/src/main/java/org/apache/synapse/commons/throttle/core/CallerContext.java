@@ -40,9 +40,9 @@ public abstract class CallerContext implements Serializable, Cloneable {
     /* next access time - the end of prohibition */
     private long nextAccessTime = 0;
     /* first access time - when caller came across the on first time */
-    private long firstAccessTime = 0;
+    private volatile long firstAccessTime = 0;
     /* The nextTimeWindow - beginning of next unit time period- end of current unit time period  */
-    private long nextTimeWindow = 0;
+    private volatile long nextTimeWindow = 0;
     /* The globalCount to keep track number of request */
     private AtomicLong globalCount = new AtomicLong(0);
     private long localQuota;
@@ -52,7 +52,7 @@ public abstract class CallerContext implements Serializable, Cloneable {
      This is specific for each API EP
      if this is true, then syncing of throttle parameter with global redis counters be synced will be done in sync mode
      */
-    private boolean isThrottleParamSyncingModeSync;
+    private volatile boolean isThrottleParamSyncingModeSync;
     private ThrottleProperties throttleProperties;
 
 
@@ -146,7 +146,20 @@ public abstract class CallerContext implements Serializable, Cloneable {
         boolean canAccess = false;
         int maxRequest = configuration.getMaximumRequestPerUnitTime();
         if (maxRequest != 0) {
-            if ((this.globalCount.get() + this.localCount.get()) < maxRequest) {    //If the globalCount is less than max request
+            long currentLocal;
+            boolean incremented = false;
+            long requestedCount = eventCount == null ? 1L : eventCount;
+            do {
+                long currentGlobal = this.globalCount.get();
+                currentLocal = this.localCount.get();
+                if (currentGlobal + currentLocal + requestedCount > maxRequest) {
+                    break; // slot exhausted; do not increment
+                }
+                // Try to atomically increment only if localCount hasn't changed
+                incremented = this.localCount.compareAndSet(currentLocal, currentLocal + requestedCount);
+            } while (!incremented);
+
+            if (incremented) {
                 if (log.isDebugEnabled()) {
                     log.debug("CallerContext Checking access if unit time is not over and less than max count>> Access "
                             + "allowed=" + maxRequest + " available="+ (maxRequest - (this.globalCount.get() + this.localCount.get()))
@@ -155,7 +168,6 @@ public abstract class CallerContext implements Serializable, Cloneable {
                             + configuration.getID() + " nextAccessTime=" + this.nextAccessTime);
                 }
                 canAccess = true;     // can continue access
-                this.localCount.addAndGet(eventCount);
                 // Send the current state to others (clustered env)
                 throttleContext.flushCallerContext(this, id);
                 // can complete access
@@ -455,6 +467,14 @@ public abstract class CallerContext implements Serializable, Cloneable {
         localCount.incrementAndGet();
     }
 
+    public long getAndSetLocalCounter(long newValue) {
+        return localCount.getAndSet(newValue);
+    }
+
+    public void incrementLocalCounterBy(long delta) {
+        localCount.addAndGet(delta);
+    }
+
     public void decrementLocalCounter() {
         long currentValue;
         long newValue;
@@ -465,6 +485,14 @@ public abstract class CallerContext implements Serializable, Cloneable {
             }
             newValue = currentValue - 1;
         } while (!localCount.compareAndSet(currentValue, newValue));
+    }
+
+    public void subtractFromLocalCounterSafe(long amount) {
+        long current, next;
+        do {
+            current = localCount.get();
+            next = Math.max(0L, current - amount);
+        } while (!localCount.compareAndSet(current, next));
     }
 
     public long getGlobalCounter() {

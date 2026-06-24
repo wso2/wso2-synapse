@@ -123,10 +123,8 @@ public class SharedParamManager {
 		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
 			return distributedCounterManager.addAndGetCounter(id, value);
 		} else {
-			long currentCount = counters.get(id);
-			long updatedCount = currentCount + value;
-			counters.put(id, updatedCount);
-			return updatedCount;
+			// Atomically increment counter and return new total.
+			return counters.compute(id, (k, v) -> (v == null ? 0L : v) + value);
 		}
 	}
 
@@ -147,13 +145,13 @@ public class SharedParamManager {
 		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
 			return distributedCounterManager.asyncGetAndAddCounter(id, value);
 		} else {
-			Long currentCount = counters.get(id);
-			if(currentCount == null) {
-				currentCount = 0L;
-			}
-			long updatedCount = currentCount + value;
-			counters.put(id, updatedCount);
-			return currentCount;
+			// Atomically increment counter and return old value (before the add).
+			long[] oldValue = {0L};
+			counters.compute(id, (k, v) -> {
+				oldValue[0] = (v == null ? 0L : v);
+				return oldValue[0] + value;
+			});
+			return oldValue[0];
 		}
 	}
 
@@ -171,13 +169,13 @@ public class SharedParamManager {
 		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
 			return distributedCounterManager.asyncGetAndAlterCounter(id,value);
 		} else {
-			Long currentCount = counters.get(id);
-			if(currentCount == null) {
-				currentCount = 0L;
-			}
-			long updatedCount = currentCount + value;
-			counters.put(id, updatedCount);
-			return currentCount;
+			// Atomically alter counter and return old value (before the alter).
+			long[] oldValue = {0L};
+			counters.compute(id, (k, v) -> {
+				oldValue[0] = (v == null ? 0L : v);
+				return oldValue[0] + value;
+			});
+			return oldValue[0];
 		}
 	}
 
@@ -374,6 +372,109 @@ public class SharedParamManager {
 			if (log.isTraceEnabled()) {
 				log.trace("Current time:" + System.currentTimeMillis() + "Lock released for key: " + lockKey);
 			}
+		}
+	}
+	/**
+	 * Atomically reads the window timestamp and counter for the given caller id.
+	 *
+	 * @param id caller context id
+	 * @return long[2]: {timestamp, counter}
+	 */
+	public static long[] getWindowState(String id) {
+		String key = ThrottleConstants.THROTTLE_WINDOW_HASH_KEY + id;
+		DistributedCounterManager distributedCounterManager =
+				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
+		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
+			return distributedCounterManager.getWindowState(key);
+		} else {
+			String tsKey      = ThrottleConstants.THROTTLE_TIMESTAMP_KEY + id;
+			String counterKey = ThrottleConstants.THROTTLE_SHARED_COUNTER_KEY + id;
+			Long ts      = timestamps.get(tsKey);
+			Long counter = counters.get(counterKey);
+			return new long[]{
+					ts      != null ? ts      : 0L,
+					counter != null ? counter : 0L
+			};
+		}
+	}
+
+	/**
+	 * Unconditionally sets a throttle window by overwriting both timestamp and counter, then
+	 * refreshing the TTL. Must be called while holding the per-caller window lock.
+	 *
+	 * @param id         caller context id
+	 * @param count      initial counter value
+	 * @param ts         window first-access time in milliseconds
+	 * @param expiryTime absolute expiry timestamp in milliseconds (ts + unitTime)
+	 */
+	public static void setWindow(String id, long count, long ts, long expiryTime) {
+		String key = ThrottleConstants.THROTTLE_WINDOW_HASH_KEY + id;
+		DistributedCounterManager distributedCounterManager =
+				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
+		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
+			distributedCounterManager.setWindow(key, count, ts, expiryTime);
+		} else {
+			timestamps.put(ThrottleConstants.THROTTLE_TIMESTAMP_KEY + id, ts);
+			counters.put(ThrottleConstants.THROTTLE_SHARED_COUNTER_KEY + id, count);
+		}
+	}
+
+	/**
+	 * Atomically increments the window counter by {@code delta}.
+	 *
+	 * @param id    caller context id
+	 * @param delta value to add to the counter
+	 * @return new global counter value after the increment
+	 */
+	public static long incrWindowCounter(String id, long delta, long expiryTime) {
+		String key = ThrottleConstants.THROTTLE_WINDOW_HASH_KEY + id;
+		DistributedCounterManager distributedCounterManager =
+				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
+		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
+			return distributedCounterManager.incrWindowCounter(key, delta, expiryTime);
+		} else {
+			String counterKey = ThrottleConstants.THROTTLE_SHARED_COUNTER_KEY + id;
+			long[] result = {0L};
+			counters.compute(counterKey, (k, v) -> {
+				result[0] = ((v != null) ? v : 0L) + delta;
+				return result[0];
+			});
+			return result[0];
+		}
+	}
+
+	/**
+	 * Tries to acquire the per-caller window lock without blocking.
+	 * Returns {@code true} if the lock was acquired, {@code false} if another node holds it.
+	 * The lock TTL is set to {@code expiryTime} (absolute window boundary) so it auto-expires
+	 * when the window ends, even if the holder crashes mid-tick.
+	 *
+	 * @param id         caller context id
+	 * @param expiryTime absolute window-end timestamp in ms (localFAT + unitTime)
+	 * @return true if this node acquired the lock
+	 */
+	public static boolean tryWindowLock(String id, long expiryTime) {
+		DistributedCounterManager distributedCounterManager =
+				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
+		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
+			String lockKey = ThrottleConstants.THROTTLE_WINDOW_LOCK_KEY + id;
+			return distributedCounterManager.setLockWithExpiry(lockKey, "1", expiryTime);
+		}
+		return true;  // Single-JVM: no cluster contention, always proceed.
+	}
+
+	/**
+	 * Releases the per-caller window lock acquired by {@link #tryWindowLock}.
+	 * Should be called in a {@code finally} block after lock-protected Redis work completes.
+	 *
+	 * @param id caller context id
+	 */
+	public static void releaseWindowLock(String id) {
+		DistributedCounterManager distributedCounterManager =
+				ThrottleServiceDataHolder.getInstance().getDistributedCounterManager();
+		if (distributedCounterManager != null && distributedCounterManager.isEnable()) {
+			String lockKey = ThrottleConstants.THROTTLE_WINDOW_LOCK_KEY + id;
+			distributedCounterManager.removeLock(lockKey);
 		}
 	}
 }
