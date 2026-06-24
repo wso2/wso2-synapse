@@ -1681,7 +1681,7 @@
        <org.wso2.orbit.atlassian.oai.version>2.44.1.wso2v1</org.wso2.orbit.atlassian.oai.version>
        <swagger.parser.v3.version>2.1.37.wso2v1</swagger.parser.v3.version>
        <jaxen.version>2.0.0</jaxen.version>
-       <commons-compress.orbit.version>1.28.0.wso2v1</commons-compress.orbit.version>
+       <commons-compress.orbit.version>1.28.0.wso2v2</commons-compress.orbit.version>
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->

@@ -317,10 +317,8 @@ public class DeferredMessageBuilder {
                 pushbackInputStream.unread(bytesRead);
                 return new BrotliCompressorInputStream(pushbackInputStream);
             }
-        } else if (checkContentEncodingMatches(msgContext, "gzip")) {
-            return HTTPTransportUtils.handleGZip(msgContext, in);
         }
-        return in;
+        return HTTPTransportUtils.handleGZip(msgContext, in);
     }
 
     private static boolean checkContentEncodingMatches(MessageContext msgContext, String encoding) {
