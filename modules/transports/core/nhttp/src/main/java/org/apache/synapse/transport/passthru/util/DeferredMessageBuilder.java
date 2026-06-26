@@ -30,6 +30,7 @@ import org.apache.axis2.transport.TransportUtils;
 import org.apache.axis2.transport.http.*;
 import org.apache.axis2.util.JavaUtils;
 import org.apache.axis2.util.MessageProcessorSelector;
+import org.apache.commons.compress.compressors.brotli.BrotliCompressorInputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
@@ -39,6 +40,7 @@ import javax.xml.stream.XMLStreamException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PushbackInputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -102,7 +104,7 @@ public class DeferredMessageBuilder {
     	
 		String contentType = (String) msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE);
 		String _contentType = getContentType(contentType, msgCtx);
-		in = HTTPTransportUtils.handleGZip(msgCtx, in);
+		in = handleContentEncoding(msgCtx, in);
 
 		AxisConfiguration configuration = msgCtx.getConfigurationContext().getAxisConfiguration();
 		Parameter useFallbackParameter =
@@ -305,5 +307,23 @@ public class DeferredMessageBuilder {
                     type = HTTPConstants.MEDIA_TYPE_APPLICATION_XML;
         }
         return type;
+    }
+
+    private static InputStream handleContentEncoding(MessageContext msgContext, InputStream in) throws IOException {
+        if (checkContentEncodingMatches(msgContext, "br")) {
+            PushbackInputStream pushbackInputStream = new PushbackInputStream(in);
+            int bytesRead = pushbackInputStream.read();
+            if (bytesRead != -1) {
+                pushbackInputStream.unread(bytesRead);
+                return new BrotliCompressorInputStream(pushbackInputStream);
+            }
+        }
+        return HTTPTransportUtils.handleGZip(msgContext, in);
+    }
+
+    private static boolean checkContentEncodingMatches(MessageContext msgContext, String encoding) {
+        Map headers = (Map)msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
+        return headers != null && (encoding.equals(headers.get(HTTPConstants.HEADER_CONTENT_ENCODING))
+                || encoding.equals(headers.get(HTTPConstants.HEADER_CONTENT_ENCODING_LOWERCASE)));
     }
 }
