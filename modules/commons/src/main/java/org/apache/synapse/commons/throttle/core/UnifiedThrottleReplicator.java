@@ -31,6 +31,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Unified throttle window and counter replicator that serializes both window and counter
@@ -59,6 +60,11 @@ public class UnifiedThrottleReplicator {
     // in-flight push (its delta is in Redis but not yet subtracted from localCount) and can
     // briefly reject a caller that is actually under its limit.
     private final ConcurrentHashMap<String, Boolean> processing = new ConcurrentHashMap<>();
+
+    // Log at most one connection-error ERROR per this interval; extras go to DEBUG.
+    private static final long CONNECTION_ERROR_LOG_INTERVAL_MS = 30_000L;
+    private final AtomicLong lastConnectionErrorLogTime = new AtomicLong(0L);
+    private final AtomicLong consecutiveConnectionErrors = new AtomicLong(0L);
 
     public UnifiedThrottleReplicator() {
         throttleProperties = ThrottleServiceDataHolder.getInstance().getThrottleProperties();
@@ -179,7 +185,15 @@ public class UnifiedThrottleReplicator {
                     // Single-shot Redis lock attempt — no spin. If the lock is held by another
                     // cluster node, re-queue this key so another replicator thread can retry it
                     // within the same tick rather than blocking this thread or discarding the key.
-                    boolean lockAcquired = SharedParamManager.tryWindowLock(id, localFAT + unitTime);
+                    boolean lockAcquired = false;
+                    try {
+                        lockAcquired = SharedParamManager.tryWindowLock(id, localFAT + unitTime);
+                        onReplicationSuccess();
+                    } catch (DistributedCounterException e) {
+                        logReplicationError("Failed to acquire window lock for key=" + key
+                                + ". Redis may be unavailable. Will retry on next tick.", e);
+                        continue;  // No lock acquired, no lock to release.
+                    }
                     if (!lockAcquired) {
                         if (log.isDebugEnabled()) {
                             log.debug("Could not acquire window lock for callerId=" + id
@@ -208,8 +222,9 @@ public class UnifiedThrottleReplicator {
                         long[] windowState;
                         try {
                             windowState = SharedParamManager.getWindowState(id);
-                        } catch (Exception e) {
-                            log.error("Failed to read window state from Redis for key=" + key
+                            onReplicationSuccess();
+                        } catch (DistributedCounterException e) {
+                            logReplicationError("Failed to read window state from Redis for key=" + key
                                     + ". Will retry on next tick.", e);
                             continue;
                         }
@@ -227,8 +242,9 @@ public class UnifiedThrottleReplicator {
                         // Branch A: No active Redis window. Create it with this node's snapshot.
                         try {
                             SharedParamManager.setWindow(id, snapshotCounter, localFAT, localFAT + unitTime);
-                        } catch (Exception e) {
-                            log.error("Failed to set Redis window for key=" + key
+                            onReplicationSuccess();
+                        } catch (DistributedCounterException e) {
+                            logReplicationError("Failed to set Redis window for key=" + key
                                     + ". Will retry on next tick.", e);
                             continue;
                         }
@@ -319,6 +335,7 @@ public class UnifiedThrottleReplicator {
 
                         try {
                             long newTotal = SharedParamManager.incrWindowCounter(id, alignedSnapshot, sharedNextWindow);
+                            onReplicationSuccess();
                             synchronized (id.intern()) {
                                 if (callerContext.getFirstAccessTime() == sharedTimestamp
                                         && sharedNextWindow > System.currentTimeMillis()) {
@@ -336,8 +353,8 @@ public class UnifiedThrottleReplicator {
                                 log.debug("Replicated callerId=" + id
                                         + " pushed=" + alignedSnapshot + " total=" + newTotal);
                             }
-                        } catch (Exception e) {
-                            log.error("Failed to push counter for key=" + key
+                        } catch (DistributedCounterException e) {
+                            logReplicationError("Failed to push counter for key=" + key
                                     + ". Local count preserved (" + alignedSnapshot + ").", e);
                             continue;
                         }
@@ -363,6 +380,7 @@ public class UnifiedThrottleReplicator {
 
                         try {
                             long newTotal = SharedParamManager.incrWindowCounter(id, snapshotCounter, localFAT + unitTime);
+                            onReplicationSuccess();
                             synchronized (id.intern()) {
                                 if (callerContext.getFirstAccessTime() == localFAT
                                         && localFAT + unitTime > System.currentTimeMillis()) {
@@ -380,8 +398,8 @@ public class UnifiedThrottleReplicator {
                                 log.debug("Replicated callerId=" + id
                                         + " pushed=" + snapshotCounter + " total=" + newTotal);
                             }
-                        } catch (Exception e) {
-                            log.error("Failed to push counter for key=" + key
+                        } catch (DistributedCounterException e) {
+                            logReplicationError("Failed to push counter for key=" + key
                                     + ". Local count preserved (" + snapshotCounter + ").", e);
                             continue;
                         }
@@ -427,6 +445,7 @@ public class UnifiedThrottleReplicator {
                                                   long localFAT, long unitTime) {
             try {
                 long[] windowState = SharedParamManager.getWindowState(id);
+                onReplicationSuccess();
                 if (windowState[0] != localFAT) {
                     // Different or absent Redis window — leave realignment to the push path.
                     return;
@@ -443,12 +462,44 @@ public class UnifiedThrottleReplicator {
                         }
                     }
                 }
-            } catch (Exception e) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Lock-free global counter refresh failed for callerId=" + id
-                            + "; relying on push-path refresh next tick.", e);
-                }
+            } catch (DistributedCounterException e) {
+                logReplicationError("Lock-free global counter refresh failed for callerId=" + id
+                        + "; relying on push-path refresh next tick.", e);
             }
+        }
+    }
+    /**
+     * Logs a Redis operation error. Transient connection errors (Redis unreachable, timeout, etc.)
+     * are suppressed after the first ERROR within CONNECTION_ERROR_LOG_INTERVAL_MS to prevent log
+     * flooding during an outage — subsequent connection errors within the interval are dropped
+     * (in DEBUG mode all errors are logged individually without suppression). Non-transient errors
+     * (data faults, programming errors) are always logged at ERROR regardless.
+     */
+    private void logReplicationError(String message, DistributedCounterException e) {
+        if (e.isTransient()) {
+            long count = consecutiveConnectionErrors.incrementAndGet();
+            long now = System.currentTimeMillis();
+            long lastLog = lastConnectionErrorLogTime.get();
+            boolean shouldLog = now - lastLog > CONNECTION_ERROR_LOG_INTERVAL_MS
+                    && lastConnectionErrorLogTime.compareAndSet(lastLog, now);
+            if (log.isDebugEnabled()) {
+                // Debug mode: log every connection error individually without rate-limiting.
+                log.debug(message, e);
+            } else if (shouldLog) {
+                log.error(message + " [Transient connection error; suppressing for "
+                        + CONNECTION_ERROR_LOG_INTERVAL_MS / 1000 + "s, "
+                        + count + " transient errors since last success]", e);
+            }
+        } else {
+            log.error(message, e);
+        }
+    }
+
+    private void onReplicationSuccess() {
+        lastConnectionErrorLogTime.set(0L);
+        long prev = consecutiveConnectionErrors.getAndSet(0L);
+        if (prev > 0) {
+            log.warn("Distributed counter connection restored after " + prev + " consecutive connection errors.");
         }
     }
 }

@@ -141,7 +141,7 @@ public interface DistributedCounterManager {
 
     public long setLock(String key, String value);
 
-    public boolean setLockWithExpiry(String key, String value, long expiryTimeStamp);
+    public boolean setLockWithExpiry(String key, String value, long expiryTimeStamp) throws DistributedCounterException;
 
     public long getKeyLockRetrievalTimeout();
 
@@ -153,7 +153,7 @@ public interface DistributedCounterManager {
      * @param key distributed store key
      * @return long[2]: {timestamp, counter}
      */
-    default long[] getWindowState(String key) {
+    default long[] getWindowState(String key) throws DistributedCounterException {
         throw new UnsupportedOperationException("Not implemented");
     }
 
@@ -167,7 +167,7 @@ public interface DistributedCounterManager {
      * @param ts         window first-access time in milliseconds
      * @param expiryTime absolute expiry timestamp in milliseconds (ts + unitTime)
      */
-    default void setWindow(String key, long count, long ts, long expiryTime) {
+    default void setWindow(String key, long count, long ts, long expiryTime) throws DistributedCounterException {
         throw new UnsupportedOperationException("Not implemented");
     }
 
@@ -182,7 +182,7 @@ public interface DistributedCounterManager {
      * @param expiryTime absolute window-end timestamp in ms (sharedTimestamp + unitTime)
      * @return new global counter value after the increment
      */
-    default long incrWindowCounter(String key, long delta, long expiryTime) {
+    default long incrWindowCounter(String key, long delta, long expiryTime) throws DistributedCounterException {
         throw new UnsupportedOperationException("Not implemented");
     }
 }
