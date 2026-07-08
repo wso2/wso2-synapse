@@ -437,9 +437,8 @@ public class InvokeMediator extends AbstractMediator implements
             Object messageType = axis2MessageContext.getProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE);
             Object contentType = axis2MessageContext.getProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE);
             Object headers = axis2MessageContext.getProperty(TRANSPORT_HEADERS);
-            Map transportHeadersMap = (Map) headers;
-            // Create a clone of the original transport headers
-            transportHeadersMap = new TreeMap(transportHeadersMap);
+			// Create a clone of the original transport headers, guarding against null
+			Map transportHeadersMap = (headers != null) ? new TreeMap((Map) headers) : new TreeMap();
             synCtx.setProperty(ORIGINAL_MESSAGE_TYPE + "_" + SynapseConstants.BEFORE_INVOKE_TEMPLATE, messageType);
             synCtx.setProperty(ORIGINAL_CONTENT_TYPE + "_" + SynapseConstants.BEFORE_INVOKE_TEMPLATE, contentType);
             synCtx.setProperty(ORIGINAL_TRANSPORT_HEADERS + "_" +
