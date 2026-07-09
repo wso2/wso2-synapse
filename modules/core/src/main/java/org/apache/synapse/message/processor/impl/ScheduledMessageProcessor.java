@@ -38,6 +38,7 @@ import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskManager;
 import org.apache.synapse.task.TaskManagerObserver;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -79,9 +80,11 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
 	private TaskManager taskManager = null;
 	/**
-	 * Task associated with Message Processor
+	 * All ForwardingService/SamplingService/FailoverForwardingService instances created in start(),
+	 * one per memberCount slot. Used by terminate() to stop ALL workers (not just the last one),
+	 * and by resumeRemotely() to reset each instance's isTerminated flag.
 	 */
-	private Task task;
+	private final List<Task> tasks = new ArrayList<Task>();
 
 	private int memberCount = 1;
 
@@ -167,13 +170,16 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
     @Override
     public boolean start() {
+		// Reset the per-slot Task list before populating (idempotent under update() start()).
+		tasks.clear();
 		for (int i = 0; i < memberCount; i++) {
 			/*
 			 * Make sure to fetch the task after initializing the message sender
 			 * and consumer properly. Otherwise you may get NullPointer
 			 * exceptions.
 			 */
-			task = this.getTask();
+			Task task = this.getTask();
+			tasks.add(task);
 			TaskDescription taskDescription = new TaskDescription();
 			taskDescription.setName(TASK_PREFIX + name + SYMBOL_UNDERSCORE + i);
 			taskDescription.setTaskGroup(MessageProcessorConstants.SCHEDULED_MESSAGE_PROCESSOR_GROUP);
@@ -442,6 +448,14 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
     @Override
     public void resumeService() {
+		// Mirror pauseService()->terminate(): clear isTerminated so workers reconnect on resume.
+		for (Task task : tasks) {
+			if (task instanceof ForwardingService) {
+				((ForwardingService) task).resetTerminated();
+			} else if (task instanceof FailoverForwardingService) {
+				((FailoverForwardingService) task).resetTerminated();
+			}
+		}
 		for (int i = 0; i < memberCount; i++) {
 			taskManager.resume(TASK_PREFIX + name + SYMBOL_UNDERSCORE + i);
 		}
@@ -547,6 +561,12 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     public void cleanupLocalResources() {
         if (messageConsumers != null) {
             for (MessageConsumer messageConsumer : messageConsumers) {
+                // This cleanup is processor teardown. Mark the consumer dead before
+                // closing its resources so a task racing with pause/destroy cannot reconnect from
+                // receive() and leave a new JMS connection outside the processor lifecycle. Broker
+                // failure cleanup inside JmsConsumer.receive() does not set this flag, so that path
+                // can still use its reconnect retry logic. No-op for RabbitMQ.
+                messageConsumer.setAlive(false);
                 messageConsumer.cleanup();
             }
         }
@@ -619,12 +639,17 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     }
 
 	private void terminate() {
-		if (task instanceof ForwardingService) {
-			((ForwardingService) task).terminate();
-		} else if (task instanceof SamplingService) {
-			((SamplingService) task).terminate();
-		} else if (task instanceof FailoverForwardingService) {
-			((FailoverForwardingService) task).terminate();
+		// Iterate ALL memberCount slots  previously only this.task (the last one
+		// created in start()) was terminated, leaving the other N-1 workers free to reconnect
+		// after cleanupLocalResources() and create orphan consumers.
+		for (Task task : tasks) {
+			if (task instanceof ForwardingService) {
+				((ForwardingService) task).terminate();
+			} else if (task instanceof SamplingService) {
+				((SamplingService) task).terminate();
+			} else if (task instanceof FailoverForwardingService) {
+				((FailoverForwardingService) task).terminate();
+			}
 		}
 	}
 
@@ -650,5 +675,17 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	@Override
 	public void resumeRemotely() {
 		setMessageProcessorState(ProcessorState.RUNNING);
+		// Reset the per-slot isTerminated flag so the re-init guard (Syn-C, gated on
+		// !isTerminated) allows the next Quartz fire to rebuild a consumer. Same FwdSvc instances
+		// are reused across pause/resume  without this, terminate-all on pause would permanently
+		// brick every slot on resume (line 261's self-reset can't fire without a working consumer).
+		// SamplingService is intentionally skipped  it has no isTerminated state (different design).
+		for (Task task : tasks) {
+			if (task instanceof ForwardingService) {
+				((ForwardingService) task).resetTerminated();
+			} else if (task instanceof FailoverForwardingService) {
+				((FailoverForwardingService) task).resetTerminated();
+			}
+		}
 	}
 }

@@ -253,6 +253,32 @@ public class ForwardingService implements Task, ManagedLifecycle {
 		boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
 		AspectConfiguration aspectConfiguration = messageProcessor.getAspectConfiguration();
 
+
+		// Refuse to reconnect while this slot is terminated. During the
+		// pauseAllLocallyRunningTasks cascade, terminate() (now terminate-all per Syn-A) sets
+		// isTerminated=true on every FwdSvc; without this guard, an un-paused worker would re-enter
+		// execute() between cleanupLocalResources() and its own Quartz pauseJob, see the dead
+		// consumer, and call setMessageConsumer() which appends a fresh consumer after cleanup 
+		// the orphan. resumeRemotely() resets isTerminated on resume so this guard re-opens cleanly.
+		if (!isTerminated && (messageConsumer == null || !messageConsumer.isAlive())) {
+			try {
+				setMessageConsumer();
+			} catch (StoreForwardException | SynapseException e) {
+				// Rebuilding the consumer can fail while the store is unavailable.
+				// With no existing consumer there is nothing useful to do in this fire. If an old
+				// consumer still exists, continue to fetch(): broker-failure cleanup leaves the raw
+				// JMS isAlive flag true, so receive() can reconnect through the normal retry path.
+				// A teardown-marked consumer has the flag set to false and receive() returns null.
+				if (messageConsumer == null) {
+					log.error("[" + messageProcessor.getName()
+							+ "] Failed to initialise message consumer; message store unavailable.", e);
+					return;
+				}
+				log.warn("[" + messageProcessor.getName()
+						+ "] Message store unavailable while re-initialising consumer; "
+						+ "will attempt reconnect via the fetch loop.");
+			}
+		}
 		do {
 			resetService();
 			MessageContext messageContext = null;
@@ -975,6 +1001,16 @@ public class ForwardingService implements Task, ManagedLifecycle {
 					+ messageProcessor.getName() + "]");
 			return false;
 		}
+	}
+
+	/**
+	 * Reset isTerminated so the re-init guard at {@link #execute()} can rebuild a
+	 * consumer on the next Quartz fire. Called by {@code ScheduledMessageProcessor.resumeRemotely()}
+	 * via {@code ScheduledTaskManager.scheduleCoordinatedTask} on every resume  pairs with the
+	 * terminate-all set by {@code ScheduledMessageProcessor.terminate()} on pause.
+	 */
+	public void resetTerminated() {
+		isTerminated = false;
 	}
 
 	/*
