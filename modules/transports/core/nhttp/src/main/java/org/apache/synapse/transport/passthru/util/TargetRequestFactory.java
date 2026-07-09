@@ -61,8 +61,9 @@ public class TargetRequestFactory {
 
             // basic request
             Boolean noEntityBody = (Boolean) msgContext.getProperty(PassThroughConstants.NO_ENTITY_BODY);
-            
-            if(msgContext.getEnvelope().getBody().getFirstElement() != null){
+
+            if(msgContext.getEnvelope().getBody() != null
+                    && msgContext.getEnvelope().getBody().getFirstElement() != null){
             	noEntityBody  =false;
             }
 
