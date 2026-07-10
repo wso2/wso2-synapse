@@ -172,8 +172,14 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
             synLog.traceTrace("Message : " + synCtx.getEnvelope());
         }
 
+        StringBuilder schemaKeyBuilder = new StringBuilder();
+        for (Value schemaKey : schemaKeys) {
+            schemaKeyBuilder.append(schemaKey.evaluateValue(synCtx));
+        }
+        String keyStr = schemaKeyBuilder.toString();
+
         org.apache.axis2.context.MessageContext a2mc = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-        if (JsonUtil.hasAJsonPayload(a2mc) || sourcePath instanceof SynapseJsonPath || isJsonSchema(synCtx)) {
+        if (JsonUtil.hasAJsonPayload(a2mc) || sourcePath instanceof SynapseJsonPath || isJsonSchema(synCtx, keyStr)) {
             ProcessingReport report;
 
 
@@ -863,4 +869,43 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
         return false;
     }
 
+    /**
+    * Inspects the first configured schema key content to determine if it is a JSON Schema.
+    * Includes optimizations to read cache maps first and avoid heavy element serialization.
+    */
+    private boolean isJsonSchema(MessageContext synCtx, String combinedPropertyKey) {
+        if (cachedJsonSchemaMap.containsKey(combinedPropertyKey)) {
+            return true;
+        }
+        if (cachedSchemaMap.containsKey(combinedPropertyKey)) {
+            return false;
+        }
+        if (schemaKeys == null || schemaKeys.isEmpty()) {
+            return false;
+        }
+        try {
+            String propName = schemaKeys.get(0).evaluateValue(synCtx);
+            Object schemaObject = synCtx.getEntry(propName);
+            if (schemaObject != null) {
+                String content = "";
+                if (schemaObject instanceof String) {
+                    content = ((String) schemaObject).trim();
+                } else if (schemaObject instanceof org.apache.axiom.om.OMElement) {
+                    org.apache.axiom.om.OMElement omElement = (org.apache.axiom.om.OMElement) schemaObject;
+                    if ("binary".equals(omElement.getLocalName()) &&
+                        "http://ws.apache.org/commons/ns/payload".equals(omElement.getNamespace().getNamespaceURI())) {
+                        content = omElement.getText().trim();
+                    }
+                } else if (schemaObject instanceof org.apache.axiom.om.OMText) {
+                    content = ((org.apache.axiom.om.OMText) schemaObject).getText().trim();
+                }
+                if (content.startsWith("{") || content.startsWith("[")) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Failed to inspect schema content for JSON detection", e);
+        }
+        return false;
+    }
 }
