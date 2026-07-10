@@ -173,8 +173,9 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
         }
 
         org.apache.axis2.context.MessageContext a2mc = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-        if (JsonUtil.hasAJsonPayload(a2mc)) {
+        if (JsonUtil.hasAJsonPayload(a2mc) || sourcePath instanceof SynapseJsonPath || isJsonSchema(synCtx)) {
             ProcessingReport report;
+
 
             // This JsonSchema used if user decide not to cache the schema. In such a situation jsonSchema will not used.
             JsonSchema uncachedJsonSchema = null;
@@ -831,6 +832,35 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                 StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(), ComponentType.MEDIATOR, holder);
         getAspectConfiguration().setUniqueId(mediatorId);
         StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR, holder);
+    }
+
+    /**
+    * Inspects the first configured schema key content to determine if it is a JSON Schema.
+    */
+    private boolean isJsonSchema(MessageContext synCtx) {
+        if (schemaKeys == null || schemaKeys.isEmpty()) {
+            return false;
+        }
+        try {
+            String propName = schemaKeys.get(0).evaluateValue(synCtx);
+            Object schemaObject = synCtx.getEntry(propName);
+            if (schemaObject != null) {
+                String content = "";
+                if (schemaObject instanceof String) {
+                    content = ((String) schemaObject).trim();
+                } else if (schemaObject instanceof org.apache.axiom.om.OMElement) {
+                    content = ((org.apache.axiom.om.OMElement) schemaObject).toString().trim();
+                } else if (schemaObject instanceof org.apache.axiom.om.OMText) {
+                    content = ((org.apache.axiom.om.OMText) schemaObject).getText().trim();
+                }
+                if (content.startsWith("{") || content.startsWith("[")) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            // Ignore and fallback
+        }
+        return false;
     }
 
 }
