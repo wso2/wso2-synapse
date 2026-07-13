@@ -152,6 +152,8 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
      */
     private boolean cacheSchema = true;
 
+    private boolean isJSONSource = false;
+
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     public boolean mediate(MessageContext synCtx) {
 
@@ -173,7 +175,7 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
         }
 
         org.apache.axis2.context.MessageContext a2mc = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-        if (JsonUtil.hasAJsonPayload(a2mc)) {
+        if (isJSONSource || JsonUtil.hasAJsonPayload(a2mc)) {
             ProcessingReport report;
 
             // This JsonSchema used if user decide not to cache the schema. In such a situation jsonSchema will not used.
@@ -815,6 +817,16 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
      */
     public boolean isCacheSchema() {
         return cacheSchema;
+    }
+
+    public void setIsJSONSource(boolean isJSONSourcePath) {
+
+        this.isJSONSource = isJSONSourcePath;
+    }
+
+    public boolean isJSONSource() {
+
+        return isJSONSource;
     }
 
     @Override

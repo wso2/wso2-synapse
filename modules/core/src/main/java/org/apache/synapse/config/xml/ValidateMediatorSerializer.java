@@ -81,6 +81,10 @@ public class ValidateMediatorSerializer extends AbstractListMediatorSerializer {
                 String.valueOf(mediator.isCacheSchema()));
         validate.addAttribute(cacheSchemaAtt);
 
+        if (mediator.isJSONSource()) {
+            validate.addAttribute(fac.createOMAttribute("json-source", nullNS, "true"));
+        }
+
         serializeComments(validate, mediator.getCommentsList());
 
         return validate;
