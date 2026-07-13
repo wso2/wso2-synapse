@@ -171,6 +171,34 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
         boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         AspectConfiguration aspectConfiguration = messageProcessor.getAspectConfiguration();
 
+        /*
+         * If a previous pauseMessageProcessorTemporarily cycle marked the consumer as not alive,
+         * rebuild it via setMessageConsumerAndProducer() so this fire has a usable fresh JmsConsumer
+         * instance. Without this, the receive() guard in JmsConsumer would short-circuit every fetch
+         * and the task would never dequeue another message until the processor is restarted.
+         */
+        // Refuse to reconnect while this slot is terminated. Pairs with
+        // ScheduledMessageProcessor.terminate() (now terminate-all) on pause and
+        // resumeRemotely() resetTerminated on resume. Same rationale as ForwardingService:237.
+        if (!isTerminated && (messageConsumer == null || !messageConsumer.isAlive())) {
+            try {
+                setMessageConsumerAndProducer();
+            } catch (StoreForwardException | SynapseException e) {
+                // Rebuilding the consumer can fail while the store is unavailable.
+                // With no existing consumer there is nothing useful to do in this fire. If an old
+                // consumer still exists, continue to fetch(): broker-failure cleanup leaves the raw
+                // JMS isAlive flag true, so receive() can reconnect through the normal retry path.
+                // A teardown-marked consumer has the flag set to false and receive() returns null.
+                if (messageConsumer == null) {
+                    log.error("[" + messageProcessor.getName()
+                            + "] Failed to initialise message consumer; message store unavailable.", e);
+                    return;
+                }
+                log.warn("[" + messageProcessor.getName()
+                        + "] Message store unavailable while re-initialising consumer; "
+                        + "will attempt reconnect via the fetch loop.");
+            }
+        }
         do {
             resetService();
             MessageContext messageContext = null;
@@ -495,6 +523,16 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
                       messageProcessor.getName() + "]");
             return false;
         }
+    }
+
+    /**
+     * Reset isTerminated so the re-init guard at the top of execute() can rebuild a
+     * consumer on the next Quartz fire. Called by {@code ScheduledMessageProcessor.resumeRemotely()}
+     * on every resume  pairs with the terminate-all set by
+     * {@code ScheduledMessageProcessor.terminate()} on pause.
+     */
+    public void resetTerminated() {
+        isTerminated = false;
     }
 
     /*
