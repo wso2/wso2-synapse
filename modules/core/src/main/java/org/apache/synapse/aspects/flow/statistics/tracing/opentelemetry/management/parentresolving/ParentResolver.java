@@ -66,6 +66,6 @@ public class ParentResolver {
         }
 
         // Resolve based on latest active span
-        return LatestActiveParentResolver.resolveParent(spanStore);
+        return LatestActiveParentResolver.resolveParent(spanStore, synCtx);
     }
 }

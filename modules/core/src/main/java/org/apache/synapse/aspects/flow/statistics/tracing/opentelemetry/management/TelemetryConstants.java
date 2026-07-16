@@ -57,6 +57,31 @@ public class TelemetryConstants {
     public static final String OPENTELEMETRY_METRIC_PUSH_INTERVAL_SECONDS = "opentelemetry.metric.push.interval.seconds";
 
     public static final String OPENTELEMETRY_METRIC_DEFAULT_PUSH_INTERVAL_SECONDS = "60";
+
+    /**
+     * Maximum number of spans kept in the queue before being dropped.
+     */
+    public static final String OPENTELEMETRY_BSP_MAX_QUEUE_SIZE = "opentelemetry.bsp.max.queue.size";
+    public static final String OPENTELEMETRY_BSP_DEFAULT_MAX_QUEUE_SIZE = "2048";
+
+    /**
+     * Maximum number of spans exported in a single batch.
+     */
+    public static final String OPENTELEMETRY_BSP_MAX_EXPORT_BATCH_SIZE = "opentelemetry.bsp.max.export.batch.size";
+    public static final String OPENTELEMETRY_BSP_DEFAULT_MAX_EXPORT_BATCH_SIZE = "512";
+
+    /**
+     * Delay interval (in milliseconds) between two consecutive span exports.
+     */
+    public static final String OPENTELEMETRY_BSP_SCHEDULE_DELAY_MILLIS = "opentelemetry.bsp.schedule.delay.millis";
+    public static final String OPENTELEMETRY_BSP_DEFAULT_SCHEDULE_DELAY_MILLIS = "5000";
+
+    /**
+     * Maximum time (in milliseconds) the exporter is allowed to run before being cancelled.
+     */
+    public static final String OPENTELEMETRY_BSP_EXPORT_TIMEOUT_MILLIS = "opentelemetry.bsp.export.timeout.millis";
+    public static final String OPENTELEMETRY_BSP_DEFAULT_EXPORT_TIMEOUT_MILLIS = "30000";
+
     /**
      * HTTP protocol constant.
      */
