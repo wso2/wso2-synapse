@@ -575,7 +575,7 @@ public class MessageHelper {
      */
     public static SOAPEnvelope cloneSOAPEnvelope(SOAPEnvelope envelope) {
         SOAPFactory fac;
-        if (SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI
+        if (envelope.getBody() != null && SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI
                 .equals(envelope.getBody().getNamespace().getNamespaceURI())) {
             fac = OMAbstractFactory.getSOAP11Factory();
         } else {
