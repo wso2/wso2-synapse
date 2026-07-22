@@ -353,7 +353,15 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
         if (taskDescription == null) {
             handleException("Error while initializing the startup. TaskDescription is null.");
         }
-        configureStartupStateFromRegistry(taskDescription);
+        boolean skipConfiguringStartupState = false;
+        Object skipConfiguringStartupStateProp = taskDescription.getProperty(TaskConstants.SKIP_START_IN_PAUSED_MODE_ASSIGNMENT);
+        if (skipConfiguringStartupStateProp != null) {
+            skipConfiguringStartupState = Boolean.parseBoolean((String) skipConfiguringStartupStateProp);
+        }
+
+        if (!skipConfiguringStartupState) {
+            configureStartupStateFromRegistry(taskDescription);
+        }
         initSynapseTaskManager(synapseEnvironment);
         TaskDescriptionRepository repository = synapseTaskManager.getTaskDescriptionRepository();
         if (repository == null) {

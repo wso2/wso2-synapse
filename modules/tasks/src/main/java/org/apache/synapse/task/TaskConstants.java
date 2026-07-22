@@ -28,4 +28,6 @@ public final class TaskConstants {
     public static final String TASK_DESCRIPTION_REPOSITORY = "task_description_repository";
 
     public static final String SYNAPSE_ENV = "SynapseEnvironment";
+
+    public static final String SKIP_START_IN_PAUSED_MODE_ASSIGNMENT = "skipStartInPauseModeAssignment";
 }
