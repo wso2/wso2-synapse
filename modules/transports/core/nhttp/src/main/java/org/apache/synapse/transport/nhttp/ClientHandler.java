@@ -198,7 +198,7 @@ public class ClientHandler implements NHttpClientEventHandler {
         this.connStrategy = new DefaultConnectionReuseStrategy();
         this.metrics = metrics;
         this.allocator = new HeapByteBufferAllocator();
-        this.threadingView = new ThreadingView("HttpClientWorker", true, 50);
+        this.threadingView = ThreadingView.getInstance("HttpClientWorker", true, 50);
 
         this.cfg = NHttpConfiguration.getInstance();
         workerPool = WorkerPoolFactory.getWorkerPool(
