@@ -71,7 +71,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
      */
     private boolean globalFileLockingFlag = true;
 
-    private VFSParamDTO vfsParamDTO = null;
+    private VFSParamDTO vfsParameters = null;
     /**
      * Map to hold lock object for each host per service when operating in synchronous write mode
      */
@@ -153,10 +153,10 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                 }
 
             }
-            vfsParamDTO = new VFSParamDTO();
-            vfsParamDTO.setAutoLockRelease(autoLockRelease);
-            vfsParamDTO.setAutoLockReleaseInterval(autoLockReleaseInterval);
-            vfsParamDTO.setAutoLockReleaseSameNode(autoLockReleaseSameNode);
+            vfsParameters = new VFSParamDTO();
+            vfsParameters.setAutoLockRelease(autoLockRelease);
+            vfsParameters.setAutoLockReleaseInterval(autoLockReleaseInterval);
+            vfsParameters.setAutoLockReleaseSameNode(autoLockReleaseSameNode);
         } catch (FileSystemException e) {
             String message = "Error initializing the file transport : " + e.getMessage();
             VFSTransportErrorHandler.handleException(log, message, e);
@@ -296,8 +296,14 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                         // before uploading the file
                         if (vfsOutInfo.isFileLockingEnabled()) {
                             acquireLockForSending(responseFile, vfsOutInfo, fso, configName);
-                            populateResponseFile(responseFile, msgCtx,append, true, updateLastModified, fso);
-                            VFSUtils.releaseLock(getFsManager(), responseFile, fso);
+                            // Release the lock from one place for every result
+                            // after it has been acquired. This prevents a second
+                            // release from deleting another sender's lock.
+                            try {
+                                populateResponseFile(responseFile, msgCtx,append, true, updateLastModified, fso);
+                            } finally {
+                                VFSUtils.releaseLock(getFsManager(), responseFile, fso);
+                            }
                         } else {
                             populateResponseFile(responseFile, msgCtx,append, false, updateLastModified, fso);
                         }
@@ -308,8 +314,11 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                         // before uploading the file
                         if (vfsOutInfo.isFileLockingEnabled()) {
                             acquireLockForSending(replyFile, vfsOutInfo, fso, configName);
-                            populateResponseFile(replyFile, msgCtx, append, true, updateLastModified, fso);
-                            VFSUtils.releaseLock(getFsManager(), replyFile, fso);
+                            try {
+                                populateResponseFile(replyFile, msgCtx, append, true, updateLastModified, fso);
+                            } finally {
+                                VFSUtils.releaseLock(getFsManager(), replyFile, fso);
+                            }
                         } else {
                             populateResponseFile(replyFile, msgCtx, append, false, updateLastModified, fso);
                         }
@@ -323,8 +332,11 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                     // if file locking is not disabled acquire the lock before uploading the file
                     if (vfsOutInfo.isFileLockingEnabled()) {
                         acquireLockForSending(replyFile, vfsOutInfo, fso, configName);
-                        populateResponseFile(replyFile, msgCtx, append, true, updateLastModified, fso);
-                        VFSUtils.releaseLock(getFsManager(), replyFile, fso);
+                        try {
+                            populateResponseFile(replyFile, msgCtx, append, true, updateLastModified, fso);
+                        } finally {
+                            VFSUtils.releaseLock(getFsManager(), replyFile, fso);
+                        }
                     } else {
                         populateResponseFile(replyFile, msgCtx, append, false, updateLastModified, fso);
                     }
@@ -375,8 +387,8 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
     }
 
     protected void populateResponseFile(FileObject responseFile, MessageContext msgContext,
-                                      boolean append, boolean lockingEnabled, boolean updateLastModified,
-                                        FileSystemOptions fso) throws AxisFault {
+                                      boolean append, boolean fileLockingEnabled, boolean updateLastModified,
+                                      FileSystemOptions fso) throws AxisFault {
         MessageFormatter messageFormatter = getMessageFormatter(msgContext);
         OMOutputFormat format = BaseUtils.getOMOutputFormat(msgContext);
         String configName = (String) msgContext.getProperty("_INTERNAL_TRIGGER_NAME");
@@ -410,9 +422,8 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
             metrics.incrementBytesSent(msgContext, os.getByteCount());
             
         } catch (IOException e) {
-            if (lockingEnabled) {
-                VFSUtils.releaseLock(getFsManager(), responseFile, fso);
-            }
+            // The caller releases the lock after this method finishes. The
+            // fileLockingEnabled parameter remains for protected API compatibility.
             metrics.incrementFaultsSending();
             String responseFileURI = responseFile.getName().getURI();
             closeFileSystem(responseFile, configName);
@@ -426,8 +437,9 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
             throws AxisFault {
         
         int tryNum = 0;
-        // wait till we get the lock
-        while (!VFSUtils.acquireLock(getFsManager(), responseFile, fso, false)) {
+        // Pass the sender parameters so automatic cleanup can process stale
+        // sender locks while waiting for the file lock.
+        while (!VFSUtils.acquireLock(getFsManager(), responseFile, vfsParameters, fso, false)) {
             if (vfsOutInfo.getMaxRetryCount() == tryNum++) {
                 String message = "Couldn't send the message to file : "
                         + VFSUtils.maskURLPassword(responseFile.getName().getURI()) + ", unable to acquire the " +

@@ -48,6 +48,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -72,6 +73,40 @@ public class VFSUtils {
     private static final Pattern PASSWORD_PATTERN = Pattern.compile(":(?:[^/]+)@");
 
     private static final Random randomNumberGenerator = new Random();
+
+    /**
+     * Keeps local operations for the same file path in order. The shared map
+     * is held only while an entry is found, created, or removed. Remote file
+     * operations run after that short section, so unrelated paths can proceed
+     * independently.
+     */
+    private static final class PathLock {
+        private final ReentrantLock operationLock = new ReentrantLock();
+        private int referenceCount;
+    }
+
+    private static final Map<String, PathLock> PATH_LOCKS = new HashMap<String, PathLock>();
+
+    private static PathLock getOrCreatePathLock(String filePath) {
+        synchronized (PATH_LOCKS) {
+            PathLock pathLock = PATH_LOCKS.get(filePath);
+            if (pathLock == null) {
+                pathLock = new PathLock();
+                PATH_LOCKS.put(filePath, pathLock);
+            }
+            pathLock.referenceCount++;
+            return pathLock;
+        }
+    }
+
+    private static void releasePathLockReference(String filePath, PathLock pathLock) {
+        synchronized (PATH_LOCKS) {
+            pathLock.referenceCount--;
+            if (pathLock.referenceCount == 0) {
+                PATH_LOCKS.remove(filePath);
+            }
+        }
+    }
 
     /**
      * SSL Keystore.
@@ -174,8 +209,8 @@ public class VFSUtils {
      * @param fso represents file system options used when resolving file from file system manager.
      * @return boolean true if the lock has been acquired or false if not
      */
-    public static synchronized boolean acquireLock(FileSystemManager fsManager, FileObject fo,
-                                                   FileSystemOptions fso, boolean isListener) {
+    public static boolean acquireLock(FileSystemManager fsManager, FileObject fo,
+                                      FileSystemOptions fso, boolean isListener) {
         return acquireLock(fsManager, fo, null, fso, isListener);
     }
 
@@ -192,36 +227,41 @@ public class VFSUtils {
      *            represents file system options used when resolving file from file system manager.
      * @return boolean true if the lock has been acquired or false if not
      */
-    public static synchronized boolean acquireLock(FileSystemManager fsManager, FileObject fo, VFSParamDTO paramDTO,
-                                                   FileSystemOptions fso, boolean isListener) {
-        String strLockValue = getLockValue();
-        byte[] lockValue = strLockValue.getBytes();
+    public static boolean acquireLock(FileSystemManager fsManager, FileObject fo, VFSParamDTO paramDTO,
+                                      FileSystemOptions fso, boolean isListener) {
+        String lockValueText = getLockValue();
+        byte[] lockValueBytes = lockValueText.getBytes();
         FileObject lockObject = null;
-        String fullPath = getFullPath(fo);
+        String filePath = getFullPath(fo);
 
+        // Use one local lock for each lock file path. Operations for the same
+        // file stay ordered without blocking unrelated files.
+        final String lockFilePath = filePath + LOCK_FILE_SUFFIX;
+        final PathLock pathLock = getOrCreatePathLock(lockFilePath);
+        pathLock.operationLock.lock();
         try {
             // check whether there is an existing lock for this item, if so it is assumed
             // to be processed by an another listener (downloading) or a sender (uploading)
             // lock file is derived by attaching the ".lock" second extension to the file name
-            lockObject = fsManager.resolveFile(fullPath + LOCK_FILE_SUFFIX, fso);
+            lockObject = fsManager.resolveFile(lockFilePath, fso);
             if (lockObject.exists()) {
                 log.debug("There seems to be an external lock, aborting the processing of the file "
                         + maskURLPassword(fo.getName().getURI())
                         + ". This could possibly be due to some other party already "
                         + "processing this file or the file is still being uploaded");
                 if(paramDTO != null && paramDTO.isAutoLockRelease()){
-                    releaseLock(lockValue, strLockValue, lockObject, paramDTO.isAutoLockReleaseSameNode(),
+                    releaseLock(lockValueBytes, lockValueText, lockObject, paramDTO.isAutoLockReleaseSameNode(),
                             paramDTO.getAutoLockReleaseInterval());
                 }
             } else {
                 if (isListener) {
                     //Check the original file existence before the lock file to handle concurrent access scenario
-                    FileObject originalFileObject = fsManager.resolveFile(fullPath, fso);
+                    FileObject originalFileObject = fsManager.resolveFile(filePath, fso);
                     if (!originalFileObject.exists()) {
                         return false;
                     }
                 }
-                if (!createLockFile(lockValue, lockObject, fullPath)) {
+                if (!createLockFile(lockValueBytes, lockObject, filePath)) {
                     return false;
                 }
 
@@ -231,8 +271,8 @@ public class VFSUtils {
                 // as the written random lock value.
                 // NOTE: this may not be optimal but is sub optimal
                 FileObject verifyingLockObject = fsManager.resolveFile(
-                        fullPath + LOCK_FILE_SUFFIX, fso);
-                if (verifyingLockObject.exists() && verifyLock(lockValue, verifyingLockObject)) {
+                        lockFilePath, fso);
+                if (verifyingLockObject.exists() && verifyLock(lockValueBytes, verifyingLockObject)) {
                     return true;
                 }
             }
@@ -246,11 +286,14 @@ public class VFSUtils {
                 }
             } else {
                 try {
-                    ((DefaultFileSystemManager) fsManager).closeCachedFileSystem(fullPath + LOCK_FILE_SUFFIX, fso);
+                    ((DefaultFileSystemManager) fsManager).closeCachedFileSystem(lockFilePath, fso);
                 } catch (Exception e1) {
                     log.warn("Unable to clear file system", e1);
                 }
             }
+        } finally {
+            pathLock.operationLock.unlock();
+            releasePathLockReference(lockFilePath, pathLock);
         }
         return false;
     }
@@ -408,43 +451,48 @@ public class VFSUtils {
         return null;
     }
 
-    public static synchronized void markFailRecord(FileSystemManager fsManager, FileObject fo) {
+    public static void markFailRecord(FileSystemManager fsManager, FileObject fo) {
         markFailRecord(fsManager, fo, null);
     }
 
-    public static synchronized void markFailRecord(FileSystemManager fsManager, FileObject fo, FileSystemOptions fso) {
+    public static void markFailRecord(FileSystemManager fsManager, FileObject fo, FileSystemOptions fso) {
 
-        // generate a random fail value to ensure that there are no two parties
-        // processing the same file
-        byte[] failValue = (Long.toString((new Date()).getTime())).getBytes();
+        // Store the current time in the failure record.
+        byte[] failureTimestampBytes = Long.toString((new Date()).getTime()).getBytes();
 
+        // Use one local lock for each failure record path. Unrelated failure
+        // records can be written independently.
+        final String failureFilePath = getFullPath(fo) + FAIL_FILE_SUFFIX;
+        final PathLock pathLock = getOrCreatePathLock(failureFilePath);
+        pathLock.operationLock.lock();
         try {
-            String fullPath = getFullPath(fo);
-            FileObject failObject = fsManager.resolveFile(fullPath + FAIL_FILE_SUFFIX, fso);
-            if (!failObject.exists()) {
-                failObject.createFile();
+            String filePath = getFullPath(fo);
+            FileObject failureFile = fsManager.resolveFile(failureFilePath, fso);
+            if (!failureFile.exists()) {
+                failureFile.createFile();
             }
 
-            // write a lock file before starting of the processing, to ensure that the
-            // item is not processed by any other parties
-
-            OutputStream stream = failObject.getContent().getOutputStream();
+            OutputStream outputStream = failureFile.getContent().getOutputStream();
             try {
-                stream.write(failValue);
-                stream.flush();
+                outputStream.write(failureTimestampBytes);
+                outputStream.flush();
             } catch (IOException e) {
-                failObject.delete();
-                log.error("Couldn't create the fail file before processing the file " + maskURLPassword(fullPath), e);
+                failureFile.delete();
+                log.error("Could not create the failure record for file: " + maskURLPassword(filePath), e);
             } finally {
                 try {
-                    stream.close();
+                    outputStream.close();
                 } catch (IOException e) {
                     log.debug("Error closing stream", e);
                 }
-                failObject.close();
+                failureFile.close();
             }
         } catch (FileSystemException fse) {
-            log.error("Cannot get the lock for the file : " + maskURLPassword(fo.getName().getURI()) + " before processing");
+            log.error("Could not create the failure record for file: "
+                    + maskURLPassword(fo.getName().getURI()), fse);
+        } finally {
+            pathLock.operationLock.unlock();
+            releasePathLockReference(failureFilePath, pathLock);
         }
     }
 
