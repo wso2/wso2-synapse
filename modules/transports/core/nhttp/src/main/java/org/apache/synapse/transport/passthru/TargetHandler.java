@@ -1182,11 +1182,29 @@ public class TargetHandler implements NHttpClientEventHandler {
             } else {
                 if (null != ex && null != ex.getMessage()) {
                     log.error("Unexpected error: " + ex.getMessage(), ex);
+                } else if (null != ex) {
+                    log.error("Unexpected error.", ex);
                 } else {
                     log.error("Unexpected error.");
                 }
                 if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                     logHttpRequestErrorInCorrelationLog(conn, "Unexpected error");
+                }
+                if (state != ProtocolState.RESPONSE_DONE && requestMsgCtx != null) {
+                    requestMsgCtx.setProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN,
+                            PassThroughConstants.INTERNAL_ORIGIN_ERROR_HANDLER);
+
+                    targetErrorHandler.handleError(requestMsgCtx,
+                            ErrorCodes.SND_IO_ERROR,
+                            "Error in Sender",
+                            null,
+                            state);
+
+                    synchronized (requestMsgCtx) {
+                        requestMsgCtx.setProperty(PassThroughConstants.WAIT_BUILDER_IN_STREAM_COMPLETE,
+                                Boolean.TRUE);
+                        requestMsgCtx.notifyAll();
+                    }
                 }
                 TargetContext.updateState(conn, ProtocolState.CLOSED);
             }
