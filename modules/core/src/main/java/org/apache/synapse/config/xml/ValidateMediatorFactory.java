@@ -35,7 +35,7 @@ import java.util.*;
  * <p>
  * Configuration syntax:
  * <pre>
- * &lt;validate [source="xpath"] [cache-schema = "true|false"]>
+ * &lt;validate [source="xpath"] [cache-schema = "true|false"] [json-source="true|false"]>
  *   &lt;schema key="string">+
  *   &lt;resource location="&lt;external-schema>" key="string">+
  *   &lt;feature name="&lt;validation-feature-name>" value="true|false"/>
@@ -51,6 +51,7 @@ public class ValidateMediatorFactory extends AbstractListMediatorFactory {
     private static final QName ON_FAIL_Q  = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "on-fail");
     private static final QName SCHEMA_Q   = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "schema");
     private static final QName ATT_CACHE_SCHEMA = new QName("cache-schema");
+    private static final QName ATT_JSON_SOURCE = new QName("json-source");
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
@@ -109,6 +110,15 @@ public class ValidateMediatorFactory extends AbstractListMediatorFactory {
                 log.debug("Schema cached: " + cacheSchema);
             }
             validateMediator.setCacheSchema(cacheSchema);
+        }
+
+        OMAttribute attIsJSONSource = elem.getAttribute(ATT_JSON_SOURCE);
+        if (attIsJSONSource != null) {
+            final boolean isJsonSource = Boolean.parseBoolean(attIsJSONSource.getAttributeValue());
+            if (log.isDebugEnabled()) {
+                log.debug("isJsonSource: " + isJsonSource);
+            }
+            validateMediator.setIsJSONSource(isJsonSource);
         }
 
         //process external schema resources
