@@ -273,6 +273,10 @@ public class Access {
         return getParam(message, "http.remote.addr");
     }
 
+    public static String getCorrelationIdElement(HttpMessage message) {
+        return getParam(message, AccessConstants.PARAM_CORRELATION_ID);
+    }
+
     /**
      * AccessLogElement writes the partial message into the buffer.
      */
@@ -325,6 +329,28 @@ public class Access {
             buf.append(remoteHost);
         }
 
+    }
+
+    /**
+     * write the correlation id shared between a request's access log entry and its
+     * corresponding response's entry, since they are otherwise logged independently with
+     * no way to tell which response belongs to which request - %I
+     */
+    protected static class CorrelationIdElement implements AccessLogElement {
+        public void addElement(StringBuilder buf, Date date, HttpRequest request,
+                               HttpResponse response) {
+            String correlationId = "-";
+            try {
+                if (request != null) {
+                    correlationId = getCorrelationIdElement(request);
+                } else if (response != null) {
+                    correlationId = getCorrelationIdElement(response);
+                }
+            } catch (Exception e) {
+                // empty correlation id
+            }
+            buf.append(correlationId);
+        }
     }
 
     /**
@@ -814,6 +840,8 @@ public class Access {
                 return new RefererElement();
             case 'h':
                 return new HostElement();         //%h
+            case 'I':
+                return new CorrelationIdElement();   //%I
             case 'k':
                 return new KeepAliveElement();
             case 'l':

@@ -23,6 +23,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectionKey;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
@@ -46,7 +47,10 @@ import org.apache.http.nio.reactor.SessionInputBuffer;
 import org.apache.http.nio.reactor.SessionOutputBuffer;
 import org.apache.http.nio.util.ByteBufferAllocator;
 import org.apache.http.params.HttpParams;
+import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.transport.http.access.AccessConstants;
 import org.apache.synapse.transport.http.access.AccessHandler;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 
 public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
         implements UpgradableNHttpConnection {
@@ -78,6 +82,32 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
         if (this.iolog.isDebugEnabled() || this.wirelog.isDebugEnabled() || SynapseDebugInfoHolder.getInstance().isDebuggerEnabled()) {
             super.bind(new LoggingIOSession(session, this.id, this.iolog, this.wirelog));
         }
+    }
+
+    /**
+     * Resolves the correlation id for the given request so the access log's request-line
+     * entry can carry it, generating (and writing back onto the request header, exactly as
+     * {@code SourceHandler#setCorrelationId} does) a new one if the client didn't send one.
+     * <p>
+     * This runs at parse time, before the {@code requestReceived} transport event fires and
+     * {@code SourceHandler#setCorrelationId} resolves the same id for the rest of the request
+     * lifecycle (message context, correlation/trace logs). Resolving it here first - using the
+     * identical header-name lookup - means that by the time {@code SourceHandler} runs, it finds
+     * the header already set and simply reuses this same value, so a single id is used
+     * throughout, and it is also what ties this request's access log line to its response's.
+     *
+     * @param request the just-parsed HTTP request
+     * @return the correlation id to attach to the access log entry
+     */
+    private static String resolveCorrelationId(final HttpRequest request) {
+        String correlationHeaderName = PassThroughConfiguration.getInstance().getCorrelationHeaderName();
+        Header[] correlationHeader = request.getHeaders(correlationHeaderName);
+        if (correlationHeader.length != 0) {
+            return correlationHeader[0].getValue();
+        }
+        String correlationId = UUID.randomUUID().toString();
+        request.setHeader(correlationHeaderName, correlationId);
+        return correlationId;
     }
 
     @Override
@@ -372,6 +402,12 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
                     params.setParameter("http.remote.addr",
                             remote.getAddress().getHostAddress());
                 }
+                // SourceHandler#setCorrelationId has already run for this request/response
+                // exchange by the time its response is written, so the id is available here.
+                Object correlationId = getContext().getAttribute(CorrelationConstants.CORRELATION_ID);
+                if (correlationId != null) {
+                    params.setParameter(AccessConstants.PARAM_CORRELATION_ID, correlationId.toString());
+                }
 
                 AccessHandler.getAccess().addAccessToQueue(message);
             }
@@ -430,6 +466,7 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
                     params.setParameter("http.remote.addr",
                             remote.getAddress().getHostAddress());
                 }
+                params.setParameter(AccessConstants.PARAM_CORRELATION_ID, resolveCorrelationId(request));
                 AccessHandler.getAccess().addAccessToQueue(message);
             }
 

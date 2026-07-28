@@ -77,6 +77,15 @@ public class AccessConstants {
 
     public static final String CONFIG_ENABLE_LOGGING = "access_log_enable";
 
+    /**
+     * HttpParams key used to carry the transport's correlation id (see
+     * {@code org.apache.synapse.commons.CorrelationConstants#CORRELATION_ID}) into the access
+     * log renderer, so that a request's log line and its corresponding response's log line -
+     * logged independently of one another - can be correlated. HttpParams are local, in-memory
+     * message metadata only and are never written to the wire, matching the existing
+     * "http.remote.addr" parameter used for the same purpose.
+     */
+    public static final String PARAM_CORRELATION_ID = "synapse.access.log.correlation.id";
 
     public static String getLogPattern() {
         return AccessConfiguration.getInstance().getStringProperty(CONFIG_PATTERN, LOG_PATTERN);
