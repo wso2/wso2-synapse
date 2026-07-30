@@ -23,8 +23,6 @@ import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 
 import java.io.File;
-import java.net.URISyntaxException;
-import java.net.URL;
 
 /**
  * Provides utility methods for PassTrough Transport tests.
@@ -33,8 +31,8 @@ public class PassThroughTestUtils {
 
     private static final String PASSTHROUGH_THREAD_GROUP = "Pass-through Message Processing Thread Group";
     private static final String PASSTHROUGH_THREAD_ID = "PassThroughMessageProcessor";
-    private static final String PASSTHROUGH_CONF_RESOURCE =
-            "org.apache.synapse.transport.ptt.conf/passthru-http.properties";
+    private static final String PASSTHROUGH_RESOURCE_PATH = File.separator + "src" + File.separator + "test" +
+            File.separator + "resources" + File.separator + "org.apache.synapse.transport.ptt.conf" + File.separator;
 
     /**
      * Creates a PassThroughConfiguration instance with provided passthru-http.properties
@@ -42,21 +40,9 @@ public class PassThroughTestUtils {
      * @return PassThroughConfiguration instance
      */
     public static PassThroughConfiguration getPassThroughConfiguration() {
-        System.setProperty(PassThroughConstants.CONF_LOCATION, resolveConfDirectory());
+        String testConfLocation = System.getProperty("user.dir") + PASSTHROUGH_RESOURCE_PATH;
+        System.setProperty(PassThroughConstants.CONF_LOCATION, testConfLocation);
         return PassThroughConfiguration.getInstance();
-    }
-
-    private static String resolveConfDirectory() {
-        URL resourceUrl = PassThroughTestUtils.class.getClassLoader().getResource(PASSTHROUGH_CONF_RESOURCE);
-        if (resourceUrl == null) {
-            throw new IllegalStateException(
-                    "Unable to locate " + PASSTHROUGH_CONF_RESOURCE + " on the test classpath");
-        }
-        try {
-            return new File(resourceUrl.toURI()).getParentFile().getAbsolutePath();
-        } catch (URISyntaxException e) {
-            throw new IllegalStateException("Unable to resolve conf directory for " + PASSTHROUGH_CONF_RESOURCE, e);
-        }
     }
 
     /**
