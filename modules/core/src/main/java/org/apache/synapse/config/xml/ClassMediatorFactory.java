@@ -117,6 +117,13 @@ public class ClassMediatorFactory extends AbstractMediatorFactory {
             }
         }
 
+        // Enforce mediator access control against the class actually resolved, before it is
+        // instantiated. Instantiation runs static initialisers and the constructor, so a class
+        // that is not permitted must never reach newInstance(). Applying the check here covers
+        // every resolution path above (Synapse library loader, dynamic class mediator loaders and
+        // the default class loader).
+        MediatorAccessControl.checkByClass(clazz);
+
         try {
             mediator = (Mediator) clazz.newInstance();
             if (mediator instanceof AbstractMediator && FactoryUtils.isVersionedDeployment(properties)) {
