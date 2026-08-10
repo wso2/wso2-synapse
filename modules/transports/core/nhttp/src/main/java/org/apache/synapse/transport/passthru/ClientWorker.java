@@ -30,11 +30,13 @@ import org.apache.axis2.description.WSDL2Constants;
 import org.apache.axis2.engine.AxisEngine;
 import org.apache.axis2.util.JavaUtils;
 import org.apache.axis2.wsdl.WSDLConstants;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpStatus;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.protocol.HTTP;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
 import org.apache.synapse.commons.util.ext.TenantInfoInitiatorProvider;
@@ -239,6 +241,16 @@ public class ClientWorker implements Runnable {
     }
 
     public void run() {
+
+        /* Remove correlation id MDC thread local value that can be persisting from the
+           previous usage of this thread */
+        ThreadContext.remove(CorrelationConstants.CORRELATION_MDC_PROPERTY);
+        /* Subsequent to removing the correlation id MDC thread local value, a new value is put in case
+           there is one */
+        Object correlationId = requestMessageContext.getProperty(CorrelationConstants.CORRELATION_ID);
+        if (correlationId instanceof String && StringUtils.isNotEmpty((String) correlationId)) {
+            ThreadContext.put(CorrelationConstants.CORRELATION_MDC_PROPERTY, (String) correlationId);
+        }
 
         initTenantInfo();
         if (responseMsgCtx == null) {
