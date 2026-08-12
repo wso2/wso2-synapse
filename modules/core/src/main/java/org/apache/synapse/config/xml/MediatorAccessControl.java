@@ -86,6 +86,10 @@ public final class MediatorAccessControl {
      */
     private static final class MediatorElementIndex {
 
+        /** Returned, and deliberately not cached, when the index cannot be built. */
+        static final MediatorElementIndex EMPTY = new MediatorElementIndex(
+            Collections.<String, String>emptyMap(), Collections.<String, String>emptyMap());
+
         final Map<String, String> byClassName;
         final Map<String, String> bySimpleName;
 
@@ -233,19 +237,14 @@ public final class MediatorAccessControl {
     private static void checkMediatorName(MediatorAccessControlConfig mediatorAccessControlConfig,
                                           String normalizedName, String displayName) {
 
-        if (AccessControlListType.BLOCK_LIST == mediatorAccessControlConfig.listType) {
-            if (mediatorAccessControlConfig.mediators.contains(normalizedName)) {
-                String msg = "Mediator '" + displayName + "' is blocked by mediator access control.";
-                log.debug(msg);
-                throw new MediatorAccessControlException(msg, displayName);
-            }
-        } else if (AccessControlListType.ALLOW_LIST == mediatorAccessControlConfig.listType) {
-            if (!mediatorAccessControlConfig.mediators.contains(normalizedName)) {
-                String msg = "Mediator '" + displayName + "' is not in the allowed mediators list.";
-                log.debug(msg);
-                throw new MediatorAccessControlException(msg, displayName);
-            }
+        if (!isBlocked(mediatorAccessControlConfig, normalizedName)) {
+            return;
         }
+        String msg = AccessControlListType.BLOCK_LIST == mediatorAccessControlConfig.listType
+                ? "Mediator '" + displayName + "' is blocked by mediator access control."
+                : "Mediator '" + displayName + "' is not in the allowed mediators list.";
+        log.debug(msg);
+        throw new MediatorAccessControlException(msg, displayName);
     }
 
     /**
@@ -283,10 +282,23 @@ public final class MediatorAccessControl {
     * ThrowErrorMediatorFactory would produce. It also keys the result on the fully qualified name,
     * so a customer class cannot inherit a decision by sharing a simple name.
     *
-    * A mediator that has a factory but no serializer cannot be resolved this way and is recorded in
-    * the fallback map under the name derived from its factory.
+    * One element may be served by more than one implementation - the foreach element is built as
+    * either ForEachMediator or ForEachMediatorV2 depending on its attributes - so a serializer stem
+    * that matches no factory is resolved against the longest factory stem it is prefixed by, rather
+    * than being discarded. Anything still unresolved is reported, because a silently dropped entry
+    * is exactly a class this check would fail to govern.
     *
-    * @return the index, never null
+    * A mediator that has a factory but no serializer cannot be resolved by class name and is
+    * recorded in the fallback map under the name derived from its factory.
+    *
+    * The registries are read under the MediatorFactoryFinder class monitor, the lock that
+    * reset() and loadMediatorFactories() mutate the factory map under. The index is built once, so
+    * holding it briefly costs nothing, and iterating those live maps unlocked risks a
+    * ConcurrentModificationException during a configuration or tenant reload.
+    *
+    * @return the index, or MediatorElementIndex.EMPTY if it could not be built. The empty result is
+    *         deliberately not cached, so a transient failure is retried on the next call rather
+    *         than disabling this check for the lifetime of the JVM.
     */
     private static MediatorElementIndex getElementIndex() {
 
@@ -298,22 +310,37 @@ public final class MediatorAccessControl {
         Map<String, String> byClassName = new HashMap<>();
         Map<String, String> bySimpleName = new HashMap<>();
         try {
-            // stem -> implementation class name, from the serializers
             Map<String, String> stemToClassName = new HashMap<>();
-            for (Map.Entry<String, MediatorSerializer> entry :
-                    MediatorSerializerFinder.getInstance().getSerializerMap().entrySet()) {
-                if (entry.getKey() == null || entry.getValue() == null) {
-                    continue;
+            Set<String> ambiguousStems = new HashSet<>();
+            Map<QName, Class> factories;
+
+            synchronized (MediatorFactoryFinder.class) {
+                for (Map.Entry<String, MediatorSerializer> entry :
+                        MediatorSerializerFinder.getInstance().getSerializerMap().entrySet()) {
+                    if (entry.getKey() == null || entry.getValue() == null) {
+                        continue;
+                    }
+                    String stem = stripSuffix(entry.getValue().getClass().getSimpleName(), "Serializer");
+                    if (stem == null) {
+                        continue;
+                    }
+                    String previous = stemToClassName.put(stem, entry.getKey());
+                    if (previous != null && !previous.equals(entry.getKey())) {
+                        // Two serializers in different packages share a simple name. Either could be
+                        // the one a factory means, so neither is used: guessing risks both failing to
+                        // govern a restricted class and refusing a legitimate one.
+                        ambiguousStems.add(stem);
+                        log.warn("Mediator serializers for '" + previous + "' and '" + entry.getKey()
+                                + "' share the simple name '" + stem + "Serializer'. Neither class "
+                                + "will be resolved to a mediator element by class mediator access "
+                                + "control.");
+                    }
                 }
-                String stem = stripSuffix(entry.getValue().getClass().getSimpleName(), "Serializer");
-                if (stem != null) {
-                    stemToClassName.put(stem, entry.getKey());
-                }
+                factories = new HashMap<>(MediatorFactoryFinder.getInstance().getFactoryMap());
             }
 
-            // stem -> element name, from the factories
-            for (Map.Entry<QName, Class> entry :
-                    MediatorFactoryFinder.getInstance().getFactoryMap().entrySet()) {
+            Set<String> consumedStems = new HashSet<>();
+            for (Map.Entry<QName, Class> entry : factories.entrySet()) {
                 if (entry.getKey() == null || entry.getValue() == null) {
                     continue;
                 }
@@ -322,12 +349,41 @@ public final class MediatorAccessControl {
                     continue;
                 }
                 String elementName = entry.getKey().getLocalPart();
-                String className = stemToClassName.get(stem);
+                String className = ambiguousStems.contains(stem) ? null : stemToClassName.get(stem);
                 if (className != null) {
                     byClassName.put(className, elementName);
+                    consumedStems.add(stem);
                 } else {
                     bySimpleName.put(stem.toLowerCase(Locale.ROOT), elementName);
                 }
+            }
+
+            // Additional implementations of an element already resolved above: match the leftover
+            // serializer stem to the longest factory stem it extends.
+            for (Map.Entry<String, String> leftover : stemToClassName.entrySet()) {
+                String stem = leftover.getKey();
+                if (consumedStems.contains(stem) || ambiguousStems.contains(stem)
+                        || byClassName.containsKey(leftover.getValue())) {
+                    continue;
+                }
+                String bestStem = null;
+                for (String candidate : consumedStems) {
+                    if (stem.startsWith(candidate)
+                            && (bestStem == null || candidate.length() > bestStem.length())) {
+                        bestStem = candidate;
+                    }
+                }
+                if (bestStem != null) {
+                    String elementName = byClassName.get(stemToClassName.get(bestStem));
+                    if (elementName != null) {
+                        byClassName.put(leftover.getValue(), elementName);
+                        continue;
+                    }
+                }
+                log.warn("Mediator implementation '" + leftover.getValue() + "' could not be "
+                        + "resolved to a mediator element, because its serializer name '" + stem
+                        + "Serializer' matches no registered mediator factory. Class mediator "
+                        + "access control will not govern this class.");
             }
 
             if (log.isDebugEnabled()) {
@@ -335,10 +391,14 @@ public final class MediatorAccessControl {
                         + ", resolved by factory-derived name: " + bySimpleName.size()
                         + " " + bySimpleName.keySet());
             }
-        } catch (Exception e) {
-            // Never let index construction break deployment.
+        } catch (Throwable t) {
+            // Throwable, not Exception: MediatorSerializerFinder builds its singleton in a static
+            // initialiser, so a failing extension serializer surfaces as ExceptionInInitializerError
+            // or NoClassDefFoundError.
             log.warn("Could not build the mediator implementation to element index. Class mediator "
-                    + "access control checks will be skipped this cycle.", e);
+                    + "access control checks are skipped until it can be built, and will be "
+                    + "retried on the next class mediator.", t);
+            return MediatorElementIndex.EMPTY;
         }
 
         MediatorElementIndex built = new MediatorElementIndex(
