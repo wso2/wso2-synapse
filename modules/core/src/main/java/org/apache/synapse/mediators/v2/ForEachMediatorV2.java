@@ -703,22 +703,31 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
 
     private String getVariableName(SynapsePath expression) {
 
-        return expression.getExpression().split("\\.")[1];
+        String expr = expression.getExpression();
+        if (expr.startsWith(ExpressionConstants.SYNAPSE_EXPRESSION_IDENTIFIER_START)) {
+            expr = expr.substring(2, expr.length() - 1);
+        }
+        return expr.split("\\.")[1];
     }
 
     private boolean isCollectionReferencedByVariable(SynapsePath expression) {
 
-        return expression.getExpression().startsWith(VARIABLE_DOT);
+        String expr = expression.getExpression();
+        return expr.startsWith(VARIABLE_DOT) ||
+                expr.startsWith(ExpressionConstants.SYNAPSE_EXPRESSION_IDENTIFIER_START + VARIABLE_DOT);
     }
 
     private JsonPath getJsonPathFromExpression(String expression) {
 
         String jsonPath = expression;
+        if (jsonPath.startsWith(ExpressionConstants.SYNAPSE_EXPRESSION_IDENTIFIER_START)) {
+            jsonPath = jsonPath.substring(2, jsonPath.length() - 1);
+        }
         if (jsonPath.startsWith(ExpressionConstants.PAYLOAD)) {
             jsonPath = jsonPath.replace(ExpressionConstants.PAYLOAD, ExpressionConstants.PAYLOAD_$);
         } else if (jsonPath.startsWith(VARIABLE_DOT)) {
             // Remove the "vars." prefix and variable name and replace it with "$" for JSON path
-            jsonPath = expression.replaceAll(ExpressionConstants.VARIABLES + "\\.\\w+\\.(\\w+)", "\\$.$1")
+            jsonPath = jsonPath.replaceAll(ExpressionConstants.VARIABLES + "\\.\\w+\\.(\\w+)", "\\$.$1")
                     .replaceAll(ExpressionConstants.VARIABLES + "\\.\\w+", "\\$");
         }
         return JsonPath.compile(jsonPath);
