@@ -117,6 +117,35 @@ public class MessageInjector implements Task, ManagedLifecycle {
     private boolean isSequential = false;
 
     /**
+     * Caches the process-wide synchronous-injection setting on first use. When enabled, every message-injector
+     * task completes sequence mediation on its Quartz worker thread, even if the task itself is not configured
+     * for sequential execution. When disabled or absent, the task-level sequential setting remains authoritative.
+     */
+    private static Boolean globalSynchronousInjectionEnabled;
+
+    private static boolean isGlobalSynchronousInjectionEnabled() {
+        if (globalSynchronousInjectionEnabled == null) {
+            boolean synchronousInjectionEnabled = false;
+            try {
+                Object configuredValue = org.wso2.config.mapper.ConfigParser.getParsedConfigs()
+                        .get("task_handling.synchronous_injection");
+                synchronousInjectionEnabled = configuredValue != null
+                        && Boolean.parseBoolean(configuredValue.toString());
+            } catch (Throwable ignored) {
+                // Synapse can run outside Micro Integrator without the config-mapper runtime. In that case,
+                // preserve the existing task-level behavior by treating the global override as disabled.
+            }
+            if (synchronousInjectionEnabled) {
+                LogFactory.getLog(MessageInjector.class)
+                        .info("Global synchronous injection is enabled. Message-injector tasks will complete "
+                                + "sequence mediation on the Quartz worker thread, overriding each task setting.");
+            }
+            globalSynchronousInjectionEnabled = synchronousInjectionEnabled;
+        }
+        return globalSynchronousInjectionEnabled;
+    }
+
+    /**
      * Name of the proxy service which message should be injected
      */
     private String proxyName = null;
@@ -458,7 +487,7 @@ public class MessageInjector implements Task, ManagedLifecycle {
                         }
                     }
                     mc.pushFaultHandler(new MediatorFaultHandler(mc.getFaultSequence()));
-                    if (isSequential) {
+                    if (isSequential || isGlobalSynchronousInjectionEnabled()) {
                         mediateMessageSequentially(mc, seq);
                     } else {
                         synapseEnvironment.injectAsync(mc, seq);
