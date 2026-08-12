@@ -56,6 +56,9 @@ public class MediatorAccessControlIndexTest extends TestCase {
     }
 
     private static class AlphaMediatorFactory { }
+    /** Simple name collides with a Synapse mediator, but the package does not. */
+    private static class GammaMediator { }
+    private static class Alpha { }
     private static class BetaMediatorFactory { }
     private static class GammaMediatorFactory { }
 
@@ -120,8 +123,12 @@ public class MediatorAccessControlIndexTest extends TestCase {
                 index.byClassName.containsKey("com.example.AlphaMediator"));
     }
 
-    /** Two serializers sharing a simple name: neither class may be resolved. */
-    public void testAmbiguousSerializerStemResolvesNothing() {
+    /**
+     * Two serializers sharing a simple name: neither class may be resolved by class name. A
+     * Synapse mediator of that name can still resolve through the factory-derived fallback, which
+     * is what the warning now says and what this asserts.
+     */
+    public void testAmbiguousSerializerStemResolvesNothingByClassName() {
 
         Map<QName, Class> factories = new HashMap<QName, Class>();
         factories.put(q("alpha"), AlphaMediatorFactory.class);
@@ -135,6 +142,8 @@ public class MediatorAccessControlIndexTest extends TestCase {
 
         assertFalse(index.byClassName.containsKey("com.example.AlphaMediator"));
         assertFalse(index.byClassName.containsKey("com.other.AlphaMediator"));
+        assertEquals("the factory falls through to the derived-name map",
+                "alpha", index.bySimpleName.get("alphamediator"));
     }
 
     /** A factory with no serializer falls back to the name derived from the factory. */
@@ -175,5 +184,60 @@ public class MediatorAccessControlIndexTest extends TestCase {
 
         assertEquals(1, index.serializerCount);
         assertEquals(2, index.factoryCount);
+    }
+
+    /**
+     * The other half of the ambiguity fix: two factories with no serializer sharing a simple name.
+     * This is the branch that governs the AnnotatedCommandMediator fallback.
+     */
+    public void testDerivedNameClaimedByTwoElementsIsExcluded() {
+
+        Map<QName, Class> factories = new HashMap<QName, Class>();
+        factories.put(q("gamma"), GammaMediatorFactory.class);
+        factories.put(q("shadow"), org.apache.synapse.config.xml.other.GammaMediatorFactory.class);
+
+        MediatorAccessControl.MediatorElementIndex index =
+                MediatorAccessControl.buildIndex(serializers(), factories);
+
+        assertFalse("an ambiguous derived name must not resolve to any element",
+                index.bySimpleName.containsKey("gammamediator"));
+    }
+
+    /** An exact class-name match resolves regardless of package. */
+    public void testResolveElementMatchesExactClassName() {
+
+        Map<QName, Class> factories = new HashMap<QName, Class>();
+        factories.put(q("alpha"), AlphaMediatorFactory.class);
+        MediatorAccessControl.MediatorElementIndex index = MediatorAccessControl.buildIndex(
+                serializers(new AlphaMediatorSerializer(Alpha.class.getName())), factories);
+
+        assertEquals("alpha", MediatorAccessControl.resolveElement(index, Alpha.class));
+    }
+
+    /**
+     * The package gate. A class outside org.apache.synapse.mediators must not inherit a decision
+     * through the derived-name fallback merely by sharing a simple name with a Synapse mediator.
+     */
+    public void testResolveElementAppliesThePackageGateToTheFallback() {
+
+        Map<String, String> bySimpleName = new HashMap<String, String>();
+        bySimpleName.put("gammamediator", "gamma");
+        MediatorAccessControl.MediatorElementIndex index = new MediatorAccessControl
+                .MediatorElementIndex(new HashMap<String, String>(), bySimpleName, 0, 0);
+
+        assertNull("a customer class must not match by simple name",
+                MediatorAccessControl.resolveElement(index, GammaMediator.class));
+    }
+
+    /** A class inside the Synapse mediator package does resolve through the fallback. */
+    public void testResolveElementAllowsTheFallbackInsideTheSynapsePackage() {
+
+        Map<String, String> bySimpleName = new HashMap<String, String>();
+        bySimpleName.put("stubmediator", "stub");
+        MediatorAccessControl.MediatorElementIndex index = new MediatorAccessControl
+                .MediatorElementIndex(new HashMap<String, String>(), bySimpleName, 0, 0);
+
+        assertEquals("stub", MediatorAccessControl.resolveElement(
+                index, org.apache.synapse.mediators.StubMediator.class));
     }
 }

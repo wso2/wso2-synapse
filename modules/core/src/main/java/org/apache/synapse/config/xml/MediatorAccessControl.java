@@ -23,7 +23,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 
 import javax.xml.namespace.QName;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -112,6 +115,21 @@ public final class MediatorAccessControl {
     }
 
     /**
+     * Discards the cached implementation to element index so that it is rebuilt on next use.
+     *
+     * Called when a mediator factory or serializer is registered at runtime. The size comparison in
+     * getElementIndex() catches a registration that grows a registry, but a registration that
+     * replaces an existing entry - an extension supplying its own factory for an element that
+     * already exists, or a redeployed extension jar, which is always a replacement because
+     * ExtensionDeployer does not remove entries on undeploy - leaves the size unchanged. Being told
+     * is exact where comparing sizes is only a proxy.
+     */
+    public static void invalidateIndex() {
+
+        elementIndex = null;
+    }
+
+    /**
      * Loads access control configuration from synapse.properties.
      * Called once during MediatorFactoryFinder initialization.
      */
@@ -159,6 +177,30 @@ public final class MediatorAccessControl {
     }
 
     /**
+    * Resolves a mediator implementation class to the element it is registered under.
+    *
+    * An exact match on the fully qualified name is preferred. Mediators that have a factory but no
+    * serializer cannot be matched that way and fall back to the name derived from the factory; that
+    * fallback is restricted to Synapse's own mediator package, because a name derived from a
+    * factory is not an identity and without the restriction a customer class sharing the name would
+    * inherit a decision meant for the Synapse implementation.
+    *
+    * Package private so the resolution, including that package gate, can be tested directly.
+    *
+    * @param index the implementation to element index
+    * @param resolved the class named by the &lt;class&gt; element
+    * @return the element name, or null if the class backs no registered mediator element
+    */
+    static String resolveElement(MediatorElementIndex index, Class<?> resolved) {
+
+        String elementName = index.byClassName.get(resolved.getName());
+        if (elementName == null && resolved.getName().startsWith(SYNAPSE_MEDIATOR_PACKAGE)) {
+            elementName = index.bySimpleName.get(resolved.getSimpleName().toLowerCase(Locale.ROOT));
+        }
+        return elementName;
+    }
+
+    /**
      * Checks whether the class named by a &lt;class&gt; element may be used.
      *
      * The class mediator resolves an arbitrary fully qualified class name, so without this check
@@ -186,17 +228,7 @@ public final class MediatorAccessControl {
             return;
         }
 
-        MediatorElementIndex index = getElementIndex();
-        String elementName = index.byClassName.get(resolved.getName());
-
-        if (elementName == null && resolved.getName().startsWith(SYNAPSE_MEDIATOR_PACKAGE)) {
-            // Mediators that have a factory but no serializer cannot be matched by class name, so
-            // they fall back to the name derived from the factory. Restricted to Synapse's own
-            // mediator package, since a name derived from a factory is not an identity: without the
-            // restriction a customer class that happened to share the name would inherit a decision
-            // meant for the Synapse implementation.
-            elementName = index.bySimpleName.get(resolved.getSimpleName().toLowerCase(Locale.ROOT));
-        }
+        String elementName = resolveElement(getElementIndex(), resolved);
 
         if (elementName == null) {
             // Not the implementation of any registered mediator element.
@@ -387,9 +419,11 @@ public final class MediatorAccessControl {
             String serializerName = entry.getValue().getClass().getSimpleName();
             String stem = stripSuffix(serializerName, "Serializer");
             if (stem == null) {
-                log.debug("Mediator serializer '" + serializerName + "' does not follow the "
+                if (log.isDebugEnabled()) {
+                    log.debug("Mediator serializer '" + serializerName + "' does not follow the "
                         + "<Mediator>Serializer naming convention, so '" + entry.getKey()
                         + "' cannot be resolved to a mediator element by class name.");
+                }
                 continue;
             }
             String previous = stemToClassName.put(stem, entry.getKey());
@@ -397,7 +431,8 @@ public final class MediatorAccessControl {
                 ambiguousStems.add(stem);
                 log.warn("Mediator serializers for '" + previous + "' and '" + entry.getKey()
                         + "' share the simple name '" + serializerName + "'. Neither class will be "
-                        + "resolved to a mediator element by class mediator access control.");
+                        + "resolved to a mediator element by class name; a Synapse mediator may "
+                        + "still resolve through the factory-derived name.");
             }
         }
 
@@ -414,9 +449,11 @@ public final class MediatorAccessControl {
             String factoryName = entry.getValue().getSimpleName();
             String stem = stripSuffix(factoryName, "Factory");
             if (stem == null) {
-                log.debug("Mediator factory '" + factoryName + "' does not follow the "
+                if (log.isDebugEnabled()) {
+                    log.debug("Mediator factory '" + factoryName + "' does not follow the "
                         + "<Mediator>Factory naming convention, so element '"
                         + entry.getKey().getLocalPart() + "' has no implementation mapping.");
+                }
                 continue;
             }
             String elementName = entry.getKey().getLocalPart();
@@ -457,25 +494,37 @@ public final class MediatorAccessControl {
                     || byClassName.containsKey(className)) {
                 continue;
             }
-            String bestStem = null;
-            for (String candidate : consumedStems) {
-                if (stem.startsWith(candidate)
-                        && (bestStem == null || candidate.length() > bestStem.length())) {
-                    bestStem = candidate;
+            // Longest first, falling through when a candidate's class was excluded as ambiguous.
+            List<String> candidates = new ArrayList<>(consumedStems);
+            Collections.sort(candidates, new Comparator<String>() {
+                public int compare(String a, String b) { return b.length() - a.length(); }
+            });
+            String elementName = null;
+            String matchedStem = null;
+            for (String candidate : candidates) {
+                if (!stem.startsWith(candidate)) {
+                    continue;
+                }
+                String candidateElement = byClassName.get(stemToClassName.get(candidate));
+                if (candidateElement != null) {
+                    elementName = candidateElement;
+                    matchedStem = candidate;
+                    break;
                 }
             }
-            String elementName = bestStem == null
-                    ? null : byClassName.get(stemToClassName.get(bestStem));
             if (elementName != null) {
                 byClassName.put(className, elementName);
-                log.debug("Mediator implementation '" + className + "' resolved to element '"
-                        + elementName + "' because its serializer name extends '" + bestStem
-                        + "Serializer'.");
+                if (log.isDebugEnabled()) {
+                    log.debug("Mediator implementation '" + className + "' resolved to element '"
+                            + elementName + "' because its serializer name extends '" + matchedStem
+                            + "Serializer'.");
+                }
             } else {
                 log.warn("Mediator implementation '" + className + "' could not be resolved to a "
-                        + "mediator element, because its serializer name '" + stem + "Serializer' "
-                        + "matches no registered mediator factory. Class mediator access control "
-                        + "will not govern this class.");
+                        + "mediator element: its serializer name '" + stem + "Serializer' matches "
+                        + "no registered mediator factory, and no factory it extends resolves to an "
+                        + "unambiguous element. Class mediator access control will not govern this "
+                        + "class.");
             }
         }
 

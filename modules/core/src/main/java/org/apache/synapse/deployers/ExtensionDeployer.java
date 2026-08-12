@@ -39,6 +39,7 @@ import org.apache.axis2.deployment.repository.util.DeploymentFileData;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.config.xml.MediatorFactory;
+import org.apache.synapse.config.xml.MediatorAccessControl;
 import org.apache.synapse.config.xml.MediatorFactoryFinder;
 import org.apache.synapse.config.xml.MediatorSerializer;
 import org.apache.synapse.config.xml.MediatorSerializerFinder;
@@ -123,6 +124,12 @@ public class ExtensionDeployer extends AbstractDeployer {
                 log.info("Registered mediator serializer " + serializer.getClass().getName()
                         + " for " + mediatorClassName);
             }
+
+            // The mediator access control index is derived from these two registries. Registration
+            // here happens outside MediatorFactoryFinder initialisation, and replacing an existing
+            // entry leaves the registry size unchanged, so the index has to be told rather than
+            // left to notice.
+            MediatorAccessControl.invalidateIndex();
             
         } catch (IOException e) {
             handleException("I/O error in reading the mediator jar file", e);
