@@ -24,6 +24,7 @@ import org.apache.logging.log4j.ThreadContext;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.ParentSpanWrapperStackManager;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.helpers.SpanTagger;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.helpers.TracingUtils;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.models.ContinuationStateSequenceInfo;
@@ -114,6 +115,7 @@ public class SpanStore {
             componentUniqueIdWiseSpanWrappers.put(statisticDataUnit.getComponentId(), spanWrapper);
         }
         activeSpanWrappers.add(spanWrapper);
+        ParentSpanWrapperStackManager.push(spanId, synCtx);
         return spanWrapper;
     }
 
@@ -197,6 +199,7 @@ public class SpanStore {
             }
             spanWrapper.getSpan().end();
             activeSpanWrappers.remove(spanWrapper);
+            ParentSpanWrapperStackManager.pop(synCtx);
         }
     }
 

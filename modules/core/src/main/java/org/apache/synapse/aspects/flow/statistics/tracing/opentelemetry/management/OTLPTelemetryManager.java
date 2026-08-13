@@ -138,7 +138,18 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
         }
 
         sdkTracerProvider = SdkTracerProvider.builder()
-                .addSpanProcessor(BatchSpanProcessor.builder(spanExporter).build())
+                .addSpanProcessor(BatchSpanProcessor.builder(spanExporter)
+                        .setMaxQueueSize(getIntProperty(TelemetryConstants.OPENTELEMETRY_BSP_MAX_QUEUE_SIZE,
+                                TelemetryConstants.OPENTELEMETRY_BSP_DEFAULT_MAX_QUEUE_SIZE))
+                        .setMaxExportBatchSize(getIntProperty(TelemetryConstants.OPENTELEMETRY_BSP_MAX_EXPORT_BATCH_SIZE,
+                                TelemetryConstants.OPENTELEMETRY_BSP_DEFAULT_MAX_EXPORT_BATCH_SIZE))
+                        .setScheduleDelay(Duration.ofMillis(getIntProperty(
+                                TelemetryConstants.OPENTELEMETRY_BSP_SCHEDULE_DELAY_MILLIS,
+                                TelemetryConstants.OPENTELEMETRY_BSP_DEFAULT_SCHEDULE_DELAY_MILLIS)))
+                        .setExporterTimeout(Duration.ofMillis(getIntProperty(
+                                TelemetryConstants.OPENTELEMETRY_BSP_EXPORT_TIMEOUT_MILLIS,
+                                TelemetryConstants.OPENTELEMETRY_BSP_DEFAULT_EXPORT_TIMEOUT_MILLIS)))
+                        .build())
                 .setResource(Resource.getDefault().merge(TelemetryUtil.getTracerProviderResource(TelemetryConstants.SERVICE_NAME)))
                 .build();
 
@@ -243,4 +254,17 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
         }
         return metricIntervalSeconds;
     }
+
+
+    private int getIntProperty(String propertyName, String defaultValue) {
+        String value = SynapsePropertiesLoader.getPropertyValue(propertyName, defaultValue);
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            logger.warn("Invalid integer for " + propertyName + ": '" + value
+                    + "'. Using default value: " + defaultValue);
+            return Integer.parseInt(defaultValue);
+        }
+    }
+
 }

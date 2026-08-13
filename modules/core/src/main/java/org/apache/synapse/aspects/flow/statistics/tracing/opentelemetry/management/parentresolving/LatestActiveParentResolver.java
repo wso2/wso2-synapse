@@ -18,7 +18,9 @@
 
 package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.parentresolving;
 
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.ParentSpanWrapperStackManager;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.stores.SpanStore;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.models.SpanWrapper;
 
@@ -33,7 +35,14 @@ public class LatestActiveParentResolver extends AbstractParentResolver {
      * @param spanStore The span store object.
      * @return          Resolved parent span wrapper.
      */
-    public static SpanWrapper resolveParent(SpanStore spanStore) {
+    public static SpanWrapper resolveParent(SpanStore spanStore, MessageContext synCtx) {
+        String parentSpanWrapperId = ParentSpanWrapperStackManager.peekParentSpanWrapperId(synCtx);
+        if (parentSpanWrapperId != null) {
+            SpanWrapper parentSpan = spanStore.getSpanWrapper(parentSpanWrapperId);
+            if (parentSpan != null) {
+                return parentSpan;
+            }
+        }
         return resolveLatestActiveSpanWrapper(spanStore);
     }
 
