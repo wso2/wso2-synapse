@@ -55,6 +55,17 @@ public class Access {
 
     private static LinkedBlockingQueue<HttpRequestWrapper> requestQueue;
     private static LinkedBlockingQueue<HttpResponseWrapper> responseQueue;
+    private static LinkedBlockingQueue<RequestResponsePair> combinedQueue;
+
+    public static class RequestResponsePair {
+        final HttpRequestWrapper request;
+        final HttpResponseWrapper response;
+
+        RequestResponsePair(HttpRequestWrapper req, HttpResponseWrapper res) {
+            this.request = req;
+            this.response = res;
+        }
+    }
 
     private Date date;
 
@@ -70,6 +81,7 @@ public class Access {
         Access.accessLogger = accessLogger;
         requestQueue = new LinkedBlockingQueue<HttpRequestWrapper>();
         responseQueue = new LinkedBlockingQueue<HttpResponseWrapper>();
+        combinedQueue = new LinkedBlockingQueue<RequestResponsePair>();
         logElements = createLogElements();
         logAccesses();
     }
@@ -99,13 +111,56 @@ public class Access {
     }
 
     /**
+     * Adds a correlated request+response pair to the combined queue for single-line logging.
+     *
+     * @param request  - HttpRequest
+     * @param response - HttpResponse
+     */
+    public void addCombinedAccessToQueue(HttpRequest request, HttpResponse response) {
+        HttpRequestWrapper requestWrapper = new HttpRequestWrapper();
+        requestWrapper.setHttpRequest(request);
+        Object reqTimeMs = request.getParams().getParameter("http.request.time.ms");
+        if (reqTimeMs instanceof Long) {
+            requestWrapper.setDate(new Date((Long) reqTimeMs));
+        } else {
+            requestWrapper.setDate(new Date(AccessTimeUtil.getDate().getTime()));
+        }
+
+        HttpResponseWrapper responseWrapper = null;
+        if (response != null) {
+            long responseTimeMs = System.currentTimeMillis();
+            response.getParams().setParameter("http.response.time.ms", responseTimeMs);
+            responseWrapper = new HttpResponseWrapper();
+            responseWrapper.setHttpResponse(response);
+            responseWrapper.setDate(new Date(responseTimeMs));
+        }
+
+        combinedQueue.add(new RequestResponsePair(requestWrapper, responseWrapper));
+    }
+
+    /**
      * logs the request and response accesses.
      */
     public void logAccesses() {
         Thread logRequests = new LogRequests();
         Thread logResponses = new LogResponses();
+        Thread logCombined = new LogCombined();
         logRequests.start();
         logResponses.start();
+        logCombined.start();
+    }
+
+    private class LogCombined extends Thread {
+        public void run() {
+            while (true) {
+                try {
+                    RequestResponsePair pair = combinedQueue.take();
+                    logCombined(pair.request, pair.response);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 
     private class LogRequests extends Thread {
@@ -155,6 +210,26 @@ public class Access {
         log.debug(logString);      //log to the console
         if (accessLogger.isLoggingEnabled) {
             accessLogger.log(logString);      //log to the file
+        }
+    }
+
+    /**
+     * Logs request and response as a single combined log line.
+     *
+     * @param request  - HttpRequestWrapper
+     * @param response - HttpResponseWrapper
+     */
+    public void logCombined(HttpRequestWrapper request, HttpResponseWrapper response) {
+        Date actualDateOfOperation = request.getDate();
+        StringBuilder result = new StringBuilder(128);
+        HttpResponse httpResponse = response != null ? response.getHttpResponse() : null;
+        for (AccessLogElement logElement : logElements) {
+            logElement.addElement(result, actualDateOfOperation, request.getHttpRequest(), httpResponse);
+        }
+        String logString = result.toString();
+        accesslog.info(logString);
+        if (accessLogger.isLoggingEnabled) {
+            accessLogger.log(logString);
         }
     }
 
@@ -667,6 +742,43 @@ public class Access {
     }
 
     /**
+     * write the correlation ID - %I
+     */
+    protected static class CorrelationIdElement implements AccessLogElement {
+        public void addElement(StringBuilder buf, Date date, HttpRequest request,
+                               HttpResponse response) {
+            if (request != null) {
+                Object correlationId = request.getParams().getParameter(
+                        org.apache.synapse.commons.CorrelationConstants.CORRELATION_ID);
+                buf.append(correlationId != null ? correlationId : "-");
+            } else {
+                buf.append('-');
+            }
+        }
+    }
+
+    /**
+     * write time taken to process the request in milliseconds - %D
+     * Only meaningful in combined mode where both request and response are available.
+     */
+    protected static class TimeTakenElement implements AccessLogElement {
+        public void addElement(StringBuilder buf, Date date, HttpRequest request,
+                               HttpResponse response) {
+            if (request != null && response != null) {
+                Object reqTimeMs = request.getParams().getParameter("http.request.time.ms");
+                Object resTimeMs = response.getParams().getParameter("http.response.time.ms");
+                if (reqTimeMs instanceof Long && resTimeMs instanceof Long) {
+                    buf.append((Long) resTimeMs - (Long) reqTimeMs);
+                } else {
+                    buf.append('-');
+                }
+            } else {
+                buf.append('-');
+            }
+        }
+    }
+
+    /**
      * write a specific response header - %{xxx}o
      */
     protected static class ResponseHeaderElement implements AccessLogElement {
@@ -798,6 +910,8 @@ public class Access {
                 return new LocalAddrElement();
             case 'a':
                 return new UserAgentElement();
+            case 'D':
+                return new TimeTakenElement();
             case 'b':
                 return new ByteSentElement(true);     //%b
             case 'B':
@@ -814,6 +928,8 @@ public class Access {
                 return new RefererElement();
             case 'h':
                 return new HostElement();         //%h
+            case 'I':
+                return new CorrelationIdElement();
             case 'k':
                 return new KeepAliveElement();
             case 'l':

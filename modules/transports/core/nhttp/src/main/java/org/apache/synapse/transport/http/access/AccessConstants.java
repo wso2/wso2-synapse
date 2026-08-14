@@ -77,6 +77,8 @@ public class AccessConstants {
 
     public static final String CONFIG_ENABLE_LOGGING = "access_log_enable";
 
+    public static final String CONFIG_V2_LOGGING = "access_log_v2";
+
 
     public static String getLogPattern() {
         return AccessConfiguration.getInstance().getStringProperty(CONFIG_PATTERN, LOG_PATTERN);
@@ -96,6 +98,10 @@ public class AccessConstants {
 
     public static String getDirectory() {
         return AccessConfiguration.getInstance().getStringProperty(CONFIG_DIRECTORY, DIRECTORY);
+    }
+
+    public static boolean isV2LoggingEnabled() {
+        return AccessConfiguration.getInstance().getBooleanProperty(CONFIG_V2_LOGGING, Boolean.FALSE);
     }
 
 }

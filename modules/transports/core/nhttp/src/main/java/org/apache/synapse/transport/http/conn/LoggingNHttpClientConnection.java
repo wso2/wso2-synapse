@@ -38,6 +38,8 @@ import org.apache.http.nio.reactor.SessionOutputBuffer;
 import org.apache.http.nio.util.ByteBufferAllocator;
 import org.apache.http.params.HttpParams;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
+import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.transport.http.access.AccessConstants;
 import org.apache.synapse.transport.http.access.AccessHandler;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.TargetHandler;
@@ -49,6 +51,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectionKey;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
@@ -69,6 +72,7 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
     private static final Properties props = MiscellaneousUtil.loadProperties(PROPERTY_FILE);
     private static final boolean REPLAY_TXN_ENABLED = Boolean.parseBoolean(
             MiscellaneousUtil.getProperty(props, PassThroughConstants.REPLAY_TXN_ENABLED_KEY, "false"));
+    private final AtomicReference<HttpRequest> pendingAccessLogRequest = new AtomicReference<>();
 
     public LoggingNHttpClientConnection(
             final IOSession session,
@@ -96,6 +100,7 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
         if (this.log.isDebugEnabled()) {
             this.log.debug(this.id + ": Close connection");
         }
+        logPendingRequestOnConnectionEnd();
         super.close();
     }
 
@@ -104,7 +109,15 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
         if (this.log.isDebugEnabled()) {
             this.log.debug(this.id + ": Shutdown connection");
         }
+        logPendingRequestOnConnectionEnd();
         super.shutdown();
+    }
+
+    private void logPendingRequestOnConnectionEnd() {
+        HttpRequest request = pendingAccessLogRequest.getAndSet(null);
+        if (request != null) {
+            AccessHandler.getAccess().addCombinedAccessToQueue(request, null);
+        }
     }
 
     @Override
@@ -376,6 +389,7 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
             if (message != null && accesslog.isInfoEnabled()) {
                 HttpRequest request = (HttpRequest) message;
                 HttpParams params = request.getParams();
+                params.setParameter("http.request.time.ms", System.currentTimeMillis());
 
                 final SocketAddress remoteAddress = session.getRemoteAddress();
                 if (remoteAddress instanceof InetSocketAddress) {
@@ -384,7 +398,16 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
                             remote.getAddress().getHostAddress());
                 }
 
-                AccessHandler.getAccess().addAccessToQueue(message);
+                Object correlationId = getContext().getAttribute(CorrelationConstants.CORRELATION_ID);
+                if (correlationId != null) {
+                    params.setParameter(CorrelationConstants.CORRELATION_ID, correlationId.toString());
+                }
+
+                if (AccessConstants.isV2LoggingEnabled()) {
+                    pendingAccessLogRequest.set(request);
+                } else {
+                    AccessHandler.getAccess().addAccessToQueue(message);
+                }
             }
             this.writer.write(message);
         }
@@ -442,7 +465,14 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
                             remote.getAddress().getHostAddress());
                 }
 
-                AccessHandler.getAccess().addAccessToQueue(message);
+                if (AccessConstants.isV2LoggingEnabled()) {
+                    HttpRequest request = pendingAccessLogRequest.getAndSet(null);
+                    if (request != null) {
+                        AccessHandler.getAccess().addCombinedAccessToQueue(request, response);
+                    }
+                } else {
+                    AccessHandler.getAccess().addAccessToQueue(message);
+                }
             }
             return message;
         }

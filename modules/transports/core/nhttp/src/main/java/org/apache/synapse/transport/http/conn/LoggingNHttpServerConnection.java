@@ -24,6 +24,7 @@ import java.net.SocketAddress;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
@@ -46,6 +47,8 @@ import org.apache.http.nio.reactor.SessionInputBuffer;
 import org.apache.http.nio.reactor.SessionOutputBuffer;
 import org.apache.http.nio.util.ByteBufferAllocator;
 import org.apache.http.params.HttpParams;
+import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.transport.http.access.AccessConstants;
 import org.apache.synapse.transport.http.access.AccessHandler;
 
 public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
@@ -61,6 +64,7 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
     private final String id;
 
     private IOSession original;
+    private final AtomicReference<HttpRequest> pendingAccessLogRequest = new AtomicReference<>();
 
     public LoggingNHttpServerConnection(
             final IOSession session,
@@ -85,6 +89,7 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
         if (this.log.isDebugEnabled()) {
             this.log.debug(this.id + ": Close connection");
         }
+        logPendingRequestOnConnectionEnd();
         super.close();
     }
 
@@ -93,7 +98,19 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
         if (this.log.isDebugEnabled()) {
             this.log.debug(this.id + ": Shutdown connection");
         }
+        logPendingRequestOnConnectionEnd();
         super.shutdown();
+    }
+
+    private void logPendingRequestOnConnectionEnd() {
+        HttpRequest request = pendingAccessLogRequest.getAndSet(null);
+        if (request != null) {
+            Object correlationId = getContext().getAttribute(CorrelationConstants.CORRELATION_ID);
+            if (correlationId != null) {
+                request.getParams().setParameter(CorrelationConstants.CORRELATION_ID, correlationId.toString());
+            }
+            AccessHandler.getAccess().addCombinedAccessToQueue(request, null);
+        }
     }
 
     @Override
@@ -373,7 +390,24 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
                             remote.getAddress().getHostAddress());
                 }
 
-                AccessHandler.getAccess().addAccessToQueue(message);
+                if (AccessConstants.isV2LoggingEnabled()) {
+                    HttpRequest request = pendingAccessLogRequest.getAndSet(null);
+                    if (request != null) {
+                        HttpParams reqParams = request.getParams();
+                        if (remoteAddress instanceof InetSocketAddress) {
+                            final InetSocketAddress remote = ((InetSocketAddress) remoteAddress);
+                            reqParams.setParameter("http.remote.addr",
+                                    remote.getAddress().getHostAddress());
+                        }
+                        Object correlationId = getContext().getAttribute(CorrelationConstants.CORRELATION_ID);
+                        if (correlationId != null) {
+                            reqParams.setParameter(CorrelationConstants.CORRELATION_ID, correlationId.toString());
+                        }
+                        AccessHandler.getAccess().addCombinedAccessToQueue(request, response);
+                    }
+                } else {
+                    AccessHandler.getAccess().addAccessToQueue(message);
+                }
             }
 
             this.writer.write(message);
@@ -423,6 +457,7 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
             if (message != null && accesslog.isInfoEnabled()) {
                 HttpRequest request = (HttpRequest) message;
                 HttpParams params = request.getParams();
+                params.setParameter("http.request.time.ms", System.currentTimeMillis());
 
                 final SocketAddress remoteAddress = session.getRemoteAddress();
                 if (remoteAddress instanceof InetSocketAddress) {
@@ -430,7 +465,11 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
                     params.setParameter("http.remote.addr",
                             remote.getAddress().getHostAddress());
                 }
-                AccessHandler.getAccess().addAccessToQueue(message);
+                if (AccessConstants.isV2LoggingEnabled()) {
+                    pendingAccessLogRequest.set(request);
+                } else {
+                    AccessHandler.getAccess().addAccessToQueue(message);
+                }
             }
 
             return message;
