@@ -20,6 +20,7 @@
 package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.synapse.Mediator;
@@ -29,6 +30,7 @@ import org.apache.synapse.mediators.transform.PayloadFactoryMediator;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
+import java.util.Iterator;
 import java.util.List;
 
 public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer {
@@ -99,9 +101,15 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
                 } else {
                     if (isFreeMarkerTemplate(mediator)) {
                         createCdataTag(mediator, formatElem);
-                    } else {    
-                    formatElem.addChild(AXIOMUtil.stringToOM(mediator.getFormat()));
-                }
+                    } else {
+                        OMElement paddedFormatElem = AXIOMUtil.stringToOM("<pfPadding>" + mediator.getFormat() + "</pfPadding>");
+                        Iterator childIt = paddedFormatElem.getChildren();
+                        while (childIt.hasNext()) {
+                            Object child = childIt.next();
+                            childIt.remove();
+                            formatElem.addChild((OMNode) child);
+                        }
+                    }
                 }
                     payloadFactoryElem.addChild(formatElem);
                 } catch (XMLStreamException e) {
