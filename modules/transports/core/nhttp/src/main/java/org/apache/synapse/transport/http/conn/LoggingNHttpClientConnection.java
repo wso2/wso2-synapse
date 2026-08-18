@@ -26,6 +26,7 @@ import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseFactory;
+import org.apache.http.HttpStatus;
 import org.apache.http.impl.nio.DefaultNHttpClientConnection;
 import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.nio.NHttpClientEventHandler;
@@ -389,7 +390,7 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
             if (message != null && accesslog.isInfoEnabled()) {
                 HttpRequest request = (HttpRequest) message;
                 HttpParams params = request.getParams();
-                params.setParameter("http.request.time.ms", System.currentTimeMillis());
+                params.setParameter(AccessConstants.HTTP_REQUEST_TIME_MS, System.currentTimeMillis());
 
                 final SocketAddress remoteAddress = session.getRemoteAddress();
                 if (remoteAddress instanceof InetSocketAddress) {
@@ -466,9 +467,11 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
                 }
 
                 if (AccessConstants.isV2LoggingEnabled()) {
-                    HttpRequest request = pendingAccessLogRequest.getAndSet(null);
-                    if (request != null) {
-                        AccessHandler.getAccess().addCombinedAccessToQueue(request, response);
+                    if (response.getStatusLine().getStatusCode() >= HttpStatus.SC_OK) {
+                        HttpRequest request = pendingAccessLogRequest.getAndSet(null);
+                        if (request != null) {
+                            AccessHandler.getAccess().addCombinedAccessToQueue(request, response);
+                        }
                     }
                 } else {
                     AccessHandler.getAccess().addAccessToQueue(message);

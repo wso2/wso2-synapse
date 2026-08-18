@@ -18,7 +18,9 @@
  */
 package org.apache.synapse.transport.http.access;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.Header;
 import org.apache.http.HttpMessage;
@@ -41,6 +43,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  * org.apache.catalina.valves.AccessLogValve with thanks.
  */
 public class Access {
+
+    private static final String THREAD_HTTP_ACCESS_LOG_V2 = "http-access-log-v2";
     private static Log log = LogFactory.getLog(Access.class);
     private final Log accesslog = LogFactory.getLog(LoggingUtils.ACCESS_LOG_ID);
 
@@ -81,7 +85,7 @@ public class Access {
         Access.accessLogger = accessLogger;
         requestQueue = new LinkedBlockingQueue<HttpRequestWrapper>();
         responseQueue = new LinkedBlockingQueue<HttpResponseWrapper>();
-        combinedQueue = new LinkedBlockingQueue<RequestResponsePair>();
+        combinedQueue = new LinkedBlockingQueue<RequestResponsePair>(AccessConstants.getV2QueueSize());
         logElements = createLogElements();
         logAccesses();
     }
@@ -119,23 +123,21 @@ public class Access {
     public void addCombinedAccessToQueue(HttpRequest request, HttpResponse response) {
         HttpRequestWrapper requestWrapper = new HttpRequestWrapper();
         requestWrapper.setHttpRequest(request);
-        Object reqTimeMs = request.getParams().getParameter("http.request.time.ms");
-        if (reqTimeMs instanceof Long) {
-            requestWrapper.setDate(new Date((Long) reqTimeMs));
-        } else {
-            requestWrapper.setDate(new Date(AccessTimeUtil.getDate().getTime()));
-        }
+        requestWrapper.setDate(new Date((Long) request.getParams().getParameter(AccessConstants.HTTP_REQUEST_TIME_MS)));
 
         HttpResponseWrapper responseWrapper = null;
         if (response != null) {
             long responseTimeMs = System.currentTimeMillis();
-            response.getParams().setParameter("http.response.time.ms", responseTimeMs);
+            response.getParams().setParameter(AccessConstants.HTTP_RESPONSE_TIME_MS, responseTimeMs);
             responseWrapper = new HttpResponseWrapper();
             responseWrapper.setHttpResponse(response);
             responseWrapper.setDate(new Date(responseTimeMs));
         }
 
-        combinedQueue.add(new RequestResponsePair(requestWrapper, responseWrapper));
+        if (!combinedQueue.offer(new RequestResponsePair(requestWrapper, responseWrapper))) {
+            Object correlationId = request.getParams().getParameter(CorrelationConstants.CORRELATION_ID);
+            log.warn("Combined access log queue is full, dropping entry. correlation_id=" + correlationId);
+        }
     }
 
     /**
@@ -144,10 +146,13 @@ public class Access {
     public void logAccesses() {
         Thread logRequests = new LogRequests();
         Thread logResponses = new LogResponses();
-        Thread logCombined = new LogCombined();
         logRequests.start();
         logResponses.start();
-        logCombined.start();
+        if (AccessConstants.isV2LoggingEnabled()) {
+            Thread logCombined = new LogCombined();
+            logCombined.setName(THREAD_HTTP_ACCESS_LOG_V2);
+            logCombined.start();
+        }
     }
 
     private class LogCombined extends Thread {
@@ -742,15 +747,16 @@ public class Access {
     }
 
     /**
-     * write the correlation ID - %I
+     * write the correlation ID - %X
      */
     protected static class CorrelationIdElement implements AccessLogElement {
         public void addElement(StringBuilder buf, Date date, HttpRequest request,
                                HttpResponse response) {
             if (request != null) {
                 Object correlationId = request.getParams().getParameter(
-                        org.apache.synapse.commons.CorrelationConstants.CORRELATION_ID);
-                buf.append(correlationId != null ? correlationId : "-");
+                        CorrelationConstants.CORRELATION_ID);
+                String corrId = correlationId != null ? correlationId.toString() : null;
+                buf.append(StringUtils.isNotBlank(corrId) ? corrId : "-");
             } else {
                 buf.append('-');
             }
@@ -765,8 +771,8 @@ public class Access {
         public void addElement(StringBuilder buf, Date date, HttpRequest request,
                                HttpResponse response) {
             if (request != null && response != null) {
-                Object reqTimeMs = request.getParams().getParameter("http.request.time.ms");
-                Object resTimeMs = response.getParams().getParameter("http.response.time.ms");
+                Object reqTimeMs = request.getParams().getParameter(AccessConstants.HTTP_REQUEST_TIME_MS);
+                Object resTimeMs = response.getParams().getParameter(AccessConstants.HTTP_RESPONSE_TIME_MS);
                 if (reqTimeMs instanceof Long && resTimeMs instanceof Long) {
                     buf.append((Long) resTimeMs - (Long) reqTimeMs);
                 } else {
@@ -928,7 +934,7 @@ public class Access {
                 return new RefererElement();
             case 'h':
                 return new HostElement();         //%h
-            case 'I':
+            case 'X':
                 return new CorrelationIdElement();
             case 'k':
                 return new KeepAliveElement();
