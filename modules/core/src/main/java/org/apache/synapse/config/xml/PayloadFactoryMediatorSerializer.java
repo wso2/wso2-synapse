@@ -90,8 +90,7 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
         if(!mediator.isFormatDynamic()){
             if (mediator.getFormat() != null) {
 
-                try {
-                    OMElement formatElem = fac.createOMElement(FORMAT, synNS);
+                OMElement formatElem = fac.createOMElement(FORMAT, synNS);
                 String type = mediator.getType();
                 if(type!=null && (type.contains(JSON_TYPE) || type.contains(TEXT))) {
                     if (isFreeMarkerTemplate(mediator)) {
@@ -107,22 +106,20 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
                             // Pad with a temporary root so non-XML formats (e.g. "$1") still parse.
                             OMElement paddedFormatElem = AXIOMUtil.stringToOM(
                                     "<pfPadding>" + mediator.getFormat() + "</pfPadding>");
-                            Iterator childIt = paddedFormatElem.getChildren();
+                            Iterator<?> childIt = paddedFormatElem.getChildren();
                             while (childIt.hasNext()) {
                                 OMNode child = (OMNode) childIt.next();
                                 childIt.remove();
                                 formatElem.addChild(child);
                             }
-                        } catch (OMException e) {
+                        } catch (OMException | XMLStreamException e) {
                             // Still not parseable even padded - fall back to plain text.
+                            log.warn("PayloadFactory format could not be parsed - falling back to plain text: ", e);
                             formatElem.setText(mediator.getFormat());
                         }
                     }
                 }
-                    payloadFactoryElem.addChild(formatElem);
-                } catch (XMLStreamException e) {
-                    handleException("Error while serializing payloadFactory mediator", e);
-                }
+                payloadFactoryElem.addChild(formatElem);
             } else {
                 handleException("Invalid payloadFactory mediator, format is required");
             }
