@@ -134,5 +134,25 @@ public class PayloadFactoryMediatorSerializerTest {
         );
     }
 
+    /**
+     * Test SerializeSpecificMediator method with a bare, unwrapped placeholder format (e.g. "$1",
+     * with no surrounding XML element) and assert that serialization succeeds (instead of
+     * throwing, as the raw format is not itself well-formed XML) and the format round-trips
+     * correctly.
+     */
+    @Test
+    public void testSerializeSpecificMediator6() {
+        PayloadFactoryMediatorSerializer serializer = new PayloadFactoryMediatorSerializer();
+        PayloadFactoryMediator payloadFactoryMediator = new PayloadFactoryMediator();
+        payloadFactoryMediator.setTemplateProcessor(new RegexTemplateProcessor());
+        payloadFactoryMediator.setFormat("$1");
+        OMElement element = serializer.serializeSpecificMediator(payloadFactoryMediator);
+        Assert.assertNotNull(element);
+        MediatorFactory mediatorFactory = new PayloadFactoryMediatorFactory();
+        Mediator mediator = mediatorFactory.createMediator(element, null);
+        Assert.assertEquals("Bare placeholder format is not serialized correctly", "$1",
+                ((PayloadFactoryMediator) mediator).getFormat());
+    }
+
 }
 
