@@ -20,6 +20,8 @@
 package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMException;
+import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.synapse.Mediator;
@@ -29,6 +31,7 @@ import org.apache.synapse.mediators.transform.PayloadFactoryMediator;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
+import java.util.Iterator;
 import java.util.List;
 
 public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer {
@@ -87,8 +90,7 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
         if(!mediator.isFormatDynamic()){
             if (mediator.getFormat() != null) {
 
-                try {
-                    OMElement formatElem = fac.createOMElement(FORMAT, synNS);
+                OMElement formatElem = fac.createOMElement(FORMAT, synNS);
                 String type = mediator.getType();
                 if(type!=null && (type.contains(JSON_TYPE) || type.contains(TEXT))) {
                     if (isFreeMarkerTemplate(mediator)) {
@@ -99,14 +101,25 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
                 } else {
                     if (isFreeMarkerTemplate(mediator)) {
                         createCdataTag(mediator, formatElem);
-                    } else {    
-                    formatElem.addChild(AXIOMUtil.stringToOM(mediator.getFormat()));
+                    } else {
+                        try {
+                            // Pad with a temporary root so non-XML formats (e.g. "$1") still parse.
+                            OMElement paddedFormatElem = AXIOMUtil.stringToOM(
+                                    "<pfPadding>" + mediator.getFormat() + "</pfPadding>");
+                            Iterator<?> childIt = paddedFormatElem.getChildren();
+                            while (childIt.hasNext()) {
+                                OMNode child = (OMNode) childIt.next();
+                                childIt.remove();
+                                formatElem.addChild(child);
+                            }
+                        } catch (OMException | XMLStreamException e) {
+                            // Still not parseable even padded - fall back to plain text.
+                            log.warn("PayloadFactory format could not be parsed - falling back to plain text: ", e);
+                            formatElem.setText(mediator.getFormat());
+                        }
+                    }
                 }
-                }
-                    payloadFactoryElem.addChild(formatElem);
-                } catch (XMLStreamException e) {
-                    handleException("Error while serializing payloadFactory mediator", e);
-                }
+                payloadFactoryElem.addChild(formatElem);
             } else {
                 handleException("Invalid payloadFactory mediator, format is required");
             }
