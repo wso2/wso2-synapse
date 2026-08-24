@@ -92,6 +92,16 @@ public class PassThroughConfiguration {
         return _instance;
     }
 
+    /**
+     * Reloads properties from "passthru-http.properties", picking up the current CONF_LOCATION.
+     */
+    public void reload() {
+        props = loadProperties("passthru-http.properties");
+        isKeepAliveDisabled = null;
+        isTLSGracefulConnectionTerminationEnabled = null;
+        passThroughDefaultServiceName = null;
+    }
+
     public int getWorkerPoolCoreSize() {
         return ConfigurationBuilderUtil.getIntProperty(PassThroughConfigPNames.WORKER_POOL_SIZE_CORE,
                 DEFAULT_WORKER_POOL_SIZE_CORE, props);
@@ -328,8 +338,8 @@ public class PassThroughConfiguration {
              }
          }
          if (in != null) {
-             try {
-                 properties.load(in);
+             try (InputStream inputStream = in) {
+                 properties.load(inputStream);
              } catch (IOException e) {
                  String msg = "Error loading properties from a file at : " + filePath;
                  log.error(msg, e);
