@@ -42,7 +42,10 @@ public class PassThroughTestUtils {
     public static PassThroughConfiguration getPassThroughConfiguration() {
         String testConfLocation = System.getProperty("user.dir") + PASSTHROUGH_RESOURCE_PATH;
         System.setProperty(PassThroughConstants.CONF_LOCATION, testConfLocation);
-        return PassThroughConfiguration.getInstance();
+        // Force a reload since the singleton may already be initialized by another test.
+        PassThroughConfiguration configuration = PassThroughConfiguration.getInstance();
+        configuration.reload();
+        return configuration;
     }
 
     /**
