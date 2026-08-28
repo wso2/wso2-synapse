@@ -18,10 +18,15 @@
  */
 package org.apache.synapse.transport.http.access;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 /**
  * Constants used in the Access Class
  */
 public class AccessConstants {
+
+    private static final Log log = LogFactory.getLog(AccessConstants.class);
 
     /**
      * Pattern used to log - Default is COMBINED_PATTERN given below.
@@ -44,6 +49,8 @@ public class AccessConstants {
     public static final String MONTHS[] =
             {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    public static final String HTTP_REQUEST_TIME_MS = "http.request.time.ms";
+    public static final String HTTP_RESPONSE_TIME_MS = "http.response.time.ms";
 
     /**
      * The directory in which log files are created.
@@ -77,6 +84,14 @@ public class AccessConstants {
 
     public static final String CONFIG_ENABLE_LOGGING = "access_log_enable";
 
+    private static final String CONFIG_V2_LOGGING = "access_log_v2";
+
+    private static final String CONFIG_V2_QUEUE_SIZE = "access_log_v2_queue_size";
+
+    private static final int DEFAULT_V2_QUEUE_SIZE = 2000;
+
+    private static final boolean V2_LOGGING_ENABLED =
+            AccessConfiguration.getInstance().getBooleanProperty(CONFIG_V2_LOGGING, Boolean.FALSE);
 
     public static String getLogPattern() {
         return AccessConfiguration.getInstance().getStringProperty(CONFIG_PATTERN, LOG_PATTERN);
@@ -96,6 +111,20 @@ public class AccessConstants {
 
     public static String getDirectory() {
         return AccessConfiguration.getInstance().getStringProperty(CONFIG_DIRECTORY, DIRECTORY);
+    }
+
+    public static boolean isV2LoggingEnabled() {
+        return V2_LOGGING_ENABLED;
+    }
+
+    public static int getV2QueueSize() {
+        int size = AccessConfiguration.getInstance().getIntProperty(CONFIG_V2_QUEUE_SIZE, DEFAULT_V2_QUEUE_SIZE);
+        if (size <= 0) {
+            log.warn("Invalid value for " + CONFIG_V2_QUEUE_SIZE + ": " + size +
+                    ". Using default value: " + DEFAULT_V2_QUEUE_SIZE);
+            return DEFAULT_V2_QUEUE_SIZE;
+        }
+        return size;
     }
 
 }
