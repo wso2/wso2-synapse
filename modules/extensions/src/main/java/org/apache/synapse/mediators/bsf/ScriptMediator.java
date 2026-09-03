@@ -335,9 +335,13 @@ public class ScriptMediator extends AbstractMediator {
             if (language.equals(RHINO_JAVA_SCRIPT)) {
                 org.mozilla.javascript.Context.exit();
             }
-            if (language.equals("js") || language.equals(GRAAL_JAVA_SCRIPT)) {
+            if (language.equals(JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT)) {
                 if (context != null) {
-                    context.leave();
+                    try {
+                        context.leave();
+                    } finally {
+                        closeQuietly(context);
+                    }
                 }
             }
         }
@@ -386,10 +390,10 @@ public class ScriptMediator extends AbstractMediator {
             }
             obj = invocableScript.invokeFunction(function, scriptArgs.toArray());
         } finally {
-          if(sew != null){
-              // return engine to front of queue or drop if queue is full (i.e. if getNewScriptEngine() spawns a new engine)
-              pool.offer(sew);
-          }
+            if(sew != null){
+                // return engine to front of queue or drop if queue is full (i.e. if getNewScriptEngine() spawns a new engine)
+                pool.offer(sew);
+            }
         }
 
 
@@ -468,15 +472,29 @@ public class ScriptMediator extends AbstractMediator {
         scriptMC = getScriptMessageContext(synCtx, xmlHelper, context);
         processJSONPayload(synCtx, scriptMC);
         Bindings bindings = scriptEngine.createBindings();
-        bindings.put(MC_VAR_NAME, scriptMC);
+        try {
+            bindings.put(MC_VAR_NAME, scriptMC);
 
-        Object response;
-        if (compiledScript != null) {
-            response = compiledScript.eval(bindings);
-        } else {
-            response = scriptEngine.eval(scriptSourceCode, bindings);
+            Object response;
+            if (compiledScript != null) {
+                response = compiledScript.eval(bindings);
+            } else {
+                response = scriptEngine.eval(scriptSourceCode, bindings);
+            }
+            return response;
+        } finally {
+            closeQuietly(bindings);
         }
-        return response;
+    }
+
+    private void closeQuietly(Object closeable) {
+        if (closeable instanceof AutoCloseable) {
+            try {
+                ((AutoCloseable) closeable).close();
+            } catch (Exception e) {
+                log.warn("Error while closing script engine resource", e);
+            }
+        }
     }
 
     private void processJSONPayload(MessageContext synCtx, ScriptMessageContext scriptMC) throws ScriptException {
