@@ -59,6 +59,13 @@ public class TaskDescriptionSerializer {
             task.addAttribute("group", group, NULL_OMNS);
         }
 
+        boolean startOnLoad = taskDescription.isStartOnLoad();
+        if (startOnLoad) {
+            task.addAttribute(TaskConstants.START_ON_LOAD_ATTRIBUTE, "true", NULL_OMNS);
+        } else {
+            task.addAttribute(TaskConstants.START_ON_LOAD_ATTRIBUTE, "false", NULL_OMNS);
+        }
+
         List<String> pinnedServers = taskDescription.getPinnedServers();
         if (pinnedServers != null && !pinnedServers.isEmpty()) {
             StringBuffer pinnedServersStr = new StringBuffer(pinnedServers.get(0));

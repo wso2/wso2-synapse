@@ -30,4 +30,6 @@ public final class TaskConstants {
     public static final String SYNAPSE_ENV = "SynapseEnvironment";
 
     public static final String SKIP_START_IN_PAUSED_MODE_ASSIGNMENT = "skipStartInPauseModeAssignment";
+
+    public static final String START_ON_LOAD_ATTRIBUTE = "startOnLoad";
 }
