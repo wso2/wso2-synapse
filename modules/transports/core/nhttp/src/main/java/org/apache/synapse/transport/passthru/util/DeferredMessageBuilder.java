@@ -127,7 +127,7 @@ public class DeferredMessageBuilder {
             trasferEncoded = (String) transportHeaders.get(HTTP.TRANSFER_ENCODING);
 
 			if (contentType.equals(PassThroughConstants.DEFAULT_CONTENT_TYPE)
-					&& (contentLength == null || Integer.valueOf(contentLength) == 0)
+					&& (contentLength == null || Long.parseLong(contentLength) == 0)
 					&& trasferEncoded == null) {
 				msgCtx.setProperty(PassThroughConstants.NO_ENTITY_BODY, true);
 				msgCtx.setProperty(Constants.Configuration.CONTENT_TYPE, "");
