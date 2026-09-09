@@ -68,6 +68,14 @@ public class TaskDescriptionFactory {
                 taskDescription.setTaskGroup(group);
             }
 
+            String startOnLoad = el.getAttributeValue(
+                    new QName(NULL_NAMESPACE, TaskConstants.START_ON_LOAD_ATTRIBUTE));
+            if (startOnLoad != null) {
+                taskDescription.setTaskStartOnLoad(Boolean.parseBoolean(startOnLoad));
+            } else {
+                taskDescription.setTaskStartOnLoad(true);
+            }
+
             // set the task class
             OMAttribute classAttr = el.getAttribute(new QName("class"));
             if (classAttr != null && classAttr.getAttributeValue() != null) {

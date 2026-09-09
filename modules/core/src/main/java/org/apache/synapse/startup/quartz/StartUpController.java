@@ -32,7 +32,6 @@ import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.commons.util.PropertyHelper;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.registry.Registry;
-import org.apache.synapse.util.DynamicControlOperationResult;
 import org.apache.synapse.startup.AbstractStartup;
 import org.apache.synapse.startup.tasks.MessageInjector;
 import org.apache.synapse.task.SynapseTaskManager;
@@ -42,6 +41,7 @@ import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskDescriptionRepository;
 import org.apache.synapse.task.TaskManager;
 import org.apache.synapse.task.TaskScheduler;
+import org.apache.synapse.util.DynamicControlOperationResult;
 
 import javax.xml.namespace.QName;
 import java.net.InetAddress;
@@ -169,16 +169,16 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
         } else {
             try {
                 if (this.activateTask()) {
+                    setStartupControllerStateInRegistry(StartUpController.StartUpControllerState.ACTIVE);
                     message = "Task [" + getName() + "] is successfully activated.";
                     logger.info(message);
-                    setStartupControllerStateInRegistry(StartUpController.StartUpControllerState.ACTIVE);
                     isSuccess = true;
                 } else {
                     message = "Failed to activate the Task: " + getName();
                     logger.error(message);
                 }
             } catch (Exception e) {
-                this.deactivateTask();   
+                this.deactivateTask();
                 message = "Failed to activate the Task: " + getName();
                 logger.error(message, e);
             }
@@ -206,9 +206,9 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
         } else {
             try {
                 if (this.deactivateTask()) {
+                    setStartupControllerStateInRegistry(StartUpController.StartUpControllerState.INACTIVE);
                     message = "Task [" + getName() + "] is successfully deactivated.";
                     logger.info(message);
-                    setStartupControllerStateInRegistry(StartUpController.StartUpControllerState.INACTIVE);
                     isSuccess = true;
                 } else {
                     message = "Failed to deactivate the Task: " + getName();
@@ -258,13 +258,12 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
         return new DynamicControlOperationResult(isSuccess, message);
     }
 
-
     /**
      * Updates the state of the startup controller task in the registry.
      *
      * <p>This method ensures that the state of the startup controller task is persisted in
      * the registry for future reference. If the registry is unavailable and state
-     * preservation is enabled, a warning is logged, and the state will not be updated.
+     * preservation is enabled, an exception is thrown, and the state will not be updated.
      * </p>
      * @param state the {@link StartUpController.StartUpControllerState} to be saved in the registry
      */
@@ -311,7 +310,7 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
      *   <li>If the stored state string equals {@code "ACTIVE"} (case-insensitive), returns
      *       {@link StartUpControllerState#ACTIVE}.</li>
      *   <li>If the stored state string equals {@code "INACTIVE"} (case-insensitive), returns
-     *       @link StartUpControllerState#INACTIVE}.</li>
+     *       {@link StartUpControllerState#INACTIVE}.</li>
      *   <li>For any other stored value, returns {@link StartUpControllerState#INITIAL}.</li>
      * </ul>
      * </p>
@@ -341,7 +340,7 @@ public class StartUpController extends AbstractStartup implements AspectConfigur
 
         StartUpControllerState startupState = getStartupStateFromRegistry();
         if (startupState == StartUpControllerState.INITIAL) {
-            taskDescription.setStartInPausedMode(false);
+            taskDescription.setStartInPausedMode(!taskDescription.isStartOnLoad());
         } else {
             taskDescription.setStartInPausedMode(startupState == StartUpControllerState.INACTIVE);
         }

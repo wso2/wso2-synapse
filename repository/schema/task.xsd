@@ -50,6 +50,7 @@
         <xs:attribute name="class" type="xs:string" use="required"/>
         <xs:attribute name="name" type="xs:string" use="required"/>
         <xs:attribute name="group" type="xs:string" use="optional"/>
+        <xs:attribute name="startOnLoad" type="xs:boolean" use="optional"/>
         <xs:attribute name="pinnedServers" type="xs:string" use="optional"/>
     </xs:complexType>
 

@@ -18,11 +18,13 @@ public final class TaskDescription {
 
     private String taskGroup;
 
+    private boolean startOnLoad = true;
+
     /**
      * Indicates whether the task should be scheduled in a paused state.
      * <p>
-     * This flag is maintained internally and is determined by registry state
-     * (not by the external task definition). When true, the scheduler should schedule the
+     * This flag is maintained internally and is determined by registry state and also
+     * `startOnLoad` flag on initial deployment of the task. When true, the scheduler should schedule the
      * task as paused on deployment and it must be explicitly resumed to run.
      */
     private boolean startInPausedMode;
@@ -106,6 +108,15 @@ public final class TaskDescription {
 
     public void setTaskGroup(String taskGroup) {
         this.taskGroup = taskGroup;
+    }
+
+    public void setTaskStartOnLoad(boolean startOnLoad) {
+        this.startOnLoad = startOnLoad;
+    }
+
+    public boolean isStartOnLoad() {
+
+        return startOnLoad;
     }
 
     public boolean isStartInPausedMode() {
