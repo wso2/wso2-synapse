@@ -782,7 +782,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                         contentTypeValueInMsgCtx += "; charset=" + encoding;
                     }
                 }
-                sourceResponse.removeHeader(HTTP.CONTENT_TYPE);
+                removeExistingContentTypeHeader(sourceResponse, sourceConfiguration);
                 sourceResponse.addHeader(HTTP.CONTENT_TYPE, contentTypeValueInMsgCtx);
                 isContentTypeSetFromMsgCtx = true;
             }
@@ -790,10 +790,28 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 
         // If ContentType is not set from msg context, get the formatter ContentType
         if (!isContentTypeSetFromMsgCtx) {
-            sourceResponse.removeHeader(HTTP.CONTENT_TYPE);
+            removeExistingContentTypeHeader(sourceResponse, sourceConfiguration);
             sourceResponse.addHeader(HTTP.CONTENT_TYPE,
                                      formatter.getContentType(
                                              msgContext, format, msgContext.getSoapAction()));
+        }
+    }
+
+    /**
+     * Removes any existing Content-Type header from the response before the transport sets its own value. When
+     * duplicate Content-Type header removal is enabled the header is matched ignoring its letter case, so a
+     * Content-Type header returned by the backend in a different casing is removed as well instead of being sent
+     * to the client alongside the one set by the transport.
+     *
+     * @param sourceResponse      response to be sent to the client
+     * @param sourceConfiguration listener configuration holding the duplicate removal setting
+     */
+    private void removeExistingContentTypeHeader(SourceResponse sourceResponse,
+                                                 SourceConfiguration sourceConfiguration) {
+        if (sourceConfiguration.isDuplicateResponseContentTypeHeaderRemovalEnabled()) {
+            sourceResponse.removeHeaderIgnoreCase(HTTP.CONTENT_TYPE);
+        } else {
+            sourceResponse.removeHeader(HTTP.CONTENT_TYPE);
         }
     }
 }
