@@ -141,7 +141,7 @@ public class SourceResponseFactory {
                      sourceRequest.getHeaders().containsKey(HTTP.TRANSFER_ENCODING))) {
                     if (log.isDebugEnabled()) {
                         log.debug("Disable keep-alive in the client connection : Content-length/Transfer-encoding" +
-                                  " headers present for GET/HEAD/DELETE request");
+                                  " headers present for GET/HEAD/DELETE/OPTIONS request");
                     }
                     sourceResponse.setKeepAlive(false);
                 }
@@ -163,7 +163,8 @@ public class SourceResponseFactory {
     private static boolean isPayloadOptionalMethod(String httpMethod) {
         return (PassThroughConstants.HTTP_GET.equals(httpMethod) ||
                 PassThroughConstants.HTTP_HEAD.equals(httpMethod) ||
-                PassThroughConstants.HTTP_DELETE.equals(httpMethod));
+                PassThroughConstants.HTTP_DELETE.equals(httpMethod) ||
+                PassThroughConstants.HTTP_OPTIONS.equals(httpMethod));
     }
     
 }
