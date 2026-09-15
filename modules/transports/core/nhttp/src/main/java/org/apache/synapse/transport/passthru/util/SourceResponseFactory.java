@@ -163,7 +163,8 @@ public class SourceResponseFactory {
     private static boolean isPayloadOptionalMethod(String httpMethod) {
         return (PassThroughConstants.HTTP_GET.equals(httpMethod) ||
                 PassThroughConstants.HTTP_HEAD.equals(httpMethod) ||
-                PassThroughConstants.HTTP_DELETE.equals(httpMethod));
+                PassThroughConstants.HTTP_DELETE.equals(httpMethod) ||
+                PassThroughConstants.HTTP_OPTIONS.equals(httpMethod));
     }
     
 }
