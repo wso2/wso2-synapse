@@ -141,7 +141,7 @@ public class SourceResponseFactory {
                      sourceRequest.getHeaders().containsKey(HTTP.TRANSFER_ENCODING))) {
                     if (log.isDebugEnabled()) {
                         log.debug("Disable keep-alive in the client connection : Content-length/Transfer-encoding" +
-                                  " headers present for GET/HEAD/DELETE request");
+                                  " headers present for GET/HEAD/DELETE/OPTIONS request");
                     }
                     sourceResponse.setKeepAlive(false);
                 }
