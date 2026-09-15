@@ -28,12 +28,16 @@ import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.axis2.engine.Handler;
 import org.apache.axis2.transport.base.threads.NativeWorkerPool;
 import org.apache.axis2.transport.base.threads.WorkerPool;
+import org.apache.axiom.om.OMOutputFormat;
+import org.apache.axis2.transport.MessageFormatter;
 import org.apache.commons.logging.Log;
 import org.apache.http.impl.nio.DefaultNHttpServerConnection;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
+import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.util.BufferFactory;
 import org.apache.synapse.transport.passthru.util.PassThroughTestUtils;
@@ -147,5 +151,66 @@ public class PassThroughHttpSenderTest extends TestCase {
 
         when(digestGenerator.getDigest(any(MessageContext.class))).thenReturn("testString");
         sender.submitResponse(messageContext);
+    }
+
+    /**
+     * Tests that setContentType removes a Content-Type header returned by the backend in a different letter case
+     * when duplicate Content-Type header removal is enabled, so that only the Content-Type selected by the
+     * transport is sent to the client.
+     */
+    @Test
+    public void testSetContentTypeRemovesDifferentlyCasedContentTypeWhenEnabled() {
+        MockitoAnnotations.initMocks(this);
+        SourceConfiguration sourceConfiguration = mock(SourceConfiguration.class);
+        when(sourceConfiguration.isPreserveHttpHeader(HTTP.CONTENT_TYPE)).thenReturn(false);
+        when(sourceConfiguration.isDuplicateResponseContentTypeHeaderRemovalEnabled()).thenReturn(true);
+
+        SourceResponse sourceResponse = new SourceResponse(sourceConfiguration, 200, null);
+        sourceResponse.addHeader("content-type", "application/json");
+
+        sender.setContentType(createMessageContextWithContentType(), sourceResponse, mock(MessageFormatter.class),
+                new OMOutputFormat(), sourceConfiguration);
+
+        Assert.assertNull("Content-Type returned by the backend in a different letter case should be removed",
+                sourceResponse.getHeader("content-type"));
+        Assert.assertEquals("Only the Content-Type set by the transport should remain", "application/json",
+                sourceResponse.getHeader(HTTP.CONTENT_TYPE));
+    }
+
+    /**
+     * Tests that setContentType keeps its earlier exact key removal when duplicate Content-Type header removal is
+     * disabled, leaving a Content-Type returned by the backend in a different letter case alongside the one set by
+     * the transport.
+     */
+    @Test
+    public void testSetContentTypeKeepsDifferentlyCasedContentTypeWhenDisabled() {
+        MockitoAnnotations.initMocks(this);
+        SourceConfiguration sourceConfiguration = mock(SourceConfiguration.class);
+        when(sourceConfiguration.isPreserveHttpHeader(HTTP.CONTENT_TYPE)).thenReturn(false);
+        when(sourceConfiguration.isDuplicateResponseContentTypeHeaderRemovalEnabled()).thenReturn(false);
+
+        SourceResponse sourceResponse = new SourceResponse(sourceConfiguration, 200, null);
+        sourceResponse.addHeader("content-type", "application/json");
+
+        sender.setContentType(createMessageContextWithContentType(), sourceResponse, mock(MessageFormatter.class),
+                new OMOutputFormat(), sourceConfiguration);
+
+        Assert.assertEquals("Content-Type returned by the backend should be left untouched", "application/json",
+                sourceResponse.getHeader("content-type"));
+        Assert.assertEquals("Content-Type set by the transport should be added as well", "application/json",
+                sourceResponse.getHeader(HTTP.CONTENT_TYPE));
+    }
+
+    /**
+     * Builds a message context carrying a Content-Type, with character encoding disabled so that the asserted
+     * value is not altered by an appended charset.
+     *
+     * @return message context used by the setContentType tests
+     */
+    private MessageContext createMessageContextWithContentType() {
+        MessageContext msgContext = new MessageContext();
+        msgContext.setProperty(Constants.Configuration.CONTENT_TYPE, "application/json");
+        msgContext.setProperty(PassThroughConstants.SET_CHARACTER_ENCODING, "false");
+        return msgContext;
     }
 }
