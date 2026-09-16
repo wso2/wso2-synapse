@@ -30,6 +30,7 @@ import junit.framework.TestCase;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.mediators.TestUtils;
 
@@ -43,6 +44,9 @@ public class ScriptMediatorFactoryTest extends TestCase {
     
     private static final OMElement REG_PROP_FOO_FUNC_MEDIATOR_CONFIG = TestUtils.createOMElement(
        "<script language='js' key='MyFooMediator' function='foo'/>");
+
+    private static final OMElement JS_ENGINE_ALIAS_MEDIATOR_CONFIG = TestUtils.createOMElement(
+       "<script language='jsEngine'>true</script>");
 
     private static final OMElement MY_MEDIATOR = TestUtils.createOMElement(
        "<x><![CDATA[ function mediate(mc) { return true;} ]]></x>");
@@ -85,6 +89,23 @@ public class ScriptMediatorFactoryTest extends TestCase {
         ScriptMediatorFactory mf = new ScriptMediatorFactory();
         Mediator mediator = mf.createMediator(REG_PROP_FOO_FUNC_MEDIATOR_CONFIG, new Properties());
         assertTrue(mediator.mediate(mc));
+    }
+
+    /**
+     * The "jsEngine" extension is registered internally to obtain a Rhino engine for JSON parsing.
+     * It must never be selectable through the 'language' attribute, because doing so yields a Rhino
+     * engine without the ClassShutter sandbox that is installed only on the rhinoJs code path,
+     * which restores unrestricted Java interop from a script mediator.
+     */
+    public void testJsEngineAliasIsNotSelectableAsLanguage() {
+        ScriptMediatorFactory mf = new ScriptMediatorFactory();
+        try {
+            mf.createMediator(JS_ENGINE_ALIAS_MEDIATOR_CONFIG, new Properties());
+            fail("'jsEngine' must not be usable as a script mediator language");
+        } catch (SynapseException e) {
+            assertTrue("Unexpected message: " + e.getMessage(),
+                    e.getMessage().contains("No script engine found for language"));
+        }
     }
 
 }

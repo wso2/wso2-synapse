@@ -146,6 +146,16 @@ public class ScriptMediator extends AbstractMediator {
      */
     private ScriptEngineManager engineManager;
     /**
+     * Extension under which the internal Rhino engine is registered. This is deliberately
+     * registered on {@link #rhinoEngineManager} only, and never on {@link #engineManager},
+     * which is looked up using the user supplied 'language' attribute.
+     */
+    private static final String RHINO_ENGINE_EXTENSION = "jsEngine";
+    /**
+     * Private Script Engine Manager used solely to create the internal Rhino engine
+     */
+    private ScriptEngineManager rhinoEngineManager;
+    /**
      * Default Pool Size
      */
     private int DEFAULT_POOL_SIZE = 15;
@@ -688,13 +698,11 @@ public class ScriptMediator extends AbstractMediator {
             this.scriptEngine = GraalJSScriptEngine.create(null, AccessControlUtils.createSecureGraalContext(classAccessControlConfig));
             this.jsEngine = GraalJSScriptEngine.create(null, AccessControlUtils.createSecureGraalContext(classAccessControlConfig));
         } else if (language.equals(RHINO_JAVA_SCRIPT)) {
-            engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
-            this.scriptEngine = engineManager.getEngineByExtension("jsEngine");
-            this.jsEngine = engineManager.getEngineByExtension("jsEngine");
+            this.scriptEngine = createRhinoEngine();
+            this.jsEngine = createRhinoEngine();
         } else {
-            engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
             this.scriptEngine = engineManager.getEngineByExtension(language);
-            this.jsEngine = engineManager.getEngineByExtension("jsEngine");
+            this.jsEngine = createRhinoEngine();
         }
 
         // The pool is only consumed through getNewScriptEngine(), which is reachable only from
@@ -737,6 +745,19 @@ public class ScriptMediator extends AbstractMediator {
                 ContextFactory.initGlobal(new SandboxContextFactory(nativeObjectAccessControlConfig));
             }
         }
+    }
+
+    /**
+     * Creates a Rhino script engine using a private ScriptEngineManager.
+     *
+     * @return a Rhino script engine
+     */
+    private ScriptEngine createRhinoEngine() {
+        if (rhinoEngineManager == null) {
+            rhinoEngineManager = new ScriptEngineManager();
+            rhinoEngineManager.registerEngineExtension(RHINO_ENGINE_EXTENSION, new RhinoScriptEngineFactory());
+        }
+        return rhinoEngineManager.getEngineByExtension(RHINO_ENGINE_EXTENSION);
     }
 
     private ScriptEngine createNashornEnginePortable() {
@@ -806,7 +827,7 @@ public class ScriptMediator extends AbstractMediator {
         } else if (language.equals(NASHORN_JAVA_SCRIPT)) {
             engineSupplier = () -> createNashornEnginePortable();
         } else if (language.equals(RHINO_JAVA_SCRIPT)) {
-            engineSupplier = () -> engineManager.getEngineByExtension("jsEngine");
+            engineSupplier = () -> createRhinoEngine();
         } else {
             engineSupplier = () -> engineManager.getEngineByExtension(language);
         }
@@ -857,7 +878,7 @@ public class ScriptMediator extends AbstractMediator {
             } else if (language.equals(NASHORN_JAVA_SCRIPT)) {
                 scriptEngineWrapper = new ScriptEngineWrapper(createNashornEnginePortable());
             } else if (language.equals(RHINO_JAVA_SCRIPT)) {
-                scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByExtension("jsEngine"));
+                scriptEngineWrapper = new ScriptEngineWrapper(createRhinoEngine());
             } else {
                 scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByExtension(language));
             }
