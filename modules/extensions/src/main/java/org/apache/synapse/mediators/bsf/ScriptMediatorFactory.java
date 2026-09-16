@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.*;
 
+import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.ALLOWED_SCRIPT_LANGUAGES;
 import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.DEFAULT_SCRIPT_ENGINE;
 import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.GRAAL_JAVA_SCRIPT;
 import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.JAVA_SCRIPT;
@@ -105,6 +106,7 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
 
         Map<Value, Object> includeKeysMap = getIncludeKeysMap(elem);
         String language = langAtt.getAttributeValue();
+        assertLanguageAllowed(language);
         if (language.equals(JAVA_SCRIPT) &&
                 (RHINO_JAVA_SCRIPT.equals(SynapsePropertiesLoader.getPropertyValue(
                         DEFAULT_SCRIPT_ENGINE, GRAAL_JAVA_SCRIPT)))) {
@@ -189,6 +191,36 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
             inputArgsMap.put(nameAttribute, argument);
         }
         return inputArgsMap;
+    }
+
+    /**
+     * Checks the configured language against the list configured with
+     * {@link ScriptMediatorConstants#ALLOWED_SCRIPT_LANGUAGES} in synapse.properties. The check is
+     * applied before an engine is resolved for the language.
+     * <p/>
+     * The property distinguishes three states:
+     * <ul>
+     *   <li>not present - no restriction is applied, so an existing deployment behaves as before
+     *       until the list is set;</li>
+     *   <li>present and empty - every language is rejected, which disables the script mediator;</li>
+     *   <li>present with values - only the listed languages are accepted.</li>
+     * </ul>
+     *
+     * @param language the configured language
+     */
+    private void assertLanguageAllowed(String language) {
+        String allowedLanguages = SynapsePropertiesLoader.getPropertyValue(ALLOWED_SCRIPT_LANGUAGES, null);
+        if (allowedLanguages == null) {
+            return;
+        }
+        if (StringUtils.isNotBlank(language)) {
+            for (String allowedLanguage : allowedLanguages.split(",")) {
+                if (StringUtils.isNotBlank(allowedLanguage) && allowedLanguage.trim().equals(language)) {
+                    return;
+                }
+            }
+        }
+        throw new SynapseException("Unsupported script language");
     }
 
     private Map<Value, Object> getIncludeKeysMap(OMElement elem) {
