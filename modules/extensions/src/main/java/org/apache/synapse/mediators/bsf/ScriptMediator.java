@@ -848,7 +848,7 @@ public class ScriptMediator extends AbstractMediator {
 
     public ScriptEngineWrapper getNewScriptEngine() {
 
-        ScriptEngineWrapper scriptEngineWrapper = pool.poll();
+        ScriptEngineWrapper scriptEngineWrapper = pool == null ? null : pool.poll();
         if (scriptEngineWrapper == null) {
             if (language.equals(GRAAL_JAVA_SCRIPT) || language.equals(JAVA_SCRIPT)) {
                 scriptEngineWrapper = new ScriptEngineWrapper(
