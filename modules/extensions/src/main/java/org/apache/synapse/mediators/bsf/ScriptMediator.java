@@ -697,12 +697,18 @@ public class ScriptMediator extends AbstractMediator {
             this.jsEngine = engineManager.getEngineByExtension("jsEngine");
         }
 
-        pool = new LinkedBlockingQueue<>(poolSize);
+        // The pool is only consumed through getNewScriptEngine(), which is reachable only from
+        // mediateWithExternalScript() (key != null). Inline scripts are mediated by
+        // mediateForInlineScript(), which never touches the pool, so building it for them leaves
+        // poolSize fully initialised script engines idle for the lifetime of the mediator.
+        if (key != null) {
+            pool = new LinkedBlockingQueue<>(poolSize);
 
-        final Supplier<ScriptEngine> engineSupplier = getScriptEngineSupplier();
+            final Supplier<ScriptEngine> engineSupplier = getScriptEngineSupplier();
 
-        for (int i = 0; i < poolSize; i++) {
-            pool.add(new ScriptEngineWrapper(engineSupplier.get()));
+            for (int i = 0; i < poolSize; i++) {
+                pool.add(new ScriptEngineWrapper(engineSupplier.get()));
+            }
         }
         if (scriptEngine == null) {
             handleException("No script engine found for language: " + language);
