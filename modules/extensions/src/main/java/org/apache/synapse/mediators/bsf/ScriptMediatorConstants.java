@@ -74,5 +74,5 @@ public class ScriptMediatorConstants {
      * Name of the synapse.properties entry holding the comma separated list of script languages
      * that may be used by a script mediator. When the entry is absent, no restriction is applied.
      */
-    public static final String ALLOWED_SCRIPT_LANGUAGES = "synapse.script.mediator.allow.languages";
+    public static final String ALLOWED_SCRIPT_LANGUAGES = "synapse.script.mediator.allowed.languages";
 }

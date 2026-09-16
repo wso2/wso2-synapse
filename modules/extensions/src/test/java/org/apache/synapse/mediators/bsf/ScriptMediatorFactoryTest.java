@@ -211,9 +211,9 @@ public class ScriptMediatorFactoryTest extends TestCase {
         field.setAccessible(true);
         Properties properties = (Properties) field.get(null);
         if (value == null) {
-            properties.remove("synapse.script.mediator.allow.languages");
+            properties.remove("synapse.script.mediator.allowed.languages");
         } else {
-            properties.setProperty("synapse.script.mediator.allow.languages", value);
+            properties.setProperty("synapse.script.mediator.allowed.languages", value);
         }
     }
 
