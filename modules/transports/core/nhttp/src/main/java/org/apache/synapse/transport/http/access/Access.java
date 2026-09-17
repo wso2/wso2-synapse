@@ -45,6 +45,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Access {
 
     private static final String THREAD_HTTP_ACCESS_LOG_V2 = "http-access-log-v2";
+    private static final String HEADER_CONTENT_LENGTH = "Content-Length";
     private static Log log = LogFactory.getLog(Access.class);
     private final Log accesslog = LogFactory.getLog(LoggingUtils.ACCESS_LOG_ID);
 
@@ -507,7 +508,7 @@ public class Access {
             long length = -1;
             try {
                 if (request != null) {
-                    String sLength = getHeaderValues(request, "Content-Length");
+                    String sLength = getHeaderValues(request, HEADER_CONTENT_LENGTH);
                     if(null != sLength && !"".equals(sLength)) {
                         length = Long.valueOf(sLength);
                     }
@@ -523,6 +524,29 @@ public class Access {
             } catch (Exception e) {
                 buf.append('-'); //No entity found.
             }
+        }
+    }
+
+    /**
+     * write response content length - %w
+     */
+    protected static class ResponseByteSentElement implements AccessLogElement {
+        public void addElement(StringBuilder buf, Date date, HttpRequest request,
+                               HttpResponse response) {
+            buf.append(response != null ? getContentLengthHeader(response) : "-");
+        }
+    }
+
+    private static String getContentLengthHeader(HttpMessage message) {
+        String value = getHeaderValues(message, HEADER_CONTENT_LENGTH);
+        if (StringUtils.isBlank(value)) {
+            return "-";
+        }
+        try {
+            Long.parseLong(value.trim());
+            return value.trim();
+        } catch (NumberFormatException e) {
+            return "-";
         }
     }
 
@@ -964,6 +988,8 @@ public class Access {
                 return new VaryElement();
             case 'v':
                 return new LocalServerNameElement();
+            case 'w':
+                return new ResponseByteSentElement();            // %w — response bytes (v2)
             case 'x':
                 return new ConnectionElement();
             case 'Z':
