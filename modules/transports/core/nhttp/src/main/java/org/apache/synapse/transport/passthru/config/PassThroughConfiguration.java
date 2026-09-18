@@ -225,6 +225,11 @@ public class PassThroughConfiguration {
                 "", props);
     }
 
+    public boolean isDuplicateResponseContentTypeHeaderRemovalEnabled() {
+        return ConfigurationBuilderUtil.getBooleanProperty(
+                PassThroughConfigPNames.HTTP_RESPONSE_DUPLICATE_CONTENT_TYPE_HEADER_REMOVAL, true, props);
+    }
+
     public boolean isServiceListBlocked() {
         return getBooleanProperty(PassThroughConfigPNames.BLOCK_SERVICE_LIST, true);
     }

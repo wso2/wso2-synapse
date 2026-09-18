@@ -96,6 +96,15 @@ public interface PassThroughConfigPNames {
     public String HTTP_RESPONSE_HEADERS_PRESERVE = "http.response.headers.preserve";
 
     /**
+     * Defines whether an existing response Content-Type header should be removed ignoring letter case before the
+     * transport sets its own value, so that a Content-Type header returned by the backend in a different casing
+     * does not result in a duplicate Content-Type header being sent to the client. Enabled by default, set it to
+     * false to fall back to the earlier case sensitive behaviour.
+     */
+    public String HTTP_RESPONSE_DUPLICATE_CONTENT_TYPE_HEADER_REMOVAL =
+            "http.response.duplicate.content.type.header.removal";
+
+    /**
      * Defines whether ESB needs to preserve the original Http header.
      */
     public String HTTP_HEADERS_PRESERVE = "http.headers.preserve";
