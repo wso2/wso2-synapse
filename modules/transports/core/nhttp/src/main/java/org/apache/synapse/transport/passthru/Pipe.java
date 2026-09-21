@@ -96,9 +96,9 @@ public class Pipe {
 
     private BaseConfiguration baseConfig;
 
-    private boolean serializationComplete = false;
+    private volatile boolean serializationComplete = false;
 
-    private boolean rawSerializationComplete = false;
+    private volatile boolean rawSerializationComplete = false;
 
     private boolean hasHttpProducer = true;
 
