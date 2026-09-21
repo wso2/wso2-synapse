@@ -28,6 +28,7 @@ import org.apache.axis2.context.ServiceContext;
 import org.apache.axis2.description.InOutAxisOperation;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.description.TransportOutDescription;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ContinuationState;
@@ -399,6 +400,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         } finally {
             // Clear ThreadContext after message injection to prevent context leakage
             MediatorIdLogSetter.getInstance().clearMediatorId();
+            ThreadContext.remove(SynapseConstants.TRACE_ID);
+            ThreadContext.remove(SynapseConstants.SPAN_ID);
             if (synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
@@ -827,6 +830,19 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         // Sync mediator ID from MessageContext to ThreadContext when thread switches
         MediatorIdLogSetter.getInstance().syncToThreadContext(synCtx);
+
+        // The response is mediated on a transport thread that never saw the request, so restore the
+        // trace and span IDs of this message rather than reporting whatever that thread last held.
+        ThreadContext.remove(SynapseConstants.TRACE_ID);
+        ThreadContext.remove(SynapseConstants.SPAN_ID);
+        Object traceId = synCtx.getProperty(SynapseConstants.JAEGER_TRACE_ID);
+        if (traceId instanceof String) {
+            ThreadContext.put(SynapseConstants.TRACE_ID, (String) traceId);
+        }
+        Object spanId = synCtx.getProperty(SynapseConstants.JAEGER_SPAN_ID);
+        if (spanId instanceof String) {
+            ThreadContext.put(SynapseConstants.SPAN_ID, (String) spanId);
+        }
 
         if (log.isDebugEnabled()) {
             log.debug("Mediating response using the ContinuationStateStack");
