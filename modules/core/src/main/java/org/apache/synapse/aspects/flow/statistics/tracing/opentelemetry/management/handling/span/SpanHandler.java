@@ -249,7 +249,7 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         }
 
         headersMap.putAll(tracerSpecificCarrier);
-        statisticDataUnit.setTransportHeaderMap(new ConcurrentHashMap<>(headersMap));
+        statisticDataUnit.setTransportHeaderMap(getSafeTransportHeaders(headersMap));
         ((Axis2MessageContext) synCtx).getAxis2MessageContext()
             .setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, headersMap);
 
@@ -375,7 +375,7 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
             }
         }
 
-        statisticDataUnit.setTransportHeaderMap(new ConcurrentHashMap<>(headersMap));
+        statisticDataUnit.setTransportHeaderMap(getSafeTransportHeaders(headersMap));
 
         String spanId = TracingUtils.extractId(statisticDataUnit);
         SpanWrapper spanWrapper = spanStore.addSpanWrapper(spanId, span, statisticDataUnit, parentSpanWrapper, msgCtx);
@@ -412,6 +412,27 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
                 && (TelemetryUtil.isOuterLayerComponent(statisticDataUnit.getComponentType()) || statisticDataUnit.isOuterLayerSpan()
                 || (statisticDataUnit.getComponentType() == ComponentType.SEQUENCE
                 && SynapseConstants.MAIN_SEQUENCE_KEY.equals(statisticDataUnit.getComponentName())));
+    }
+
+    /**
+     * Creates a copy of the given transport headers map for the statistic data unit, leaving out
+     * entries with a null key or value.
+     * <p>
+     * A copy is needed because the map is reported when the span is finished, by which time the live
+     * header map has changed further. Null entries are left out because transport headers legitimately
+     * carry them, while a ConcurrentHashMap rejects them with a NullPointerException.
+     *
+     * @param headersMap Live transport headers map. Must not be null.
+     * @return           Copy of the given map, without its null keys and values.
+     */
+    private static Map<Object, Object> getSafeTransportHeaders(Map<?, ?> headersMap) {
+        Map<Object, Object> safeHeaders = new ConcurrentHashMap<>();
+        headersMap.forEach((key, value) -> {
+            if (key != null && value != null) {
+                safeHeaders.put(key, value);
+            }
+        });
+        return safeHeaders;
     }
 
     @Override
