@@ -46,6 +46,11 @@ public class ScriptMediatorConstants {
     public static final String GRAAL_JAVA_SCRIPT = "graalJs";
 
     /**
+     * Name of the java script language with usage of graal engine (module alias).
+     */
+    public static final String MJS_JAVA_SCRIPT = "mjs";
+
+    /**
      * Name of the nashorn java script engine.
      */
     public static final String NASHORN = "nashorn";
