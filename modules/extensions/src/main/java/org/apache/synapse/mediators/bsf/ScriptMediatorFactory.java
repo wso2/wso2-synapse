@@ -220,7 +220,7 @@ public class ScriptMediatorFactory extends AbstractMediatorFactory {
                 }
             }
         }
-        throw new SynapseException("Unsupported script language");
+        throw new SynapseException("Unsupported script language: " + language);
     }
 
     private Map<Value, Object> getIncludeKeysMap(OMElement elem) {
