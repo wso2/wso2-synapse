@@ -18,10 +18,12 @@
 
 package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span;
 
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.event.CallbackEventHandler;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.event.CloseEventHandler;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.event.ContinuationStateStackEventHandler;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.event.OpenEventHandler;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.stores.SpanStore;
 
 /**
  * Interface for the controller which handles OpenTelemetry compatible spans, with respect to various events received
@@ -29,4 +31,12 @@ import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.manageme
  */
 public interface OpenTelemetrySpanHandler
         extends OpenEventHandler, CloseEventHandler, CallbackEventHandler, ContinuationStateStackEventHandler {
+
+    /**
+     * Gets the span store that holds the spans of the message flow the given context belongs to.
+     *
+     * @param messageContext Message context.
+     * @return Span store of that message flow.
+     */
+    SpanStore getSpanStore(MessageContext messageContext);
 }
