@@ -1670,7 +1670,7 @@
 
        <glassfish.jersey.version>2.41</glassfish.jersey.version>
 
-       <freemarker.version>2.3.30</freemarker.version>
+       <freemarker.version>2.3.35</freemarker.version>
        <awaitility.version>3.1.2</awaitility.version>
        <jaxb.version>4.0.6</jaxb.version>
        <jakarta.xml.bind.version>4.0.4</jakarta.xml.bind.version>
