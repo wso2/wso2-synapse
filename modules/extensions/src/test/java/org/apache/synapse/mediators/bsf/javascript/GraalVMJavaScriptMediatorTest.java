@@ -23,6 +23,7 @@ import org.apache.axiom.attachments.ByteArrayDataSource;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMText;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -155,5 +156,50 @@ public class GraalVMJavaScriptMediatorTest extends TestCase {
         ScriptMediator mediator = new ScriptMediator("js", INLINE_SCRIPT,null);
         boolean responese = mediator.mediate(mc);
         assertTrue(responese);
+    }
+
+    /**
+     * Verify that persisting a raw GraalJS object across mediators is unsafe once contexts are
+     * properly released after each mediation.
+     */
+    public void testInlineMediatorWithRawJsObjectAcrossMediators() throws Exception {
+        MessageContext mc = TestUtils.getTestContext("<foo/>", null);
+        ScriptMediator producer = new ScriptMediator("js",
+                "mc.setProperty('rawJsObject', { foo: 'bar' }); true;", null);
+        assertTrue(producer.mediate(mc));
+
+        ScriptMediator consumer = new ScriptMediator("js",
+                "var o = mc.getProperty('rawJsObject'); o.foo === 'bar';", null);
+
+        boolean synapseExceptionThrown = false;
+        try {
+            consumer.mediate(mc);
+        } catch (SynapseException e) {
+            synapseExceptionThrown = true;
+        }
+
+        assertTrue("Reading raw JS objects across mediators should fail once contexts are closed",
+                synapseExceptionThrown);
+    }
+
+    /**
+     * Primitives and strings stored via mc.setProperty remain readable in a later script
+     * mediator after Graal contexts are closed.
+     */
+    public void testInlineMediatorWithPrimitivesAcrossMediators() throws Exception {
+        MessageContext mc = TestUtils.getTestContext("<foo/>", null);
+        ScriptMediator producer = new ScriptMediator("js",
+                "mc.setProperty('s', 'hello');\n"
+                        + "mc.setProperty('n', 42);\n"
+                        + "mc.setProperty('b', true);\n"
+                        + "true;", null);
+        assertTrue(producer.mediate(mc));
+
+        ScriptMediator consumer = new ScriptMediator("js",
+                "var s = mc.getProperty('s');\n"
+                        + "var n = mc.getProperty('n');\n"
+                        + "var b = mc.getProperty('b');\n"
+                        + "s === 'hello' && n === 42 && b === true;", null);
+        assertTrue(consumer.mediate(mc));
     }
 }
