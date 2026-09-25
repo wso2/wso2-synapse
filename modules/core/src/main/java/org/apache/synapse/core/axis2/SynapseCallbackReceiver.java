@@ -58,6 +58,7 @@ import org.apache.synapse.endpoints.auth.oauth.MessageCache;
 import org.apache.synapse.endpoints.auth.oauth.OAuthUtils;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.util.TracingIdLogSetter;
 import org.apache.synapse.transport.netty.BridgeConstants;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
@@ -221,6 +222,8 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     handleNoCallback(messageID, messageCtx);
                     return;
                 }
+                // Set the request's trace and span IDs in the ThreadContext
+                TracingIdLogSetter.setFromMessage(SynapseOutMsgCtx);
                 messageCtx.removeProperty(PassThroughConstants.INTERNAL_EXCEPTION_ORIGIN);
                 if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                     CallbackStatisticCollector.updateParentsForCallback(SynapseOutMsgCtx, messageID);
