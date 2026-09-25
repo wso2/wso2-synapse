@@ -97,15 +97,17 @@ public class MediatorWorker implements Runnable {
             // hold the IDs of a previously mediated message. The trace and span IDs are reported by
             // the span handler only when a span opens, which happens after mediation begins here,
             // so restore them from the message being mediated now.
-            ThreadContext.remove(SynapseConstants.TRACE_ID);
-            ThreadContext.remove(SynapseConstants.SPAN_ID);
-            Object traceId = synCtx.getProperty(SynapseConstants.JAEGER_TRACE_ID);
-            if (traceId instanceof String) {
-                ThreadContext.put(SynapseConstants.TRACE_ID, (String) traceId);
-            }
-            Object spanId = synCtx.getProperty(SynapseConstants.JAEGER_SPAN_ID);
-            if (spanId instanceof String) {
-                ThreadContext.put(SynapseConstants.SPAN_ID, (String) spanId);
+            if (RuntimeStatisticCollector.isOpenTelemetryEnabled()) {
+                ThreadContext.remove(SynapseConstants.TRACE_ID);
+                ThreadContext.remove(SynapseConstants.SPAN_ID);
+                Object traceId = synCtx.getProperty(SynapseConstants.JAEGER_TRACE_ID);
+                if (traceId instanceof String) {
+                    ThreadContext.put(SynapseConstants.TRACE_ID, (String) traceId);
+                }
+                Object spanId = synCtx.getProperty(SynapseConstants.JAEGER_SPAN_ID);
+                if (spanId instanceof String) {
+                    ThreadContext.put(SynapseConstants.SPAN_ID, (String) spanId);
+                }
             }
 
             if (synCtx.getEnvironment().isDebuggerEnabled()) {
@@ -175,8 +177,10 @@ public class MediatorWorker implements Runnable {
             
             // Clear ThreadContext when thread finishes to prevent context leakage
             MediatorIdLogSetter.getInstance().clearMediatorId();
-            ThreadContext.remove(SynapseConstants.TRACE_ID);
-            ThreadContext.remove(SynapseConstants.SPAN_ID);
+            if (RuntimeStatisticCollector.isOpenTelemetryEnabled()) {
+                ThreadContext.remove(SynapseConstants.TRACE_ID);
+                ThreadContext.remove(SynapseConstants.SPAN_ID);
+            }
         }
         synCtx = null;
         seq = null;
